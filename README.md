@@ -1,7 +1,6 @@
 # Adena Browser Extension
 [![Twitter: Adena Wallet](https://img.shields.io/twitter/follow/adenaapp?style=social)](https://twitter.com/adenaapp)
 ![Banner](banner.png)
-> Your Gateway to Gnoland
 
 ## Introduction
 **Adena** is a friendly, open source, non-custodial Gnoland wallet, built for Gnomes worldwide. Adena exists to power millions of smart contracts and tokens that will flourish the Gnoland ecosystem with a quality UI, custom token & NFT management, and a seamless dapp integration process.
