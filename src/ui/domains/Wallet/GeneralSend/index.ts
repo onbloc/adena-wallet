@@ -1,0 +1,1 @@
+export { GeneralSendView } from './GeneralSendView';

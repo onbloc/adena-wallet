@@ -1,0 +1,1 @@
+export { TransactionDetailView } from './TransactionDetailView';

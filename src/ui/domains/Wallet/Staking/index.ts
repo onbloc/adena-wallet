@@ -1,0 +1,1 @@
+export { StakingView } from './StakingView';

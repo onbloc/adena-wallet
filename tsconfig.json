@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "esnext",
+    "target": "es5",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "strict": true,
+    "allowJs": true,
+    "lib": ["dom", "es6"],
+    "baseUrl": "./",
+    "paths": {
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@ui/*": [
+        "src/ui/*"
+      ],
+      "@pages/*": [
+        "src/pages/*"
+      ],
+      "@router/*": [
+        "src/router/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
+      "@styles/*": [
+        "src/styles/*"
+      ]
+    }
+  },
+  "include": [
+    "./src/**/*",
+    "src/custom.d.ts"
+  ]
+}

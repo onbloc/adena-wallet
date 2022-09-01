@@ -1,0 +1,1 @@
+export { SeedPhraseView } from './SeedPhraseView';
