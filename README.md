@@ -9,7 +9,7 @@ As a user, Adena makes managing your crypto as simple as sending money on Paypal
 
 You can find the latest version of Adena on our [official website](https://adena.app/), or directly on [the Chrome Webstore](https://chrome.google.com/webstore/detail/adena/oefglhbffgfkcpboeackfgdagmlnihnh).
 
-Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](https://medium.com/@adena.app) for patch notes and updates!
+Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](https://medium.com/@adena.app) for the latest updates and patch notes!
 
 ## Features
 ✅ Create & Restore Wallet <br>
