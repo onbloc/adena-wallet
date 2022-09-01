@@ -12,32 +12,32 @@ You can find the latest version of Adena on our [official website](https://adena
 
 Also, follow us on our [Medium](https://medium.com/@adena.app) for patch notes and updates!
 
-### Features
-✅ Create & Restore Wallet
-✅ View Account Balances
-✅ Deposit & Send Tokens
-✅ Transaction History
-✅ Settings
-✅ Connect to Dapps
-✅ Sign GNO Contracts
-⬜ Add Accounts
-⬜ Manage Custom Tokens
-⬜ View & Transfer NFTs
-⬜ Staking & Governance
-⬜ Change Network
+## Features
+✅ Create & Restore Wallet <br>
+✅ View Account Balances <br>
+✅ Deposit & Send Tokens <br>
+✅ Transaction History <br>
+✅ Settings <br>
+✅ Connect to Dapps <br>
+✅ Sign GNO Contracts <br>
+⬜ Add Accounts <br>
+⬜ Manage Custom Tokens <br>
+⬜ View & Transfer NFTs <br>
+⬜ Staking & Governance <br>
+⬜ Change Network<br>
 
 ## Documentation
 Check out our official documentation page for guides and brand assets.
-- ️🙎‍♂️ [User Guide](https://docs.adena.app/user-guide)
-- ⚒️ [Developer Guide](https://docs.adena.app/integrations/)
-- 📚 [Resources](https://docs.adena.app/resources/)
+- ️[User Guide](https://docs.adena.app/user-guide)
+- [Developer Guide](https://docs.adena.app/integrations/)
+- [Resources](https://docs.adena.app/resources/)
 
 ## Contributors
 **Onbloc**
-- Website: [onbloc.xyz](https://onbloc.xyz)
-- Twitter: [@onblocxyz](https://mobile.twitter.com/onblocxyz)
-- Github: [Onbloc](https://github.com/onbloc)
-- Medium: [Onbloc](https://medium.com/onbloc)
+- [Website](https://onbloc.xyz)
+- [Twitter](https://mobile.twitter.com/onblocxyz)
+- [Github](https://github.com/onbloc)
+- [Medium](https://medium.com/onbloc)
 
 ## Support
 If you need support, join [our channel](https://discord.gg/6eTSyZ3569) on Gnoland's Discord server and ask for help!
