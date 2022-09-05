@@ -55,7 +55,7 @@ export const useLogin = () => {
   const approveButtonClick = () => {
     tryLoginApprove(password);
   };
-  const forgotButtonClick = () => navigate(RoutePath.EnterSeedPharse);
+  const forgotButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
 
   useEffect(() => {
     setError(false);

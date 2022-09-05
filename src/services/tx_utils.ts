@@ -97,7 +97,6 @@ export function createDeleteMsg(
 export function encodeType(type: string, msg: any) {
   switch (type) {
     case '/vm.m_call':
-      console.log(msg);
       return MsgCall.encode({
         caller: msg.caller,
         send: msg.send,

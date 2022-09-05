@@ -107,6 +107,7 @@ export const ApproveTransactionView = () => {
   const argsRef = useRef<HTMLTextAreaElement>(null);
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [walletString, SetWalletString] = useState<string>();
+  const [gasFee, setGasFee] = useState<string>();
 
   const Login = () => {
     getSavedPassword().then((pwd: string) => {
@@ -117,6 +118,22 @@ export const ApproveTransactionView = () => {
   useEffect(() => {
     Login();
   }, []);
+
+  useEffect(() => {
+    // get args as string, convert object
+    if (typeof getDataRef.current?.value === 'string') {
+      const argObj = JSON.parse(getDataRef.current.value);
+      
+      const baseFee = Number(argObj.fee.amount[0].amount);
+      const toGnot = baseFee / 1000000;
+      
+      const showFee = toGnot.toString() + ' GNOT';
+
+      setGasFee(showFee);
+    } else {
+      //console.log('typeof', typeof getDataRef.current?.value);
+    }
+  });
 
   const showDetailText: string = showDetail
     ? 'Hide Transaction Details'
@@ -152,7 +169,7 @@ export const ApproveTransactionView = () => {
         window.close();
       })();
     } else {
-      console.log('no good');
+      // console.log('no good');
     }
   };
 
@@ -179,13 +196,13 @@ export const ApproveTransactionView = () => {
 
   return (
     <>
-      <input ref={getDataRef} id='atv_args' type={'hidden'} />
+      {/*<input ref={getDataRef} id='atv_args' type='hidden' />*/}
+      {/*<input id='atv_args' type='hidden' />*/}
+      <dd id='atv_args' hidden={true} ref={getDataRef} />
 
       <Wrapper>
         <Typography type='header4'>Approve Transaction</Typography>
-        {false ? (
-          <ApproveTransactionLoading />
-        ) : (
+        {
           <>
             <img className='logo' src={gnotLogo} alt='gnoland-logo' />
             <RoundedBox>
@@ -206,11 +223,11 @@ export const ApproveTransactionView = () => {
             <RoundedDataBox>
               <RoundedDL>
                 <dt>Network Fee:</dt>
-                <dd>{`${dummy.networkFee} ${dummy.unit}`}</dd>
+                <dd>{gasFee}</dd>
               </RoundedDL>
             </RoundedDataBox>
           </>
-        )}
+        }
         <CancelAndConfirmButton
           cancelButtonProps={{ onClick: cancelEvent }}
           confirmButtonProps={{

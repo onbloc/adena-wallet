@@ -18,10 +18,6 @@ const Copy = ({ seeds, tabIndex }: { seeds: string; tabIndex?: number }) => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
   const sdk = useSdk();
 
-  const handleCancleButtonClick = () => {
-    console.log(sdk.address);
-  };
-
   const handleButtonClick = useCallback(() => {
     setIsClicked((prev: boolean) => !prev);
     navigator.clipboard.writeText(seeds);

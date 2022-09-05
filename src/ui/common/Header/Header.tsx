@@ -28,7 +28,7 @@ export const Header = () => {
   const addAccount = useMatch(RoutePath.SideBarAddAccount);
   const importAccount = useMatch(RoutePath.SideBarImportAccount);
 
-  const enterSeedPhrase = useMatch(RoutePath.EnterSeedPharse);
+  const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
   const yourSeedPhrase = useMatch(RoutePath.YourSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
   const lauchAdena = useMatch(RoutePath.LaunchAdena);

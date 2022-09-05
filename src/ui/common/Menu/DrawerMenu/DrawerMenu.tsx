@@ -104,7 +104,7 @@ export const DrawerMenu = ({ open, setOpen, onClick }: DrawerMenuProps) => {
   const login = useMatch(RoutePath.Login);
   const restoreClickHandler = () => {
     setOpen(!open);
-    navigate(RoutePath.EnterSeedPharse);
+    navigate(RoutePath.EnterSeedPhrase);
   };
   const lockClickHandler = () => {
     setOpen(!open);

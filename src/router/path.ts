@@ -7,7 +7,7 @@ export enum RoutePath {
   Create = '/create',
 
   //phrase
-  EnterSeedPharse = '/popup/enter-seed',
+  EnterSeedPhrase = '/popup/enter-seed',
   CreatePassword = '/popup/create-password',
   LaunchAdena = '/popup/launch-adena',
   YourSeedPhrase = '/popup/your-seed-phrase',

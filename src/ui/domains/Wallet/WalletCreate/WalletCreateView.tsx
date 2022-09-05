@@ -31,7 +31,7 @@ export const WalletCreateView = () => {
   const navigate = useNavigate();
   const sdk = useSdk();
   const handleCreateButtonClick = () => navigate(RoutePath.YourSeedPhrase);
-  const handleRestoreButtonClick = () => navigate(RoutePath.EnterSeedPharse);
+  const handleRestoreButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
   const [isExistWallet, setExistWallet] = useState(false);
 
   const autoLogin = () => {
@@ -42,13 +42,16 @@ export const WalletCreateView = () => {
             sdk.init(wallet);
             navigate(RoutePath.Wallet);
           })
-          .catch(() => navigate(RoutePath.Login));
+          .catch(() => {
+            navigate(RoutePath.Login);
+          });
       })
       .catch(() => {
         chrome.storage.local.get(['adenaWallet'], async (result) => {
           if (result.adenaWallet) {
             navigate(RoutePath.Login);
           } else {
+            //TODO
           }
         });
         setExistWallet(true);
@@ -58,11 +61,6 @@ export const WalletCreateView = () => {
   useEffect(() => {
     autoLogin();
   });
-
-  useEffect(() => {
-    // console.log(loginHandler());
-    console.log('WalletCreateView sdk.initialized : ', sdk.initialized);
-  }, [sdk]);
 
   return (
     <>

@@ -1,7 +1,7 @@
 {
-  "name": "adena-extension",
-  "version": "1.3.0",
-  "description": "",
+  "name": "Adena",
+  "version": "1.3.1",
+  "description": "Adena Wallet",
   "scripts": {
     "build:dev": "webpack --mode=development --watch",
     "build": "webpack --mode production",

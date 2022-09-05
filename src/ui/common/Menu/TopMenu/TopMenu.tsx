@@ -31,8 +31,6 @@ export const TopMenu = () => {
   const { address, addrname } = useSdk();
   const [open, setOpen] = useState(false);
   const [connectedAddr, setConnectedAddr] = useState('');
-  const [isApprove, setIsApprove] = useState(false);
-  const location = useLocation();
 
   const toggleMenuHandler = () => setOpen(!open);
   useEffect(() => {
@@ -42,20 +40,12 @@ export const TopMenu = () => {
     })();
   }, [connectedAddr]);
 
-  useEffect(() => {
-    if (location.pathname.indexOf('approve') === -1) {
-      setIsApprove(false);
-    } else {
-      setIsApprove(true);
-    }
-  }, [location]);
-
   return (
     <>
       {address && addrname && (
         <Wrapper>
           <Header>
-            <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} hidden={isApprove} />
+            <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
             <CopyTooltip copyText={address}>
               <>
                 <Typography type='body1Bold'>
