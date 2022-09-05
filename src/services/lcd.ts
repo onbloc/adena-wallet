@@ -13,12 +13,16 @@ export class GnoClient {
     return res.data;
   }
 
-  async getAccount(address: string): Promise<BaseAccount | undefined> {
+  async getAccount(address: string): Promise<BaseAccount | undefined | string> {
     try {
       const res = await this.instance.get(`/abci_query?path=%22auth/accounts/${address}%22`);
       if (res.data.error) {
         throw res.data.error.message;
       } else {
+        if (res.data.result.response.ResponseBase.Data === 'bnVsbA==') {
+          return 'WAY TOO FRESH ACCOUNT';
+          // throw new Error('WAY TOO FRESH ACCOUNT');
+        }
         const responseBase = JSON.parse(atob(res.data.result.response.ResponseBase.Data));
         return responseBase.BaseAccount;
       }
@@ -99,16 +103,12 @@ export class GnoClient {
 
   async doContractMsg(doc: any, address: string, signer: OfflineAminoSigner | undefined | any) {
     try {
-      console.log(doc);
       const account_info: any = await this.getAccount(address);
-      console.log(account_info);
       doc.account_number = account_info.account_number;
       doc.sequence = account_info.sequence;
 
       const signature = signer.signAmino(address, doc);
-      console.log(await signature);
       const txBz = makeProtoTx((await signature).signed, (await signature).signature);
-      console.log(txBz);
       return await this.broadcastTx(txBz);
     } catch (e) {
       console.log(e);
@@ -126,9 +126,7 @@ export class GnoClient {
 
     const byte_str = Uint8Array.from(d_str, (c) => c.charCodeAt(0));
     const res = await this.instance.get(`/broadcast_tx_commit?tx=[${tx}]`);
-    console.log(res);
     const txResponse = res.data.result.check_tx.ResponseBase;
-    console.log(txResponse);
     if (txResponse.Error) {
       let log = txResponse.Data;
       if (log) {

@@ -12,9 +12,6 @@ const adena = {
   GetAccount: function GetAccount() {
     return new Promise((res) => {
       const tmpListener = function (evt: any) {
-        // console.log("return", evt.data);
-        // console.log("return type", typeof evt.data);
-
         if (typeof evt.data === 'object') {
           if (evt.data.address) {
             res(evt.data);

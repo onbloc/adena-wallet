@@ -81,7 +81,7 @@ export const CustomRouter = () => (
       <Route path={RoutePath.CreatePassword} element={<CreatePasswordPage />} />
       <Route path={RoutePath.LaunchAdena} element={<LaunchAdenaPage />} />
       <Route path={RoutePath.Wallet} element={<WalletPage />} />
-      <Route path={RoutePath.EnterSeedPharse} element={<EnterSeedPhrasePage />} />
+      <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrasePage />} />
       <Route path={RoutePath.Login} element={<LoginPage />} />
       <Route path={RoutePath.Nft} element={<NftCollectionPage />} />
       <Route path={RoutePath.Staking} element={<StakingPage />} />

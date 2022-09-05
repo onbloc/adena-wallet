@@ -18,15 +18,12 @@ export const getSavedPassword = (): Promise<string> => {
             const plainPassword = decryption(result.encryptedPassword, result.encryptedKey);
             resolve(plainPassword);
           } else {
-            // console.log("NO LOGIN");
-            resolve('1000'); // no login
             // TODO using reject
-            // reject("1000");
+            reject('1000');
           }
         },
       );
     } catch (err) {
-      // console.log("GOT ERROR", err);
       reject(err);
     }
   });

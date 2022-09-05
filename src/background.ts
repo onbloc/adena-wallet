@@ -53,11 +53,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       const walletString = result.adenaWallet;
 
       (async () => {
-        const sessionpass = await getSavedPassword();
+        try {
+          const sessionpass = await getSavedPassword();
 
-        if (sessionpass === '1000') {
-          sendResponse('1000'); // login error
-        } else {
           const wallet = await Secp256k1HdWallet.deserialize(walletString, sessionpass as string);
           const ret = (await wallet.getAccounts())[0];
           const test = new GnoClient(
@@ -67,9 +65,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
               adapter: fetchAdapter,
             }),
           );
-          const ddd = await test.getAccount(ret.address);
+          const res = await test.getAccount(ret.address);
 
-          sendResponse(ddd);
+          sendResponse(res);
+        } catch (err) {
+          sendResponse(err);
         }
       })();
     });
