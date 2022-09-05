@@ -52,7 +52,7 @@ export const TopMenu = () => {
                   {addrname[0].length > 11 ? `${addrname[0].slice(0, 11)}...` : addrname[0]}
                 </Typography>
                 <Typography type='body1Reg' color={theme.color.neutral[4]}>
-                  {` (${address.slice(0, 4)}....${address.slice(-4)})`}
+                  {` (${address.slice(0, 4)}...${address.slice(-4)})`}
                 </Typography>
               </>
             </CopyTooltip>

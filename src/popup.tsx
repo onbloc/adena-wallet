@@ -18,8 +18,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     (document.getElementById('atv_function') as HTMLElement).innerHTML = 'Transfer';
   }
 
-  (document.getElementById('atv_args') as HTMLInputElement).value = JSON.stringify(request.data);
+  // set rest params
+  let restData;
+  restData = request.data;
+  restData['origin'] = request.called;
+  (document.getElementById('atv_args') as HTMLInputElement).value = JSON.stringify(restData);
   // (document.getElementById('atv_args') as HTMLElement).innerHTML = JSON.stringify(request.data);
+
+  // set called domain
+  // console.log('request', request.called);
+  // (document.getElementById('atv_origin') as HTMLInputElement).value = request.called;
+
+  // console.log('window.location.href', window.location.href);
 
   //sendResponse("SEND from test.js");
 });

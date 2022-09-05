@@ -34,9 +34,11 @@ const CopyInputBox = styled.div`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
   ${inputStyle};
   border: 1px solid ${({ theme }) => theme.color.neutral[4]};
+
   & .nickname {
     color: ${({ theme }) => theme.color.neutral[2]};
   }
+
   margin-bottom: 8px;
 `;
 
@@ -46,11 +48,12 @@ export const DepositView = () => {
   const [displayaddr, setDisplayaddr] = useState('');
   const { address, addrname } = useSdk();
   useEffect(() => {
-    setDisplayaddr(address.slice(0, 4) + '...' + address.slice(-4));
+    setDisplayaddr(address.slice(0, 4) + '..' + address.slice(-4));
   }, [address, displayaddr]);
 
   const closeButtonClick = () =>
     location.state === 'token' ? navigate(RoutePath.TokenDetails) : navigate(RoutePath.Wallet);
+
   return (
     <Wrapper>
       <Typography type='header4'>Deposit GNOT</Typography>
@@ -59,7 +62,8 @@ export const DepositView = () => {
       </QRCodeBox>
       <CopyInputBox>
         <strong>
-          {addrname[0] as string}&nbsp;
+          {addrname[0].length > 11 ? `${addrname[0].slice(0, 11)}..` : (addrname[0] as string)}
+          &nbsp;
           <span className='nickname'>&#40;{displayaddr}&#41;</span>
         </strong>
         <Copy seeds={address} />

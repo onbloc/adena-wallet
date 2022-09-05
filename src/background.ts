@@ -1,4 +1,4 @@
-import { Secp256k1HdWallet } from './services/signer';
+import { Secp256k1HdWallet } from '@services/signer';
 import axios from 'axios';
 import { GnoClient } from '@services/lcd';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
@@ -34,6 +34,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                   {
                     type: 'TO_POPUP_WINDOW',
                     data: request.data,
+                    called: sender.origin,
                   },
                   function (my_res) {
                     // console.log(my_res);

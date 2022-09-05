@@ -97,7 +97,7 @@ const dummy = {
 export const ApproveTransactionView = () => {
   const sdk = useSdk();
   const navigate = useNavigate();
-  const [isLogined, setIslogined] = useState(true);
+  const [isLogined, setIsLogined] = useState(true);
   const [loading, setLoading] = useState(true);
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -108,6 +108,7 @@ export const ApproveTransactionView = () => {
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [walletString, SetWalletString] = useState<string>();
   const [gasFee, setGasFee] = useState<string>();
+  const [origin, setOrigin] = useState<string>('https://gno.land');
 
   const Login = () => {
     getSavedPassword().then((pwd: string) => {
@@ -123,13 +124,16 @@ export const ApproveTransactionView = () => {
     // get args as string, convert object
     if (typeof getDataRef.current?.value === 'string') {
       const argObj = JSON.parse(getDataRef.current.value);
-      
+
       const baseFee = Number(argObj.fee.amount[0].amount);
-      const toGnot = baseFee / 1000000;
-      
-      const showFee = toGnot.toString() + ' GNOT';
+      const toGNOT = baseFee / 1000000;
+
+      const showFee = toGNOT.toString() + ' GNOT';
 
       setGasFee(showFee);
+
+      // set origin
+      setOrigin(argObj.origin);
     } else {
       //console.log('typeof', typeof getDataRef.current?.value);
     }
@@ -207,7 +211,7 @@ export const ApproveTransactionView = () => {
             <img className='logo' src={gnotLogo} alt='gnoland-logo' />
             <RoundedBox>
               <Typography type='body2Reg' color={'#ffffff'}>
-                https://gno.land
+                {origin}
               </Typography>
             </RoundedBox>
             <BundleDataBox>

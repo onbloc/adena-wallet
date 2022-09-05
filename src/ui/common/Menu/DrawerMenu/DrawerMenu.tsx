@@ -126,10 +126,9 @@ export const DrawerMenu = ({ open, setOpen, onClick }: DrawerMenuProps) => {
           <DrawerBody>
             <ul>
               <ListItem>
-                <Typography type='body1Reg'>{`${addrname[0]} (${address.slice(
-                  0,
-                  4,
-                )}....${address.slice(-4)})`}</Typography>
+                <Typography type='body1Reg'>{`${
+                  addrname[0].length > 9 ? `${addrname[0].slice(0, 9)}..` : addrname[0]
+                } (${address.slice(0, 4)}..${address.slice(-4)})`}</Typography>
                 <img src={statusCheck} alt='status icon' />
               </ListItem>
             </ul>
