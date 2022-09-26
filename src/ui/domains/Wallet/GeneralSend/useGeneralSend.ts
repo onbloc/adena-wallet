@@ -33,14 +33,19 @@ export const useGeneralSend = () => {
       const charAtFirst = v.charAt(0);
       const charAtSecond = v.charAt(1);
       let charAtZeroCheck: string | null = v;
-      if (Number(charAtSecond) >= 1 && charAtFirst === '0') {
+      if (Number(charAtSecond) >= 1 && charAtFirst === '0' ) {
         charAtZeroCheck = v.replace(/(^0+)/, '');
       } else if (Number(charAtSecond) === 0 && charAtFirst === '0') {
         charAtZeroCheck = v.replace(/(^0+)/, '0');
       } else if (charAtFirst === '.') {
         charAtZeroCheck = `0${v}`;
       }
-      setAmount(charAtZeroCheck);
+      if (charAtZeroCheck.includes('.')&& charAtZeroCheck.split('.')[1].length > 6) {
+        setAmount(Number(charAtZeroCheck).toFixed(6).toString());
+      } else {
+        setAmount(charAtZeroCheck);
+      }
+      
     },
     [amount],
   );

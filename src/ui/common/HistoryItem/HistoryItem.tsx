@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Typography from '../Typography';
 import theme from '@styles/theme';
+import { float_with_comma, minify_status } from '@services/utils';
 
 interface Transaction {
   type: string;
@@ -58,11 +59,6 @@ const getColorByAmount = (amount: string) => {
   return amount.includes('-') ? '#C1C4CD' : '#74CEB9';
 };
 
-const getTransactionType = (amount: string, type: string) => {
-  if (type !== 'valid_tx') return 'Error';
-  return amount.includes('-') ? 'Sent' : 'Received';
-};
-
 const getTransactionSign = (amount: string) => {
   return amount.includes('-') ? 'To' : 'From';
 };
@@ -73,8 +69,20 @@ const getFromToAddr = (fromto: string, from: string, to: string) => {
     : from.slice(0, 4) + '..' + from.slice(-4);
 };
 
+const amountPretty = (amount: string): string => {
+  if (amount === '0') {
+    return amount;
+  } else if (amount.includes('-')) {
+    return float_with_comma(amount);
+  } else {
+    return `+${float_with_comma(amount)}`;
+  }
+};
+
 // amount text는 type에 따라서 color 다르게 보여줘야함.
 export const HistoryItem = (p: HistoryItemProps) => {
+  // console.log(p);
+
   return (
     <Wrapper>
       <Typography type='body1Reg' color={theme.color.neutral[1]}>
@@ -83,29 +91,41 @@ export const HistoryItem = (p: HistoryItemProps) => {
       <BoxWrap>
         {p.transaction.map((item: any, idx: number) => (
           <ListItem key={idx} onClick={() => p.onClick(item)}>
-            <img src={item.nftImg} alt='ntf logo' />
+            <img src={item.txImg} alt='txImg' />
             <Center>
-              {getTransactionType(item.amount, item.protoType.result_type) && (
-                <Typography type='body3Bold'>
-                  {getTransactionType(item.amount, item.protoType.result_type)}
-                </Typography>
-              )}
-              {getTransactionSign(item.amount) &&
-                getFromToAddr(
-                  getTransactionSign(item.amount),
-                  item.protoType.from,
-                  item.protoType.to,
-                ) && (
-                  <Typography type='body3Reg' color={theme.color.neutral[2]}>
-                    {`${getTransactionSign(item.amount)}: ${getFromToAddr(
-                      getTransactionSign(item.amount),
-                      item.protoType.from,
-                      item.protoType.to,
-                    )}`}
-                  </Typography>
-                )}
+              {/*Func with Minified Status (S=Success, F=Failed)*/}
+              {/*{`${minify_status(item.txStatus)}_${item.txFunc}`}*/}
+              {item.txFunc}
+              <Typography type='body3Bold'>{item.txDesc}</Typography>
+              {/*  {getTransactionSign(item.amount) &&*/}
+              {/*    getFromToAddr(*/}
+              {/*      getTransactionSign(item.amount),*/}
+              {/*      item.protoType.from,*/}
+              {/*      item.protoType.to,*/}
+              {/*    ) && (*/}
+              {/*      <Typography type='body3Reg' color={theme.color.neutral[2]}>*/}
+              {/*        {`${getTransactionSign(item.amount)}: ${getFromToAddr(*/}
+              {/*          getTransactionSign(item.amount),*/}
+              {/*          item.protoType.from,*/}
+              {/*          item.protoType.to,*/}
+              {/*        )}`}*/}
+              {/*      </Typography>*/}
+              {/*    )}*/}
             </Center>
-            <Typography type='body3Reg'>{`${item.amount} ${item.nftType}`}</Typography>
+
+            {amountPretty(item.txSend).includes('+') && (
+              <Typography type='body3Reg' color={theme.color.green[2]}>{`${amountPretty(
+                item.txSend,
+              )}`}</Typography>
+            )}
+
+            {!amountPretty(item.txSend).includes('+') && (
+              <Typography type='body3Reg' color={theme.color.neutral[2]}>{`${amountPretty(
+                item.txSend,
+              )}`}</Typography>
+            )}
+
+            {/*<Typography type='body3Reg'>{`${amountPretty(item.txSend)}`}</Typography>*/}
           </ListItem>
         ))}
       </BoxWrap>

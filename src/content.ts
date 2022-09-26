@@ -16,7 +16,8 @@ window.addEventListener(
           data: event.data.data,
         },
         (response) => {
-          // console.log(response);
+          // console.log('contentScript', response);
+          event.source?.postMessage(response);
         },
       );
     } else if (event.data.type && event.data.type === 'TOCS_GetAccount') {

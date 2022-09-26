@@ -87,17 +87,10 @@ const RoundedDL = styled(DLWrapStyle)`
   border: 1px solid ${({ theme }) => theme.color.neutral[3]};
 `;
 
-const dummy = {
-  contract: 'vm.call',
-  function: 'CreateBoard',
-  networkFee: '0.000001',
-  unit: 'GNOT',
-};
-
 export const ApproveTransactionView = () => {
   const sdk = useSdk();
   const navigate = useNavigate();
-  const [isLogined, setIslogined] = useState(true);
+  const [isLogined, setIsLogined] = useState(true);
   const [loading, setLoading] = useState(true);
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -107,7 +100,9 @@ export const ApproveTransactionView = () => {
   const argsRef = useRef<HTMLTextAreaElement>(null);
   const [showDetail, setShowDetail] = useState<boolean>(false);
   const [walletString, SetWalletString] = useState<string>();
+  const [reqAddr, setReqAddr] = useState<string>('');
   const [gasFee, setGasFee] = useState<string>();
+  const [origin, setOrigin] = useState<string>('https://gno.land');
 
   const Login = () => {
     getSavedPassword().then((pwd: string) => {
@@ -123,13 +118,26 @@ export const ApproveTransactionView = () => {
     // get args as string, convert object
     if (typeof getDataRef.current?.value === 'string') {
       const argObj = JSON.parse(getDataRef.current.value);
-      
+      // console.log('GOT PARAMS', argObj);
+
+      // 주소 검사
+      const argType = argObj.msgs[0].type;
+
+      if (argType === '/vm.m_call') {
+        setReqAddr(argObj.msgs[0].value.caller);
+      } else if (argType === '/bank.MsgSend') {
+        setReqAddr(argObj.msgs[0].value.from_address);
+      }
+
       const baseFee = Number(argObj.fee.amount[0].amount);
-      const toGnot = baseFee / 1000000;
-      
-      const showFee = toGnot.toString() + ' GNOT';
+      const toGNOT = baseFee / 1000000;
+
+      const showFee = toGNOT.toString() + ' GNOT';
 
       setGasFee(showFee);
+
+      // set origin
+      setOrigin(argObj.origin);
     } else {
       //console.log('typeof', typeof getDataRef.current?.value);
     }
@@ -150,10 +158,22 @@ export const ApproveTransactionView = () => {
     setShowDetail((prev: boolean) => !prev);
   }, [showDetail]);
 
+  if (reqAddr !== undefined && reqAddr !== '' && sdk.address !== reqAddr) {
+    // console.log('reqAddr', reqAddr);
+    // console.log('sdk.address', sdk.address);
+
+    chrome.runtime.sendMessage({
+      type: 'RETURN_TX_RESULT',
+      data: '2000',
+      msg: `req: ${reqAddr} <-> adena: ${sdk.address}`,
+    });
+    window.close();
+  } else {
+    console.log('reqAddr', reqAddr);
+    console.log('sdk.address', sdk.address);
+  }
+
   const approveEvent = () => {
-    // console.log(functionRef.current?.value);
-    // console.log(contractRef.current?.value);
-    // console.log(argsRef.current?.value);
     if (initialized) {
       (async () => {
         const rtn = await sdk.gnoClient?.doContractMsg(
@@ -162,35 +182,37 @@ export const ApproveTransactionView = () => {
           sdk.getSigner(),
         );
         if (rtn === undefined) {
-          alert('fail transaction');
+          // alert('fail transaction');
+          await chrome.runtime.sendMessage({
+            type: 'RETURN_TX_RESULT', // RETURN TX RESULT
+            data: '6000', // failed
+            msg: rtn,
+          });
         } else {
-          alert('success transaction');
+          await chrome.runtime.sendMessage({
+            type: 'RETURN_TX_RESULT',
+            data: '7000', // success
+            msg: rtn,
+          });
         }
         window.close();
       })();
     } else {
       // console.log('no good');
+      chrome.runtime.sendMessage({
+        type: 'RETURN_TX_RESULT',
+        data: '3000', // unknown error
+      });
     }
   };
 
-  const cancelEvent = () => {
-    // console.log(sdk.address);
-    // console.log(functionRef.current?.value);
-    // console.log(contractRef.current?.value);
-    // console.log(argsRef.current?.value);
-    // console.log(sdk.getSigner());
-
-    // const args_split = argsRef.current?.value.split(",");
-    // const args = {
-    //   bid: args_split?.at(0),
-    //   title: args_split?.at(1),
-    //   body: args_split?.at(2),
-    // };
-
-    // console.log(args);
-    // console.log(JSON.parse(getDataRef.current?.value as string));
-
-    //sdk.gnoClient?.doContract("createPost", args, sdk.address, sdk.getSigner());
+  const cancelEvent = async () => {
+    console.log('SENDING');
+    await chrome.runtime.sendMessage({
+      type: 'RETURN_TX_RESULT',
+      data: '5000', // user reject tx
+    });
+    console.log('5000');
     window.close();
   };
 
@@ -207,7 +229,7 @@ export const ApproveTransactionView = () => {
             <img className='logo' src={gnotLogo} alt='gnoland-logo' />
             <RoundedBox>
               <Typography type='body2Reg' color={'#ffffff'}>
-                https://gno.land
+                {origin}
               </Typography>
             </RoundedBox>
             <BundleDataBox>
@@ -219,6 +241,10 @@ export const ApproveTransactionView = () => {
                 <dt>Function</dt>
                 <dd id='atv_function'></dd>
               </BundleDL>
+              {/*<BundleDL>*/}
+              {/*  <dt>ARGS</dt>*/}
+              {/*  <dd id='atv_args'></dd>*/}
+              {/*</BundleDL>*/}
             </BundleDataBox>
             <RoundedDataBox>
               <RoundedDL>

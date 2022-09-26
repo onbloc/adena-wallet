@@ -20,7 +20,7 @@ export class GnoClient {
         throw res.data.error.message;
       } else {
         if (res.data.result.response.ResponseBase.Data === 'bnVsbA==') {
-          return 'WAY TOO FRESH ACCOUNT';
+          return `4000_${address}`;
           // throw new Error('WAY TOO FRESH ACCOUNT');
         }
         const responseBase = JSON.parse(atob(res.data.result.response.ResponseBase.Data));

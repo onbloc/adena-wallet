@@ -14,6 +14,7 @@ import LoginPage from '@pages/Login';
 import EnterSeedPhrasePage from '@pages/SideBar/Phrase/EnterSeed';
 import NftCollectionPage from '@pages/Wallet/Nft';
 import StakingPage from '@pages/Wallet/Staking';
+import ExplorePage from '@pages/Wallet/Explore';
 import HistoryPage from '@pages/Wallet/History';
 import TransactionDetailPage from '@pages/Wallet/TransactionDetail';
 import SettingAddAccountPage from '@pages/Settings/Default';
@@ -85,6 +86,7 @@ export const CustomRouter = () => (
       <Route path={RoutePath.Login} element={<LoginPage />} />
       <Route path={RoutePath.Nft} element={<NftCollectionPage />} />
       <Route path={RoutePath.Staking} element={<StakingPage />} />
+      <Route path={RoutePath.Explore} element={<ExplorePage />} />
       <Route path={RoutePath.History} element={<HistoryPage />} />
       <Route path={RoutePath.TransactionDetail} element={<TransactionDetailPage />} />
       <Route path={RoutePath.Setting} element={<SettingAddAccountPage />} />

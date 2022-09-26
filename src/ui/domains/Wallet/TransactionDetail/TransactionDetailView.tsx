@@ -5,7 +5,6 @@ import Typography, { textVariants } from '@ui/common/Typography';
 import link from '../../../../assets/share.svg';
 import FullButton from '@ui/common/Button/FullButton';
 import { useLocation, useNavigate } from 'react-router-dom';
-import theme from '@styles/theme';
 
 interface DLProps {
   color?: string;
@@ -67,52 +66,126 @@ const StatusInfo = styled.div`
   }
 `;
 
+const removeUgly = (target: any) => {
+  return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
+};
+
 export const TransactionDetailView = () => {
   const { modelState, onLinkClick, setTx } = useStatus();
-  const { date, type, status, fromto, fromtoaddr, networkFee, tokenImg, price } = modelState.model;
+  const { date, type, status, fee, img, send } = modelState.model;
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
   const location = useLocation();
 
+  const [txType, setTxType] = useState();
+  const [txFunc, setTxFunc] = useState();
+  const [txDesc, setTxDesc] = useState();
+  const [txReason, setTxReason] = useState();
+  const [txHash, setTxHash] = useState<string>('');
+
   useEffect(() => {
     const state = location.state as any;
+    console.log('state', state);
+
     setTx(state);
+    setTxDesc(state.txDesc);
+    setTxType(state.txType);
+    setTxFunc(state.txFunc);
+    setTxReason(state.txReason);
+    setTxHash(state.protoType.hash);
   }, []);
 
   return (
     <Wrapper>
       <img src={modelState.statusIcon} alt='status icon' />
       <TokenBox color={modelState.color}>
-        <img src={tokenImg} alt='logo image' />
-        <Typography type='header6'>{`${price} GNOT`}</Typography>
+        <img src={img} alt='logo image' />
+        <Typography type='header6'>{`${send} GNOT`}</Typography>
       </TokenBox>
+      {/* Common */}
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{date}</dd>
+          <dt>{date}</dt>
         </DLWrap>
-        <DLWrap>
-          <dt>Type</dt>
-          <dd>{type}</dd>
-        </DLWrap>
+        {/*DataBox Cond*/}
+        {txType === '/bank.MsgSend' && txFunc === 'Sent' && (
+          <>
+            <DLWrap>
+              <dt>Type</dt>
+              <dt>{txFunc}</dt>
+            </DLWrap>
+            <DLWrap>
+              <dt>To</dt>
+              <dt>{removeUgly(txDesc)}</dt>
+            </DLWrap>
+          </>
+        )}
+
+        {txType === '/bank.MsgSend' && txFunc === 'Received' && (
+          <>
+            <DLWrap>
+              <dt>Type</dt>
+              <dt>{txFunc}</dt>
+            </DLWrap>
+            <DLWrap>
+              <dt>From</dt>
+              <dt>{removeUgly(txDesc)}</dt>
+            </DLWrap>
+          </>
+        )}
+
+        {txType === '/vm.m_call' && (
+          <>
+            <DLWrap>
+              <dt>Type</dt>
+              {/*<dt>{txType}</dt>*/}
+              <dt>Contract Execution</dt>
+            </DLWrap>
+            <DLWrap>
+              <dt>Func</dt>
+              <dt>{txFunc}</dt>
+            </DLWrap>
+          </>
+        )}
+
+        {txType === '/vm.m_addpkg' && (
+          <>
+            <DLWrap>
+              <dt>Type</dt>
+              {/*<dt>{txType}</dt>*/}
+              <dt>Contract Deploy</dt>
+            </DLWrap>
+            <DLWrap>
+              <dt>Func</dt>
+              <dt>AddPkg</dt>
+            </DLWrap>
+          </>
+        )}
+        {/* Common */}
         <DLWrap color={modelState.color}>
           <dt>Status</dt>
           <StatusInfo>
             <dd>{status}</dd>
-            <dd className='status-icon' onClick={onLinkClick}>
+            <dd className='status-icon' onClick={() => onLinkClick(txHash)}>
               <img src={link} alt='link' />
             </dd>
           </StatusInfo>
         </DLWrap>
-        <DLWrap>
-          <dt>{fromto}</dt>
-          <dd>{fromtoaddr}</dd>
-        </DLWrap>
+        {status === 'Failed' && (
+          <>
+            <DLWrap color={modelState.color}>
+              <dt>Reason</dt>
+              <dt>{removeUgly(txReason)}</dt>
+            </DLWrap>
+          </>
+        )}
         <DLWrap>
           <dt>Network&nbsp;Fee</dt>
-          <dd>{networkFee} GNOT</dd>
+          <dd>{fee} GNOT</dd>
         </DLWrap>
       </DataBox>
+      &nbsp;
       <FullButton mode='dark' onClick={closeButtonClick}>
         <Typography type='body1Bold'>Close</Typography>
       </FullButton>

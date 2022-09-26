@@ -1,12 +1,33 @@
-import { Secp256k1HdWallet } from './services/signer';
+import { Secp256k1HdWallet } from '@services/signer';
 import axios from 'axios';
 import { GnoClient } from '@services/lcd';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { getSavedPassword } from '@services/client/fetcher';
-import session = chrome.storage.session;
+
+// 설치 시 페이지 팝업
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    console.log('install');
+    chrome.tabs.create(
+      {
+        url: chrome.runtime.getURL('/install.html'),
+      },
+      (tab) => {},
+    );
+  } else if (details.reason === 'update') {
+    console.log('update');
+    // chrome.tabs.create(
+    //   {
+    //     url: 'https://medium.com/@adena.app',
+    //   },
+    //   (tab) => {},
+    // );
+  }
+});
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.type === 'TOBG_DoContractPopup') {
+    console.log('background.ts__TOBG_DoContractPopup');
     chrome.storage.local.get(['adenaWallet'], function (result) {
       if (result.adenaWallet) {
         chrome.windows.create(
@@ -14,12 +35,13 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             url: chrome.runtime.getURL('popup.html#/wallet/approve-transaction-login'),
             type: 'popup',
             height: 600,
-            width: 380,
+            width: 360,
             left: 800,
             top: 300,
           },
           function (response: any) {
             chrome.tabs.onUpdated.addListener(function (tabId, info) {
+              console.log('background.ts__tabs.onUpdated.addListener');
               let _a;
               if (
                 info.status == 'complete' &&
@@ -29,14 +51,26 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     ? void 0
                     : _a.id)
               ) {
+                console.log('background.ts__tabs.sendMessage');
                 chrome.tabs.sendMessage(
                   response.tabs[0].id,
                   {
                     type: 'TO_POPUP_WINDOW',
                     data: request.data,
+                    called: sender.origin,
                   },
-                  function (my_res) {
-                    // console.log(my_res);
+                  function (popupResponse) {
+                    chrome.runtime.onMessage.addListener(
+                      (tmpRequest, tmpSender, tmpSendResponse) => {
+                        if (tmpRequest.type === 'RETURN_TX_RESULT') {
+                          tmpSendResponse(tmpRequest.data);
+                          sendResponse(tmpRequest.data);
+                          return true;
+                        }
+                        return true;
+                      },
+                    );
+                    // sendResponse(myRes);
                   },
                 );
               }
@@ -44,7 +78,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           },
         );
       } else {
-        sendResponse('9000'); // gno error
+        // No Wallet
+        console.log('NO WALLET FOUND');
+        sendResponse('1001');
       }
     });
     return true;
@@ -52,11 +88,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     chrome.storage.local.get(['adenaWallet'], function (result) {
       const walletString = result.adenaWallet;
 
+      if (walletString === undefined) {
+        sendResponse('1001');
+      }
+
       (async () => {
         try {
-          const sessionpass = await getSavedPassword();
+          const savedPassword = await getSavedPassword();
 
-          const wallet = await Secp256k1HdWallet.deserialize(walletString, sessionpass as string);
+          const wallet = await Secp256k1HdWallet.deserialize(walletString, savedPassword as string);
           const ret = (await wallet.getAccounts())[0];
           const test = new GnoClient(
             axios.create({

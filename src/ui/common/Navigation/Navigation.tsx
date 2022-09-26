@@ -8,8 +8,8 @@ const icons = {
   walletOff: require('../../../assets/wallet-off.svg').default,
   galleryOn: require('../../../assets/gallery-on.svg').default,
   galleryOff: require('../../../assets/gallery-off.svg').default,
-  stakeOn: require('../../../assets/stake-on.svg').default,
-  stakeOff: require('../../../assets/stake-off.svg').default,
+  searchOn: require('../../../assets/search-on.svg').default,
+  searchOff: require('../../../assets/search-off.svg').default,
   clockOn: require('../../../assets/clock-on.svg').default,
   clockOff: require('../../../assets/clock-off.svg').default,
   settingOn: require('../../../assets/setting-on.svg').default,
@@ -30,7 +30,7 @@ const Wrapper = styled.nav`
 
 export const Navigation = () => {
   const wallet = useMatch(RoutePath.Wallet);
-  const staking = useMatch(RoutePath.Staking);
+  const explore = useMatch(RoutePath.Explore);
   const nft = useMatch(RoutePath.Nft);
   const history = useMatch(RoutePath.History);
   const settings = useMatch(RoutePath.Setting);
@@ -50,10 +50,10 @@ export const Navigation = () => {
       selected: icons.galleryOn,
     },
     {
-      currAddress: staking,
-      routingAddress: RoutePath.Staking,
-      unselected: icons.stakeOff,
-      selected: icons.stakeOn,
+      currAddress: explore,
+      routingAddress: RoutePath.Explore,
+      unselected: icons.searchOff,
+      selected: icons.searchOn,
     },
     {
       currAddress: history,
@@ -71,7 +71,7 @@ export const Navigation = () => {
 
   return (
     <>
-      {(wallet || tokenDetails || nft || staking || history || settings) && (
+      {(wallet || tokenDetails || nft || explore || history || settings) && (
         <Wrapper>
           {navItems.map((item, idx) => (
             <div key={idx}>

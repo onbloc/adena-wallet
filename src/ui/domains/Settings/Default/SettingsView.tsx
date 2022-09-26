@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@ui/common/DefaultInput';
 import { useSdk } from '@services/client';
+import theme from '@styles/theme';
 
 const model = {
   walletName: 'Account 1',
@@ -59,7 +60,7 @@ const GrayButtonBox = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
   width: 100%;
   height: 80px;
-  background-color: ${({ theme }) => theme.color.neutral[6]};
+  background-color: ${({ theme }) => theme.color.neutral[4]};
   border-radius: 18px;
   padding: 12px 18px 14px 20px;
   margin: 20px 0px;
@@ -71,7 +72,7 @@ const GrayButtonBox = styled.div`
   }
   transition: all 0.4s ease;
   &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[4]};
+    background-color: ${({ theme }) => theme.color.neutral[5]};
   }
 `;
 
@@ -84,7 +85,7 @@ export const SettingsView = () => {
   const [text, setText] = useState<string>(() => addrname[0] as string);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => setText(e.target.value);
-  const shareButtonClick = () => window.open('https://gnoscan.io', '_blank');
+  const shareButtonClick = () => window.open(`https://gnoscan.io/test2/account/${address}`, '_blank');
   const handleTextBlur = () => setText(() => addrname[0] as string);
   const handleFocus = () => {
     setText('');
@@ -113,7 +114,9 @@ export const SettingsView = () => {
         <Typography className='title-arrow' type='header6'>
           Change Password
         </Typography>
-        <Typography type='body2Reg'>Change your lock screen password</Typography>
+        <Typography type='body2Reg' color={theme.color.neutral[2]}>
+          Change your lock screen password
+        </Typography>
       </GrayButtonBox>
       <FullButton mode='primary' disabled={true}>
         <Typography type='body1Bold' disabled={true}>

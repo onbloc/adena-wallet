@@ -1,8 +1,9 @@
 import { coins, Token } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
-import gnot from '../assets/gnot-logo.svg';
-import { Secp256k1HdWallet } from './signer';
+import gnotLogo from '../assets/gnot-logo.svg';
+import contractLogo from '../assets/history-contract.svg';
+import addPkgLogo from '../assets/addpkg.svg';
 
 export function formatAddress(wallet: string): string {
   return ellideMiddle(wallet, 24);
@@ -111,58 +112,68 @@ export function decryption(encryptedPassword: string, encryptedKey: string) {
 
 export function parseTxsEachDate(txs: object[], address: string) {
   return txs.reduce((o: any, cur: any) => {
-    const k = cur.time.slice(0, 10);
+    const k = cur.date.slice(0, 10);
+
+    // console.log('cur', cur);
+
+    // 타입 & 함수 우선 처리
+    let txFunc;
+    let txDesc;
+
+    if (cur.func === 'Sent') {
+      txDesc = `To: ${addr_reducer(cur.to)}`;
+    } else if (cur.func === 'Received') {
+      txDesc = `From: ${addr_reducer(cur.from)}`;
+    } else if (cur.type === '/vm.m_call') {
+      txDesc = `pkg: ${cur.pkg_path}`;
+    } else if (cur.type === '/vm.m_addpkg') {
+      txFunc = 'AddPkg';
+    } else {
+      txDesc = '';
+    }
+
+    // 이미지 로고 처리
+    let txLogo;
+    if (cur.type === '/bank.MsgSend') {
+      txLogo = gnotLogo;
+    } else if (cur.type === '/vm.m_call') {
+      txLogo = contractLogo;
+    } else if (cur.type === '/vm.m_addpkg') {
+      txLogo = addPkgLogo;
+    } else {
+      txLogo = undefined;
+    }
+
+    // console.log(txFunc || cur.func);
+    // console.log(cur.type);
 
     if (o[k]) {
-      if (cur.from === address) {
-        o[k].transaction.push({
-          nftImg: gnot,
-          nftType: '',
-          account: addr_reducer(cur.from),
-          amount: amount_splitter(cur.amount),
-          addr: address,
-          protoType: cur,
-        });
-      } else if (cur.to === address) {
-        o[k].transaction.push({
-          nftImg: gnot,
-          nftType: '',
-          account: addr_reducer(cur.to),
-          amount: amount_splitter(cur.amount),
-          addr: address,
-          protoType: cur,
-        });
-      }
+      o[k].transaction.push({
+        txImg: txLogo, // 제일 왼쪽 이미지
+        txStatus: cur.result.status, // 성공 / 실패
+        txReason: cur.result.reason, // 실패 시 이유
+        txType: cur.type,
+        txFunc: txFunc || cur.func,
+        txDesc: txDesc, // 부가 설명
+        txSend: prettier(cur.send),
+        protoType: cur,
+      });
     } else {
-      if (cur.from === address) {
-        o[k] = {
-          date: k,
-          transaction: [
-            {
-              nftImg: gnot,
-              nftType: '',
-              account: addr_reducer(cur.from),
-              amount: amount_splitter(cur.amount),
-              addr: address,
-              protoType: cur,
-            },
-          ],
-        };
-      } else if (cur.to === address) {
-        o[k] = {
-          date: k,
-          transaction: [
-            {
-              nftImg: gnot,
-              nftType: '',
-              account: addr_reducer(cur.to),
-              amount: amount_splitter(cur.amount),
-              addr: address,
-              protoType: cur,
-            },
-          ],
-        };
-      }
+      o[k] = {
+        date: k,
+        transaction: [
+          {
+            txImg: txLogo, // 제일 왼쪽 이미지
+            txStatus: cur.result.status, // 성공 / 실패
+            txReason: cur.result.reason, // 실패 시 이유
+            txType: cur.type, // vm.m_call
+            txFunc: txFunc || cur.func, // CreateBoard
+            txDesc: txDesc, // 부가 설명
+            txSend: prettier(cur.send),
+            protoType: cur,
+          },
+        ],
+      };
     }
     return o;
   }, {});
@@ -178,6 +189,18 @@ const amount_splitter = (amt: string) => {
   });
 };
 
+const prettier = (target: any) => {
+  if (target === undefined) {
+    return '0';
+  } else {
+    if (target !== 0) {
+      return target.replace('gnot', '');
+    } else if (target === 0) {
+      return '0';
+    }
+  }
+};
+
 export function editNick(rawNick: string) {
   // chrome.storage.local.get(["adenaWalletNicks"], (result: any) => {
   //   console.log(result["adenaWalletNicks"]);
@@ -190,4 +213,16 @@ export function editNick(rawNick: string) {
   }
 
   return 'hello_nick';
+}
+
+export function float_with_comma(target: any) {
+  return Number(target).toLocaleString('en-US', { minimumFractionDigits: 6 });
+}
+
+export function minify_status(status: string) {
+  if (status === 'Success') {
+    return 'S';
+  } else {
+    return 'F';
+  }
 }

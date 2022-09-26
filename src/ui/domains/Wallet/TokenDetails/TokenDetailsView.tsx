@@ -29,93 +29,6 @@ interface THistoryData {
   }[];
 }
 
-const data: THistoryData[] = [
-  {
-    date: 'Today',
-    transaction: [
-      {
-        type: 'Delegated',
-        receiver: 'From',
-        nftImg: logo,
-        nftType: 'GNOT',
-        account: 'gno5...123n',
-        amount: '-4,000',
-      },
-      {
-        type: 'Failed',
-        receiver: 'From',
-        nftImg: logo,
-        nftType: 'GNOS',
-        account: 'gno5...123n',
-        amount: '-5,462.2436',
-      },
-    ],
-  },
-  {
-    date: 'Yesterday',
-    transaction: [
-      {
-        type: 'Undelegated',
-        receiver: 'To',
-        nftImg: logo,
-        nftType: 'GNOT',
-        account: 'gno5...123n',
-        amount: '+5,000',
-      },
-      {
-        type: 'Sent',
-        receiver: 'From',
-        nftImg: logo,
-        nftType: 'GNOS',
-        account: 'gno5...123n',
-        amount: '-5,462.2436',
-      },
-    ],
-  },
-  {
-    date: 'Yesterday',
-    transaction: [
-      {
-        type: 'Undelegated',
-        receiver: 'To',
-        nftImg: logo,
-        nftType: 'GNOT',
-        account: 'gno5...123n',
-        amount: '+5,000',
-      },
-      {
-        type: 'Sent',
-        receiver: 'From',
-        nftImg: logo,
-        nftType: 'GNOS',
-        account: 'gno5...123n',
-        amount: '-5,462.2436',
-      },
-    ],
-  },
-  {
-    date: 'Yesterday',
-    transaction: [
-      {
-        type: 'Undelegated',
-        receiver: 'To',
-        nftImg: logo,
-        nftType: 'GNOT',
-        account: 'gno5...123n',
-        amount: '+5,000',
-      },
-      {
-        type: 'Sent',
-        receiver: 'From',
-        nftImg: logo,
-        nftType: 'GNOS',
-        account: 'gno5...123n',
-        amount: '-5,462.2436',
-      },
-    ],
-  },
-];
-
 const Wrapper = styled.section`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
@@ -210,7 +123,7 @@ export const TokenDetailsView = () => {
             bgColor={theme.color.neutral[3]}
             posTop='28px'
             onClick={() => {
-              window.open('https://gnoscan.io/', '_blank');
+              window.open(`https://gnoscan.io/test2/account/${address}`, '_blank');
             }}
           />
         </EtcIcon>

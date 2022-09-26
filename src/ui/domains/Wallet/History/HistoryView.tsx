@@ -167,6 +167,7 @@ export const HistoryView = () => {
       <Typography type='header4' className='history-title'>
         History
       </Typography>
+
       {!loading &&
         (datas.length ? (
           datas.map((item, idx) => (

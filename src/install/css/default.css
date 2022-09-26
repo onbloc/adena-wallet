@@ -1,0 +1,82 @@
+@charset 'utf-8';
+
+html,
+body {
+    -webkit-font-smoothing: antialiased;
+    font-family: "Poppins", sans-serif;
+    color: #ffffff;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+html,
+body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+a,
+img,
+small,
+strong,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+form,
+label,
+footer,
+header,
+menu,
+nav,
+section {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    list-style: none;
+}
+
+footer,
+header,
+menu,
+nav,
+section {
+    display: block;
+}
+* {
+    box-sizing: border-box;
+    font: inherit;
+    color: inherit;
+}
+
+img {
+    border: 0;
+}
+
+a {
+    text-decoration: none;
+}
+
+button {
+    background: none;
+    outline: none;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+&:disabled {
+     cursor: default;
+ }
+}

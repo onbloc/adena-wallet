@@ -25,13 +25,19 @@ const Header = styled.div`
 export const HomeMenu = ({ entry }: { entry: string }) => {
   const [open, setOpen] = useState(false);
   const toggleMenuHandler = () => setOpen(!open);
+
   return (
     <Wrapper>
       <Header>
-        {entry !== 'approveLogin' && <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />}
+        {entry.includes('approve') && (
+          <HamburgerMenuBtn type='button' disabled={true} onClick={() => console.log('')} />
+        )}
+        {!entry.includes('approve') && (
+          <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
+        )}
         <img src={logo} alt='adena logo' />
       </Header>
-      {entry !== 'approveLogin' && (
+      {entry !== '/wallet/approve-transaction' && (
         <DrawerMenu open={open} setOpen={setOpen} onClick={toggleMenuHandler} />
       )}
     </Wrapper>
