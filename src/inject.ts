@@ -12,9 +12,6 @@ const adena = {
   DoContract: function DoContract(message: any) {
     return new Promise((res) => {
       const tmpListener = function (evt: any) {
-        console.log('REAL evt.data', evt.data);
-        console.log('REAL evt.rtn', evt.rtn);
-
         if (evt.data === '1001') {
           res({
             status: 'error',
@@ -73,7 +70,6 @@ const adena = {
   GetAccount: function GetAccount() {
     return new Promise((res) => {
       const tmpListener = function (evt: any) {
-        console.log('RECV evt.data', evt.data);
         if (typeof evt.data === 'object') {
           if (evt.data.address) {
             res(evt.data);

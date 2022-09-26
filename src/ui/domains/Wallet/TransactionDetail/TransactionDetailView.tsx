@@ -85,8 +85,6 @@ export const TransactionDetailView = () => {
 
   useEffect(() => {
     const state = location.state as any;
-    console.log('state', state);
-
     setTx(state);
     setTxDesc(state.txDesc);
     setTxType(state.txType);

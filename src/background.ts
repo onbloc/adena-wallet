@@ -4,10 +4,8 @@ import { GnoClient } from '@services/lcd';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { getSavedPassword } from '@services/client/fetcher';
 
-// 설치 시 페이지 팝업
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    console.log('install');
     chrome.tabs.create(
       {
         url: chrome.runtime.getURL('/install.html'),
@@ -15,7 +13,6 @@ chrome.runtime.onInstalled.addListener((details) => {
       (tab) => {},
     );
   } else if (details.reason === 'update') {
-    console.log('update');
     // chrome.tabs.create(
     //   {
     //     url: 'https://medium.com/@adena.app',
@@ -27,7 +24,6 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.type === 'TOBG_DoContractPopup') {
-    console.log('background.ts__TOBG_DoContractPopup');
     chrome.storage.local.get(['adenaWallet'], function (result) {
       if (result.adenaWallet) {
         chrome.windows.create(
@@ -41,7 +37,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
           },
           function (response: any) {
             chrome.tabs.onUpdated.addListener(function (tabId, info) {
-              console.log('background.ts__tabs.onUpdated.addListener');
               let _a;
               if (
                 info.status == 'complete' &&
@@ -51,7 +46,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     ? void 0
                     : _a.id)
               ) {
-                console.log('background.ts__tabs.sendMessage');
                 chrome.tabs.sendMessage(
                   response.tabs[0].id,
                   {
@@ -79,7 +73,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         );
       } else {
         // No Wallet
-        console.log('NO WALLET FOUND');
         sendResponse('1001');
       }
     });

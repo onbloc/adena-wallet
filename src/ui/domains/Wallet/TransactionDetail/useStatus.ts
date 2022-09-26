@@ -65,7 +65,6 @@ export const useStatus = () => {
   };
 
   const handleLinkClick = (hash: string) => {
-    console.log(hash);
     window.open(`https://gnoscan.io/test2/contract/${hash}`, '_blank');
   };
 
@@ -108,8 +107,6 @@ export const useStatus = () => {
         singleTx.type = 'Error';
         singleTx.status = 'Failed';
       }
-
-      console.log(tx?.protoType.fee);
 
       if (tx?.protoType.fee === undefined) {
         singleTx.fee = '0';
