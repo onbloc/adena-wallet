@@ -55,7 +55,7 @@ export const useCreatePassword = () => {
     } else {
       await sdk.init(wallet);
     }
-    await sdk.refreshBalance();
+    
     const walletSerialize = await wallet.serialize(pwd);
     chrome.storage.local.set({ adenaWallet: walletSerialize }, () => {
       encryption(pwd);

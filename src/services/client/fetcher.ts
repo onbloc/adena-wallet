@@ -39,6 +39,8 @@ export const walletDeserialize = (plainPass: string): Promise<any> => {
             if (wallet) {
               encryption(plainPass);
               resolve(wallet);
+            } else {
+              reject();
             }
           } catch (err) {
             reject(err);

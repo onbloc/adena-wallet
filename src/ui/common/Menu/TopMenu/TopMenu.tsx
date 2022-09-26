@@ -36,7 +36,7 @@ export const TopMenu = () => {
   useEffect(() => {
     (async () => {
       const net = await axios.get('https://conf.adena.app/net.json');
-      setConnectedAddr(net.data.gnoUrl);
+      setConnectedAddr(net.data.chainName);
     })();
   }, [connectedAddr]);
 
@@ -49,10 +49,10 @@ export const TopMenu = () => {
             <CopyTooltip copyText={address}>
               <>
                 <Typography type='body1Bold'>
-                  {addrname[0].length > 11 ? `${addrname[0].slice(0, 11)}...` : addrname[0]}
+                  {addrname[0].length > 11 ? `${addrname[0].slice(0, 11)}..` : addrname[0]}
                 </Typography>
                 <Typography type='body1Reg' color={theme.color.neutral[4]}>
-                  {` (${address.slice(0, 4)}....${address.slice(-4)})`}
+                  {` (${address.slice(0, 4)}...${address.slice(-4)})`}
                 </Typography>
               </>
             </CopyTooltip>

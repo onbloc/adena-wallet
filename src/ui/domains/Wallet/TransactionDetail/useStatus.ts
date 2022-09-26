@@ -1,5 +1,3 @@
-import gnosLogo from '../../../../assets/gnos-logo.svg';
-import gnotLogo from '../../../../assets/gnot-logo.svg';
 import success from '../../../../assets/success.svg';
 import failed from '../../../../assets/failed.svg';
 import theme from '@styles/theme';
@@ -9,11 +7,10 @@ export type Transaction = {
   date: string;
   type: string;
   status: string;
-  fromto: string;
-  fromtoaddr: string;
-  networkFee: string;
-  tokenImg: string;
-  price: string;
+  fee: string;
+  img: string;
+  send: string;
+  desc: string;
   [key: string]: string;
 };
 
@@ -23,33 +20,30 @@ type StatusStyle = {
 };
 
 interface txtype {
-  nftImg: string;
-  nftType: string;
-  account: string;
-  amount: string;
-  addr: string;
   protoType: txprototype;
+  txDesc: string;
+  txImg: string;
+  txReason: string;
+  txSend: string;
+  txStatus: string;
+  txType: string;
 }
 
 interface txprototype {
-  result_type: string;
-  time: string;
+  date: string;
+  fee: string;
   from: string;
+  func: string;
+  hash: string;
+  height: string;
+  result: object;
+  send: string;
   to: string;
   amount: string;
+  txhash: string;
 }
 
 export const useStatus = () => {
-  const data: Transaction = {
-    date: 'May 16, 2022 10:42 am',
-    type: 'Send',
-    status: 'Success',
-    fromto: '',
-    fromtoaddr: 'https://ibb.co/jRDjPyW',
-    networkFee: '0.000001',
-    tokenImg: gnotLogo,
-    price: '1,000.1234',
-  };
   const getStatusStyle = (status: string): StatusStyle => {
     switch (status) {
       case 'Success' || 'Sent':
@@ -70,65 +64,66 @@ export const useStatus = () => {
     }
   };
 
-  const handleLinkClick = () => window.open('https://gnoscan.io/', '_blank');
+  const handleLinkClick = (hash: string) => {
+    window.open(`https://gnoscan.io/test2/contract/${hash}`, '_blank');
+  };
 
   const [tx, setTx] = useState<txtype>();
   const [displayTx, setDisplayTx] = useState<Transaction>({
     date: '',
     type: '',
     status: '',
-    fromto: '',
-    fromtoaddr: '',
-    networkFee: '0.000001',
-    tokenImg: gnotLogo,
-    price: '',
+    fee: '',
+    img: '',
+    send: '',
+    desc: '',
   });
   useEffect(() => {
     if (tx) {
-      const settx = {
+      const singleTx = {
+        status: '',
+        img: '',
+        send: '',
         date: '',
         type: '',
-        status: '',
-        fromto: '',
-        fromtoaddr: '',
-        networkFee: '0.000001',
-        tokenImg: gnotLogo,
-        price: '',
+        fee: '',
+        desc: '',
       };
 
-      settx.price = tx?.amount as string;
+      singleTx.img = tx?.txImg;
+      singleTx.send = Number(tx?.txSend) !== 0 ? (tx?.txSend.replace('gnot', '') as string) : '0';
 
-      let time_adjust = new Date(tx?.protoType.time as string);
+      let time_adjust = new Date(tx?.protoType.date as string);
       const offset = time_adjust.getTimezoneOffset();
       time_adjust = new Date(time_adjust.getTime() - offset * 60 * 1000);
-      settx.date =
+      singleTx.date =
         time_adjust.toISOString().split('T')[0] +
         ' ' +
         time_adjust.toISOString().split('T')[1].slice(0, 8);
 
-      if (tx?.addr === tx?.protoType.from) {
-        settx.fromto = 'To';
-        settx.fromtoaddr = tx?.protoType.to.slice(0, 4) + '...' + tx?.protoType.to.slice(-4);
-      } else if (tx?.addr === tx?.protoType.to) {
-        settx.fromto = 'From';
-        settx.fromtoaddr = tx?.protoType.from.slice(0, 4) + '...' + tx?.protoType.from.slice(-4);
+      if (tx?.txStatus === 'Success') {
+        singleTx.status = 'Success';
+      } else {
+        singleTx.type = 'Error';
+        singleTx.status = 'Failed';
       }
 
-      if (tx?.protoType.result_type === 'valid_tx') {
-        settx.type = tx?.amount.includes('-') ? 'Send' : 'Deposit';
-        settx.status = 'Success';
+      if (tx?.protoType.fee === undefined) {
+        singleTx.fee = '0';
       } else {
-        settx.type = 'Error';
-        settx.status = 'Failed';
+        singleTx.fee = tx?.protoType.fee.replace('gnot', '');
       }
-      setDisplayTx(settx);
+
+      setDisplayTx(singleTx);
     }
   }, [tx]);
 
   return {
     modelState: {
       model: displayTx,
+      // @ts-ignore
       color: getStatusStyle(displayTx.status).color,
+      // @ts-ignore
       statusIcon: getStatusStyle(displayTx.status).statusIcon,
     },
     onLinkClick: handleLinkClick,

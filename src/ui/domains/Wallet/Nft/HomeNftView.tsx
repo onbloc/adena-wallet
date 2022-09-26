@@ -1,39 +1,27 @@
+import theme from '@styles/theme';
 import { CommingSoon } from '@ui/common/CommingSoon';
 import Typography from '@ui/common/Typography';
 import React from 'react';
 import styled from 'styled-components';
-import nftBg from '../../../../assets/nft-bg.svg';
 
 const Wrapper = styled.div`
-  position: relative;
+  /* ${({ theme }) => theme.mixins.flexbox('row', 'center', 'fle')} */
   width: 100%;
   height: 100%;
-  background: url(${nftBg}) no-repeat center 29px / cover;
   padding-top: 24px;
-  ::after {
-    content: '';
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    background-color: rgba(33, 33, 40, 0.7);
-  }
-  .staking-title {
-    position: absolute;
-    top: 24px;
-    left: 0px;
-    z-index: 1;
+  background-color: ${({ theme }) => theme.color.neutral[7]};
+  .desc {
+    ${({ theme }) => theme.mixins.positionCenter()};
   }
 `;
 
 export const HomeNftView = () => {
   return (
     <Wrapper>
-      <Typography className='staking-title' type='header4'>
-        NFTs
+      <Typography type='header4'>NFTs</Typography>
+      <Typography className='desc' type='body1Reg' color={theme.color.neutral[2]}>
+        No NFTs to display
       </Typography>
-      <CommingSoon />
     </Wrapper>
   );
 };

@@ -21,7 +21,7 @@ export const Header = () => {
 
   const nft = useMatch(RoutePath.Nft);
 
-  const staking = useMatch(RoutePath.Staking);
+  const explore = useMatch(RoutePath.Explore);
   const history = useMatch(RoutePath.History);
   const settings = useMatch('/settings/*');
 
@@ -31,19 +31,19 @@ export const Header = () => {
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
   const yourSeedPhrase = useMatch(RoutePath.YourSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
-  const lauchAdena = useMatch(RoutePath.LaunchAdena);
+  const launchAdena = useMatch(RoutePath.LaunchAdena);
   return (
     <Wrapper>
       {(login || ApproveTransactionLogin) && (
         // @ts-ignore
-        <HomeMenu entry={location.state as string} />
+        <HomeMenu entry={location.pathname as string} />
       )}
-      {(importAccount || wallet || settings || addAccount || nft || staking || history) && (
+      {(importAccount || wallet || settings || addAccount || nft || explore || history) && (
         <TopMenu />
       )}
       {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
       {createPassword && <ProgressMenu progressLevel={'second'} />}
-      {lauchAdena && <ProgressMenu progressLevel={'third'} />}
+      {launchAdena && <ProgressMenu progressLevel={'third'} />}
     </Wrapper>
   );
 };

@@ -14,14 +14,18 @@ export const useLogin = () => {
   const location = useLocation();
 
   const tryLogin = (password: string) => {
-    walletDeserialize(password)
+    try{
+      walletDeserialize(password)
       .then((wallet) => {
         sdk.init(wallet);
         return sdk.initialized;
       })
-      .catch((err) => setError(true))
       .then((init) => navigate(RoutePath.Wallet))
       .catch((err) => setError(true));
+    } catch (e){
+      setError(true);
+    }
+    
   };
 
   const tryLoginApprove = (password: string) => {
@@ -49,12 +53,11 @@ export const useLogin = () => {
     (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
     [password],
   );
-  const unlockButtonClick = () => {
-    tryLogin(password);
-  };
-  const approveButtonClick = () => {
-    tryLoginApprove(password);
-  };
+
+  const unlockButtonClick = () => tryLogin(password);
+
+  const approveButtonClick = () => tryLoginApprove(password);
+
   const forgotButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
 
   useEffect(() => {

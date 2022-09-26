@@ -3,6 +3,7 @@ export enum RoutePath {
   Login = '/login',
   Nft = '/nft',
   Staking = '/staking',
+  Explore = '/explore',
   History = '/history',
   Create = '/create',
 
