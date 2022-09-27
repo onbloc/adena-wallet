@@ -19,11 +19,12 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Settings <br>
 ✅ Connect to Dapps <br>
 ✅ Sign GNO Contracts <br>
+✅ Explorer Dapps <br>
 ⬜ Add Accounts <br>
 ⬜ Manage Custom Tokens <br>
 ⬜ View & Transfer NFTs <br>
 ⬜ Staking & Governance <br>
-⬜ Change Network<br>
+⬜ Change Network <br>
 
 ## Documentation
 Check out our official documentation page for guides and brand assets.
