@@ -1,9 +1,6 @@
 import { AccountData, Secp256k1HdWallet } from '@/amino';
 import { WalletAccountConfig } from '.';
 
-/**
- * NOTE: 현재 Gno 쪽 내역조회 API 가 없어 임시로 구현
- */
 interface AccountHistory {
   height: string;
   date: string;

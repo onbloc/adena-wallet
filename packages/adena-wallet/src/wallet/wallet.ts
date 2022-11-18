@@ -60,12 +60,6 @@ export class Wallet {
     return privateKey;
   };
 
-  /**
-   * Mnemonic 문자로 지갑을 생성한다.
-   *
-   * @param seeds User's mnemonic words
-   * @returns
-   */
   public static createByMnemonic = async (
     seeds: string,
     accountPaths: Array<number> = [0],
@@ -75,13 +69,6 @@ export class Wallet {
     return new Wallet(aminoSigner);
   };
 
-  /**
-   * Mnemonic 문자와 비밀번호로 지갑을 생성한다.
-   *
-   * @param seeds User's mnemonic words
-   * @param password User's mnemonic password
-   * @returns
-   */
   public static createByMnemonicAndPassword = async (
     seeds: string,
     password: string,
@@ -92,13 +79,6 @@ export class Wallet {
     return new Wallet(aminoSigner);
   };
 
-  /**
-   * 직렬화된 지갑데이터를 역직렬화를 통해 지갑을 생성한다.
-   *
-   * @param serializedKey 직렬화된 지갑 데이터
-   * @param serializedPassword 직렬화 시 사용된 비밀번호
-   * @returns
-   */
   public static createBySerialized = async (
     serializedKey: string,
     serializedPassword: string,
