@@ -1,1 +1,0 @@
-export { TokenDetailsView } from './TokenDetailsView';

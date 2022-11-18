@@ -32,3 +32,12 @@ dist/
 # setup
 yarn.lock
 package-lock.json
+
+*.spec.ts
+*.spec.*
+.vscode
+.jest
+yarn.lock
+package.lock
+node_modules
+node_modules
