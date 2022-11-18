@@ -31,7 +31,7 @@ export const loadWallet = async () => {
 };
 
 /**
- * This function loads a wallet instance with password.
+ * This function loads a wallet instance with the password.
  *
  * @param password wallet's password
  * @returns Wallet
@@ -44,7 +44,7 @@ export const loadWalletWithPassword = async (password: string) => {
 };
 
 /**
- * This function is saved by encrypting the wallet password.
+ * This function encrypts and saves the wallet password.
  *
  * @param password wallet's password
  */
@@ -55,7 +55,7 @@ export const saveWalletPassword = async (password: string) => {
 };
 
 /**
- * This function is loaded by decrypting the wallet password.
+ * This function loads the wallet by decrypting the password.
  *
  * @throws WalletError 'NOT_FOUND_PASSWORD'
  * @returns decrypted password
@@ -75,7 +75,7 @@ export const loadWalletPassword = async () => {
 };
 
 /**
- * This function serializes wallet with password.
+ * This function serializes the wallet with a password.
  *
  * @param wallet Wallet instance
  * @param passowrd wallet's password
@@ -90,7 +90,7 @@ export const saveSerializedWallet = async (
 };
 
 /**
- * This function creates a wallet by mnemonic seeds.
+ * This function creates a wallet with mnemonic seeds.
  *
  * @params Parameters
  * - mnemonic mnemonic seeds
@@ -116,7 +116,7 @@ const createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<num
 };
 
 /**
- * This function loads serialized wallet.
+ * This function loads the serialized wallet.
  *
  * @throws WalletError 'NOT_FOUND_SERIALIZED'
  * @returns Wallet
@@ -131,7 +131,7 @@ const loadSerializedWallet = async () => {
 };
 
 /**
- * This function deserializes wallet with password.
+ * This function deserializes the wallet with the password.
  *
  * @throws WalletError 'FAILED_TO_LOAD'
  * @returns Wallet
