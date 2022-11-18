@@ -8,11 +8,15 @@
 
 **Adena** is a friendly, open-source, non-custodial Gnoland wallet, built for Gnomes worldwide. Adena exists to power millions of realms (smart contracts in gnolang) and tokens that will flourish the Gnoland ecosystem with a quality interface, NFT & custom token support, and a seamless integration procedure.
 ​
+
 For users, Adena makes managing crypto as simple as keeping and sending money on Paypal or Venmo.
+
 ​
 For developers, Adena provides streamlined web3 experience upon integration!
+
 ​
 You can find the latest official version of Adena on our [official website](https://adena.app/), or directly on [the Chrome Webstore](https://chrome.google.com/webstore/detail/adena/oefglhbffgfkcpboeackfgdagmlnihnh).
+
 ​
 Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](https://medium.com/@adena.app) for newest updates, patch notes, and partnership announcements!
 ​
