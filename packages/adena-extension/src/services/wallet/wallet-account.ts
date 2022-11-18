@@ -3,7 +3,7 @@ import { Wallet, WalletAccount, WalletAccountConfig } from 'adena-wallet';
 import { GnoClient } from 'gno-client';
 
 /**
- * This function loads accounts by wallet.
+ * This function loads accounts in the wallet.
  *
  * @param wallet Wallet instnace
  * @returns WalletAccount instances
@@ -24,7 +24,7 @@ export const loadAccounts = async (
 };
 
 /**
- * This function updates account by gno api.
+ * This function updates account via gno api.
  *
  * @param gnoClient GnoClient instance
  * @param account WalletAccount instance
@@ -45,7 +45,7 @@ export const updateAccountInfo = async (
 };
 
 /**
- * This function loads stored account's names.
+ * This function loads the names of the stored accounts.
  *
  * @returns account's names
  */
@@ -55,7 +55,7 @@ export const loadAccountNames = async () => {
 };
 
 /**
- * This function updates account name by address and name.
+ * This function updates the account name by address and name.
  *
  * @param address
  * @param name
@@ -70,7 +70,7 @@ export const updateAccountName = async (address: string, name: string) => {
 };
 
 /**
- * This function changes accounts by account names.
+ * This function changes account names by accounts.
  *
  * @param accounts WalletAccount instances
  * @returns changed WalletAccount instances
@@ -84,7 +84,7 @@ export const changeAccountsByAccountNames = async (
 };
 
 /**
- * This function increments the number of accounts in the wallet.
+ * This function increments the number of accounts in the wallet by 1.
  */
 export const increaseWalletAccountPaths = async () => {
   let accountPaths = await LocalStorageValue.getToNumbers('WALLET_ACCOUNT_PATHS');
@@ -97,7 +97,7 @@ export const increaseWalletAccountPaths = async () => {
 };
 
 /**
- * This function decrements the number of accounts in the wallet.
+ * This function decrements the number of accounts in the wallet by 1.
  */
 export const decreaseWalletAccountPaths = async () => {
   let accountPaths = await LocalStorageValue.getToNumbers('WALLET_ACCOUNT_PATHS');
