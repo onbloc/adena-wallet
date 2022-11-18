@@ -1,1 +1,0 @@
-export { EnterSeedPharseView } from './EnterSeedPharseView';

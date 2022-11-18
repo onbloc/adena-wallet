@@ -1,1 +1,0 @@
-export { WalletCreateView } from './WalletCreateView';

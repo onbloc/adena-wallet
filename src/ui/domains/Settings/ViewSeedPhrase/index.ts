@@ -1,1 +1,0 @@
-export { ViewSeedPhraseView } from './ViewSeedPhraseView';

@@ -1,1 +1,0 @@
-export { SendConfirmView } from './SendConfirmView';

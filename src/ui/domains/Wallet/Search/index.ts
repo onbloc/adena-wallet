@@ -1,1 +1,0 @@
-export { WalletSearchView } from './WalletSearchView';

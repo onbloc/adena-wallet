@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "esnext",
+    "target": "es5",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "strict": true,
+    "allowJs": true,
+    "downlevelIteration": true,
+    "lib": ["dom", "es5", "es6"],
+    "baseUrl": "./",
+    "paths": {
+      "@hooks/*": ["src/hooks/*"],
+      "@ui/*": ["src/ui/*"],
+      "@pages/*": ["src/pages/*"],
+      "@router/*": ["src/router/*"],
+      "@services/*": ["src/services/*"],
+      "@styles/*": ["src/styles/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@components/*": ["src/components/*"],
+      "@states/*": ["src/states/*"],
+      "@common/*": ["src/common/*"],
+      "@inject/*": ["src/inject/*"]
+    }
+  },
+  "include": ["./src/**/*", "src/custom.d.ts"]
+}
