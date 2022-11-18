@@ -2,7 +2,7 @@ import { Transaction, uint8ArrayToArray, WalletAccount, WalletAccountConfig } fr
 import { GnoClient } from 'gno-client';
 
 /**
- * This function creates transaction.
+ * This function creates a transaction.
  *
  * @param account WalletAccount instance
  * @param message message
@@ -42,8 +42,7 @@ export const createTransaction = async (
 };
 
 /**
- * This function creates transaction.
- * TODO: 'makeProtoTx' function should be removed.
+ * This function creates a transaction.
  *
  * @param account WalletAccount instance
  * @param message message
@@ -90,7 +89,7 @@ export const createTransactionByContract = async (
 };
 
 /**
- * This function sends transaction to gno
+ * This function sends a transaction to gnoland
  *
  * @param gnoClient gno api client
  * @param transaction created transaction
