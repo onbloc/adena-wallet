@@ -2,11 +2,11 @@ import { atom } from 'recoil';
 import { Wallet, WalletAccount } from 'adena-wallet';
 
 /**
- * CREATE: when there is no stored serialized wallet value
+ * CREATE: When there is no stored serialized wallet value
  * LOGIN: When there is no encrypted password value
- * LOADING: When deserializing
- * FINISH: When deserialization is finished
- * FAIL: When deserialization is failed
+ * LOADING: During deserialization
+ * FINISH: When deserialization is complete
+ * FAIL: When deserialization has failed
  */
 type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
 
