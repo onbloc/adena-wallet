@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "build": "yarn build:module && yarn build:service && yarn",
+    "build:changed": "nx affected --target=build",
     "build:module": "nx run-many --target=build --projects=adena-wallet,gno-client",
     "build:service": "nx run-many --target=build --projects=adena-extension"
   },
