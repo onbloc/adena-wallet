@@ -1,0 +1,76 @@
+version: 2.1
+
+orbs:
+  aws-s3: circleci/aws-s3@3.0.0
+
+jobs:
+  build_qa:
+    docker:
+      - image: cimg/node:18.12.0
+        environment:
+          TZ: 'Asia/Seoul'
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: 'Turn on insecure mode for curl'
+          command: echo insecure >> $HOME/.curlrc
+      - run:
+          name: Install project
+          command: |
+            sudo npm install -g nx
+            sudo yarn
+      - run:
+          name: Build project
+          command: |
+            sudo nx run-many --target=build --projects=adena-wallet,gno-client
+            sudo nx run-many --target=build --projects=adena-extension
+      - run:
+          name: Make build files
+          command: |
+            bash scripts/build-qa.sh
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - scripts
+            - deploy
+            - deploy-latest
+
+  deploy_notification:
+    docker:
+      - image: circleci/python:2.7
+
+    steps:
+      - attach_workspace:
+          at: .
+      - aws-s3/copy:
+          from: deploy/*
+          to: 's3://adena-extension-build'
+      - aws-s3/copy:
+          from: deploy-latest/*
+          to: 's3://adena-extension-build'
+      - run:
+          name: Notify on slack
+          command: |
+            bash ./scripts/notification-success.sh $RESOURCE_URI_PATH $HOOK_URI_PATH
+
+workflows:
+  build-deploy:
+    jobs:
+      - build_qa:
+          filters:
+            branches:
+              only:
+                - main
+                - /qa\/.*/
+      - deploy_notification:
+          context:
+            - ADENA_DEVELOP
+            - ADENA_SLACK
+          requires:
+            - build_qa
+          filters:
+            branches:
+              only:
+                - /qa\/.*/
