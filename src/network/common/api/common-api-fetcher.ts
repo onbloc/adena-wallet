@@ -98,9 +98,9 @@ export class CommonApiFetcher implements CommonApi {
     );
   };
 
-  public getTransactionHistory = async (address: string) => {
-    const result = await axios.get<Array<CommonResponse.History>>(
-      CommonApiPath.createPathOfHistoryTemp(address),
+  public getTransactionHistory = async (address: string, page: number) => {
+    const result = await axios.get<CommonResponse.History>(
+      CommonApiPath.createPathOfHistoryTemp(address, page),
     );
     return result.data;
   };
