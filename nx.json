@@ -10,7 +10,8 @@
           "lint",
           "test",
           "e2e"
-        ]
+        ],
+        "accessToken": "ODBjYzg2MGYtZTk3Zi00ODE4LTg4MmQtOWQyNDM4Nzk3M2FkfHJlYWQtd3JpdGU="
       }
     }
   }
