@@ -97,7 +97,11 @@ export class Test2ApiFetcher implements Test2Api {
   };
 
   // Deprecated on onbloc
-  public getTransactionHistory = async (address: string) => {
-    return [];
+  public getTransactionHistory = async (address: string, page: number) => {
+    return {
+      hits: 0,
+      next: false,
+      txs: [],
+    };
   };
 }

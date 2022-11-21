@@ -38,5 +38,5 @@ export interface CommonApi {
     request: { [key in string]: any },
   ) => Promise<CommonResponse.AbciQuery>;
 
-  getTransactionHistory: (address: string) => Promise<Array<CommonResponse.History>>;
+  getTransactionHistory: (address: string, page: number) => Promise<CommonResponse.History>;
 }
