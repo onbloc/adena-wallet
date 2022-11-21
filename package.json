@@ -7,7 +7,10 @@
     "build": "yarn build:module && yarn build:service && yarn",
     "build:changed": "nx affected --target=build",
     "build:module": "nx run-many --target=build --projects=adena-wallet,gno-client",
-    "build:service": "nx run-many --target=build --projects=adena-extension"
+    "build:service": "nx run-many --target=build --projects=adena-extension",
+    "version:qa": "sh scripts/update-build-version.sh",
+    "version:package": "sh scripts/update-package-version.sh",
+    "test": "yarn jest"
   },
   "private": true,
   "dependencies": {},
