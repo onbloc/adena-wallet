@@ -1,5 +1,5 @@
-export interface TransactionHistory {
-  height: string;
+export interface HistoryItem {
+  height: number;
   date: string;
   hash: string;
   result: {
@@ -9,7 +9,19 @@ export interface TransactionHistory {
   type: string;
   from?: string;
   to?: string;
-  send: string;
   func: string;
-  fee: string;
+  send: {
+    value: number;
+    denom: string;
+  };
+  fee: {
+    value: number;
+    denom: string;
+  };
+}
+
+export interface History {
+  hits: number;
+  next: boolean;
+  txs: Array<HistoryItem>;
 }
