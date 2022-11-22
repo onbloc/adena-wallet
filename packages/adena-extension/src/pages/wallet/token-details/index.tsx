@@ -80,7 +80,7 @@ export const TokenDetails = () => {
 
   const [balance, setBalance] = useState('');
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const [state, setState] = useState(transactionHistory.init ? 'FINISH' : 'LOADING');
+  const [state, setState] = useState('FINISH');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
@@ -91,8 +91,15 @@ export const TokenDetails = () => {
 
   const initHistory = async () => {
     await updateLastHistory();
-    setState('FINISH');
   }
+
+  useEffect(() => {
+    if (transactionHistory.init === false) {
+      setState('LOADING');
+    } else {
+      setState('FINISH');
+    }
+  }, [transactionHistory.init])
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {

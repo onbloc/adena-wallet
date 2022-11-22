@@ -40,7 +40,7 @@ export const Login = () => {
   useEffect(() => {
     switch (state) {
       case 'FINISH':
-        navigate(RoutePath.Wallet);
+        navigate(RoutePath.Home);
         break;
       default:
         break;
