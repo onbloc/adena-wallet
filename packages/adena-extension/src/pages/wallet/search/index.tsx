@@ -106,7 +106,7 @@ export const WalletSearch = () => {
           )
           .map((balance, idx) => (
             <ListBox
-              left={<img src={balance.img} alt='logo image' />}
+              left={<img src={balance.imageData} alt='logo image' />}
               center={<Text type='body1Bold'>{balance.name}</Text>}
               right={
                 <Text type='body2Reg'>{`${maxFractionDigits(balance.amount ?? 0, 6)} ${balance.type

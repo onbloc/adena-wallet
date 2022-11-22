@@ -48,7 +48,7 @@ interface ChainType {
 export const loadNetworkConfigs = async () => {
   try {
     const response = await axios.get<{ [key in string]: ChainType }>(
-      'https://conf.adena.app/chains.json',
+      'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json',
     );
     const configSet = response.data;
     return Object.keys(configSet).map((key) => configSet[key]);

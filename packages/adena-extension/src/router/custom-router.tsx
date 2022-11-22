@@ -35,8 +35,22 @@ import { ImportAccount } from '@pages/certify/import-account';
 import { ApproveEstablish } from '@pages/wallet/approve-establish';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { useTransactionHistory } from '@hooks/use-transaction-history';
+import { useQuery } from '@tanstack/react-query';
 
 export const CustomRouter = () => {
+
+  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
+  const [, updateLastTransactionHistory] = useTransactionHistory();
+  useQuery(['transactionHistory', {
+    address: transactionHistory.address,
+    page: transactionHistory.currentPage,
+  }], updateLastTransactionHistory, {
+
+    refetchInterval: 5000
+  })
 
   return (
     <Router>

@@ -164,12 +164,12 @@ export function removeUgly(target: any) {
 
 export function getStatusStyle(status: string) {
   switch (status) {
-    case 'Success' || 'Sent':
+    case 'Success' || 'Send':
       return {
         color: theme.color.green[2],
         statusIcon: success,
       };
-    case 'Failed':
+    case 'Fail':
       return {
         color: theme.color.red[2],
         statusIcon: failed,
@@ -198,13 +198,13 @@ export function searchTextFilter(target: string, searchText: string) {
   return target.toLocaleLowerCase().includes(searchText.toLocaleLowerCase());
 }
 
-export function amountSetSymbol(v: number | string) {
+export function amountSetSymbol(v: number | string, full?: boolean) {
   if (v === '0' || v === 0) {
     return String(v);
   } else if (String(v).includes('-')) {
-    return maxFractionDigits(v, 6);
+    return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6);
   } else {
-    return `+${maxFractionDigits(v, 6)}`;
+    return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`;
   }
 }
 

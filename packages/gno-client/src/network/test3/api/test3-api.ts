@@ -38,5 +38,5 @@ export interface Test3Api {
     request: { [key in string]: any },
   ) => Promise<Test3Response.AbciQuery>;
 
-  getTransactionHistory: (address: string) => Promise<Array<Test3Response.History>>;
+  getTransactionHistory: (address: string, page: number) => Promise<Test3Response.History>;
 }
