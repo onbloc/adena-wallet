@@ -31,12 +31,12 @@ const menuMakerInfo = [
   },
   {
     title: 'Change Network',
-    subTitle: 'Manage your app connections',
+    subTitle: 'Configure your network settings',
     navigatePath: RoutePath.ChangeNetwork,
   },
   {
     title: 'Change Password',
-    subTitle: 'Configure your network settings',
+    subTitle: 'Change your lock screen password',
     navigatePath: RoutePath.SettingChangePassword,
   },
 ];
