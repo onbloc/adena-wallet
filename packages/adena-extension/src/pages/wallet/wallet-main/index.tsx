@@ -51,7 +51,7 @@ export const WalletMain = () => {
     if (balances && balances.length > 0) {
       if (balances[0].amountDenom.toUpperCase() === balances[0].denom.toUpperCase()) {
         const amount = maxFractionDigits(balances[0].amount ?? 0, 6);
-        const unit = balances[0].amountDenom;
+        const unit = balances[0].amountDenom.toUpperCase();
         const currentBalance = `${amount}\n${unit}`;
         setCurrentBalance(currentBalance);
       }

@@ -178,7 +178,7 @@ export const TokenDetails = () => {
             />
           ))
         ) : (
-          <Text className='no-transaction' type='body1Reg' color={theme.color.neutral[9]}>
+          <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
             No transaction to display
           </Text>
         )
