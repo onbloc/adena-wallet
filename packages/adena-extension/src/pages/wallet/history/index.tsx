@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -7,9 +7,9 @@ import { RoutePath } from '@router/path';
 import ListWithDate from '@components/list-box/list-with-date';
 import LoadingHistory from '@components/loading-screen/loading-history';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
-import { HistoryItem } from 'gno-client/src/api/response';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { HistoryItem } from 'gno-client/src/api/response';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -33,18 +33,26 @@ const Wrapper = styled.main`
 export const History = () => {
   const navigate = useNavigate();
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const [state, setState] = useState(transactionHistory.init ? 'FINISH' : 'LOADING');
+  const [state, setState] = useState('FINISH');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+
   useEffect(() => {
     initHistory();
   }, [])
 
   const initHistory = async () => {
     await updateLastHistory();
-    setState('FINISH');
   }
+
+  useEffect(() => {
+    if (transactionHistory.init === false) {
+      setState('LOADING');
+    } else {
+      setState('FINISH');
+    }
+  }, [transactionHistory.init])
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -76,7 +84,6 @@ export const History = () => {
   const onClickHistoryItem = (item: HistoryItem) => {
     navigate(RoutePath.TransactionDetail, { state: item })
   };
-
 
   return (
     <Wrapper>
