@@ -20,7 +20,7 @@ const Wrapper = styled.main`
 
 export const LaunchAdena = () => {
   const navigate = useNavigate();
-  const handleNextButtonClick = () => navigate(RoutePath.Wallet);
+  const handleNextButtonClick = () => navigate(RoutePath.Home);
 
   return (
     <Wrapper>
