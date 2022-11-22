@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { fullDateFormat, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import useStatus, { ResultTxStateType } from './use-status';
 import Text from '@components/text';
@@ -6,55 +7,76 @@ import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { formatAddress } from '@common/utils/client-utils';
+import { useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
+import { HistoryItem } from 'gno-client/src/api/response';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 interface DLProps {
   color?: string;
 }
 
 export const TransactionDetail = () => {
+  const [gnoClient] = useGnoClient();
   const location = useLocation();
-  const state = location.state as any;
-  const { initTxState, handleLinkClick } = useStatus();
+  const [transactionItem, setTransactionItem] = useState<HistoryItem | undefined>();
+  // const { initTxState, handleLinkClick } = useStatus();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
-  const [txData, setTxData] = useState<ResultTxStateType | null>(() => initTxState(state));
-  return (
+  // const [txData, setTxData] = useState<ResultTxStateType | null>(() => initTxState(state));
+
+  useEffect(() => {
+    setTransactionItem(location.state);
+  }, [location])
+
+  const [{
+    getIcon,
+    getFunctionName,
+    getTransferInfo,
+    getAmountFullValue,
+    getNetworkFee,
+  }] = useTransactionHistoryInfo();
+
+  const handleLinkClick = (hash: string) => {
+    window.open(`https://gnoscan.io/${gnoClient?.chainId ?? ''}/contract/${hash}`, '_blank');
+  };
+
+  return transactionItem ? (
     <Wrapper>
-      <img className='status-icon' src={txData?.txStatusStyle.statusIcon} alt='status icon' />
-      <TokenBox color={txData?.txStatusStyle.color ?? ''}>
-        <img className='tx-symbol' src={txData?.txSymbol} alt='logo image' />
-        <Text type='header6'>{txData?.txSend}</Text>
+      <img className='status-icon' src={getStatusStyle(transactionItem.result.status ?? '').statusIcon} alt='status icon' />
+      <TokenBox color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
+        <img className='tx-symbol' src={getIcon(transactionItem)} alt='logo image' />
+        <Text type='header6'>{getAmountFullValue(transactionItem)}</Text>
       </TokenBox>
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{txData?.txDate}</dd>
+          <dd>{fullDateFormat(transactionItem.date)}</dd>
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
-          <dd>{txData?.txTypeDesc}</dd>
+          <dd>{getFunctionName(transactionItem)}</dd>
         </DLWrap>
-        <DLWrap color={txData?.txStatusStyle.color ?? ''}>
+        <DLWrap color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
           <dt>Status</dt>
           <StatusInfo>
-            <dd>{txData?.txStatus}</dd>
+            <dd>{transactionItem.result.status}</dd>
             <dd
               className='link-icon'
-              onClick={() => txData?.txHash && handleLinkClick(txData?.txHash)}
+              onClick={() => transactionItem.hash && handleLinkClick(transactionItem.hash)}
             >
               <img src={link} alt='link' />
             </dd>
           </StatusInfo>
         </DLWrap>
-        {txData?.txTransfer && txData?.txAddress && (
+        {getTransferInfo(transactionItem) !== null && (
           <DLWrap>
-            <dt>{txData?.txTransfer}</dt>
-            <dd>{formatAddress(txData?.txAddress)}</dd>
+            <dt>{getTransferInfo(transactionItem)?.transferType}</dt>
+            <dd>{formatAddress(getTransferInfo(transactionItem)?.transferAddress ?? '')}</dd>
           </DLWrap>
         )}
         <DLWrap>
           <dt>Network Fee</dt>
-          <dd>{`${txData?.txFee} GNOT`}</dd>
+          <dd>{getNetworkFee(transactionItem)}</dd>
         </DLWrap>
       </DataBox>
       <Button
@@ -66,7 +88,7 @@ export const TransactionDetail = () => {
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>
-  );
+  ) : <></>;
 };
 
 const Wrapper = styled.main`

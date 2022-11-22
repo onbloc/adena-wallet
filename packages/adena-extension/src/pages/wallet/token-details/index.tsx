@@ -12,10 +12,11 @@ import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { useGnoClient } from '@hooks/use-gno-client';
-import { maxFractionDigits, parseTxsEachDate } from '@common/utils/client-utils';
+import { maxFractionDigits } from '@common/utils/client-utils';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
-import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { useTransactionHistory } from '@hooks/use-transaction-history';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -68,7 +69,6 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = () => {
   const navigate = useNavigate();
-  const [state, setState] = useState('LOADING');
   const [etcClicked, setEtcClicked] = useState(false);
   const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
   const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
@@ -77,9 +77,49 @@ export const TokenDetails = () => {
   const [currentAccount] = useCurrentAccount();
   const [balances] = useWalletBalances(true);
   const [gnoClient] = useGnoClient();
-  const [datas, setDatas] = useState<any[]>([]);
 
   const [balance, setBalance] = useState('');
+  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
+  const [state, setState] = useState(transactionHistory.init ? 'FINISH' : 'LOADING');
+  const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
+  const [nextFetch, setNextFetch] = useState(false);
+  const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+
+  useEffect(() => {
+    initHistory();
+  }, [])
+
+  const initHistory = async () => {
+    await updateLastHistory();
+    setState('FINISH');
+  }
+
+  useEffect(() => {
+    if (document.getElementsByTagName('body').length > 0) {
+      setBodyElement(document.getElementsByTagName('body')[0]);
+    }
+  }, [document.getElementsByTagName('body')])
+
+  useEffect(() => {
+    bodyElement?.addEventListener('scroll', onScrollListener);
+    return () => bodyElement?.removeEventListener('scroll', onScrollListener);
+  }, [bodyElement]);
+
+  useEffect(() => {
+    if (nextFetch) {
+      updateNextHistory().then(() =>
+        setNextFetch(false))
+    }
+  }, [nextFetch]);
+
+  const onScrollListener = async () => {
+    if (bodyElement) {
+      const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
+      if (remain < 60 && !nextFetch) {
+        setNextFetch(true);
+      }
+    }
+  }
 
   useEffect(() => {
     if (balances && balances.length > 0) {
@@ -87,36 +127,6 @@ export const TokenDetails = () => {
       setBalance(currentBalance);
     }
   }, [balances]);
-
-  useEffect(() => {
-    setState('LOADING');
-    initHistoryDatas();
-  }, [gnoClient]);
-
-  useEffect(() => {
-    const historyFetchTimer = setInterval(() => {
-      initHistoryDatas();
-    }, 5000);
-
-    return () => {
-      clearInterval(historyFetchTimer);
-    };
-  }, []);
-
-  const initHistoryDatas = async () => {
-    if (gnoClient && currentAccount) {
-      try {
-        const address = currentAccount.data.address;
-        const historyDatas = await gnoClient.getTransactionHistory(address);
-        const data = parseTxsEachDate(historyDatas);
-        setDatas(Object.values(data));
-      } catch (e) {
-        console.error(e);
-        setDatas([]);
-      }
-      setState('FINISH');
-    }
-  };
 
   const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
 
@@ -133,7 +143,7 @@ export const TokenDetails = () => {
             posTop='28px'
             onClick={() => {
               window.open(
-                `https://gnoscan.io/test2/account/${currentAccount?.data.address}`,
+                `https://gnoscan.io/${gnoClient?.chainId}/account/${currentAccount?.data.address}`,
                 '_blank',
               );
             }}
@@ -151,17 +161,17 @@ export const TokenDetails = () => {
         }}
       />
       {state === 'FINISH' ? (
-        datas.length > 0 ? (
-          datas.map((item, idx) => (
+        Object.keys(getHistory()).length > 0 ? (
+          Object.keys(getHistory()).map((item, idx) => (
             <ListWithDate
               key={idx}
-              date={item.date}
-              transaction={item.transaction}
+              date={item}
+              transaction={getHistory()[item]}
               onClick={historyItemClick}
             />
           ))
         ) : (
-          <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+          <Text className='no-transaction' type='body1Reg' color={theme.color.neutral[9]}>
             No transaction to display
           </Text>
         )

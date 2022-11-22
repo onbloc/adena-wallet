@@ -3,7 +3,7 @@ import { WalletService } from '@services/index';
 import { GnoClientState, WalletState } from '@states/index';
 import { WalletAccount } from 'adena-wallet';
 import { useEffect } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useResetRecoilState } from 'recoil';
 
 export const useCurrentAccount = (): [
   account: InstanceType<typeof WalletAccount> | null,
@@ -17,10 +17,12 @@ export const useCurrentAccount = (): [
   const [gnoClient] = useRecoilState(GnoClientState.current);
   const [walletAccounts] = useRecoilState(WalletState.accounts);
   const [, setBalances] = useRecoilState(WalletState.balances);
+  const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
 
   useEffect(() => {
     if (currentAccount?.getAddress()) {
       updateCurrentName();
+      clearTransactionHistory();
     }
   }, [currentAccount?.getAddress()])
 

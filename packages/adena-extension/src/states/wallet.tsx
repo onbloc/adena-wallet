@@ -1,5 +1,6 @@
 import { atom } from 'recoil';
 import { Wallet, WalletAccount } from 'adena-wallet';
+import { HistoryItem } from 'gno-client/src/api/response';
 
 /**
  * CREATE: When there is no stored serialized wallet value
@@ -30,26 +31,44 @@ export const currentAccount = atom<InstanceType<typeof WalletAccount> | null>({
   default: null,
 });
 
-
-interface TokenInfo {
-  denom?: string;
-  img?: string;
-  name?: string;
-  type?: string;
-  unit?: number;
-  amount?: number;
+export interface TransactionHistoryState {
+  address: string | null;
+  currentPage: number;
+  init: boolean;
+  isFinish: boolean;
+  items: Array<HistoryItem>;
 }
-export const tokenInfos = atom<Array<TokenInfo>>({
-  key: `wallet/tokenInfos`,
+
+export const transactionHistory = atom<TransactionHistoryState>({
+  key: `wallet/transactionHistory`,
+  default: {
+    init: false,
+    address: null,
+    currentPage: -1,
+    isFinish: false,
+    items: []
+  },
+});
+
+export interface TokenConfig {
+  type: string;
+  name: string;
+  denom: string;
+  unit: number;
+  minimalDenom: string;
+  minimalUnit: number;
+  image: string;
+  imageData?: string;
+}
+
+export const tokenConfig = atom<Array<TokenConfig>>({
+  key: `wallet/tokenConfig`,
   default: [],
 });
 
-interface Balance {
-  denom?: string;
-  img?: string;
-  name?: string;
-  type?: string;
-  unit?: number;
+export interface Balance extends TokenConfig {
+  amount: number;
+  amountDenom: string;
 }
 export const balances = atom<Array<Balance>>({
   key: `wallet/balances`,
