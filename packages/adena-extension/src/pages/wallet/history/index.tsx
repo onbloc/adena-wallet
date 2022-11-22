@@ -33,7 +33,6 @@ const Wrapper = styled.main`
 export const History = () => {
   const navigate = useNavigate();
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const [state, setState] = useState('FINISH');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
@@ -45,14 +44,6 @@ export const History = () => {
   const initHistory = async () => {
     await updateLastHistory();
   }
-
-  useEffect(() => {
-    if (transactionHistory.init === false) {
-      setState('LOADING');
-    } else {
-      setState('FINISH');
-    }
-  }, [transactionHistory.init])
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -90,7 +81,7 @@ export const History = () => {
       <Text type='header4' className='history-title'>
         History
       </Text>
-      {state === 'FINISH' ? (
+      {transactionHistory.init ? (
         Object.keys(getHistory()).length > 0 ? (
           Object.keys(getHistory()).map((item, idx) => (
             <ListWithDate

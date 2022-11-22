@@ -15,6 +15,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenConfig } from '@hooks/use-token-config';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { useTransactionHistory } from '@hooks/use-transaction-history';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -33,6 +34,7 @@ export const WalletMain = () => {
   const [currentAccount, updateCurrentAccountInfo] = useCurrentAccount();
   const [currentBalance, setCurrentBalance] = useState<string | undefined>();
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
+  const [, updateLastHistory] = useTransactionHistory();
 
   useEffect(() => {
     if (gnoClient && state === 'FINISH') {
@@ -44,6 +46,7 @@ export const WalletMain = () => {
     if (currentAccount?.getAddress()) {
       updateBalances();
       updateCurrentAccountInfo();
+      updateLastHistory();
     }
   }, [currentAccount?.getAddress()])
 

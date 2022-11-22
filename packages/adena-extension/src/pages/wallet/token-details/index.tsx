@@ -79,8 +79,7 @@ export const TokenDetails = () => {
   const [gnoClient] = useGnoClient();
 
   const [balance, setBalance] = useState('');
-  const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const [state, setState] = useState('FINISH');
+  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
@@ -92,15 +91,6 @@ export const TokenDetails = () => {
   const initHistory = async () => {
     await updateLastHistory();
   }
-
-  useEffect(() => {
-    if (transactionHistory.init === false) {
-      setState('LOADING');
-    } else {
-      setState('FINISH');
-    }
-    setTransactionHistory({ ...transactionHistory, init: true });
-  }, [transactionHistory.init])
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -168,24 +158,26 @@ export const TokenDetails = () => {
           text: 'Send',
         }}
       />
-      {state === 'FINISH' ? (
-        Object.keys(getHistory()).length > 0 ? (
-          Object.keys(getHistory()).map((item, idx) => (
-            <ListWithDate
-              key={idx}
-              date={item}
-              transaction={getHistory()[item]}
-              onClick={historyItemClick}
-            />
-          ))
+      {
+        transactionHistory.init ? (
+          Object.keys(getHistory()).length > 0 ? (
+            Object.keys(getHistory()).map((item, idx) => (
+              <ListWithDate
+                key={idx}
+                date={item}
+                transaction={getHistory()[item]}
+                onClick={historyItemClick}
+              />
+            ))
+          ) : (
+            <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+              No transaction to display
+            </Text>
+          )
         ) : (
-          <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
-            No transaction to display
-          </Text>
+          <LoadingTokenDetails />
         )
-      ) : (
-        <LoadingTokenDetails />
-      )}
+      }
     </Wrapper>
   );
 };
