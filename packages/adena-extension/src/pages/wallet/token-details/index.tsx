@@ -79,7 +79,7 @@ export const TokenDetails = () => {
   const [gnoClient] = useGnoClient();
 
   const [balance, setBalance] = useState('');
-  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
+  const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
   const [state, setState] = useState('FINISH');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
@@ -99,6 +99,7 @@ export const TokenDetails = () => {
     } else {
       setState('FINISH');
     }
+    setTransactionHistory({ ...transactionHistory, init: true });
   }, [transactionHistory.init])
 
   useEffect(() => {
