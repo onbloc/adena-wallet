@@ -5,6 +5,7 @@ import { CustomRouter } from '@router/custom-router';
 import { GlobalStyle } from '@styles/global-style';
 import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Background } from '@components/background';
 
 const queryClient = new QueryClient();
 
@@ -16,7 +17,9 @@ const App = () => {
         <Suspense fallback={<div>Loading...</div>}>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider theme={theme}>
-              <CustomRouter />
+              <Background>
+                <CustomRouter />
+              </Background>
             </ThemeProvider>
           </QueryClientProvider>
         </Suspense>
