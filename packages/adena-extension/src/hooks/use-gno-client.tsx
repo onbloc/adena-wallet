@@ -26,12 +26,6 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     const [networks, setNetworks] = useRecoilState(GnoClientState.networks);
 
     useEffect(() => {
-        if (!currentNetwork) {
-            updateNetworks();
-        }
-    }, [currentNetwork])
-
-    useEffect(() => {
         initCurrentNetwork();
     }, [networks.length])
 
