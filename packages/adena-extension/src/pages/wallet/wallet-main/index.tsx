@@ -12,7 +12,6 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { maxFractionDigits } from '@common/utils/client-utils';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useTokenConfig } from '@hooks/use-token-config';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';

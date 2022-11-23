@@ -19,12 +19,18 @@ export const ApproveTransactionMain = () => {
   const [wallet, state] = useWallet();
   const [, updateWalletAccounts] = useWalletAccounts(wallet);
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
-  const [gnoClient] = useGnoClient();
+  const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
   const [gasFee, setGasFee] = useState(0);
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>()
   const [favicon, setFavicon] = useState<any>(null);
+
+  useEffect(() => {
+    if (!gnoClient) {
+      updateGnoClient();
+    }
+  }, [gnoClient])
 
   useEffect(() => {
     if (location.state?.requestData) {

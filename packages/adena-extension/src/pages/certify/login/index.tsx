@@ -8,6 +8,7 @@ import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { ValidationService } from '@services/index';
+import LoadingWallet from '@components/loading-screen/loading-wallet';
 
 const text = 'Enter\nYour Password';
 
@@ -86,7 +87,7 @@ export const Login = () => {
 
   const onClickForgotButton = () => navigate(RoutePath.EnterSeedPhrase);
 
-  return (
+  return state !== 'LOADING' ? (
     <Wrapper>
       <Title>{text}</Title>
       <DefaultInput
@@ -111,5 +112,7 @@ export const Login = () => {
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>
+  ) : (
+    <LoadingWallet />
   );
 };
