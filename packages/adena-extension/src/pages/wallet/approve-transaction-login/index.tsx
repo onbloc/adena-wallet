@@ -44,7 +44,7 @@ export const ApproveTransactionLogin = () => {
         loadWallet();
         break;
       case 'FINISH':
-        navigate(RoutePath.ApproveTransaction, { state: { requestData } });
+        navigate(RoutePath.ApproveTransaction + location.search, { state: { requestData } });
         break;
       case 'CREATE':
       case 'FAIL':
