@@ -22,6 +22,7 @@ export const isEstablished = async (hostname: string) => {
 
 export const establish = async (hostname: string, appName: string, favicon?: string | null) => {
   const establishedSites = await LocalStorageValue.getToObject('ESTABLISH_SITES');
+  const currentChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
   const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
   const accountEstablishedSites = await getAccountEstablishedSites(
     establishedSites,
@@ -33,6 +34,7 @@ export const establish = async (hostname: string, appName: string, favicon?: str
       ...accountEstablishedSites.filter((site: any) => site.hostname !== hostname),
       {
         hostname,
+        chainId: currentChainId !== '' ? currentChainId : 'test3',
         account: currentAccountAddress,
         name: appName,
         favicon: favicon ?? null,
@@ -67,9 +69,12 @@ const getAccountEstablishedSites = async (
   establishedSites: { [key in string]: any },
   currentAccountAddress: string,
 ) => {
+  const currentChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
   const accountEstablishedSites =
     Object.keys(establishedSites).findIndex((key) => key === currentAccountAddress) > -1
-      ? establishedSites[currentAccountAddress]
+      ? [...establishedSites[currentAccountAddress]].filter(
+          (site) => site.chainId === currentChainId,
+        )
       : [];
   return accountEstablishedSites;
 };
