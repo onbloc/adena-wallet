@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTransactionHistory } from "@hooks/use-transaction-history";
-import { useQuery } from "@tanstack/react-query";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { WalletState } from "@states/index";
+import { GnoClientState, WalletState } from "@states/index";
 
 interface Props {
     children?: React.ReactNode;
@@ -10,13 +9,24 @@ interface Props {
 
 export const Background = ({ children }: Props) => {
 
-    const [, updateLastTransactionHistory] = useTransactionHistory();
     const [currentAccountAddress, setCurrentAccountAddress] = useState<string>('');
+    const [gnoClient] = useRecoilState(GnoClientState.current);
     const [currentAccount] = useRecoilState(WalletState.currentAccount);
+    const [, updateLastTransactionHistory] = useTransactionHistory();
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
 
-    useQuery(['transactionHistory'], updateLastTransactionHistory, { refetchInterval: 5000 });
+    /**
+     * History Data Interval Fetch
+     */
+    useEffect(() => {
+        if (gnoClient && currentAccount) {
+            const historyFetchTimer = setInterval(() => {
+                updateLastTransactionHistory();
+            }, 5000);
+            return () => { clearInterval(historyFetchTimer) }
+        }
+    }, [gnoClient, currentAccount]);
 
     useEffect(() => {
         if (currentAccount !== null) {
