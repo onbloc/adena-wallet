@@ -35,10 +35,16 @@ export const WalletCreate = () => {
   const handleRestoreButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
 
   const [wallet, state, loadWallet] = useWallet();
-  const [gnoClient] = useGnoClient();
+  const [gnoClient, , updateNetworks] = useGnoClient();
   const [walletAccounts, updateWalletAccounts] = useWalletAccounts(wallet);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [balances, updateBalances] = useWalletBalances();
+
+  useEffect(() => {
+    if (!gnoClient) {
+      updateNetworks();
+    }
+  }, [gnoClient])
 
   useEffect(() => {
     if (walletAccounts && walletAccounts.length > 0) {
