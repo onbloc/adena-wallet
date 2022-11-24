@@ -9,11 +9,13 @@ export interface HistoryItem {
   type: string;
   from?: string;
   to?: string;
-  func: string;
-  send: {
+  func?: string;
+  creator?: string;
+  send?: {
     value: number;
     denom: string;
   };
+  package?: any;
   fee: {
     value: number;
     denom: string;
