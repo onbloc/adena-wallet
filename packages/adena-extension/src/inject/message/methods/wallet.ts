@@ -1,5 +1,5 @@
 import { WalletError } from '@common/errors';
-import { LocalStorageValue, SessionStorageValue } from '@common/values';
+import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
 import { GnoClientService, WalletService } from '@services/index';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
@@ -67,14 +67,8 @@ export const addEstablish = async (
   message: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentPassword = await SessionStorageValue.get('ENCRYPTED_PASSWORD');
-  if (currentPassword === '') {
-    sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', message, message.key));
-    return;
-  }
-
   HandlerMethod.createPopup(
-    RoutePath.ApproveEstablish,
+    RoutePath.ApproveLogin,
     message,
     InjectionMessageInstance.failure('CONNECTION_REJECTED', message, message.key),
     sendResponse,
