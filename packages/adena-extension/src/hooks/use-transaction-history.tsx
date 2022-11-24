@@ -55,7 +55,7 @@ export const useTransactionHistory = (): [
                 const newItems = response.txs;
                 const newItemHashes = response.txs.map((item: HistoryItem) => item.hash);
                 const items = transactionHistory.items.filter(item => !newItemHashes.includes(item.hash));
-                const isFinish = page === 0 ? transactionHistory.isFinish : !response.next;
+                const isFinish = transactionHistory.isFinish ? true : !response.next;
                 const changedHistory = {
                     init: true,
                     address,

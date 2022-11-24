@@ -36,10 +36,15 @@ export const History = () => {
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+  const [transactionItems, setTransactionItems] = useState(getHistory());
 
   useEffect(() => {
     initHistory();
   }, [])
+
+  useEffect(() => {
+    setTransactionItems(getHistory());
+  }, [transactionHistory.items.length])
 
   const initHistory = async () => {
     await updateLastHistory();
@@ -82,12 +87,12 @@ export const History = () => {
         History
       </Text>
       {transactionHistory.init ? (
-        Object.keys(getHistory()).length > 0 ? (
-          Object.keys(getHistory()).map((item, idx) => (
+        Object.keys(transactionItems).length > 0 ? (
+          Object.keys(transactionItems).map((item, idx) => (
             <ListWithDate
               key={idx}
               date={item}
-              transaction={getHistory()[item]}
+              transaction={transactionItems[item]}
               onClick={onClickHistoryItem}
             />
           ))
