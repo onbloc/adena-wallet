@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fullDateFormat, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
-import useStatus, { ResultTxStateType } from './use-status';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
