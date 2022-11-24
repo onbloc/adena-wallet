@@ -15,7 +15,7 @@ export const doContract = async (
     return;
   }
   HandlerMethod.createPopup(
-    RoutePath.ApproveTransactionLogin,
+    RoutePath.ApproveLogin,
     requestData,
     InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData, requestData.key),
     sendResponse,
