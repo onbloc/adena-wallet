@@ -48,7 +48,7 @@ export const useTransactionHistoryInfo = (): [{
             case 'Send':
                 return `To: ${formatAddress(transactionItem.to ?? '', 4)}`;
             case 'Receive':
-                return `To: ${formatAddress(transactionItem.from ?? '', 4)}`
+                return `From: ${formatAddress(transactionItem.from ?? '', 4)}`
             default:
                 break;
         }
