@@ -1,7 +1,7 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
 import { LocalStorageValue, SessionStorageValue } from '@common/values';
-import { Wallet } from 'adena-wallet';
+import { Wallet } from 'adena-module';
 
 /**
  * This function creates a wallet instance.

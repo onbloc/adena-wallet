@@ -1,5 +1,5 @@
-import { fromHex, toAscii } from './../encoding';
-import { Uint32, Uint53 } from './../math';
+import { fromHex, toAscii } from '../encoding';
+import { Uint32, Uint53 } from '../math';
 import BN from 'bn.js';
 import elliptic from 'elliptic';
 

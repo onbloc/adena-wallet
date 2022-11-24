@@ -1,4 +1,4 @@
-import { toUtf8 } from './../encoding';
+import { toUtf8 } from '../encoding';
 
 import { pbkdf2Sha512 } from './pbkdf2';
 import { sha256 } from './sha';

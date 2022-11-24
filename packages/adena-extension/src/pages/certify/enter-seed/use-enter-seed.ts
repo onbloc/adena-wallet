@@ -1,6 +1,6 @@
 import { RoutePath } from '@router/path';
 import { WalletService } from '@services/index';
-import { EnglishMnemonic } from 'adena-wallet/src/crypto';
+import { EnglishMnemonic } from 'adena-module/src/crypto';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

@@ -8,7 +8,7 @@ import DefaultInput from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { toBase64 } from 'adena-wallet/src/encoding';
+import { toBase64 } from 'adena-module/src/encoding';
 
 const text = {
   title: 'Export Private Key',

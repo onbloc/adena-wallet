@@ -1,6 +1,6 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { Wallet } from 'adena-wallet';
+import { Wallet } from 'adena-module';
 import { useWalletLoader } from './use-wallet-loader';
 
 /**

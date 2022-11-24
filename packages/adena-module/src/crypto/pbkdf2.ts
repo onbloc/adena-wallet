@@ -1,4 +1,4 @@
-import { assert } from './../utils';
+import { assert } from '../utils';
 import { pbkdf2Async as noblePbkdf2Async } from '@noble/hashes/pbkdf2';
 import { sha512 as nobleSha512 } from '@noble/hashes/sha512';
 import crypto from 'crypto';

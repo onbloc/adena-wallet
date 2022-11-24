@@ -23,7 +23,7 @@ jobs:
       - run:
           name: Build project
           command: |
-            sudo nx run-many --target=build --projects=adena-wallet,gno-client
+            sudo nx run-many --target=build --projects=adena-module,gno-client
             sudo nx run-many --target=build --projects=adena-extension
       - run:
           name: Make build files

@@ -1,5 +1,5 @@
-import { toHex } from './../encoding';
-import { Uint53 } from './../math';
+import { toHex } from '../encoding';
+import { Uint53 } from '../math';
 
 import { pubkeyToRawAddress } from './addresses';
 import { MultisigThresholdPubkey, SinglePubkey } from './pubkeys';

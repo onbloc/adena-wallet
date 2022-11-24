@@ -1,5 +1,5 @@
-import { Secp256k1, Sha256 } from './../crypto';
-import { toBech32 } from './../encoding';
+import { Secp256k1, Sha256 } from '../crypto';
+import { toBech32 } from '../encoding';
 
 import { rawSecp256k1PubkeyToRawAddress } from './addresses';
 import { encodeSecp256k1Signature } from './signature';
