@@ -142,7 +142,7 @@ export const ApproveTransactionMain = () => {
                 <dd id='atv_function'>{getContractFunctionText()}</dd>
               </BundleDL>
             </BundleDataBox>
-            <RoundedDataBox>
+            <RoundedDataBox className='sub-info'>
               <RoundedDL>
                 <dt>Network Fee:</dt>
                 <dd>{`${gasFee * 0.000001} GNOT`}</dd>
@@ -193,6 +193,10 @@ const DataBoxStyle = styled.div`
   }
   dd {
     color: ${({ theme }) => theme.color.neutral[0]};
+  }
+
+  &.sub-info * {
+    font-size: ${({ theme }) => theme.fonts.body2Reg};
   }
 `;
 
