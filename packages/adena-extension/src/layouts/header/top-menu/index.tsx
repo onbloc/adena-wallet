@@ -69,15 +69,15 @@ export const TopMenu = () => {
 
   return (
     <>
-      {currentAccount && (
+      {(
         <Wrapper>
           <Header>
             <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-            <CopyTooltip copyText={currentAccount.data.address}>
+            <CopyTooltip copyText={currentAccount?.data.address ?? ''}>
               <Text type='body1Bold' display='inline-flex'>
-                {formatNickname(currentAccount.data.name, 12)}
+                {formatNickname(currentAccount?.data.name ?? '', 12)}
                 <Text type='body1Reg' color={theme.color.neutral[9]}>
-                  {` (${formatAddress(currentAccount.data.address)})`}
+                  {` (${formatAddress(currentAccount?.data.address ?? '')})`}
                 </Text>
               </Text>
             </CopyTooltip>
