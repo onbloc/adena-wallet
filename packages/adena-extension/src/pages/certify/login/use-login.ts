@@ -20,7 +20,7 @@ export const useLogin = () => {
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && location.pathname === RoutePath.ApproveTransactionLogin) {
+    if (e.key === 'Enter' && location.pathname === RoutePath.ApproveLogin) {
       tryLoginApprove(password);
     } else if (e.key === 'Enter' && location.pathname === '/login') {
       tryLogin(password);

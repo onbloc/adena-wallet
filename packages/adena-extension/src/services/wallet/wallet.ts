@@ -90,6 +90,20 @@ export const saveSerializedWallet = async (
 };
 
 /**
+ * This function checks if the wallet is locked.
+ *
+ * @returns boolean
+ */
+export const isLocked = async () => {
+  try {
+    const password = await loadWalletPassword();
+    return password === '';
+  } catch (e) {
+    return true;
+  }
+};
+
+/**
  * This function creates a wallet with mnemonic seeds.
  *
  * @params Parameters
