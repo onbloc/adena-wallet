@@ -1,11 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { Route, useLocation, useMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -36,9 +38,15 @@ export const Header = () => {
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
 
+  const [walletState] = useRecoilState(WalletState.state)
+
+  const isLoadingWallet = () => {
+    return walletState === 'LOADING';
+  }
+
   return (
     <Wrapper>
-      {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
+      {!isLoadingWallet() && (login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
       {(approveEstablish || approveTransaction) && <ApproveMenu />}
       {(wallet ||
         settings ||
