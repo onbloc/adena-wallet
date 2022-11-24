@@ -4,6 +4,7 @@
   "description": "Adena Wallet",
   "license": "MIT",
   "scripts": {
+    "develop": "nx build:dev adena-extension",
     "build": "yarn build:module && yarn build:service && yarn",
     "build:changed": "nx affected --target=build",
     "build:module": "nx run-many --target=build --projects=adena-module,gno-client",
