@@ -50,6 +50,26 @@ export const getAccount = async (
   }
 };
 
+export const addEstablish = async (
+  message: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  const isLocked = await WalletService.isLocked();
+  const isEstablised = await WalletService.isEstablished(message.hostname ?? '');
+  if (!isLocked && isEstablised) {
+    sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', message, message.key));
+    return true;
+  }
+
+  const path = isLocked ? RoutePath.ApproveLogin : RoutePath.ApproveEstablish;
+  HandlerMethod.createPopup(
+    path,
+    message,
+    InjectionMessageInstance.failure('CONNECTION_REJECTED', message, message.key),
+    sendResponse,
+  );
+};
+
 const getNetworkMapperType = (chainId: string) => {
   switch (chainId) {
     case 'test2':
@@ -61,16 +81,4 @@ const getNetworkMapperType = (chainId: string) => {
     default:
       return 'COMMON';
   }
-};
-
-export const addEstablish = async (
-  message: InjectionMessage,
-  sendResponse: (message: any) => void,
-) => {
-  HandlerMethod.createPopup(
-    RoutePath.ApproveLogin,
-    message,
-    InjectionMessageInstance.failure('CONNECTION_REJECTED', message, message.key),
-    sendResponse,
-  );
 };

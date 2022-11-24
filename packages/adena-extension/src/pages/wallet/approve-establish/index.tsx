@@ -21,6 +21,12 @@ export const ApproveEstablish = () => {
     initRequestSite();
   }, [window.location]);
 
+  useEffect(() => {
+    if (key !== '' && hostname !== '') {
+      checkEstablised();
+    }
+  }, [key, hostname])
+
   const initRequestSite = async () => {
     try {
       const data = parseParmeters(location.search);
@@ -33,6 +39,14 @@ export const ApproveEstablish = () => {
       }
     } catch (e) {
       console.log(e);
+    }
+  }
+
+  const checkEstablised = async () => {
+    const isEstablised = await WalletService.isEstablished(hostname ?? '');
+    if (isEstablised) {
+      chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
+      return;
     }
   }
 

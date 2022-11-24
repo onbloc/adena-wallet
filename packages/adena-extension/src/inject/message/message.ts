@@ -53,6 +53,10 @@ const MESSAGE_TYPES = {
     code: 4001,
     description: 'The transaction has failed.',
   },
+  ALREADY_CONNECTED: {
+    code: 4001,
+    description: 'The account is already connected to this website.',
+  },
   UNSUPPORTED_TYPE: {
     code: 4005,
     description: 'Adena does not support the requested transaction type.',
