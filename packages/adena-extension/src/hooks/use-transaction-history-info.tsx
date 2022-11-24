@@ -2,10 +2,14 @@ import { HistoryItem } from "gno-client/src/api/response";
 import theme from "@styles/theme";
 import { amountSetSymbol, formatAddress, minFractionDigits } from "@common/utils/client-utils";
 import { useTokenConfig } from "./use-token-config";
+import { useWalletBalances } from "./use-wallet-balances";
+import IconAddPkg from '../assets/addpkg.svg';
+import IconContract from '../assets/contract.svg';
 
 export const useTransactionHistoryInfo = (): [{
     getIcon: (transactionItem: HistoryItem) => string | undefined,
     getStatusColor: (transactionItem: HistoryItem) => string,
+    getTypeName: (transactionItem: HistoryItem) => string,
     getFunctionName: (transactionItem: HistoryItem) => string,
     getDescription: (transactionItem: HistoryItem) => string,
     getAmountValue: (transactionItem: HistoryItem) => string,
@@ -14,10 +18,21 @@ export const useTransactionHistoryInfo = (): [{
     getTransferInfo: (transactionItem: HistoryItem) => { transferType: string, transferAddress: string } | null,
 }] => {
 
+    const [balances] = useWalletBalances();
     const [, convertUnit, getTokenImage] = useTokenConfig();
 
     const getIcon = (transactionItem: HistoryItem) => {
-        return getTokenImage(transactionItem.send.denom);
+        if (transactionItem.type === '/bank.MsgSend') {
+            return getTokenImage(transactionItem.send?.denom ?? balances[0].denom);
+        }
+        if (transactionItem.type === '/vm.m_addpkg') {
+            return IconAddPkg;
+        }
+        if (transactionItem.type === '/vm.m_call') {
+            return IconContract;
+        }
+
+        return getTokenImage(balances[0].denom);
     }
 
     const getStatusColor = (transactionItem: HistoryItem) => {
@@ -32,18 +47,31 @@ export const useTransactionHistoryInfo = (): [{
         return theme.color.neutral[9];
     }
 
+    const getTypeName = (transactionItem: HistoryItem) => {
+        if (transactionItem.type === '/bank.MsgSend') {
+            return transactionItem.func ?? '';
+        }
+        if (transactionItem.type === '/vm.m_addpkg') {
+            return 'Add Package';
+        }
+        if (transactionItem.type === '/vm.m_call') {
+            return 'Contract Interaction';
+        }
+        return '';
+    }
+
     const getFunctionName = (transactionItem: HistoryItem) => {
         const { func, type } = transactionItem;
         if (type === '/bank.MsgSend') {
-            if (['Failed'].includes(func)) {
+            if (func && ['Failed'].includes(func)) {
                 return 'Send';
             }
         }
-        return func;
+        return func ?? '';
     }
 
     const getDescription = (transactionItem: HistoryItem) => {
-        const { func, type } = transactionItem;
+        const { func } = transactionItem;
         switch (func) {
             case 'Send':
                 return `To: ${formatAddress(transactionItem.to ?? '', 4)}`;
@@ -52,24 +80,29 @@ export const useTransactionHistoryInfo = (): [{
             default:
                 break;
         }
-        switch (type) {
-            case '/vm.m_addpkg':
-                return 'AddPkg';
-            case '/vm.m_call':
-                return `pkg: ${transactionItem.type}`;
-            default:
-                return `pkg: ${transactionItem.type}`;
-        }
+        return '';
     }
 
     const getAmountValue = (transactionItem: HistoryItem) => {
-        const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
-        return `${amountSetSymbol(result.amount)} ${result.denom}`;
+        let amount = 0;
+        let denom = balances[0].denom.toUpperCase();
+        if (transactionItem.send) {
+            const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
+            amount = result.amount;
+            denom = result.denom;
+        }
+        return `${amountSetSymbol(amount)} ${denom}`;
     }
 
     const getAmountFullValue = (transactionItem: HistoryItem) => {
-        const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
-        return `${minFractionDigits(result.amount, 6)} ${result.denom}`;
+        let amount = 0;
+        let denom = balances[0].denom.toUpperCase();
+        if (transactionItem.send) {
+            const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
+            amount = result.amount;
+            denom = result.denom;
+        }
+        return `${minFractionDigits(amount, 6)} ${denom}`;
     }
 
     const getNetworkFee = (transactionItem: HistoryItem) => {
@@ -91,6 +124,7 @@ export const useTransactionHistoryInfo = (): [{
     return [{
         getIcon,
         getStatusColor,
+        getTypeName,
         getFunctionName,
         getDescription,
         getAmountValue,

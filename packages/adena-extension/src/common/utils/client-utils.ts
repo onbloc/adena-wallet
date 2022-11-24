@@ -275,3 +275,11 @@ export const createFaviconByHostname = async (hostname: string) => {
 const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
 };
+
+export const optimizeNumber = (value: number, multiply: number) => {
+  const decimalPosition = `${multiply}`.indexOf('.');
+  const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
+  const extraValue = Math.pow(10, decimalLength);
+  const currentAmouont = Math.round(value * multiply * extraValue) / extraValue;
+  return currentAmouont;
+};

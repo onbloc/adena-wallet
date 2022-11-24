@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fullDateFormat, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
-import useStatus, { ResultTxStateType } from './use-status';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -19,10 +18,8 @@ export const TransactionDetail = () => {
   const [gnoClient] = useGnoClient();
   const location = useLocation();
   const [transactionItem, setTransactionItem] = useState<HistoryItem | undefined>();
-  // const { initTxState, handleLinkClick } = useStatus();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
-  // const [txData, setTxData] = useState<ResultTxStateType | null>(() => initTxState(state));
 
   useEffect(() => {
     setTransactionItem(location.state);
@@ -30,6 +27,7 @@ export const TransactionDetail = () => {
 
   const [{
     getIcon,
+    getTypeName,
     getFunctionName,
     getTransferInfo,
     getAmountFullValue,
@@ -40,12 +38,26 @@ export const TransactionDetail = () => {
     window.open(`https://gnoscan.io/${gnoClient?.chainId ?? ''}/contract/${hash}`, '_blank');
   };
 
+  const isTransfer = () => {
+    return transactionItem?.send !== undefined;
+  }
+
+  const getMainText = () => {
+    if (!transactionItem) {
+      return '';
+    }
+    if (isTransfer()) {
+      return getAmountFullValue(transactionItem);
+    }
+    return getFunctionName(transactionItem);
+  }
+
   return transactionItem ? (
     <Wrapper>
       <img className='status-icon' src={getStatusStyle(transactionItem.result.status ?? '').statusIcon} alt='status icon' />
       <TokenBox color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
         <img className='tx-symbol' src={getIcon(transactionItem)} alt='logo image' />
-        <Text type='header6'>{getAmountFullValue(transactionItem)}</Text>
+        <Text type='header6'>{getMainText()}</Text>
       </TokenBox>
       <DataBox>
         <DLWrap>
@@ -54,7 +66,7 @@ export const TransactionDetail = () => {
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
-          <dd>{getFunctionName(transactionItem)}</dd>
+          <dd>{getTypeName(transactionItem)}</dd>
         </DLWrap>
         <DLWrap color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
           <dt>Status</dt>

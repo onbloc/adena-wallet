@@ -87,7 +87,7 @@ export const Login = () => {
 
   const onClickForgotButton = () => navigate(RoutePath.EnterSeedPhrase);
 
-  return state !== 'LOADING' ? (
+  return (
     <Wrapper>
       <Title>{text}</Title>
       <DefaultInput
@@ -112,7 +112,5 @@ export const Login = () => {
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>
-  ) : (
-    <LoadingWallet />
   );
 };

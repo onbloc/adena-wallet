@@ -1,3 +1,4 @@
+import { optimizeNumber } from "@common/utils/client-utils";
 import { WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import axios from "axios";
@@ -21,29 +22,24 @@ export const useTokenConfig = (): [
 
     const convertUnit = (amount: number, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { amount: number, denom: string } => {
         if (tokenConfig) {
-            const currentConverType = convertType ?? 'COMMON';
-            const currentConfig = tokenConfig.find(
+            const convertDenomType = convertType ?? 'COMMON';
+            const currentTokenConfig = tokenConfig.find(
                 config => denom.toUpperCase() === config.denom.toUpperCase() || denom.toUpperCase() === config.minimalDenom.toUpperCase());
 
-            if (currentConfig) {
-                if (currentConfig.denom.toUpperCase() === denom.toUpperCase()) {
-                    if (currentConverType === 'MINIMAL') {
-                        return {
-                            amount: amount * (currentConfig.unit / currentConfig.minimalUnit),
-                            denom: currentConfig.minimalDenom
-                        }
-                    }
-                } else if (currentConfig.minimalDenom.toUpperCase() === denom.toUpperCase()) {
-                    if (currentConverType === 'COMMON') {
-                        return {
-                            amount: amount * (currentConfig.minimalUnit / currentConfig.unit),
-                            denom: currentConfig.denom.toUpperCase()
-                        }
-                    }
+            if (currentTokenConfig) {
+                const denomType = currentTokenConfig.denom.toUpperCase() === denom.toUpperCase() ? 'COMMON' : 'MINIMAL';
+                const currentUnit = denomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
+                const convertUnit = convertDenomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
+
+                const currentAmouont = optimizeNumber(amount, currentUnit / convertUnit);
+                const currentDenom = convertDenomType === 'COMMON' ? currentTokenConfig.denom.toUpperCase() : currentTokenConfig.minimalDenom;
+
+                return {
+                    amount: currentAmouont,
+                    denom: currentDenom
                 }
             }
         }
-
         return {
             amount,
             denom
@@ -77,9 +73,9 @@ export const useTokenConfig = (): [
     }
 
     const getTokenImage = (denom: string) => {
-        const currentConfig = tokenConfig.find(
+        const config = tokenConfig.find(
             config => denom.toUpperCase() === config.denom.toUpperCase() || denom.toUpperCase() === config.minimalDenom.toUpperCase());
-        return currentConfig?.imageData;
+        return config?.imageData;
     }
 
     return [getConfig, convertUnit, getTokenImage]

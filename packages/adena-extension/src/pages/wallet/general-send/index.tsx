@@ -35,7 +35,7 @@ export const GeneralSend = () => {
         color='#777777'
         type='captionReg'
         textAlign='left'
-      >{`Balance: ${balances[0].amount} GNOT`}</Text>
+      >{`Balance: ${balances[0].amount} ${balances[0].amountDenom}`}</Text>
     );
   };
   return (
