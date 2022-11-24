@@ -1,5 +1,5 @@
 {
-  "name": "adena-wallet",
+  "name": "adena-module",
   "version": "1.4.1",
   "description": "Adena's Wallet",
   "main": "./dist/index.umd.js",

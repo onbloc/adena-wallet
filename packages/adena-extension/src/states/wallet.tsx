@@ -1,5 +1,5 @@
 import { atom } from 'recoil';
-import { Wallet, WalletAccount } from 'adena-wallet';
+import { Wallet, WalletAccount } from 'adena-module';
 import { HistoryItem } from 'gno-client/src/api/response';
 
 /**

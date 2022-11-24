@@ -1,4 +1,4 @@
-import { Transaction, uint8ArrayToArray, WalletAccount, WalletAccountConfig } from 'adena-wallet';
+import { Transaction, uint8ArrayToArray, WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
 
 /**

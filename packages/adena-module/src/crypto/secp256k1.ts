@@ -1,4 +1,4 @@
-import { fromHex, toHex } from './../encoding';
+import { fromHex, toHex } from '../encoding';
 import BN from 'bn.js';
 import elliptic from 'elliptic';
 

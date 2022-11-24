@@ -8,7 +8,7 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { Wallet } from 'adena-wallet';
+import { Wallet } from 'adena-module';
 
 const text = {
   title: 'Seed Phrase',

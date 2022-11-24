@@ -1,6 +1,6 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { Wallet, WalletAccount } from 'adena-wallet';
+import { Wallet, WalletAccount } from 'adena-module';
 import { WalletService } from '@services/index';
 import { useGnoClient } from './use-gno-client';
 import { useCurrentAccount } from './use-current-account';
