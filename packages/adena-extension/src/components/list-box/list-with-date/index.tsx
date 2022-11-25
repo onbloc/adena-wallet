@@ -34,11 +34,8 @@ const SymbolImage = styled.div<{ status: boolean }>`
 export const ListWithDate = (props: HistoryItemProps) => {
 
   const [{
-    getIcon,
+    getTransactionInfo,
     getStatusColor,
-    getFunctionName,
-    getDescription,
-    getAmountValue,
   }] = useTransactionHistoryInfo();
 
   const getDateText = () => {
@@ -57,40 +54,46 @@ export const ListWithDate = (props: HistoryItemProps) => {
     return formatDate;
   }
 
+  const renderTransactionItem = (item: HistoryItem, idx: number) => {
+    const info = getTransactionInfo(item)
+
+    return (
+      <ListBox
+        left={
+          <SymbolImage status={item.result.status === 'Success'}>
+            <img src={info.icon} alt='_' />
+          </SymbolImage>
+        }
+        center={
+          <Center>
+            <Text type='body3Bold'>
+              {info.title}
+            </Text>
+            <Text type='body3Reg' color={theme.color.neutral[9]}>
+              {info.titleDescription}
+            </Text>
+          </Center>
+        }
+        right={
+          <Text
+            type='body3Reg'
+            color={getStatusColor(item)}
+          >{info.amount}</Text>
+        }
+        hoverAction={true}
+        gap={12}
+        key={idx}
+        onClick={() => props.onClick(item)}
+      />
+    )
+  }
+
   return (
     <Wrapper>
       <Text className='p-date' type='body1Reg' color={theme.color.neutral[9]}>
         {getDateText()}
       </Text>
-      {props.transaction.map((item: HistoryItem, idx: number) => (
-        <ListBox
-          left={
-            <SymbolImage status={item.result.status === 'Success'}>
-              <img src={getIcon(item)} alt='_' />
-            </SymbolImage>
-          }
-          center={
-            <Center>
-              <Text type='body3Bold'>
-                {getFunctionName(item)}
-              </Text>
-              <Text type='body3Reg' color={theme.color.neutral[9]}>
-                {getDescription(item)}
-              </Text>
-            </Center>
-          }
-          right={
-            <Text
-              type='body3Reg'
-              color={getStatusColor(item)}
-            >{getAmountValue(item)}</Text>
-          }
-          hoverAction={true}
-          gap={12}
-          key={idx}
-          onClick={() => props.onClick(item)}
-        />
-      ))}
+      {props.transaction.map(renderTransactionItem)}
     </Wrapper>
   );
 };

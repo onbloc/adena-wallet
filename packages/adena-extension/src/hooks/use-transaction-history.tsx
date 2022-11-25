@@ -22,6 +22,9 @@ export const useTransactionHistory = (): [
     const formatTransactionHistory = (history: Array<HistoryItem>) => {
         const initValue: { [key in string]: Array<HistoryItem> } = {};
         return history.reduce((accum: { [key in string]: Array<HistoryItem> }, current) => {
+            if (current.result.status === 'Fail' && current.func === 'Receive') {
+                return accum;
+            }
             const dateStr = current.date.slice(0, 10);
             if (!accum[dateStr]) {
                 accum[dateStr] = [] as Array<HistoryItem>;

@@ -12,6 +12,7 @@ export const Background = ({ children }: Props) => {
     const [currentAccountAddress, setCurrentAccountAddress] = useState<string>('');
     const [gnoClient] = useRecoilState(GnoClientState.current);
     const [currentAccount] = useRecoilState(WalletState.currentAccount);
+    const [transactionHistory] = useRecoilState(WalletState.transactionHistory)
     const [, updateLastTransactionHistory] = useTransactionHistory();
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
@@ -26,7 +27,7 @@ export const Background = ({ children }: Props) => {
             }, 5000);
             return () => { clearInterval(historyFetchTimer) }
         }
-    }, [gnoClient, currentAccount]);
+    }, [gnoClient, currentAccount, transactionHistory.currentPage]);
 
     useEffect(() => {
         if (currentAccount !== null) {

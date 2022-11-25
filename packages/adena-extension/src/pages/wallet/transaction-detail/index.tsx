@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { fullDateFormat, getStatusStyle } from '@common/utils/client-utils';
+import { getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { formatAddress } from '@common/utils/client-utils';
-import { useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
+import { TransactionDetailInfo, useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
 import { HistoryItem } from 'gno-client/src/api/response';
 import { useGnoClient } from '@hooks/use-gno-client';
 
@@ -20,75 +19,62 @@ export const TransactionDetail = () => {
   const [transactionItem, setTransactionItem] = useState<HistoryItem | undefined>();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
+  const [{ getTransactionDetailInfo }] = useTransactionHistoryInfo();
+  const [detailInfo, setDetailInfo] = useState<TransactionDetailInfo | undefined>();
 
   useEffect(() => {
     setTransactionItem(location.state);
   }, [location])
 
-  const [{
-    getIcon,
-    getTypeName,
-    getFunctionName,
-    getTransferInfo,
-    getAmountFullValue,
-    getNetworkFee,
-  }] = useTransactionHistoryInfo();
+  useEffect(() => {
+    if (transactionItem) {
+      const detailInfo = getTransactionDetailInfo(transactionItem);
+      setDetailInfo(detailInfo);
+    }
+  }, [transactionItem])
+
 
   const handleLinkClick = (hash: string) => {
     window.open(`https://gnoscan.io/${gnoClient?.chainId ?? ''}/contract/${hash}`, '_blank');
   };
 
-  const isTransfer = () => {
-    return transactionItem?.send !== undefined;
-  }
-
-  const getMainText = () => {
-    if (!transactionItem) {
-      return '';
-    }
-    if (isTransfer()) {
-      return getAmountFullValue(transactionItem);
-    }
-    return getFunctionName(transactionItem);
-  }
-
-  return transactionItem ? (
+  return detailInfo ? (
     <Wrapper>
-      <img className='status-icon' src={getStatusStyle(transactionItem.result.status ?? '').statusIcon} alt='status icon' />
-      <TokenBox color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
-        <img className='tx-symbol' src={getIcon(transactionItem)} alt='logo image' />
-        <Text type='header6'>{getMainText()}</Text>
+      <img className='status-icon' src={getStatusStyle(detailInfo.status).statusIcon} alt='status icon' />
+      <TokenBox color={getStatusStyle(detailInfo.status).color}>
+        <img className='tx-symbol' src={detailInfo.icon} alt='logo image' />
+        <Text type='header6'>{detailInfo.main}</Text>
       </TokenBox>
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{fullDateFormat(transactionItem.date)}</dd>
+          <dd>{detailInfo.date}</dd>
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
-          <dd>{getTypeName(transactionItem)}</dd>
+          <dd>{detailInfo.type}</dd>
         </DLWrap>
-        <DLWrap color={getStatusStyle(transactionItem.result?.status ?? '').color ?? ''}>
+        <DLWrap color={getStatusStyle(detailInfo.status).color}>
           <dt>Status</dt>
           <StatusInfo>
-            <dd>{transactionItem.result.status}</dd>
+            <dd>{detailInfo.status}</dd>
             <dd
               className='link-icon'
-              onClick={() => transactionItem.hash && handleLinkClick(transactionItem.hash)}
+              onClick={() => transactionItem?.hash && handleLinkClick(transactionItem?.hash ?? '')}
             >
               <img src={link} alt='link' />
             </dd>
           </StatusInfo>
         </DLWrap>
-        {getTransferInfo(transactionItem) !== null && (
+        {detailInfo.transfer && (
           <DLWrap>
-            <dt>{getTransferInfo(transactionItem)?.transferType}</dt>
-            <dd>{formatAddress(getTransferInfo(transactionItem)?.transferAddress ?? '')}</dd>
+            <dt>{detailInfo.transfer.type}</dt>
+            <dd>{detailInfo.transfer.address}</dd>
           </DLWrap>
         )}
         <DLWrap>
           <dt>Network Fee</dt>
-          <dd>{getNetworkFee(transactionItem)}</dd>
+          <dd>{detailInfo.networkFee}</dd>
         </DLWrap>
       </DataBox>
       <Button
