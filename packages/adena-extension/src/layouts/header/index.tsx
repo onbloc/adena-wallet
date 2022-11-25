@@ -6,8 +6,6 @@ import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 
 const Wrapper = styled.header`
   width: 100%;
