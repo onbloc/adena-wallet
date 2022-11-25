@@ -6,8 +6,6 @@ import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -38,15 +36,9 @@ export const Header = () => {
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
 
-  const [walletState] = useRecoilState(WalletState.state)
-
-  const isLoadingWallet = () => {
-    return walletState === 'LOADING';
-  }
-
   return (
     <Wrapper>
-      {!isLoadingWallet() && (login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
+      {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
       {(approveEstablish || approveTransaction) && <ApproveMenu />}
       {(wallet ||
         settings ||
