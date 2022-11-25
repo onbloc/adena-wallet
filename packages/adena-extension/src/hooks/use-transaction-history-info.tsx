@@ -194,20 +194,6 @@ export const useTransactionHistoryInfo = (): [{
         };
     }
 
-    const getIcon = (transactionItem: HistoryItem) => {
-        if (transactionItem.type === '/bank.MsgSend') {
-            return getTokenImage(transactionItem.send?.denom ?? balances[0].denom);
-        }
-        if (transactionItem.type === '/vm.m_addpkg') {
-            return IconAddPkg;
-        }
-        if (transactionItem.type === '/vm.m_call') {
-            return IconContract;
-        }
-
-        return getTokenImage(balances[0].denom);
-    }
-
     const getStatusColor = (transactionItem: HistoryItem) => {
         const { func, result } = transactionItem;
         if (func === 'Receive' && result.status === 'Success') {
@@ -218,19 +204,6 @@ export const useTransactionHistoryInfo = (): [{
             return theme.color.neutral[9];
         }
         return theme.color.neutral[9];
-    }
-
-    const getTypeName = (transactionItem: HistoryItem) => {
-        if (transactionItem.type === '/bank.MsgSend') {
-            return transactionItem.func ?? '';
-        }
-        if (transactionItem.type === '/vm.m_addpkg') {
-            return 'Add Package';
-        }
-        if (transactionItem.type === '/vm.m_call') {
-            return 'Contract Interaction';
-        }
-        return '';
     }
 
     const getFunctionName = (transactionItem: HistoryItem) => {
@@ -257,14 +230,18 @@ export const useTransactionHistoryInfo = (): [{
     }
 
     const getAmountValue = (transactionItem: HistoryItem) => {
-        let amount = 0;
-        let denom = balances[0].denom.toUpperCase();
-        if (transactionItem.send) {
-            const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
-            amount = result.amount;
-            denom = result.denom;
+        try {
+            let amount = 0;
+            let denom = balances[0].denom.toUpperCase();
+            if (transactionItem.send) {
+                const result = convertUnit(transactionItem.send.value, transactionItem.send.denom, 'COMMON');
+                amount = result.amount;
+                denom = result.denom;
+            }
+            return `${amountSetSymbol(amount)} ${denom}`;
+        } catch (e) {
+            return '';
         }
-        return `${amountSetSymbol(amount)} ${denom}`;
     }
 
     const getAmountFullValue = (transactionItem: HistoryItem) => {
