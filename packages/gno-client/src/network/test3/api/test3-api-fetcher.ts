@@ -96,9 +96,9 @@ export class Test3ApiFetcher implements Test3Api {
     );
   };
 
-  public getTransactionHistory = async (address: string) => {
-    const result = await axios.get<Array<Test3Response.History>>(
-      Test3ApiPath.createPathOfHistoryTemp(address),
+  public getTransactionHistory = async (address: string, page: number) => {
+    const result = await axios.get<Test3Response.History>(
+      Test3ApiPath.createPathOfHistoryTemp(address, page),
     );
     return result.data;
   };

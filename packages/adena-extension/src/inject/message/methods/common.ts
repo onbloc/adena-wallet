@@ -15,7 +15,7 @@ export const createPopup = async (
       }&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
-    height: 600,
+    height: 570,
     width: 380,
     left: 800,
     top: 300,

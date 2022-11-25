@@ -1,12 +1,18 @@
 {
-  "name": "adena-extension",
-  "version": "1.4.0",
+  "name": "adena-wallet",
+  "version": "1.4.1",
   "description": "Adena Wallet",
   "license": "MIT",
   "scripts": {
+    "develop": "nx build:dev adena-extension",
     "build": "yarn build:module && yarn build:service && yarn",
-    "build:module": "nx run-many --target=build --projects=adena-wallet,gno-client",
-    "build:service": "nx run-many --target=build --projects=adena-extension"
+    "build:changed": "nx affected --target=build",
+    "build:module": "nx run-many --target=build --projects=adena-module,gno-client",
+    "build:service": "nx run-many --target=build --projects=adena-extension",
+    "version:qa": "sh scripts/update-build-version.sh",
+    "version:package": "sh scripts/update-package-version.sh",
+    "tag": "sh scripts/create-tag.sh",
+    "test": "yarn jest"
   },
   "private": true,
   "dependencies": {},

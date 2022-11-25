@@ -1,86 +1,67 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { useGnoClient } from './use-gno-client';
-import axios from 'axios';
 import { useEffect } from 'react';
+import { useTokenConfig } from './use-token-config';
+import { TokenConfig, Balance } from '@states/wallet';
 
 interface BalanceInfo {
   unit: string;
   amount: string;
 }
 
-interface TokenInfo {
-  denom?: string;
-  img?: string;
-  name?: string;
-  type?: string;
-  unit?: number;
-  amount?: number;
-}
-
 export const useWalletBalances = (
   initialize?: boolean,
-): [balances: Array<TokenInfo>, updateBalances: () => void] => {
+): [balances: Array<Balance>, updateBalances: () => void] => {
   const [gnoClient, ,] = useGnoClient();
   const [currentAccount] = useRecoilState(WalletState.currentAccount);
   const [balances, setBalances] = useRecoilState(WalletState.balances);
-  const [tokenInfos, setTokenInfos] = useRecoilState(WalletState.tokenInfos);
+  const [getTokenConfig, convertTokenUnit, getTokenImage] = useTokenConfig();
 
   useEffect(() => {
-    if (initialize && tokenInfos.length > 0) {
+    if (initialize) {
       updateBalances();
     }
-  }, [gnoClient, tokenInfos, currentAccount?.getAddress()]);
+  }, [gnoClient, currentAccount?.getAddress()]);
 
-  useEffect(() => {
-    if (tokenInfos.length === 0) {
-      updateTokenInfos();
-    }
-  }, [tokenInfos])
-
-  const updateTokenInfos = async () => {
-    const response = await axios.get<Array<TokenInfo>>('https://conf.adena.app/token.json');
-    setTokenInfos(response.data);
-    return response.data;
-  }
 
   const updateBalances = async () => {
     if (currentAccount && gnoClient) {
-      let currentTokenInfo = [...tokenInfos];
-      if (currentTokenInfo.length === 0) {
-        currentTokenInfo = await updateTokenInfos();
-      }
+      const tokenConfigs = await getTokenConfig();
       const response = await gnoClient.getBalances(currentAccount.getAddress());
       const balances: Array<BalanceInfo> = [...response.balances];
-      const tokenBalances = currentTokenInfo
-        .filter((element) => balances.findIndex((balance) => balance.unit === element.denom) > -1)
-        .map((element) => createTokenBalances(element, balances));
+      const tokenBalances = balances.map(balance => createTokenBalance(balance, tokenConfigs))
+        .filter(balance => balance !== null);
 
       if (tokenBalances.length > 0) {
-        setBalances(tokenBalances);
+        setBalances(tokenBalances as Array<Balance>);
       }
     }
   };
 
-  const createTokenBalances = (element: TokenInfo, balances: Array<BalanceInfo>): TokenInfo => {
-    const currentBalance = balances.find((balance) => balance.unit === element.denom);
-    let amount = 0.0;
-    if (currentBalance) {
-      if (element.unit) {
-        amount = parseFloat((parseFloat(currentBalance.amount) * element.unit).toFixed(6));
-      } else {
-        amount = parseFloat(currentBalance.amount);
-      }
+  const createTokenBalance = (balance: BalanceInfo, configs: Array<TokenConfig>): Balance | null => {
+    const currentConfig = configs.find((config) =>
+      config.denom.toUpperCase() === balance.unit.toUpperCase() ||
+      config.minimalDenom.toUpperCase() === balance.unit.toUpperCase()
+    );
+
+    if (currentConfig) {
+      const result = convertTokenUnit(parseFloat(balance.amount), balance.unit, 'COMMON');
+      return {
+        minimalDenom: currentConfig.minimalDenom,
+        denom: currentConfig.denom,
+        image: getTokenImage(currentConfig.denom) ?? '',
+        imageData: getTokenImage(currentConfig.denom) ?? '',
+        name: currentConfig.name,
+        type: currentConfig.type,
+        minimalUnit: currentConfig.minimalUnit,
+        unit: currentConfig.unit,
+        amount: result.amount,
+        amountDenom: result.denom
+      };
     }
 
-    return {
-      denom: element.denom ?? 'gnot',
-      img: element.img ?? '../../../../assets/gnot-logo.svg',
-      name: element.name ?? 'Gnoland',
-      type: element.type ?? 'GNOT',
-      unit: element.unit ?? 0,
-      amount,
-    };
+    return null;
   };
 
   return [balances, updateBalances];

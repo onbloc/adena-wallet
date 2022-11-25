@@ -31,12 +31,12 @@ const menuMakerInfo = [
   },
   {
     title: 'Change Network',
-    subTitle: 'Manage your app connections',
+    subTitle: 'Configure your network settings',
     navigatePath: RoutePath.ChangeNetwork,
   },
   {
     title: 'Change Password',
-    subTitle: 'Configure your network settings',
+    subTitle: 'Change your lock screen password',
     navigatePath: RoutePath.SettingChangePassword,
   },
 ];
@@ -52,6 +52,8 @@ const MenuMaker = ({ onClick, title, subTitle }: MenuMakerProps) => (
   </GrayButtonBox>
 );
 
+const ACCOUNT_NAME_LENGTH_LIMIT = 23;
+
 export const Settings = () => {
   const [currnetAccount] = useCurrentAccount();
   const updateAccountName = useUpdateWalletAccountName();
@@ -64,8 +66,10 @@ export const Settings = () => {
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    await setText(name);
-    await updateAccountName(currnetAccount?.data.address || '', name);
+    if (name.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
+      await setText(name);
+      await updateAccountName(currnetAccount?.data.address || '', name);
+    }
   };
 
   const handleTextBlur = () => {

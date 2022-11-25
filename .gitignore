@@ -33,11 +33,12 @@ dist/
 yarn.lock
 package-lock.json
 
-*.spec.ts
-*.spec.*
 .vscode
-.jest
 yarn.lock
 package.lock
 node_modules
-node_modules
+node_modules/
+
+result.info
+deploy/*
+deploy-latest/*

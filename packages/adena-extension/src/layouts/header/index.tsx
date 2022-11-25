@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { Route, useLocation, useMatch } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
@@ -20,7 +20,7 @@ export const Header = () => {
   const location = useLocation();
   const login = useMatch(RoutePath.Login);
   const approveEstablish = useMatch(RoutePath.ApproveEstablish);
-  const approveTransactionLogin = useMatch(RoutePath.ApproveTransactionLogin);
+  const ApproveLogin = useMatch(RoutePath.ApproveLogin);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
@@ -38,7 +38,7 @@ export const Header = () => {
 
   return (
     <Wrapper>
-      {(login || approveTransactionLogin) && <HomeMenu entry={location.pathname as string} />}
+      {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
       {(approveEstablish || approveTransaction) && <ApproveMenu />}
       {(wallet ||
         settings ||

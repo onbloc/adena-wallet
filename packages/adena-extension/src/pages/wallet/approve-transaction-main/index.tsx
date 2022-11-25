@@ -12,6 +12,7 @@ import { useWallet } from '@hooks/use-wallet';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import { LocalStorageValue } from '@common/values';
+import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 
 export const ApproveTransactionMain = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
@@ -19,12 +20,18 @@ export const ApproveTransactionMain = () => {
   const [wallet, state] = useWallet();
   const [, updateWalletAccounts] = useWalletAccounts(wallet);
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
-  const [gnoClient] = useGnoClient();
+  const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
   const [gasFee, setGasFee] = useState(0);
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>()
   const [favicon, setFavicon] = useState<any>(null);
+
+  useEffect(() => {
+    if (!gnoClient) {
+      updateGnoClient();
+    }
+  }, [gnoClient])
 
   useEffect(() => {
     if (location.state?.requestData) {
@@ -113,48 +120,52 @@ export const ApproveTransactionMain = () => {
     return transactionData.contractFunction;
   }
 
-  return (
-    <>
-      <dd id='atv_args' hidden={true} ref={getDataRef} />
-      <Wrapper>
-        <Text type='header4'>Approve Transaction</Text>
-        {
-          <>
-            <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
-            <RoundedBox>
-              <Text type='body2Reg' color={'#ffffff'}>
-                {hostname}
-              </Text>
-            </RoundedBox>
-            <BundleDataBox>
-              <BundleDL>
-                <dt>Contract</dt>
-                <dd id='atv_contract'>{transactionData?.contractType ?? ''}</dd>
-              </BundleDL>
-              <BundleDL>
-                <dt>Function</dt>
-                <dd id='atv_function'>{getContractFunctionText()}</dd>
-              </BundleDL>
-            </BundleDataBox>
-            <RoundedDataBox>
-              <RoundedDL>
-                <dt>Network Fee:</dt>
-                <dd>{`${gasFee * 0.000001} GNOT`}</dd>
-              </RoundedDL>
-            </RoundedDataBox>
-          </>
-        }
-        <CancelAndConfirmButton
-          cancelButtonProps={{ onClick: cancelEvent }}
-          confirmButtonProps={{
-            onClick: approveEvent,
-            text: 'Approve',
-          }}
-        />
-      </Wrapper>
-    </>
-  );
+  return transactionData ? (
+    <Wrapper>
+      <Text type='header4'>Approve Transaction</Text>
+      <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
+      <RoundedBox>
+        <Text type='body2Reg' color={'#ffffff'}>
+          {hostname}
+        </Text>
+      </RoundedBox>
+      <BundleDataBox>
+        <BundleDL>
+          <dt>Contract</dt>
+          <dd id='atv_contract'>{transactionData?.contractType ?? ''}</dd>
+        </BundleDL>
+        <BundleDL>
+          <dt>Function</dt>
+          <dd id='atv_function'>{getContractFunctionText()}</dd>
+        </BundleDL>
+      </BundleDataBox>
+      <RoundedDataBox className='sub-info'>
+        <RoundedDL>
+          <dt>Network Fee:</dt>
+          <dd>{`${gasFee * 0.000001} GNOT`}</dd>
+        </RoundedDL>
+      </RoundedDataBox>
+      <CancelAndConfirmButton
+        cancelButtonProps={{ onClick: cancelEvent }}
+        confirmButtonProps={{
+          onClick: approveEvent,
+          text: 'Approve',
+        }}
+      />
+    </Wrapper>
+  ) : (
+    <LoadingWrapper>
+      <LoadingApproveTransaction />
+    </LoadingWrapper>
+  )
 };
+
+const LoadingWrapper = styled.div`
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  width: 100%;
+  height: calc(100vh - 48px);
+  padding: 0 20px 24px 20px;
+`;
 
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
@@ -187,6 +198,10 @@ const DataBoxStyle = styled.div`
   }
   dd {
     color: ${({ theme }) => theme.color.neutral[0]};
+  }
+
+  &.sub-info * {
+    font-size: ${({ theme }) => theme.fonts.body2Reg};
   }
 `;
 

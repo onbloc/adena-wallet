@@ -11,6 +11,7 @@ import { InjectionMessageInstance } from '@inject/message';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
 import { ValidationService } from '@services/index';
+import { MessageKeyType } from '@inject/message'
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -23,7 +24,7 @@ const Wrapper = styled.div`
   padding: 0px 20px 24px;
 `;
 
-export const ApproveTransactionLogin = () => {
+export const ApproveLogin = () => {
   const navigate = useNavigate();
   const [state, loadWallet, loadWalletByPassword] = useWalletLoader();
   const [password, setPassword] = useState('');
@@ -44,7 +45,7 @@ export const ApproveTransactionLogin = () => {
         loadWallet();
         break;
       case 'FINISH':
-        navigate(RoutePath.ApproveTransaction, { state: { requestData } });
+        redirect();
         break;
       case 'CREATE':
       case 'FAIL':
@@ -73,6 +74,20 @@ export const ApproveTransactionLogin = () => {
       setError(true);
     }
   };
+
+  const redirect = () => {
+    switch (requestData?.type as MessageKeyType | undefined) {
+      case 'DO_CONTRACT':
+        navigate(RoutePath.ApproveTransaction + location.search, { state: { requestData } });
+        break;
+      case 'ADD_ESTABLISH':
+        navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
+        break;
+      default:
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData));
+        break;
+    }
+  }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') tryLoginApprove(password);

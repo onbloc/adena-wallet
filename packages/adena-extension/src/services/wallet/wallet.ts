@@ -1,7 +1,7 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
 import { LocalStorageValue, SessionStorageValue } from '@common/values';
-import { Wallet } from 'adena-wallet';
+import { Wallet } from 'adena-module';
 
 /**
  * This function creates a wallet instance.
@@ -87,6 +87,20 @@ export const saveSerializedWallet = async (
   const serializedWallet = await wallet.serialize(passowrd);
   await LocalStorageValue.set('SERIALIZED', serializedWallet);
   await saveWalletPassword(passowrd);
+};
+
+/**
+ * This function checks if the wallet is locked.
+ *
+ * @returns boolean
+ */
+export const isLocked = async () => {
+  try {
+    const password = await loadWalletPassword();
+    return password === '';
+  } catch (e) {
+    return true;
+  }
 };
 
 /**

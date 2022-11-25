@@ -3,7 +3,7 @@ import { useRecoilState } from "recoil";
 import { WalletService } from "@services/index";
 import { LocalStorageValue } from "@common/values";
 import { useCurrentAccount } from "./use-current-account";
-import { WalletAccount } from "adena-wallet";
+import { WalletAccount } from "adena-module";
 
 interface CreateWalletParams {
     mnemonic: string;

@@ -1,4 +1,4 @@
-import { Decimal, Uint53 } from './../math';
+import { Decimal, Uint53 } from '../math';
 
 export interface Coin {
   readonly denom: string;

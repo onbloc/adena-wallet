@@ -1,60 +1,80 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
-import useStatus, { ResultTxStateType } from './use-status';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { formatAddress } from '@common/utils/client-utils';
+import { TransactionDetailInfo, useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
+import { HistoryItem } from 'gno-client/src/api/response';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 interface DLProps {
   color?: string;
 }
 
 export const TransactionDetail = () => {
+  const [gnoClient] = useGnoClient();
   const location = useLocation();
-  const state = location.state as any;
-  const { initTxState, handleLinkClick } = useStatus();
+  const [transactionItem, setTransactionItem] = useState<HistoryItem | undefined>();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
-  const [txData, setTxData] = useState<ResultTxStateType | null>(() => initTxState(state));
-  return (
+  const [{ getTransactionDetailInfo }] = useTransactionHistoryInfo();
+  const [detailInfo, setDetailInfo] = useState<TransactionDetailInfo | undefined>();
+
+  useEffect(() => {
+    setTransactionItem(location.state);
+  }, [location])
+
+  useEffect(() => {
+    if (transactionItem) {
+      const detailInfo = getTransactionDetailInfo(transactionItem);
+      setDetailInfo(detailInfo);
+    }
+  }, [transactionItem])
+
+
+  const handleLinkClick = (hash: string) => {
+    window.open(`https://gnoscan.io/${gnoClient?.chainId ?? ''}/contract/${hash}`, '_blank');
+  };
+
+  return detailInfo ? (
     <Wrapper>
-      <img className='status-icon' src={txData?.txStatusStyle.statusIcon} alt='status icon' />
-      <TokenBox color={txData?.txStatusStyle.color ?? ''}>
-        <img className='tx-symbol' src={txData?.txSymbol} alt='logo image' />
-        <Text type='header6'>{txData?.txSend}</Text>
+      <img className='status-icon' src={getStatusStyle(detailInfo.status).statusIcon} alt='status icon' />
+      <TokenBox color={getStatusStyle(detailInfo.status).color}>
+        <img className='tx-symbol' src={detailInfo.icon} alt='logo image' />
+        <Text type='header6'>{detailInfo.main}</Text>
       </TokenBox>
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{txData?.txDate}</dd>
+          <dd>{detailInfo.date}</dd>
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
-          <dd>{txData?.txTypeDesc}</dd>
+          <dd>{detailInfo.type}</dd>
         </DLWrap>
-        <DLWrap color={txData?.txStatusStyle.color ?? ''}>
+        <DLWrap color={getStatusStyle(detailInfo.status).color}>
           <dt>Status</dt>
           <StatusInfo>
-            <dd>{txData?.txStatus}</dd>
+            <dd>{detailInfo.status}</dd>
             <dd
               className='link-icon'
-              onClick={() => txData?.txHash && handleLinkClick(txData?.txHash)}
+              onClick={() => transactionItem?.hash && handleLinkClick(transactionItem?.hash ?? '')}
             >
               <img src={link} alt='link' />
             </dd>
           </StatusInfo>
         </DLWrap>
-        {txData?.txTransfer && txData?.txAddress && (
+        {detailInfo.transfer && (
           <DLWrap>
-            <dt>{txData?.txTransfer}</dt>
-            <dd>{formatAddress(txData?.txAddress)}</dd>
+            <dt>{detailInfo.transfer.type}</dt>
+            <dd>{detailInfo.transfer.address}</dd>
           </DLWrap>
         )}
         <DLWrap>
           <dt>Network Fee</dt>
-          <dd>{`${txData?.txFee} GNOT`}</dd>
+          <dd>{detailInfo.networkFee}</dd>
         </DLWrap>
       </DataBox>
       <Button
@@ -66,7 +86,7 @@ export const TransactionDetail = () => {
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>
-  );
+  ) : <></>;
 };
 
 const Wrapper = styled.main`

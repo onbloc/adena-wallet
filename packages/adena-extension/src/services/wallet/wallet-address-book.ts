@@ -1,5 +1,5 @@
 import { LocalStorageValue } from '@common/values';
-import { WalletAccount } from 'adena-wallet';
+import { WalletAccount } from 'adena-module';
 import { v4 as uuidv4 } from 'uuid';
 
 export const getAddressBook = async () => {

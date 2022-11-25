@@ -1,14 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { parseTxsEachDate } from '@common/utils/client-utils';
 import ListWithDate from '@components/list-box/list-with-date';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoClient } from '@hooks/use-gno-client';
 import LoadingHistory from '@components/loading-screen/loading-history';
+import { useTransactionHistory } from '@hooks/use-transaction-history';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { HistoryItem } from 'gno-client/src/api/response';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -31,55 +32,68 @@ const Wrapper = styled.main`
 
 export const History = () => {
   const navigate = useNavigate();
-  const historyItemClick = (item: any) => navigate(RoutePath.TransactionDetail, { state: item });
-  const [datas, setDatas] = useState<any[]>([]);
-
-  const [currentAccount] = useCurrentAccount();
-  const [gnoClient] = useGnoClient();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState('LOADING');
+  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
+  const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
+  const [nextFetch, setNextFetch] = useState(false);
+  const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+  const [transactionItems, setTransactionItems] = useState(getHistory());
 
   useEffect(() => {
-    setState('LOADING');
-    initHistoryDatas();
-  }, []);
+    initHistory();
+  }, [])
 
   useEffect(() => {
-    const historyFetchTimer = setInterval(() => {
-      initHistoryDatas()
-    }, 5000);
+    setTransactionItems(getHistory());
+  }, [transactionHistory.items.length])
 
-    return () => { clearInterval(historyFetchTimer) }
-  }, []);
+  const initHistory = async () => {
+    await updateLastHistory();
+  }
 
-  const initHistoryDatas = async () => {
-    if (gnoClient && currentAccount) {
-      try {
-        const address = currentAccount.data.address;
-        const historyDatas = await gnoClient.getTransactionHistory(address);
-        const data = parseTxsEachDate(historyDatas);
-        setDatas(Object.values(data));
-      } catch (e) {
-        console.error(e);
-        setDatas([]);
-      }
-      setState('FINISH');
+  useEffect(() => {
+    if (document.getElementsByTagName('body').length > 0) {
+      setBodyElement(document.getElementsByTagName('body')[0]);
     }
+  }, [document.getElementsByTagName('body')])
+
+  useEffect(() => {
+    bodyElement?.addEventListener('scroll', onScrollListener);
+    return () => bodyElement?.removeEventListener('scroll', onScrollListener);
+  }, [bodyElement]);
+
+  useEffect(() => {
+    if (nextFetch) {
+      updateNextHistory().finally(() =>
+        setNextFetch(false))
+    }
+  }, [nextFetch]);
+
+  const onScrollListener = async () => {
+    if (bodyElement) {
+      const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
+      if (remain < 60 && !nextFetch) {
+        setNextFetch(true);
+      }
+    }
+  }
+
+  const onClickHistoryItem = (item: HistoryItem) => {
+    navigate(RoutePath.TransactionDetail, { state: item })
   };
 
   return (
-    <Wrapper ref={scrollRef}>
+    <Wrapper>
       <Text type='header4' className='history-title'>
         History
       </Text>
-      {state === 'FINISH' ? (
-        datas.length > 0 ? (
-          datas.map((item, idx) => (
+      {transactionHistory.init ? (
+        Object.keys(transactionItems).length > 0 ? (
+          Object.keys(transactionItems).map((item, idx) => (
             <ListWithDate
               key={idx}
-              date={item.date}
-              transaction={item.transaction}
-              onClick={historyItemClick}
+              date={item}
+              transaction={transactionItems[item]}
+              onClick={onClickHistoryItem}
             />
           ))
         ) : (
@@ -90,6 +104,9 @@ export const History = () => {
       ) : (
         <LoadingHistory />
       )}
+      <div >
+
+      </div>
     </Wrapper>
   );
 };

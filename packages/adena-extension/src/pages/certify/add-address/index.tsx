@@ -1,5 +1,5 @@
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -8,7 +8,6 @@ import add from '../../../assets/add-symbol.svg';
 import edit from '../../../assets/edit-symbol.svg';
 import DefaultInput, { inputStyle } from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { RoutePath } from '@router/path';
 import { ErrorText } from '@components/error-text';
 import theme from '@styles/theme';
 import { ValidationService, WalletService } from '@services/index';
@@ -16,6 +15,7 @@ import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 
 const specialPatternCheck = /\W|\s/g;
+const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AddAddress = () => {
   const navigate = useNavigate();
@@ -34,7 +34,13 @@ const AddAddress = () => {
     const patternCheck = e.target.value.replace(specialPatternCheck, '');
     setAddress(() => patternCheck.toLowerCase());
   };
-  const onChangeName = (e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value);
+
+  const onChangeName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputText = e.target.value;
+    if (inputText.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
+      setName(e.target.value);
+    }
+  };
 
   const saveButtonClick = () => {
     let isValid = true;

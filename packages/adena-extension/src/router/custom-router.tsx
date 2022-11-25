@@ -5,7 +5,7 @@ import { Header } from '@layouts/header';
 import { Navigation } from '@layouts/navigation';
 import { WalletCreate } from '@pages/wallet/wallet-create';
 import { ApproveTransactionMain } from '@pages/wallet/approve-transaction-main';
-import { ApproveTransactionLogin } from '@pages/wallet/approve-transaction-login';
+import { ApproveLogin } from '@pages/wallet/approve-login';
 import { YourSeedPhrase } from '@pages/certify/your-seed-phrase';
 import { CreatePassword } from '@pages/certify/create-password';
 import { LaunchAdena } from '@pages/certify/launch-adena';
@@ -66,7 +66,7 @@ export const CustomRouter = () => {
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
-        <Route path={RoutePath.ApproveTransactionLogin} element={<ApproveTransactionLogin />} />
+        <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
         <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />

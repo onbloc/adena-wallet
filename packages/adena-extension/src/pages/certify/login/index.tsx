@@ -8,6 +8,7 @@ import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { ValidationService } from '@services/index';
+import LoadingWallet from '@components/loading-screen/loading-wallet';
 
 const text = 'Enter\nYour Password';
 
@@ -40,7 +41,7 @@ export const Login = () => {
   useEffect(() => {
     switch (state) {
       case 'FINISH':
-        navigate(RoutePath.Wallet);
+        navigate(RoutePath.Home);
         break;
       default:
         break;

@@ -1,5 +1,5 @@
 import { LocalStorageValue } from '@common/values';
-import { Wallet, WalletAccount, WalletAccountConfig } from 'adena-wallet';
+import { Wallet, WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
 
 /**

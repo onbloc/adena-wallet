@@ -119,6 +119,6 @@ export class GnoClient implements GnoClientApi {
 
   public getBalances = async (address: string) => this.network.getBalances(address);
 
-  public getTransactionHistory = async (address: string) =>
-    this.network.getTransactionHistory(address);
+  public getTransactionHistory = async (address: string, page?: number) =>
+    this.network.getTransactionHistory(address, page ?? 0);
 }

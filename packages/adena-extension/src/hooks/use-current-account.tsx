@@ -1,7 +1,7 @@
 import { LocalStorageValue } from '@common/values';
 import { WalletService } from '@services/index';
 import { GnoClientState, WalletState } from '@states/index';
-import { WalletAccount } from 'adena-wallet';
+import { WalletAccount } from 'adena-module';
 import { useEffect } from 'react';
 import { useRecoilState } from 'recoil';
 

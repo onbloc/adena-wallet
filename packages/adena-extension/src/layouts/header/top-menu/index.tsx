@@ -10,6 +10,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { useWallet } from '@hooks/use-wallet';
+import { useLocation } from 'react-router-dom';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -43,6 +44,7 @@ export const TopMenu = () => {
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
   const [wallet] = useWallet();
+  const location = useLocation();
 
   useEffect(() => {
     getCurrentUrl().then((currentUrl) => {
@@ -52,7 +54,7 @@ export const TopMenu = () => {
         setHostname(hostname);
       });
     });
-  }, [wallet]);
+  }, [wallet, location]);
 
   const getCurrentUrl = () => {
     return new Promise((resolver) => {
@@ -67,15 +69,15 @@ export const TopMenu = () => {
 
   return (
     <>
-      {currentAccount && (
+      {(
         <Wrapper>
           <Header>
             <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-            <CopyTooltip copyText={currentAccount.data.address}>
+            <CopyTooltip copyText={currentAccount?.data.address ?? ''}>
               <Text type='body1Bold' display='inline-flex'>
-                {formatNickname(currentAccount.data.name, 12)}
+                {formatNickname(currentAccount?.data.name ?? '', 12)}
                 <Text type='body1Reg' color={theme.color.neutral[9]}>
-                  {` (${formatAddress(currentAccount.data.address)})`}
+                  {` (${formatAddress(currentAccount?.data.address ?? '')})`}
                 </Text>
               </Text>
             </CopyTooltip>

@@ -2,24 +2,18 @@ import React from 'react';
 import styled from 'styled-components';
 import Text from '../../text';
 import theme from '@styles/theme';
-import { amountSetSymbol, funcTextFilter } from '@common/utils/client-utils';
+import { dateTimeFormatEn, getDateDiff } from '@common/utils/client-utils';
 import ListBox from '../index';
 import success from '../../../assets/success.svg';
 import failed from '../../../assets/failed.svg';
+import { HistoryItem } from 'gno-client/src/api/response';
+import { useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
 
 interface HistoryItemProps {
   onClick: (item: any) => void;
   date: string;
-  transaction: any[];
+  transaction: Array<HistoryItem>;
 }
-
-const SymbolWithStatus = ({ item }: any) => {
-  return (
-    <SymbolImage status={item.txStatus === 'Success'}>
-      <img src={item.txImg} alt='txImg' />
-    </SymbolImage>
-  );
-};
 
 const SymbolImage = styled.div<{ status: boolean }>`
   position: relative;
@@ -37,49 +31,71 @@ const SymbolImage = styled.div<{ status: boolean }>`
   }
 `;
 
-export const ListWithDate = (p: HistoryItemProps) => {
+export const ListWithDate = (props: HistoryItemProps) => {
+
+  const [{
+    getTransactionInfo,
+    getStatusColor,
+  }] = useTransactionHistoryInfo();
+
+  const getDateText = () => {
+    const currentDate = new Date(props.date);
+    const dateDiff = getDateDiff(currentDate);
+    let formatDate = '';
+
+    if (dateDiff === 0) {
+      formatDate = 'Today';
+    } else if (dateDiff === 1) {
+      formatDate = 'Yesterday';
+    } else {
+      const result = dateTimeFormatEn(currentDate);
+      formatDate = `${result.month} ${result.day}, ${result.year}`;
+    }
+    return formatDate;
+  }
+
+  const renderTransactionItem = (item: HistoryItem, idx: number) => {
+    const info = getTransactionInfo(item)
+
+    return (
+      <ListBox
+        left={
+          <SymbolImage status={item.result.status === 'Success'}>
+            <img src={info.icon} alt='_' />
+          </SymbolImage>
+        }
+        center={
+          <Center>
+            <Text type='body3Bold'>
+              {info.title}
+            </Text>
+            <Text type='body3Reg' color={theme.color.neutral[9]}>
+              {info.titleDescription}
+            </Text>
+          </Center>
+        }
+        right={
+          <Text
+            type='body3Reg'
+            color={getStatusColor(item)}
+          >{info.amount}</Text>
+        }
+        hoverAction={true}
+        gap={12}
+        key={idx}
+        onClick={() => props.onClick(item)}
+      />
+    )
+  }
+
   return (
     <Wrapper>
       <Text className='p-date' type='body1Reg' color={theme.color.neutral[9]}>
-        {p.date}
+        {getDateText()}
       </Text>
-      {p.transaction.map((item: any, idx: number) => (
-        <ListBox
-          left={<SymbolWithStatus item={item} />}
-          center={
-            <Center>
-              <Text type='body3Bold'>
-                {item.txType === '/bank.MsgSend' ? funcTextFilter(item.txFunc) : item.txFunc}
-              </Text>
-              <Text type='body3Reg' color={theme.color.neutral[9]}>
-                {item.txDesc}
-              </Text>
-            </Center>
-          }
-          right={
-            <Text
-              type='body3Reg'
-              color={txStatusColor(item.txStatus, item.txFunc)}
-            >{`${amountSetSymbol(item.txSend)} GNOT`}</Text>
-          }
-          hoverAction={true}
-          gap={12}
-          key={idx}
-          onClick={() => p.onClick(item)}
-        />
-      ))}
+      {props.transaction.map(renderTransactionItem)}
     </Wrapper>
   );
-};
-
-const txStatusColor = (txStatus: string, txFunc: string) => {
-  if (txFunc === 'Received' && txStatus === 'Success') {
-    return theme.color.green[2];
-  } else if (txStatus === 'Success') {
-    return theme.color.neutral[0];
-  } else if (txStatus === 'Failed') {
-    return theme.color.neutral[9];
-  }
 };
 
 const Wrapper = styled.div`

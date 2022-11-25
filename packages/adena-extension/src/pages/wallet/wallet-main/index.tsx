@@ -12,6 +12,9 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { maxFractionDigits } from '@common/utils/client-utils';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { useTransactionHistory } from '@hooks/use-transaction-history';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -27,9 +30,10 @@ export const WalletMain = () => {
   const [gnoClient] = useGnoClient();
   const [, updateWalletAccounts] = useWalletAccounts(wallet);
   const [balances, updateBalances] = useWalletBalances();
-  const [currentBalances, setCurrentBalances] = useState<Array<any>>([]);
   const [currentAccount, updateCurrentAccountInfo] = useCurrentAccount();
-  const [currentBalance, setCurrentBalance] = useState('');
+  const [currentBalance, setCurrentBalance] = useState<string | undefined>();
+  const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
+  const [, updateLastHistory] = useTransactionHistory();
 
   useEffect(() => {
     if (gnoClient && state === 'FINISH') {
@@ -41,16 +45,18 @@ export const WalletMain = () => {
     if (currentAccount?.getAddress()) {
       updateBalances();
       updateCurrentAccountInfo();
+      updateLastHistory();
     }
   }, [currentAccount?.getAddress()])
 
   useEffect(() => {
     if (balances && balances.length > 0) {
-      const amount = maxFractionDigits(balances[0].amount ?? 0, 6);
-      const unit = balances[0].type;
-      const currentBalance = `${amount}\n${unit}`;
-      setCurrentBalance(currentBalance);
-      setCurrentBalances(balances);
+      if (balances[0].amountDenom.toUpperCase() === balances[0].denom.toUpperCase()) {
+        const amount = maxFractionDigits(balances[0].amount ?? 0, 6);
+        const unit = balances[0].amountDenom.toUpperCase();
+        const currentBalance = `${amount}\n${unit}`;
+        setCurrentBalance(currentBalance);
+      }
     }
   }, [balances]);
 
@@ -71,20 +77,22 @@ export const WalletMain = () => {
                 text: 'Send',
               }}
             />
-            {currentBalances.map((item, index) => (
-              <ListBox
-                left={<img src={item.img} alt='logo image' />}
-                center={<Text type='body1Bold'>{item.name || ''}</Text>}
-                right={
-                  <Text type='body2Reg'>{`${maxFractionDigits(item.amount ?? 0, 6)} ${item.type ?? ''
-                    }`}</Text>
-                }
-                hoverAction={true}
-                gap={12}
-                key={index}
-                onClick={CoinBoxClick}
-              />
-            ))}
+            {
+              tokenConfig.map((item, index) => (
+                <ListBox
+                  left={<img src={item.imageData} alt='logo image' />}
+                  center={<Text type='body1Bold'>{item.name || ''}</Text>}
+                  right={
+                    <Text type='body2Reg'>
+                      {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount ?? 0, 6)} ${item.type ?? ''}`}
+                    </Text>
+                  }
+                  hoverAction={true}
+                  gap={12}
+                  key={index}
+                  onClick={CoinBoxClick}
+                />
+              ))}
           </Wrapper>
         )
       ) : (
