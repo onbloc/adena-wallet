@@ -38,15 +38,9 @@ export const Header = () => {
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
 
-  const [walletState] = useRecoilState(WalletState.state)
-
-  const isLoadingWallet = () => {
-    return walletState === 'LOADING';
-  }
-
   return (
     <Wrapper>
-      {!isLoadingWallet() && (login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
+      {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
       {(approveEstablish || approveTransaction) && <ApproveMenu />}
       {(wallet ||
         settings ||
