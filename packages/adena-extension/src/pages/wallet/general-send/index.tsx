@@ -194,9 +194,9 @@ const TextFieldWrap = styled.div<{ error: boolean; isOpen: boolean }>`
   border-bottom-right-radius: ${({ isOpen }) => (isOpen ? '0px' : '30px')};
   border: 1px solid
     ${({ isOpen, error, theme }) => {
-    if (error && !isOpen) return theme.color.red[2];
-    if (isOpen && !error) return theme.color.primary[3];
-    if (!error && !isOpen) return theme.color.neutral[6];
+    if (isOpen) return theme.color.primary[3];
+    if (error) return theme.color.red[2];
+    return theme.color.neutral[6];
   }};
   background-color: ${({ theme }) => theme.color.neutral[8]};
   padding: 0 16px;
