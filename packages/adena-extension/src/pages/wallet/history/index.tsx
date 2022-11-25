@@ -63,7 +63,7 @@ export const History = () => {
 
   useEffect(() => {
     if (nextFetch) {
-      updateNextHistory().then(() =>
+      updateNextHistory().finally(() =>
         setNextFetch(false))
     }
   }, [nextFetch]);
