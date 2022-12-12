@@ -40,12 +40,15 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "crypto-js": "^4.1.1",
-    "dotenv": "^16.0.3",
-    "protobufjs": "^7.1.2",
+    "@ledgerhq/hw-transport": "^6.27.1",
+    "@ledgerhq/hw-transport-webusb": "^6.27.1",
     "base64-js": "^1.3.0",
     "bech32": "^1.1.4",
-    "readonly-date": "^1.0.0",
-    "bn.js": "^5.2.1"
+    "bn.js": "^5.2.1",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.3",
+    "ledger-cosmos-js": "^2.1.8",
+    "protobufjs": "^7.1.2",
+    "readonly-date": "^1.0.0"
   }
 }
