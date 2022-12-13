@@ -13,6 +13,7 @@ import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
 import { ValidationService } from '@services/index';
 import { MessageKeyType } from '@inject/message'
 import { PasswordValidationError } from '@common/errors';
+import { ErrorText } from '@components/error-text';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -122,6 +123,7 @@ export const ApproveLogin = () => {
             error={error !== null}
             ref={inputRef}
           />
+          {error && <ErrorText text={error.message} />}
           <Button
             fullWidth
             hierarchy={ButtonHierarchy.Primary}
