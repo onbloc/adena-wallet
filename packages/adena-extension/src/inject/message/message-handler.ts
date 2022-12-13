@@ -69,6 +69,13 @@ export class MessageHandler {
       case 'ADD_ESTABLISH':
         HandlerMethod.addEstablish(message, sendResponse);
         break;
+      case 'SIGN_AMINO':
+        HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.signAmino(message, sendResponse);
+          }
+        });
+        break;
       default:
         break;
     }

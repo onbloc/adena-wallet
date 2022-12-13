@@ -1,7 +1,33 @@
 import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
+import { GnoClientService, TransactionService } from '@services/index';
+import { GnoClient } from 'gno-client';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { loadGnoClient } from './wallet';
+
+export const signAmino = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  const gnoClient = await loadGnoClient();
+  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+    return;
+  }
+  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+    return;
+  }
+  const signedDocumnet = await TransactionService.createSignDocument(
+    gnoClient,
+    currentAccountAddress,
+    requestData?.data?.message,
+    requestData?.data?.gasWanted,
+    requestData?.data?.gasFee,
+    requestData?.data?.memo,
+  );
+  sendResponse(InjectionMessageInstance.success('SIGN_SUCCESS', signedDocumnet, requestData.key));
+}
 
 export const doContract = async (
   requestData: InjectionMessage,

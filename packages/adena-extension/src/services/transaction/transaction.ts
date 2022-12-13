@@ -89,6 +89,35 @@ export const createTransactionByContract = async (
 };
 
 /**
+ * This function creates a signed document.
+ *
+ * @param account WalletAccount instance
+ * @param message message
+ * @param gasWanted gaswanted
+ * @returns signed document
+ */
+export const createSignDocument = async (
+  gnoClient: InstanceType<typeof GnoClient>,
+  accountAddress: string,
+  message: any,
+  gasWanted: number,
+  gasFee?: number,
+  memo?: string | undefined,
+) => {
+  const accountInfo = await gnoClient.getAccount(accountAddress);
+  const currentAccount = new WalletAccount({});
+  currentAccount.updateByGno({
+    address: accountInfo.address,
+    publicKey: accountInfo.publicKey ?? '',
+    accountNumber: accountInfo.accountNumber,
+    sequence: accountInfo.sequence,
+  });
+  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
+  const document = Transaction.generateDocument(currentAccount, message, gasWanted, gasFee);
+  return document;
+};
+
+/**
  * This function sends a transaction to gnoland
  *
  * @param gnoClient gno api client

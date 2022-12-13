@@ -56,6 +56,23 @@ export class AdenaExecutor {
   };
 
   public DoContract = (params: RequestDocontractMessage) => {
+    this.valdiateContractMessage(params);
+    const eventMessage = AdenaExecutor.createEventMessage('DO_CONTRACT', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public GetAccount = () => {
+    const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public SignAmino = (params: RequestDocontractMessage) => {
+    this.valdiateContractMessage(params);
+    const eventMessage = AdenaExecutor.createEventMessage('SIGN_AMINO', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
+  private valdiateContractMessage = (params: RequestDocontractMessage) => {
     if (!validateDoContractRequest(params)) {
       return InjectionMessageInstance.failure('INVALID_FORMAT');
     }
@@ -73,16 +90,7 @@ export class AdenaExecutor {
       default:
         return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
     }
-    const eventMessage = AdenaExecutor.createEventMessage('DO_CONTRACT', {
-      ...params,
-    });
-    return this.sendEventMessage(eventMessage);
-  };
-
-  public GetAccount = () => {
-    const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
-    return this.sendEventMessage(eventMessage);
-  };
+  }
 
   private sendEventMessage = (eventMessage: InjectionMessage) => {
     this.listen();
