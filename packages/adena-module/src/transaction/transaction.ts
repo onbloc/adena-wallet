@@ -53,7 +53,7 @@ export class Transaction {
     }
 
     if (this.memo) {
-      TransactionEncode.memo(writer, this.memo).ldelim();
+      TransactionEncode.memo(writer, this.memo);
     }
 
     const transactionValue = writer.finish();
@@ -92,11 +92,12 @@ export class Transaction {
 
   public static generateDocument = (
     account: WalletAccount,
-    message: any,
+    messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
+    memo?: string
   ): StdSignDoc => {
-    return Document.createDocument(account, message, gasWanted, gasFee);
+    return Document.createDocument(account, messages, gasWanted, gasFee, memo);
   };
 
   public static generateSignature = async (

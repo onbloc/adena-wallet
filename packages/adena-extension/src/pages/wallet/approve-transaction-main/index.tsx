@@ -74,7 +74,7 @@ export const ApproveTransactionMain = () => {
       const transaction = await TransactionService.createTransactionByContract(
         gnoClient,
         currentAccount,
-        requestData?.data?.message,
+        requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo
@@ -114,10 +114,10 @@ export const ApproveTransactionMain = () => {
     if (!transactionData) {
       return '';
     }
-    if (`${transactionData.contractType}`.indexOf('bank.MsgSend') > -1) {
+    if (`${transactionData.contracts[0]?.type}`.indexOf('bank.MsgSend') > -1) {
       return 'Send';
     }
-    return transactionData.contractFunction;
+    return transactionData.contracts[0]?.function;
   }
 
   return transactionData ? (
@@ -132,7 +132,7 @@ export const ApproveTransactionMain = () => {
       <BundleDataBox>
         <BundleDL>
           <dt>Contract</dt>
-          <dd id='atv_contract'>{transactionData?.contractType ?? ''}</dd>
+          <dd id='atv_contract'>{transactionData.contracts[0]?.type ?? ''}</dd>
         </BundleDL>
         <BundleDL>
           <dt>Function</dt>

@@ -1,6 +1,6 @@
 {
   "name": "adena-wallet",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Adena Wallet",
   "license": "MIT",
   "scripts": {
@@ -11,6 +11,7 @@
     "build:service": "nx run-many --target=build --projects=adena-extension",
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",
+    "tag": "sh scripts/create-tag.sh",
     "test": "yarn jest"
   },
   "private": true,

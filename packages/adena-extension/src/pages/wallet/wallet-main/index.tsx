@@ -30,7 +30,7 @@ export const WalletMain = () => {
   const [gnoClient] = useGnoClient();
   const [, updateWalletAccounts] = useWalletAccounts(wallet);
   const [balances, updateBalances] = useWalletBalances();
-  const [currentAccount, updateCurrentAccountInfo] = useCurrentAccount();
+  const [currentAccount] = useCurrentAccount();
   const [currentBalance, setCurrentBalance] = useState<string | undefined>();
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
@@ -44,7 +44,6 @@ export const WalletMain = () => {
   useEffect(() => {
     if (currentAccount?.getAddress()) {
       updateBalances();
-      updateCurrentAccountInfo();
       updateLastHistory();
     }
   }, [currentAccount?.getAddress()])
