@@ -53,7 +53,7 @@ export class Transaction {
     }
 
     if (this.memo) {
-      TransactionEncode.memo(writer, this.memo).ldelim();
+      TransactionEncode.memo(writer, this.memo);
     }
 
     const transactionValue = writer.finish();
