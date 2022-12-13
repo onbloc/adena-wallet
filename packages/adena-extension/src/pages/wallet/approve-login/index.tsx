@@ -110,7 +110,7 @@ export const ApproveLogin = () => {
 
   return (
     <Wrapper>
-      {state === 'LOGIN' || state === 'LOADING' ? (
+      {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
         <>
           <Title>
             {text}
