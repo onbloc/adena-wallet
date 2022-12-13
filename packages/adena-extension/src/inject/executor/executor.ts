@@ -9,10 +9,12 @@ import {
 type Params = { [key in string]: any };
 
 export interface RequestDocontractMessage {
-  message: {
-    type: string;
-    value: { [key in string]: any };
-  };
+  messages: Array<
+    {
+      type: string;
+      value: { [key in string]: any };
+    }
+  >;
   gasFee: number;
   gasWanted: number;
   memo?: string;
@@ -76,19 +78,21 @@ export class AdenaExecutor {
     if (!validateDoContractRequest(params)) {
       return InjectionMessageInstance.failure('INVALID_FORMAT');
     }
-    switch (params.message.type) {
-      case '/bank.MsgSend':
-        if (!validateTrasactionMessageOfBankSend(params.message)) {
-          return InjectionMessageInstance.failure('INVALID_FORMAT');
-        }
-        break;
-      case '/vm.m_call':
-        if (!validateTrasactionMessageOfVmCall(params.message)) {
-          return InjectionMessageInstance.failure('INVALID_FORMAT');
-        }
-        break;
-      default:
-        return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
+    for (const message of params.messages) {
+      switch (message.type) {
+        case '/bank.MsgSend':
+          if (!validateTrasactionMessageOfBankSend(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_call':
+          if (!validateTrasactionMessageOfVmCall(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        default:
+          return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
+      }
     }
   }
 

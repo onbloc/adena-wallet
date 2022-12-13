@@ -24,7 +24,7 @@ export const createTransaction = async (
     accountNumber: accountInfo.accountNumber,
     sequence: accountInfo.sequence,
   });
-  const document = Transaction.generateDocument(currentAccount, message, gasWanted, gasFee);
+  const document = Transaction.generateDocument(currentAccount, [message], gasWanted, gasFee);
   const transactionFee = await Transaction.generateTransactionFee(
     currentAccount,
     gasWanted,
@@ -52,7 +52,7 @@ export const createTransaction = async (
 export const createTransactionByContract = async (
   gnoClient: InstanceType<typeof GnoClient>,
   account: InstanceType<typeof WalletAccount>,
-  message: any,
+  messages: Array<any>,
   gasWanted: number,
   gasFee?: number,
   memo?: string | undefined,
@@ -64,8 +64,9 @@ export const createTransactionByContract = async (
     accountNumber: accountInfo.accountNumber,
     sequence: accountInfo.sequence,
   });
+  console.log(messages)
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
-  const document = Transaction.generateDocument(currentAccount, message, gasWanted, gasFee);
+  const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
   const transactionFee = await Transaction.generateTransactionFee(
     currentAccount,
     gasWanted,
@@ -74,15 +75,19 @@ export const createTransactionByContract = async (
   const transactionSignature = await Transaction.generateSignature(currentAccount, document);
   const transaction = Transaction.builder()
     .fee(transactionFee)
-    .messages([message])
+    .messages(messages)
     .signatures([transactionSignature])
     .memo(memo ?? '')
     .build();
   const transactionValue = uint8ArrayToArray(transaction.encodedValue);
   return {
     value: transactionValue,
-    contractType: message.type,
-    contractFunction: message.value.func,
+    contracts: messages.map(message => {
+      return {
+        type: message?.type,
+        function: message?.value?.func
+      }
+    }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
   };
@@ -99,7 +104,7 @@ export const createTransactionByContract = async (
 export const createSignDocument = async (
   gnoClient: InstanceType<typeof GnoClient>,
   accountAddress: string,
-  message: any,
+  messages: Array<any>,
   gasWanted: number,
   gasFee?: number,
   memo?: string | undefined,
@@ -113,7 +118,7 @@ export const createSignDocument = async (
     sequence: accountInfo.sequence,
   });
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
-  const document = Transaction.generateDocument(currentAccount, message, gasWanted, gasFee);
+  const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
   return document;
 };
 
