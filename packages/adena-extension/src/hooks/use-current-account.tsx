@@ -7,7 +7,7 @@ import { useRecoilState } from 'recoil';
 
 export const useCurrentAccount = (): [
   account: InstanceType<typeof WalletAccount> | null,
-  updateCurrentAccountInfo: () => void,
+  updateCurrentAccountInfo: (address?: string) => void,
   changeCurrentAccount: (
     address?: string | null,
     accounts?: Array<InstanceType<typeof WalletAccount>>,
@@ -36,9 +36,11 @@ export const useCurrentAccount = (): [
     }
   }
 
-  const updateCurrentAccountInfo = async () => {
-    if (gnoClient && currentAccount) {
-      const changedAccount = await WalletService.updateAccountInfo(gnoClient, currentAccount);
+  const updateCurrentAccountInfo = async (address?: string) => {
+    const currentAddress = address ?? currentAccount?.getAddress();
+    const account = walletAccounts?.find(item => item.data.address === currentAddress);
+    if (gnoClient && account) {
+      const changedAccount = await WalletService.updateAccountInfo(gnoClient, account);
       setCurrentAccount(changedAccount);
     }
   };
@@ -56,8 +58,6 @@ export const useCurrentAccount = (): [
     if (address) {
       await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', address);
       currentAddress = address;
-    } else {
-      currentAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
     }
     if (currentAccounts.findIndex(account => account.getAddress() === currentAddress) === -1) {
       currentAddress = currentAccounts[0].getAddress();
