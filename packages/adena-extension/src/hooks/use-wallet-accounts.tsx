@@ -4,6 +4,7 @@ import { Wallet, WalletAccount } from 'adena-module';
 import { WalletService } from '@services/index';
 import { useGnoClient } from './use-gno-client';
 import { useCurrentAccount } from './use-current-account';
+import { LocalStorageValue } from '@common/values';
 
 export const useWalletAccounts = (
   wallet: InstanceType<typeof Wallet> | null,
@@ -21,7 +22,8 @@ export const useWalletAccounts = (
     }
 
     const accounts = await WalletService.loadAccounts(wallet, gnoCliet.config);
-    changeCurrentAccount(null, accounts);
+    const currentAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    changeCurrentAccount(currentAddress, accounts);
     setWalletAccounts(accounts);
     return accounts;
   };

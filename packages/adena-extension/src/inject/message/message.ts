@@ -13,6 +13,10 @@ const MESSAGE_TYPES = {
     code: 0,
     description: 'Get account.',
   },
+  SIGN_AMINO: {
+    code: 0,
+    description: 'Sign amino.',
+  },
   NOT_CONNECTED: {
     code: 1000,
     description: 'A connection has not been established.',
@@ -72,6 +76,10 @@ const MESSAGE_TYPES = {
   GET_ACCOUNT_SUCCESS: {
     code: 0,
     description: 'Account information has been successfully returned.',
+  },
+  SIGN_SUCCESS: {
+    code: 0,
+    description: 'Sign information has been successfully returned.',
   },
   TRANSACTION_SENT: {
     code: 0,
