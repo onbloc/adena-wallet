@@ -1,4 +1,5 @@
 import { AccountData, Secp256k1HdWallet } from '@/amino';
+import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
 import { WalletAccountConfig } from '.';
 
 interface AccountHistory {
@@ -30,13 +31,13 @@ interface WalletAccountArguments {
   balance?: string;
   histories?: Array<AccountHistory>;
   config?: WalletAccountConfig;
-  aminoSigner?: Secp256k1HdWallet;
+  aminoSigner?: Secp256k1HdWallet | LedgerSigner;
 }
 
 export class WalletAccount {
   private index: number;
 
-  private aminoSigner: Secp256k1HdWallet | undefined;
+  private aminoSigner: Secp256k1HdWallet | LedgerSigner | undefined;
 
   private status: 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
 
@@ -109,7 +110,7 @@ export class WalletAccount {
     return this.address;
   };
 
-  public getSigner = (): Secp256k1HdWallet => {
+  public getSigner = (): Secp256k1HdWallet | LedgerSigner => {
     if (!this.aminoSigner) {
       throw Error();
     }
@@ -129,7 +130,7 @@ export class WalletAccount {
     this.name = name;
   };
 
-  public setSigner = (signer: Secp256k1HdWallet) => {
+  public setSigner = (signer: Secp256k1HdWallet | LedgerSigner) => {
     this.aminoSigner = signer;
   };
 

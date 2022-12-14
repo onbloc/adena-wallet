@@ -1,5 +1,6 @@
 import { Transaction, uint8ArrayToArray, WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
+import { WalletService } from '..';
 
 /**
  * This function creates a transaction.
@@ -64,7 +65,6 @@ export const createTransactionByContract = async (
     accountNumber: accountInfo.accountNumber,
     sequence: accountInfo.sequence,
   });
-  console.log(messages)
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
   const transactionFee = await Transaction.generateTransactionFee(
@@ -101,7 +101,7 @@ export const createTransactionByContract = async (
  * @param gasWanted gaswanted
  * @returns signed document
  */
-export const createSignDocument = async (
+export const createAminoSign = async (
   gnoClient: InstanceType<typeof GnoClient>,
   accountAddress: string,
   messages: Array<any>,
@@ -109,8 +109,16 @@ export const createSignDocument = async (
   gasFee?: number,
   memo?: string | undefined,
 ) => {
+  const wallet = await WalletService.loadWallet();
+  await wallet.initAccounts();
+  const currentAccount = wallet.getAccounts().find(
+    (walletAccount: InstanceType<typeof WalletAccount>) =>
+      walletAccount.getAddress() === accountAddress)?.clone();
+  if (!currentAccount) {
+    return null;
+  }
+
   const accountInfo = await gnoClient.getAccount(accountAddress);
-  const currentAccount = new WalletAccount({});
   currentAccount.updateByGno({
     address: accountInfo.address,
     publicKey: accountInfo.publicKey ?? '',
@@ -118,8 +126,9 @@ export const createSignDocument = async (
     sequence: accountInfo.sequence,
   });
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
-  const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
-  return document;
+  const signedDocumnet = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
+  const signAminoResponse = currentAccount.getSigner()?.signAmino(accountAddress, signedDocumnet);
+  return signAminoResponse;
 };
 
 /**

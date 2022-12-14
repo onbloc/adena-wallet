@@ -39,3 +39,5 @@ export { AccountData, Algo, AminoSignResponse, OfflineAminoSigner } from './sign
 export { isStdTx, makeStdTx, StdTx } from './stdtx';
 export { executeKdf, KdfConfiguration } from './wallet';
 export * from './document';
+export * from './ledger/ledgerconnector';
+export * from './ledger/ledgerwallet';
