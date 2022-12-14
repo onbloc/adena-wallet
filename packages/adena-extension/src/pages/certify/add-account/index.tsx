@@ -52,6 +52,22 @@ export const AddAccount = () => {
     await setCurrentState('LOADING');
   };
 
+  const onClickConnectHardwareWallet = () => {
+    const popupOption: chrome.windows.CreateData = {
+      url: chrome.runtime.getURL(
+        `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
+      ),
+      type: 'popup',
+      height: 570,
+      width: 380,
+      left: 800,
+      top: 300,
+    };
+
+    window.close();
+    chrome.windows.create(popupOption);
+  };
+
   const updateCurrentAccount = async () => {
     if (walletAccounts) {
       const addr = walletAccounts[walletAccounts.length - 1].getAddress();
@@ -80,6 +96,14 @@ export const AddAccount = () => {
         </Text>
         <Text className='title-desc' type='body2Reg'>
           Import an existing account
+        </Text>
+      </GrayButtonBox>
+      <GrayButtonBox onClick={onClickConnectHardwareWallet}>
+        <Text className='title-arrow' type='body1Bold'>
+          Connect Hardware Wallet
+        </Text>
+        <Text className='title-desc' type='body2Reg'>
+          Add a ledger account
         </Text>
       </GrayButtonBox>
       <Button
