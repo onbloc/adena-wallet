@@ -17,7 +17,7 @@ export const signAmino = async (
   if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
     return;
   }
-  const signedDocumnet = await TransactionService.createSignDocument(
+  const signedDocumnet = await TransactionService.createAminoSign(
     gnoClient,
     currentAccountAddress,
     requestData?.data?.messages,
