@@ -14,9 +14,9 @@ interface ChainConfig {
 export class Wallet {
   private walletAccounts: Array<WalletAccount>;
 
-  private aminoSigner: Secp256k1HdWallet|LedgerSigner;
+  private aminoSigner: Secp256k1HdWallet | LedgerSigner;
 
-  constructor(aminoSigner: Secp256k1HdWallet|LedgerSigner) {
+  constructor(aminoSigner: Secp256k1HdWallet | LedgerSigner) {
     this.aminoSigner = aminoSigner;
     this.walletAccounts = [];
   }
@@ -96,7 +96,7 @@ export class Wallet {
     const interactiveTimeout = 120_000;
     const walletConfig = Wallet.createWalletConfig({ accountPaths });
     const ledgerTransport = await TransportWebUSB.create(interactiveTimeout, interactiveTimeout);
-  
+
     const aminoSigner = new LedgerSigner(ledgerTransport, {
       hdPaths: walletConfig.hdPaths,
     });
