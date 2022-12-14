@@ -21,6 +21,7 @@ export const createTransaction = async (
   const accountInfo = await gnoClient.getAccount(account.getAddress());
   const currentAccount = new WalletAccount(account.data);
   currentAccount.setSigner(account.getSigner());
+  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   currentAccount.updateByGno({
     accountNumber: accountInfo.accountNumber,
     sequence: accountInfo.sequence,
