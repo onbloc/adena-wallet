@@ -53,8 +53,8 @@ export const Header = () => {
         connectedApps ||
         changeNetwork) && <TopMenu />}
       {(yourSeedPhrase || enterSeedPhrase || approveHardwareWalletInit || approveHardwareWalletConnect) && <ProgressMenu progressLevel={'first'} />}
-      {createPassword || approveHardwareWalletSelectAccount && <ProgressMenu progressLevel={'second'} />}
-      {launchAdena || approveHardwareWalletFinish && <ProgressMenu progressLevel={'third'} />}
+      {(createPassword || approveHardwareWalletSelectAccount) && <ProgressMenu progressLevel={'second'} />}
+      {(launchAdena || approveHardwareWalletFinish) && <ProgressMenu progressLevel={'third'} />}
     </Wrapper>
   );
 };
