@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
-import IconConnectHardwareWallet from '../../../assets/connect-hardware-wallet.svg';
+import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';

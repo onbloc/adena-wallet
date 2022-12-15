@@ -54,11 +54,6 @@ export const AddAccount = () => {
   };
 
   const onClickConnectHardwareWallet = () => {
-    addAccount(WalletAccount.createByLedgerAddress({
-      address: `${accounts?.length ?? 0 + 1}`,
-      name: `Ledger ${accounts?.length ?? 0 + 1}`
-    })).then(initAccounts);
-    return;
     const popupOption: chrome.windows.CreateData = {
       url: chrome.runtime.getURL(
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,

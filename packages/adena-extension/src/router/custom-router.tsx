@@ -35,7 +35,12 @@ import { ImportAccount } from '@pages/certify/import-account';
 import { ApproveEstablish } from '@pages/wallet/approve-establish';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
-import { ApproveConnectHardwareWalletConnect, ApproveConnectHardwareWalletFinish, ApproveConnectHardwareWalletInit, ApproveConnectHardwareWalletSelectAccount } from '@pages/certify/approve-connect-hardware-wallet';
+import {
+  ApproveConnectHardwareWalletConnect,
+  ApproveConnectHardwareWalletFinish,
+  ApproveConnectHardwareWalletInit,
+  ApproveConnectHardwareWalletSelectAccount
+} from '@pages/certify/approve-connect-hardware-wallet';
 
 export const CustomRouter = () => {
 

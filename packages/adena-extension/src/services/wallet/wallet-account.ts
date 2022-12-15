@@ -25,6 +25,9 @@ export const loadAccounts = async (config?: {
   coinDecimals: number;
 }) => {
   const serializedAccounts = await LocalStorageValue.getToObject<Array<string>>('WALLET_ACCOUNTS');
+  if (!Array.isArray(serializedAccounts)) {
+    return [];
+  }
   const accounts: Array<InstanceType<typeof WalletAccount>> = [];
   serializedAccounts.forEach((serializedAccount) => {
     try {
