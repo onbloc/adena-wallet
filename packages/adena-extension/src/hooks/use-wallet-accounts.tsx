@@ -49,7 +49,7 @@ export const useWalletAccounts = (
       return false;
     });
     const createdAccounts = walletAccounts.filter(walletAccount => accounts.find(account => account.getAddress() === walletAccount.getAddress()) === undefined);
-    return [...filteredAccounts, ...createdAccounts];
+    return WalletService.changeAccountsByAccountNames([...filteredAccounts, ...createdAccounts]);
   };
 
   return {

@@ -100,8 +100,8 @@ export class WalletAccount {
     const account = new WalletAccount(this.data);
     try {
       account.setSigner(this.getSigner());
+      account.setConfig(this.getConfig()?.clone());
     } catch (e) { }
-    account.setConfig(this.getConfig().clone());
     return account;
   };
 

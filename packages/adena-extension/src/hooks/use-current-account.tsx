@@ -1,5 +1,6 @@
 import { LocalStorageValue } from '@common/values';
 import { WalletService } from '@services/index';
+import { loadAccounts } from '@services/wallet';
 import { GnoClientState, WalletState } from '@states/index';
 import { WalletAccount } from 'adena-module';
 import { useEffect } from 'react';
@@ -49,7 +50,8 @@ export const useCurrentAccount = (): [
     address?: string | null,
     accounts?: Array<InstanceType<typeof WalletAccount>>,
   ) => {
-    const currentAccounts = accounts ?? walletAccounts;
+    const storedAccounts = await loadAccounts();
+    const currentAccounts = accounts ?? storedAccounts ?? walletAccounts;
     if (!currentAccounts || currentAccounts.length === 0) {
       return 0;
     }
@@ -58,6 +60,8 @@ export const useCurrentAccount = (): [
     if (address) {
       await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', address);
       currentAddress = address;
+    } else {
+      currentAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
     }
     if (currentAccounts.findIndex(account => account.getAddress() === currentAddress) === -1) {
       currentAddress = currentAccounts[0].getAddress();
