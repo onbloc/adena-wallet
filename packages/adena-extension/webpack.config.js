@@ -79,6 +79,7 @@ const config = {
       '@states': path.resolve(__dirname, 'src/states'),
       '@common': path.resolve(__dirname, 'src/common'),
       '@inject': path.resolve(__dirname, 'src/inject'),
+      '@assets': path.resolve(__dirname, 'src/assets'),
     },
   },
   plugins: [
