@@ -15,6 +15,7 @@ export const useTransactionHistory = (): [
     const getHistory = async () => {
         const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
         if (transactionHistory.address === address) {
+            console.log(formatTransactionHistory(transactionHistory.items))
             return formatTransactionHistory(transactionHistory.items);
         }
         return {};

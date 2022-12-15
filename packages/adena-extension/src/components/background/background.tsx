@@ -45,10 +45,8 @@ export const Background = ({ children }: Props) => {
     }, [currentAccount])
 
     useEffect(() => {
-        if (currentAccountAddress.length > 0) {
-            clearTransactionHistory();
-        }
-    }, [currentAccountAddress])
+        clearTransactionHistory();
+    }, [currentAccount?.getAddress()])
 
     return (
         <>
