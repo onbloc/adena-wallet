@@ -41,7 +41,7 @@ export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState, setLoadingState] = useState('INIT');
   const [wallet] = useWallet();
-  const [, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { initAccounts } = useWalletAccounts(wallet);
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
   const [balances, updateBalances] = useWalletBalances();
 
@@ -73,7 +73,7 @@ export const ChangeNetwork = () => {
     }
     setLoadingState('LOADING');
     await changeNetwork(network.chainId);
-    await updateWalletAccounts();
+    await initAccounts();
   };
 
   return loadinsgState !== 'LOADING' ? (

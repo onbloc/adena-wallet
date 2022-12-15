@@ -16,7 +16,7 @@ export const useGeneralSend = () => {
   const navigate = useNavigate();
   const [balances] = useWalletBalances();
   const [wallet] = useWallet();
-  const [walletAccounts] = useWalletAccounts(wallet);
+  const { accounts } = useWalletAccounts(wallet);
   const [currentAccount, ,] = useCurrentAccount();
   const [address, setAddress] = useState<string>('');
   const [selectName, setSelectName] = useState<string>('');
@@ -33,9 +33,9 @@ export const useGeneralSend = () => {
 
   useEffect(() => {
     (async () => {
-      if (walletAccounts && currentAccount) {
+      if (accounts && currentAccount) {
         const result = await Promise.all([
-          WalletService.getAddressBookByWalletAccounts(walletAccounts).filter(
+          WalletService.getAddressBookByWalletAccounts(accounts).filter(
             (v) => currentAccount.getAddress() !== v.address,
           ),
           WalletService.getAddressBook(),

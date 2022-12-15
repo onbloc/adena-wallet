@@ -36,7 +36,7 @@ export const WalletCreate = () => {
 
   const [wallet, state, loadWallet] = useWallet();
   const [gnoClient, , updateNetworks] = useGnoClient();
-  const [walletAccounts, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { accounts, initAccounts } = useWalletAccounts(wallet);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [balances, updateBalances] = useWalletBalances();
 
@@ -47,10 +47,10 @@ export const WalletCreate = () => {
   }, [gnoClient])
 
   useEffect(() => {
-    if (walletAccounts && walletAccounts.length > 0) {
+    if (accounts && accounts.length > 0) {
       changeCurrentAccount();
     }
-  }, [walletAccounts?.length])
+  }, [accounts?.length])
 
   useEffect(() => {
     if (gnoClient?.chainId && currentAccount?.getAddress()) {
@@ -71,7 +71,7 @@ export const WalletCreate = () => {
         loadWallet();
         break;
       case 'FINISH':
-        updateWalletAccounts();
+        initAccounts();
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);

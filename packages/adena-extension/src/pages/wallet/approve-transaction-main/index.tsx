@@ -18,7 +18,7 @@ export const ApproveTransactionMain = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [wallet, state] = useWallet();
-  const [, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { initAccounts } = useWalletAccounts(wallet);
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -42,7 +42,7 @@ export const ApproveTransactionMain = () => {
   useEffect(() => {
     if (wallet) {
       if (state === 'FINISH') {
-        updateWalletAccounts();
+        initAccounts();
       }
     }
   }, [wallet, state]);

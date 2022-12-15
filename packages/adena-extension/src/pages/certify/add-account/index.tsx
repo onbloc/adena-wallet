@@ -12,11 +12,12 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
+import { WalletAccount } from 'adena-module';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
   const [wallet, walletState] = useWallet();
-  const [walletAccounts] = useWalletAccounts(wallet);
+  const { accounts, addAccount, initAccounts } = useWalletAccounts(wallet);
   const [increaseAccount] = useWalletAccountPathController();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [currentState, setCurrentState] = useState('INIT');
@@ -53,6 +54,11 @@ export const AddAccount = () => {
   };
 
   const onClickConnectHardwareWallet = () => {
+    addAccount(WalletAccount.createByLedgerAddress({
+      address: `${accounts?.length ?? 0 + 1}`,
+      name: `Ledger ${accounts?.length ?? 0 + 1}`
+    })).then(initAccounts);
+    return;
     const popupOption: chrome.windows.CreateData = {
       url: chrome.runtime.getURL(
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
@@ -69,8 +75,8 @@ export const AddAccount = () => {
   };
 
   const updateCurrentAccount = async () => {
-    if (walletAccounts) {
-      const addr = walletAccounts[walletAccounts.length - 1].getAddress();
+    if (accounts) {
+      const addr = accounts[accounts.length - 1].getAddress();
       await changeCurrentAccount(addr);
     }
   }
