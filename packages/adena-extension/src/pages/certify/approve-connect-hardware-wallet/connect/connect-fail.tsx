@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
-import IconConnectFailPermission from '@assets/success-symbol.svg';
+import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 
 const text = {
   title: 'Connection Failed',
