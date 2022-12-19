@@ -10,6 +10,8 @@ import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-butto
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { TransactionService } from '@services/index';
+import { SendConfirmLedgerLoading } from './ledger-loading';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 
 const data = {
   amount: '4,000',
@@ -39,6 +41,7 @@ export const SendConfirm = () => {
   const [currentAccount] = useCurrentAccount();
   const [sendState, setSendState] = useState('INIT');
   const [gnoClient] = useGnoClient();
+  const [isLoadingLedger, setIsLoadingLedger] = useState(false);
 
   useEffect(() => {
     setToaddress(state.address);
@@ -48,14 +51,29 @@ export const SendConfirm = () => {
 
   useEffect(() => {
     if (sendState === 'SEND') {
-      sendToken().then(() => navigate(RoutePath.History));
+      sendBySigner();
     }
   }, [sendState]);
+
+  const sendBySigner = () => {
+    if (currentAccount?.data.signerType === 'LEDGER') {
+      setIsLoadingLedger(true);
+    } else {
+      sendToken().then(() => navigate(RoutePath.History));
+    }
+  };
 
   const sendButtonClick = async () => {
     if (sendState === 'INIT') {
       setSendState('SEND');
     }
+  };
+
+  const cancelLedger = async () => {
+    const connected = await TransportWebUSB.openConnected();
+    await connected?.close();
+    setIsLoadingLedger(false);
+    setSendState('INIT');
   };
 
   const sendToken = async () => {
@@ -79,40 +97,42 @@ export const SendConfirm = () => {
     }
   };
 
-  return (
-    <Wrapper>
-      <HeaderWrap>
-        <LeftArrowBtn onClick={handlePrevButtonClick} />
-        <Text type='header4'>Sending GNOT</Text>
-      </HeaderWrap>
-      <AmountViewBox>
-        <img src={logo} alt='logo' />
-        <Text type='header5'>{`${toamount && toamount} ${data.type}`}</Text>
-      </AmountViewBox>
-      <DownArrowBtn />
-      <AddressViewBox>
-        {toname ? (
-          <Text type='body2Reg' className='name-with-address'>
-            {toname}
-            <span>{toaddress && ` (${toaddress})`}</span>
-          </Text>
-        ) : (
-          <Text type='body2Reg'>{toaddress}</Text>
-        )}
-      </AddressViewBox>
-      <NetworkFeeBox>
-        <dt>Network Fee:</dt>
-        <dd>{`${data.feeAmount} ${data.type}`}</dd>
-      </NetworkFeeBox>
-      <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: cancelButtonClick }}
-        confirmButtonProps={{
-          onClick: sendButtonClick,
-          text: 'Send',
-        }}
-      />
-    </Wrapper>
-  );
+  return isLoadingLedger ?
+    <SendConfirmLedgerLoading sendToken={sendToken} cancel={cancelLedger} /> :
+    (
+      <Wrapper>
+        <HeaderWrap>
+          <LeftArrowBtn onClick={handlePrevButtonClick} />
+          <Text type='header4'>Sending GNOT</Text>
+        </HeaderWrap>
+        <AmountViewBox>
+          <img src={logo} alt='logo' />
+          <Text type='header5'>{`${toamount && toamount} ${data.type}`}</Text>
+        </AmountViewBox>
+        <DownArrowBtn />
+        <AddressViewBox>
+          {toname ? (
+            <Text type='body2Reg' className='name-with-address'>
+              {toname}
+              <span>{toaddress && ` (${toaddress})`}</span>
+            </Text>
+          ) : (
+            <Text type='body2Reg'>{toaddress}</Text>
+          )}
+        </AddressViewBox>
+        <NetworkFeeBox>
+          <dt>Network Fee:</dt>
+          <dd>{`${data.feeAmount} ${data.type}`}</dd>
+        </NetworkFeeBox>
+        <CancelAndConfirmButton
+          cancelButtonProps={{ onClick: cancelButtonClick }}
+          confirmButtonProps={{
+            onClick: sendButtonClick,
+            text: 'Send',
+          }}
+        />
+      </Wrapper>
+    );
 };
 
 const Wrapper = styled.main`

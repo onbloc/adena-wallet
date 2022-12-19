@@ -164,7 +164,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       <div className='item' key={index}>
         <div className='address-wrapper'>
           <span className='address'>{formatAddress(account.getAddress())}</span>
-          <span className='path'>{`m/44'/118'/0'/0/${account.data.index - 1}`}</span>
+          <span className='path'>{`m/44'/118'/0'/0/${account.data.path}`}</span>
         </div>
         <span className={selected ? 'check active' : 'check'} onClick={() => onClickSelectButton(account.getAddress())}>
           <img className='icon-check' src={IconCheck} alt='check-image' />

@@ -1,3 +1,4 @@
+import { HdPath } from "..";
 import { StdSignature } from "./signature";
 import { StdSignDoc } from "./signdoc";
 
@@ -8,6 +9,7 @@ export interface AccountData {
   readonly address: string;
   readonly algo: Algo;
   readonly pubkey: Uint8Array;
+  readonly hdPath: HdPath;
 }
 
 export interface AminoSignResponse {

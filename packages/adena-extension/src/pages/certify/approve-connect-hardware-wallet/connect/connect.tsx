@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, WalletAccount } from 'adena-module';
+import { Wallet, WalletAccount, LedgerSigner } from 'adena-module';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
@@ -31,10 +31,6 @@ export const ApproveConnectHardwareWalletConnect = () => {
       requestPermission();
       return;
     }
-    if (connectState === 'REQUEST_WALLET') {
-      requestHardwareWallet();
-      return;
-    }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.getAccounts().map((account: InstanceType<typeof WalletAccount>) => account.serialize());
       navigate(RoutePath.ApproveHardwareWalletSelectAccount, { state: { accounts: serializedAccounts } });
@@ -63,16 +59,25 @@ export const ApproveConnectHardwareWalletConnect = () => {
     return false;
   };
 
-  const requestHardwareWallet = async () => {
-    setConnectState('REQUEST_WALLET_LOAD');
+  const checkHardwareConnect = async () => {
     try {
-      await TransportWebUSB.openConnected();
+      const wallet = await Wallet.createByLedger([0]);
+      await wallet.initAccounts();
+      setConnectState('REQUEST_WALLET_LOAD');
+    } catch (e) {
+      setConnectState('FAILED');
+    }
+  };
+
+  const requestHardwareWallet = async () => {
+    setConnectState('REQUEST_WALLET');
+    await checkHardwareConnect();
+    try {
       const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
       await wallet.initAccounts();
       setWallet(wallet);
       setConnectState('SUCCESS');
     } catch (e) {
-      console.log(e)
       setConnectState('FAILED');
     }
   };
@@ -88,7 +93,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {
-      return <ConnectRequestWallet active={connectState === 'FAILED'} retry={requestHardwareWallet} />
+      return <ConnectRequestWallet active={connectState === 'FAILED'} requestHardwareWallet={requestHardwareWallet} />
     }
 
     if (connectState === 'REQUEST_WALLET_LOAD') {

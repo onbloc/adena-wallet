@@ -18,20 +18,9 @@ export const createTransaction = async (
   gasWanted: number,
   gasFee?: number,
 ) => {
-  const accountInfo = await gnoClient.getAccount(account.getAddress());
-  const currentAccount = new WalletAccount(account.data);
-  if (account.data.signerType === 'AMINO') {
-    currentAccount.setSigner(account.getSigner());
-  } else if (account.data.signerType === 'LEDGER') {
-    const ledgerWallet = await Wallet.createByLedger([account.data.index - 1]);
-    await ledgerWallet.initAccounts();
-    currentAccount.setSigner(ledgerWallet.getAccounts()[0].getSigner());
-  }
-  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
-  currentAccount.updateByGno({
-    accountNumber: accountInfo.accountNumber,
-    sequence: accountInfo.sequence,
-  });
+  const currentAccount = account.data.signerType === 'LEDGER' ?
+    await createTransactionAccountByLedger(gnoClient, account) :
+    await createTransactionAccount(gnoClient, account);
   const document = Transaction.generateDocument(currentAccount, [message], gasWanted, gasFee);
   const transactionFee = await Transaction.generateTransactionFee(
     currentAccount,
@@ -47,6 +36,46 @@ export const createTransaction = async (
     .build();
   const transactionValue = uint8ArrayToArray(transaction.encodedValue);
   return transactionValue;
+};
+
+const createTransactionAccount = async (
+  gnoClient: InstanceType<typeof GnoClient>,
+  account: InstanceType<typeof WalletAccount>
+) => {
+  const accountInfo = await gnoClient.getAccount(account.getAddress());
+  const currentAccount = new WalletAccount(account.data);
+  try {
+    currentAccount.setSigner(account.getSigner());
+  } catch (e) {
+    console.log(e);
+  }
+  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
+  currentAccount.updateByGno({
+    accountNumber: accountInfo.accountNumber,
+    sequence: accountInfo.sequence,
+  });
+  return currentAccount;
+};
+
+const createTransactionAccountByLedger = async (
+  gnoClient: InstanceType<typeof GnoClient>,
+  account: InstanceType<typeof WalletAccount>
+) => {
+  const accountInfo = await gnoClient.getAccount(account.getAddress());
+  const currentAccount = new WalletAccount(account.data);
+  try {
+    const ledgerWallet = await Wallet.createByLedger([account.data.path]);
+    await ledgerWallet.initAccounts();
+    currentAccount.setSigner(ledgerWallet.getAccounts()[0].getSigner());
+  } catch (e) {
+    console.log(e);
+  }
+  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
+  currentAccount.updateByGno({
+    accountNumber: accountInfo.accountNumber,
+    sequence: accountInfo.sequence,
+  });
+  return currentAccount;
 };
 
 /**
