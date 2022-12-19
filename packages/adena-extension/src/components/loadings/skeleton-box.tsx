@@ -36,7 +36,7 @@ export const SkeletonBoxStyle = styled.div`
       rgba(82, 82, 107, 0) 100%
     );
     background-size: 100% 100%;
-    animation: ${pulseKeyframe} 1.7s linear infinite;
+    animation: ${pulseKeyframe} 1.5s linear infinite;
     content: '';
   }
 `;
