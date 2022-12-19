@@ -2,10 +2,10 @@ import styled, { keyframes } from 'styled-components';
 
 const pulseKeyframe = keyframes`
   to {
-		transform: translateX(100%);
+    background-position-x: -200%;
 	}
   from {
-    transform: translateX(0%);
+    background-position-x: 0%;
   }
 `;
 
@@ -22,17 +22,18 @@ export const SkeletonBoxStyle = styled.div`
     position: absolute;
     display: inline-block;
     top: 0;
-    right: 100%;
-    width: 200%;
+    right: 0;
+    width: 100%;
     height: 100%;
+    z-index: 99;
     background: linear-gradient(
       270deg,
       rgba(82, 82, 107, 0) 0%,
-      rgba(123, 123, 152, 0.32) 30%,
-      rgba(82, 82, 107, 0) 70%,
-      rgba(123, 123, 152, 0.32) 100%
+      rgba(123, 123, 152, 0.32) 48.44%,
+      rgba(82, 82, 107, 0) 100%
     );
-    animation: ${pulseKeyframe} 2s linear infinite;
+    background-size: 200% 100%;
+    animation: ${pulseKeyframe} 1.7s linear infinite;
     content: '';
   }
 `;
