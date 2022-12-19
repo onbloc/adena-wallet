@@ -67,7 +67,7 @@ export const WalletCreate = () => {
   useEffect(() => {
     switch (state) {
       case 'NONE':
-        // loadWallet();
+        loadWallet();
         break;
       case 'FINISH':
         initAccounts();
