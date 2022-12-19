@@ -1,4 +1,4 @@
-import { Transaction, uint8ArrayToArray, WalletAccount, WalletAccountConfig } from 'adena-module';
+import { Transaction, uint8ArrayToArray, Wallet, WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletService } from '..';
 
@@ -20,7 +20,13 @@ export const createTransaction = async (
 ) => {
   const accountInfo = await gnoClient.getAccount(account.getAddress());
   const currentAccount = new WalletAccount(account.data);
-  currentAccount.setSigner(account.getSigner());
+  if (account.data.signerType === 'AMINO') {
+    currentAccount.setSigner(account.getSigner());
+  } else if (account.data.signerType === 'LEDGER') {
+    const ledgerWallet = await Wallet.createByLedger([account.data.index - 1]);
+    await ledgerWallet.initAccounts();
+    currentAccount.setSigner(ledgerWallet.getAccounts()[0].getSigner());
+  }
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   currentAccount.updateByGno({
     accountNumber: accountInfo.accountNumber,
