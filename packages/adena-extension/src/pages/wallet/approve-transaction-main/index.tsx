@@ -9,16 +9,17 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useWallet } from '@hooks/use-wallet';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import { LocalStorageValue } from '@common/values';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
+import { Wallet } from 'adena-module';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import { ApproveLdegerLoading } from './approve-ledger-loading';
 
 export const ApproveTransactionMain = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [wallet, state] = useWallet();
-  const { initAccounts } = useWalletAccounts(wallet);
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -40,19 +41,11 @@ export const ApproveTransactionMain = () => {
   }, [location])
 
   useEffect(() => {
-    if (wallet) {
-      if (state === 'FINISH') {
-        initAccounts();
-      }
-    }
-  }, [wallet, state]);
-
-  useEffect(() => {
     if (gnoClient && currentAccount && requestData) {
       initFavicon();
       initTransactionData();
     } else if (gnoClient && requestData) {
-      initCurrentAccount()
+      initCurrentAccount();
     }
   }, [gnoClient, currentAccount, requestData]);
 
@@ -68,12 +61,21 @@ export const ApproveTransactionMain = () => {
 
   const initTransactionData = async () => {
     if (!gnoClient || !currentAccount) {
-      return;
+      return false;
     }
     try {
+      const account = currentAccount.clone();
+      if (currentAccount.data.signerType === 'AMINO') {
+        account.setSigner(wallet?.getSigner());
+      } else if (currentAccount.data.signerType === 'LEDGER') {
+        const ledgerWallet = await Wallet.createByLedger([currentAccount.data.path]);
+        await ledgerWallet.initAccounts();
+        const ledgerAccount = ledgerWallet.getAccounts()[0];
+        account.setSigner(ledgerAccount.getSigner())
+      }
       const transaction = await TransactionService.createTransactionByContract(
         gnoClient,
-        currentAccount,
+        account,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
@@ -82,9 +84,16 @@ export const ApproveTransactionMain = () => {
       setGasFee(requestData?.data?.gasFee ?? 0);
       setHostname(requestData?.hostname ?? '');
       setTrasactionData(transaction);
+      return true;
+
     } catch (e) {
       console.error(e);
+      const error: any = e;
+      if (error?.message === 'Transaction signing request was rejected by the user') {
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
+      }
     }
+    return false;
   }
 
 
@@ -118,6 +127,20 @@ export const ApproveTransactionMain = () => {
       return 'Send';
     }
     return transactionData.contracts[0]?.function;
+  }
+
+  const cancelLedger = async () => {
+    const connected = await TransportWebUSB.openConnected();
+    await connected?.close();
+    window.close();
+  };
+
+  const renderLoading = () => {
+    if (!currentAccount || currentAccount.data.signerType !== 'LEDGER') {
+      return <LoadingApproveTransaction />
+    }
+
+    return <ApproveLdegerLoading createTransaction={initTransactionData} cancel={cancelLedger} />;
   }
 
   return transactionData ? (
@@ -155,7 +178,7 @@ export const ApproveTransactionMain = () => {
     </Wrapper>
   ) : (
     <LoadingWrapper>
-      <LoadingApproveTransaction />
+      {renderLoading()}
     </LoadingWrapper>
   )
 };

@@ -73,6 +73,10 @@ export class Wallet {
     return privateKey;
   };
 
+  public getSigner = () => {
+    return this.aminoSigner;
+  };
+
   public static createByMnemonic = async (
     seeds: string,
     accountPaths: Array<number> = [0],
