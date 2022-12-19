@@ -176,7 +176,7 @@ export class WalletAccount {
 
   public static createByAminoAccount = (accountData: AccountData) => {
     const { address, algo, pubkey, hdPath } = accountData;
-    const path = hdPath.at(-1)?.toNumber() ?? -1;
+    const path = hdPath?.at(-1)?.toNumber() ?? -1;
     return new WalletAccount({
       address,
       cryptoAlgorithm: algo,
