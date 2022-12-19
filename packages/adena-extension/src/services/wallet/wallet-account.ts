@@ -1,6 +1,16 @@
 import { LocalStorageValue } from '@common/values';
-import { Wallet, WalletAccount, WalletAccountConfig } from 'adena-module';
+import { WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
+
+/**
+ * This function saves accounts in the wallet.
+ *
+ * @param walletAccounts Wallet instnace arrays
+ */
+export const saveAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
+  const serializedAccounts = walletAccounts.map(account => account.serialize());
+  await LocalStorageValue.setByObject('WALLET_ACCOUNTS', serializedAccounts);
+};
 
 /**
  * This function loads accounts in the wallet.
@@ -8,19 +18,31 @@ import { GnoClient } from 'gno-client';
  * @param wallet Wallet instnace
  * @returns WalletAccount instances
  */
-export const loadAccounts = async (
-  wallet: InstanceType<typeof Wallet>,
-  config?: {
-    chainId: string;
-    coinDenom: string;
-    coinMinimalDenom: string;
-    coinDecimals: number;
-  },
-) => {
-  const currentWallet = wallet.clone();
-  const accountNames = await loadAccountNames();
-  await currentWallet.initAccounts(accountNames, config);
-  return currentWallet.getAccounts();
+export const loadAccounts = async (config?: {
+  chainId: string;
+  coinDenom: string;
+  coinMinimalDenom: string;
+  coinDecimals: number;
+}) => {
+  const serializedAccounts = await LocalStorageValue.getToObject<Array<string>>('WALLET_ACCOUNTS');
+  if (!Array.isArray(serializedAccounts)) {
+    return [];
+  }
+  const accounts: Array<InstanceType<typeof WalletAccount>> = [];
+  serializedAccounts.forEach((serializedAccount) => {
+    try {
+      const account = WalletAccount.deserialize(serializedAccount);
+      if (config) {
+        account.setConfig(new WalletAccountConfig(config));
+      }
+      if (!accounts.find(item => item.getAddress() === account.getAddress())) {
+        accounts.push(account);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  return accounts;
 };
 
 /**
@@ -110,6 +132,7 @@ export const decreaseWalletAccountPaths = async () => {
 
 export const clearWalletAccountData = async () => {
   await LocalStorageValue.remove('CURRENT_ACCOUNT_ADDRESS');
+  await LocalStorageValue.remove('WALLET_ACCOUNTS');
   await LocalStorageValue.remove('WALLET_ACCOUNT_NAMES');
   await LocalStorageValue.remove('WALLET_ACCOUNT_PATHS');
   await LocalStorageValue.remove('ESTABLISH_SITES');

@@ -1,4 +1,5 @@
 import { AccountData, Secp256k1HdWallet } from '@/amino';
+import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
 import { WalletAccountConfig } from '.';
 
 interface AccountHistory {
@@ -19,6 +20,7 @@ interface AccountHistory {
 
 interface WalletAccountArguments {
   index?: number;
+  signerType?: 'AMINO' | 'LEDGER';
   status?: 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
   name?: string;
   accountNumber?: string;
@@ -30,13 +32,15 @@ interface WalletAccountArguments {
   balance?: string;
   histories?: Array<AccountHistory>;
   config?: WalletAccountConfig;
-  aminoSigner?: Secp256k1HdWallet;
+  signer?: Secp256k1HdWallet | LedgerSigner;
 }
 
 export class WalletAccount {
   private index: number;
 
-  private aminoSigner: Secp256k1HdWallet | undefined;
+  private signerType: 'AMINO' | 'LEDGER';
+
+  private signer: Secp256k1HdWallet | LedgerSigner | undefined;
 
   private status: 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
 
@@ -62,7 +66,8 @@ export class WalletAccount {
 
   constructor(args: WalletAccountArguments) {
     this.index = args.index ?? 0;
-    this.aminoSigner = args.aminoSigner;
+    this.signerType = args.signerType ?? 'AMINO';
+    this.signer = args.signer;
     this.name = args.name ?? `Account ${this.index}`;
     this.status = args.status ?? 'NONE';
     this.accountNumber = args.accountNumber;
@@ -76,6 +81,7 @@ export class WalletAccount {
   public get data() {
     return {
       index: this.index,
+      signerType: this.signerType,
       name: this.name,
       status: this.status,
       accountNumber: this.accountNumber,
@@ -92,9 +98,15 @@ export class WalletAccount {
 
   public clone = () => {
     const account = new WalletAccount(this.data);
-    account.setSigner(this.getSigner());
-    account.setConfig(this.getConfig().clone());
+    try {
+      account.setSigner(this.getSigner());
+      account.setConfig(this.getConfig()?.clone());
+    } catch (e) { }
     return account;
+  };
+
+  public serialize = () => {
+    return JSON.stringify(this.data);
   };
 
   public getAccountNumber = () => {
@@ -109,11 +121,11 @@ export class WalletAccount {
     return this.address;
   };
 
-  public getSigner = (): Secp256k1HdWallet => {
-    if (!this.aminoSigner) {
+  public getSigner = (): Secp256k1HdWallet | LedgerSigner => {
+    if (!this.signer) {
       throw Error();
     }
-    return this.aminoSigner;
+    return this.signer;
   };
 
   public getConfig = () => {
@@ -129,8 +141,8 @@ export class WalletAccount {
     this.name = name;
   };
 
-  public setSigner = (signer: Secp256k1HdWallet) => {
-    this.aminoSigner = signer;
+  public setSigner = (signer: Secp256k1HdWallet | LedgerSigner) => {
+    this.signer = signer;
   };
 
   public setConfig = (config: WalletAccountConfig) => {
@@ -160,4 +172,34 @@ export class WalletAccount {
       publicKey: pubkey,
     });
   };
+
+  public static createByLedgerAddress = ({
+    address,
+    name,
+    config
+  }: {
+    address: string;
+    name?: string;
+    config?: WalletAccountConfig;
+  }) => {
+    return new WalletAccount({
+      address,
+      signerType: 'LEDGER',
+      status: 'ACTIVE',
+      name: name ?? 'Ledger',
+      config
+    });
+  };
+
+  public static deserialize(serialized: string) {
+    try {
+      const deserializedValue = JSON.parse(serialized);
+      if (deserializedValue?.address) {
+        return new WalletAccount({ ...deserializedValue });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    throw new Error('Wallet Account deserialze error');
+  }
 }

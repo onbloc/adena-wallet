@@ -24,7 +24,8 @@
       "@components/*": ["src/components/*"],
       "@states/*": ["src/states/*"],
       "@common/*": ["src/common/*"],
-      "@inject/*": ["src/inject/*"]
+      "@inject/*": ["src/inject/*"],
+      "@assets/*": ["src/assets/*"]
     }
   },
   "include": ["./src/**/*", "src/custom.d.ts"]

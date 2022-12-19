@@ -1,4 +1,4 @@
-# Adena Browser Extension
+# Adena Wallet
 
 [![Twitter: Adena Wallet](https://img.shields.io/twitter/follow/adenaapp?style=social)](https://twitter.com/adenaapp)
 ![Banner](banner.png)

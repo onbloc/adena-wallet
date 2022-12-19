@@ -36,15 +36,15 @@ export const History = () => {
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
-  const [transactionItems, setTransactionItems] = useState(getHistory());
+  const [transactionItems, setTransactionItems] = useState<{ [key in string]: any }>({});
 
   useEffect(() => {
     initHistory();
   }, [])
 
   useEffect(() => {
-    setTransactionItems(getHistory());
-  }, [transactionHistory.items.length])
+    getHistory().then(setTransactionItems);
+  }, [transactionHistory.address, transactionHistory.items.length])
 
   const initHistory = async () => {
     await updateLastHistory();

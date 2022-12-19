@@ -12,11 +12,12 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
+import { WalletAccount } from 'adena-module';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
   const [wallet, walletState] = useWallet();
-  const [walletAccounts] = useWalletAccounts(wallet);
+  const { accounts, addAccount, initAccounts } = useWalletAccounts(wallet);
   const [increaseAccount] = useWalletAccountPathController();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [currentState, setCurrentState] = useState('INIT');
@@ -52,9 +53,25 @@ export const AddAccount = () => {
     await setCurrentState('LOADING');
   };
 
+  const onClickConnectHardwareWallet = () => {
+    const popupOption: chrome.windows.CreateData = {
+      url: chrome.runtime.getURL(
+        `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
+      ),
+      type: 'popup',
+      height: 570,
+      width: 380,
+      left: 800,
+      top: 300,
+    };
+
+    window.close();
+    chrome.windows.create(popupOption);
+  };
+
   const updateCurrentAccount = async () => {
-    if (walletAccounts) {
-      const addr = walletAccounts[walletAccounts.length - 1].getAddress();
+    if (accounts) {
+      const addr = accounts[accounts.length - 1].getAddress();
       await changeCurrentAccount(addr);
     }
   }
@@ -80,6 +97,14 @@ export const AddAccount = () => {
         </Text>
         <Text className='title-desc' type='body2Reg'>
           Import an existing account
+        </Text>
+      </GrayButtonBox>
+      <GrayButtonBox onClick={onClickConnectHardwareWallet}>
+        <Text className='title-arrow' type='body1Bold'>
+          Connect Hardware Wallet
+        </Text>
+        <Text className='title-desc' type='body2Reg'>
+          Add a ledger account
         </Text>
       </GrayButtonBox>
       <Button

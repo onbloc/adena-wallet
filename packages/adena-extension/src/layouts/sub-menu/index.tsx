@@ -47,7 +47,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const [wallet] = useWallet();
   const [, loadWallet] = useWalletLoader();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [walletAccounts] = useWalletAccounts(wallet);
+  const { accounts } = useWalletAccounts(wallet);
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -89,9 +89,9 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
           {!login && currentAccount && (
             <Body>
               <ListWrapper>
-                {walletAccounts &&
-                  walletAccounts.length > 0 &&
-                  walletAccounts.map((v, i) => (
+                {accounts &&
+                  accounts.length > 0 &&
+                  accounts.map((v, i) => (
                     <ListItem key={i} onClick={() => changeAccountHandler(v.data.address)}>
                       <Text type='body2Reg' display='inline-flex'>
                         {formatNickname(v.data.name, 10)}

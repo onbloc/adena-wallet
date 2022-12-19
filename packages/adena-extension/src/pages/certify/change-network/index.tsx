@@ -2,8 +2,6 @@ import theme from '@styles/theme';
 import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import ListBox from '@components/list-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +11,8 @@ import { GnoClient } from 'gno-client';
 import { RoutePath } from '@router/path';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
+import { useWalletBalances } from '@hooks/use-wallet-balances';
+import LoadingWallet from '@components/loading-screen/loading-wallet';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -39,28 +39,47 @@ const LeftWrap = styled.div`
 
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
-  const [state] = useRecoilState(WalletState.state);
+  const [loadinsgState, setLoadingState] = useState('INIT');
   const [wallet] = useWallet();
-  const [, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { initAccounts } = useWalletAccounts(wallet);
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
+  const [balances, updateBalances] = useWalletBalances();
 
   useEffect(() => {
     updateNetworks();
   }, []);
 
+  useEffect(() => {
+    if (loadinsgState === 'LOADING') {
+      updateBalances();
+    }
+  }, [currentNetwork]);
+
+  useEffect(() => {
+    if (loadinsgState === 'LOADING') {
+      setLoadingState('FINISH');
+    }
+  }, [balances]);
+
+  useEffect(() => {
+    if (loadinsgState === 'FINISH') {
+      navigate(RoutePath.Wallet);
+    }
+  }, [loadinsgState]);
+
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
     if (network.chainId === currentNetwork?.chainId) {
       return;
     }
+    setLoadingState('LOADING');
     await changeNetwork(network.chainId);
-    await updateWalletAccounts();
-    navigate(RoutePath.Wallet);
+    await initAccounts();
   };
 
-  return (
+  return loadinsgState !== 'LOADING' ? (
     <Wrapper>
       <Text type='header4'>Change Network</Text>
-      {state === 'FINISH' && networks.length > 0 ? (
+      {networks.length > 0 ? (
         <>
           {networks.map((network: InstanceType<typeof GnoClient>, index: number) => (
             <ListBox
@@ -105,5 +124,7 @@ export const ChangeNetwork = () => {
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>
+  ) : (
+    <LoadingWallet />
   );
 };

@@ -36,7 +36,7 @@ export const WalletCreate = () => {
 
   const [wallet, state, loadWallet] = useWallet();
   const [gnoClient, , updateNetworks] = useGnoClient();
-  const [walletAccounts, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { accounts, initAccounts } = useWalletAccounts(wallet);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [balances, updateBalances] = useWalletBalances();
 
@@ -44,13 +44,13 @@ export const WalletCreate = () => {
     if (!gnoClient) {
       updateNetworks();
     }
-  }, [gnoClient])
+  }, [gnoClient]);
 
   useEffect(() => {
-    if (walletAccounts && walletAccounts.length > 0) {
+    if (accounts && accounts.length > 0) {
       changeCurrentAccount();
     }
-  }, [walletAccounts?.length])
+  }, [accounts?.length]);
 
   useEffect(() => {
     if (gnoClient?.chainId && currentAccount?.getAddress()) {
@@ -58,12 +58,11 @@ export const WalletCreate = () => {
     }
   }, [gnoClient?.chainId, currentAccount?.getAddress()]);
 
-
   useEffect(() => {
     if (balances.length > 0) {
       navigate(RoutePath.Wallet);
     }
-  }, [balances])
+  }, [balances]);
 
   useEffect(() => {
     switch (state) {
@@ -71,7 +70,7 @@ export const WalletCreate = () => {
         loadWallet();
         break;
       case 'FINISH':
-        updateWalletAccounts();
+        initAccounts();
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);
@@ -82,38 +81,32 @@ export const WalletCreate = () => {
   }, [state]);
 
   const isLoading = () => {
-    if (
-      state !== null &&
-      state !== 'LOADING' &&
-      state !== 'NONE' &&
-      state !== 'FINISH'
-    ) {
+    if (state !== null && state !== 'LOADING' && state !== 'NONE' && state !== 'FINISH') {
       return false;
     }
     return true;
-  }
+  };
 
   return (
     <>
-      {
-        isLoading() ? (
-          <LoadingWallet />
-        ) : (
-          <Wrapper>
-            <Logo src={logo} alt='logo' />
-            <Button
-              fullWidth
-              hierarchy={ButtonHierarchy.Primary}
-              margin='auto 0px 12px'
-              onClick={handleCreateButtonClick}
-            >
-              <Text type='body1Bold'>Create New Wallet</Text>
-            </Button>
-            <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={handleRestoreButtonClick}>
-              <Text type='body1Bold'>Restore Wallet</Text>
-            </Button>
-          </Wrapper>
-        )}
+      {isLoading() ? (
+        <LoadingWallet />
+      ) : (
+        <Wrapper>
+          <Logo src={logo} alt='logo' />
+          <Button
+            fullWidth
+            hierarchy={ButtonHierarchy.Primary}
+            margin='auto 0px 12px'
+            onClick={handleCreateButtonClick}
+          >
+            <Text type='body1Bold'>Create New Wallet</Text>
+          </Button>
+          <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={handleRestoreButtonClick}>
+            <Text type='body1Bold'>Restore Wallet</Text>
+          </Button>
+        </Wrapper>
+      )}
     </>
   );
 };

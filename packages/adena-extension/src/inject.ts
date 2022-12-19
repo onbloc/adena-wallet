@@ -17,6 +17,11 @@ const init = () => {
       const response = await executor.GetAccount();
       return response;
     },
+    async Sign(mesasage: RequestDocontractMessage) {
+      const executor = new AdenaExecutor();
+      const response = await executor.SignAmino(mesasage);
+      return response;
+    },
   };
 
   window.adena = adena;

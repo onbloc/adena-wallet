@@ -18,7 +18,7 @@ export const ApproveTransactionMain = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [wallet, state] = useWallet();
-  const [, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { initAccounts } = useWalletAccounts(wallet);
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -42,7 +42,7 @@ export const ApproveTransactionMain = () => {
   useEffect(() => {
     if (wallet) {
       if (state === 'FINISH') {
-        updateWalletAccounts();
+        initAccounts();
       }
     }
   }, [wallet, state]);
@@ -74,7 +74,7 @@ export const ApproveTransactionMain = () => {
       const transaction = await TransactionService.createTransactionByContract(
         gnoClient,
         currentAccount,
-        requestData?.data?.message,
+        requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
         requestData?.data?.memo
@@ -114,10 +114,10 @@ export const ApproveTransactionMain = () => {
     if (!transactionData) {
       return '';
     }
-    if (`${transactionData.contractType}`.indexOf('bank.MsgSend') > -1) {
+    if (`${transactionData.contracts[0]?.type}`.indexOf('bank.MsgSend') > -1) {
       return 'Send';
     }
-    return transactionData.contractFunction;
+    return transactionData.contracts[0]?.function;
   }
 
   return transactionData ? (
@@ -132,7 +132,7 @@ export const ApproveTransactionMain = () => {
       <BundleDataBox>
         <BundleDL>
           <dt>Contract</dt>
-          <dd id='atv_contract'>{transactionData?.contractType ?? ''}</dd>
+          <dd id='atv_contract'>{transactionData.contracts[0]?.type ?? ''}</dd>
         </BundleDL>
         <BundleDL>
           <dt>Function</dt>

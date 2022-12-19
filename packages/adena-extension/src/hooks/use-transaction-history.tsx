@@ -1,19 +1,21 @@
 import { GnoClientState, WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
 import { HistoryItem } from "gno-client/src/api/response";
+import { LocalStorageValue } from "@common/values";
 
 export const useTransactionHistory = (): [
-    getHistory: () => { [key in string]: Array<HistoryItem> },
+    getHistory: () => Promise<{ [key in string]: Array<HistoryItem> }>,
     updateLastTransactionHistory: () => Promise<boolean>,
     updateNextTransactionHistory: () => Promise<boolean>
 ] => {
 
     const [gnoClient] = useRecoilState(GnoClientState.current);
-    const [currentAccount] = useRecoilState(WalletState.currentAccount);
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
-    const getHistory = () => {
-        if (transactionHistory.address === currentAccount?.getAddress()) {
+    const getHistory = async () => {
+        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        if (transactionHistory.address === address) {
+            console.log(formatTransactionHistory(transactionHistory.items))
             return formatTransactionHistory(transactionHistory.items);
         }
         return {};
@@ -40,8 +42,9 @@ export const useTransactionHistory = (): [
     }
 
     const updateNextTransactionHistory = async () => {
-        if (currentAccount && !transactionHistory.isFinish) {
-            if (currentAccount.getAddress() === transactionHistory.address) {
+        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        if (address && !transactionHistory.isFinish) {
+            if (address === transactionHistory.address) {
                 return await fetchTransactionHistory(transactionHistory.currentPage + 1);
             }
         }
@@ -49,9 +52,9 @@ export const useTransactionHistory = (): [
     }
 
     const fetchTransactionHistory = async (page: number) => {
-        if (gnoClient && currentAccount) {
+        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        if (gnoClient && address) {
             const currentPage = page ?? 0;
-            const address = currentAccount.getAddress();
             try {
                 const response = await gnoClient.getTransactionHistory(address, currentPage * 20);
                 const lastPage = currentPage > transactionHistory.currentPage ? currentPage : transactionHistory.currentPage;

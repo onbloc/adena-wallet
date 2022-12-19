@@ -1,7 +1,32 @@
 import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
+import { TransactionService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { loadGnoClient } from './wallet';
+
+export const signAmino = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  const gnoClient = await loadGnoClient();
+  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+    return;
+  }
+  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+    return;
+  }
+  const signedDocumnet = await TransactionService.createAminoSign(
+    gnoClient,
+    currentAccountAddress,
+    requestData?.data?.messages,
+    requestData?.data?.gasWanted,
+    requestData?.data?.gasFee,
+    requestData?.data?.memo,
+  );
+  sendResponse(InjectionMessageInstance.success('SIGN_SUCCESS', signedDocumnet, requestData.key));
+}
 
 export const doContract = async (
   requestData: InjectionMessage,
@@ -40,30 +65,32 @@ const validateTransactionMessage = (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const message = requestData.data?.message;
-  switch (message?.type) {
-    case '/bank.MsgSend':
-      if (currentAccountAddress !== message.value.from_address) {
+  const messages = requestData.data?.messages;
+  for (const message of messages) {
+    switch (message?.type) {
+      case '/bank.MsgSend':
+        if (currentAccountAddress !== message.value.from_address) {
+          sendResponse(
+            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+          );
+          return false;
+        }
+        break;
+      case '/vm.m_call':
+        if (currentAccountAddress !== message.value.caller) {
+          sendResponse(
+            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+          );
+          return false;
+        }
+        break;
+      case '/vm.m_addpkg':
+      default:
         sendResponse(
-          InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+          InjectionMessageInstance.failure('UNSUPPORTED_TYPE', requestData?.data, requestData?.key),
         );
         return false;
-      }
-      break;
-    case '/vm.m_call':
-      if (currentAccountAddress !== message.value.caller) {
-        sendResponse(
-          InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
-        );
-        return false;
-      }
-      break;
-    case '/vm.m_addpkg':
-    default:
-      sendResponse(
-        InjectionMessageInstance.failure('UNSUPPORTED_TYPE', requestData?.data, requestData?.key),
-      );
-      return false;
+    }
   }
   return true;
 };
