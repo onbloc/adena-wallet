@@ -1,11 +1,14 @@
 import styled, { keyframes } from 'styled-components';
 
 const pulseKeyframe = keyframes`
-  to {
-    background-position-x: -200%;
-	}
-  from {
-    background-position-x: 0%;
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(50%);
+  }
+  100% {
+    transform: translateX(130%);
   }
 `;
 
@@ -29,10 +32,10 @@ export const SkeletonBoxStyle = styled.div`
     background: linear-gradient(
       270deg,
       rgba(82, 82, 107, 0) 0%,
-      rgba(123, 123, 152, 0.32) 48.44%,
+      rgba(123, 123, 152, 0.32) 50%,
       rgba(82, 82, 107, 0) 100%
     );
-    background-size: 200% 100%;
+    background-size: 100% 100%;
     animation: ${pulseKeyframe} 1.7s linear infinite;
     content: '';
   }
