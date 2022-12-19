@@ -21,6 +21,7 @@ export enum RoutePath {
   Send = '/wallet/send',
   GeneralSend = '/wallet/general-send',
   SendConfirm = '/wallet/send-confirm',
+  SendLedgerReject = '/wallet/send-confirm/reject',
   TokenDetails = '/wallet/token-details',
   ApproveLogin = '/approve/wallet/login',
   ApproveTransaction = '/approve/wallet/transaction',

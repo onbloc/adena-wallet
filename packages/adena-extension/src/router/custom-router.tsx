@@ -41,6 +41,7 @@ import {
   ApproveConnectHardwareWalletInit,
   ApproveConnectHardwareWalletSelectAccount
 } from '@pages/certify/approve-connect-hardware-wallet';
+import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 
 export const CustomRouter = () => {
 
@@ -69,6 +70,7 @@ export const CustomRouter = () => {
         <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
         <Route path={RoutePath.GeneralSend} element={<GeneralSend />} />
         <Route path={RoutePath.SendConfirm} element={<SendConfirm />} />
+        <Route path={RoutePath.SendLedgerReject} element={<SendConfirmReject />} />
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />

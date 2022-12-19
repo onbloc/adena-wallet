@@ -1,5 +1,6 @@
 import { AccountData, Secp256k1HdWallet } from '@/amino';
 import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
+import { HdPath } from '@/crypto';
 import { WalletAccountConfig } from '.';
 
 interface AccountHistory {
@@ -33,6 +34,7 @@ interface WalletAccountArguments {
   histories?: Array<AccountHistory>;
   config?: WalletAccountConfig;
   signer?: Secp256k1HdWallet | LedgerSigner;
+  path?: number;
 }
 
 export class WalletAccount {
@@ -64,6 +66,8 @@ export class WalletAccount {
 
   private config: WalletAccountConfig;
 
+  private path: number;
+
   constructor(args: WalletAccountArguments) {
     this.index = args.index ?? 0;
     this.signerType = args.signerType ?? 'AMINO';
@@ -76,6 +80,7 @@ export class WalletAccount {
     this.balance = args.balance ?? '';
     this.histories = args.histories ? [...args.histories] : [];
     this.config = args.config ?? WalletAccountConfig.createConfigByTest2();
+    this.path = args.path ?? -1;
   }
 
   public get data() {
@@ -93,6 +98,7 @@ export class WalletAccount {
       balance: this.balance,
       histories: [...this.histories],
       config: this.config,
+      path: this.path
     };
   }
 
@@ -145,6 +151,10 @@ export class WalletAccount {
     this.signer = signer;
   };
 
+  public setPath = (path: HdPath) => {
+    this.path = path[-1].toNumber();
+  };
+
   public setConfig = (config: WalletAccountConfig) => {
     this.config = config;
   };
@@ -165,29 +175,35 @@ export class WalletAccount {
   };
 
   public static createByAminoAccount = (accountData: AccountData) => {
-    const { address, algo, pubkey } = accountData;
+    const { address, algo, pubkey, hdPath } = accountData;
+    const path = hdPath.at(-1)?.toNumber() ?? -1;
     return new WalletAccount({
       address,
       cryptoAlgorithm: algo,
       publicKey: pubkey,
+      path
     });
   };
 
   public static createByLedgerAddress = ({
     address,
     name,
-    config
+    config,
+    hdPath
   }: {
     address: string;
     name?: string;
     config?: WalletAccountConfig;
+    hdPath?: HdPath;
   }) => {
+    const path = hdPath?.at(-1)?.toNumber() ?? -1;
     return new WalletAccount({
       address,
       signerType: 'LEDGER',
       status: 'ACTIVE',
       name: name ?? 'Ledger',
-      config
+      config,
+      path
     });
   };
 
