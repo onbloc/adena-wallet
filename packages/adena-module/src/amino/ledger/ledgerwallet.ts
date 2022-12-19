@@ -13,7 +13,7 @@ import { serializeSignToGnoDoc } from '../secp256k1hdwallet';
 import Transport from '@ledgerhq/hw-transport';
 import { AddressAndPubkey, LedgerConnector, LedgerConnectorOptions } from './ledgerconnector';
 
-  
+
 export class LedgerSigner implements OfflineAminoSigner {
   private readonly connector: LedgerConnector;
   private readonly hdPaths: readonly HdPath[];
@@ -28,7 +28,8 @@ export class LedgerSigner implements OfflineAminoSigner {
     if (!this.accounts) {
       const pubkeys = await this.connector.getPubkeys();
       this.accounts = await Promise.all(
-        pubkeys.map(async (pubkey) => ({
+        pubkeys.map(async (pubkey, index) => ({
+          hdPath: this.hdPaths[index],
           algo: "secp256k1" as const,
           address: await this.connector.getCosmosAddress(pubkey),
           pubkey: pubkey,

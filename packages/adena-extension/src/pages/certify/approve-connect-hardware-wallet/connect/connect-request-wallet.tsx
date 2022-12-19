@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import IconConnectRequestHardwareWallet from '@assets/connect-request-hardware-wallet.svg';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Open Cosmos App\nin Your Ledger',
@@ -30,10 +32,25 @@ const Wrapper = styled.main`
 
 interface Props {
   active: boolean;
-  retry: () => void;
+  requestHardwareWallet: () => Promise<void>;
 }
 
-export const ConnectRequestWallet = ({ active, retry }: Props) => {
+export const ConnectRequestWallet = ({ active, requestHardwareWallet }: Props) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    requestHardwareWallet();
+  }, []);
+
+  useEffect(() => {
+    if (active) {
+      setTimeout(requestHardwareWallet, 1000);
+    }
+  }, [active]);
+
+  const onClickClose = () => {
+    navigate(RoutePath.ApproveHardwareWalletInit);
+  };
 
   return (
     <Wrapper>
@@ -41,12 +58,11 @@ export const ConnectRequestWallet = ({ active, retry }: Props) => {
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Primary}
+        hierarchy={ButtonHierarchy.Dark}
         margin='auto 0px 0px'
-        onClick={retry}
-        disabled={!active}
+        onClick={onClickClose}
       >
-        <Text type='body1Bold'>Retry</Text>
+        <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>
   );

@@ -293,10 +293,11 @@ export class Secp256k1HdWallet implements OfflineAminoSigner {
 
   public async getAccounts(): Promise<readonly AccountData[]> {
     const accountsWithPrivkeys = await this.getAccountsWithPrivkeys();
-    return accountsWithPrivkeys.map(({ algo, pubkey, address }) => ({
+    return accountsWithPrivkeys.map(({ algo, pubkey, address, hdPath }) => ({
       algo: algo,
       pubkey: pubkey,
       address: address,
+      hdPath: hdPath
     }));
   }
 
@@ -393,6 +394,7 @@ export class Secp256k1HdWallet implements OfflineAminoSigner {
         const { privkey, pubkey } = await this.getKeyPair(hdPath);
         const address = toBech32(prefix, rawSecp256k1PubkeyToRawAddress(pubkey));
         return {
+          hdPath: hdPath,
           algo: 'secp256k1' as const,
           privkey: privkey,
           pubkey: pubkey,
