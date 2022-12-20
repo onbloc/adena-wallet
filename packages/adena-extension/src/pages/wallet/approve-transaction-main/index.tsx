@@ -81,9 +81,9 @@ export const ApproveTransactionMain = () => {
         requestData?.data?.gasFee,
         requestData?.data?.memo
       );
+      setTrasactionData(transaction);
       setGasFee(requestData?.data?.gasFee ?? 0);
       setHostname(requestData?.hostname ?? '');
-      setTrasactionData(transaction);
       return true;
 
     } catch (e) {
@@ -119,14 +119,14 @@ export const ApproveTransactionMain = () => {
     chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData?.data, requestData?.key));
   };
 
-  const getContractFunctionText = () => {
+  const getContractFunctionText = ({ type = '', functionName = '' }: { type?: string; functionName?: string }) => {
     if (!transactionData) {
       return '';
     }
-    if (`${transactionData.contracts[0]?.type}`.indexOf('bank.MsgSend') > -1) {
-      return 'Send';
+    if (`${type}`.indexOf('bank.MsgSend') > -1) {
+      return 'Transfer';
     }
-    return transactionData.contracts[0]?.function;
+    return functionName;
   }
 
   const cancelLedger = async () => {
@@ -143,6 +143,26 @@ export const ApproveTransactionMain = () => {
     return <ApproveLdegerLoading createTransaction={initTransactionData} cancel={cancelLedger} />;
   }
 
+  const renderContracts = () => {
+    if (!transactionData || !Array.isArray(transactionData.contracts)) {
+      return <></>;
+    }
+
+    return transactionData.contracts.map((contract, index) => (
+      <BundleDataBox key={index}>
+        <BundleDL>
+          <dt>Contract</dt>
+          <dd id='atv_contract'>{contract?.type ?? ''}</dd>
+        </BundleDL>
+        <BundleDL>
+          <dt>Function</dt>
+          <dd id='atv_function'>{getContractFunctionText({ type: contract?.type, functionName: contract?.function })}</dd>
+        </BundleDL>
+      </BundleDataBox>
+    )
+    );
+  };
+
   return transactionData ? (
     <Wrapper>
       <Text type='header4'>Approve Transaction</Text>
@@ -152,16 +172,7 @@ export const ApproveTransactionMain = () => {
           {hostname}
         </Text>
       </RoundedBox>
-      <BundleDataBox>
-        <BundleDL>
-          <dt>Contract</dt>
-          <dd id='atv_contract'>{transactionData.contracts[0]?.type ?? ''}</dd>
-        </BundleDL>
-        <BundleDL>
-          <dt>Function</dt>
-          <dd id='atv_function'>{getContractFunctionText()}</dd>
-        </BundleDL>
-      </BundleDataBox>
+      {renderContracts()}
       <RoundedDataBox className='sub-info'>
         <RoundedDL>
           <dt>Network Fee:</dt>

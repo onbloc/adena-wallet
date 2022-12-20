@@ -121,7 +121,8 @@ export const createTransactionByContract = async (
     contracts: messages.map(message => {
       return {
         type: message?.type,
-        function: message?.value?.func
+        function: message?.value?.func,
+        value: message?.value
       }
     }),
     gasWanted: document.fee.gas,
