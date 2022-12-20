@@ -127,6 +127,7 @@ export const createTransactionByContract = async (
     }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
+    document
   };
 };
 

@@ -15,6 +15,9 @@ import LoadingApproveTransaction from '@components/loading-screen/loading-approv
 import { Wallet } from 'adena-module';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { ApproveLdegerLoading } from './approve-ledger-loading';
+import Button from '@components/buttons/button';
+import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import IconArraowUp from '@assets/arrowS-up-gray.svg';
 
 export const ApproveTransactionMain = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
@@ -27,6 +30,7 @@ export const ApproveTransactionMain = () => {
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>()
   const [favicon, setFavicon] = useState<any>(null);
+  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
 
   useEffect(() => {
     if (!gnoClient) {
@@ -163,6 +167,23 @@ export const ApproveTransactionMain = () => {
     );
   };
 
+  const renderTransactionInfo = () => {
+    const buttonText = visibleTransactionInfo ? 'Hide Transaction Data' : 'View Transaction Data'
+    return (
+      <TransactionInfoBox>
+        <Button className='visible-button' onClick={() => setVisibleTransactionInfo(!visibleTransactionInfo)}>
+          {`${buttonText}`}
+          <img src={visibleTransactionInfo ? IconArraowUp : IconArraowDown} />
+        </Button>
+        {
+          visibleTransactionInfo && (
+            <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
+          )
+        }
+      </TransactionInfoBox>
+    )
+  };
+
   return transactionData ? (
     <Wrapper>
       <Text type='header4'>Approve Transaction</Text>
@@ -179,6 +200,7 @@ export const ApproveTransactionMain = () => {
           <dd>{`${gasFee * 0.000001} GNOT`}</dd>
         </RoundedDL>
       </RoundedDataBox>
+      {renderTransactionInfo()}
       <CancelAndConfirmButton
         cancelButtonProps={{ onClick: cancelEvent }}
         confirmButtonProps={{
@@ -197,14 +219,16 @@ export const ApproveTransactionMain = () => {
 const LoadingWrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  height: calc(100vh - 48px);
+  min-height: calc(100vh - 48px);
+  height: auto;
   padding: 0 20px 24px 20px;
 `;
 
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  height: calc(100vh - 48px);
+  min-height: calc(100vh - 48px);
+  height: auto;
   padding: 24px 20px;
   .logo {
     margin: 24px auto;
@@ -266,6 +290,46 @@ const RoundedDataBox = styled(DataBoxStyle)`
   dt {
     color: ${({ theme }) => theme.color.neutral[9]};
   }
+  margin-bottom: 10px;
+`;
+
+const TransactionInfoBox = styled(DataBoxStyle)`
+  .visible-button {
+    color: ${({ theme }) => theme.color.neutral[9]};
+    height: fit-content;
+    margin-bottom: 10px;
+
+    img {
+      margin-left: 3px;
+    }
+  }
+  .raw-info-textarea {
+    width: 100%;
+    height: 120px;
+    overflow: auto;
+    border-radius: 24px;
+    background-color: ${({ theme }) => theme.color.neutral[8]};
+    border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+    padding: 12px;
+    ${({ theme }) => theme.fonts.body2Reg};
+    resize: none;
+    margin-bottom: 10px;
+  }
+  .raw-info-textarea::-webkit-scrollbar {
+    width: 2px;
+    padding: 1px 1px 1px 0px;
+    margin-right: 10px;
+  }
+
+  .raw-info-textarea::-webkit-scrollbar-thumb {
+    background-color: darkgrey;
+  }
+  
+  .raw-info-textarea::-webkit-resizer {
+    display: none !important;
+  }
+  
+  margin-bottom: 10px;
 `;
 
 const BundleDL = styled(DLWrapStyle)`
