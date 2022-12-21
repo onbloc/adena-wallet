@@ -302,7 +302,7 @@ export const useTransactionHistoryInfo = (): [{
         }
         const isSend = getFunctionName(transactionItem) === 'Send';
         return {
-            type: isSend ? "Send" : "From",
+            type: isSend ? "To" : "From",
             address: isSend ?
                 formatAddress(transactionItem.to ?? '', 4) :
                 formatAddress(transactionItem.from ?? '', 4)
