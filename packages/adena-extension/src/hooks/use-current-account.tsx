@@ -5,6 +5,7 @@ import { GnoClientState, WalletState } from '@states/index';
 import { WalletAccount } from 'adena-module';
 import { useEffect } from 'react';
 import { useRecoilState } from 'recoil';
+import { useWallet } from './use-wallet';
 
 export const useCurrentAccount = (): [
   account: InstanceType<typeof WalletAccount> | null,
@@ -18,11 +19,14 @@ export const useCurrentAccount = (): [
   const [gnoClient] = useRecoilState(GnoClientState.current);
   const [walletAccounts] = useRecoilState(WalletState.accounts);
   const [, setBalances] = useRecoilState(WalletState.balances);
+  const [wallet] = useWallet();
 
   useEffect(() => {
-    if (currentAccount?.getAddress()) {
-      updateCurrentName();
+    if (!currentAccount) {
+      return;
     }
+    updateCurrentName();
+
   }, [currentAccount?.getAddress()])
 
   const updateCurrentName = async () => {
@@ -76,7 +80,9 @@ export const useCurrentAccount = (): [
     );
     const changedCurrentAccount =
       accountIndex > 0 ? currentAccounts[accountIndex] : currentAccounts[0];
-
+    if (changedCurrentAccount.data.signerType === 'AMINO') {
+      changedCurrentAccount.setSigner(wallet?.getSigner());
+    }
     updateCurrentAccountName(changedCurrentAccount);
     setCurrentAccount(changedCurrentAccount);
   };
