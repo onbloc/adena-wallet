@@ -35,13 +35,13 @@ export const AddAccount = () => {
       default:
         break;
     }
-  }, [currentState, walletState])
+  }, [currentState, walletState]);
 
   useEffect(() => {
     if (currentState === 'LOADING') {
       setCurrentState('FINISH');
     }
-  }, [currentAccount])
+  }, [currentAccount]);
 
   const isLoading = () => {
     return (currentState === 'INCREASE' || currentState === 'LOADING');
@@ -71,8 +71,9 @@ export const AddAccount = () => {
 
   const updateCurrentAccount = async () => {
     if (accounts) {
-      const addr = accounts[accounts.length - 1].getAddress();
-      await changeCurrentAccount(addr);
+      const address = accounts[accounts.length - 1].getAddress();
+      await initAccounts();
+      await changeCurrentAccount(address);
     }
   }
 

@@ -22,13 +22,13 @@ export const Background = ({ children }: Props) => {
      * History Data Interval Fetch
      */
     useEffect(() => {
-        if (gnoClient && currentAccount) {
+        if (gnoClient?.chainId && currentAccount) {
             const historyFetchTimer = setInterval(() => {
                 updateLastTransactionHistory();
             }, 5000);
             return () => { clearInterval(historyFetchTimer) }
         }
-    }, [gnoClient, currentAccount, transactionHistory.currentPage]);
+    }, [gnoClient?.chainId, currentAccount, transactionHistory.currentPage]);
 
     useEffect(() => {
         if (currentAccount === null) {
@@ -46,7 +46,7 @@ export const Background = ({ children }: Props) => {
 
     useEffect(() => {
         clearTransactionHistory();
-    }, [currentAccount?.getAddress()])
+    }, [currentAccount?.getAddress(), gnoClient?.chainId])
 
     return (
         <>

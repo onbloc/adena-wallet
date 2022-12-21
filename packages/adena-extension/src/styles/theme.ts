@@ -103,6 +103,16 @@ export const fonts: FontsKeyType = {
     font-size: 12px;
     line-height: 21px;
   `,
+  body4Bold: css`
+    font-weight: 600;
+    font-size: 10px;
+    line-height: 15px;
+  `,
+  body4Reg: css`
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 15px;
+  `,
   title1: css`
     font-weight: 500;
     font-size: 25px;
@@ -133,6 +143,8 @@ export type FontsType =
   | 'body2Reg'
   | 'body3Bold'
   | 'body3Reg'
+  | 'body4Bold'
+  | 'body4Reg'
   | 'title1'
   | 'captionBold'
   | 'captionReg';

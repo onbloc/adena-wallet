@@ -11,6 +11,7 @@ import DefaultInput from '@components/default-input';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useUpdateWalletAccountName } from '@hooks/use-update-wallet-account-name';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 interface MenuMakerProps {
   onClick: () => void;
@@ -61,8 +62,10 @@ export const Settings = () => {
   const revealSeedClick = () => navigate(RoutePath.SettingSeedPhrase);
   const [text, setText] = useState<string>(() => currnetAccount?.data.name || '');
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const shareButtonClick = () =>
-    window.open(`https://gnoscan.io/test2/account/${currnetAccount?.data.address}`, '_blank');
+  const [gnoClient] = useGnoClient();
+  const shareButtonClick = async () => {
+    window.open(`https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/accounts/${currnetAccount?.data.address}`, '_blank')
+  };
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
