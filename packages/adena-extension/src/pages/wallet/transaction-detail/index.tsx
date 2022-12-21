@@ -6,7 +6,7 @@ import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TransactionDetailInfo, useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
-import { HistoryItem } from 'gno-client/src/api/response';
+import { HistoryItemType } from 'gno-client/src/api/response';
 import { useGnoClient } from '@hooks/use-gno-client';
 
 interface DLProps {
@@ -16,7 +16,7 @@ interface DLProps {
 export const TransactionDetail = () => {
   const [gnoClient] = useGnoClient();
   const location = useLocation();
-  const [transactionItem, setTransactionItem] = useState<HistoryItem | undefined>();
+  const [transactionItem, setTransactionItem] = useState<HistoryItemType | undefined>();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
   const [{ getTransactionDetailInfo }] = useTransactionHistoryInfo();
@@ -35,7 +35,7 @@ export const TransactionDetail = () => {
 
 
   const handleLinkClick = (hash: string) => {
-    window.open(`https://gnoscan.io/${gnoClient?.chainId ?? ''}/contract/${hash}`, '_blank');
+    window.open(`https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/transactions/${hash}`, '_blank');
   };
 
   return detailInfo ? (
@@ -43,7 +43,10 @@ export const TransactionDetail = () => {
       <img className='status-icon' src={getStatusStyle(detailInfo.status).statusIcon} alt='status icon' />
       <TokenBox color={getStatusStyle(detailInfo.status).color}>
         <img className='tx-symbol' src={detailInfo.icon} alt='logo image' />
-        <Text type='header6'>{detailInfo.main}</Text>
+        <Text display={'flex'} className='main-text' type='header6'>
+          {detailInfo.main}
+          {detailInfo.msgNum > 1 && <Text type='body2Bold'>{` +${detailInfo.msgNum - 1}`}</Text>}
+        </Text>
       </TokenBox>
       <DataBox>
         <DLWrap>
@@ -52,7 +55,10 @@ export const TransactionDetail = () => {
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
-          <dd>{detailInfo.type}</dd>
+          <dd>
+            {detailInfo.type}
+            {detailInfo.msgNum > 1 && <Text type='body3Bold'>{` +${detailInfo.msgNum - 1}`}</Text>}
+          </dd>
         </DLWrap>
         <DLWrap color={getStatusStyle(detailInfo.status).color}>
           <dt>Status</dt>
@@ -112,6 +118,9 @@ const TokenBox = styled.div<{ color: string }>`
     width: 30px;
     height: 30px;
   }
+  .main-text {
+    align-items: center;
+  }
 `;
 
 const DataBox = styled.div`
@@ -139,7 +148,9 @@ const DLWrap = styled.dl<DLProps>`
     color: ${({ theme }) => theme.color.neutral[9]};
   }
   dd {
+    display: flex;
     color: ${(props) => (props.color ? props.color : props.theme.color.neutral[0])};
+    align-items: center;
   }
 `;
 
