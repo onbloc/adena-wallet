@@ -60,7 +60,7 @@ export const AddAccount = () => {
       ),
       type: 'popup',
       height: 570,
-      width: 380,
+      width: 360,
       left: 800,
       top: 300,
     };
