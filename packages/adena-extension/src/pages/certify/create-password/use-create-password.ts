@@ -2,9 +2,10 @@ import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWalletCreator } from '@hooks/use-wallet-creator';
-import { ValidationService } from '@services/index';
+import { ValidationService, WalletService } from '@services/index';
 import { PasswordValidationError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
+import { useResetRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 export const useCreatePassword = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const useCreatePassword = () => {
   const [seeds, SetSeeds] = useState('');
   const [, createWallet] = useWalletCreator();
   const [errorMessage, setErrorMessage] = useState('');
+  const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -93,6 +95,8 @@ export const useCreatePassword = () => {
 
     try {
       if (isValidPassword && isValidConfirmPassword) {
+        clearCurrentAccount();
+        await WalletService.clearWalletAccountData();
         const walletState = await createWallet({ mnemonic: seeds, password: pwd });
         return walletState;
       }
@@ -105,7 +109,6 @@ export const useCreatePassword = () => {
   const nextButtonClick = async () => {
     const walletState = await validationCheck();
     if (walletState === 'FINISH') {
-      await LocalStorageValue.remove('CURRENT_ACCOUNT_ADDRESS');
       navigate(RoutePath.LaunchAdena);
       return;
     }

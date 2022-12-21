@@ -1,5 +1,4 @@
 import { RoutePath } from '@router/path';
-import { WalletService } from '@services/index';
 import { EnglishMnemonic } from 'adena-module/src/crypto';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -30,7 +29,6 @@ export const useEnterSeed = () => {
     try {
       const checkedMnemonic = new EnglishMnemonic(seed);
       if (checkedMnemonic) {
-        await WalletService.clearWalletAccountData();
         navigate(RoutePath.CreatePassword, {
           state: { seeds: seed },
         });

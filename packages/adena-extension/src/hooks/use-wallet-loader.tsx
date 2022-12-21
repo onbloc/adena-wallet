@@ -2,6 +2,7 @@ import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
+import { LocalStorageValue } from '@common/values';
 
 /**
  * Load or Deserialize wallet  by saved serialized wallet data
@@ -26,6 +27,7 @@ export const useWalletLoader = (): [
     try {
       const loadedWallet = await WalletService.loadWallet();
       await loadedWallet.initAccounts();
+      await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
       setWallet(loadedWallet);
       setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
@@ -46,6 +48,7 @@ export const useWalletLoader = (): [
     try {
       const loadedWallet = await WalletService.loadWalletWithPassword(password);
       await loadedWallet.initAccounts();
+      await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
       setWallet(loadedWallet);
       setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
@@ -59,6 +62,13 @@ export const useWalletLoader = (): [
         setState(changedState);
       }
       return changedState;
+    }
+  };
+
+  const initCurrentAccountAddress = async (address: any) => {
+    const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    if (!currentAccountAddress) {
+      LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', `${address}`);
     }
   };
 

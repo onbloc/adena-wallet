@@ -135,6 +135,8 @@ export const clearWalletAccountData = async () => {
   await LocalStorageValue.remove('WALLET_ACCOUNTS');
   await LocalStorageValue.remove('WALLET_ACCOUNT_NAMES');
   await LocalStorageValue.remove('WALLET_ACCOUNT_PATHS');
+  await LocalStorageValue.remove('ADDRESS_BOOK');
+  await LocalStorageValue.remove('CURRENT_CHAIN_ID');
   await LocalStorageValue.remove('ESTABLISH_SITES');
 };
 
