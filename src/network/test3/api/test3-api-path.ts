@@ -49,5 +49,5 @@ export class Test3ApiPath {
   };
 
   public static createPathOfHistoryTemp = (address: string, page: number) =>
-    `https://api.adena.app/test3/history/${address}?skip=${page}`;
+    `https://api.adena.app/test3/multi_history/${address}?skip=${page}&size=20`;
 }
