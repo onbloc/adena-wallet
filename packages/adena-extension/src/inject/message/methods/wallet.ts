@@ -19,18 +19,8 @@ export const getAccount = async (
     if (!currentAccountAddress || currentAccountAddress === '') {
       currentAccountAddress = wallet.getAccounts()[0].getAddress();
     }
-    const storedChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
-    const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
-    const networkConfigs = await GnoClientService.loadNetworkConfigs();
-    const currentNetworkConfig =
-      networkConfigs.find((network) => network.chainId === currentChainId) ?? networkConfigs[0];
 
-    const gnoClient = GnoClient.createNetworkByType(
-      currentNetworkConfig,
-      getNetworkMapperType(currentNetworkConfig.chainId),
-      fetchAdapter,
-    );
-
+    const gnoClient = await loadGnoClient();
     const account = await gnoClient.getAccount(currentAccountAddress);
     sendReponse(
       InjectionMessageInstance.success(
@@ -69,6 +59,21 @@ export const addEstablish = async (
     sendResponse,
   );
 };
+
+export const loadGnoClient = async () => {
+  const storedChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
+  const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
+  const networkConfigs = await GnoClientService.loadNetworkConfigs();
+  const currentNetworkConfig =
+    networkConfigs.find((network) => network.chainId === currentChainId) ?? networkConfigs[0];
+
+  const gnoClient = GnoClient.createNetworkByType(
+    currentNetworkConfig,
+    getNetworkMapperType(currentNetworkConfig.chainId),
+    fetchAdapter,
+  );
+  return gnoClient;
+}
 
 const getNetworkMapperType = (chainId: string) => {
   switch (chainId) {

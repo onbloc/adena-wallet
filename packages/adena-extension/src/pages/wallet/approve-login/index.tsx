@@ -12,6 +12,8 @@ import LoadingApproveTransaction from '@components/loading-screen/loading-approv
 import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
 import { ValidationService } from '@services/index';
 import { MessageKeyType } from '@inject/message'
+import { PasswordValidationError } from '@common/errors';
+import { ErrorText } from '@components/error-text';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -28,7 +30,7 @@ export const ApproveLogin = () => {
   const navigate = useNavigate();
   const [state, loadWallet, loadWalletByPassword] = useWalletLoader();
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<PasswordValidationError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
   const location = useLocation();
@@ -61,18 +63,24 @@ export const ApproveLogin = () => {
   }, [inputRef]);
 
   useEffect(() => {
-    setError(false);
+    setError(null);
   }, [password]);
 
   const tryLoginApprove = async (password: string) => {
+    let currentError = null;
     try {
       ValidationService.validateEmptyPassword(password);
       ValidationService.validateWrongPasswordLength(password);
       await loadWalletByPassword(password);
-    } catch (err) {
-      console.log(err)
-      setError(true);
+    } catch (error) {
+      if (error instanceof PasswordValidationError) {
+        currentError = error;
+      }
     }
+    if (currentError === null) {
+      currentError = new PasswordValidationError('INVALID_PASSWORD');
+    }
+    setError(currentError);
   };
 
   const redirect = () => {
@@ -102,7 +110,7 @@ export const ApproveLogin = () => {
 
   return (
     <Wrapper>
-      {state === 'LOGIN' ? (
+      {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
         <>
           <Title>
             {text}
@@ -112,9 +120,10 @@ export const ApproveLogin = () => {
             placeholder='Password'
             onChange={onChange}
             onKeyDown={onKeyDown}
-            error={error}
+            error={error !== null}
             ref={inputRef}
           />
+          {error && <ErrorText text={error.message} />}
           <Button
             fullWidth
             hierarchy={ButtonHierarchy.Primary}

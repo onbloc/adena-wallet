@@ -35,6 +35,13 @@ import { ImportAccount } from '@pages/certify/import-account';
 import { ApproveEstablish } from '@pages/wallet/approve-establish';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
+import {
+  ApproveConnectHardwareWalletConnect,
+  ApproveConnectHardwareWalletFinish,
+  ApproveConnectHardwareWalletInit,
+  ApproveConnectHardwareWalletSelectAccount
+} from '@pages/certify/approve-connect-hardware-wallet';
+import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 
 export const CustomRouter = () => {
 
@@ -63,6 +70,7 @@ export const CustomRouter = () => {
         <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
         <Route path={RoutePath.GeneralSend} element={<GeneralSend />} />
         <Route path={RoutePath.SendConfirm} element={<SendConfirm />} />
+        <Route path={RoutePath.SendLedgerReject} element={<SendConfirmReject />} />
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
@@ -74,6 +82,11 @@ export const CustomRouter = () => {
         <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
+        <Route path={RoutePath.AddAddress} element={<AddAddress />} />
+        <Route path={RoutePath.ApproveHardwareWalletInit} element={<ApproveConnectHardwareWalletInit />} />
+        <Route path={RoutePath.ApproveHardwareWalletConnect} element={<ApproveConnectHardwareWalletConnect />} />
+        <Route path={RoutePath.ApproveHardwareWalletSelectAccount} element={<ApproveConnectHardwareWalletSelectAccount />} />
+        <Route path={RoutePath.ApproveHardwareWalletFinish} element={<ApproveConnectHardwareWalletFinish />} />
       </Routes>
       <Navigation />
     </Router>

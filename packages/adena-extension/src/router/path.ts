@@ -21,6 +21,7 @@ export enum RoutePath {
   Send = '/wallet/send',
   GeneralSend = '/wallet/general-send',
   SendConfirm = '/wallet/send-confirm',
+  SendLedgerReject = '/wallet/send-confirm/reject',
   TokenDetails = '/wallet/token-details',
   ApproveLogin = '/approve/wallet/login',
   ApproveTransaction = '/approve/wallet/transaction',
@@ -39,4 +40,8 @@ export enum RoutePath {
   ChangeNetwork = '/settings/change-network',
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
+  ApproveHardwareWalletInit = '/approve/settings/hardware-wallet',
+  ApproveHardwareWalletConnect = '/approve/settings/hardware-wallet/connect',
+  ApproveHardwareWalletSelectAccount = '/approve/settings/hardware-wallet/select-account',
+  ApproveHardwareWalletFinish = '/approve/settings/hardware-wallet/finish',
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
 import { GnoClientState, WalletState } from "@states/index";
+import { LocalStorageValue } from "@common/values";
 
 interface Props {
     children?: React.ReactNode;
@@ -30,18 +31,22 @@ export const Background = ({ children }: Props) => {
     }, [gnoClient, currentAccount, transactionHistory.currentPage]);
 
     useEffect(() => {
-        if (currentAccount !== null) {
-            if (currentAccount.getAddress() !== currentAccountAddress) {
+        if (currentAccount === null) {
+            return;
+        }
+        if (currentAccount.getAddress() === currentAccountAddress) {
+            return;
+        }
+        LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
+            if (storedAccountAddress !== currentAccount.getAddress()) {
                 setCurrentAccountAddress(currentAccount.getAddress());
             }
-        }
+        });
     }, [currentAccount])
 
     useEffect(() => {
-        if (currentAccountAddress.length > 0) {
-            clearTransactionHistory();
-        }
-    }, [currentAccountAddress])
+        clearTransactionHistory();
+    }, [currentAccount?.getAddress()])
 
     return (
         <>

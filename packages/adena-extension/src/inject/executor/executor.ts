@@ -9,10 +9,12 @@ import {
 type Params = { [key in string]: any };
 
 export interface RequestDocontractMessage {
-  message: {
-    type: string;
-    value: { [key in string]: any };
-  };
+  messages: Array<
+    {
+      type: string;
+      value: { [key in string]: any };
+    }
+  >;
   gasFee: number;
   gasWanted: number;
   memo?: string;
@@ -56,26 +58,8 @@ export class AdenaExecutor {
   };
 
   public DoContract = (params: RequestDocontractMessage) => {
-    if (!validateDoContractRequest(params)) {
-      return InjectionMessageInstance.failure('INVALID_FORMAT');
-    }
-    switch (params.message.type) {
-      case '/bank.MsgSend':
-        if (!validateTrasactionMessageOfBankSend(params.message)) {
-          return InjectionMessageInstance.failure('INVALID_FORMAT');
-        }
-        break;
-      case '/vm.m_call':
-        if (!validateTrasactionMessageOfVmCall(params.message)) {
-          return InjectionMessageInstance.failure('INVALID_FORMAT');
-        }
-        break;
-      default:
-        return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
-    }
-    const eventMessage = AdenaExecutor.createEventMessage('DO_CONTRACT', {
-      ...params,
-    });
+    this.valdiateContractMessage(params);
+    const eventMessage = AdenaExecutor.createEventMessage('DO_CONTRACT', params);
     return this.sendEventMessage(eventMessage);
   };
 
@@ -83,6 +67,34 @@ export class AdenaExecutor {
     const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
     return this.sendEventMessage(eventMessage);
   };
+
+  public SignAmino = (params: RequestDocontractMessage) => {
+    this.valdiateContractMessage(params);
+    const eventMessage = AdenaExecutor.createEventMessage('SIGN_AMINO', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
+  private valdiateContractMessage = (params: RequestDocontractMessage) => {
+    if (!validateDoContractRequest(params)) {
+      return InjectionMessageInstance.failure('INVALID_FORMAT');
+    }
+    for (const message of params.messages) {
+      switch (message.type) {
+        case '/bank.MsgSend':
+          if (!validateTrasactionMessageOfBankSend(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_call':
+          if (!validateTrasactionMessageOfVmCall(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        default:
+          return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
+      }
+    }
+  }
 
   private sendEventMessage = (eventMessage: InjectionMessage) => {
     this.listen();

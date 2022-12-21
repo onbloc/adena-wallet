@@ -1,13 +1,15 @@
 import { LocalStorageValue } from '@common/values';
 import { WalletService } from '@services/index';
+import { loadAccounts } from '@services/wallet';
 import { GnoClientState, WalletState } from '@states/index';
 import { WalletAccount } from 'adena-module';
 import { useEffect } from 'react';
 import { useRecoilState } from 'recoil';
+import { useWallet } from './use-wallet';
 
 export const useCurrentAccount = (): [
   account: InstanceType<typeof WalletAccount> | null,
-  updateCurrentAccountInfo: () => void,
+  updateCurrentAccountInfo: (address?: string) => void,
   changeCurrentAccount: (
     address?: string | null,
     accounts?: Array<InstanceType<typeof WalletAccount>>,
@@ -17,11 +19,14 @@ export const useCurrentAccount = (): [
   const [gnoClient] = useRecoilState(GnoClientState.current);
   const [walletAccounts] = useRecoilState(WalletState.accounts);
   const [, setBalances] = useRecoilState(WalletState.balances);
+  const [wallet] = useWallet();
 
   useEffect(() => {
-    if (currentAccount?.getAddress()) {
-      updateCurrentName();
+    if (!currentAccount) {
+      return;
     }
+    updateCurrentName();
+
   }, [currentAccount?.getAddress()])
 
   const updateCurrentName = async () => {
@@ -36,9 +41,11 @@ export const useCurrentAccount = (): [
     }
   }
 
-  const updateCurrentAccountInfo = async () => {
-    if (gnoClient && currentAccount) {
-      const changedAccount = await WalletService.updateAccountInfo(gnoClient, currentAccount);
+  const updateCurrentAccountInfo = async (address?: string) => {
+    const currentAddress = address ?? currentAccount?.getAddress();
+    const account = walletAccounts?.find(item => item.data.address === currentAddress);
+    if (gnoClient && account) {
+      const changedAccount = await WalletService.updateAccountInfo(gnoClient, account);
       setCurrentAccount(changedAccount);
     }
   };
@@ -47,7 +54,8 @@ export const useCurrentAccount = (): [
     address?: string | null,
     accounts?: Array<InstanceType<typeof WalletAccount>>,
   ) => {
-    const currentAccounts = accounts ?? walletAccounts;
+    const storedAccounts = await loadAccounts();
+    const currentAccounts = accounts ?? storedAccounts ?? walletAccounts;
     if (!currentAccounts || currentAccounts.length === 0) {
       return 0;
     }
@@ -72,7 +80,9 @@ export const useCurrentAccount = (): [
     );
     const changedCurrentAccount =
       accountIndex > 0 ? currentAccounts[accountIndex] : currentAccounts[0];
-
+    if (changedCurrentAccount.data.signerType === 'AMINO') {
+      changedCurrentAccount.setSigner(wallet?.getSigner());
+    }
     updateCurrentAccountName(changedCurrentAccount);
     setCurrentAccount(changedCurrentAccount);
   };

@@ -1,6 +1,8 @@
 import { Secp256k1HdWallet, makeCosmoshubPath } from '@/amino';
 import { HdPath } from '..';
 import { WalletAccount, WalletAccountConfig } from './account';
+import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 
 interface ChainConfig {
   chainId: string;
@@ -12,9 +14,9 @@ interface ChainConfig {
 export class Wallet {
   private walletAccounts: Array<WalletAccount>;
 
-  private aminoSigner: Secp256k1HdWallet;
+  private aminoSigner: Secp256k1HdWallet | LedgerSigner;
 
-  constructor(aminoSigner: Secp256k1HdWallet) {
+  constructor(aminoSigner: Secp256k1HdWallet | LedgerSigner) {
     this.aminoSigner = aminoSigner;
     this.walletAccounts = [];
   }
@@ -27,7 +29,9 @@ export class Wallet {
 
   public initAccounts = async (names: { [key in string]: string } = {}, config?: ChainConfig) => {
     const accounts = await this.aminoSigner.getAccounts();
-    const walletAccounts = accounts.map(WalletAccount.createByAminoAccount);
+    const walletAccounts = this.aminoSigner instanceof Secp256k1HdWallet ?
+      accounts.map(WalletAccount.createByAminoAccount) :
+      accounts.map(WalletAccount.createByLedgerAddress);
     walletAccounts.map((walletAccount, index) => {
       walletAccount.setIndex(index + 1);
       walletAccount.setSigner(this.aminoSigner);
@@ -44,10 +48,16 @@ export class Wallet {
   };
 
   public serialize = async (password: string): Promise<string> => {
+    if (this.aminoSigner instanceof LedgerSigner) {
+      throw new Error('Ledger wallet cannot be serialized');
+    }
     return await this.aminoSigner.serialize(password);
   };
 
   public getMnemonic = () => {
+    if (this.aminoSigner instanceof LedgerSigner) {
+      throw new Error('Ledger wallet does not have mnemonic');
+    }
     return this.aminoSigner.mnemonic;
   };
 
@@ -56,8 +66,15 @@ export class Wallet {
   };
 
   public getPrivateKey = async (address: string) => {
+    if (this.aminoSigner instanceof LedgerSigner) {
+      throw new Error('Ledger wallet does not have private key');
+    }
     const privateKey = await this.aminoSigner.getPrivkey(address);
     return privateKey;
+  };
+
+  public getSigner = () => {
+    return this.aminoSigner;
   };
 
   public static createByMnemonic = async (
@@ -76,6 +93,19 @@ export class Wallet {
   ): Promise<Wallet> => {
     const walletConfig = Wallet.createWalletConfig({ password, accountPaths });
     const aminoSigner = await Secp256k1HdWallet.fromMnemonic(seeds, walletConfig);
+    return new Wallet(aminoSigner);
+  };
+
+  public static createByLedger = async (
+    accountPaths: Array<number> = [0],
+  ): Promise<Wallet> => {
+    const interactiveTimeout = 120_000;
+    const walletConfig = Wallet.createWalletConfig({ accountPaths });
+    const ledgerTransport = await TransportWebUSB.create(interactiveTimeout, interactiveTimeout);
+
+    const aminoSigner = new LedgerSigner(ledgerTransport, {
+      hdPaths: walletConfig.hdPaths,
+    });
     return new Wallet(aminoSigner);
   };
 

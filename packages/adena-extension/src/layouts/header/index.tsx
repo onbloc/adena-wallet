@@ -36,6 +36,11 @@ export const Header = () => {
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
 
+  const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
+  const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
+  const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
+  const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
+
   return (
     <Wrapper>
       {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
@@ -47,9 +52,9 @@ export const Header = () => {
         history ||
         connectedApps ||
         changeNetwork) && <TopMenu />}
-      {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
-      {createPassword && <ProgressMenu progressLevel={'second'} />}
-      {launchAdena && <ProgressMenu progressLevel={'third'} />}
+      {(yourSeedPhrase || enterSeedPhrase || approveHardwareWalletInit || approveHardwareWalletConnect) && <ProgressMenu progressLevel={'first'} />}
+      {(createPassword || approveHardwareWalletSelectAccount) && <ProgressMenu progressLevel={'second'} />}
+      {(launchAdena || approveHardwareWalletFinish) && <ProgressMenu progressLevel={'third'} />}
     </Wrapper>
   );
 };

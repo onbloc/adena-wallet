@@ -5,7 +5,8 @@ type ValueType =
   | 'CURRENT_ACCOUNT_ADDRESS'
   | 'CURRENT_CHAIN_ID'
   | 'ESTABLISH_SITES'
-  | 'ADDRESS_BOOK';
+  | 'ADDRESS_BOOK'
+  | 'WALLET_ACCOUNTS';
 
 export const get = async (valueType: ValueType): Promise<string> => {
   const values = await chrome.storage.local.get(valueType);
@@ -52,20 +53,21 @@ export const setByNumbers = async (valueType: ValueType, values: Array<number>) 
   await set(valueType, values.join());
 };
 
-export const getToObject = async (valueType: ValueType) => {
-  let object: { [key in string]: any } = {};
-  const value = await get(valueType);
+type objectType = { [key in string]: any };
+
+export const getToObject = async <T extends objectType = objectType>(valueType: ValueType): Promise<T> => {
   try {
+    const value = await get(valueType);
     if (value && value !== '') {
-      object = JSON.parse(value);
+      return JSON.parse(value) as T;
     }
   } catch (e) {
     console.log(e);
   }
 
-  return object;
+  return {} as T;
 };
 
-export const setByObject = async (valueType: ValueType, value: { [key in string]: any }) => {
+export const setByObject = async (valueType: ValueType, value: objectType) => {
   await set(valueType, JSON.stringify(value));
 };

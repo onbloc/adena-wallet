@@ -68,7 +68,6 @@ export const useTransactionHistoryInfo = (): [{
     }
 
     const mappedCommon = (transactionItem: HistoryItem): TransactionInfo => {
-        console.log("COMMON?", transactionItem);
         const func = transactionItem.func ?? '';
         const icon = IconContract;
         const title = func;
@@ -124,7 +123,6 @@ export const useTransactionHistoryInfo = (): [{
     }
 
     const mappedCommonDetail = (transactionItem: HistoryItem): TransactionDetailInfo => {
-        console.log("COMMON?", transactionItem);
         const icon = IconContract;
         const main = transactionItem.func ?? '';
         const date = fullDateFormat(transactionItem.date);

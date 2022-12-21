@@ -28,23 +28,22 @@ export const WalletMain = () => {
   const CoinBoxClick = () => navigate(RoutePath.TokenDetails);
   const [wallet, state] = useWallet();
   const [gnoClient] = useGnoClient();
-  const [, updateWalletAccounts] = useWalletAccounts(wallet);
+  const { initAccounts } = useWalletAccounts(wallet);
   const [balances, updateBalances] = useWalletBalances();
-  const [currentAccount, updateCurrentAccountInfo] = useCurrentAccount();
+  const [currentAccount] = useCurrentAccount();
   const [currentBalance, setCurrentBalance] = useState<string | undefined>();
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
 
   useEffect(() => {
     if (gnoClient && state === 'FINISH') {
-      updateWalletAccounts();
+      initAccounts();
     }
   }, [state, gnoClient]);
 
   useEffect(() => {
     if (currentAccount?.getAddress()) {
       updateBalances();
-      updateCurrentAccountInfo();
       updateLastHistory();
     }
   }, [currentAccount?.getAddress()])

@@ -83,6 +83,7 @@ export const TokenDetails = () => {
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+  const [historyItems, setHistoryItems] = useState<{ [key in string]: any }>({});
 
   useEffect(() => {
     initHistory();
@@ -90,6 +91,8 @@ export const TokenDetails = () => {
 
   const initHistory = async () => {
     await updateLastHistory();
+    const historyItems = await getHistory();
+    setHistoryItems(historyItems);
   }
 
   useEffect(() => {
@@ -160,12 +163,12 @@ export const TokenDetails = () => {
       />
       {
         transactionHistory.init ? (
-          Object.keys(getHistory()).length > 0 ? (
-            Object.keys(getHistory()).map((item, idx) => (
+          Object.keys(historyItems).length > 0 ? (
+            Object.keys(historyItems).map((item, idx) => (
               <ListWithDate
                 key={idx}
                 date={item}
-                transaction={getHistory()[item]}
+                transaction={historyItems[item]}
                 onClick={historyItemClick}
               />
             ))
