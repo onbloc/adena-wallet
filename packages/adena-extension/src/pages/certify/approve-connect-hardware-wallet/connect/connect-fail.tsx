@@ -7,7 +7,7 @@ import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 
 const text = {
   title: 'Connection Failed',
-  desc: 'We couldn’t connect to your hardware\nwallet. Please make sure your ledger\ndevice is unlocked and connected to\nyour computer.',
+  desc: 'We couldn’t connect to your ledger\ndevice. Please ensure that your device\nis unlocked.',
 };
 
 const Wrapper = styled.main`
