@@ -8,6 +8,7 @@ type ProgressLevel = 'first' | 'second' | 'third';
 
 interface ProgressMenuProps {
   location?: string;
+  showLogo?: boolean;
   progressLevel: ProgressLevel;
 }
 
@@ -37,13 +38,13 @@ const Hr = styled.hr<ProgressMenuProps>`
   margin: 0px;
 `;
 
-export const ProgressMenu = ({ location, progressLevel }: ProgressMenuProps) => {
+export const ProgressMenu = ({ progressLevel, showLogo }: ProgressMenuProps) => {
   const navigate = useNavigate();
   const handlePrevButtonClick = () => navigate(-1);
 
   return (
     <Wrapper>
-      {progressLevel === 'third' ? (
+      {progressLevel === 'third' || showLogo ? (
         <img src={logo} alt='adena logo' />
       ) : (
         <Button onClick={handlePrevButtonClick} tabIndex={0} />
