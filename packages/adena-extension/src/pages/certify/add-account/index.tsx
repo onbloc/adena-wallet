@@ -102,7 +102,7 @@ export const AddAccount = () => {
       </GrayButtonBox>
       <GrayButtonBox onClick={onClickConnectHardwareWallet}>
         <Text className='title-arrow' type='body1Bold'>
-          Connect Hardware Wallet
+          Connect Ledger
         </Text>
         <Text className='title-desc' type='body2Reg'>
           Add a ledger account
