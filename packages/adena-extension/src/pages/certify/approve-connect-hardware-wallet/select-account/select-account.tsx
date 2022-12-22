@@ -12,6 +12,7 @@ import { formatAddress } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import { LocalStorageValue } from '@common/values';
 
 const text = {
   title: 'Select Accounts'
@@ -150,14 +151,34 @@ const AccountListContainer = styled.div`
 
       img {
         display: none;
+        width: 15px;
+        height: 15px;
+        margin: auto;
       }
 
-      &.active {
+      &.active, &.disabled {
         background-color: ${theme.color.primary[4]};
         border: 1px solid ${theme.color.primary[4]};
-
         img {
           display: block;
+        }
+      }
+
+      &.disabled {
+        position: relative;
+        cursor: default;
+        overflow: hidden;
+        border: none;
+
+        .mask {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 20px;
+          height: 20px;
+          display: block;
+          background-color: black;
+          opacity: 0.6;
         }
       }
     }
@@ -175,6 +196,7 @@ const defaultAccounts = [
 export const ApproveConnectHardwareWalletSelectAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
   const [accounts, setAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
@@ -193,10 +215,14 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const initAccounts = async (accounts: Array<InstanceType<typeof WalletAccount>>) => {
     const storedAccounts = await WalletService.loadAccounts();
-    const availSelectAccounts = accounts.filter(account => storedAccounts.find(storedAccount => storedAccount.getAddress() === account.getAddress()) === undefined);
-    setAccounts(availSelectAccounts);
+    setStoredAccounts(storedAccounts);
+    setAccounts(accounts);
     const lastPath = accounts.map(account => account.data.path).reverse()[0];
     setLastPath(lastPath);
+  };
+
+  const isStoredAccount = (adderss: string) => {
+    return storedAccounts.find(account => account.getAddress() === adderss) !== undefined;
   };
 
   const onClickSelectButton = (address: string) => {
@@ -225,20 +251,22 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     const storedAccounts = await WalletService.loadAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
 
-    let ledgerAccountIndex = 1 + storedAccounts.filter(storedAccount => storedAccount.data.signerType === 'LEDGER').length;
     selectAccounts.forEach(account => {
       if (!storedAccounts.find(storedAccount => storedAccount.getAddress() === account.getAddress())) {
-        account.setName(`Ledger ${ledgerAccountIndex}`);
+        account.setName(`Ledger ${account.data.path + 1}`);
         savedAccounts.push(account);
-        ledgerAccountIndex += 1;
       }
     });
-
-    await WalletService.saveAccounts([...storedAccounts, ...savedAccounts]);
+    const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
+    await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
+    if (resultSavedAccounts.length > 0) {
+      await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', resultSavedAccounts[0].getAddress());
+    }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };
 
   const renderAccount = (account: InstanceType<typeof WalletAccount>, index: number) => {
+    const stored = isStoredAccount(account.getAddress());
     const selected = selectAccountAddresses.includes(account.getAddress());
     return (
       <div className='item' key={index}>
@@ -246,9 +274,18 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
           <span className='address'>{formatAddress(account.getAddress())}</span>
           <span className='path'>{`m/44'/118'/0'/0/${account.data.path}`}</span>
         </div>
-        <span className={selected ? 'check active' : 'check'} onClick={() => onClickSelectButton(account.getAddress())}>
-          <img className='icon-check' src={IconCheck} alt='check-image' />
-        </span>
+        {
+          stored ? (
+            <span className={'check disabled'}>
+              <img className='icon-check' src={IconCheck} alt='check-image' />
+              <span className={'mask'}></span>
+            </span>
+          ) : (
+            <span className={selected ? 'check active' : 'check'} onClick={() => onClickSelectButton(account.getAddress())}>
+              <img className='icon-check' src={IconCheck} alt='check-image' />
+            </span>
+          )
+        }
       </div>
     )
   }
