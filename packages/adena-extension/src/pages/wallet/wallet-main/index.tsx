@@ -61,8 +61,7 @@ export const WalletMain = () => {
 
   return (
     <>
-      {state === 'FINISH' ? (
-        currentBalance &&
+      {currentBalance && state === 'FINISH' ? (
         balances && (
           <Wrapper>
             <Text type='header2' textAlign='center'>
