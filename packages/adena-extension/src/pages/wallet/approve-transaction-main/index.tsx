@@ -12,7 +12,6 @@ import { useWallet } from '@hooks/use-wallet';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import { LocalStorageValue } from '@common/values';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
-import { Wallet } from 'adena-module';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { ApproveLdegerLoading } from './approve-ledger-loading';
 import Button from '@components/buttons/button';
@@ -30,6 +29,7 @@ export const ApproveTransactionMain = () => {
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>()
   const [favicon, setFavicon] = useState<any>(null);
+  const [loadingLedger, setLoadingLedger] = useState(false);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
 
   useEffect(() => {
@@ -68,18 +68,9 @@ export const ApproveTransactionMain = () => {
       return false;
     }
     try {
-      const account = currentAccount.clone();
-      if (currentAccount.data.signerType === 'AMINO') {
-        account.setSigner(wallet?.getSigner());
-      } else if (currentAccount.data.signerType === 'LEDGER') {
-        const ledgerWallet = await Wallet.createByLedger([currentAccount.data.path]);
-        await ledgerWallet.initAccounts();
-        const ledgerAccount = ledgerWallet.getAccounts()[0];
-        account.setSigner(ledgerAccount.getSigner())
-      }
-      const transaction = await TransactionService.createTransactionByContract(
+      const transaction = await TransactionService.createTransactionData(
         gnoClient,
-        account,
+        currentAccount,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
@@ -100,22 +91,45 @@ export const ApproveTransactionMain = () => {
     return false;
   }
 
-
-  const approveEvent = async () => {
+  const sendTransaction = async () => {
     if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
       try {
-        const transaction = transactionData.value;
-        const result = await TransactionService.sendTransaction(gnoClient, transaction);
+        const transactionValue = await TransactionService.createTransactionByContract(
+          gnoClient,
+          currentAccount,
+          requestData?.data?.messages,
+          requestData?.data?.gasWanted,
+          requestData?.data?.gasFee,
+          requestData?.data?.memo
+        );
+        const result = await TransactionService.sendTransaction(gnoClient, transactionValue);
         if (result.height && result.height !== "0") {
           chrome.runtime.sendMessage(InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key));
+          return true;
         } else {
           chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key));
         }
       } catch (e) {
+        if (e instanceof Error) {
+          const message = e.message;
+          if (message.includes('Ledger')) {
+            return false;
+          }
+        }
         chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
       }
     } else {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key));
+    }
+    return false;
+  }
+
+  const approveEvent = async () => {
+    if (currentAccount?.data.signerType === 'AMINO') {
+      sendTransaction();
+    }
+    if (currentAccount?.data.signerType === 'LEDGER') {
+      setLoadingLedger(true);
     }
   };
 
@@ -138,14 +152,6 @@ export const ApproveTransactionMain = () => {
     await connected?.close();
     window.close();
   };
-
-  const renderLoading = () => {
-    if (!currentAccount || currentAccount.data.signerType !== 'LEDGER') {
-      return <LoadingApproveTransaction />
-    }
-
-    return <ApproveLdegerLoading createTransaction={initTransactionData} cancel={cancelLedger} />;
-  }
 
   const renderContracts = () => {
     if (!transactionData || !Array.isArray(transactionData.contracts)) {
@@ -184,36 +190,46 @@ export const ApproveTransactionMain = () => {
     )
   };
 
-  return transactionData ? (
-    <Wrapper>
-      <Text type='header4'>Approve Transaction</Text>
-      <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
-      <RoundedBox>
-        <Text type='body2Reg' color={'#ffffff'}>
-          {hostname}
-        </Text>
-      </RoundedBox>
-      {renderContracts()}
-      <RoundedDataBox className='sub-info'>
-        <RoundedDL>
-          <dt>Network Fee:</dt>
-          <dd>{`${gasFee * 0.000001} GNOT`}</dd>
-        </RoundedDL>
-      </RoundedDataBox>
-      {renderTransactionInfo()}
-      <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: cancelEvent }}
-        confirmButtonProps={{
-          onClick: approveEvent,
-          text: 'Approve',
-        }}
-      />
-    </Wrapper>
-  ) : (
-    <LoadingWrapper>
-      {renderLoading()}
-    </LoadingWrapper>
-  )
+  const renderApproveTransaction = () => {
+    return loadingLedger ? (
+      <LoadingWrapper>
+        <ApproveLdegerLoading createTransaction={sendTransaction} cancel={cancelLedger} />
+      </LoadingWrapper>
+    ) : (
+      <Wrapper>
+        <Text type='header4'>Approve Transaction</Text>
+        <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
+        <RoundedBox>
+          <Text type='body2Reg' color={'#ffffff'}>
+            {hostname}
+          </Text>
+        </RoundedBox>
+        {renderContracts()}
+        <RoundedDataBox className='sub-info'>
+          <RoundedDL>
+            <dt>Network Fee:</dt>
+            <dd>{`${gasFee * 0.000001} GNOT`}</dd>
+          </RoundedDL>
+        </RoundedDataBox>
+        {renderTransactionInfo()}
+        <CancelAndConfirmButton
+          cancelButtonProps={{ onClick: cancelEvent }}
+          confirmButtonProps={{
+            onClick: approveEvent,
+            text: 'Approve',
+          }}
+        />
+      </Wrapper>
+    );
+  };
+
+  return transactionData ?
+    renderApproveTransaction() :
+    (
+      <LoadingWrapper>
+        <LoadingApproveTransaction />
+      </LoadingWrapper>
+    )
 };
 
 const LoadingWrapper = styled.div`
