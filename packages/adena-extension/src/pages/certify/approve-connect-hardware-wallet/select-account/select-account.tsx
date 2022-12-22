@@ -321,7 +321,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
         fullWidth
         hierarchy={ButtonHierarchy.Primary}
         margin='auto 0px 0px'
-        disabled={loadPath}
+        disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}
       >
         <Text type='body1Bold'>Next</Text>
