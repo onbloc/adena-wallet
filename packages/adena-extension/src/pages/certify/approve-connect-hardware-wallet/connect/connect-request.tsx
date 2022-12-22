@@ -7,7 +7,7 @@ import IconConnectRequestPermissionLoading from '@assets/connect-request-permiss
 
 const text = {
   title: 'Requesting Permission',
-  desc: 'Connect your ledger device to your\ncomputer and make sure that your\nwallet is unlocked.',
+  desc: 'Please approve the connection request\nin your browser.',
 };
 
 const Wrapper = styled.main`
@@ -34,7 +34,7 @@ const Wrapper = styled.main`
     width: 100px;
     height: 100px;
     margin: 20px auto;
-    animation: rotate 5s infinite
+    animation: rotate 1.5s infinite
   }
 
   div {

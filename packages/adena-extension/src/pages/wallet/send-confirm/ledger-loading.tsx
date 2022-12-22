@@ -37,7 +37,7 @@ const Wrapper = styled.main`
     width: 100px;
     height: 100px;
     margin: 20px auto;
-    animation: rotate 5s infinite
+    animation: rotate 1.5s infinite
   }
 
   div {
