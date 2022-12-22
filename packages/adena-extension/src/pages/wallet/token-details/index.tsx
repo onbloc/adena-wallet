@@ -70,6 +70,7 @@ const EtcIcon = styled.div`
 export const TokenDetails = () => {
   const navigate = useNavigate();
   const [etcClicked, setEtcClicked] = useState(false);
+  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
   const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
   const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
   const SendButtonClick = () => navigate(RoutePath.GeneralSend, { state: 'token' });
@@ -79,20 +80,26 @@ export const TokenDetails = () => {
   const [gnoClient] = useGnoClient();
 
   const [balance, setBalance] = useState('');
-  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [historyItems, setHistoryItems] = useState<{ [key in string]: any }>({});
+  const [loadingHistory, setLoadingHistory] = useState(transactionHistory.items.length === 0);
 
   useEffect(() => {
     initHistory();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    setLoadingHistory(transactionHistory.items.length === 0)
+  }, [transactionHistory.items.length]);
+
+  useEffect(() => {
+    getHistory().then(setHistoryItems);
+  }, [transactionHistory.address, transactionHistory.items.length]);
 
   const initHistory = async () => {
     await updateLastHistory();
-    const historyItems = await getHistory();
-    setHistoryItems(historyItems);
   }
 
   useEffect(() => {
@@ -162,7 +169,9 @@ export const TokenDetails = () => {
         }}
       />
       {
-        transactionHistory.init ? (
+        loadingHistory ? (
+          <LoadingTokenDetails />
+        ) : (
           Object.keys(historyItems).length > 0 ? (
             Object.keys(historyItems).map((item, idx) => (
               <ListWithDate
@@ -177,8 +186,6 @@ export const TokenDetails = () => {
               No transaction to display
             </Text>
           )
-        ) : (
-          <LoadingTokenDetails />
         )
       }
     </Wrapper>
