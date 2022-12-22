@@ -105,7 +105,7 @@ const AccountListContainer = styled.div`
       align-items: center;
       justify-content: center;
       svg {
-        animation: rotate 2s infinite
+        animation: rotate 1.5s infinite
       }
       circle {
         stroke: ${theme.color.neutral[9]};
