@@ -1,3 +1,5 @@
+import { WalletError } from '@common/errors';
+import { loadWallet } from '@services/wallet';
 import { Transaction, uint8ArrayToArray, Wallet, WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletService } from '..';
@@ -47,7 +49,8 @@ const createTransactionAccount = async (
   try {
     currentAccount.setSigner(account.getSigner());
   } catch (e) {
-    console.log(e);
+    const wallet = await loadWallet();
+    currentAccount.setSigner(wallet.getSigner());
   }
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   currentAccount.updateByGno({
@@ -63,13 +66,9 @@ const createTransactionAccountByLedger = async (
 ) => {
   const accountInfo = await gnoClient.getAccount(account.getAddress());
   const currentAccount = new WalletAccount(account.data);
-  try {
-    const ledgerWallet = await Wallet.createByLedger([account.data.path]);
-    await ledgerWallet.initAccounts();
-    currentAccount.setSigner(ledgerWallet.getAccounts()[0].getSigner());
-  } catch (e) {
-    console.log(e);
-  }
+  const ledgerWallet = await Wallet.createByLedger([account.data.path]);
+  await ledgerWallet.initAccounts();
+  currentAccount.setSigner(ledgerWallet.getAccounts()[0].getSigner());
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   currentAccount.updateByGno({
     accountNumber: accountInfo.accountNumber,
@@ -94,14 +93,9 @@ export const createTransactionByContract = async (
   gasFee?: number,
   memo?: string | undefined,
 ) => {
-  const accountInfo = await gnoClient.getAccount(account.getAddress());
-  const currentAccount = new WalletAccount(account.data);
-  currentAccount.setSigner(account.getSigner());
-  currentAccount.updateByGno({
-    accountNumber: accountInfo.accountNumber,
-    sequence: accountInfo.sequence,
-  });
-  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
+  const currentAccount = account.data.signerType === 'LEDGER' ?
+    await createTransactionAccountByLedger(gnoClient, account) :
+    await createTransactionAccount(gnoClient, account);
   const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
   const transactionFee = await Transaction.generateTransactionFee(
     currentAccount,
@@ -116,8 +110,32 @@ export const createTransactionByContract = async (
     .memo(memo ?? '')
     .build();
   const transactionValue = uint8ArrayToArray(transaction.encodedValue);
+  return transactionValue;
+}
+
+export const createTransactionData = async (
+  gnoClient: InstanceType<typeof GnoClient>,
+  account: InstanceType<typeof WalletAccount>,
+  messages: Array<any>,
+  gasWanted: number,
+  gasFee?: number,
+  memo?: string | undefined,
+) => {
+  const accountInfo = await gnoClient.getAccount(account.getAddress());
+  const currentAccount = new WalletAccount(account.data);
+  currentAccount.updateByGno({
+    accountNumber: accountInfo.accountNumber,
+    sequence: accountInfo.sequence,
+  });
+  currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
+  const document = Transaction.generateDocument(currentAccount, messages, gasWanted, gasFee, memo);
+  const transactionFee = await Transaction.generateTransactionFee(
+    currentAccount,
+    gasWanted,
+    gasFee,
+  );
   return {
-    value: transactionValue,
+    messages,
     contracts: messages.map(message => {
       return {
         type: message?.type,
@@ -125,6 +143,7 @@ export const createTransactionByContract = async (
         value: message?.value
       }
     }),
+    transactionFee,
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
     document
@@ -147,14 +166,18 @@ export const createAminoSign = async (
   gasFee?: number,
   memo?: string | undefined,
 ) => {
-  const wallet = await WalletService.loadWallet();
-  await wallet.initAccounts();
-  const currentAccount = wallet.getAccounts().find(
+  const accounts = await WalletService.loadAccounts();
+  const account = accounts.find(
     (walletAccount: InstanceType<typeof WalletAccount>) =>
       walletAccount.getAddress() === accountAddress)?.clone();
-  if (!currentAccount) {
-    return null;
+  if (!account) {
+    throw new WalletError('NOT_FOUND_ACCOUNT');
   }
+  if (account.data.signerType === 'LEDGER') {
+    throw new WalletError('FAILED_TO_LOAD');
+  }
+
+  const currentAccount = await createTransactionAccount(gnoClient, account);
 
   const accountInfo = await gnoClient.getAccount(accountAddress);
   currentAccount.updateByGno({

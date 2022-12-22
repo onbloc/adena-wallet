@@ -17,6 +17,10 @@ const ERROR_VALUE = {
     status: 1003,
     type: 'FAILED_TO_CREATE',
   },
+  NOT_FOUND_ACCOUNT: {
+    status: 1004,
+    type: 'NOT_FOUND_PASSWORD',
+  },
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;
