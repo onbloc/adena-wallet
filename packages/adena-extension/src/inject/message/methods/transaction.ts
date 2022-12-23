@@ -18,7 +18,7 @@ export const signAmino = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveLogin,
     requestData,
-    InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData, requestData.key),
+    InjectionMessageInstance.failure('SIGN_REJECTED', requestData, requestData.key),
     sendResponse,
   );
 }
