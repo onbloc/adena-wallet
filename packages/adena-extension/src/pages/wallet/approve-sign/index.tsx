@@ -18,6 +18,7 @@ import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 
+// TODO: ApproveTransaction
 export const ApproveSign = () => {
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
@@ -193,7 +194,7 @@ export const ApproveSign = () => {
       </LoadingWrapper>
     ) : (
       <Wrapper>
-        <Text type='header4'>Approve Transaction</Text>
+        <Text type='header4'>Sign Transaction</Text>
         <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
         <RoundedBox>
           <Text type='body2Reg' color={'#ffffff'}>
@@ -212,7 +213,7 @@ export const ApproveSign = () => {
           cancelButtonProps={{ onClick: cancelEvent }}
           confirmButtonProps={{
             onClick: approveEvent,
-            text: 'Approve',
+            text: 'Sign',
           }}
         />
       </Wrapper>
