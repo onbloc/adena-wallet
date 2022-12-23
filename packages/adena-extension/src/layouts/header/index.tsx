@@ -21,6 +21,7 @@ export const Header = () => {
   const login = useMatch(RoutePath.Login);
   const approveEstablish = useMatch(RoutePath.ApproveEstablish);
   const ApproveLogin = useMatch(RoutePath.ApproveLogin);
+  const approveSign = useMatch(RoutePath.ApproveSign);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
@@ -44,7 +45,7 @@ export const Header = () => {
   return (
     <Wrapper>
       {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
-      {(approveEstablish || approveTransaction) && <ApproveMenu />}
+      {(approveEstablish || approveTransaction || approveSign) && <ApproveMenu />}
       {(wallet ||
         settings ||
         nft ||
