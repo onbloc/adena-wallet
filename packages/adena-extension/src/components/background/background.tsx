@@ -17,6 +17,7 @@ export const Background = ({ children }: Props) => {
     const [, updateLastTransactionHistory] = useTransactionHistory();
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
+    const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
     /**
      * History Data Interval Fetch
@@ -45,6 +46,7 @@ export const Background = ({ children }: Props) => {
     }, [currentAccount])
 
     useEffect(() => {
+        clearCurrentBalance();
         clearTransactionHistory();
     }, [currentAccount?.getAddress(), gnoClient?.chainId])
 

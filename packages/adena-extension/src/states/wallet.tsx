@@ -37,7 +37,7 @@ export interface TransactionHistoryState {
   init: boolean;
   isFinish: boolean;
   items: Array<HistoryItem>;
-}
+};
 
 export const transactionHistory = atom<TransactionHistoryState>({
   key: `wallet/transactionHistory`,
@@ -69,8 +69,22 @@ export const tokenConfig = atom<Array<TokenConfig>>({
 export interface Balance extends TokenConfig {
   amount: number;
   amountDenom: string;
-}
+};
+
 export const balances = atom<Array<Balance>>({
   key: `wallet/balances`,
   default: [],
+});
+
+export interface CuurentBalance {
+  amount: number;
+  denom: string;
+};
+
+export const currentBalance = atom<CuurentBalance>({
+  key: `wallet/currentBalance`,
+  default: {
+    amount: 0,
+    denom: ''
+  },
 });

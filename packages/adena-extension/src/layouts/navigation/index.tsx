@@ -34,14 +34,15 @@ const Wrapper = styled.nav`
 
 export const Navigation = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const wallet = useMatch(RoutePath.Wallet);
   const explore = useMatch(RoutePath.Explore);
   const nft = useMatch(RoutePath.Nft);
   const history = useMatch(RoutePath.History);
   const settings = useMatch(RoutePath.Setting);
   const tokenDetails = useMatch(RoutePath.TokenDetails);
-  const [state, setState] = useRecoilState(WalletState.state);
+  const [state] = useRecoilState(WalletState.state);
+  const [currentBalance] = useRecoilState(WalletState.currentBalance);
 
   const navItems = [
     {
@@ -71,9 +72,16 @@ export const Navigation = () => {
     },
   ];
 
+  const isRender = () => {
+    if (wallet || tokenDetails || nft || explore || history || settings) {
+      return currentBalance.denom !== '';
+    }
+    return false;
+  }
+
   return (
     <>
-      {(wallet || tokenDetails || nft || explore || history || settings) && (
+      {isRender() && (
         <Wrapper>
           {navItems.map((item, idx) => (
             <div key={idx}>
