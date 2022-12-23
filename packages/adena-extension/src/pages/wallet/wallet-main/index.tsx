@@ -31,7 +31,7 @@ export const WalletMain = () => {
   const { initAccounts } = useWalletAccounts(wallet);
   const [balances, updateBalances] = useWalletBalances();
   const [currentAccount] = useCurrentAccount();
-  const [currentBalance, setCurrentBalance] = useState<string | undefined>();
+  const [currentBalance, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
 
@@ -51,48 +51,53 @@ export const WalletMain = () => {
   useEffect(() => {
     if (balances && balances.length > 0) {
       if (balances[0].amountDenom.toUpperCase() === balances[0].denom.toUpperCase()) {
-        const amount = maxFractionDigits(balances[0].amount ?? 0, 6);
-        const unit = balances[0].amountDenom.toUpperCase();
-        const currentBalance = `${amount}\n${unit}`;
-        setCurrentBalance(currentBalance);
+        setCurrentBalance({
+          amount: balances[0].amount,
+          denom: balances[0].amountDenom.toUpperCase()
+        });
       }
     }
   }, [balances]);
 
+  const getCurrentBalance = () => {
+    if (!currentBalance.denom) {
+      return null;
+    }
+    return `${maxFractionDigits(currentBalance.amount, 6)}\n${currentBalance.denom}`
+  };
+
   return (
     <>
-      {currentBalance && state === 'FINISH' ? (
-        balances && (
-          <Wrapper>
-            <Text type='header2' textAlign='center'>
-              {currentBalance}
-            </Text>
-            <DubbleButton
-              margin='14px 0px 30px'
-              leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
-              rightProps={{
-                onClick: SendButtonClick,
-                text: 'Send',
-              }}
-            />
-            {
-              tokenConfig.map((item, index) => (
-                <ListBox
-                  left={<img src={item.imageData} alt='logo image' />}
-                  center={<Text type='body1Bold'>{item.name || ''}</Text>}
-                  right={
-                    <Text type='body2Reg'>
-                      {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount ?? 0, 6)} ${item.type ?? ''}`}
-                    </Text>
-                  }
-                  hoverAction={true}
-                  gap={12}
-                  key={index}
-                  onClick={CoinBoxClick}
-                />
-              ))}
-          </Wrapper>
-        )
+      {getCurrentBalance() && state === 'FINISH' ? (
+        <Wrapper>
+          <Text type='header2' textAlign='center'>
+            {getCurrentBalance()}
+          </Text>
+          <DubbleButton
+            margin='14px 0px 30px'
+            leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+            rightProps={{
+              onClick: SendButtonClick,
+              text: 'Send',
+            }}
+          />
+          {
+            tokenConfig.map((item, index) => (
+              <ListBox
+                left={<img src={item.imageData} alt='logo image' />}
+                center={<Text type='body1Bold'>{item.name || ''}</Text>}
+                right={
+                  <Text type='body2Reg'>
+                    {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount ?? 0, 6)} ${item.type ?? ''}`}
+                  </Text>
+                }
+                hoverAction={true}
+                gap={12}
+                key={index}
+                onClick={CoinBoxClick}
+              />
+            ))}
+        </Wrapper>
       ) : (
         <LoadingWallet />
       )}
