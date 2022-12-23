@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -19,9 +19,8 @@ import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 
 export const ApproveTransactionMain = () => {
-  const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [wallet, state] = useWallet();
+  const [, state] = useWallet();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -183,7 +182,9 @@ export const ApproveTransactionMain = () => {
         </Button>
         {
           visibleTransactionInfo && (
-            <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
+            <div className='textarea-wrapper'>
+              <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
+            </div>
           )
         }
       </TransactionInfoBox>
@@ -319,17 +320,21 @@ const TransactionInfoBox = styled(DataBoxStyle)`
       margin-left: 3px;
     }
   }
-  .raw-info-textarea {
+  .textarea-wrapper {
     width: 100%;
     height: 120px;
-    overflow: auto;
     border-radius: 24px;
     background-color: ${({ theme }) => theme.color.neutral[8]};
     border: 1px solid ${({ theme }) => theme.color.neutral[6]};
-    padding: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .raw-info-textarea {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
     ${({ theme }) => theme.fonts.body2Reg};
     resize: none;
-    margin-bottom: 10px;
   }
   .raw-info-textarea::-webkit-scrollbar {
     width: 2px;
