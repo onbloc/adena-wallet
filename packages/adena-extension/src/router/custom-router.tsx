@@ -42,6 +42,7 @@ import {
   ApproveConnectHardwareWalletSelectAccount
 } from '@pages/certify/approve-connect-hardware-wallet';
 import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
+import { ApproveSign } from '@pages/wallet/approve-sign';
 
 export const CustomRouter = () => {
 
@@ -74,6 +75,7 @@ export const CustomRouter = () => {
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
+        <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />

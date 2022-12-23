@@ -69,7 +69,7 @@ export const AddAccount = () => {
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
       ),
       type: 'popup',
-      height: 570,
+      height: 590,
       width: 380,
       left: 800,
       top: 300,
@@ -114,7 +114,7 @@ export const AddAccount = () => {
         <Text className='title-arrow' type='body1Bold'>
           Connect Ledger
         </Text>
-        <Text className='title-desc' type='body2Reg'>
+        <Text type='body2Reg' color={theme.color.neutral[2]}>
           Add a ledger account
         </Text>
       </GrayButtonBox>
