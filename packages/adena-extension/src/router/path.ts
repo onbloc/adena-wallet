@@ -25,6 +25,7 @@ export enum RoutePath {
   TokenDetails = '/wallet/token-details',
   ApproveLogin = '/approve/wallet/login',
   ApproveTransaction = '/approve/wallet/transaction',
+  ApproveSign = '/approve/wallet/sign',
   ApproveEstablish = '/approve/wallet/establish',
   ImportAccount = '/wallet/import-account',
   AddAccount = '/wallet/add-account',

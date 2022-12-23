@@ -1,16 +1,13 @@
 import { WalletError } from '@common/errors';
 import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
-import { TransactionService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
-import { loadGnoClient } from './wallet';
 
 export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const gnoClient = await loadGnoClient();
   const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
   if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
     return;
@@ -18,25 +15,12 @@ export const signAmino = async (
   if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
     return;
   }
-  try {
-    const signedDocumnet = await TransactionService.createAminoSign(
-      gnoClient,
-      currentAccountAddress,
-      requestData?.data?.messages,
-      requestData?.data?.gasWanted,
-      requestData?.data?.gasFee,
-      requestData?.data?.memo,
-    );
-    sendResponse(InjectionMessageInstance.success('SIGN_SUCCESS', signedDocumnet, requestData.key));
-  } catch (error) {
-    if (error instanceof WalletError) {
-      if (error.getType() === 'NOT_FOUND_PASSWORD') {
-        sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', error, requestData.key));
-        return;
-      }
-      sendResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', { error }, requestData.key));
-    }
-  }
+  HandlerMethod.createPopup(
+    RoutePath.ApproveLogin,
+    requestData,
+    InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData, requestData.key),
+    sendResponse,
+  );
 }
 
 export const doContract = async (
