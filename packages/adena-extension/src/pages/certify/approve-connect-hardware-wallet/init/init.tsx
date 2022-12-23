@@ -13,11 +13,12 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  height: 100%;
-  padding-top: 30px;
+  min-height: calc(100vh - 48px);
+  height: auto;
+  padding: 24px 20px;
+  margin: 0 auto;
 
   .icon {
     width: 100px;

@@ -86,13 +86,13 @@ export const ApproveSign = () => {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
       }
     }
     return false;
   }
 
-  const sendTransaction = async () => {
+  const signTransaction = async () => {
     if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
       try {
         const signedAmino = await TransactionService.createAminoSign(
@@ -113,7 +113,7 @@ export const ApproveSign = () => {
             return false;
           }
         }
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
       }
     } else {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key));
@@ -123,7 +123,7 @@ export const ApproveSign = () => {
 
   const approveEvent = async () => {
     if (currentAccount?.data.signerType === 'AMINO') {
-      sendTransaction();
+      signTransaction();
     }
     if (currentAccount?.data.signerType === 'LEDGER') {
       setLoadingLedger(true);
@@ -131,7 +131,7 @@ export const ApproveSign = () => {
   };
 
   const cancelEvent = async () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData?.data, requestData?.key));
+    chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key));
   };
 
   const getContractFunctionText = ({ type = '', functionName = '' }: { type?: string; functionName?: string }) => {
@@ -190,7 +190,7 @@ export const ApproveSign = () => {
   const renderApproveTransaction = () => {
     return loadingLedger ? (
       <LoadingWrapper>
-        <ApproveLdegerLoading createTransaction={sendTransaction} cancel={cancelLedger} />
+        <ApproveLdegerLoading createTransaction={signTransaction} cancel={cancelLedger} />
       </LoadingWrapper>
     ) : (
       <Wrapper>

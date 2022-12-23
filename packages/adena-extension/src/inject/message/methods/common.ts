@@ -10,12 +10,10 @@ export const createPopup = async (
 ) => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
-      `popup.html#${popupPath}?key=${message.key}&hostname=${
-        message.hostname
-      }&data=${encodeParameter(message)}`,
+      `popup.html#${popupPath}?key=${message.key}&hostname=${message.hostname}&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
-    height: 570,
+    height: 590,
     width: 380,
     left: 800,
     top: 300,

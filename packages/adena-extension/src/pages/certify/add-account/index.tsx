@@ -69,7 +69,7 @@ export const AddAccount = () => {
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
       ),
       type: 'popup',
-      height: 570,
+      height: 590,
       width: 380,
       left: 800,
       top: 300,
