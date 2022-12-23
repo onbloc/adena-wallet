@@ -53,14 +53,24 @@ export const AddAccount = () => {
     await setCurrentState('LOADING');
   };
 
-  const onClickConnectHardwareWallet = () => {
+  const existsPopups = async () => {
+    const windows = await chrome.windows.getAll();
+    return windows.findIndex((window) => window.type === 'popup') > -1;
+  };
+
+  const onClickConnectHardwareWallet = async () => {
+    const isPopup = await existsPopups();
+    if (isPopup) {
+      return;
+    }
+
     const popupOption: chrome.windows.CreateData = {
       url: chrome.runtime.getURL(
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
       ),
       type: 'popup',
       height: 570,
-      width: 360,
+      width: 380,
       left: 800,
       top: 300,
     };
