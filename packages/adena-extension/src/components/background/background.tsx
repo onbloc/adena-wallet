@@ -17,18 +17,19 @@ export const Background = ({ children }: Props) => {
     const [, updateLastTransactionHistory] = useTransactionHistory();
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
+    const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
     /**
      * History Data Interval Fetch
      */
     useEffect(() => {
-        if (gnoClient && currentAccount) {
+        if (gnoClient?.chainId && currentAccount) {
             const historyFetchTimer = setInterval(() => {
                 updateLastTransactionHistory();
             }, 5000);
             return () => { clearInterval(historyFetchTimer) }
         }
-    }, [gnoClient, currentAccount, transactionHistory.currentPage]);
+    }, [gnoClient?.chainId, currentAccount, transactionHistory.currentPage]);
 
     useEffect(() => {
         if (currentAccount === null) {
@@ -45,8 +46,9 @@ export const Background = ({ children }: Props) => {
     }, [currentAccount])
 
     useEffect(() => {
+        clearCurrentBalance();
         clearTransactionHistory();
-    }, [currentAccount?.getAddress()])
+    }, [currentAccount?.getAddress(), gnoClient?.chainId])
 
     return (
         <>

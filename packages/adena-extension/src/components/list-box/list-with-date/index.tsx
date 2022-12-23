@@ -6,13 +6,13 @@ import { dateTimeFormatEn, getDateDiff } from '@common/utils/client-utils';
 import ListBox from '../index';
 import success from '../../../assets/success.svg';
 import failed from '../../../assets/failed.svg';
-import { HistoryItem } from 'gno-client/src/api/response';
+import { HistoryItemType } from 'gno-client/src/api/response';
 import { useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
 
 interface HistoryItemProps {
   onClick: (item: any) => void;
   date: string;
-  transaction: Array<HistoryItem>;
+  transaction: Array<HistoryItemType>;
 }
 
 const SymbolImage = styled.div<{ status: boolean }>`
@@ -54,7 +54,7 @@ export const ListWithDate = (props: HistoryItemProps) => {
     return formatDate;
   }
 
-  const renderTransactionItem = (item: HistoryItem, idx: number) => {
+  const renderTransactionItem = (item: HistoryItemType, idx: number) => {
     const info = getTransactionInfo(item)
 
     return (
@@ -66,8 +66,9 @@ export const ListWithDate = (props: HistoryItemProps) => {
         }
         center={
           <Center>
-            <Text type='body3Bold'>
+            <Text display={'flex'} type='body3Bold'>
               {info.title}
+              {info.msgNum > 1 && <Text type='body4Bold'>{`  +${info.msgNum - 1}`}</Text>}
             </Text>
             <Text type='body3Reg' color={theme.color.neutral[9]}>
               {info.titleDescription}
@@ -110,6 +111,10 @@ const Wrapper = styled.div`
 
 const Center = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
+
+  & > div {
+    align-items: center;
+  }
 `;
 
 export default ListWithDate;

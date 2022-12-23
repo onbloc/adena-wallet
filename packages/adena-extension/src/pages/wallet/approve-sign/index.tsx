@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -18,9 +18,11 @@ import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 
-export const ApproveTransactionMain = () => {
+// TODO: ApproveTransaction
+export const ApproveSign = () => {
+  const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [, state] = useWallet();
+  const [wallet, state] = useWallet();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -84,29 +86,25 @@ export const ApproveTransactionMain = () => {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
       }
     }
     return false;
   }
 
-  const sendTransaction = async () => {
+  const signTransaction = async () => {
     if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
       try {
-        const transactionValue = await TransactionService.createTransactionByContract(
+        const signedAmino = await TransactionService.createAminoSign(
           gnoClient,
-          currentAccount,
+          currentAccount.getAddress(),
           requestData?.data?.messages,
           requestData?.data?.gasWanted,
           requestData?.data?.gasFee,
           requestData?.data?.memo
         );
-        const result = await TransactionService.sendTransaction(gnoClient, transactionValue);
-        if (result.height && result.height !== "0") {
-          chrome.runtime.sendMessage(InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key));
-          return true;
-        } else {
-          chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key));
+        if (signedAmino) {
+          chrome.runtime.sendMessage(InjectionMessageInstance.success('SIGN_AMINO', signedAmino, requestData?.key));
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -115,7 +113,7 @@ export const ApproveTransactionMain = () => {
             return false;
           }
         }
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
       }
     } else {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key));
@@ -125,7 +123,7 @@ export const ApproveTransactionMain = () => {
 
   const approveEvent = async () => {
     if (currentAccount?.data.signerType === 'AMINO') {
-      sendTransaction();
+      signTransaction();
     }
     if (currentAccount?.data.signerType === 'LEDGER') {
       setLoadingLedger(true);
@@ -133,7 +131,7 @@ export const ApproveTransactionMain = () => {
   };
 
   const cancelEvent = async () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData?.data, requestData?.key));
+    chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key));
   };
 
   const getContractFunctionText = ({ type = '', functionName = '' }: { type?: string; functionName?: string }) => {
@@ -182,9 +180,7 @@ export const ApproveTransactionMain = () => {
         </Button>
         {
           visibleTransactionInfo && (
-            <div className='textarea-wrapper'>
-              <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
-            </div>
+            <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
           )
         }
       </TransactionInfoBox>
@@ -194,11 +190,11 @@ export const ApproveTransactionMain = () => {
   const renderApproveTransaction = () => {
     return loadingLedger ? (
       <LoadingWrapper>
-        <ApproveLdegerLoading createTransaction={sendTransaction} cancel={cancelLedger} />
+        <ApproveLdegerLoading createTransaction={signTransaction} cancel={cancelLedger} />
       </LoadingWrapper>
     ) : (
       <Wrapper>
-        <Text type='header4'>Approve Transaction</Text>
+        <Text type='header4'>Sign Transaction</Text>
         <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
         <RoundedBox>
           <Text type='body2Reg' color={'#ffffff'}>
@@ -217,7 +213,7 @@ export const ApproveTransactionMain = () => {
           cancelButtonProps={{ onClick: cancelEvent }}
           confirmButtonProps={{
             onClick: approveEvent,
-            text: 'Approve',
+            text: 'Sign',
           }}
         />
       </Wrapper>
@@ -320,21 +316,17 @@ const TransactionInfoBox = styled(DataBoxStyle)`
       margin-left: 3px;
     }
   }
-  .textarea-wrapper {
+  .raw-info-textarea {
     width: 100%;
     height: 120px;
+    overflow: auto;
     border-radius: 24px;
     background-color: ${({ theme }) => theme.color.neutral[8]};
     border: 1px solid ${({ theme }) => theme.color.neutral[6]};
-    padding: 12px 16px;
-    margin-bottom: 10px;
-  }
-  .raw-info-textarea {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
+    padding: 12px;
     ${({ theme }) => theme.fonts.body2Reg};
     resize: none;
+    margin-bottom: 10px;
   }
   .raw-info-textarea::-webkit-scrollbar {
     width: 2px;

@@ -7,15 +7,16 @@ import IconConnectRequestPermissionLoading from '@assets/connect-request-permiss
 
 const text = {
   title: 'Requesting Permission',
-  desc: 'Connect your ledger device to your\ncomputer and make sure that your\nwallet is unlocked.',
+  desc: 'Please approve the connection request\nin your browser.',
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  height: 100%;
-  padding-top: 50px;
+  min-height: calc(100vh - 48px);
+  height: auto;
+  padding: 24px 20px;
+  margin: 0 auto;
 
   @keyframes rotate {
     from {
@@ -34,7 +35,7 @@ const Wrapper = styled.main`
     width: 100px;
     height: 100px;
     margin: 20px auto;
-    animation: rotate 5s infinite
+    animation: rotate 1.5s infinite
   }
 
   div {

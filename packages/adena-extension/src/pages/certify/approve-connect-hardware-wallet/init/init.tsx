@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
@@ -6,19 +6,19 @@ import Text from '@components/text';
 import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 
 const text = {
-  title: 'Connect a\nHardware Wallet',
-  desc: 'Connect your ledger device to your\ncomputer and make sure that your\nwallet is unlocked.',
+  title: 'Connect a\nLedger Device',
+  desc: 'Connect your ledger device to your\ncomputer and make sure it is unlocked.',
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  height: 100%;
-  padding-top: 30px;
+  min-height: calc(100vh - 48px);
+  height: auto;
+  padding: 24px 20px;
+  margin: 0 auto;
 
   .icon {
     width: 100px;

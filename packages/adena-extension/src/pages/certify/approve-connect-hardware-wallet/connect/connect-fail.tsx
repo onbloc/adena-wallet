@@ -7,15 +7,16 @@ import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 
 const text = {
   title: 'Connection Failed',
-  desc: 'We couldn’t connect to your hardware\nwallet. Please make sure your ledger\ndevice is unlocked and connected to\nyour computer.',
+  desc: 'We couldn’t connect to your ledger\ndevice. Please ensure that your device\nis unlocked.',
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  padding-top: 50px;
+${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+width: 100%;
+min-height: calc(100vh - 48px);
+height: auto;
+padding: 24px 20px;
+margin: 0 auto;
 
   .icon {
     width: 100px;

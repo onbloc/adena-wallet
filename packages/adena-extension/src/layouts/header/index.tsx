@@ -6,6 +6,8 @@ import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -21,6 +23,7 @@ export const Header = () => {
   const login = useMatch(RoutePath.Login);
   const approveEstablish = useMatch(RoutePath.ApproveEstablish);
   const ApproveLogin = useMatch(RoutePath.ApproveLogin);
+  const approveSign = useMatch(RoutePath.ApproveSign);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
@@ -40,21 +43,25 @@ export const Header = () => {
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
+  const [currentBalance] = useRecoilState(WalletState.currentBalance);
 
   return (
     <Wrapper>
       {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
-      {(approveEstablish || approveTransaction) && <ApproveMenu />}
+      {(approveEstablish || approveTransaction || approveSign) && <ApproveMenu />}
       {(wallet ||
-        settings ||
         nft ||
         explore ||
         history ||
+        settings ||
         connectedApps ||
-        changeNetwork) && <TopMenu />}
-      {(yourSeedPhrase || enterSeedPhrase || approveHardwareWalletInit || approveHardwareWalletConnect) && <ProgressMenu progressLevel={'first'} />}
-      {(createPassword || approveHardwareWalletSelectAccount) && <ProgressMenu progressLevel={'second'} />}
-      {(launchAdena || approveHardwareWalletFinish) && <ProgressMenu progressLevel={'third'} />}
+        changeNetwork) && <TopMenu disabled={currentBalance.denom === ''} />}
+      {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
+      {(createPassword) && <ProgressMenu progressLevel={'second'} />}
+      {(launchAdena) && <ProgressMenu progressLevel={'third'} />}
+      {(approveHardwareWalletInit || approveHardwareWalletConnect) && <ProgressMenu showLogo progressLevel={'first'} />}
+      {(approveHardwareWalletSelectAccount) && <ProgressMenu showLogo progressLevel={'second'} />}
+      {(approveHardwareWalletFinish) && <ProgressMenu showLogo progressLevel={'third'} />}
     </Wrapper>
   );
 };

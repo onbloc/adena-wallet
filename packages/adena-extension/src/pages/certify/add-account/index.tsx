@@ -53,13 +53,23 @@ export const AddAccount = () => {
     await setCurrentState('LOADING');
   };
 
-  const onClickConnectHardwareWallet = () => {
+  const existsPopups = async () => {
+    const windows = await chrome.windows.getAll();
+    return windows.findIndex((window) => window.type === 'popup') > -1;
+  };
+
+  const onClickConnectHardwareWallet = async () => {
+    const isPopup = await existsPopups();
+    if (isPopup) {
+      return;
+    }
+
     const popupOption: chrome.windows.CreateData = {
       url: chrome.runtime.getURL(
         `popup.html#${RoutePath.ApproveHardwareWalletInit}`,
       ),
       type: 'popup',
-      height: 570,
+      height: 590,
       width: 380,
       left: 800,
       top: 300,
@@ -102,9 +112,9 @@ export const AddAccount = () => {
       </GrayButtonBox>
       <GrayButtonBox onClick={onClickConnectHardwareWallet}>
         <Text className='title-arrow' type='body1Bold'>
-          Connect Hardware Wallet
+          Connect Ledger
         </Text>
-        <Text className='title-desc' type='body2Reg'>
+        <Text type='body2Reg' color={theme.color.neutral[2]}>
           Add a ledger account
         </Text>
       </GrayButtonBox>

@@ -106,6 +106,8 @@ export class NetworkTest3 implements GnoClientApi {
   };
 
   public getTransactionHistory = async (address: string, page?: number) => {
-    return this.fetcher.getTransactionHistory(address, page ?? 0);
+    const result = await this.fetcher.getTransactionHistory(address, page ?? 0);
+    const history = Test3Mapper.HistoryMapper.toHistory(result);
+    return history;
   };
 }

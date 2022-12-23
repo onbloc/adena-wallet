@@ -47,7 +47,11 @@ const MESSAGE_TYPES = {
   },
   TRANSACTION_REJECTED: {
     code: 4000,
-    description: 'The transaction has been rejected by the user.',
+    description: 'The signature request has been rejected by the user.',
+  },
+  SIGN_REJECTED: {
+    code: 4000,
+    description: 'SIGN_REJECTED',
   },
   CONNECTION_REJECTED: {
     code: 4000,
@@ -56,6 +60,10 @@ const MESSAGE_TYPES = {
   TRANSACTION_FAILED: {
     code: 4001,
     description: 'The transaction has failed.',
+  },
+  SIGN_FAILED: {
+    code: 4001,
+    description: 'The sign has failed.',
   },
   ALREADY_CONNECTED: {
     code: 4001,
@@ -83,7 +91,7 @@ const MESSAGE_TYPES = {
   },
   TRANSACTION_SENT: {
     code: 0,
-    description: 'The transaction has been successfully sent.',
+    description: 'Signed data has been successfully returned.',
   },
 };
 

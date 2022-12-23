@@ -1,15 +1,13 @@
+import { WalletError } from '@common/errors';
 import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
-import { TransactionService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
-import { loadGnoClient } from './wallet';
 
 export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const gnoClient = await loadGnoClient();
   const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
   if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
     return;
@@ -17,15 +15,12 @@ export const signAmino = async (
   if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
     return;
   }
-  const signedDocumnet = await TransactionService.createAminoSign(
-    gnoClient,
-    currentAccountAddress,
-    requestData?.data?.messages,
-    requestData?.data?.gasWanted,
-    requestData?.data?.gasFee,
-    requestData?.data?.memo,
+  HandlerMethod.createPopup(
+    RoutePath.ApproveLogin,
+    requestData,
+    InjectionMessageInstance.failure('SIGN_REJECTED', requestData, requestData.key),
+    sendResponse,
   );
-  sendResponse(InjectionMessageInstance.success('SIGN_SUCCESS', signedDocumnet, requestData.key));
 }
 
 export const doContract = async (

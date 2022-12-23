@@ -65,6 +65,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
       await wallet.initAccounts();
       setConnectState('REQUEST_WALLET_LOAD');
     } catch (e) {
+      console.log(e)
       setConnectState('FAILED');
     }
   };

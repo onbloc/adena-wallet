@@ -91,6 +91,9 @@ export const ApproveLogin = () => {
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
         break;
+      case 'SIGN_AMINO':
+        navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
+        break;
       default:
         chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData));
         break;

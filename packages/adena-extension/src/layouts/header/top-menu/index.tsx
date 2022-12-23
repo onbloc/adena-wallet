@@ -37,7 +37,7 @@ const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
   return isEstablish ? `You are connected to ${currentHostname}` : `You are not connected to ${currentHostname}`;
 }
 
-export const TopMenu = () => {
+export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [currentAccount] = useCurrentAccount();
@@ -67,25 +67,21 @@ export const TopMenu = () => {
     });
   };
 
-  return (
-    <>
-      {(
-        <Wrapper>
-          <Header>
-            <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-            <CopyTooltip copyText={currentAccount?.data.address ?? ''}>
-              <Text type='body1Bold' display='inline-flex'>
-                {formatNickname(currentAccount?.data.name ?? '', 12)}
-                <Text type='body1Reg' color={theme.color.neutral[9]}>
-                  {` (${formatAddress(currentAccount?.data.address ?? '')})`}
-                </Text>
-              </Text>
-            </CopyTooltip>
-            <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
-          </Header>
-          <SubMenu open={open} setOpen={setOpen} onClick={toggleMenuHandler} />
-        </Wrapper>
-      )}
-    </>
-  );
+  return !disabled ? (
+    <Wrapper>
+      <Header>
+        <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
+        <CopyTooltip copyText={currentAccount?.data.address ?? ''}>
+          <Text type='body1Bold' display='inline-flex'>
+            {formatNickname(currentAccount?.data.name ?? '', 12)}
+            <Text type='body1Reg' color={theme.color.neutral[9]}>
+              {` (${formatAddress(currentAccount?.data.address ?? '')})`}
+            </Text>
+          </Text>
+        </CopyTooltip>
+        <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
+      </Header>
+      <SubMenu open={open} setOpen={setOpen} onClick={toggleMenuHandler} />
+    </Wrapper>
+  ) : <></>;
 };
