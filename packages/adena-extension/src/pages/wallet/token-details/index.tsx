@@ -151,7 +151,7 @@ export const TokenDetails = () => {
             posTop='28px'
             onClick={() => {
               window.open(
-                `https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/accounts/${currentAccount?.data.address}`,
+                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.data.address}`,
                 '_blank',
               );
             }}
