@@ -272,6 +272,17 @@ export const createFaviconByHostname = async (hostname: string) => {
   return null;
 };
 
+export const createImageDataBySvg = async (imageUri: string) => {
+  try {
+    const response = await axios.get(imageUri, { responseType: 'arraybuffer', });
+    const imageData = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    return imageData;
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+};
+
 const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
 };

@@ -64,7 +64,7 @@ export const Settings = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
   const shareButtonClick = async () => {
-    window.open(`https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/accounts/${currnetAccount?.data.address}`, '_blank')
+    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.data.address}`, '_blank')
   };
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {

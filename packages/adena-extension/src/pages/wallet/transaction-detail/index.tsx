@@ -35,7 +35,7 @@ export const TransactionDetail = () => {
 
 
   const handleLinkClick = (hash: string) => {
-    window.open(`https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/transactions/${hash}`, '_blank');
+    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
   };
 
   return detailInfo ? (
