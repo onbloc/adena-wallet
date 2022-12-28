@@ -37,9 +37,8 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ⬜ Multi-Chain <br>
 ⬜ Manage Custom Tokens <br>
 ⬜ View & Transfer NFTs <br>
-⬜ In-app Swap <br>
+⬜ In-app Swap
 ​
-
 ## Building Locally
 
 To set up a local environment, clone this repository and run the following commands:
