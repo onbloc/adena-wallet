@@ -31,13 +31,14 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Connect to Dapps <br>
 ✅ Sign GNO Contracts <br>
 ✅ Explore Dapps <br>
-✅ Add Accounts <br>
-✅ Change Network <br>
+✅ Multi-Accounts <br>
+✅ Multi-Network <br>
+✅ Ledger Support <br>
+⬜ Multi-Chain <br>
 ⬜ Manage Custom Tokens <br>
 ⬜ View & Transfer NFTs <br>
-⬜ Staking & Governance <br>
+⬜ In-app Swap
 ​
-
 ## Building Locally
 
 To set up a local environment, clone this repository and run the following commands:
@@ -67,7 +68,7 @@ Check out our official documentation page for guides and brand assets.
 **Onbloc**
 
 - [Website](https://onbloc.xyz)
-- [Twitter](https://mobile.twitter.com/onblocxyz)
+- [Twitter](https://twitter.com/onblocxyz)
 - [Medium](https://medium.com/onbloc)
   ​
   ​

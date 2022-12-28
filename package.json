@@ -2,7 +2,7 @@
   "name": "adena-wallet",
   "version": "1.4.2",
   "description": "Adena Wallet",
-  "license": "MIT",
+  "license": "Adena License",
   "scripts": {
     "develop": "nx build:dev adena-extension",
     "build": "yarn build:module && yarn build:service && yarn",
