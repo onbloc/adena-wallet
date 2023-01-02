@@ -131,7 +131,7 @@ export const TokenDetails = () => {
 
   useEffect(() => {
     if (balances && balances.length > 0) {
-      const currentBalance = maxFractionDigits(balances[0].amount ?? 0, 6);
+      const currentBalance = maxFractionDigits(balances[0].amount.toString() ?? 0, 6);
       setBalance(currentBalance);
     }
   }, [balances]);

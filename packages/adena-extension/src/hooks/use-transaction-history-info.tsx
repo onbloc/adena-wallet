@@ -5,6 +5,7 @@ import { useWalletBalances } from "./use-wallet-balances";
 import IconAddPkg from '../assets/addpkg.svg';
 import IconContract from '../assets/contract.svg';
 import { GnoClientResnpose } from "gno-client/src/api";
+import BigNumber from "bignumber.js";
 
 export interface TransactionInfo {
     icon: any;
@@ -263,12 +264,12 @@ export const useTransactionHistoryInfo = (): [{
         }
         try {
             const { amount, denom } = transactionItem.transfer;
-            let currentAmount = amount ?? 0;
+            let currentAmount = BigNumber(amount ?? 0);
             let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;
-            return `${amountSetSymbol(currentAmount)} ${currentDenom}`;
+            return `${amountSetSymbol(currentAmount.toString())} ${currentDenom}`;
         } catch (e) {
             return '';
         }
@@ -280,20 +281,21 @@ export const useTransactionHistoryInfo = (): [{
         }
         try {
             const { amount, denom } = transactionItem.transfer;
-            let currentAmount = amount ?? 0;
+            let currentAmount = BigNumber(amount ?? 0);
             let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;
-            return `${minFractionDigits(currentAmount, 6)} ${currentDenom}`;
+            return `${minFractionDigits(currentAmount.toString(), 6)} ${currentDenom}`;
         } catch (e) {
             return '';
         }
     }
 
     const getNetworkFee = (transactionItem: GnoClientResnpose.HistoryItemType) => {
-        const result = convertUnit(transactionItem.fee.amount ?? 0, transactionItem.fee.denom, 'COMMON');
-        return `${minFractionDigits(result.amount, 6)} ${result.denom}`;
+        const feeAmount = BigNumber(transactionItem.fee.amount ?? 0);
+        const result = convertUnit(feeAmount, transactionItem.fee.denom, 'COMMON');
+        return `${minFractionDigits(result.amount.toString(), 6)} ${result.denom}`;
     }
 
     const getTransferInfo = (transactionItem: GnoClientResnpose.HistoryItemType) => {

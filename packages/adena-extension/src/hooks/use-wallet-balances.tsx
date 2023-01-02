@@ -4,6 +4,7 @@ import { useGnoClient } from './use-gno-client';
 import { useEffect } from 'react';
 import { useTokenConfig } from './use-token-config';
 import { TokenConfig, Balance } from '@states/wallet';
+import BigNumber from 'bignumber.js';
 
 interface BalanceInfo {
   unit: string;
@@ -46,7 +47,8 @@ export const useWalletBalances = (
     );
 
     if (currentConfig) {
-      const result = convertTokenUnit(parseFloat(balance.amount), balance.unit, 'COMMON');
+      const amount = BigNumber(balance.amount);
+      const result = convertTokenUnit(amount, balance.unit, 'COMMON');
       return {
         minimalDenom: currentConfig.minimalDenom,
         denom: currentConfig.denom,

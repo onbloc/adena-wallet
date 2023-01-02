@@ -63,7 +63,7 @@ export const WalletMain = () => {
     if (!currentBalance.denom) {
       return null;
     }
-    return `${maxFractionDigits(currentBalance.amount, 6)}\n${currentBalance.denom}`
+    return `${maxFractionDigits(currentBalance.amount.toString(), 6)}\n${currentBalance.denom}`
   };
 
   return (
@@ -88,7 +88,7 @@ export const WalletMain = () => {
                 center={<Text type='body1Bold'>{item.name || ''}</Text>}
                 right={
                   <Text type='body2Reg'>
-                    {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount ?? 0, 6)} ${item.type ?? ''}`}
+                    {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount.toString() ?? 0, 6)} ${item.type ?? ''}`}
                   </Text>
                 }
                 hoverAction={true}

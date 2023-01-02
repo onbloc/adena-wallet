@@ -1,6 +1,7 @@
 import { atom } from 'recoil';
 import { Wallet, WalletAccount } from 'adena-module';
 import { HistoryItem } from 'gno-client/src/api/response';
+import BigNumber from 'bignumber.js';
 
 /**
  * CREATE: When there is no stored serialized wallet value
@@ -67,7 +68,7 @@ export const tokenConfig = atom<Array<TokenConfig>>({
 });
 
 export interface Balance extends TokenConfig {
-  amount: number;
+  amount: BigNumber;
   amountDenom: string;
 };
 
@@ -77,14 +78,14 @@ export const balances = atom<Array<Balance>>({
 });
 
 export interface CuurentBalance {
-  amount: number;
+  amount: BigNumber;
   denom: string;
 };
 
 export const currentBalance = atom<CuurentBalance>({
   key: `wallet/currentBalance`,
   default: {
-    amount: 0,
+    amount: BigNumber(0),
     denom: ''
   },
 });

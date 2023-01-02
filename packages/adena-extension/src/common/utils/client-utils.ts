@@ -5,6 +5,7 @@ import success from '../../assets/success.svg';
 import failed from '../../assets/failed.svg';
 import theme from '@styles/theme';
 import axios from 'axios';
+import BigNumber from 'bignumber.js';
 
 export function formatAddress(v: string, num?: number): string {
   const length = num ?? 4;
@@ -287,10 +288,10 @@ const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
 };
 
-export const optimizeNumber = (value: number, multiply: number) => {
-  const decimalPosition = `${multiply}`.indexOf('.');
+export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
+  const decimalPosition = multiply.toString().indexOf('.');
   const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
   const extraValue = Math.pow(10, decimalLength);
-  const currentAmouont = Math.round(value * multiply * extraValue) / extraValue;
+  const currentAmouont = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
   return currentAmouont;
 };

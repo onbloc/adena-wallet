@@ -2,13 +2,14 @@ import { optimizeNumber } from "@common/utils/client-utils";
 import { WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import axios from "axios";
+import BigNumber from "bignumber.js";
 import { useRecoilState } from "recoil";
 
 const TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json";
 
 export const useTokenConfig = (): [
     getConfig: () => Promise<Array<TokenConfig>>,
-    convertTokenUnit: (amount: number, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { amount: number, denom: string },
+    convertTokenUnit: (amount: BigNumber, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { amount: BigNumber, denom: string },
     getTokenImage: (denom: string) => string | undefined
 ] => {
     const [tokenConfig, setTokenConfig] = useRecoilState(WalletState.tokenConfig);
@@ -20,7 +21,7 @@ export const useTokenConfig = (): [
         return await fetchTokenConfig();
     }
 
-    const convertUnit = (amount: number, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { amount: number, denom: string } => {
+    const convertUnit = (amount: BigNumber, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { amount: BigNumber, denom: string } => {
         if (tokenConfig) {
             const convertDenomType = convertType ?? 'COMMON';
             const currentTokenConfig = tokenConfig.find(
@@ -31,7 +32,7 @@ export const useTokenConfig = (): [
                 const currentUnit = denomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
                 const convertUnit = convertDenomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
 
-                const currentAmouont = optimizeNumber(amount, currentUnit / convertUnit);
+                const currentAmouont = optimizeNumber(amount, BigNumber(currentUnit).dividedBy(convertUnit));
                 const currentDenom = convertDenomType === 'COMMON' ? currentTokenConfig.denom.toUpperCase() : currentTokenConfig.minimalDenom;
 
                 return {
