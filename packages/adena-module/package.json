@@ -1,6 +1,6 @@
 {
   "name": "adena-module",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Adena's Wallet",
   "main": "./dist/index.umd.js",
   "module": "./dist/index.esm.js",
