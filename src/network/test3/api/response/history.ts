@@ -18,11 +18,11 @@ export interface HistoryItem {
   msg_num: number,
   func?: string,
   transfer: {
-    amount: number | null,
+    amount: string | number | null,
     denom: string
   },
   fee: {
-    amount: number | null,
+    amount: string | number | null,
     denom: string
   }
 }
