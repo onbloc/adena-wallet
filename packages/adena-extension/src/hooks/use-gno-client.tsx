@@ -1,5 +1,5 @@
 import { LocalStorageValue } from "@common/values";
-import { GnoClientService } from "@services/index";
+import { ResourceService } from "@services/index";
 import { GnoClientState } from "@states/index";
 import { GnoClient } from "gno-client";
 import { useEffect } from "react";
@@ -48,7 +48,7 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     }
 
     const updateNetworks = async () => {
-        const networkConfigs = await GnoClientService.loadNetworkConfigs();
+        const networkConfigs = await ResourceService.fetchChainNetworks();
         const currentChainId = await getCurrentChainId();
         await LocalStorageValue.set('CURRENT_CHAIN_ID', currentChainId);
         const createdNetworks = networkConfigs.map(config => GnoClient.createNetworkByType(config, getNetworkMapperType(config.chainId)));

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
@@ -25,7 +25,6 @@ export const WalletMain = () => {
   const navigate = useNavigate();
   const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
-  const CoinBoxClick = () => navigate(RoutePath.TokenDetails);
   const [wallet, state] = useWallet();
   const [gnoClient] = useGnoClient();
   const { initAccounts } = useWalletAccounts(wallet);
@@ -35,29 +34,47 @@ export const WalletMain = () => {
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
 
+  const currentAccountAddress = currentAccount?.getAddress();
+  const finishedWalletLoading = gnoClient && state === 'FINISH';
+  const finishedBalanceLoading = balances && balances.length > 0;
+
   useEffect(() => {
-    if (gnoClient && state === 'FINISH') {
-      initAccounts();
+    if (finishedWalletLoading) {
+      updateAccounts();
     }
   }, [state, gnoClient]);
 
   useEffect(() => {
-    if (currentAccount?.getAddress()) {
-      updateBalances();
-      updateLastHistory();
+    if (currentAccountAddress) {
+      updateCurrentAccount();
     }
-  }, [currentAccount?.getAddress()])
+  }, [currentAccountAddress])
 
   useEffect(() => {
-    if (balances && balances.length > 0) {
-      if (balances[0].amountDenom.toUpperCase() === balances[0].denom.toUpperCase()) {
-        setCurrentBalance({
-          amount: balances[0].amount,
-          denom: balances[0].amountDenom.toUpperCase()
-        });
-      }
+    updateCurrentBalance();
+  }, [finishedBalanceLoading]);
+
+  const updateAccounts = () => {
+    initAccounts();
+  };
+
+  const updateCurrentAccount = () => {
+    updateBalances();
+    updateLastHistory();
+  };
+
+  const updateCurrentBalance = () => {
+    if (!finishedBalanceLoading) {
+      return;
     }
-  }, [balances]);
+    if (balances[0].amountDenom.toUpperCase() !== balances[0].denom.toUpperCase()) {
+      return;
+    }
+    setCurrentBalance({
+      amount: balances[0].amount,
+      denom: balances[0].amountDenom.toUpperCase()
+    });
+  }
 
   const getCurrentBalance = () => {
     if (!currentBalance.denom) {
@@ -66,41 +83,64 @@ export const WalletMain = () => {
     return `${maxFractionDigits(currentBalance.amount.toString(), 6)}\n${currentBalance.denom}`
   };
 
-  return (
-    <>
-      {getCurrentBalance() && state === 'FINISH' ? (
-        <Wrapper>
-          <Text type='header2' textAlign='center'>
-            {getCurrentBalance()}
-          </Text>
-          <DubbleButton
-            margin='14px 0px 30px'
-            leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
-            rightProps={{
-              onClick: SendButtonClick,
-              text: 'Send',
-            }}
-          />
-          {
-            tokenConfig.map((item, index) => (
-              <ListBox
-                left={<img src={item.imageData} alt='logo image' />}
-                center={<Text type='body1Bold'>{item.name || ''}</Text>}
-                right={
-                  <Text type='body2Reg'>
-                    {`${maxFractionDigits(balances.find(balance => balance.denom === item.denom)?.amount.toString() ?? 0, 6)} ${item.type ?? ''}`}
-                  </Text>
-                }
-                hoverAction={true}
-                gap={12}
-                key={index}
-                onClick={CoinBoxClick}
-              />
-            ))}
-        </Wrapper>
-      ) : (
-        <LoadingWallet />
-      )}
-    </>
-  );
+  return (finishedWalletLoading && finishedBalanceLoading) ?
+    (
+      <Wrapper>
+        <Text type='header2' textAlign='center'>
+          {getCurrentBalance()}
+        </Text>
+        <DubbleButton
+          margin='14px 0px 30px'
+          leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+          rightProps={{
+            onClick: SendButtonClick,
+            text: 'Send',
+          }}
+        />
+        <WalletMainTokens tokenConfig={tokenConfig} balances={balances} />
+      </Wrapper>
+    ) : (
+      <LoadingWallet />
+    )
+};
+
+interface WalletMainTokensProps {
+  tokenConfig: Array<WalletState.TokenConfig>;
+  balances: Array<WalletState.Balance>;
+};
+
+const WalletMainTokens = ({ tokenConfig, balances }: WalletMainTokensProps) => {
+  const navigate = useNavigate();
+  const onClickToken = () => navigate(RoutePath.TokenDetails);
+
+  const getItemBalance = (item: WalletState.TokenConfig) => {
+    const balance = balances.find(balance => balance.denom === item.denom);
+    if (!balance) {
+      return '';
+    }
+    const { amount, denom } = balance
+    return `${maxFractionDigits(amount.toString(), 6)} ${denom.toUpperCase()}`;
+  };
+
+  return <>
+    {
+      tokenConfig.map((item, index) => (
+        <ListBox
+          left={
+            <img src={item.imageData} alt='logo image' />
+          }
+          center={
+            <Text type='body1Bold'>{item.name || ''}</Text>
+          }
+          right={
+            <Text type='body2Reg'>{getItemBalance(item)}</Text>
+          }
+          hoverAction={true}
+          gap={12}
+          key={index}
+          onClick={onClickToken}
+        />
+      ))
+    }
+  </>
 };

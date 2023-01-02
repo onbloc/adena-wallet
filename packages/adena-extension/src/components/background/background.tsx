@@ -3,8 +3,8 @@ import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
 import { ExploreState, GnoClientState, WalletState } from "@states/index";
 import { LocalStorageValue } from "@common/values";
-import axios from "axios";
 import { createImageDataBySvg } from "@common/utils/client-utils";
+import { ResourceService } from "@services/index";
 
 interface Props {
     children?: React.ReactNode;
@@ -50,7 +50,7 @@ export const Background = ({ children }: Props) => {
 
     useEffect(() => {
         if (exploreSites.length === 0) {
-            loadSiteInfos();
+            fetchAppInfos();
         }
     }, [exploreSites])
 
@@ -59,20 +59,10 @@ export const Background = ({ children }: Props) => {
         clearTransactionHistory();
     }, [currentAccount?.getAddress(), gnoClient?.chainId]);
 
-    const loadSiteInfos = async () => {
+    const fetchAppInfos = async () => {
         try {
-            const response = await axios.get<Array<{
-                symbol: string;
-                name: string;
-                description: string;
-                logo: string;
-                link: string;
-                display: boolean;
-                order: number;
-            }>>(
-                'https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/apps.json',
-            );
-            const exploreSites = response.data
+            const response = await ResourceService.fetchAppInfos();
+            const exploreSites = response
                 .filter(site => site.display)
                 .sort(site => site.order);
             const convertedSites: Array<any> = [];

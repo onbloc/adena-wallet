@@ -12,7 +12,6 @@ import { LocalStorageValue } from '@common/values';
  *  - load: load wallet
  *  - loadByPassowrd: load wallet by password
  */
-
 export const useWalletLoader = (): [
   state: string,
   loadWallet: () => void,
