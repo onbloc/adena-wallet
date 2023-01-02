@@ -70,7 +70,7 @@ export const Background = ({ children }: Props) => {
                 display: boolean;
                 order: number;
             }>>(
-                'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/explores.json',
+                'https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/apps.json',
             );
             const exploreSites = response.data
                 .filter(site => site.display)

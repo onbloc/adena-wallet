@@ -5,7 +5,7 @@ import axios from "axios";
 import BigNumber from "bignumber.js";
 import { useRecoilState } from "recoil";
 
-const TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json";
+const TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/tokens.json";
 
 export const useTokenConfig = (): [
     getConfig: () => Promise<Array<TokenConfig>>,

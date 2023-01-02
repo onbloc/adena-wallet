@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-interface ChainType {
+interface Chain {
+  main: boolean;
+  chainId: string;
+  chainName: string;
+  order: number;
+  networks: Array<Network>;
+};
+
+interface Network {
+  main: boolean;
   chainId: string;
   chainName: string;
   addressPrefix: string;
@@ -13,15 +22,16 @@ interface ChainType {
     unit: number;
     minimalDenom: string;
     minimalUnit: number;
-  };
-}
+  }
+};
+
 export const loadNetworkConfigs = async () => {
   try {
-    const response = await axios.get<{ [key in string]: ChainType }>(
-      'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json',
+    const response = await axios.get<Array<Chain>>(
+      'https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/chains.json',
     );
-    const configSet = response.data;
-    return Object.keys(configSet).map((key) => configSet[key]);
+    const networks = response.data.find(chain => chain.main)?.networks ?? [];
+    return networks;
   } catch (error) {
     console.error(error);
   }
