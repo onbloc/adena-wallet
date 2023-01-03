@@ -64,11 +64,11 @@ export const loadGnoClient = async () => {
   const storedChainId = await WalletRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
   const networks = await ResourceService.fetchChainNetworks();
-  const currentNetworkConfig = networks.find((network) => network.chainId === currentChainId) ?? networks[0];
+  const currentNetworkConfig = networks.find((network) => network.networkId === currentChainId) ?? networks[0];
 
   const gnoClient = GnoClient.createNetworkByType(
-    currentNetworkConfig,
-    getNetworkMapperType(currentNetworkConfig.chainId),
+    { ...currentNetworkConfig, chainId: currentNetworkConfig.networkId, chainName: currentNetworkConfig.networkName },
+    getNetworkMapperType(currentNetworkConfig.networkId),
     fetchAdapter,
   );
   return gnoClient;
