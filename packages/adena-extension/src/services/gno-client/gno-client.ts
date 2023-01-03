@@ -10,8 +10,8 @@ interface Chain {
 
 interface Network {
   main: boolean;
-  chainId: string;
-  chainName: string;
+  networkId: string;
+  networkName: string;
   addressPrefix: string;
   rpcUrl: string;
   gnoUrl: string;
@@ -33,7 +33,7 @@ export const loadNetworkConfigs = async () => {
     const networks = response.data.find(chain => chain.main)?.networks ?? [];
     return networks;
   } catch (error) {
-    console.error(error);
+    console.info(error);
   }
   return [];
 };

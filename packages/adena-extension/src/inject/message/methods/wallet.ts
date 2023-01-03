@@ -65,11 +65,11 @@ export const loadGnoClient = async () => {
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
   const networkConfigs = await GnoClientService.loadNetworkConfigs();
   const currentNetworkConfig =
-    networkConfigs.find((network) => network.chainId === currentChainId) ?? networkConfigs[0];
+    networkConfigs.find((network) => network.networkId === currentChainId) ?? networkConfigs[0];
 
   const gnoClient = GnoClient.createNetworkByType(
-    currentNetworkConfig,
-    getNetworkMapperType(currentNetworkConfig.chainId),
+    { ...currentNetworkConfig, chainId: currentNetworkConfig.networkId, chainName: currentNetworkConfig.networkName },
+    getNetworkMapperType(currentNetworkConfig.networkId),
     fetchAdapter,
   );
   return gnoClient;

@@ -51,7 +51,7 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
         const networkConfigs = await GnoClientService.loadNetworkConfigs();
         const currentChainId = await getCurrentChainId();
         await LocalStorageValue.set('CURRENT_CHAIN_ID', currentChainId);
-        const createdNetworks = networkConfigs.map(config => GnoClient.createNetworkByType(config, getNetworkMapperType(config.chainId)));
+        const createdNetworks = networkConfigs.map(config => GnoClient.createNetworkByType({ ...config, chainId: config.networkId, chainName: config.networkName }, getNetworkMapperType(config.networkId)));
 
         setNetworks(createdNetworks);
     }
@@ -59,7 +59,6 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     const changeCurrentNetwork = async (chainId: string) => {
         await LocalStorageValue.set('CURRENT_CHAIN_ID', chainId);
         const currentNetworkIndex = networks.findIndex(network => network.chainId === chainId);
-
         if (currentNetworkIndex > -1) {
             setCurrentNetwork(networks[currentNetworkIndex].clone());
         }
