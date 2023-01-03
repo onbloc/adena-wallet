@@ -19,6 +19,7 @@
       "@pages/*": ["src/pages/*"],
       "@router/*": ["src/router/*"],
       "@services/*": ["src/services/*"],
+      "@repositories/*": ["src/repositories/*"],
       "@styles/*": ["src/styles/*"],
       "@layouts/*": ["src/layouts/*"],
       "@components/*": ["src/components/*"],
