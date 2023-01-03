@@ -16,7 +16,7 @@ export class ChromeLocalStorage implements Storage {
 
   public set = async (key: string, value: string) => {
     await this.storage.set({
-      [key]: `${value}`,
+      [key]: value,
     });
   };
 

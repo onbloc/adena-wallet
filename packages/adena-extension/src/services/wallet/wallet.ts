@@ -12,8 +12,7 @@ import { WalletAccountRepository, WalletRepository } from '@repositories/wallet'
  */
 export const createWallet = async ({ mnemonic, password }: { mnemonic: string; password: string }) => {
   const wallet = await createWalletByMnemonic(mnemonic);
-  const serializedWallet = await wallet.serialize(password);
-  await WalletRepository.updateSerializedWallet(serializedWallet);
+  saveWallet(wallet, password);
   return wallet;
 };
 
@@ -23,9 +22,8 @@ export const createWallet = async ({ mnemonic, password }: { mnemonic: string; p
  * @returns Wallet
  */
 export const loadWallet = async () => {
-  const serializedWallet = await WalletRepository.getSerializedWallet();
   const password = await WalletRepository.getWalletPassword();
-  const walletInstance = await deserializeWallet(serializedWallet, password);
+  const walletInstance = await deserializeWallet(password);
   return walletInstance;
 };
 
@@ -36,8 +34,7 @@ export const loadWallet = async () => {
  * @returns Wallet
  */
 export const loadWalletWithPassword = async (password: string) => {
-  const serializedWallet = await WalletRepository.getSerializedWallet();
-  const walletInstance = await deserializeWallet(serializedWallet, password);
+  const walletInstance = await deserializeWallet(password);
   await WalletRepository.updateWalletPassword(password);
   return walletInstance;
 };
@@ -83,13 +80,29 @@ const createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<num
 };
 
 /**
+ * This function serializes the wallet with a password.
+ *
+ * @param wallet Wallet instance
+ * @param password wallet's password
+ */
+const saveWallet = async (
+  wallet: InstanceType<typeof Wallet>,
+  password: string,
+) => {
+  const serializedWallet = await wallet.serialize(password);
+  await WalletRepository.updateSerializedWallet(serializedWallet);
+  await WalletRepository.updateWalletPassword(password);
+};
+
+/**
  * This function deserializes the wallet with the password.
  *
  * @throws WalletError 'FAILED_TO_LOAD'
  * @returns Wallet
  */
-const deserializeWallet = async (serializedWallet: string, password: string) => {
+const deserializeWallet = async (password: string) => {
   try {
+    const serializedWallet = await WalletRepository.getSerializedWallet();
     const walletInstance = await Wallet.createBySerialized(serializedWallet, password);
     return walletInstance;
   } catch (e) {

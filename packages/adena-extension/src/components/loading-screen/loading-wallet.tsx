@@ -2,8 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
-import { Header } from '@layouts/header';
-import { Navigation } from '@layouts/navigation';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};

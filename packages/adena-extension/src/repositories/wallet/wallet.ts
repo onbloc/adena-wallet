@@ -71,5 +71,5 @@ export const existsWalletPassword = async () => {
   const encryptedKey = await sessionStorage.get('ENCRYPTED_KEY');
   const encryptedPassword = await sessionStorage.get('ENCRYPTED_PASSWORD');
 
-  return encryptedKey && encryptedPassword;
+  return Boolean(encryptedKey) && Boolean(encryptedPassword);
 };

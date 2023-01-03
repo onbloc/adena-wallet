@@ -22,12 +22,17 @@ export const useWalletLoader = (): [
   const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
   const validateWallet = async () => {
-    const existWallet = Boolean(await WalletRepository.getSerializedWallet());
-    if (!existWallet) {
-      setState('CREATE');
-      return false;
+    try {
+      const existWallet = Boolean(await WalletRepository.getSerializedWallet());
+      if (existWallet) {
+        return true;
+      }
+      return true;
+    } catch (e) {
+      console.log(e);
     }
-    return true;
+    setState('CREATE');
+    return false;
   }
 
   const validatePassword = async () => {
@@ -44,12 +49,12 @@ export const useWalletLoader = (): [
   }
 
   const loadWallet = async () => {
-    if (!await validateWallet()) {
-      return;
-    }
-    if (!await validatePassword()) {
-      return;
-    }
+    // if (!await validateWallet()) {
+    //   return;
+    // }
+    // if (!await validatePassword()) {
+    //   return;
+    // }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWallet();
@@ -58,8 +63,8 @@ export const useWalletLoader = (): [
       setWallet(loadedWallet);
       setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
-
     } catch (error) {
+      console.log(error);
       if (error instanceof WalletError) {
         const changedState = getStateByWalletError(error);
         setState(changedState);
@@ -84,6 +89,7 @@ export const useWalletLoader = (): [
       setState('FINISH');
       return 'FINISH';
     } catch (error) {
+      console.log(error)
       let changedState: "CREATE" | "LOGIN" | "FAIL" = 'FAIL';
       if (error instanceof WalletError) {
         changedState = getStateByWalletError(error);
