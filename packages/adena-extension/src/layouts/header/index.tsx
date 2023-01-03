@@ -44,6 +44,9 @@ export const Header = () => {
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
   const [currentBalance] = useRecoilState(WalletState.currentBalance);
+  const [walletState] = useRecoilState(WalletState.state);
+
+  const loadingComplete = currentBalance.denom !== '' && walletState === 'FINISH';
 
   return (
     <Wrapper>
@@ -55,7 +58,7 @@ export const Header = () => {
         history ||
         settings ||
         connectedApps ||
-        changeNetwork) && <TopMenu disabled={currentBalance.denom === ''} />}
+        changeNetwork) && loadingComplete && <TopMenu />}
       {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
       {(createPassword) && <ProgressMenu progressLevel={'second'} />}
       {(launchAdena) && <ProgressMenu progressLevel={'third'} />}

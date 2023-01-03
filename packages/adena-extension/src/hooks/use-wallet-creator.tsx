@@ -1,7 +1,6 @@
 import { WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
 import { WalletService } from "@services/index";
-import { LocalStorageValue } from "@common/values";
 import { useCurrentAccount } from "./use-current-account";
 import { WalletAccount } from "adena-module";
 
@@ -44,15 +43,15 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
     }
 
     const initCurrentAccount = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-        const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
         const currentAccount = walletAccounts.find(account => account.getAddress() === currentAccountAddress);
         if (currentAccount) {
             await changeCurrentAccount(currentAccount.getAddress(), walletAccounts);
-            await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', currentAccount.getAddress());
+            await WalletService.saveCurrentAccountAddress(currentAccount.getAddress());
         } else {
             if (walletAccounts.length > 0) {
                 await changeCurrentAccount(walletAccounts[0].getAddress(), walletAccounts);
-                await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', walletAccounts[0].getAddress());
+                await WalletService.saveCurrentAccountAddress(walletAccounts[0].getAddress());
             }
         }
     }

@@ -1,6 +1,5 @@
-import { WalletError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
+import { WalletService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
@@ -8,7 +7,7 @@ export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
   if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
     return;
   }
@@ -27,7 +26,7 @@ export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
   if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
     return;
   }

@@ -1,9 +1,9 @@
-import { LocalStorageValue } from "@common/values";
-import { ResourceService } from "@services/index";
+import { ResourceService, WalletService } from "@services/index";
 import { GnoClientState } from "@states/index";
 import { GnoClient } from "gno-client";
 import { useEffect } from "react";
 import { useRecoilState } from "recoil";
+import { WalletRepository } from "@repositories/wallet";
 
 const getNetworkMapperType = (chainId: string) => {
     switch (chainId) {
@@ -37,7 +37,7 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     }
 
     const getCurrentChainId = async () => {
-        const storedChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
+        const storedChainId = await WalletRepository.getCurrentChainId();
         if (storedChainId !== '') {
             return storedChainId;
         }
@@ -50,14 +50,14 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     const updateNetworks = async () => {
         const networkConfigs = await ResourceService.fetchChainNetworks();
         const currentChainId = await getCurrentChainId();
-        await LocalStorageValue.set('CURRENT_CHAIN_ID', currentChainId);
+        await WalletRepository.updateCurrentChainId(currentChainId);
         const createdNetworks = networkConfigs.map(config => GnoClient.createNetworkByType(config, getNetworkMapperType(config.chainId)));
 
         setNetworks(createdNetworks);
     }
 
     const changeCurrentNetwork = async (chainId: string) => {
-        await LocalStorageValue.set('CURRENT_CHAIN_ID', chainId);
+        await WalletRepository.updateCurrentChainId(chainId);
         const currentNetworkIndex = networks.findIndex(network => network.chainId === chainId);
 
         if (currentNetworkIndex > -1) {

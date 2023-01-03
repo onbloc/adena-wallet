@@ -1,9 +1,9 @@
 import { WalletError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
 import { ResourceService, WalletService } from '@services/index';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
+import { WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
@@ -15,7 +15,7 @@ export const getAccount = async (
     const walletPassword = await WalletService.loadWalletPassword();
     const wallet = await WalletService.loadWalletWithPassword(walletPassword);
     await wallet.initAccounts();
-    let currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    let currentAccountAddress = await WalletService.loadCurrentAccountAddress();
     if (!currentAccountAddress || currentAccountAddress === '') {
       currentAccountAddress = wallet.getAccounts()[0].getAddress();
     }
@@ -61,7 +61,7 @@ export const addEstablish = async (
 };
 
 export const loadGnoClient = async () => {
-  const storedChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
+  const storedChainId = await WalletRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
   const networks = await ResourceService.fetchChainNetworks();
   const currentNetworkConfig = networks.find((network) => network.chainId === currentChainId) ?? networks[0];

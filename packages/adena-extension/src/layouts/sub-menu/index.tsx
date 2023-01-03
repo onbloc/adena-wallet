@@ -19,6 +19,7 @@ import { useWallet } from '@hooks/use-wallet';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
+import { WalletRepository } from '@repositories/wallet';
 
 interface SubMenuProps {
   open: boolean;
@@ -61,7 +62,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 
   const lockClickHandler = async () => {
     setOpen(!open);
-    await SessionStorageValue.claer();
+    await WalletRepository.removePassword();
     await loadWallet();
     navigate(RoutePath.Login, { replace: true });
   };

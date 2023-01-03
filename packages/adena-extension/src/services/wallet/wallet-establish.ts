@@ -1,8 +1,8 @@
-import { LocalStorageValue } from '@common/values';
+import { WalletAccountRepository, WalletEstablishRepository, WalletRepository } from '@repositories/wallet';
 
 export const getCurrentEstablisedSites = async () => {
-  const establishedSites = await LocalStorageValue.getToObject('ESTABLISH_SITES');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const establishedSites = await WalletEstablishRepository.getEstablishedSites();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountEstablishedSites = await getAccountEstablishedSites(
     establishedSites,
     currentAccountAddress,
@@ -11,8 +11,8 @@ export const getCurrentEstablisedSites = async () => {
 };
 
 export const isEstablished = async (hostname: string) => {
-  const establishedSites = await LocalStorageValue.getToObject('ESTABLISH_SITES');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const establishedSites = await WalletEstablishRepository.getEstablishedSites();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountEstablishedSites = await getAccountEstablishedSites(
     establishedSites,
     currentAccountAddress,
@@ -21,9 +21,9 @@ export const isEstablished = async (hostname: string) => {
 };
 
 export const establish = async (hostname: string, appName: string, favicon?: string | null) => {
-  const establishedSites = await LocalStorageValue.getToObject('ESTABLISH_SITES');
-  const currentChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const establishedSites = await WalletEstablishRepository.getEstablishedSites();
+  const currentChainId = await WalletRepository.getCurrentChainId();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountEstablishedSites = await getAccountEstablishedSites(
     establishedSites,
     currentAccountAddress,
@@ -42,12 +42,12 @@ export const establish = async (hostname: string, appName: string, favicon?: str
       },
     ],
   };
-  await LocalStorageValue.setByObject('ESTABLISH_SITES', changedEstablishedSites);
+  await WalletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
 };
 
 export const unestablish = async (hostname: string) => {
-  const establishedSites = await LocalStorageValue.getToObject('ESTABLISH_SITES');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const establishedSites = await WalletEstablishRepository.getEstablishedSites();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountEstablishedSites = await getAccountEstablishedSites(
     establishedSites,
     currentAccountAddress,
@@ -62,19 +62,19 @@ export const unestablish = async (hostname: string) => {
     ...establishedSites,
     [currentAccountAddress]: changedAccountEstablishedSites,
   };
-  await LocalStorageValue.setByObject('ESTABLISH_SITES', changedEstablishedSites);
+  await WalletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
 };
 
 const getAccountEstablishedSites = async (
   establishedSites: { [key in string]: any },
   currentAccountAddress: string,
 ) => {
-  const currentChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
+  const currentChainId = await WalletRepository.getCurrentChainId();
   const accountEstablishedSites =
     Object.keys(establishedSites).findIndex((key) => key === currentAccountAddress) > -1
       ? [...establishedSites[currentAccountAddress]].filter(
-          (site) => site.chainId === currentChainId,
-        )
+        (site) => site.chainId === currentChainId,
+      )
       : [];
   return accountEstablishedSites;
 };

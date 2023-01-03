@@ -2,7 +2,7 @@ import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
+import { WalletRepository } from '@repositories/wallet';
 
 /**
  * Load or Deserialize wallet  by saved serialized wallet data
@@ -21,7 +21,35 @@ export const useWalletLoader = (): [
   const [, setWallet] = useRecoilState(WalletState.wallet);
   const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
+  const validateWallet = async () => {
+    const existWallet = Boolean(await WalletRepository.getSerializedWallet());
+    if (!existWallet) {
+      setState('CREATE');
+      return false;
+    }
+    return true;
+  }
+
+  const validatePassword = async () => {
+    try {
+      const existPassword = await WalletRepository.existsWalletPassword();
+      if (existPassword) {
+        return true;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    setState('LOGIN');
+    return false;
+  }
+
   const loadWallet = async () => {
+    if (!await validateWallet()) {
+      return;
+    }
+    if (!await validatePassword()) {
+      return;
+    }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWallet();
@@ -43,6 +71,9 @@ export const useWalletLoader = (): [
   };
 
   const loadWalletByPassword = async (password: string) => {
+    if (!await validateWallet()) {
+      return 'CREATE';
+    }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWalletWithPassword(password);
@@ -65,9 +96,9 @@ export const useWalletLoader = (): [
   };
 
   const initCurrentAccountAddress = async (address: any) => {
-    const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
     if (!currentAccountAddress) {
-      LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', `${address}`);
+      await WalletService.saveCurrentAccountAddress(address);
     }
   };
 

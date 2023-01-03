@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
 import { ExploreState, GnoClientState, WalletState } from "@states/index";
-import { LocalStorageValue } from "@common/values";
 import { createImageDataBySvg } from "@common/utils/client-utils";
 import { ResourceService } from "@services/index";
+import { AdenaStorage } from "@common/storage";
 
 interface Props {
     children?: React.ReactNode;
@@ -41,7 +41,8 @@ export const Background = ({ children }: Props) => {
         if (currentAccount.getAddress() === currentAccountAddress) {
             return;
         }
-        LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
+
+        AdenaStorage.local().get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
             if (storedAccountAddress !== currentAccount.getAddress()) {
                 setCurrentAccountAddress(currentAccount.getAddress());
             }

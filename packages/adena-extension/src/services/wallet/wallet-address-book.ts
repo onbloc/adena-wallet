@@ -1,10 +1,10 @@
-import { LocalStorageValue } from '@common/values';
 import { WalletAccount } from 'adena-module';
+import { WalletAccountRepository, WalletAddressRepository } from '@repositories/wallet';
 import { v4 as uuidv4 } from 'uuid';
 
 export const getAddressBook = async () => {
-  const addressBook = await LocalStorageValue.getToObject('ADDRESS_BOOK');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const addressBook = await WalletAddressRepository.getAddressBook();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const currentAccountAddressBook = await getAddressBookItems(addressBook, currentAccountAddress);
   return currentAccountAddressBook;
 };
@@ -23,8 +23,8 @@ export const getAddressBookByWalletAccounts = (
 };
 
 export const addAddressBookItem = async (name: string, address: string) => {
-  const addressBook = await LocalStorageValue.getToObject('ADDRESS_BOOK');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const addressBook = await WalletAddressRepository.getAddressBook();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountAddressBook = await getAddressBookItems(addressBook, currentAccountAddress);
   const changedaddressBook: { [key in string]: any } = {
     ...addressBook,
@@ -38,12 +38,12 @@ export const addAddressBookItem = async (name: string, address: string) => {
       },
     ],
   };
-  await LocalStorageValue.setByObject('ADDRESS_BOOK', changedaddressBook);
+  WalletAddressRepository.updateAddressBooke(changedaddressBook);
 };
 
 export const updateAddressBookItem = async (id: string, name: string, address: string) => {
-  const addressBook = await LocalStorageValue.getToObject('ADDRESS_BOOK');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const addressBook = await WalletAddressRepository.getAddressBook();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountAddressBook = await getAddressBookItems(addressBook, currentAccountAddress);
 
   const currentIndex = accountAddressBook.findIndex((item: any) => item.id === id);
@@ -60,12 +60,12 @@ export const updateAddressBookItem = async (id: string, name: string, address: s
     ...addressBook,
     [currentAccountAddress]: accountAddressBook,
   };
-  await LocalStorageValue.setByObject('ADDRESS_BOOK', changedaddressBook);
+  WalletAddressRepository.updateAddressBooke(changedaddressBook);
 };
 
 export const removeAddressBookItem = async (id: string) => {
-  const addressBook = await LocalStorageValue.getToObject('ADDRESS_BOOK');
-  const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+  const addressBook = await WalletAddressRepository.getAddressBook();
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
   const accountAddressBook = await getAddressBookItems(addressBook, currentAccountAddress);
 
   const changedAccountAddressBook = accountAddressBook.filter((item: any) => item.id !== id);
@@ -75,7 +75,7 @@ export const removeAddressBookItem = async (id: string) => {
     ...addressBook,
     [currentAccountAddress]: changedAccountAddressBook,
   };
-  await LocalStorageValue.setByObject('ADDRESS_BOOK', changedaddressBook);
+  WalletAddressRepository.updateAddressBooke(changedaddressBook);
 };
 
 const getAddressBookItems = async (

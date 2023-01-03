@@ -27,7 +27,7 @@ export const WalletCreate = () => {
   const finishedAccountsLoading = Boolean(accounts?.length);
   const finishedCurrentAccountLoading = Boolean(currentAccount?.getAddress());
   const finishedBalancesLoading = balances.length > 0;
-  const finishedWalletLoading = state === 'LOGIN';
+  const finishedWalletLoading = state === 'CREATE';
 
   useEffect(() => {
     if (!finishedGnoClientLoading) {
