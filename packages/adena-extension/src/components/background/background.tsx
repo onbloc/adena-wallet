@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { ExploreState, GnoClientState, WalletState } from "@states/index";
+import { CommonState, ExploreState, GnoClientState, WalletState } from "@states/index";
 import { createImageDataBySvg } from "@common/utils/client-utils";
 import { ResourceService } from "@services/index";
 import { AdenaStorage } from "@common/storage";
@@ -21,6 +21,7 @@ export const Background = ({ children }: Props) => {
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
     const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+    const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
 
     /**
      * History Data Interval Fetch
@@ -58,6 +59,7 @@ export const Background = ({ children }: Props) => {
     useEffect(() => {
         clearCurrentBalance();
         clearTransactionHistory();
+        clearHistoryPosition();
     }, [currentAccount?.getAddress(), gnoClient?.chainId]);
 
     const fetchAppInfos = async () => {
