@@ -35,26 +35,10 @@ export const useWalletLoader = (): [
     return false;
   }
 
-  const validatePassword = async () => {
-    try {
-      const existPassword = await WalletRepository.existsWalletPassword();
-      if (existPassword) {
-        return true;
-      }
-    } catch (e) {
-      console.log(e);
-    }
-    setState('LOGIN');
-    return false;
-  }
-
   const loadWallet = async () => {
-    // if (!await validateWallet()) {
-    //   return;
-    // }
-    // if (!await validatePassword()) {
-    //   return;
-    // }
+    if (!await validateWallet()) {
+      return;
+    }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWallet();
