@@ -52,7 +52,7 @@ export const WalletMain = () => {
 
   useEffect(() => {
     updateCurrentBalance();
-  }, [finishedBalanceLoading]);
+  }, [balances]);
 
   const updateAccounts = () => {
     initAccounts();

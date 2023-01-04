@@ -57,10 +57,19 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
     }
 
     const changeCurrentNetwork = async (chainId: string) => {
-        await WalletRepository.updateCurrentChainId(chainId);
+        let currentNetwork: InstanceType<typeof GnoClient> | null = null;
         const currentNetworkIndex = networks.findIndex(network => network.chainId === chainId);
         if (currentNetworkIndex > -1) {
-            setCurrentNetwork(networks[currentNetworkIndex].clone());
+            currentNetwork = networks[currentNetworkIndex].clone();
+        } else {
+            if (networks.length > 0) {
+                currentNetwork = networks[currentNetworkIndex].clone();
+            }
+        }
+
+        if (currentNetwork !== null) {
+            setCurrentNetwork(currentNetwork.clone());
+            await WalletRepository.updateCurrentChainId(currentNetwork.chainId);
         }
     }
 

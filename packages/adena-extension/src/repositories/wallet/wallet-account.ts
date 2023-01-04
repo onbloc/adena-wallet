@@ -56,6 +56,9 @@ export const updateAccounts = async (walletAccounts: Array<InstanceType<typeof W
 export const getAccountPaths = async () => {
   const localStorage = AdenaStorage.local<LocalValueType>();
   const accountPaths = await localStorage.getToNumbers('WALLET_ACCOUNT_PATHS');
+  if (accountPaths.length === 0) {
+    return [0];
+  }
   return accountPaths;
 };
 

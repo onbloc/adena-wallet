@@ -98,10 +98,12 @@ export class CommonApiFetcher implements CommonApi {
     );
   };
 
+  // Deprecated on onbloc
   public getTransactionHistory = async (address: string, page: number) => {
-    const result = await axios.get<CommonResponse.History>(
-      CommonApiPath.createPathOfHistoryTemp(address, page),
-    );
-    return result.data;
+    return {
+      hits: 0,
+      next: false,
+      txs: [],
+    };
   };
 }
