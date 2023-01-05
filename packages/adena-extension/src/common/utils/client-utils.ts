@@ -6,6 +6,7 @@ import failed from '../../assets/failed.svg';
 import theme from '@styles/theme';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
 
 export function formatAddress(v: string, num?: number): string {
   const length = num ?? 4;
@@ -294,4 +295,17 @@ export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
   const extraValue = Math.pow(10, decimalLength);
   const currentAmouont = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
   return currentAmouont;
+};
+
+export const dateToLocal = (utcDateStr: string) => {
+  const hasTimezone = `${utcDateStr}`.includes('Z');
+  const timezoneOffset = new Date().getTimezoneOffset();
+  let currentDate = dayjs(utcDateStr);
+  if (!hasTimezone) {
+    currentDate = currentDate.subtract(timezoneOffset, 'minutes');
+  }
+  return {
+    value: currentDate.format('YYYY-MM-DD HH:mm:ss'),
+    offsetHours: -timezoneOffset / 60,
+  };
 };
