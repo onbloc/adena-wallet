@@ -34,11 +34,11 @@ export const convertUnit = (amount: BigNumber, denom: string, config: WalletStat
   const currentUnit = denomType === 'COMMON' ? config.unit : config.minimalUnit;
   const convertUnit = convertDenomType === 'COMMON' ? config.unit : config.minimalUnit;
 
-  const currentAmouont = optimizeNumber(amount, BigNumber(currentUnit).dividedBy(convertUnit));
+  const currentAmount = optimizeNumber(amount, BigNumber(currentUnit).dividedBy(convertUnit));
   const currentDenom = convertDenomType === 'COMMON' ? config.denom.toUpperCase() : config.minimalDenom;
 
   return {
-    amount: currentAmouont,
+    amount: currentAmount,
     denom: currentDenom
   }
 };
