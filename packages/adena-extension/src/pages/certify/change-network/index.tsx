@@ -42,7 +42,7 @@ export const ChangeNetwork = () => {
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
   const [finishedLoading, setFinishedLoading] = useState(false);
   const clearWalletBalance = useResetRecoilState(WalletState.balances);
-  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setWalletState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
@@ -52,6 +52,7 @@ export const ChangeNetwork = () => {
   useEffect(() => {
     if (loadinsgState === 'LOADING') {
       clearWalletBalance();
+      setFailedNetwork(undefined);
       setLoadingState('FINISH');
     }
   }, [currentNetwork]);
@@ -63,10 +64,10 @@ export const ChangeNetwork = () => {
   }, [loadinsgState]);
 
   useEffect(() => {
-    if (finishedLoading) {
+    if (finishedLoading && failedNetwork !== undefined) {
       navigate(RoutePath.Home);
     }
-  }, [finishedLoading]);
+  }, [finishedLoading, failedNetwork]);
 
   const checkHealth = async () => {
     let health = false;

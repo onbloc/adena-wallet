@@ -6,8 +6,6 @@ import { useWallet } from '@hooks/use-wallet';
 import { PasswordValidationError } from '@common/errors';
 import { useWalletCreator } from '@hooks/use-wallet-creator';
 
-const lengthCheck = /^.{8,23}$/;
-
 export const useChangePassword = () => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -108,7 +106,7 @@ export const useChangePassword = () => {
     setErrorMessage(errorMessage);
     if (isValid) {
       try {
-        const walletState = await createWallet({ mnemonic: wallet?.getMnemonic(), password: newPassword });
+        const walletState = await createWallet({ mnemonic: wallet?.getMnemonic(), password: newPassword }, true);
         return walletState;
       } catch (e) {
         console.error(e);

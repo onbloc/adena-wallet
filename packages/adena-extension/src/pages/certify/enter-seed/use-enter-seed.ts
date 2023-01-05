@@ -14,6 +14,7 @@ export const useEnterSeed = () => {
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
       const patternCheck = e.target.value.replace(specialPatternCheck, '');
       setSeed(() => patternCheck.toLowerCase());
+      setError(false);
     },
     [seed],
   );
@@ -26,6 +27,10 @@ export const useEnterSeed = () => {
   };
 
   const handleButtonClick = async () => {
+    if (seed.length === 0) {
+      return;
+    }
+
     try {
       const checkedMnemonic = new EnglishMnemonic(seed);
       if (checkedMnemonic) {

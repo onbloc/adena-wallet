@@ -96,7 +96,7 @@ export const useTransactionHistoryInfo = (): [{
 
     const mappedBankMsgSend = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionInfo => {
         const func = getFunctionName(transactionItem);
-        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0].denom);
+        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0]?.denom);
         const title = (['Fail'].includes(func)) ? 'Send' : func;
         const titleDescription = getTransferDescription(transactionItem);
         const amount = getAmountValue(transactionItem);
@@ -161,7 +161,7 @@ export const useTransactionHistoryInfo = (): [{
     }
 
     const mappedBankMsgSendDetail = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionDetailInfo => {
-        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0].denom);
+        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0]?.denom);
         const main = getAmountFullValue(transactionItem);
         const date = fullDateFormat(transactionItem.date);
         const type = getFunctionName(transactionItem);
@@ -265,7 +265,7 @@ export const useTransactionHistoryInfo = (): [{
         try {
             const { amount, denom } = transactionItem.transfer;
             let currentAmount = BigNumber(amount ?? 0);
-            let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
+            let currentDenom = denom ? denom.toUpperCase() : balances[0]?.denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;
@@ -282,7 +282,7 @@ export const useTransactionHistoryInfo = (): [{
         try {
             const { amount, denom } = transactionItem.transfer;
             let currentAmount = BigNumber(amount ?? 0);
-            let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
+            let currentDenom = denom ? denom.toUpperCase() : balances[0]?.denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;

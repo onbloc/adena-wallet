@@ -1,7 +1,8 @@
 import { GnoClientState, WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
-import { HistoryItem } from "gno-client/src/api/response";
+import { HistoryItem, HistoryItemType } from "gno-client/src/api/response";
 import { WalletService } from "@services/index";
+import { dateToLocal } from "@common/utils/client-utils";
 
 export const useTransactionHistory = (): [
     getHistory: () => Promise<{ [key in string]: Array<HistoryItem> }>,
@@ -57,7 +58,12 @@ export const useTransactionHistory = (): [
             try {
                 const response = await gnoClient.getTransactionHistory(address, currentPage * 20);
                 const lastPage = currentPage > transactionHistory.currentPage ? currentPage : transactionHistory.currentPage;
-                const newItems = response.txs;
+                const newItems = response.txs.map((tx: HistoryItemType) => {
+                    return {
+                        ...tx,
+                        date: dateToLocal(tx.date).value
+                    }
+                });
                 const newItemHashes = response.txs.map((item: HistoryItem) => item.hash);
                 const items = transactionHistory.items.filter(item => !newItemHashes.includes(item.hash));
                 const isFinish = transactionHistory.isFinish ? true : !response.next;

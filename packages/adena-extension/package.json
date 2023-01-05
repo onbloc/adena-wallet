@@ -54,6 +54,7 @@
     "axios": "^0.27.2",
     "bignumber.js": "^9.1.1",
     "crypto-js": "^4.1.1",
+    "dayjs": "^1.11.7",
     "gno-client": "*",
     "html-loader": "^4.1.0",
     "node-polyfill-webpack-plugin": "^2.0.1",

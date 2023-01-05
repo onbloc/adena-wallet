@@ -48,7 +48,11 @@ export const useGeneralSend = () => {
 
   useEffect(() => {
     if (balances.length > 0) {
-      setNowAmount(BigNumber(balances[0]?.amount ?? 0));
+      try {
+        setNowAmount(BigNumber(balances[0]?.amount ?? 0));
+      } catch (e) {
+        setNowAmount(BigNumber(0));
+      }
     }
   }, [balances]);
 

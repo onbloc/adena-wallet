@@ -13,20 +13,22 @@ interface CreateWalletParams {
  * 
  * @returns 
  */
-export const useWalletCreator = (): [state: string, createWallet: (params: CreateWalletParams) => Promise<string>] => {
+export const useWalletCreator = (): [state: string, createWallet: (params: CreateWalletParams, background?: boolean) => Promise<string>] => {
 
     const [state, setState] = useRecoilState(WalletState.state);
     const [, setWallet] = useRecoilState(WalletState.wallet);
     const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
     const [, , changeCurrentAccount] = useCurrentAccount();
 
-    const createWallet = async (params: CreateWalletParams) => {
+    const createWallet = async (params: CreateWalletParams, background?: boolean) => {
         const {
             mnemonic,
             password
         } = params;
         let currentState: 'FINISH' | 'LOADING' | 'FAIL' = 'LOADING';
-        setState(currentState);
+        if (!background) {
+            setState(currentState);
+        }
         try {
             const createdWallet = await WalletService.createWallet({ mnemonic, password });
             await createdWallet.initAccounts();

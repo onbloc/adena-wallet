@@ -67,12 +67,12 @@ export const WalletMain = () => {
     if (!finishedBalanceLoading) {
       return;
     }
-    if (balances[0].amountDenom.toUpperCase() !== balances[0].denom.toUpperCase()) {
+    if (balances[0]?.amountDenom.toUpperCase() !== balances[0]?.denom.toUpperCase()) {
       return;
     }
     setCurrentBalance({
-      amount: balances[0].amount,
-      denom: balances[0].amountDenom.toUpperCase()
+      amount: balances[0]?.amount,
+      denom: balances[0]?.amountDenom.toUpperCase()
     });
   }
 
