@@ -9,7 +9,8 @@ interface Props {
 
 export const ErrorContainer = ({ children }: Props) => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
-  return failedNetwork ?
-    <ErrorNetwork /> :
-    <>{children}</>;
+  return failedNetwork === false ?
+    <>{children}</> :
+    <ErrorNetwork />
+    ;
 };

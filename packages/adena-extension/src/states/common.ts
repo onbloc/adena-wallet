@@ -11,7 +11,7 @@ export const historyPosition = atom<HistoryPosition>({
   },
 });
 
-export const failedNetwork = atom<boolean>({
+export const failedNetwork = atom<boolean | undefined>({
   key: `common/failed-network`,
   default: false
 });
