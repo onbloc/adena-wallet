@@ -88,7 +88,8 @@ export const Settings = () => {
 
   const getDefaultAccountName = () => {
     const accountType = currnetAccount?.data.signerType !== "LEDGER" ? "Account" : "Ledger";
-    return `${accountType} ${currnetAccount?.data.index}`;
+    const accountNumber = (currnetAccount?.data.path ?? 0) + 1
+    return `${accountType} ${accountNumber}`;
   };
 
   return (
