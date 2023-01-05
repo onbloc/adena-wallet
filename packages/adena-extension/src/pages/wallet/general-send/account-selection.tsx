@@ -1,28 +1,7 @@
-import React, { Ref, RefObject, useRef, useState } from 'react';
-import Text from '@components/text';
+import React, { Ref, useRef, useState } from 'react';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Icon from '@components/icons';
 import styled from 'styled-components';
-import { useEffect } from 'react';
-
-const dummy: any = [
-  {
-    type: 'Account 1',
-    value: '(g1no...4c8a)',
-  },
-  {
-    type: 'Account 2',
-    value: '(g1no...4c8a)',
-  },
-  {
-    type: 'Account 3',
-    value: '(g1no...4c8a)',
-  },
-  {
-    type: 'Account 4',
-    value: '(g1no...4c8a)',
-  },
-];
 
 interface Props {
   value: string;
@@ -103,11 +82,6 @@ const TextFieldWrap = styled.div<{ error: boolean; isOpen: boolean }>`
     width: 21px;
     height: 21px;
   }
-`;
-
-const Textarea = styled.textarea`
-  overflow: hidden;
-  resize: none;
 `;
 
 export default AccountSelection;
