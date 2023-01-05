@@ -110,7 +110,7 @@ export const useGeneralSend = () => {
   }
 
   const maxButtonClick = () => {
-    if (nowAmount < BigNumber(fee)) {
+    if (nowAmount <= BigNumber(fee)) {
       setAmount('0');
       return;
     }
