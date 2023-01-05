@@ -21,15 +21,11 @@ export const Background = ({ children }: Props) => {
     const [transactionHistory] = useRecoilState(WalletState.transactionHistory)
     const [, updateLastTransactionHistory] = useTransactionHistory();
     const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
-    const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+    const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
     const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
     const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
-
-    useEffect(() => {
-        console.log('failedNetwork', failedNetwork)
-    }, [failedNetwork])
 
     useEffect(() => {
         if (gnoClient) {
