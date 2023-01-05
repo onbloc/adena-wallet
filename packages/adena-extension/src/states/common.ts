@@ -10,3 +10,8 @@ export const historyPosition = atom<HistoryPosition>({
     position: 0
   },
 });
+
+export const failedNetwork = atom<boolean>({
+  key: `common/failed-network`,
+  default: false
+});

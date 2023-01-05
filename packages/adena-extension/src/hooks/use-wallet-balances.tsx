@@ -1,4 +1,4 @@
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { useGnoClient } from './use-gno-client';
 import { useEffect } from 'react';
@@ -13,6 +13,7 @@ export const useWalletBalances = (
   const [currentAccount] = useRecoilState(WalletState.currentAccount);
   const [balances, setBalances] = useRecoilState(WalletState.balances);
   const [getTokenConfig] = useTokenConfig();
+  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   useEffect(() => {
     if (initialize) {
@@ -24,10 +25,15 @@ export const useWalletBalances = (
   const updateBalances = async () => {
     if (currentAccount && gnoClient) {
       const tokenConfigs = await getTokenConfig();
-      const tokenBalances = await WalletService.getTokenBalances(gnoClient, currentAccount.getAddress(), tokenConfigs);
+      try {
+        const tokenBalances = await WalletService.getTokenBalances(gnoClient, currentAccount.getAddress(), tokenConfigs);
 
-      if (tokenBalances.length > 0) {
-        setBalances(tokenBalances as Array<Balance>);
+        if (tokenBalances.length > 0) {
+          setBalances(tokenBalances as Array<Balance>);
+          setFailedNetwork(false);
+        }
+      } catch (e) {
+        setFailedNetwork(true);
       }
     }
   };

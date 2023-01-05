@@ -11,6 +11,8 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { CommonState } from '@states/index';
+import { useRecoilState } from 'recoil';
 
 export const WalletCreate = () => {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export const WalletCreate = () => {
   const { accounts, initAccounts } = useWalletAccounts(wallet);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [balances, updateBalances] = useWalletBalances();
+  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   const finishedGnoClientLoading = Boolean(gnoClient?.chainId);
   const finishedAccountsLoading = Boolean(accounts?.length);
@@ -52,6 +55,12 @@ export const WalletCreate = () => {
       navigate(RoutePath.Wallet);
     }
   }, [finishedBalancesLoading]);
+
+  useEffect(() => {
+    if (failedNetwork) {
+      navigate(RoutePath.Wallet);
+    }
+  }, [failedNetwork]);
 
   useEffect(() => {
     switch (state) {

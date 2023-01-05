@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link, useMatch, useNavigate } from 'react-router-dom';
+import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import Icon, { IconName } from '@components/icons';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 
 const Wrapper = styled.nav`
   width: 100%;
@@ -44,6 +44,7 @@ export const Navigation = () => {
   const [state] = useRecoilState(WalletState.state);
   const [currentBalance] = useRecoilState(WalletState.currentBalance);
   const [walletState] = useRecoilState(WalletState.state);
+  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   const navItems = [
     {
@@ -77,7 +78,7 @@ export const Navigation = () => {
 
   const isRender = () => {
     if (wallet || tokenDetails || nft || explore || history || settings) {
-      return loadingComplete;
+      return loadingComplete || failedNetwork;
     }
     return false;
   }
