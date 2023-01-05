@@ -86,6 +86,11 @@ export const Settings = () => {
     inputRef.current?.focus();
   };
 
+  const getAccountNamePlaceHolder = () => {
+    const accountType = currnetAccount?.data.signerType !== "LEDGER" ? "Account" : "Ledger";
+    return `${accountType} ${currnetAccount?.data.index}`;
+  };
+
   return (
     <Wrapper>
       <IconInputBox>
@@ -95,7 +100,7 @@ export const Settings = () => {
           onChange={onChangeAccountName}
           ref={inputRef}
           onBlur={handleTextBlur}
-          placeholder={`Account ${currnetAccount?.data.index}`}
+          placeholder={getAccountNamePlaceHolder()}
         />
         <PencilButton type='button' onClick={handleFocus} />
       </IconInputBox>
@@ -121,6 +126,7 @@ export const Settings = () => {
         hierarchy={ButtonHierarchy.Primary}
         onClick={revealSeedClick}
         margin='12px 0px 0px'
+        disabled={currnetAccount?.data.signerType === "LEDGER"}
       >
         <Text type='body1Bold'>Reveal Seed Phrase</Text>
       </Button>
