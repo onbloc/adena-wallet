@@ -293,8 +293,8 @@ export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
   const decimalPosition = multiply.toString().indexOf('.');
   const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
   const extraValue = Math.pow(10, decimalLength);
-  const currentAmouont = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
-  return currentAmouont;
+  const currentAmount = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
+  return currentAmount;
 };
 
 export const dateToLocal = (utcDateStr: string) => {
