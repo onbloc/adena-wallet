@@ -39,9 +39,15 @@ export class MessageHandler {
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void,
   ) => {
-    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-    const serializedWallet = await WalletRepository.getSerializedWallet();
-    if (currentAccountAddress === '' || serializedWallet === '') {
+    let existsWallet = false;
+    try {
+      const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+      const serializedWallet = await WalletRepository.getSerializedWallet();
+      existsWallet = currentAccountAddress !== '' && serializedWallet !== '';
+    } catch (e) {
+      existsWallet = false;
+    }
+    if (!existsWallet) {
       sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', message, message.key));
       return;
     }

@@ -76,7 +76,7 @@ export const Settings = () => {
   };
 
   const handleTextBlur = () => {
-    const changedName = text === '' ? `Account ${currnetAccount?.data.index}` : text;
+    const changedName = text === '' ? `${getDefaultAccountName()}` : text;
     updateAccountName(currnetAccount?.data.address || '', changedName);
   };
 
@@ -86,7 +86,7 @@ export const Settings = () => {
     inputRef.current?.focus();
   };
 
-  const getAccountNamePlaceHolder = () => {
+  const getDefaultAccountName = () => {
     const accountType = currnetAccount?.data.signerType !== "LEDGER" ? "Account" : "Ledger";
     return `${accountType} ${currnetAccount?.data.index}`;
   };
@@ -100,7 +100,7 @@ export const Settings = () => {
           onChange={onChangeAccountName}
           ref={inputRef}
           onBlur={handleTextBlur}
-          placeholder={getAccountNamePlaceHolder()}
+          placeholder={getDefaultAccountName()}
         />
         <PencilButton type='button' onClick={handleFocus} />
       </IconInputBox>
