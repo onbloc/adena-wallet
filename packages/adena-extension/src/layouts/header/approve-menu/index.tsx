@@ -8,7 +8,6 @@ import { formatAddress, formatNickname, parseParmeters } from '@common/utils/cli
 import { WalletService } from '@services/index';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
-import { LocalStorageValue } from '@common/values';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -55,8 +54,8 @@ const ApproveMenu = () => {
   }, [currentAccount?.getAddress()]);
 
   const initAddress = async () => {
-    const currentAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
-    const currentAccountNames = await LocalStorageValue.getToObject('WALLET_ACCOUNT_NAMES');
+    const currentAddress = await WalletService.loadCurrentAccountAddress();
+    const currentAccountNames = await WalletService.loadAccountNames();
     const currentAccountName = currentAccountNames[currentAddress] ?? 'Account';
     setAddress(currentAddress);
     setAccountName(currentAccountName);

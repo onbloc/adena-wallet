@@ -7,7 +7,7 @@ import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -44,6 +44,10 @@ export const Header = () => {
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
   const [currentBalance] = useRecoilState(WalletState.currentBalance);
+  const [walletState] = useRecoilState(WalletState.state);
+  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
+
+  const loadingComplete = (currentBalance.denom !== '' && walletState === 'FINISH') || failedNetwork;
 
   return (
     <Wrapper>
@@ -55,7 +59,7 @@ export const Header = () => {
         history ||
         settings ||
         connectedApps ||
-        changeNetwork) && <TopMenu disabled={currentBalance.denom === ''} />}
+        changeNetwork) && loadingComplete && <TopMenu />}
       {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
       {(createPassword) && <ProgressMenu progressLevel={'second'} />}
       {(launchAdena) && <ProgressMenu progressLevel={'third'} />}

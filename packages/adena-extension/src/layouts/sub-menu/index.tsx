@@ -2,7 +2,6 @@ import React from 'react';
 import styled from 'styled-components';
 import Portal from '@layouts/portal';
 import logo from '../../assets/logo-withIcon.svg';
-import cancel from '../../assets/cancel-large.svg';
 import lock from '../../assets/lock.svg';
 import restore from '../../assets/restore.svg';
 import help from '../../assets/help-fill.svg';
@@ -11,7 +10,6 @@ import Text from '@components/text';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { SessionStorageValue } from '@common/values';
 import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
@@ -19,6 +17,7 @@ import { useWallet } from '@hooks/use-wallet';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
+import { WalletRepository } from '@repositories/wallet';
 
 interface SubMenuProps {
   open: boolean;
@@ -61,7 +60,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 
   const lockClickHandler = async () => {
     setOpen(!open);
-    await SessionStorageValue.claer();
+    await WalletRepository.removePassword();
     await loadWallet();
     navigate(RoutePath.Login, { replace: true });
   };

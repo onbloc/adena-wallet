@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import { ExploreState, GnoClientState, WalletState } from "@states/index";
-import { LocalStorageValue } from "@common/values";
-import axios from "axios";
+import { CommonState, ExploreState, GnoClientState, WalletState } from "@states/index";
 import { createImageDataBySvg } from "@common/utils/client-utils";
+import { ResourceService } from "@services/index";
+import { AdenaStorage } from "@common/storage";
+import { useLocation } from "react-router-dom";
+import { GnoClient } from "gno-client";
 
 interface Props {
     children?: React.ReactNode;
@@ -12,15 +14,24 @@ interface Props {
 
 export const Background = ({ children }: Props) => {
 
+    const location = useLocation();
     const [currentAccountAddress, setCurrentAccountAddress] = useState<string>('');
     const [gnoClient] = useRecoilState(GnoClientState.current);
     const [currentAccount] = useRecoilState(WalletState.currentAccount);
     const [transactionHistory] = useRecoilState(WalletState.transactionHistory)
     const [, updateLastTransactionHistory] = useTransactionHistory();
     const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
+    const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
     const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
     const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+    const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
+
+    useEffect(() => {
+        if (gnoClient) {
+            checkNetwork(gnoClient);
+        }
+    }, [gnoClient?.chainId, location]);
 
     /**
      * History Data Interval Fetch
@@ -41,7 +52,8 @@ export const Background = ({ children }: Props) => {
         if (currentAccount.getAddress() === currentAccountAddress) {
             return;
         }
-        LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
+
+        AdenaStorage.local().get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
             if (storedAccountAddress !== currentAccount.getAddress()) {
                 setCurrentAccountAddress(currentAccount.getAddress());
             }
@@ -50,42 +62,53 @@ export const Background = ({ children }: Props) => {
 
     useEffect(() => {
         if (exploreSites.length === 0) {
-            loadSiteInfos();
+            fetchAppInfos();
         }
-    }, [exploreSites])
+    }, [exploreSites]);
+
+    useEffect(() => {
+        updateAppInfos();
+    }, [exploreSites.length]);
 
     useEffect(() => {
         clearCurrentBalance();
         clearTransactionHistory();
+        clearHistoryPosition();
     }, [currentAccount?.getAddress(), gnoClient?.chainId]);
 
-    const loadSiteInfos = async () => {
+    const checkNetwork = async (gnoClient: InstanceType<typeof GnoClient>) => {
+        let health = false;
         try {
-            const response = await axios.get<Array<{
-                symbol: string;
-                name: string;
-                description: string;
-                logo: string;
-                link: string;
-                display: boolean;
-                order: number;
-            }>>(
-                'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/explores.json',
-            );
-            const exploreSites = response.data
+            health = await gnoClient.isHealth();
+        } catch (e) {
+            console.log(e);
+        }
+        setFailedNetwork(!health);
+    };
+
+    const fetchAppInfos = async () => {
+        try {
+            const response = await ResourceService.fetchAppInfos();
+            const exploreSites = response
                 .filter(site => site.display)
                 .sort(site => site.order);
+            setExploreSites([...exploreSites]);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const updateAppInfos = async () => {
+        if (exploreSites.length > 0) {
             const convertedSites: Array<any> = [];
             for (const exploreSite of exploreSites) {
-                const logoData = await createImageDataBySvg(exploreSite.logo);
+                const logo = await createImageDataBySvg(exploreSite.logo);
                 convertedSites.push({
                     ...exploreSite,
-                    logo: logoData ?? ''
+                    logo
                 });
             }
             setExploreSites([...convertedSites]);
-        } catch (error) {
-            console.error(error);
         }
     }
 

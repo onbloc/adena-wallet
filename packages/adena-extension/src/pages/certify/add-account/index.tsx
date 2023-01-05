@@ -12,7 +12,6 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
-import { WalletAccount } from 'adena-module';
 
 export const AddAccount = () => {
   const navigate = useNavigate();

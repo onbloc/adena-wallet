@@ -1,6 +1,6 @@
 {
   "name": "gno-client",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Gno API interface",
   "main": "./dist/index.umd.js",
   "module": "./dist/index.esm.js",

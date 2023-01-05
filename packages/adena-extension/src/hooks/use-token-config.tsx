@@ -1,14 +1,13 @@
-import { optimizeNumber } from "@common/utils/client-utils";
+import { ResourceService, WalletService } from "@services/index";
 import { WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import axios from "axios";
+import BigNumber from "bignumber.js";
 import { useRecoilState } from "recoil";
-
-const TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json";
 
 export const useTokenConfig = (): [
     getConfig: () => Promise<Array<TokenConfig>>,
-    convertTokenUnit: (amount: number, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { amount: number, denom: string },
+    convertTokenUnit: (amount: BigNumber, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { amount: BigNumber, denom: string },
     getTokenImage: (denom: string) => string | undefined
 ] => {
     const [tokenConfig, setTokenConfig] = useRecoilState(WalletState.tokenConfig);
@@ -20,24 +19,13 @@ export const useTokenConfig = (): [
         return await fetchTokenConfig();
     }
 
-    const convertUnit = (amount: number, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { amount: number, denom: string } => {
+    const convertUnit = (amount: BigNumber, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { amount: BigNumber, denom: string } => {
         if (tokenConfig) {
-            const convertDenomType = convertType ?? 'COMMON';
             const currentTokenConfig = tokenConfig.find(
                 config => denom.toUpperCase() === config.denom.toUpperCase() || denom.toUpperCase() === config.minimalDenom.toUpperCase());
 
             if (currentTokenConfig) {
-                const denomType = currentTokenConfig.denom.toUpperCase() === denom.toUpperCase() ? 'COMMON' : 'MINIMAL';
-                const currentUnit = denomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
-                const convertUnit = convertDenomType === 'COMMON' ? currentTokenConfig.unit : currentTokenConfig.minimalUnit;
-
-                const currentAmouont = optimizeNumber(amount, currentUnit / convertUnit);
-                const currentDenom = convertDenomType === 'COMMON' ? currentTokenConfig.denom.toUpperCase() : currentTokenConfig.minimalDenom;
-
-                return {
-                    amount: currentAmouont,
-                    denom: currentDenom
-                }
+                return WalletService.convertUnit(amount, denom, currentTokenConfig, convertType);
             }
         }
         return {
@@ -47,8 +35,7 @@ export const useTokenConfig = (): [
     }
 
     const fetchTokenConfig = async () => {
-        const response = await axios.get<{ [key in string]: TokenConfig }>(TOKEN_CONFIG_URI);
-        const configs = Object.values(response.data);
+        const configs = await ResourceService.fetchTokenConfigs();
         setTokenConfig(configs);
         updateTokenConfigImages(configs);
         return configs;

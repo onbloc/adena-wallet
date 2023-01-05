@@ -1,14 +1,10 @@
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { useGnoClient } from './use-gno-client';
 import { useEffect } from 'react';
 import { useTokenConfig } from './use-token-config';
-import { TokenConfig, Balance } from '@states/wallet';
-
-interface BalanceInfo {
-  unit: string;
-  amount: string;
-}
+import { Balance } from '@states/wallet';
+import { WalletService } from '@services/index';
 
 export const useWalletBalances = (
   initialize?: boolean,
@@ -16,7 +12,8 @@ export const useWalletBalances = (
   const [gnoClient, ,] = useGnoClient();
   const [currentAccount] = useRecoilState(WalletState.currentAccount);
   const [balances, setBalances] = useRecoilState(WalletState.balances);
-  const [getTokenConfig, convertTokenUnit, getTokenImage] = useTokenConfig();
+  const [getTokenConfig] = useTokenConfig();
+  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   useEffect(() => {
     if (initialize) {
@@ -28,40 +25,17 @@ export const useWalletBalances = (
   const updateBalances = async () => {
     if (currentAccount && gnoClient) {
       const tokenConfigs = await getTokenConfig();
-      const response = await gnoClient.getBalances(currentAccount.getAddress());
-      const balances: Array<BalanceInfo> = [...response.balances];
-      const tokenBalances = balances.map(balance => createTokenBalance(balance, tokenConfigs))
-        .filter(balance => balance !== null);
+      try {
+        const tokenBalances = await WalletService.getTokenBalances(gnoClient, currentAccount.getAddress(), tokenConfigs);
 
-      if (tokenBalances.length > 0) {
-        setBalances(tokenBalances as Array<Balance>);
+        if (tokenBalances.length > 0) {
+          setBalances(tokenBalances as Array<Balance>);
+          setFailedNetwork(false);
+        }
+      } catch (e) {
+        setFailedNetwork(true);
       }
     }
-  };
-
-  const createTokenBalance = (balance: BalanceInfo, configs: Array<TokenConfig>): Balance | null => {
-    const currentConfig = configs.find((config) =>
-      config.denom.toUpperCase() === balance.unit.toUpperCase() ||
-      config.minimalDenom.toUpperCase() === balance.unit.toUpperCase()
-    );
-
-    if (currentConfig) {
-      const result = convertTokenUnit(parseFloat(balance.amount), balance.unit, 'COMMON');
-      return {
-        minimalDenom: currentConfig.minimalDenom,
-        denom: currentConfig.denom,
-        image: getTokenImage(currentConfig.denom) ?? '',
-        imageData: getTokenImage(currentConfig.denom) ?? '',
-        name: currentConfig.name,
-        type: currentConfig.type,
-        minimalUnit: currentConfig.minimalUnit,
-        unit: currentConfig.unit,
-        amount: result.amount,
-        amountDenom: result.denom
-      };
-    }
-
-    return null;
   };
 
   return [balances, updateBalances];

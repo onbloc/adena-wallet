@@ -84,15 +84,15 @@ export const TokenDetails = () => {
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [historyItems, setHistoryItems] = useState<{ [key in string]: any }>({});
-  const [loadingHistory, setLoadingHistory] = useState(transactionHistory.items.length === 0);
+  const [loadingHistory, setLoadingHistory] = useState(!transactionHistory.init);
 
   useEffect(() => {
     initHistory();
   }, []);
 
   useEffect(() => {
-    setLoadingHistory(transactionHistory.items.length === 0)
-  }, [transactionHistory.items.length]);
+    setLoadingHistory(!transactionHistory.init)
+  }, [transactionHistory.init]);
 
   useEffect(() => {
     getHistory().then(setHistoryItems);
@@ -131,7 +131,7 @@ export const TokenDetails = () => {
 
   useEffect(() => {
     if (balances && balances.length > 0) {
-      const currentBalance = maxFractionDigits(balances[0].amount ?? 0, 6);
+      const currentBalance = maxFractionDigits(balances[0].amount.toString() ?? 0, 6);
       setBalance(currentBalance);
     }
   }, [balances]);

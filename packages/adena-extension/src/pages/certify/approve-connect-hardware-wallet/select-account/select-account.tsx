@@ -12,7 +12,6 @@ import { formatAddress } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
-import { LocalStorageValue } from '@common/values';
 
 const text = {
   title: 'Select Accounts'
@@ -261,7 +260,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
     await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
-      await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', resultSavedAccounts[0].getAddress());
+      await WalletService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
     }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };

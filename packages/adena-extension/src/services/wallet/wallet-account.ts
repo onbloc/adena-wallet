@@ -1,6 +1,15 @@
-import { LocalStorageValue } from '@common/values';
 import { WalletAccount, WalletAccountConfig } from 'adena-module';
 import { GnoClient } from 'gno-client';
+import { WalletAccountRepository } from '@repositories/wallet';
+
+export const saveCurrentAccountAddress = async (address: string) => {
+  await WalletAccountRepository.updateCurrentAccountAddress(address);
+};
+
+export const loadCurrentAccountAddress = async () => {
+  const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
+  return currentAccountAddress;
+};
 
 /**
  * This function saves accounts in the wallet.
@@ -8,8 +17,7 @@ import { GnoClient } from 'gno-client';
  * @param walletAccounts Wallet instnace arrays
  */
 export const saveAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-  const serializedAccounts = walletAccounts.map(account => account.serialize());
-  await LocalStorageValue.setByObject('WALLET_ACCOUNTS', serializedAccounts);
+  await WalletAccountRepository.updateAccounts(walletAccounts);
 };
 
 /**
@@ -24,24 +32,7 @@ export const loadAccounts = async (config?: {
   coinMinimalDenom: string;
   coinDecimals: number;
 }) => {
-  const serializedAccounts = await LocalStorageValue.getToObject<Array<string>>('WALLET_ACCOUNTS');
-  if (!Array.isArray(serializedAccounts)) {
-    return [];
-  }
-  const accounts: Array<InstanceType<typeof WalletAccount>> = [];
-  serializedAccounts.forEach((serializedAccount) => {
-    try {
-      const account = WalletAccount.deserialize(serializedAccount);
-      if (config) {
-        account.setConfig(new WalletAccountConfig(config));
-      }
-      if (!accounts.find(item => item.getAddress() === account.getAddress())) {
-        accounts.push(account);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  });
+  const accounts = await WalletAccountRepository.getAccounts(config);
   return accounts;
 };
 
@@ -72,7 +63,7 @@ export const updateAccountInfo = async (
  * @returns account's names
  */
 export const loadAccountNames = async () => {
-  const accountNames = await LocalStorageValue.getToObject('WALLET_ACCOUNT_NAMES');
+  const accountNames = await WalletAccountRepository.getAccountNames();
   return accountNames;
 };
 
@@ -88,7 +79,7 @@ export const updateAccountName = async (address: string, name: string) => {
     ...accountNames,
     [address]: name,
   };
-  await LocalStorageValue.setByObject('WALLET_ACCOUNT_NAMES', changedAccountNames);
+  await WalletAccountRepository.updateAccountNames(changedAccountNames);
 };
 
 /**
@@ -109,35 +100,29 @@ export const changeAccountsByAccountNames = async (
  * This function increments the number of accounts in the wallet by 1.
  */
 export const increaseWalletAccountPaths = async () => {
-  let accountPaths = await LocalStorageValue.getToNumbers('WALLET_ACCOUNT_PATHS');
+  let accountPaths = await WalletAccountRepository.getAccountPaths();
   if (accountPaths.length < 1) {
     accountPaths = [0];
   }
   const maxPathValue = Math.max(...accountPaths);
   const increasedAccountPaths = [...accountPaths, maxPathValue + 1];
-  await LocalStorageValue.setByNumbers('WALLET_ACCOUNT_PATHS', increasedAccountPaths);
+  await WalletAccountRepository.updateAccountPaths(increasedAccountPaths);
 };
 
 /**
  * This function decrements the number of accounts in the wallet by 1.
  */
 export const decreaseWalletAccountPaths = async () => {
-  let accountPaths = await LocalStorageValue.getToNumbers('WALLET_ACCOUNT_PATHS');
+  let accountPaths = await WalletAccountRepository.getAccountPaths();
   if (accountPaths.length < 1) {
     accountPaths = [0];
   }
   const decreasedAccountPaths = [...accountPaths].slice(0, -1);
-  await LocalStorageValue.setByNumbers('WALLET_ACCOUNT_PATHS', decreasedAccountPaths);
+  await WalletAccountRepository.updateAccountPaths(decreasedAccountPaths);
 };
 
 export const clearWalletAccountData = async () => {
-  await LocalStorageValue.remove('CURRENT_ACCOUNT_ADDRESS');
-  await LocalStorageValue.remove('WALLET_ACCOUNTS');
-  await LocalStorageValue.remove('WALLET_ACCOUNT_NAMES');
-  await LocalStorageValue.remove('WALLET_ACCOUNT_PATHS');
-  await LocalStorageValue.remove('ADDRESS_BOOK');
-  await LocalStorageValue.remove('CURRENT_CHAIN_ID');
-  await LocalStorageValue.remove('ESTABLISH_SITES');
+  await WalletAccountRepository.deleteAccounts();
 };
 
 const getChangedAccount = (

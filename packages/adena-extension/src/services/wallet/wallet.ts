@@ -1,7 +1,6 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
-import { decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
-import { LocalStorageValue, SessionStorageValue } from '@common/values';
 import { Wallet } from 'adena-module';
+import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
 
 /**
  * This function creates a wallet instance.
@@ -11,10 +10,9 @@ import { Wallet } from 'adena-module';
  * - password: wallet's password
  * @returns Wallet
  */
-export const createWallet = async (parmas: { mnemonic: string; password: string }) => {
-  const { mnemonic, password } = parmas;
+export const createWallet = async ({ mnemonic, password }: { mnemonic: string; password: string }) => {
   const wallet = await createWalletByMnemonic(mnemonic);
-  await saveSerializedWallet(wallet, password);
+  saveWallet(wallet, password);
   return wallet;
 };
 
@@ -24,9 +22,8 @@ export const createWallet = async (parmas: { mnemonic: string; password: string 
  * @returns Wallet
  */
 export const loadWallet = async () => {
-  const serializedWallet = await loadSerializedWallet();
-  const password = await loadWalletPassword();
-  const walletInstance = await deserializeWallet(serializedWallet, password);
+  const password = await WalletRepository.getWalletPassword();
+  const walletInstance = await deserializeWallet(password);
   return walletInstance;
 };
 
@@ -37,56 +34,9 @@ export const loadWallet = async () => {
  * @returns Wallet
  */
 export const loadWalletWithPassword = async (password: string) => {
-  const serializedWallet = await loadSerializedWallet();
-  const walletInstance = await deserializeWallet(serializedWallet, password);
-  await saveWalletPassword(password);
+  const walletInstance = await deserializeWallet(password);
+  await WalletRepository.updateWalletPassword(password);
   return walletInstance;
-};
-
-/**
- * This function encrypts and saves the wallet password.
- *
- * @param password wallet's password
- */
-export const saveWalletPassword = async (password: string) => {
-  const { encryptedKey, encryptedPassword } = encryptPassword(password);
-  await SessionStorageValue.set('ENCRYPTED_KEY', encryptedKey);
-  await SessionStorageValue.set('ENCRYPTED_PASSWORD', encryptedPassword);
-};
-
-/**
- * This function loads the wallet by decrypting the password.
- *
- * @throws WalletError 'NOT_FOUND_PASSWORD'
- * @returns decrypted password
- */
-export const loadWalletPassword = async () => {
-  const encryptedKey = (await SessionStorageValue.get('ENCRYPTED_KEY')) || '';
-  const encryptedPassword = (await SessionStorageValue.get('ENCRYPTED_PASSWORD')) || '';
-  if (encryptedKey === '' || encryptedPassword === '') {
-    throw new WalletError('NOT_FOUND_PASSWORD');
-  }
-  try {
-    const password = decryptPassword(encryptedKey, encryptedPassword);
-    return password;
-  } catch (e) {
-    throw new WalletError('NOT_FOUND_PASSWORD');
-  }
-};
-
-/**
- * This function serializes the wallet with a password.
- *
- * @param wallet Wallet instance
- * @param passowrd wallet's password
- */
-export const saveSerializedWallet = async (
-  wallet: InstanceType<typeof Wallet>,
-  passowrd: string,
-) => {
-  const serializedWallet = await wallet.serialize(passowrd);
-  await LocalStorageValue.set('SERIALIZED', serializedWallet);
-  await saveWalletPassword(passowrd);
 };
 
 /**
@@ -96,11 +46,15 @@ export const saveSerializedWallet = async (
  */
 export const isLocked = async () => {
   try {
-    const password = await loadWalletPassword();
+    const password = await WalletRepository.getWalletPassword();
     return password === '';
   } catch (e) {
     return true;
   }
+};
+
+export const loadWalletPassword = async () => {
+  return await WalletRepository.getWalletPassword();
 };
 
 /**
@@ -114,15 +68,11 @@ export const isLocked = async () => {
  */
 const createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<number>) => {
   try {
-    let currentAccountPath = accountPaths ?? [0];
-    if (!accountPaths) {
-      const storedAccountPaths = await LocalStorageValue.getToNumbers('WALLET_ACCOUNT_PATHS');
-      if (storedAccountPaths.length > 0) {
-        currentAccountPath = storedAccountPaths;
-      }
+    if (accountPaths) {
+      await WalletAccountRepository.updateAccountPaths(accountPaths);
     }
-    await LocalStorageValue.setByNumbers('WALLET_ACCOUNT_PATHS', currentAccountPath);
-    const wallet = await Wallet.createByMnemonic(mnemonic, currentAccountPath);
+    const currentAccountPath = await WalletAccountRepository.getAccountPaths();
+    const wallet = await Wallet.createByMnemonic(mnemonic, currentAccountPath ?? [0]);
     return wallet;
   } catch (e) {
     throw new WalletError('FAILED_TO_CREATE');
@@ -130,18 +80,18 @@ const createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<num
 };
 
 /**
- * This function loads the serialized wallet.
+ * This function serializes the wallet with a password.
  *
- * @throws WalletError 'NOT_FOUND_SERIALIZED'
- * @returns Wallet
+ * @param wallet Wallet instance
+ * @param password wallet's password
  */
-const loadSerializedWallet = async () => {
-  const serializedWallet = await LocalStorageValue.get('SERIALIZED');
-
-  if (!serializedWallet || serializedWallet.length === 0) {
-    throw new WalletError('NOT_FOUND_SERIALIZED');
-  }
-  return serializedWallet;
+const saveWallet = async (
+  wallet: InstanceType<typeof Wallet>,
+  password: string,
+) => {
+  const serializedWallet = await wallet.serialize(password);
+  await WalletRepository.updateSerializedWallet(serializedWallet);
+  await WalletRepository.updateWalletPassword(password);
 };
 
 /**
@@ -150,8 +100,9 @@ const loadSerializedWallet = async () => {
  * @throws WalletError 'FAILED_TO_LOAD'
  * @returns Wallet
  */
-const deserializeWallet = async (serializedWallet: string, password: string) => {
+const deserializeWallet = async (password: string) => {
   try {
+    const serializedWallet = await WalletRepository.getSerializedWallet();
     const walletInstance = await Wallet.createBySerialized(serializedWallet, password);
     return walletInstance;
   } catch (e) {

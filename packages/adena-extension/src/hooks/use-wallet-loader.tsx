@@ -2,7 +2,7 @@ import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
+import { WalletRepository } from '@repositories/wallet';
 
 /**
  * Load or Deserialize wallet  by saved serialized wallet data
@@ -12,7 +12,6 @@ import { LocalStorageValue } from '@common/values';
  *  - load: load wallet
  *  - loadByPassowrd: load wallet by password
  */
-
 export const useWalletLoader = (): [
   state: string,
   loadWallet: () => void,
@@ -22,7 +21,24 @@ export const useWalletLoader = (): [
   const [, setWallet] = useRecoilState(WalletState.wallet);
   const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
+  const validateWallet = async () => {
+    try {
+      const existWallet = Boolean(await WalletRepository.getSerializedWallet());
+      if (existWallet) {
+        return true;
+      }
+      return true;
+    } catch (e) {
+      console.log(e);
+    }
+    setState('CREATE');
+    return false;
+  }
+
   const loadWallet = async () => {
+    if (!await validateWallet()) {
+      return;
+    }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWallet();
@@ -31,8 +47,8 @@ export const useWalletLoader = (): [
       setWallet(loadedWallet);
       setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
-
     } catch (error) {
+      console.log(error);
       if (error instanceof WalletError) {
         const changedState = getStateByWalletError(error);
         setState(changedState);
@@ -44,6 +60,9 @@ export const useWalletLoader = (): [
   };
 
   const loadWalletByPassword = async (password: string) => {
+    if (!await validateWallet()) {
+      return 'CREATE';
+    }
     setState('LOADING');
     try {
       const loadedWallet = await WalletService.loadWalletWithPassword(password);
@@ -54,6 +73,7 @@ export const useWalletLoader = (): [
       setState('FINISH');
       return 'FINISH';
     } catch (error) {
+      console.log(error)
       let changedState: "CREATE" | "LOGIN" | "FAIL" = 'FAIL';
       if (error instanceof WalletError) {
         changedState = getStateByWalletError(error);
@@ -66,9 +86,9 @@ export const useWalletLoader = (): [
   };
 
   const initCurrentAccountAddress = async (address: any) => {
-    const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
     if (!currentAccountAddress) {
-      LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', `${address}`);
+      await WalletService.saveCurrentAccountAddress(address);
     }
   };
 
