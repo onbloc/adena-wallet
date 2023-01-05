@@ -64,7 +64,7 @@ export const Settings = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
   const shareButtonClick = async () => {
-    window.open(`https://${gnoClient?.chainId ?? 'www'}.gnoscan.io/accounts/${currnetAccount?.data.address}`, '_blank')
+    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.data.address}`, '_blank')
   };
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +76,7 @@ export const Settings = () => {
   };
 
   const handleTextBlur = () => {
-    const changedName = text === '' ? `Account ${currnetAccount?.data.index}` : text;
+    const changedName = text === '' ? `${getDefaultAccountName()}` : text;
     updateAccountName(currnetAccount?.data.address || '', changedName);
   };
 
@@ -84,6 +84,12 @@ export const Settings = () => {
     await setText('');
     await updateAccountName(currnetAccount?.data.address || '', '');
     inputRef.current?.focus();
+  };
+
+  const getDefaultAccountName = () => {
+    const accountType = currnetAccount?.data.signerType !== "LEDGER" ? "Account" : "Ledger";
+    const accountNumber = (currnetAccount?.data.path ?? 0) + 1
+    return `${accountType} ${accountNumber}`;
   };
 
   return (
@@ -95,7 +101,7 @@ export const Settings = () => {
           onChange={onChangeAccountName}
           ref={inputRef}
           onBlur={handleTextBlur}
-          placeholder={`Account ${currnetAccount?.data.index}`}
+          placeholder={getDefaultAccountName()}
         />
         <PencilButton type='button' onClick={handleFocus} />
       </IconInputBox>
@@ -121,6 +127,7 @@ export const Settings = () => {
         hierarchy={ButtonHierarchy.Primary}
         onClick={revealSeedClick}
         margin='12px 0px 0px'
+        disabled={currnetAccount?.data.signerType === "LEDGER"}
       >
         <Text type='body1Bold'>Reveal Seed Phrase</Text>
       </Button>

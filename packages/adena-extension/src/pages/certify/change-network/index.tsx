@@ -9,10 +9,9 @@ import LoadingChangeNetwork from '@components/loading-screen/loading-change-netw
 import { useGnoClient } from '@hooks/use-gno-client';
 import { GnoClient } from 'gno-client';
 import { RoutePath } from '@router/path';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWallet } from '@hooks/use-wallet';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
+import { useRecoilState, useResetRecoilState } from 'recoil';
+import { CommonState, WalletState } from '@states/index';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -40,10 +39,11 @@ const LeftWrap = styled.div`
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState, setLoadingState] = useState('INIT');
-  const [wallet] = useWallet();
-  const { initAccounts } = useWalletAccounts(wallet);
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
-  const [balances, updateBalances] = useWalletBalances();
+  const [finishedLoading, setFinishedLoading] = useState(false);
+  const clearWalletBalance = useResetRecoilState(WalletState.balances);
+  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [, setWalletState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
     updateNetworks();
@@ -51,32 +51,46 @@ export const ChangeNetwork = () => {
 
   useEffect(() => {
     if (loadinsgState === 'LOADING') {
-      updateBalances();
+      clearWalletBalance();
+      setFailedNetwork(undefined);
+      setLoadingState('FINISH');
     }
   }, [currentNetwork]);
 
   useEffect(() => {
-    if (loadinsgState === 'LOADING') {
-      setLoadingState('FINISH');
-    }
-  }, [balances]);
-
-  useEffect(() => {
     if (loadinsgState === 'FINISH') {
-      navigate(RoutePath.Wallet);
+      checkHealth();
     }
   }, [loadinsgState]);
 
+  useEffect(() => {
+    if (finishedLoading && failedNetwork !== undefined) {
+      navigate(RoutePath.Home);
+    }
+  }, [finishedLoading, failedNetwork]);
+
+  const checkHealth = async () => {
+    let health = false;
+    try {
+      health = await currentNetwork?.isHealth() ?? false;
+    } catch (e) {
+      console.log(e)
+    }
+    setWalletState('NONE');
+    setFailedNetwork(!health);
+    setFinishedLoading(true);
+  }
+
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
     if (network.chainId === currentNetwork?.chainId) {
+      setFinishedLoading(true);
       return;
     }
     setLoadingState('LOADING');
     await changeNetwork(network.chainId);
-    await initAccounts();
   };
 
-  return loadinsgState !== 'LOADING' ? (
+  return loadinsgState === 'INIT' ? (
     <Wrapper>
       <Text type='header4'>Change Network</Text>
       {networks.length > 0 ? (

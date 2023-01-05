@@ -5,6 +5,8 @@ import success from '../../assets/success.svg';
 import failed from '../../assets/failed.svg';
 import theme from '@styles/theme';
 import axios from 'axios';
+import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
 
 export function formatAddress(v: string, num?: number): string {
   const length = num ?? 4;
@@ -272,14 +274,38 @@ export const createFaviconByHostname = async (hostname: string) => {
   return null;
 };
 
+export const createImageDataBySvg = async (imageUri: string) => {
+  try {
+    const response = await axios.get(imageUri, { responseType: 'arraybuffer', });
+    const imageData = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    return imageData;
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+};
+
 const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
 };
 
-export const optimizeNumber = (value: number, multiply: number) => {
-  const decimalPosition = `${multiply}`.indexOf('.');
+export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
+  const decimalPosition = multiply.toString().indexOf('.');
   const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
   const extraValue = Math.pow(10, decimalLength);
-  const currentAmouont = Math.round(value * multiply * extraValue) / extraValue;
-  return currentAmouont;
+  const currentAmount = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
+  return currentAmount;
+};
+
+export const dateToLocal = (utcDateStr: string) => {
+  const hasTimezone = `${utcDateStr}`.includes('Z');
+  const timezoneOffset = new Date().getTimezoneOffset();
+  let currentDate = dayjs(utcDateStr);
+  if (!hasTimezone) {
+    currentDate = currentDate.subtract(timezoneOffset, 'minutes');
+  }
+  return {
+    value: currentDate.format('YYYY-MM-DD HH:mm:ss'),
+    offsetHours: -timezoneOffset / 60,
+  };
 };

@@ -1,4 +1,3 @@
-import { LocalStorageValue } from '@common/values';
 import { WalletService } from '@services/index';
 import { loadAccounts } from '@services/wallet';
 import { GnoClientState, WalletState } from '@states/index';
@@ -60,17 +59,22 @@ export const useCurrentAccount = (): [
       return 0;
     }
 
+    // TODO: DELETE
     let currentAddress = '';
     if (address) {
-      await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', address);
+      await WalletService.saveCurrentAccountAddress(address);
       currentAddress = address;
     } else {
-      currentAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+      currentAddress = await WalletService.loadCurrentAccountAddress();
     }
     if (currentAccounts.findIndex(account => account.getAddress() === currentAddress) === -1) {
       currentAddress = currentAccounts[0].getAddress();
-      await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', currentAddress);
+      await WalletService.saveCurrentAccountAddress(currentAddress);
     }
+    // 
+
+    // const currentAddress = address ?? await WalletService.loadCurrentAccountAddress();
+    // await WalletService.saveCurrentAccountAddress(currentAddress);
 
     if (currentAccount?.getAddress() !== currentAddress) {
       setBalances([]);
@@ -79,7 +83,10 @@ export const useCurrentAccount = (): [
       (account) => account.getAddress() === currentAddress,
     );
     const changedCurrentAccount =
-      accountIndex > 0 ? currentAccounts[accountIndex] : currentAccounts[0];
+      accountIndex > 0 ?
+        currentAccounts[accountIndex] :
+        currentAccounts[0];
+
     if (changedCurrentAccount.data.signerType === 'AMINO') {
       changedCurrentAccount.setSigner(wallet?.getSigner());
     }

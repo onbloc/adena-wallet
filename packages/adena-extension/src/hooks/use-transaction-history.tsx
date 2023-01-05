@@ -1,7 +1,8 @@
 import { GnoClientState, WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
-import { HistoryItem } from "gno-client/src/api/response";
-import { LocalStorageValue } from "@common/values";
+import { HistoryItem, HistoryItemType } from "gno-client/src/api/response";
+import { WalletService } from "@services/index";
+import { dateToLocal } from "@common/utils/client-utils";
 
 export const useTransactionHistory = (): [
     getHistory: () => Promise<{ [key in string]: Array<HistoryItem> }>,
@@ -13,7 +14,7 @@ export const useTransactionHistory = (): [
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
     const getHistory = async () => {
-        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        const address = await WalletService.loadCurrentAccountAddress();
         if (transactionHistory.address === address) {
             return formatTransactionHistory(transactionHistory.items);
         }
@@ -41,7 +42,7 @@ export const useTransactionHistory = (): [
     }
 
     const updateNextTransactionHistory = async () => {
-        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        const address = await WalletService.loadCurrentAccountAddress();
         if (address && !transactionHistory.isFinish) {
             if (address === transactionHistory.address) {
                 return await fetchTransactionHistory(transactionHistory.currentPage + 1);
@@ -51,13 +52,18 @@ export const useTransactionHistory = (): [
     }
 
     const fetchTransactionHistory = async (page: number) => {
-        const address = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+        const address = await WalletService.loadCurrentAccountAddress();
         if (gnoClient && address) {
             const currentPage = page ?? 0;
             try {
                 const response = await gnoClient.getTransactionHistory(address, currentPage * 20);
                 const lastPage = currentPage > transactionHistory.currentPage ? currentPage : transactionHistory.currentPage;
-                const newItems = response.txs;
+                const newItems = response.txs.map((tx: HistoryItemType) => {
+                    return {
+                        ...tx,
+                        date: dateToLocal(tx.date).value
+                    }
+                });
                 const newItemHashes = response.txs.map((item: HistoryItem) => item.hash);
                 const items = transactionHistory.items.filter(item => !newItemHashes.includes(item.hash));
                 const isFinish = transactionHistory.isFinish ? true : !response.next;

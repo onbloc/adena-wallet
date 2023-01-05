@@ -1,8 +1,8 @@
 #!/bin/bash
 
 branch=$(git rev-parse --abbrev-ref HEAD)
-if [ "$branch" != "qa" ]; then
-  echo "current brunch is not 'qa'"
+if [ "$branch" != "qa" ] && [ "$branch" != "develop" ]; then
+  echo "current brunch is not 'qa' or 'develop'"
   exit;
 fi
 

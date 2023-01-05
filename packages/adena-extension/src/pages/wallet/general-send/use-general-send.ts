@@ -7,6 +7,7 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { WalletService } from '@services/index';
+import BigNumber from 'bignumber.js';
 
 const specialPatternCheck = /\W|\s/g;
 const fee = 0.000001;
@@ -17,13 +18,13 @@ export const useGeneralSend = () => {
   const [balances] = useWalletBalances();
   const [wallet] = useWallet();
   const { accounts } = useWalletAccounts(wallet);
-  const [currentAccount, ,] = useCurrentAccount();
+  const [currentAccount] = useCurrentAccount();
   const [address, setAddress] = useState<string>('');
   const [selectName, setSelectName] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [addressError, setAddressError] = useState<boolean>(false);
   const [amountError, setAmountError] = useState<boolean>(false);
-  const [nowAmount, setNowAmount] = useState(0);
+  const [nowAmount, setNowAmount] = useState(BigNumber(0));
   const [isNumber, setIsNumber] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -47,7 +48,11 @@ export const useGeneralSend = () => {
 
   useEffect(() => {
     if (balances.length > 0) {
-      setNowAmount(balances[0].amount ?? 0);
+      try {
+        setNowAmount(BigNumber(balances[0]?.amount ?? 0));
+      } catch (e) {
+        setNowAmount(BigNumber(0));
+      }
     }
   }, [balances]);
 
@@ -104,12 +109,21 @@ export const useGeneralSend = () => {
   const cancelButtonClick = () =>
     location.state === 'token' ? navigate(RoutePath.TokenDetails) : navigate(RoutePath.Wallet);
 
-  const maxButtonClick = () =>
-    setAmount(() => String(nowAmount - fee < 0 ? 0 : (nowAmount - fee).toFixed(6)));
+  const availAmount = () => {
+    return BigNumber(amount).isLessThanOrEqualTo(nowAmount.minus(fee));
+  }
+
+  const maxButtonClick = () => {
+    if (nowAmount <= BigNumber(fee)) {
+      setAmount('0');
+      return;
+    }
+    setAmount(nowAmount.minus(fee).toFixed(6).toString());
+  }
 
   const nextButtonClick = () => {
     const addressErrorCheck = addressValidationCheck(address);
-    const amountErrorCheck = Number(amount) <= nowAmount - fee && Number(amount) > 0 ? true : false;
+    const amountErrorCheck = availAmount();
     if (addressErrorCheck && amountErrorCheck)
       navigate(RoutePath.SendConfirm, {
         state: {

@@ -1,11 +1,12 @@
 import { WalletError } from '@common/errors';
-import { LocalStorageValue } from '@common/values';
 import { RoutePath } from '@router/path';
-import { GnoClientService, WalletService } from '@services/index';
+import { ResourceService, WalletService } from '@services/index';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
+import { WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { ChainRepository } from '@repositories/common';
 
 export const getAccount = async (
   requestData: InjectionMessage,
@@ -15,7 +16,7 @@ export const getAccount = async (
     const walletPassword = await WalletService.loadWalletPassword();
     const wallet = await WalletService.loadWalletWithPassword(walletPassword);
     await wallet.initAccounts();
-    let currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    let currentAccountAddress = await WalletService.loadCurrentAccountAddress();
     if (!currentAccountAddress || currentAccountAddress === '') {
       currentAccountAddress = wallet.getAccounts()[0].getAddress();
     }
@@ -61,14 +62,13 @@ export const addEstablish = async (
 };
 
 export const loadGnoClient = async () => {
-  const storedChainId = await LocalStorageValue.get('CURRENT_CHAIN_ID');
+  const storedChainId = await WalletRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
-  const networkConfigs = await GnoClientService.loadNetworkConfigs();
-  const currentNetworkConfig =
-    networkConfigs.find((network) => network.chainId === currentChainId) ?? networkConfigs[0];
+  const networks = await ChainRepository.getNetworks();
+  const currentNetworkConfig = networks.find((network) => network.chainId === currentChainId) ?? networks[0];
 
   const gnoClient = GnoClient.createNetworkByType(
-    currentNetworkConfig,
+    { ...currentNetworkConfig, chainId: currentNetworkConfig.chainId, chainName: currentNetworkConfig.chainName },
     getNetworkMapperType(currentNetworkConfig.chainId),
     fetchAdapter,
   );

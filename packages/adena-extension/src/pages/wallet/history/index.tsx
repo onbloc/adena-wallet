@@ -8,7 +8,7 @@ import ListWithDate from '@components/list-box/list-with-date';
 import LoadingHistory from '@components/loading-screen/loading-history';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 import { HistoryItem } from 'gno-client/src/api/response';
 
 const Wrapper = styled.main`
@@ -33,14 +33,16 @@ const Wrapper = styled.main`
 export const History = () => {
   const navigate = useNavigate();
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
+  const [historyPosition, setHistoryPosition] = useRecoilState(CommonState.historyPosition);
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [transactionItems, setTransactionItems] = useState<{ [key in string]: any }>({});
+  const finishedLoading = transactionHistory.init && Object.keys(transactionItems).length > 0;
 
   useEffect(() => {
     initHistory();
-  }, [])
+  }, []);
 
   useEffect(() => {
     getHistory().then(setTransactionItems);
@@ -68,6 +70,15 @@ export const History = () => {
     }
   }, [nextFetch]);
 
+  useEffect(() => {
+    if (finishedLoading) {
+      if (!bodyElement)
+        return;
+      bodyElement.scrollTo(0, historyPosition.position);
+      setHistoryPosition({ position: 0 });
+    }
+  }, [finishedLoading]);
+
   const onScrollListener = async () => {
     if (bodyElement) {
       const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
@@ -78,6 +89,7 @@ export const History = () => {
   }
 
   const onClickHistoryItem = (item: HistoryItem) => {
+    setHistoryPosition({ position: bodyElement?.scrollTop ?? 0 });
     navigate(RoutePath.TransactionDetail, { state: item })
   };
 
@@ -104,9 +116,6 @@ export const History = () => {
       ) : (
         <LoadingHistory />
       )}
-      <div >
-
-      </div>
     </Wrapper>
   );
 };

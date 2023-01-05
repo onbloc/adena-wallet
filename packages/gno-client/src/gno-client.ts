@@ -29,6 +29,10 @@ export class GnoClient implements GnoClientApi {
     return this.networkConfig.rpcUrl;
   }
 
+  public get linkUrl() {
+    return this.networkConfig.linkUrl;
+  }
+
   public get token() {
     return this.networkConfig.token;
   }

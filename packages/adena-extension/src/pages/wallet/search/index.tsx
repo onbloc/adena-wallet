@@ -109,7 +109,7 @@ export const WalletSearch = () => {
               left={<img src={balance.imageData} alt='logo image' />}
               center={<Text type='body1Bold'>{balance.name}</Text>}
               right={
-                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount ?? 0, 6)} ${balance.type
+                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${balance.type
                   }`}</Text>
               }
               hoverAction={true}

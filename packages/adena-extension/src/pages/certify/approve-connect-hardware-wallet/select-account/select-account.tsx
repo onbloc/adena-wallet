@@ -12,7 +12,6 @@ import { formatAddress } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
-import { LocalStorageValue } from '@common/values';
 
 const text = {
   title: 'Select Accounts'
@@ -186,14 +185,6 @@ const AccountListContainer = styled.div`
   }
 `;
 
-const defaultAccounts = [
-  "{\"index\":1,\"signerType\":\"LEDGER\",\"name\":\"Account 1\",\"status\":\"ACTIVE\",\"address\":\"g19fs7tzl2r4hpvpvxt9tvv54gpy6fekt8shzp4q\",\"balance\":\"\",\"histories\":[],\"config\":{\"chainId\":\"test2\",\"coinDenom\":\"UGNOT\",\"coinMinimalDenom\":\"ugnot\",\"coinDecimals\":6}}",
-  "{\"index\":2,\"signerType\":\"LEDGER\",\"name\":\"Account 2\",\"status\":\"ACTIVE\",\"address\":\"g1ckddn039khwxzu4v5mc8n34vd9ksaks2l6c3kg\",\"balance\":\"\",\"histories\":[],\"config\":{\"chainId\":\"test2\",\"coinDenom\":\"UGNOT\",\"coinMinimalDenom\":\"ugnot\",\"coinDecimals\":6}}",
-  "{\"index\":3,\"signerType\":\"LEDGER\",\"name\":\"Account 3\",\"status\":\"ACTIVE\",\"address\":\"g1q3j7d85k8x4hxw8f0w7z66hnkh4em6l6c03t5r\",\"balance\":\"\",\"histories\":[],\"config\":{\"chainId\":\"test2\",\"coinDenom\":\"UGNOT\",\"coinMinimalDenom\":\"ugnot\",\"coinDecimals\":6}}",
-  "{\"index\":4,\"signerType\":\"LEDGER\",\"name\":\"Account 4\",\"status\":\"ACTIVE\",\"address\":\"g1drg7fj2jmp6jtqhrvrcwy7ch23upn52y0q8ch6\",\"balance\":\"\",\"histories\":[],\"config\":{\"chainId\":\"test2\",\"coinDenom\":\"UGNOT\",\"coinMinimalDenom\":\"ugnot\",\"coinDecimals\":6}}",
-  "{\"index\":5,\"signerType\":\"LEDGER\",\"name\":\"Account 5\",\"status\":\"ACTIVE\",\"address\":\"g1ks4ev53j4al8uqhhlahvrfadmz3tlqdguqhxy3\",\"balance\":\"\",\"histories\":[],\"config\":{\"chainId\":\"test2\",\"coinDenom\":\"UGNOT\",\"coinMinimalDenom\":\"ugnot\",\"coinDecimals\":6}}"
-];
-
 export const ApproveConnectHardwareWalletSelectAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -203,10 +194,6 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   const [lastPath, setLastPath] = useState(-1);
   const [loadPath, setLoadPath] = useState(false);
   const LEDGER_ACCOUNT_LOAD_SIZE = 5;
-
-  useEffect(() => {
-    initAccounts(defaultAccounts.map(WalletAccount.deserialize));
-  }, []);
 
   useEffect(() => {
     if (Array.isArray(location.state?.accounts)) {
@@ -261,7 +248,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
     await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
-      await LocalStorageValue.set('CURRENT_ACCOUNT_ADDRESS', resultSavedAccounts[0].getAddress());
+      await WalletService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
     }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };

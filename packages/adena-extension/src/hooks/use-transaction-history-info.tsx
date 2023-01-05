@@ -5,6 +5,7 @@ import { useWalletBalances } from "./use-wallet-balances";
 import IconAddPkg from '../assets/addpkg.svg';
 import IconContract from '../assets/contract.svg';
 import { GnoClientResnpose } from "gno-client/src/api";
+import BigNumber from "bignumber.js";
 
 export interface TransactionInfo {
     icon: any;
@@ -95,7 +96,7 @@ export const useTransactionHistoryInfo = (): [{
 
     const mappedBankMsgSend = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionInfo => {
         const func = getFunctionName(transactionItem);
-        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0].denom);
+        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0]?.denom);
         const title = (['Fail'].includes(func)) ? 'Send' : func;
         const titleDescription = getTransferDescription(transactionItem);
         const amount = getAmountValue(transactionItem);
@@ -160,7 +161,7 @@ export const useTransactionHistoryInfo = (): [{
     }
 
     const mappedBankMsgSendDetail = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionDetailInfo => {
-        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0].denom);
+        const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? balances[0]?.denom);
         const main = getAmountFullValue(transactionItem);
         const date = fullDateFormat(transactionItem.date);
         const type = getFunctionName(transactionItem);
@@ -263,12 +264,12 @@ export const useTransactionHistoryInfo = (): [{
         }
         try {
             const { amount, denom } = transactionItem.transfer;
-            let currentAmount = amount ?? 0;
-            let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
+            let currentAmount = BigNumber(amount ?? 0);
+            let currentDenom = denom ? denom.toUpperCase() : balances[0]?.denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;
-            return `${amountSetSymbol(currentAmount)} ${currentDenom}`;
+            return `${amountSetSymbol(currentAmount.toString())} ${currentDenom}`;
         } catch (e) {
             return '';
         }
@@ -280,20 +281,21 @@ export const useTransactionHistoryInfo = (): [{
         }
         try {
             const { amount, denom } = transactionItem.transfer;
-            let currentAmount = amount ?? 0;
-            let currentDenom = denom ? denom.toUpperCase() : balances[0].denom.toUpperCase();
+            let currentAmount = BigNumber(amount ?? 0);
+            let currentDenom = denom ? denom.toUpperCase() : balances[0]?.denom.toUpperCase();
             const result = convertUnit(currentAmount, currentDenom, 'COMMON');
             currentAmount = result.amount;
             currentDenom = result.denom;
-            return `${minFractionDigits(currentAmount, 6)} ${currentDenom}`;
+            return `${minFractionDigits(currentAmount.toString(), 6)} ${currentDenom}`;
         } catch (e) {
             return '';
         }
     }
 
     const getNetworkFee = (transactionItem: GnoClientResnpose.HistoryItemType) => {
-        const result = convertUnit(transactionItem.fee.amount ?? 0, transactionItem.fee.denom, 'COMMON');
-        return `${minFractionDigits(result.amount, 6)} ${result.denom}`;
+        const feeAmount = BigNumber(transactionItem.fee.amount ?? 0);
+        const result = convertUnit(feeAmount, transactionItem.fee.denom, 'COMMON');
+        return `${minFractionDigits(result.amount.toString(), 6)} ${result.denom}`;
     }
 
     const getTransferInfo = (transactionItem: GnoClientResnpose.HistoryItemType) => {

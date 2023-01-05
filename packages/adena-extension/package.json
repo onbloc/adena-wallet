@@ -1,6 +1,6 @@
 {
   "name": "adena-extension",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Adena Wallet",
   "scripts": {
     "build:dev": "webpack --mode=development --watch",
@@ -52,7 +52,9 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.0",
     "adena-module": "*",
     "axios": "^0.27.2",
+    "bignumber.js": "^9.1.1",
     "crypto-js": "^4.1.1",
+    "dayjs": "^1.11.7",
     "gno-client": "*",
     "html-loader": "^4.1.0",
     "node-polyfill-webpack-plugin": "^2.0.1",

@@ -6,11 +6,10 @@ import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-butto
 import { useLocation } from 'react-router-dom';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { TransactionService } from '@services/index';
+import { TransactionService, WalletService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useWallet } from '@hooks/use-wallet';
 import { createFaviconByHostname } from '@common/utils/client-utils';
-import { LocalStorageValue } from '@common/values';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { ApproveLdegerLoading } from './approve-ledger-loading';
@@ -55,7 +54,7 @@ export const ApproveSign = () => {
   }, [gnoClient, currentAccount, requestData]);
 
   const initCurrentAccount = async () => {
-    const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
+    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
     changeCurrentAccount(currentAccountAddress);
   }
 

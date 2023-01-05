@@ -11,6 +11,7 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { useWallet } from '@hooks/use-wallet';
 import { useLocation } from 'react-router-dom';
+import { WalletAccountRepository } from '@repositories/wallet';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -45,6 +46,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const [isEstablish, setIsEstablish] = useState(false);
   const [wallet] = useWallet();
   const location = useLocation();
+  const [currentAccountAddress, setCurrentAccountAddress] = useState('');
+  const [currentAccountName, setCurrentAccountName] = useState('');
+
+  useEffect(() => {
+    initAccountInfo();
+  }, [currentAccount]);
 
   useEffect(() => {
     getCurrentUrl().then((currentUrl) => {
@@ -55,6 +62,19 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
       });
     });
   }, [wallet, location]);
+
+  const initAccountInfo = async () => {
+    const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
+    setCurrentAccountAddress(currentAccountAddress);
+
+    let currentAccountName = currentAccount?.data.name;
+    if (!currentAccountName) {
+      const accounts = await WalletService.loadAccounts();
+      const walletAccount = accounts.find(account => account.getAddress() === currentAccountAddress);
+      currentAccountName = walletAccount?.data.name ?? '';
+    }
+    setCurrentAccountName(currentAccountName);
+  };
 
   const getCurrentUrl = () => {
     return new Promise((resolver) => {
@@ -71,11 +91,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     <Wrapper>
       <Header>
         <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-        <CopyTooltip copyText={currentAccount?.data.address ?? ''}>
+        <CopyTooltip copyText={currentAccountAddress}>
           <Text type='body1Bold' display='inline-flex'>
-            {formatNickname(currentAccount?.data.name ?? '', 12)}
+            {formatNickname(currentAccountName, 12)}
             <Text type='body1Reg' color={theme.color.neutral[9]}>
-              {` (${formatAddress(currentAccount?.data.address ?? '')})`}
+              {` (${formatAddress(currentAccountAddress)})`}
             </Text>
           </Text>
         </CopyTooltip>

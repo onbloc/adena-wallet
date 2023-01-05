@@ -14,8 +14,14 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import theme from '@styles/theme';
 
 export const GeneralSend = () => {
-  const { addressState, amountState, buttonState, textAreaRef, onKeyDown, accountsList } =
-    useGeneralSend();
+  const {
+    addressState,
+    amountState,
+    buttonState,
+    textAreaRef,
+    onKeyDown,
+    accountsList
+  } = useGeneralSend();
   const [balances] = useWalletBalances();
 
   const existsAddressBookItems = () => {
@@ -35,7 +41,7 @@ export const GeneralSend = () => {
         color='#777777'
         type='captionReg'
         textAlign='left'
-      >{`Balance: ${balances[0].amount} ${balances[0].amountDenom}`}</Text>
+      >{`Balance: ${balances[0]?.amount} ${balances[0]?.amountDenom}`}</Text>
     );
   };
   return (

@@ -80,6 +80,7 @@ const config = {
       '@common': path.resolve(__dirname, 'src/common'),
       '@inject': path.resolve(__dirname, 'src/inject'),
       '@assets': path.resolve(__dirname, 'src/assets'),
+      '@repositories': path.resolve(__dirname, 'src/repositories'),
     },
   },
   plugins: [

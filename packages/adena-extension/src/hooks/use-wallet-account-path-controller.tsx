@@ -1,6 +1,8 @@
 import { useWalletCreator } from './use-wallet-creator';
 import { WalletService } from '@services/index';
 import { useWallet } from './use-wallet';
+import { useRecoilState, useResetRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 export const useWalletAccountPathController = (): [
   increaseAccountPaths: () => void,
@@ -8,6 +10,8 @@ export const useWalletAccountPathController = (): [
 ] => {
   const [, createWallet] = useWalletCreator();
   const [wallet] = useWallet();
+  const [, setState] = useRecoilState(WalletState.state);
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
   const increaseAccountPaths = async () => {
     await WalletService.increaseWalletAccountPaths();
@@ -21,6 +25,8 @@ export const useWalletAccountPathController = (): [
 
   const reloadWallet = async () => {
     if (wallet) {
+      setState('LOADING');
+      clearCurrentBalance();
       const mnemonic = wallet.getMnemonic();
       const password = await WalletService.loadWalletPassword();
       await createWallet({ mnemonic, password });

@@ -1,4 +1,5 @@
-import { LocalStorageValue } from '@common/values';
+import { WalletService } from '@services/index';
+import { WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '.';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups } from './methods';
@@ -38,9 +39,15 @@ export class MessageHandler {
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void,
   ) => {
-    const currentAccountAddress = await LocalStorageValue.get('CURRENT_ACCOUNT_ADDRESS');
-    const walletSerialized = await LocalStorageValue.get('SERIALIZED');
-    if (currentAccountAddress === '' || walletSerialized === '') {
+    let existsWallet = false;
+    try {
+      const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+      const serializedWallet = await WalletRepository.getSerializedWallet();
+      existsWallet = currentAccountAddress !== '' && serializedWallet !== '';
+    } catch (e) {
+      existsWallet = false;
+    }
+    if (!existsWallet) {
       sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', message, message.key));
       return;
     }
