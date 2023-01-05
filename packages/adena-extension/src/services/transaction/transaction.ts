@@ -47,10 +47,10 @@ const createTransactionAccount = async (
   const accountInfo = await gnoClient.getAccount(account.getAddress());
   const currentAccount = new WalletAccount(account.data);
   try {
-    currentAccount.setSigner(account.getSigner());
-  } catch (e) {
     const wallet = await loadWallet();
     currentAccount.setSigner(wallet.getSigner());
+  } catch (e) {
+    console.log(e);
   }
   currentAccount.setConfig(new WalletAccountConfig(gnoClient.config));
   currentAccount.updateByGno({
