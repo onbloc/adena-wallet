@@ -16,4 +16,4 @@ export const updateEstablishedSites = async (addressBook: { [key in string]: any
 export const deleteEstablishedSites = async () => {
   const localStorage = AdenaStorage.local<LocalValueType>();
   await localStorage.remove('ESTABLISH_SITES');
-}
+};

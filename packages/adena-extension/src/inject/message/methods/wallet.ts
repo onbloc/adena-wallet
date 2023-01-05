@@ -6,6 +6,7 @@ import { GnoClient } from 'gno-client';
 import { WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { ChainRepository } from '@repositories/common';
 
 export const getAccount = async (
   requestData: InjectionMessage,
@@ -63,12 +64,12 @@ export const addEstablish = async (
 export const loadGnoClient = async () => {
   const storedChainId = await WalletRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
-  const networks = await ResourceService.fetchChainNetworks();
-  const currentNetworkConfig = networks.find((network) => network.networkId === currentChainId) ?? networks[0];
+  const networks = await ChainRepository.getNetworks();
+  const currentNetworkConfig = networks.find((network) => network.chainId === currentChainId) ?? networks[0];
 
   const gnoClient = GnoClient.createNetworkByType(
-    { ...currentNetworkConfig, chainId: currentNetworkConfig.networkId, chainName: currentNetworkConfig.networkName },
-    getNetworkMapperType(currentNetworkConfig.networkId),
+    { ...currentNetworkConfig, chainId: currentNetworkConfig.chainId, chainName: currentNetworkConfig.chainName },
+    getNetworkMapperType(currentNetworkConfig.chainId),
     fetchAdapter,
   );
   return gnoClient;

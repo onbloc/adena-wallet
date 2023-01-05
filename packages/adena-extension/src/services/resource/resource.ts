@@ -1,5 +1,6 @@
 import axios from "axios";
 import { TokenConfig } from "@states/wallet";
+import { ChainRepository } from "@repositories/common";
 
 const TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/tokens.json";
 const APP_INFO_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/apps.json";
@@ -65,11 +66,13 @@ export const fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
 export const fetchChainNetworks = async () => {
   const response = await axios.get<Array<ChainResponse>>(CHAIN_URI);
   const networks = response.data.find(chain => chain.main)?.networks ?? [];
-  return networks.map(network => {
+  const mappedNetworks = networks.map(network => {
     return {
       ...network,
       chainId: network.networkId,
       chainName: network.networkName
     }
   });
+  ChainRepository.updateNetworks(mappedNetworks);
+  return mappedNetworks;
 };
