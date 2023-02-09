@@ -1,5 +1,4 @@
 const path = require('path');
-const babel = require('rollup-plugin-babel');
 const nodeResolve = require('@rollup/plugin-node-resolve');
 const merge = require('lodash.merge');
 const pkg = require('./package.json');
@@ -39,10 +38,6 @@ module.exports = merge({
     typescript({
       tsconfig: 'tsconfig.json',
       useTsconfigDeclarationDir: true,
-    }),
-    babel({
-      exclude: 'node_modules/**',
-      extensions,
     }),
   ],
 });
