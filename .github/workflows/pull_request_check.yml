@@ -1,0 +1,30 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: |
+        sudo npm install -g nx
+        sudo yarn
+
+    - name: Build project
+      run: |
+        sudo nx run-many --target=build --projects=adena-module,gno-client
+        sudo nx run-many --target=build --projects=adena-extension
+
+
