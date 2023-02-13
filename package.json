@@ -12,7 +12,7 @@
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",
     "tag": "sh scripts/create-tag.sh",
-    "test": "yarn jest --passWithNoTests"
+    "test": "jest --passWithNoTests"
   },
   "private": true,
   "dependencies": {},
