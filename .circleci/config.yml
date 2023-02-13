@@ -29,6 +29,10 @@ jobs:
           name: Make build files
           command: |
             bash scripts/build-qa.sh
+      - run:
+          name: Run npm tests
+          command: |
+            sudo npm test
 
       - persist_to_workspace:
           root: .
