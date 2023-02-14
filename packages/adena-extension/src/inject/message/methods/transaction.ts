@@ -79,6 +79,13 @@ const validateTransactionMessage = (
         }
         break;
       case '/vm.m_addpkg':
+        if (currentAccountAddress !== message.value.creator) {
+          sendResponse(
+            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+          );
+          return false;
+        }
+        break;
       default:
         sendResponse(
           InjectionMessageInstance.failure('UNSUPPORTED_TYPE', requestData?.data, requestData?.key),
