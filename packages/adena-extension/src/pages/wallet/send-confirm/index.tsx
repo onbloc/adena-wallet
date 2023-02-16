@@ -80,7 +80,7 @@ export const SendConfirm = () => {
     if (gnoClient && currentAccount) {
       const gasWanted = 60000;
       const fromAddress = currentAccount.getAddress() || '';
-      const sendAmount = `${Math.round(toamount * 10 ** 6)}${gnoClient?.token.minimalDenom || 'ugnot'}`;
+      const sendAmount = `${Math.round(toamount * 10 ** 6)}${'ugnot'}`;
 
       const message = TransactionService.createMessageOfBankSend({
         fromAddress,

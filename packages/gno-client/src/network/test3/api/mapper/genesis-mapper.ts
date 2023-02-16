@@ -1,4 +1,4 @@
-import { GnoClientResnpose } from '@/api';
+import { GnoClientResnpose } from '../../../../api';
 import { Test3Response } from '..';
 
 export class GenesisMapper {

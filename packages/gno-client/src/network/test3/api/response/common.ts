@@ -1,6 +1,6 @@
 export interface Common<T> {
   jsonrpc: string;
   id: string;
-  error?: string;
+  error?: any;
   result: T;
 }
