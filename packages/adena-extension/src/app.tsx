@@ -5,6 +5,7 @@ import { CustomRouter } from '@router/custom-router';
 import { GlobalStyle } from '@styles/global-style';
 import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AdenaProvider } from '@common/provider';
 
 const queryClient = new QueryClient();
 
@@ -14,11 +15,13 @@ const App = () => {
       <GlobalStyle />
       <RecoilRoot>
         <Suspense fallback={<div>Loading...</div>}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider theme={theme}>
-              <CustomRouter />
-            </ThemeProvider>
-          </QueryClientProvider>
+          <AdenaProvider>
+            <QueryClientProvider client={queryClient}>
+              <ThemeProvider theme={theme}>
+                <CustomRouter />
+              </ThemeProvider>
+            </QueryClientProvider>
+          </AdenaProvider>
         </Suspense>
       </RecoilRoot>
     </>
