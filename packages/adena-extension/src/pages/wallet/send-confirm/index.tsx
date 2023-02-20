@@ -9,9 +9,11 @@ import { inputStyle } from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoClient } from '@hooks/use-gno-client';
-import { TransactionService } from '@services/index';
+import { TransactionMessage, TransactionService } from '@services/index';
 import { SendConfirmLedgerLoading } from './ledger-loading';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import { useAdenaContext } from '@hooks/use-context';
+import BigNumber from 'bignumber.js';
 
 const data = {
   amount: '4,000',
@@ -29,6 +31,7 @@ type LocationSend = {
 };
 
 export const SendConfirm = () => {
+  const { transactionService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationSend;
@@ -80,20 +83,20 @@ export const SendConfirm = () => {
     if (gnoClient && currentAccount) {
       const gasWanted = 60000;
       const fromAddress = currentAccount.getAddress() || '';
-      const sendAmount = `${Math.round(toamount * 10 ** 6)}${'ugnot'}`;
-
-      const message = TransactionService.createMessageOfBankSend({
+      const sendAmount = `${BigNumber(toamount).multipliedBy(10 ** 6)}${'ugnot'}`;
+      const message = TransactionMessage.createMessageOfBankSend({
         fromAddress,
         toAddress: toaddress,
         amount: sendAmount,
       });
-      const transaction = await TransactionService.createTransaction(
-        gnoClient,
+      const gasFeeAmount = 1;
+      const transaction = await transactionService.createTransaction(
         currentAccount,
         message,
         gasWanted,
+        gasFeeAmount
       );
-      await TransactionService.sendTransaction(gnoClient, transaction);
+      await transactionService.sendTransaction(transaction);
     }
   };
 

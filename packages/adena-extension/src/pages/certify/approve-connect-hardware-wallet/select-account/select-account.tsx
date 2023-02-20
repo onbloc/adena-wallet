@@ -12,6 +12,7 @@ import { formatAddress } from '@common/utils/client-utils';
 import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import { useAdenaContext } from '@hooks/use-context';
 
 const text = {
   title: 'Select Accounts'
@@ -186,6 +187,7 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
+  const { accountService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
@@ -202,7 +204,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   }, [location]);
 
   const initAccounts = async (accounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const storedAccounts = await WalletService.loadAccounts();
+    const storedAccounts = await accountService.loadAccounts();
     setStoredAccounts(storedAccounts);
     setAccounts(accounts);
     const lastPath = accounts.map(account => account.data.path).reverse()[0];
@@ -236,7 +238,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const onClickNextButton = async () => {
     const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress()));
-    const storedAccounts = await WalletService.loadAccounts();
+    const storedAccounts = await accountService.loadAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
 
     selectAccounts.forEach(account => {
@@ -246,9 +248,9 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       }
     });
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
-    await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
+    await accountService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
-      await WalletService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
+      await accountService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
     }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };

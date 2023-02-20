@@ -1,22 +1,29 @@
 import { WalletError } from '@common/errors';
 import { RoutePath } from '@router/path';
-import { ResourceService, WalletService } from '@services/index';
+import { WalletEstablishService, WalletService } from '@services/index';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
-import { WalletRepository } from '@repositories/wallet';
+import { WalletAccountRepository, WalletEstablishRepository, WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { ChainRepository } from '@repositories/common';
+import { AdenaStorage } from '@common/storage';
 
 export const getAccount = async (
   requestData: InjectionMessage,
   sendReponse: (message: any) => void,
 ) => {
   try {
-    const walletPassword = await WalletService.loadWalletPassword();
-    const wallet = await WalletService.loadWalletWithPassword(walletPassword);
+    const localStorage = AdenaStorage.local();
+    const sessionStorage = AdenaStorage.session();
+    const walletRepository = new WalletRepository(localStorage, sessionStorage);
+    const accountRepository = new WalletAccountRepository(localStorage);
+    const walletService = new WalletService(walletRepository, accountRepository);
+
+    const walletPassword = await walletService.loadWalletPassword();
+    const wallet = await walletService.loadWalletWithPassword(walletPassword);
     await wallet.initAccounts();
-    let currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+    let currentAccountAddress = await accountRepository.getCurrentAccountAddress();
     if (!currentAccountAddress || currentAccountAddress === '') {
       currentAccountAddress = wallet.getAccounts()[0].getAddress();
     }
@@ -45,8 +52,18 @@ export const addEstablish = async (
   message: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const isLocked = await WalletService.isLocked();
-  const isEstablised = await WalletService.isEstablished(message.hostname ?? '');
+  const localStorage = AdenaStorage.local();
+  const sessionStorage = AdenaStorage.session();
+  const walletRepository = new WalletRepository(localStorage, sessionStorage);
+  const accountRepository = new WalletAccountRepository(localStorage);
+  const establishRepository = new WalletEstablishRepository(localStorage);
+  const chainRepository = new ChainRepository(localStorage);
+  const establishService = new WalletEstablishService(establishRepository, chainRepository);
+
+  const isLocked = await walletRepository.existsWalletPassword();
+  const address = await accountRepository.getCurrentAccountAddress();
+
+  const isEstablised = await establishService.isEstablished(message.hostname ?? '', address);
   if (!isLocked && isEstablised) {
     sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', message, message.key));
     return true;
@@ -62,14 +79,17 @@ export const addEstablish = async (
 };
 
 export const loadGnoClient = async () => {
-  const storedChainId = await WalletRepository.getCurrentChainId();
+  const localStorage = AdenaStorage.local();
+  const chainRepository = new ChainRepository(localStorage);
+
+  const storedChainId = await chainRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';
-  const networks = await ChainRepository.getNetworks();
+  const networks = await chainRepository.getNetworks();
   const currentNetworkConfig = networks.find((network) => network.chainId === currentChainId) ?? networks[0];
 
   const gnoClient = GnoClient.createNetworkByType(
     { ...currentNetworkConfig, chainId: currentNetworkConfig.chainId, chainName: currentNetworkConfig.chainName },
-    getNetworkMapperType(currentNetworkConfig.chainId),
+    getNetworkMapperType(currentChainId),
     fetchAdapter,
   );
   return gnoClient;
@@ -80,10 +100,7 @@ const getNetworkMapperType = (chainId: string) => {
     case 'test2':
       return 'TEST2';
     case 'test3':
-      return 'TEST3';
-    case 'main':
-      return 'MAIN';
     default:
-      return 'COMMON';
+      return 'TEST3';
   }
 };

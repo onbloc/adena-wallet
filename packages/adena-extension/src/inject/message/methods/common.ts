@@ -1,5 +1,8 @@
+import { AdenaStorage } from '@common/storage';
 import { encodeParameter } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
+import { ChainRepository } from '@repositories/common';
+import { WalletAccountRepository, WalletEstablishRepository } from '@repositories/wallet';
+import { WalletEstablishService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 export const createPopup = async (
@@ -60,7 +63,13 @@ export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
 ) => {
-  const isEstablished = await WalletService.isEstablished(requestData.hostname ?? '');
+  const localStorage = AdenaStorage.local();
+  const accountRepository = new WalletAccountRepository(localStorage);
+  const establishRepository = new WalletEstablishRepository(localStorage);
+  const chainRepository = new ChainRepository(localStorage);
+  const establishService = new WalletEstablishService(establishRepository, chainRepository);
+  const address = await accountRepository.getCurrentAccountAddress();
+  const isEstablished = await establishService.isEstablished(requestData.hostname ?? '', address);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));
     return false;

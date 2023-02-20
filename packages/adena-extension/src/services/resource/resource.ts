@@ -53,26 +53,68 @@ interface NetworkResponse {
   }
 };
 
-export const fetchTokenConfigs = async (): Promise<Array<TokenConfig>> => {
-  const response = await axios.get<Array<TokenConfigResponse>>(TOKEN_CONFIG_URI);
-  return response.data;
-};
+export class ResourceService {
 
-export const fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
-  const response = await axios.get<Array<AppInfoResponse>>(APP_INFO_URI);
-  return response.data;
-};
+  private chainRepository: ChainRepository;
 
-export const fetchChainNetworks = async () => {
-  const response = await axios.get<Array<ChainResponse>>(CHAIN_URI);
-  const networks = response.data.find(chain => chain.main)?.networks ?? [];
-  const mappedNetworks = networks.map(network => {
-    return {
-      ...network,
-      chainId: network.networkId,
-      chainName: network.networkName
+  constructor(chainRepository: ChainRepository) {
+    this.chainRepository = chainRepository;
+  }
+
+  public fetchTokenConfigs = async (): Promise<Array<TokenConfig>> => {
+    const response = await axios.get<Array<TokenConfigResponse>>(TOKEN_CONFIG_URI);
+    const configs = response.data;
+    const changedConfigs = [];
+
+    for (const config of configs) {
+      const imageData = await this.fetchResource(config.image);
+      changedConfigs.push({
+        ...config,
+        imageData
+      })
     }
-  });
-  ChainRepository.updateNetworks(mappedNetworks);
-  return mappedNetworks;
-};
+    return changedConfigs;
+  };
+
+  public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
+    const response = await axios.get<Array<AppInfoResponse>>(APP_INFO_URI);
+    return response.data;
+  };
+
+  public fetchChainNetworks = async () => {
+    const response = await axios.get<Array<ChainResponse>>(CHAIN_URI);
+    const networks = response.data.find(chain => chain.main)?.networks ?? [];
+    const mappedNetworks = networks.map(network => {
+      return {
+        ...network,
+        chainId: network.networkId,
+        chainName: network.networkName
+      }
+    });
+    this.chainRepository.updateNetworks(mappedNetworks);
+    return mappedNetworks;
+  };
+
+  public getCurrentChainId = async () => {
+    const chainId = await this.chainRepository.getCurrentChainId();
+    if (chainId?.toUpperCase() === "TEST2") {
+      return "TEST2";
+    }
+    return "TEST3";
+  };
+
+  public updateCurrentChainId = async (chainId: string) => {
+    return this.chainRepository.updateCurrentChainId(chainId);
+  };
+
+  private fetchResource = async (imageUri: string) => {
+    try {
+      const response = await axios.get(imageUri, { responseType: 'arraybuffer', });
+      const imageData = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+      return imageData;
+    } catch (e) {
+      console.error(e);
+    }
+    return undefined;
+  }
+}

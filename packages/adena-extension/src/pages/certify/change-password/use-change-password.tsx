@@ -1,12 +1,14 @@
 import { RoutePath } from '@router/path';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ValidationService, WalletService } from '@services/index';
 import { useWallet } from '@hooks/use-wallet';
 import { PasswordValidationError } from '@common/errors';
 import { useWalletCreator } from '@hooks/use-wallet-creator';
+import { useAdenaContext } from '@hooks/use-context';
+import { validateEqualsChangePassword, validateInvalidPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 
 export const useChangePassword = () => {
+  const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -42,7 +44,7 @@ export const useChangePassword = () => {
   }, [inputRef]);
 
   const initSavedPassword = async () => {
-    const currentPassword = await WalletService.loadWalletPassword();
+    const currentPassword = await walletService.loadWalletPassword();
     setSavedPassword(currentPassword);
   }
 
@@ -69,7 +71,7 @@ export const useChangePassword = () => {
     let isValid = true;
     let errorMessage = '';
     try {
-      ValidationService.validateInvalidPassword(currentPassword, storedPassword);
+      validateInvalidPassword(currentPassword, storedPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -80,8 +82,8 @@ export const useChangePassword = () => {
       }
     }
     try {
-      ValidationService.validateWrongPasswordLength(newPassword);
-      ValidationService.validateEqualsChangePassword(newPassword, currentPassword);
+      validateWrongPasswordLength(newPassword);
+      validateEqualsChangePassword(newPassword, currentPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -92,7 +94,7 @@ export const useChangePassword = () => {
       }
     }
     try {
-      ValidationService.validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
+      validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {

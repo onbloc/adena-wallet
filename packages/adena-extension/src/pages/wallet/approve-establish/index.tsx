@@ -5,12 +5,13 @@ import DefaultFavicon from './../../../assets/favicon-default.svg';
 import Text from '@components/text';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import theme from '@styles/theme';
-import { WalletService } from '@services/index';
 import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
 import { InjectionMessageInstance } from '@inject/message';
 import { useLocation } from 'react-router-dom';
+import { useAdenaContext } from '@hooks/use-context';
 
 export const ApproveEstablish = () => {
+  const { accountService, establishService } = useAdenaContext();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
@@ -43,7 +44,8 @@ export const ApproveEstablish = () => {
   }
 
   const checkEstablised = async () => {
-    const isEstablised = await WalletService.isEstablished(hostname ?? '');
+    const address = await accountService.loadCurrentAccountAddress();
+    const isEstablised = await establishService.isEstablished(hostname ?? '', address);
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
       return;
@@ -60,7 +62,8 @@ export const ApproveEstablish = () => {
   }
 
   const onClickConfirmButton = async () => {
-    await WalletService.establish(hostname, appName, favicon);
+    const address = await accountService.loadCurrentAccountAddress();
+    await establishService.establish(hostname, address, appName, favicon);
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   }
 

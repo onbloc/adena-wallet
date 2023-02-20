@@ -18,6 +18,7 @@ import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { WalletRepository } from '@repositories/wallet';
+import { useAdenaContext } from '@hooks/use-context';
 
 interface SubMenuProps {
   open: boolean;
@@ -41,6 +42,7 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
 );
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
+  const { walletService } = useAdenaContext();
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
   const [wallet] = useWallet();
@@ -60,7 +62,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 
   const lockClickHandler = async () => {
     setOpen(!open);
-    await WalletRepository.removePassword();
+    await walletService.lockWallet();
     await loadWallet();
     navigate(RoutePath.Login, { replace: true });
   };

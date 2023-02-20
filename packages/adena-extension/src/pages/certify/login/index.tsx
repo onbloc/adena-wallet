@@ -7,7 +7,7 @@ import DefaultInput from '@components/default-input';
 import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { ValidationService } from '@services/index';
+import { validateWrongPasswordLength } from '@common/validation';
 
 const text = 'Enter\nYour Password';
 
@@ -57,7 +57,7 @@ export const Login = () => {
 
   const login = async () => {
     try {
-      if (ValidationService.validateWrongPasswordLength(password)) {
+      if (validateWrongPasswordLength(password)) {
         const result = await loadWalletByPassword(password);
         if (result !== 'FINISH') {
           setValidateState(false);
