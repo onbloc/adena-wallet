@@ -11,19 +11,26 @@ import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletLoader } from '@hooks/use-wallet-loader';
-import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { formatNickname } from '@common/utils/client-utils';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { WalletRepository } from '@repositories/wallet';
+import { WalletAccount } from 'adena-module';
 
 interface SubMenuProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onClick: (e: React.MouseEvent) => void;
   selector?: string;
+}
+
+interface UserListProps {
+  accounts: Array<InstanceType<typeof WalletAccount>>;
+  changeAccountHandler: (addr: string) => void;
+  currentAccount: InstanceType<typeof WalletAccount>;
 }
 
 const RestoreWallet = ({ onClick }: { onClick: () => void }) => (
@@ -38,6 +45,29 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
     <img src={lock} alt='lock wallet' />
     <Text type='body2Reg'>Lock Wallet</Text>
   </Button>
+);
+
+const UserListMaker = ({ accounts, changeAccountHandler, currentAccount }: UserListProps) => (
+  <>
+    {accounts.map((v, i) => (
+      <ListItem key={i} onClick={() => changeAccountHandler(v.data.address)}>
+        <Text type='body2Reg' display='inline-flex'>
+          {formatNickname(v.data.name, 10)}
+          <FromBadge from={'Google'} />
+        </Text>
+        <Text type='body3Reg' color={theme.color.neutral[9]}>
+          {'123,992.09 GNOT'}
+        </Text>
+        {currentAccount.getAddress() === v.getAddress() && (
+          <img src={statusCheck} alt='status icon' className='status-icon' />
+        )}
+      </ListItem>
+    ))}
+  </>
+);
+
+const FromBadge = ({ from }: { from: string }) => (
+  <StyledBedge type='captionReg'>{from}</StyledBedge>
 );
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
@@ -88,21 +118,13 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
           {!login && currentAccount && (
             <Body>
               <ListWrapper>
-                {accounts &&
-                  accounts.length > 0 &&
-                  accounts.map((v, i) => (
-                    <ListItem key={i} onClick={() => changeAccountHandler(v.data.address)}>
-                      <Text type='body2Reg' display='inline-flex'>
-                        {formatNickname(v.data.name, 10)}
-                        <Text type='body2Reg' color={theme.color.neutral[9]}>
-                          {` (${formatAddress(v.data.address)})`}
-                        </Text>
-                      </Text>
-                      {currentAccount.getAddress() === v.getAddress() && (
-                        <img src={statusCheck} alt='status icon' />
-                      )}
-                    </ListItem>
-                  ))}
+                {accounts && accounts.length > 0 && (
+                  <UserListMaker
+                    accounts={accounts}
+                    changeAccountHandler={changeAccountHandler}
+                    currentAccount={currentAccount}
+                  />
+                )}
               </ListWrapper>
               <AddAccountBtn onClick={addAccountHandler}>
                 <Text type='body2Bold'>Add Account</Text>
@@ -127,7 +149,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 };
 
 const Container = styled.div<{ open: boolean }>`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'space-between')}
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'space-between')};
   background-color: ${({ theme }) => theme.color.neutral[7]};
   position: fixed;
   top: 0px;
@@ -211,10 +233,10 @@ const ListWrapper = styled.ul`
 `;
 
 const ListItem = styled.li`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'center')};
+  position: relative;
   width: 100%;
   cursor: pointer;
-  height: 46px;
   padding: 12px 20px;
   background-color: ${({ theme }) => theme.color.neutral[7]};
   transition: all 0.4s ease;
@@ -222,6 +244,17 @@ const ListItem = styled.li`
     background-color: ${({ theme }) => theme.color.neutral[6]};
     transition: all 0.4s ease;
   }
+  .status-icon {
+    ${theme.mixins.posTopCenterRight('20px')}
+  }
+`;
+
+const StyledBedge = styled(Text)`
+  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  padding: 0px 10px;
+  border-radius: 3px;
+  background-color: ${({ theme }) => theme.color.neutral[8]};
+  margin-left: 8px;
 `;
 
 const Dim = styled.div`

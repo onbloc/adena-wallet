@@ -12,6 +12,7 @@ export enum ButtonHierarchy {
   Ghost = 'Ghost',
   Dark = 'Dark',
   Danger = 'Danger',
+  Custom = 'Custom',
 }
 
 export const modeVariants = {
@@ -98,11 +99,15 @@ const ButtonWrapper = styled.button<ButtonProps>`
     return 'auto';
   }};
   margin: ${(props) => props.margin};
-  ${({ hierarchy }) => {
+  ${({ hierarchy, bgColor }) => {
     if (hierarchy === ButtonHierarchy.Primary) return modeVariants.primary;
     if (hierarchy === ButtonHierarchy.Ghost) return modeVariants.ghost;
     if (hierarchy === ButtonHierarchy.Dark) return modeVariants.dark;
     if (hierarchy === ButtonHierarchy.Danger) return modeVariants.danger;
+    if (hierarchy === ButtonHierarchy.Custom)
+      return css`
+        background-color: ${bgColor};
+      `;
   }};
   border-radius: ${({ radius }) => (radius ? radius : '30px')};
   transition: all 0.4s ease;

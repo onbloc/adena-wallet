@@ -6,12 +6,15 @@ export enum RoutePath {
   Explore = '/explore',
   History = '/history',
   Create = '/create',
+  ForgotPassword = '/login/forgot-password',
 
   //phrase
   EnterSeedPhrase = '/popup/enter-seed',
   CreatePassword = '/popup/create-password',
   LaunchAdena = '/popup/launch-adena',
   YourSeedPhrase = '/popup/your-seed-phrase',
+  ImportPrivateKey = '/popup/import-private-key',
+  GenerateSeedPhrase = '/popup/generate-seed-phrase',
 
   //wallet
   Wallet = '/wallet',
@@ -41,6 +44,14 @@ export enum RoutePath {
   ChangeNetwork = '/settings/change-network',
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
+  SecurityPrivacy = '/settings/security-privacy',
+  RevealPasswoardPhrase = '/settings/security-privacy/reveal-password-phrase',
+  RevealPrivatePhrase = '/settings/security-privacy/reveal-private-phrase',
+  AboutAdena = '/settings/about-adena',
+  ApproachPasswordPhrase = '/settings/security-privacy/export-private-key/approach-password-phrase',
+  ApproachPrivatePhrase = '/settings/security-privacy/export-private-key/approach-private-phrase',
+  RemoveAccount = '/settings/security-privacy/remove-account',
+  ResetWallet = '/settings/security-privacy/reset-wallet',
   ApproveHardwareWalletInit = '/approve/settings/hardware-wallet',
   ApproveHardwareWalletConnect = '/approve/settings/hardware-wallet/connect',
   ApproveHardwareWalletSelectAccount = '/approve/settings/hardware-wallet/select-account',

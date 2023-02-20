@@ -10,7 +10,7 @@ import DefaultInput from '@components/default-input';
 import { useLocation } from 'react-router-dom';
 
 const text = {
-  title: 'Create a\npassword',
+  title: 'Create\na Password',
   desc: 'This will be used to unlock your wallet.',
 };
 

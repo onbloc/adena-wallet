@@ -51,10 +51,6 @@ const config = {
         exclude: /node_modules/,
       },
       {
-        test: /\.svg$/,
-        use: ['@svgr/webpack'],
-      },
-      {
         test: /\.(png|jpe?g|svg)$/,
         loader: 'file-loader',
         options: {

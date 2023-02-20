@@ -8,6 +8,8 @@ interface ButtonProps {
   onClick: () => void;
   text: string;
   props?: React.ComponentPropsWithoutRef<'button'>;
+  hierarchy?: ButtonHierarchy;
+  bgColor?: string;
 }
 
 interface WrapperStyleProps {
@@ -31,16 +33,18 @@ const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps) => {
     <Wrapper margin={margin}>
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy={leftProps.hierarchy ?? ButtonHierarchy.Dark}
         onClick={leftProps.onClick}
+        bgColor={leftProps.bgColor}
         {...leftProps.props}
       >
         <Text type='body1Bold'>{leftProps.text}</Text>
       </Button>
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Primary}
+        hierarchy={rightProps.hierarchy ?? ButtonHierarchy.Primary}
         onClick={rightProps.onClick}
+        bgColor={rightProps.bgColor}
         {...rightProps.props}
       >
         <Text type='body1Bold'>{rightProps.text}</Text>

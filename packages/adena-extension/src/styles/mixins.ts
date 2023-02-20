@@ -1,6 +1,6 @@
 import { css, CSSProp } from 'styled-components';
 
-type MixinsKeyType = 'flexbox' | 'positionCenter' | 'posTopCenterRight' | 'posTopCenterLeft';
+type MixinsKeyType = 'flexbox' | 'positionCenter' | 'posTopCenterRight' | 'posTopCenterLeft' | 'posTopLeft';
 
 export type MixinsType = {
   [key in MixinsKeyType]: (...p: any[]) => CSSProp;
@@ -35,6 +35,13 @@ const mixins: MixinsType = {
       top: 50%;
       left: ${left};
       transform: translateY(-50%);
+    `;
+  },
+  posTopLeft: (top = '0px') => {
+    return css`
+      position: absolute;
+      top: ${top};
+      left: 0px;
     `;
   },
 } as const;
