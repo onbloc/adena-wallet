@@ -24,6 +24,7 @@
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@typescript-eslint/parser": "^5.40.0",
     "babel-loader": "^8.1.0",
+    "babel-plugin-inline-react-svg": "^2.0.1",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^6.2.1",

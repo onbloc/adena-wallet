@@ -9,6 +9,7 @@ interface DefaultButtonProps {
 
 interface ConfirmButtonProps extends DefaultButtonProps {
   text: string;
+  hierarchy?: ButtonHierarchy;
 }
 
 interface CancelAndConfirmLocation {
@@ -39,7 +40,7 @@ const CancelAndConfirmButton = ({
       </Button>
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Primary}
+        hierarchy={confirmButtonProps.hierarchy ?? ButtonHierarchy.Primary}
         onClick={confirmButtonProps.onClick}
         {...confirmButtonProps.props}
       >

@@ -6,6 +6,7 @@ import Text from './text';
 interface TitleWithDescProps {
   title: string;
   desc: string;
+  isWarningDesc?: boolean;
 }
 
 const Wrapper = styled.div`
@@ -15,11 +16,11 @@ const Wrapper = styled.div`
   text-align: left;
 `;
 
-const TitleWithDesc = ({ title, desc }: TitleWithDescProps) => {
+const TitleWithDesc = ({ title, desc, isWarningDesc = false }: TitleWithDescProps) => {
   return (
     <Wrapper>
       <Text type='header4'>{title}</Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]}>
+      <Text type='body1Reg' color={isWarningDesc ? theme.color.red[6] : theme.color.neutral[9]}>
         {desc}
       </Text>
     </Wrapper>

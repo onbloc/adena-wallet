@@ -8,6 +8,9 @@ import {
   IconAddressBookLarge,
   IconAddressBookSmall,
   IconCancel,
+  IconArrowV2,
+  IconWebLink,
+  IconHiddenEye,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -26,6 +29,9 @@ const ICONS = {
   iconAddressBookLarge: IconAddressBookLarge,
   iconAddressBookSmall: IconAddressBookSmall,
   iconCancel: IconCancel,
+  iconArrowV2: IconArrowV2,
+  iconWebLink: IconWebLink,
+  iconHiddenEye: IconHiddenEye,
 } as const;
 
 const Icon = ({ name, className = '', ...rest }: IconProps) => {

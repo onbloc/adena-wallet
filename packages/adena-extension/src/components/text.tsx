@@ -8,6 +8,7 @@ interface TextProps extends React.ComponentPropsWithoutRef<'div'> {
   display?: CSSProperties['display'];
   textAlign?: CSSProperties['textAlign'];
   color?: string;
+  margin?: CSSProperties['margin'];
 }
 
 const Text = ({
@@ -16,10 +17,20 @@ const Text = ({
   display = 'block',
   textAlign = 'left',
   color,
+  margin,
+  className = '',
   ...restProps
 }: PropsWithChildren<TextProps>) => {
   return (
-    <Wrapper type={type} display={display} textAlign={textAlign} color={color} {...restProps}>
+    <Wrapper
+      type={type}
+      display={display}
+      textAlign={textAlign}
+      color={color}
+      margin={margin}
+      className={className}
+      {...restProps}
+    >
       {children}
     </Wrapper>
   );
@@ -33,6 +44,7 @@ const Wrapper = styled.div<TextProps>`
       display: ${props.display};
       color: ${props.color};
       white-space: pre-wrap;
+      margin: ${props.margin};
     `;
   }}
 `;
