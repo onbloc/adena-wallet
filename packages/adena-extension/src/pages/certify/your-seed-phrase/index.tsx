@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import SeedBox from '@components/seed-box';
@@ -9,11 +9,77 @@ import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { Wallet } from 'adena-module';
+import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 
 const text = {
   title: 'Seed Phrase',
-  desc: 'Seed phrase is the only way to recover your wallet. Keep it somewhere safe.',
-  terms: 'I have saved my seed phrase.',
+  desc: 'This phrase is the only way to recover this wallet. DO NOT share it with anyone.',
+  termsA: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
+  termsB: 'I have saved my seed phrase.',
+  blurScreenText: 'Make sure no one is watching your screen',
+};
+
+export const YourSeedPhrase = () => {
+  const [terms, setTerms] = useState(false);
+  const navigate = useNavigate();
+  const [seeds, setSeeds] = useState(() => Wallet.generateMnemonic());
+  const [viewSeedAgree, setViewSeedAgree] = useState(false);
+  const [showBlurScreen, setShowBlurScreen] = useState(true);
+
+  const handleTermsChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
+    [terms],
+  );
+
+  const handleNextButtonClick = () =>
+    navigate(RoutePath.CreatePassword, {
+      state: { seeds: seeds },
+    });
+
+  const viewSeedAgreeButton = () => {
+    if (terms) setViewSeedAgree(true);
+    setTerms(false);
+  };
+
+  return (
+    <Wrapper>
+      <TitleWithDesc title={text.title} desc={text.desc} isWarningDesc />
+      <SeedBox
+        seeds={seeds.split(' ')}
+        scroll={false}
+        hasBlurScreen={showBlurScreen}
+        hasBlurText={!viewSeedAgree}
+        blurScreenText={text.blurScreenText}
+        className='seed-box'
+      />
+      {viewSeedAgree && (
+        <SeedViewAndCopy
+          showBlurScreen={showBlurScreen}
+          setShowBlurScreen={setShowBlurScreen}
+          copyStr={seeds}
+        />
+      )}
+      <TermsWrap>
+        <TermsCheckbox
+          checked={terms}
+          onChange={handleTermsChange}
+          tabIndex={1}
+          id={viewSeedAgree ? 'terms-B' : 'terms-A'}
+          text={viewSeedAgree ? text.termsB : text.termsA}
+          checkboxPos={viewSeedAgree ? 'CENTER' : 'TOP'}
+        />
+        <Button
+          fullWidth
+          hierarchy={ButtonHierarchy.Primary}
+          disabled={!terms}
+          onClick={viewSeedAgree ? handleNextButtonClick : viewSeedAgreeButton}
+          tabIndex={2}
+        >
+          <Text type='body1Bold'>{viewSeedAgree ? 'Next' : 'Reveal Seed Phrase'}</Text>
+        </Button>
+      </TermsWrap>
+    </Wrapper>
+  );
 };
 
 const Wrapper = styled.main`
@@ -21,46 +87,15 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 50px;
+  .seed-box {
+    margin-top: 27px;
+  }
 `;
 
-const SeedBoxWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+const TermsWrap = styled.div`
+  margin-top: auto;
   width: 100%;
-  margin-top: 27px;
-  gap: 12px;
+  .terms-A {
+    margin-bottom: 13px;
+  }
 `;
-
-export const YourSeedPhrase = () => {
-  const [terms, setTerms] = useState(false);
-  const navigate = useNavigate();
-  const [seeds, setSeeds] = useState(() => Wallet.generateMnemonic());
-
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
-  const handleNextButtonClick = () =>
-    navigate(RoutePath.CreatePassword, {
-      state: { seeds: seeds },
-    });
-
-  return (
-    <Wrapper>
-      <TitleWithDesc title={text.title} desc={text.desc} />
-      <SeedBoxWrap>
-        <SeedBox seeds={seeds.split(' ')} scroll={false} />
-        <Copy seeds={seeds} tabIndex={1} />
-      </SeedBoxWrap>
-      <TermsCheckbox checked={terms} onChange={handleTermsChange} text={text.terms} tabIndex={2} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        disabled={!terms}
-        onClick={handleNextButtonClick}
-        tabIndex={3}
-      >
-        <Text type='body1Bold'>Next</Text>
-      </Button>
-    </Wrapper>
-  );
-};

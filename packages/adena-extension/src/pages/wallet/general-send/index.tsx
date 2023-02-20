@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import logo from '../../../assets/gnot-logo.svg';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import Text from '@components/text';
-import Button, { ButtonHierarchy, modeVariants } from '@components/buttons/button';
+import Button from '@components/buttons/button';
 import { ErrorText } from '@components/error-text';
 import DefaultInput from '@components/default-input';
 import { useGeneralSend } from './use-general-send';
@@ -14,14 +14,8 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import theme from '@styles/theme';
 
 export const GeneralSend = () => {
-  const {
-    addressState,
-    amountState,
-    buttonState,
-    textAreaRef,
-    onKeyDown,
-    accountsList
-  } = useGeneralSend();
+  const { addressState, amountState, buttonState, textAreaRef, onKeyDown, accountsList } =
+    useGeneralSend();
   const [balances] = useWalletBalances();
 
   const existsAddressBookItems = () => {
@@ -76,7 +70,7 @@ export const GeneralSend = () => {
               />
             )}
             <Button
-              hierarchy={ButtonHierarchy.Primary}
+              className='account-addr-button'
               width='38px'
               height='25px'
               radius='12.5px'
@@ -129,14 +123,14 @@ export const GeneralSend = () => {
           <RightButtonBox>
             <Text type='body2Reg'>GNOT</Text>
             <Button
-              hierarchy={ButtonHierarchy.Primary}
+              bgColor={theme.color.neutral[6]}
               width='63px'
-              height='24px'
-              radius='13px'
+              height='25px'
+              radius='12.5px'
               margin='0px 0px 0px 8px'
               onClick={buttonState.max}
             >
-              Max
+              <Text type='body2Reg'>Max</Text>
             </Button>
           </RightButtonBox>
         </AmountBox>
@@ -200,13 +194,19 @@ const TextFieldWrap = styled.div<{ error: boolean; isOpen: boolean }>`
   border-bottom-right-radius: ${({ isOpen }) => (isOpen ? '0px' : '30px')};
   border: 1px solid
     ${({ isOpen, error, theme }) => {
-    if (isOpen) return theme.color.primary[3];
-    if (error) return theme.color.red[2];
-    return theme.color.neutral[6];
-  }};
+      if (isOpen) return theme.color.neutral[6];
+      if (error) return theme.color.red[2];
+      return theme.color.neutral[6];
+    }};
   background-color: ${({ theme }) => theme.color.neutral[8]};
   padding: 0 16px;
   min-height: 48px;
+  .account-addr-button {
+    background-color: ${({ theme }) => theme.color.neutral[6]};
+    &:hover {
+      background-color: ${({ theme }) => theme.color.neutral[11]};
+    }
+  }
 `;
 
 const SelectTextWrap = styled.div`
@@ -234,9 +234,9 @@ const SelectionBox = styled.div<{ isOpen: boolean }>`
   width: 100%;
   border-bottom-left-radius: 24px;
   border-bottom-right-radius: 24px;
-  border-left: 1px solid ${({ theme }) => theme.color.primary[3]};
-  border-right: 1px solid ${({ theme }) => theme.color.primary[3]};
-  border-bottom: 1px solid ${({ theme }) => theme.color.primary[3]};
+  border-left: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border-right: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border-bottom: 1px solid ${({ theme }) => theme.color.neutral[6]};
   min-height: 48px;
   max-height: 144px;
   overflow-y: auto;
@@ -275,12 +275,8 @@ const RightButtonBox = styled.div`
   ${({ theme }) => theme.mixins.posTopCenterRight('11px')};
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
   & > button {
-    ${modeVariants['primary']};
-    ${({ theme }) => theme.fonts.body2Reg};
-    width: 63px;
-    height: 24px;
-    border-radius: 13px;
-    color: ${({ theme }) => theme.color.neutral[0]};
-    margin-left: 8px;
+    &:hover {
+      background-color: ${({ theme }) => theme.color.neutral[11]};
+    }
   }
 `;

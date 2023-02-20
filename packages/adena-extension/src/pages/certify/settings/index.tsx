@@ -8,50 +8,33 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
-import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useUpdateWalletAccountName } from '@hooks/use-update-wallet-account-name';
 import { useGnoClient } from '@hooks/use-gno-client';
-
-interface MenuMakerProps {
-  onClick: () => void;
-  title: string;
-  subTitle: string;
-}
+import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
 
 const menuMakerInfo = [
   {
     title: 'Connected Apps',
-    subTitle: 'Manage your app connections',
     navigatePath: RoutePath.ConnectedApps,
   },
   {
     title: 'Address Book',
-    subTitle: 'Manage your saved addresses',
     navigatePath: RoutePath.AddressBook,
   },
   {
     title: 'Change Network',
-    subTitle: 'Configure your network settings',
     navigatePath: RoutePath.ChangeNetwork,
   },
   {
-    title: 'Change Password',
-    subTitle: 'Change your lock screen password',
-    navigatePath: RoutePath.SettingChangePassword,
+    title: 'Security & Privacy',
+    navigatePath: RoutePath.SecurityPrivacy,
+  },
+  {
+    title: 'About Adena',
+    navigatePath: RoutePath.AboutAdena,
   },
 ];
-
-const MenuMaker = ({ onClick, title, subTitle }: MenuMakerProps) => (
-  <GrayButtonBox onClick={onClick}>
-    <Text className='title-arrow' type='body1Bold'>
-      {title}
-    </Text>
-    <Text type='body2Reg' color={theme.color.neutral[2]}>
-      {subTitle}
-    </Text>
-  </GrayButtonBox>
-);
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -64,7 +47,10 @@ export const Settings = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
   const shareButtonClick = async () => {
-    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.data.address}`, '_blank')
+    window.open(
+      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.data.address}`,
+      '_blank',
+    );
   };
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,8 +73,8 @@ export const Settings = () => {
   };
 
   const getDefaultAccountName = () => {
-    const accountType = currnetAccount?.data.signerType !== "LEDGER" ? "Account" : "Ledger";
-    const accountNumber = (currnetAccount?.data.path ?? 0) + 1
+    const accountType = currnetAccount?.data.signerType !== 'LEDGER' ? 'Account' : 'Ledger';
+    const accountNumber = (currnetAccount?.data.path ?? 0) + 1;
     return `${accountType} ${accountNumber}`;
   };
 
@@ -106,31 +92,14 @@ export const Settings = () => {
         <PencilButton type='button' onClick={handleFocus} />
       </IconInputBox>
       <GnoLinkBox>
-        <Text type='captionReg' className='link-text'>
+        <Text type='light1Reg' className='link-text'>
           {currnetAccount?.data.address}
         </Text>
         <LinkIcon type='button' onClick={shareButtonClick} />
       </GnoLinkBox>
       {menuMakerInfo.map((v, i) => (
-        <MenuMaker
-          onClick={() => navigate(v.navigatePath)}
-          title={v.title}
-          subTitle={v.subTitle}
-          key={i}
-        />
+        <FullButtonRightIcon key={i} title={v.title} onClick={() => navigate(v.navigatePath)} />
       ))}
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} disabled={true} margin='20px 0px 0px'>
-        <Text type='body1Bold'>Export Private Key</Text>
-      </Button>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={revealSeedClick}
-        margin='12px 0px 0px'
-        disabled={currnetAccount?.data.signerType === "LEDGER"}
-      >
-        <Text type='body1Bold'>Reveal Seed Phrase</Text>
-      </Button>
     </Wrapper>
   );
 };
@@ -139,7 +108,7 @@ const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
-  padding-top: 30px;
+  padding-top: 24px;
   padding-bottom: 80px;
   overflow-y: auto;
 `;
@@ -151,6 +120,7 @@ const IconInputBox = styled.div`
 
 const Input = styled(DefaultInput)`
   padding-right: 38px;
+  border-radius: 18px;
 `;
 
 const PencilButton = styled.button`
@@ -165,9 +135,9 @@ const GnoLinkBox = styled.div`
   width: 100%;
   height: 40px;
   background-color: ${({ theme }) => theme.color.neutral[8]};
-  border-radius: 24px;
-  padding: 0px 10px;
-  margin: 8px 0px 20px;
+  border-radius: 18px;
+  padding: 0px 20px 0px 16px;
+  margin: 8px 0px 16px;
   .link-text {
     max-width: 276px;
     overflow: hidden;
@@ -176,8 +146,8 @@ const GnoLinkBox = styled.div`
 `;
 
 const LinkIcon = styled.button`
-  width: 20px;
-  height: 20px;
+  width: 12px;
+  height: 12px;
   background: url(${share}) no-repeat center center;
 `;
 

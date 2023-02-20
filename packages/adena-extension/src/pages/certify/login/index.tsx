@@ -84,7 +84,7 @@ export const Login = () => {
     }
   };
 
-  const onClickForgotButton = () => navigate(RoutePath.EnterSeedPhrase);
+  const onClickForgotButton = () => navigate(RoutePath.ForgotPassword);
 
   return (
     <Wrapper>
