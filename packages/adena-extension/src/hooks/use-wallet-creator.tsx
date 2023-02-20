@@ -1,8 +1,8 @@
 import { WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
-import { WalletService } from "@services/index";
 import { useCurrentAccount } from "./use-current-account";
 import { WalletAccount } from "adena-module";
+import { useAdenaContext } from "./use-context";
 
 interface CreateWalletParams {
     mnemonic: string;
@@ -14,6 +14,7 @@ interface CreateWalletParams {
  * @returns 
  */
 export const useWalletCreator = (): [state: string, createWallet: (params: CreateWalletParams, background?: boolean) => Promise<string>] => {
+    const { walletService, accountService } = useAdenaContext();
 
     const [state, setState] = useRecoilState(WalletState.state);
     const [, setWallet] = useRecoilState(WalletState.wallet);
@@ -30,7 +31,7 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
             setState(currentState);
         }
         try {
-            const createdWallet = await WalletService.createWallet({ mnemonic, password });
+            const createdWallet = await walletService.createWallet({ mnemonic, password });
             await createdWallet.initAccounts();
             await initCurrentAccount(createdWallet.getAccounts());
             setWallet(createdWallet);
@@ -45,15 +46,15 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
     }
 
     const initCurrentAccount = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-        const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+        const currentAccountAddress = await accountService.loadCurrentAccountAddress();
         const currentAccount = walletAccounts.find(account => account.getAddress() === currentAccountAddress);
         if (currentAccount) {
             await changeCurrentAccount(currentAccount.getAddress(), walletAccounts);
-            await WalletService.saveCurrentAccountAddress(currentAccount.getAddress());
+            await accountService.saveCurrentAccountAddress(currentAccount.getAddress());
         } else {
             if (walletAccounts.length > 0) {
                 await changeCurrentAccount(walletAccounts[0].getAddress(), walletAccounts);
-                await WalletService.saveCurrentAccountAddress(walletAccounts[0].getAddress());
+                await accountService.saveCurrentAccountAddress(walletAccounts[0].getAddress());
             }
         }
     }
