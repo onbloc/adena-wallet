@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import SeedBox from '@components/seed-box';
-import Copy from '@components/buttons/copy-button';
 import TermsCheckbox from '@components/terms-checkbox';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';

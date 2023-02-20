@@ -56,4 +56,6 @@ export enum RoutePath {
   ApproveHardwareWalletConnect = '/approve/settings/hardware-wallet/connect',
   ApproveHardwareWalletSelectAccount = '/approve/settings/hardware-wallet/select-account',
   ApproveHardwareWalletFinish = '/approve/settings/hardware-wallet/finish',
+  ApproveHardwareWalletLedgerPassword = '/approve/settings/hardware-wallet/ledger-password',
+  ApproveHardwareWalletLedgerAllSet = '/approve/settings/hardware-wallet/ledger-all-set',
 }

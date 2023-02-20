@@ -68,7 +68,7 @@ export const Deposit = () => {
           </Text>
         )}
 
-        <Copy seeds={currentAccount?.data.address || ''} />
+        <Copy copyStr={currentAccount?.data.address || ''} />
       </CopyInputBox>
       <Text type='captionReg' color={theme.color.neutral[9]}>
         Only use this address to receive tokens on Gnoland.

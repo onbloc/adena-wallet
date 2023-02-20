@@ -14,7 +14,7 @@ import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 
 const text = {
-  title: 'Select Accounts'
+  title: 'Select Accounts',
 };
 
 const Wrapper = styled.main`
@@ -105,7 +105,7 @@ const AccountListContainer = styled.div`
       align-items: center;
       justify-content: center;
       svg {
-        animation: rotate 1.5s infinite
+        animation: rotate 1.5s infinite;
       }
       circle {
         stroke: ${theme.color.neutral[9]};
@@ -156,7 +156,8 @@ const AccountListContainer = styled.div`
         margin: auto;
       }
 
-      &.active, &.disabled {
+      &.active,
+      &.disabled {
         background-color: ${theme.color.primary[4]};
         border: 1px solid ${theme.color.primary[4]};
         img {
@@ -188,7 +189,9 @@ const AccountListContainer = styled.div`
 export const ApproveConnectHardwareWalletSelectAccount = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
+  const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>(
+    [],
+  );
   const [accounts, setAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
@@ -205,17 +208,19 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     const storedAccounts = await WalletService.loadAccounts();
     setStoredAccounts(storedAccounts);
     setAccounts(accounts);
-    const lastPath = accounts.map(account => account.data.path).reverse()[0];
+    const lastPath = accounts.map((account) => account.data.path).reverse()[0];
     setLastPath(lastPath);
   };
 
   const isStoredAccount = (adderss: string) => {
-    return storedAccounts.find(account => account.getAddress() === adderss) !== undefined;
+    return storedAccounts.find((account) => account.getAddress() === adderss) !== undefined;
   };
 
   const onClickSelectButton = (address: string) => {
     if (selectAccountAddresses.includes(address)) {
-      setSelectAccountAddresses(selectAccountAddresses.filter(selectAddress => selectAddress !== address));
+      setSelectAccountAddresses(
+        selectAccountAddresses.filter((selectAddress) => selectAddress !== address),
+      );
       return;
     }
     setSelectAccountAddresses([...selectAccountAddresses, address]);
@@ -224,7 +229,10 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   const onClickLoadMore = async () => {
     setLoadPath(true);
     try {
-      const accountPaths = Array.from({ length: LEDGER_ACCOUNT_LOAD_SIZE }, (_, index) => index + lastPath + 1);
+      const accountPaths = Array.from(
+        { length: LEDGER_ACCOUNT_LOAD_SIZE },
+        (_, index) => index + lastPath + 1,
+      );
       const ledgerWallet = await Wallet.createByLedger(accountPaths);
       await ledgerWallet.initAccounts();
       await initAccounts([...accounts, ...ledgerWallet.getAccounts()]);
@@ -235,17 +243,21 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   };
 
   const onClickNextButton = async () => {
-    const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress()));
+    const selectAccounts = accounts.filter((account) =>
+      selectAccountAddresses.includes(account.getAddress()),
+    );
     const storedAccounts = await WalletService.loadAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
 
-    selectAccounts.forEach(account => {
-      if (!storedAccounts.find(storedAccount => storedAccount.getAddress() === account.getAddress())) {
+    selectAccounts.forEach((account) => {
+      if (
+        !storedAccounts.find((storedAccount) => storedAccount.getAddress() === account.getAddress())
+      ) {
         account.setName(`Ledger ${account.data.path + 1}`);
         savedAccounts.push(account);
       }
     });
-    const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
+    const resultSavedAccounts = savedAccounts.sort((account) => account.data.path);
     await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
       await WalletService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
@@ -262,31 +274,32 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
           <span className='address'>{formatAddress(account.getAddress())}</span>
           <span className='path'>{`m/44'/118'/0'/0/${account.data.path}`}</span>
         </div>
-        {
-          stored ? (
-            <span className={'check disabled'}>
-              <img className='icon-check' src={IconCheck} alt='check-image' />
-              <span className={'mask'}></span>
-            </span>
-          ) : (
-            <span className={selected ? 'check active' : 'check'} onClick={() => onClickSelectButton(account.getAddress())}>
-              <img className='icon-check' src={IconCheck} alt='check-image' />
-            </span>
-          )
-        }
+        {stored ? (
+          <span className={'check disabled'}>
+            <img className='icon-check' src={IconCheck} alt='check-image' />
+            <span className={'mask'}></span>
+          </span>
+        ) : (
+          <span
+            className={selected ? 'check active' : 'check'}
+            onClick={() => onClickSelectButton(account.getAddress())}
+          >
+            <img className='icon-check' src={IconCheck} alt='check-image' />
+          </span>
+        )}
       </div>
-    )
-  }
+    );
+  };
 
   const renderLoading = () => {
     return (
       <div className='icon-loading'>
-        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="4.5" cy="4.5" r="3.5" fill="current" />
+        <svg width='9' height='9' viewBox='0 0 9 9' fill='none' xmlns='http://www.w3.org/2000/svg'>
+          <circle cx='4.5' cy='4.5' r='3.5' fill='current' />
         </svg>
       </div>
     );
-  }
+  };
 
   return (
     <Wrapper>
@@ -297,7 +310,11 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
       <AccountListContainer>
         <div className='list-wrapper'>
-          {accounts.length > 0 ? accounts.map(renderAccount) : <span className='description'>{'No data to display'}</span>}
+          {accounts.length > 0 ? (
+            accounts.map(renderAccount)
+          ) : (
+            <span className='description'>{'No data to display'}</span>
+          )}
         </div>
         <Button className='load-more-button' onClick={onClickLoadMore} disabled={loadPath}>
           {loadPath ? 'Loading' : 'Load more accounts'}

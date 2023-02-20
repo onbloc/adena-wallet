@@ -66,7 +66,7 @@ export const ViewPrivateKey = () => {
         <KeyBox>
           <p>{privkey && privkey}</p>
         </KeyBox>
-        <Copy seeds={privkey} />
+        <Copy copyStr={privkey} />
       </CopyKeyBox>
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>
