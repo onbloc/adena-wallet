@@ -1,4 +1,5 @@
-import { Test3ApiAbciQueryType, Test3Response } from '.';
+import { QueryType } from '../../../api';
+import { Test3Response } from '.';
 
 export interface Test3Api {
   getHealth: () => Promise<boolean>;
@@ -34,8 +35,11 @@ export interface Test3Api {
   broadcastTxAsync: (tx: string) => Promise<Test3Response.BroadcastTxAsync>;
 
   executeAbciQuery: (
-    queryType: Test3ApiAbciQueryType,
-    request: { [key in string]: any },
+    queryType: QueryType,
+    request: {
+      query?: { [key in string]: string };
+      data?: Array<string>
+    }
   ) => Promise<Test3Response.AbciQuery>;
 
   getTransactionHistory: (address: string, page: number) => Promise<Test3Response.History>;

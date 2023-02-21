@@ -1,4 +1,5 @@
-import { Test2ApiAbciQueryType, Test2Response } from '.';
+import { QueryType } from '../../../api';
+import { Test2Response } from '.';
 
 export interface Test2Api {
   getHealth: () => Promise<boolean>;
@@ -34,8 +35,11 @@ export interface Test2Api {
   broadcastTxAsync: (tx: string) => Promise<Test2Response.BroadcastTxAsync>;
 
   executeAbciQuery: (
-    queryType: Test2ApiAbciQueryType,
-    request: { [key in string]: any },
+    queryType: QueryType,
+    request: {
+      query?: { [key in string]: string };
+      data?: Array<string>
+    }
   ) => Promise<Test2Response.AbciQuery>;
 
   getTransactionHistory: (address: string, page: number) => Promise<Test2Response.History>;

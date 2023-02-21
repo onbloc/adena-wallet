@@ -1,4 +1,4 @@
-import { GnoClientResnpose } from '@/api';
+import { GnoClientResnpose } from '../../../../api';
 import { AbciQueryAuthAccount } from '../response';
 
 export class AbciQueryAuthAccountMapper {

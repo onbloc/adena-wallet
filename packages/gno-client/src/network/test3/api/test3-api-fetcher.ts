@@ -1,8 +1,9 @@
 import { NetworkInstance, NetworkConfig } from '../..';
-import { Test3ApiAbciQueryType, Test3Response } from '.';
+import { Test3Response } from '.';
 import { Test3Api } from '.';
 import { Test3ApiPath } from '.';
 import axios, { AxiosAdapter } from 'axios';
+import { QueryType } from '../../../api/gno-client-api-abci-query-type';
 
 export class Test3ApiFetcher implements Test3Api {
   private networkInstance: NetworkInstance;
@@ -17,6 +18,9 @@ export class Test3ApiFetcher implements Test3Api {
 
   private get = async <T>(uri: string): Promise<T> => {
     const result = await this.networkInstance.get<Test3Response.Common<T>>(uri);
+    if (result.data.error) {
+      throw new Error(result.data.error?.message);
+    }
     return result.data.result;
   };
 
@@ -88,8 +92,11 @@ export class Test3ApiFetcher implements Test3Api {
   };
 
   public executeAbciQuery = async (
-    queryType: Test3ApiAbciQueryType,
-    request: { [x: string]: any },
+    queryType: QueryType,
+    request: {
+      query?: { [key in string]: string };
+      data?: Array<string>
+    }
   ) => {
     return this.get<Test3Response.AbciQuery>(
       Test3ApiPath.createPathOfAbciQuery(queryType, request),

@@ -3,6 +3,7 @@ import { useRecoilState } from 'recoil';
 import { WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
 import { WalletRepository } from '@repositories/wallet';
+import { useAdenaContext } from './use-context';
 
 /**
  * Load or Deserialize wallet  by saved serialized wallet data
@@ -17,13 +18,14 @@ export const useWalletLoader = (): [
   loadWallet: () => void,
   loadWalletByPassword: (password: string) => Promise<"CREATE" | "LOGIN" | "FAIL" | "FINISH">,
 ] => {
+  const { walletService, accountService } = useAdenaContext();
   const [state, setState] = useRecoilState(WalletState.state);
   const [, setWallet] = useRecoilState(WalletState.wallet);
   const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
   const validateWallet = async () => {
     try {
-      const existWallet = Boolean(await WalletRepository.getSerializedWallet());
+      const existWallet = await walletService.existsWallet();
       if (existWallet) {
         return true;
       }
@@ -41,7 +43,7 @@ export const useWalletLoader = (): [
     }
     setState('LOADING');
     try {
-      const loadedWallet = await WalletService.loadWallet();
+      const loadedWallet = await walletService.loadWallet();
       await loadedWallet.initAccounts();
       await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
       setWallet(loadedWallet);
@@ -65,7 +67,7 @@ export const useWalletLoader = (): [
     }
     setState('LOADING');
     try {
-      const loadedWallet = await WalletService.loadWalletWithPassword(password);
+      const loadedWallet = await walletService.loadWalletWithPassword(password);
       await loadedWallet.initAccounts();
       await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
       setWallet(loadedWallet);
@@ -86,9 +88,9 @@ export const useWalletLoader = (): [
   };
 
   const initCurrentAccountAddress = async (address: any) => {
-    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+    const currentAccountAddress = await accountService.loadCurrentAccountAddress();
     if (!currentAccountAddress) {
-      await WalletService.saveCurrentAccountAddress(address);
+      await accountService.saveCurrentAccountAddress(address);
     }
   };
 

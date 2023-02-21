@@ -1,8 +1,9 @@
 import { NetworkInstance, NetworkConfig } from './../../';
-import { Test2ApiAbciQueryType, Test2Response } from '.';
+import { Test2Response } from '.';
 import { Test2Api } from '.';
 import { Test2ApiPath } from '.';
-import axios, { AxiosAdapter } from 'axios';
+import { AxiosAdapter } from 'axios';
+import { QueryType } from '../../../api';
 
 export class Test2ApiFetcher implements Test2Api {
   private networkInstance: NetworkInstance;
@@ -88,8 +89,11 @@ export class Test2ApiFetcher implements Test2Api {
   };
 
   public executeAbciQuery = async (
-    queryType: Test2ApiAbciQueryType,
-    request: { [x: string]: any },
+    queryType: QueryType,
+    request: {
+      query?: { [key in string]: string };
+      data?: Array<string>
+    }
   ) => {
     return this.get<Test2Response.AbciQuery>(
       Test2ApiPath.createPathOfAbciQuery(queryType, request),

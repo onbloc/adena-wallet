@@ -1,8 +1,8 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { Wallet, WalletAccount } from 'adena-module';
-import { WalletService } from '@services/index';
 import { useGnoClient } from './use-gno-client';
+import { useAdenaContext } from './use-context';
 
 export const useWalletAccounts = (
   wallet: InstanceType<typeof Wallet> | null,
@@ -12,6 +12,7 @@ export const useWalletAccounts = (
   saveAccounts: (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => Promise<void>,
   addAccount: (walletAccount: InstanceType<typeof WalletAccount>) => Promise<void>,
 } => {
+  const { accountService } = useAdenaContext();
   const [gnoCliet] = useGnoClient();
   const [walletAccounts, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
@@ -27,7 +28,7 @@ export const useWalletAccounts = (
   };
 
   const saveAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    await WalletService.saveAccounts(walletAccounts);
+    await accountService.saveAccounts(walletAccounts);
     setWalletAccounts(walletAccounts);
   };
 
@@ -38,7 +39,7 @@ export const useWalletAccounts = (
   };
 
   const getCurrentAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const accounts = await WalletService.loadAccounts(gnoCliet?.config);
+    const accounts = await accountService.loadAccounts();
     const filteredAccounts = accounts.filter(account => {
       if (account.data.signerType === 'LEDGER') {
         return true;
@@ -49,7 +50,7 @@ export const useWalletAccounts = (
       return false;
     });
     const createdAccounts = walletAccounts.filter(walletAccount => accounts.find(account => account.getAddress() === walletAccount.getAddress()) === undefined);
-    return WalletService.changeAccountsByAccountNames([...filteredAccounts, ...createdAccounts]);
+    return accountService.changeAccountsByAccountNames([...filteredAccounts, ...createdAccounts]);
   };
 
   return {

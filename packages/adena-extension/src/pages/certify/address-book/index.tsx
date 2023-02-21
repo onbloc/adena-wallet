@@ -8,8 +8,8 @@ import plus from '../../../assets/plus.svg';
 import ListBox from '@components/list-box';
 import { RoutePath } from '@router/path';
 import { useEffect } from 'react';
-import { WalletService } from '@services/index';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { useAdenaContext } from '@hooks/use-context';
 
 type navigateStatus = 'add' | 'edit';
 
@@ -21,6 +21,7 @@ export interface BookListProps {
 }
 
 const AddressBook = () => {
+  const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
   const [datas, setDatas] = useState<any>([]);
   const addAddressHandler = (status: navigateStatus, curr?: BookListProps) =>
@@ -34,7 +35,7 @@ const AddressBook = () => {
 
   useEffect(() => {
     (async () => {
-      const addressList = await WalletService.getAddressBook();
+      const addressList = await addressBookService.getAddressBook();
       setDatas(addressList);
     })();
   }, []);

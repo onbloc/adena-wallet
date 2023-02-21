@@ -2,12 +2,14 @@ import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWalletCreator } from '@hooks/use-wallet-creator';
-import { ValidationService, WalletService } from '@services/index';
 import { PasswordValidationError } from '@common/errors';
 import { useResetRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { useAdenaContext } from '@hooks/use-context';
+import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 
 export const useCreatePassword = () => {
+  const { accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -55,7 +57,7 @@ export const useCreatePassword = () => {
     const password = pwd;
     const confirmPassword = confirmPwd;
     try {
-      if (ValidationService.validateNotMatchConfirmPassword(password, confirmPassword)) return true;
+      if (validateNotMatchConfirmPassword(password, confirmPassword)) return true;
     } catch (error) {
       if (error instanceof PasswordValidationError) {
         switch (error.getType()) {
@@ -76,8 +78,8 @@ export const useCreatePassword = () => {
   const validationPassword = () => {
     const password = pwd;
     try {
-      ValidationService.validateEmptyPassword(password);
-      ValidationService.validateWrongPasswordLength(password);
+      validateEmptyPassword(password);
+      validateWrongPasswordLength(password);
       return true;
     } catch (error) {
       console.log(error);
@@ -96,7 +98,7 @@ export const useCreatePassword = () => {
     try {
       if (isValidPassword && isValidConfirmPassword) {
         clearCurrentAccount();
-        await WalletService.clearWalletAccountData();
+        await accountService.clearWalletAccountData();
         const walletState = await createWallet({ mnemonic: seeds, password: pwd });
         return walletState;
       }

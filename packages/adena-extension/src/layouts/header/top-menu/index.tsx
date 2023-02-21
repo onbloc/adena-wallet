@@ -12,6 +12,7 @@ import { WalletService } from '@services/index';
 import { useWallet } from '@hooks/use-wallet';
 import { useLocation } from 'react-router-dom';
 import { WalletAccountRepository } from '@repositories/wallet';
+import { useAdenaContext } from '@hooks/use-context';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -39,6 +40,7 @@ const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
 }
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
+  const { accountService, establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [currentAccount] = useCurrentAccount();
@@ -54,9 +56,10 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   }, [currentAccount]);
 
   useEffect(() => {
-    getCurrentUrl().then((currentUrl) => {
+    getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
-      WalletService.isEstablished(hostname).then((result) => {
+      const address = await accountService.loadCurrentAccountAddress();
+      establishService.isEstablished(hostname, address).then((result) => {
         setIsEstablish(result);
         setHostname(hostname);
       });
@@ -64,12 +67,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   }, [wallet, location]);
 
   const initAccountInfo = async () => {
-    const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
-    setCurrentAccountAddress(currentAccountAddress);
+    const address = await accountService.loadCurrentAccountAddress();
+    setCurrentAccountAddress(address);
 
     let currentAccountName = currentAccount?.data.name;
     if (!currentAccountName) {
-      const accounts = await WalletService.loadAccounts();
+      const accounts = await accountService.loadAccounts();
       const walletAccount = accounts.find(account => account.getAddress() === currentAccountAddress);
       currentAccountName = walletAccount?.data.name ?? '';
     }

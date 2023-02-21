@@ -16,7 +16,7 @@ export interface TransactionEncodedMessage {
 }
 
 export interface TransactionFee {
-  gasWanted: number;
+  gasWanted: string;
   gasFee: string;
 }
 
@@ -78,26 +78,28 @@ export class Transaction {
   };
 
   public static generateTransactionFee = (
-    account: WalletAccount,
-    gasWanted: number,
-    gasFee?: number,
+    gasWanted: string,
+    gasFee?: string,
   ): TransactionFee => {
-    const gasFeeAmount = `${gasFee ?? 1}`;
-    const minimalDenom = account.getConfig().getCoinMinimalDenom();
     return {
-      gasFee: `${gasFeeAmount}${minimalDenom}`,
+      gasFee: gasFee ?? '1ugnot',
       gasWanted,
     };
   };
 
   public static generateDocument = (
     account: WalletAccount,
+    chainId: string,
     messages: Array<any>,
-    gasWanted: number,
-    gasFee?: number,
+    gasWanted: string,
+    gasFee: {
+      value: string,
+      denom: string
+    },
     memo?: string
   ): StdSignDoc => {
-    return Document.createDocument(account, messages, gasWanted, gasFee, memo);
+
+    return Document.createDocument(account, chainId, messages, gasWanted, gasFee, memo ?? "");
   };
 
   public static generateSignature = async (

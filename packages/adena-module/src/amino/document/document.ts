@@ -4,25 +4,28 @@ import { StdSignDoc } from '../signdoc';
 export class Document {
   public static createDocument(
     account: WalletAccount,
+    chainId: string,
     msgs: Array<any>,
-    gas: number,
-    gasFee?: number,
-    memo?: string
+    gasWanted: string,
+    gasFee: {
+      value: string,
+      denom: string
+    },
+    memo: string
   ): StdSignDoc {
-    const gasFeeAmount = `${gasFee ?? 1}`;
     return {
       msgs: [...msgs],
       fee: {
         amount: [
           {
-            amount: gasFeeAmount,
-            denom: account.getConfig().getCoinMinimalDenom(),
+            amount: gasFee.value,
+            denom: gasFee.denom,
           },
         ],
-        gas: gas.toString(),
+        gas: gasWanted,
       },
-      chain_id: account.getConfig().getChainId(),
-      memo: memo ?? '',
+      chain_id: chainId,
+      memo: memo,
       account_number: account.getAccountNumber() || '',
       sequence: account.getSequence() || '',
     };

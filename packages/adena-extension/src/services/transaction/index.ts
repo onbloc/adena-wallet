@@ -1,2 +1,2 @@
 export * from './transaction';
-export * from './message';
+export * as TransactionMessage from './message';

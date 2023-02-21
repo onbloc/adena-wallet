@@ -9,12 +9,12 @@ import ListBox from '@components/list-box';
 import DefaultImage from '../../../assets/favicon-default-small.svg';
 import Button from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
-import { WalletService } from '@services/index';
-import { getCurrentEstablisedSites } from '@services/wallet';
 import CloseShadowButton from '@components/buttons/close-shadow-button';
 import disconnected from '../../../assets/disconnected.svg';
+import { useAdenaContext } from '@hooks/use-context';
 
 export const ConnectedApps = () => {
+  const { accountService, establishService } = useAdenaContext();
   const navigate = useNavigate();
   const [state] = useRecoilState(WalletState.state);
   const [datas, setDatas] = useState<any>([]);
@@ -24,12 +24,14 @@ export const ConnectedApps = () => {
   }, []);
 
   const onClickDisconnect = async (item: any) => {
-    await WalletService.unestablish(item.hostname);
+    const address = await accountService.loadCurrentAccountAddress();
+    await establishService.unestablish(item.hostname, address);
     await updateDatas();
   };
 
   const updateDatas = async () => {
-    const establishedSites = await getCurrentEstablisedSites();
+    const address = await accountService.loadCurrentAccountAddress();
+    const establishedSites = await establishService.getCurrentEstablisedSites(address);
     setDatas(establishedSites);
   };
 

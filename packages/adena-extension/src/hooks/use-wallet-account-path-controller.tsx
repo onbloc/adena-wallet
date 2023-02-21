@@ -1,25 +1,26 @@
 import { useWalletCreator } from './use-wallet-creator';
-import { WalletService } from '@services/index';
 import { useWallet } from './use-wallet';
 import { useRecoilState, useResetRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { useAdenaContext } from './use-context';
 
 export const useWalletAccountPathController = (): [
   increaseAccountPaths: () => void,
   decreaseAccountPaths: () => void,
 ] => {
+  const { walletService, accountService } = useAdenaContext();
   const [, createWallet] = useWalletCreator();
   const [wallet] = useWallet();
   const [, setState] = useRecoilState(WalletState.state);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
   const increaseAccountPaths = async () => {
-    await WalletService.increaseWalletAccountPaths();
+    await accountService.increaseWalletAccountPaths();
     await reloadWallet();
   };
 
   const decreaseAccountPaths = async () => {
-    await WalletService.decreaseWalletAccountPaths();
+    await accountService.decreaseWalletAccountPaths();
     await reloadWallet();
   };
 
@@ -28,7 +29,7 @@ export const useWalletAccountPathController = (): [
       setState('LOADING');
       clearCurrentBalance();
       const mnemonic = wallet.getMnemonic();
-      const password = await WalletService.loadWalletPassword();
+      const password = await walletService.loadWalletPassword();
       await createWallet({ mnemonic, password });
     }
   };

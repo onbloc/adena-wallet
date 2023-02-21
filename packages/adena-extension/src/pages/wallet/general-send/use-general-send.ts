@@ -6,13 +6,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { WalletService } from '@services/index';
 import BigNumber from 'bignumber.js';
+import { useAdenaContext } from '@hooks/use-context';
 
 const specialPatternCheck = /\W|\s/g;
 const fee = 0.000001;
 
 export const useGeneralSend = () => {
+  const { addressBookService } = useAdenaContext();
   const location = useLocation();
   const navigate = useNavigate();
   const [balances] = useWalletBalances();
@@ -36,10 +37,10 @@ export const useGeneralSend = () => {
     (async () => {
       if (accounts && currentAccount) {
         const result = await Promise.all([
-          WalletService.getAddressBookByWalletAccounts(accounts).filter(
+          addressBookService.getAddressBookByWalletAccounts(accounts).filter(
             (v) => currentAccount.getAddress() !== v.address,
           ),
-          WalletService.getAddressBook(),
+          addressBookService.getAddressBook(),
         ]);
         setAccountsList(result.flat());
       }

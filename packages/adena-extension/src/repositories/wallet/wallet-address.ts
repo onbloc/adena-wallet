@@ -1,19 +1,25 @@
-import { AdenaStorage } from "@common/storage";
+import { StorageManager } from "@common/storage/storage-manager";
 
 type LocalValueType = 'ADDRESS_BOOK';
 
-export const getAddressBook = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  const addressBook = await localStorage.getToObject('ADDRESS_BOOK');
-  return addressBook;
-};
+export class WalletAddressRepository {
 
-export const updateAddressBooke = async (addressBook: { [key in string]: any }) => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.setByObject('ADDRESS_BOOK', addressBook);
-};
+  private localStorage: StorageManager<LocalValueType>;
 
-export const deleteAddress = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.remove('ADDRESS_BOOK');
+  constructor(localStorage: StorageManager) {
+    this.localStorage = localStorage;
+  }
+
+  public getAddressBook = async () => {
+    const addressBook = await this.localStorage.getToObject('ADDRESS_BOOK');
+    return addressBook;
+  };
+
+  public updateAddressBooke = async (addressBook: { [key in string]: any }) => {
+    await this.localStorage.setByObject('ADDRESS_BOOK', addressBook);
+  };
+
+  public deleteAddress = async () => {
+    await this.localStorage.remove('ADDRESS_BOOK');
+  }
 }

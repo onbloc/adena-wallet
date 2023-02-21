@@ -16,9 +16,11 @@ import { ApproveLdegerLoading } from './approve-ledger-loading';
 import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
+import { useAdenaContext } from '@hooks/use-context';
 
 // TODO: ApproveTransaction
 export const ApproveSign = () => {
+  const { accountService, transactionService } = useAdenaContext();
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [wallet, state] = useWallet();
@@ -54,7 +56,7 @@ export const ApproveSign = () => {
   }, [gnoClient, currentAccount, requestData]);
 
   const initCurrentAccount = async () => {
-    const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
+    const currentAccountAddress = await accountService.loadCurrentAccountAddress();
     changeCurrentAccount(currentAccountAddress);
   }
 
@@ -68,8 +70,7 @@ export const ApproveSign = () => {
       return false;
     }
     try {
-      const transaction = await TransactionService.createTransactionData(
-        gnoClient,
+      const transaction = await transactionService.createTransactionData(
         currentAccount,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
@@ -94,8 +95,7 @@ export const ApproveSign = () => {
   const signTransaction = async () => {
     if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
       try {
-        const signedAmino = await TransactionService.createAminoSign(
-          gnoClient,
+        const signedAmino = await transactionService.createAminoSign(
           currentAccount.getAddress(),
           requestData?.data?.messages,
           requestData?.data?.gasWanted,

@@ -1,3 +1,4 @@
+export * from './abci-query';
 export * from './account';
 export * from './blocks';
 export * from './broadcast-tx-async';

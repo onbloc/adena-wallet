@@ -1,8 +1,9 @@
 import { WalletService } from '@services/index';
-import { WalletRepository } from '@repositories/wallet';
+import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '.';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups } from './methods';
+import { AdenaStorage } from '@common/storage';
 
 export class MessageHandler {
   public static createHandler = (
@@ -41,9 +42,10 @@ export class MessageHandler {
   ) => {
     let existsWallet = false;
     try {
-      const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-      const serializedWallet = await WalletRepository.getSerializedWallet();
-      existsWallet = currentAccountAddress !== '' && serializedWallet !== '';
+      const walletRepsotiroy = new WalletRepository(AdenaStorage.local(), AdenaStorage.session());
+      const accountRepository = new WalletAccountRepository(AdenaStorage.local());
+      const walletService = new WalletService(walletRepsotiroy, accountRepository);
+      existsWallet = await walletService.existsWallet();
     } catch (e) {
       existsWallet = false;
     }

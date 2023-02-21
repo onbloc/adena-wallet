@@ -1,6 +1,6 @@
 import { Secp256k1HdWallet, makeCosmoshubPath } from '@/amino';
 import { HdPath } from '..';
-import { WalletAccount, WalletAccountConfig } from './account';
+import { WalletAccount } from './account';
 import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 
@@ -37,7 +37,6 @@ export class Wallet {
       walletAccount.setSigner(this.aminoSigner);
       walletAccount.data.address in names &&
         walletAccount.setName(names[walletAccount.data.address]);
-      config && walletAccount.setConfig(new WalletAccountConfig(config));
     });
 
     this.walletAccounts = [...walletAccounts];
