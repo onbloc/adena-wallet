@@ -43,6 +43,8 @@ import {
   ApproveConnectHardwareWalletFinish,
   ApproveConnectHardwareWalletInit,
   ApproveConnectHardwareWalletSelectAccount,
+  ApproveHardwareWalletLedgerPassword,
+  ApproveHardwareWalletLedgerAllSet,
 } from '@pages/certify/approve-connect-hardware-wallet';
 import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 import { ApproveSign } from '@pages/wallet/approve-sign';
@@ -123,6 +125,14 @@ export const CustomRouter = () => {
           <Route
             path={RoutePath.ApproveHardwareWalletFinish}
             element={<ApproveConnectHardwareWalletFinish />}
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletLedgerPassword}
+            element={<ApproveHardwareWalletLedgerPassword />}
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletLedgerAllSet}
+            element={<ApproveHardwareWalletLedgerAllSet />}
           />
           <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
