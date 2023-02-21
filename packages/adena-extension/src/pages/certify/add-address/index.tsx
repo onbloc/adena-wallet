@@ -10,14 +10,16 @@ import DefaultInput, { inputStyle } from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ErrorText } from '@components/error-text';
 import theme from '@styles/theme';
-import { ValidationService, WalletService } from '@services/index';
+import { validateAlreadyAddress, validateAlreadyName, validateInvalidAddress, WalletService } from '@services/index';
 import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
+import { useAdenaContext } from '@hooks/use-context';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AddAddress = () => {
+  const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const backButtonClick = () => navigate(-1);
@@ -53,7 +55,7 @@ const AddAddress = () => {
     };
 
     try {
-      ValidationService.validateInvalidAddress(address);
+      validateInvalidAddress(address);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -65,7 +67,7 @@ const AddAddress = () => {
     }
 
     try {
-      ValidationService.validateAlreadyAddress(currData, datas, isAdd);
+      validateAlreadyAddress(currData, datas, isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -77,7 +79,7 @@ const AddAddress = () => {
     }
 
     try {
-      ValidationService.validateAlreadyName(currData, datas, isAdd);
+      validateAlreadyName(currData, datas, isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -95,13 +97,13 @@ const AddAddress = () => {
   };
 
   const addHandler = async () =>
-    await WalletService.addAddressBookItem(name, address).then(() => backButtonClick());
+    await addressBookService.addAddressBookItem(name, address).then(() => backButtonClick());
   const editHandler = async () =>
-    await WalletService.updateAddressBookItem(location.state.curr.id, name, address).then(() =>
+    await addressBookService.updateAddressBookItem(location.state.curr.id, name, address).then(() =>
       backButtonClick(),
     );
   const removeHandler = async () =>
-    await WalletService.removeAddressBookItem(location.state.curr.id).then(() => backButtonClick());
+    await addressBookService.removeAddressBookItem(location.state.curr.id).then(() => backButtonClick());
 
   useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
   useEffect(() => {

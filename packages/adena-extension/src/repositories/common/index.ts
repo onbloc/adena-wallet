@@ -1,1 +1,1 @@
-export * as ChainRepository from './chain';
+export * from './chain';

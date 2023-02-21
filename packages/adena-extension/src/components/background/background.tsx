@@ -7,13 +7,14 @@ import { ResourceService } from "@services/index";
 import { AdenaStorage } from "@common/storage";
 import { useLocation } from "react-router-dom";
 import { GnoClient } from "gno-client";
+import { useAdenaContext } from "@hooks/use-context";
 
 interface Props {
     children?: React.ReactNode;
 }
 
 export const Background = ({ children }: Props) => {
-
+    const { resourceService } = useAdenaContext();
     const location = useLocation();
     const [currentAccountAddress, setCurrentAccountAddress] = useState<string>('');
     const [gnoClient] = useRecoilState(GnoClientState.current);
@@ -88,7 +89,7 @@ export const Background = ({ children }: Props) => {
 
     const fetchAppInfos = async () => {
         try {
-            const response = await ResourceService.fetchAppInfos();
+            const response = await resourceService.fetchAppInfos();
             const exploreSites = response
                 .filter(site => site.display)
                 .sort(site => site.order);

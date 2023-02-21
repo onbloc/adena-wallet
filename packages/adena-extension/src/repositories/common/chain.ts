@@ -1,6 +1,6 @@
-import { AdenaStorage } from "@common/storage";
+import { StorageManager } from "@common/storage/storage-manager";
 
-type LocalValueType = 'NETWORKS';
+type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID';
 
 interface Network {
   main: boolean;
@@ -19,18 +19,39 @@ interface Network {
   }
 };
 
-export const getNetworks = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  const networks = await localStorage.getToObject<Array<Network>>('NETWORKS');
-  return networks;
-};
+export class ChainRepository {
 
-export const updateNetworks = async (networks: Array<Network>) => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.setByObject('NETWORKS', networks);
-};
+  private localStorage: StorageManager<LocalValueType>;
 
-export const deleteNetworks = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.remove('NETWORKS');
-};
+  constructor(localStorage: StorageManager) {
+    this.localStorage = localStorage;
+  }
+
+  public getNetworks = async () => {
+    const networks = await this.localStorage.getToObject<Array<Network>>('NETWORKS');
+    return networks;
+  };
+
+  public getCurrentNetwork = async () => {
+    const networks = await this.localStorage.getToObject<Array<Network>>('NETWORKS');
+    const currentChaindId = await this.localStorage.get('CURRENT_CHAIN_ID');
+    return networks.find(network => network.chainId === currentChaindId) ?? networks[0];
+  };
+
+  public updateNetworks = async (networks: Array<Network>) => {
+    await this.localStorage.setByObject('NETWORKS', networks);
+  };
+
+  public deleteNetworks = async () => {
+    await this.localStorage.remove('NETWORKS');
+  };
+
+  public getCurrentChainId = async () => {
+    return await this.localStorage.get('CURRENT_CHAIN_ID');
+  };
+
+  public updateCurrentChainId = async (chainId: string) => {
+    await this.localStorage.set('CURRENT_CHAIN_ID', chainId);
+    return true;
+  };
+}

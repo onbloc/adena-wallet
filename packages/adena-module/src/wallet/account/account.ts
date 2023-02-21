@@ -64,8 +64,6 @@ export class WalletAccount {
 
   private histories: Array<AccountHistory>;
 
-  private config: WalletAccountConfig;
-
   private path: number;
 
   constructor(args: WalletAccountArguments) {
@@ -79,7 +77,6 @@ export class WalletAccount {
     this.address = args.address ?? '';
     this.balance = args.balance ?? '';
     this.histories = args.histories ? [...args.histories] : [];
-    this.config = args.config ?? WalletAccountConfig.createConfigByTest2();
     this.path = args.path ?? -1;
   }
 
@@ -97,7 +94,6 @@ export class WalletAccount {
       cryptoAlgorithm: this.cryptoAlgorithm,
       balance: this.balance,
       histories: [...this.histories],
-      config: this.config,
       path: this.path
     };
   }
@@ -106,7 +102,6 @@ export class WalletAccount {
     const account = new WalletAccount(this.data);
     try {
       account.setSigner(this.getSigner());
-      account.setConfig(this.getConfig()?.clone());
     } catch (e) { }
     return account;
   };
@@ -134,10 +129,6 @@ export class WalletAccount {
     return this.signer;
   };
 
-  public getConfig = () => {
-    return this.config;
-  };
-
   public setIndex = (index: number) => {
     this.index = index;
     this.name = `Account ${this.index}`;
@@ -153,10 +144,6 @@ export class WalletAccount {
 
   public setPath = (path: HdPath) => {
     this.path = path[-1].toNumber();
-  };
-
-  public setConfig = (config: WalletAccountConfig) => {
-    this.config = config;
   };
 
   public updateByGno = (accountInfo: {

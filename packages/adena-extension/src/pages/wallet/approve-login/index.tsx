@@ -10,10 +10,10 @@ import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { InjectionMessageInstance } from '@inject/message';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
-import { ValidationService } from '@services/index';
 import { MessageKeyType } from '@inject/message'
 import { PasswordValidationError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
+import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -69,8 +69,8 @@ export const ApproveLogin = () => {
   const tryLoginApprove = async (password: string) => {
     let currentError = null;
     try {
-      ValidationService.validateEmptyPassword(password);
-      ValidationService.validateWrongPasswordLength(password);
+      validateEmptyPassword(password);
+      validateWrongPasswordLength(password);
       await loadWalletByPassword(password);
     } catch (error) {
       if (error instanceof PasswordValidationError) {

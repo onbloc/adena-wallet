@@ -1,19 +1,25 @@
-import { AdenaStorage } from "@common/storage";
+import { StorageManager } from "@common/storage/storage-manager";
 
 type LocalValueType = 'ESTABLISH_SITES';
 
-export const getEstablishedSites = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  const establishedSites = await localStorage.getToObject('ESTABLISH_SITES');
-  return establishedSites;
-};
+export class WalletEstablishRepository {
 
-export const updateEstablishedSites = async (addressBook: { [key in string]: any }) => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.setByObject('ESTABLISH_SITES', addressBook);
-};
+  private localStorage: StorageManager<LocalValueType>;
 
-export const deleteEstablishedSites = async () => {
-  const localStorage = AdenaStorage.local<LocalValueType>();
-  await localStorage.remove('ESTABLISH_SITES');
-};
+  constructor(localStorage: StorageManager) {
+    this.localStorage = localStorage;
+  }
+
+  public getEstablishedSites = async () => {
+    const establishedSites = await this.localStorage.getToObject('ESTABLISH_SITES');
+    return establishedSites;
+  };
+
+  public updateEstablishedSites = async (addressBook: { [key in string]: any }) => {
+    await this.localStorage.setByObject('ESTABLISH_SITES', addressBook);
+  };
+
+  public deleteEstablishedSites = async () => {
+    await this.localStorage.remove('ESTABLISH_SITES');
+  };
+}

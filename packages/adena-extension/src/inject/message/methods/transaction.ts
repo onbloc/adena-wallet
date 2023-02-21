@@ -1,5 +1,6 @@
+import { AdenaStorage } from '@common/storage';
+import { WalletAccountRepository } from '@repositories/wallet';
 import { RoutePath } from '@router/path';
-import { WalletService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
@@ -7,11 +8,13 @@ export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+  const localStorage = AdenaStorage.local();
+  const accountRepository = new WalletAccountRepository(localStorage);
+  const address = await accountRepository.getCurrentAccountAddress();
+  if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
-  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+  if (!validateTransactionMessage(address, requestData, sendResponse)) {
     return;
   }
   HandlerMethod.createPopup(
@@ -26,11 +29,13 @@ export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+  const localStorage = AdenaStorage.local();
+  const accountRepository = new WalletAccountRepository(localStorage);
+  const address = await accountRepository.getCurrentAccountAddress();
+  if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
-  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+  if (!validateTransactionMessage(address, requestData, sendResponse)) {
     return;
   }
   HandlerMethod.createPopup(
@@ -79,6 +84,13 @@ const validateTransactionMessage = (
         }
         break;
       case '/vm.m_addpkg':
+        if (currentAccountAddress !== message.value.creator) {
+          sendResponse(
+            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+          );
+          return false;
+        }
+        break;
       default:
         sendResponse(
           InjectionMessageInstance.failure('UNSUPPORTED_TYPE', requestData?.data, requestData?.key),

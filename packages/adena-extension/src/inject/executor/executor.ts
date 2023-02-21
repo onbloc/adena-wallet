@@ -4,7 +4,7 @@ import {
   validateDoContractRequest,
   validateTrasactionMessageOfBankSend,
   validateTrasactionMessageOfVmCall,
-} from '@services/validation/validation-message';
+} from '@common/validation/validation-message';
 
 type Params = { [key in string]: any };
 
