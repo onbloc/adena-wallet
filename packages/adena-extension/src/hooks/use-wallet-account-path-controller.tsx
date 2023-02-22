@@ -15,12 +15,12 @@ export const useWalletAccountPathController = (): [
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
   const increaseAccountPaths = async () => {
-    await accountService.increaseWalletAccountPaths();
+    // await accountService.();
     await reloadWallet();
   };
 
   const decreaseAccountPaths = async () => {
-    await accountService.decreaseWalletAccountPaths();
+    // await accountService.decreaseWalletAccountPaths();
     await reloadWallet();
   };
 

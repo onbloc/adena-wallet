@@ -17,7 +17,7 @@ const getNetworkMapperType = (chainId: string) => {
 const DEFAULT_CHAIN_ID = 'TEST3';
 
 export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> | null, networks: Array<InstanceType<typeof GnoClient>>, update: () => void, changeCurrentNetwork: (chainId: string) => void] => {
-    const { resourceService } = useAdenaContext();
+    const { chainService } = useAdenaContext();
     const [currentNetwork, setCurrentNetwork] = useRecoilState(GnoClientState.current);
     const [networks, setNetworks] = useRecoilState(GnoClientState.networks);
 
@@ -36,17 +36,18 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
         if (!currentNetwork) {
             return DEFAULT_CHAIN_ID;
         }
-        return resourceService.getCurrentChainId();
+        const network = await chainService.getCurrentNetwork();
+        return network.chainId;
     }
 
     const updateNetworks = async () => {
-        const networkConfigs = await resourceService.fetchChainNetworks();
+        const networkConfigs = await chainService.getNetworks();
         const currentChainId = await getCurrentChainId();
-        resourceService.updateCurrentChainId(currentChainId);
+        chainService.updateCurrentNetwork(currentChainId);
         const createdNetworks = networkConfigs.map(config =>
             GnoClient.createNetworkByType(
-                { ...config, chainId: config.networkId, chainName: config.networkName },
-                getNetworkMapperType(config.networkId)
+                { ...config, chainId: config.chainId, chainName: config.chainName },
+                getNetworkMapperType(config.chainId)
             ));
 
         setNetworks(createdNetworks);
@@ -66,7 +67,7 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
 
         if (currentNetwork !== null) {
             setCurrentNetwork(currentNetwork.clone());
-            await resourceService.updateCurrentChainId(currentNetwork.chainId);
+            await chainService.updateCurrentNetwork(currentNetwork.chainId);
         }
     }
 

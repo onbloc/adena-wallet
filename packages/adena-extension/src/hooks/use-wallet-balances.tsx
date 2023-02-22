@@ -4,34 +4,35 @@ import { useGnoClient } from './use-gno-client';
 import { useEffect } from 'react';
 import { Balance } from '@states/wallet';
 import { useAdenaContext } from './use-context';
+import BigNumber from 'bignumber.js';
+import { GnoClient } from 'gno-client';
+import { CommonError } from '@common/errors/common';
 
 export const useWalletBalances = (
-  initialize?: boolean,
-): [balances: Array<Balance>, updateBalances: () => void] => {
+  gnoClient: InstanceType<typeof GnoClient> | null
+): [balances: Array<Balance>, updateBalances: (address: string) => void] => {
   const { balanceService } = useAdenaContext();
 
-  const [gnoClient, ,] = useGnoClient();
-  const [currentAccount] = useRecoilState(WalletState.currentAccount);
   const [balances, setBalances] = useRecoilState(WalletState.balances);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
-  useEffect(() => {
-    if (initialize) {
-      updateBalances();
+  const updateBalances = async (address: string) => {
+    if (!gnoClient) {
+      console.log("Not initialize gno client");
+      return;
     }
-  }, [gnoClient, currentAccount?.getAddress()]);
 
-
-  const updateBalances = async () => {
-    if (currentAccount && gnoClient) {
-      try {
-        const tokenBalances = await balanceService.getTokenBalances(currentAccount.getAddress());
-
-        if (tokenBalances && tokenBalances.length > 0) {
-          setBalances(tokenBalances as Array<Balance>);
-          setFailedNetwork(false);
-        }
-      } catch (e) {
+    try {
+      const tokenBalances = await balanceService.getTokenBalances(address);
+      if (tokenBalances.length > 0) {
+        setBalances(tokenBalances as Array<Balance>);
+      } else {
+        setFailedNetwork(false);
+      }
+    } catch (e) {
+      if (e instanceof CommonError) {
+        console.log(e);
+      } else {
         setFailedNetwork(true);
       }
     }

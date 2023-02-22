@@ -6,6 +6,7 @@ import IconAddPkg from '../assets/addpkg.svg';
 import IconContract from '../assets/contract.svg';
 import { GnoClientResnpose } from "gno-client/src/api";
 import BigNumber from "bignumber.js";
+import { useGnoClient } from "./use-gno-client";
 
 export interface TransactionInfo {
     icon: any;
@@ -39,7 +40,8 @@ export const useTransactionHistoryInfo = (): [{
     getTransferInfo: (transactionItem: GnoClientResnpose.HistoryItemType) => { type: string, address: string },
 }] => {
 
-    const [balances] = useWalletBalances();
+    const [gnoClient] = useGnoClient();
+    const [balances] = useWalletBalances(gnoClient);
     const [, convertUnit, getTokenImage] = useTokenConfig();
 
     const isBankMsgSend = (transactionItem: GnoClientResnpose.HistoryItemType): transactionItem is GnoClientResnpose.HistoryItemBankMsgSend => {

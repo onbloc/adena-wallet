@@ -10,7 +10,7 @@ export const useTokenConfig = (): [
     convertTokenUnit: (amount: BigNumber, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { amount: BigNumber, denom: string },
     getTokenImage: (denom: string) => string | undefined
 ] => {
-    const { balanceService, resourceService } = useAdenaContext();
+    const { balanceService, tokenService } = useAdenaContext();
     const [tokenConfig, setTokenConfig] = useRecoilState(WalletState.tokenConfig);
 
     const getConfig = async () => {
@@ -36,7 +36,7 @@ export const useTokenConfig = (): [
     }
 
     const fetchTokenConfig = async () => {
-        const configs = await resourceService.fetchTokenConfigs();
+        const configs = await tokenService.getTokenConfigs();
         setTokenConfig(configs);
         updateTokenConfigImages(configs);
         return configs;

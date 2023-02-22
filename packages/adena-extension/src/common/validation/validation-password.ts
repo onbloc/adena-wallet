@@ -8,7 +8,7 @@ export const validateInvalidPassword = (password: string, storedPassword: string
 };
 
 export const validateWrongPasswordLength = (password: string) => {
-  const REGEX_PASSWORD_LENGTH = /^.{8,23}$/;
+  const REGEX_PASSWORD_LENGTH = /^.{8,256}$/;
   if (!REGEX_PASSWORD_LENGTH.test(password)) {
     throw new PasswordValidationError('WRONG_PASSWORD_LENGTH');
   }

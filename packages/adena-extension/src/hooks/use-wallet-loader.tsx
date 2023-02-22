@@ -18,8 +18,6 @@ export const useWalletLoader = (): [
 ] => {
   const { walletService, accountService } = useAdenaContext();
   const [state, setState] = useRecoilState(WalletState.state);
-  const [, setWallet] = useRecoilState(WalletState.wallet);
-  const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
   const validateWallet = async () => {
     const existWallet = await walletService.existsWallet();
@@ -39,8 +37,6 @@ export const useWalletLoader = (): [
       const loadedWallet = await walletService.loadWallet();
       await loadedWallet.initAccounts();
       await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
-      setWallet(loadedWallet);
-      setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
     } catch (error) {
       console.log(error);
@@ -63,8 +59,6 @@ export const useWalletLoader = (): [
       const loadedWallet = await walletService.loadWalletWithPassword(password);
       await loadedWallet.initAccounts();
       await initCurrentAccountAddress(loadedWallet.getAccounts()[0]?.getAddress());
-      setWallet(loadedWallet);
-      setWalletAccounts(loadedWallet.getAccounts());
       setState('FINISH');
       return 'FINISH';
     } catch (error) {
@@ -81,9 +75,9 @@ export const useWalletLoader = (): [
   };
 
   const initCurrentAccountAddress = async (address: any) => {
-    const currentAccountAddress = await accountService.loadCurrentAccountAddress();
-    if (!currentAccountAddress) {
-      await accountService.saveCurrentAccountAddress(address);
+    const currentAccount = await accountService.getCurrentAccount();
+    if (!currentAccount) {
+      await accountService.updateCurrentAccount(address);
     }
   };
 

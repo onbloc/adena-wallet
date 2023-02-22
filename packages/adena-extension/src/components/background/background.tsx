@@ -3,7 +3,6 @@ import { useTransactionHistory } from "@hooks/use-transaction-history";
 import { useRecoilState, useResetRecoilState } from "recoil";
 import { CommonState, ExploreState, GnoClientState, WalletState } from "@states/index";
 import { createImageDataBySvg } from "@common/utils/client-utils";
-import { ResourceService } from "@services/index";
 import { AdenaStorage } from "@common/storage";
 import { useLocation } from "react-router-dom";
 import { GnoClient } from "gno-client";
@@ -14,11 +13,10 @@ interface Props {
 }
 
 export const Background = ({ children }: Props) => {
-    const { resourceService } = useAdenaContext();
+    const { accountService, chainService, tokenService } = useAdenaContext();
     const location = useLocation();
     const [currentAccountAddress, setCurrentAccountAddress] = useState<string>('');
     const [gnoClient] = useRecoilState(GnoClientState.current);
-    const [currentAccount] = useRecoilState(WalletState.currentAccount);
     const [transactionHistory] = useRecoilState(WalletState.transactionHistory)
     const [, updateLastTransactionHistory] = useTransactionHistory();
     const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
@@ -38,28 +36,16 @@ export const Background = ({ children }: Props) => {
      * History Data Interval Fetch
      */
     useEffect(() => {
-        if (gnoClient?.chainId && currentAccount) {
-            const historyFetchTimer = setInterval(() => {
-                updateLastTransactionHistory();
-            }, 5000);
-            return () => { clearInterval(historyFetchTimer) }
-        }
-    }, [gnoClient?.chainId, currentAccount, transactionHistory.currentPage]);
-
-    useEffect(() => {
-        if (currentAccount === null) {
-            return;
-        }
-        if (currentAccount.getAddress() === currentAccountAddress) {
-            return;
-        }
-
-        AdenaStorage.local().get('CURRENT_ACCOUNT_ADDRESS').then(storedAccountAddress => {
-            if (storedAccountAddress !== currentAccount.getAddress()) {
-                setCurrentAccountAddress(currentAccount.getAddress());
+        accountService.getCurrentAccount().then(currentAccount => {
+            if (gnoClient?.chainId && currentAccount) {
+                const historyFetchTimer = setInterval(() => {
+                    updateLastTransactionHistory();
+                }, 5000);
+                return () => { clearInterval(historyFetchTimer) }
             }
         });
-    }, [currentAccount])
+    }, [gnoClient?.chainId, transactionHistory.currentPage]);
+
 
     useEffect(() => {
         if (exploreSites.length === 0) {
@@ -75,7 +61,7 @@ export const Background = ({ children }: Props) => {
         clearCurrentBalance();
         clearTransactionHistory();
         clearHistoryPosition();
-    }, [currentAccount?.getAddress(), gnoClient?.chainId]);
+    }, [gnoClient?.chainId]);
 
     const checkNetwork = async (gnoClient: InstanceType<typeof GnoClient>) => {
         let health = false;
@@ -89,7 +75,7 @@ export const Background = ({ children }: Props) => {
 
     const fetchAppInfos = async () => {
         try {
-            const response = await resourceService.fetchAppInfos();
+            const response = await tokenService.getAppInfos();
             const exploreSites = response
                 .filter(site => site.display)
                 .sort(site => site.order);

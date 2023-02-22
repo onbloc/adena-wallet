@@ -33,7 +33,7 @@ export const useWalletAccounts = (
   };
 
   const saveAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    await accountService.saveAccounts(walletAccounts);
+    await accountService.updateAccounts(walletAccounts);
     setWalletAccounts(walletAccounts);
   };
 
@@ -41,19 +41,12 @@ export const useWalletAccounts = (
     const accounts = walletAccounts ?? [];
     const addedAccounts = [...accounts, walletAccount];
     await saveAccounts(addedAccounts);
-    await changeCurrentAccount(walletAccount.getAddress(), addedAccounts);
+    // await changeCurrentAccount(walletAccount.getAddress(), addedAccounts);
   };
 
   const getCurrentAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const accounts = await accountService.loadAccounts();
-    const filteredAccounts = accounts.filter(account => {
-      if (account.data.accountType === 'NONE') {
-        return false;
-      }
-      return true;
-    });
-    const createdAccounts = walletAccounts.filter(walletAccount => accounts.find(account => account.getAddress() === walletAccount.getAddress()) === undefined);
-    return accountService.changeAccountsByAccountNames([...filteredAccounts, ...createdAccounts]);
+    const accounts = await accountService.getAccounts();
+    return accounts;
   };
 
   return {

@@ -17,7 +17,6 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
     const { walletService, accountService } = useAdenaContext();
 
     const [state, setState] = useRecoilState(WalletState.state);
-    const [, setWallet] = useRecoilState(WalletState.wallet);
     const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
     const [, , changeCurrentAccount] = useCurrentAccount();
 
@@ -33,8 +32,6 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
         try {
             const createdWallet = await walletService.createWallet({ mnemonic, password });
             await createdWallet.initAccounts();
-            await initCurrentAccount(createdWallet.getAccounts());
-            setWallet(createdWallet);
             setWalletAccounts([...createdWallet.getAccounts()]);
             currentState = 'FINISH';
         } catch (e) {
@@ -45,19 +42,6 @@ export const useWalletCreator = (): [state: string, createWallet: (params: Creat
         return currentState;
     }
 
-    const initCurrentAccount = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-        const currentAccountAddress = await accountService.loadCurrentAccountAddress();
-        const currentAccount = walletAccounts.find(account => account.getAddress() === currentAccountAddress);
-        if (currentAccount) {
-            await changeCurrentAccount(currentAccount.getAddress(), walletAccounts);
-            await accountService.saveCurrentAccountAddress(currentAccount.getAddress());
-        } else {
-            if (walletAccounts.length > 0) {
-                await changeCurrentAccount(walletAccounts[0].getAddress(), walletAccounts);
-                await accountService.saveCurrentAccountAddress(walletAccounts[0].getAddress());
-            }
-        }
-    }
 
     return [state, createWallet];
 }

@@ -14,7 +14,8 @@ export const useTransactionHistory = (): [
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
     const getHistory = async () => {
-        const address = await accountService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (transactionHistory.address === address) {
             return formatTransactionHistory(transactionHistory.items);
         }
@@ -42,7 +43,8 @@ export const useTransactionHistory = (): [
     }
 
     const updateNextTransactionHistory = async () => {
-        const address = await accountService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (address && !transactionHistory.isFinish) {
             if (address === transactionHistory.address) {
                 return await fetchTransactionHistory(transactionHistory.currentPage + 1);
@@ -52,7 +54,8 @@ export const useTransactionHistory = (): [
     }
 
     const fetchTransactionHistory = async (page: number) => {
-        const address = await accountService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (gnoClient && address) {
             const currentPage = page ?? 0;
             try {

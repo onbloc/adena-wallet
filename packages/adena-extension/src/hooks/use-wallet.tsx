@@ -16,8 +16,7 @@ export const useWallet = (): [
   state: string,
   loadWallet: () => void,
 ] => {
-  const [wallet] = useRecoilState(WalletState.wallet);
   const [state, loadWallet] = useWalletLoader();
 
-  return [wallet, state, loadWallet];
+  return [null, state, loadWallet];
 };
