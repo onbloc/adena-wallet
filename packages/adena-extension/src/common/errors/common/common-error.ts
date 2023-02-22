@@ -5,6 +5,10 @@ const ERROR_VALUE = {
 		status: 400,
 		type: "FAILED_TO_INITIALIZE_PROVIDER",
 	},
+	NOT_FOUND_NETWORKS: {
+		status: 400,
+		type: "NOT_FOUND_NETWORKS",
+	},
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;
