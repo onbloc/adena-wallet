@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import WarningBox from '@components/warning/warning-box';
 import SeedBox from '@components/seed-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
-
-const privateKey =
-  'a12093890asjfnlkf02394klajsdfklasnflkauv09askdlfjkdsfanlk34u09usafdfdasdfsdfa1211321213';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 export const ApproachPrivatePhrase = () => {
+  const navigate = useNavigate();
+  const [currentAccount] = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
+  const [privateKey, setPrivateKey] = useState("");
+
+  useEffect(() => {
+    const privateKey = currentAccount?.getPrivateKey();
+    if (privateKey) {
+      setPrivateKey("0x" + privateKey);
+    }
+  }, [currentAccount]);
+
   const doneButtonClick = () => {
-    // TODO
+    navigate(RoutePath.Setting);
   };
 
   return (

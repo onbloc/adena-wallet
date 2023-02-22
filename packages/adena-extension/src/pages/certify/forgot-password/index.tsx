@@ -5,6 +5,8 @@ import Text from '@components/text';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Forgot Password?',
@@ -12,6 +14,26 @@ const text = {
 };
 
 export const ForgotPassword = () => {
+
+  const navigate = useNavigate();
+
+  const onClickLearnMore = () => {
+    try {
+      const adenaDocsUrl = "https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet";
+      chrome.tabs.create({ url: adenaDocsUrl });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const onClickHaveNotSeedPhrase = () => {
+    navigate(RoutePath.ResetWallet);
+  };
+
+  const onClickNextButton = () => {
+    navigate(RoutePath.EnterSeedPhrase);
+  };
+
   return (
     <Wrapper>
       <img src={lockLogo} alt='lock image' />
@@ -21,12 +43,12 @@ export const ForgotPassword = () => {
       <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
         {text.desc}
       </Text>
-      <LearnMore onClick={() => {}}>Learn more</LearnMore>
-      <TextStyled>
+      <LearnMore onClick={onClickLearnMore}>Learn more</LearnMore>
+      <TextStyled onClick={onClickHaveNotSeedPhrase}>
         I don’t have my seed phrase
         <Icon name='iconArrowV2' />
       </TextStyled>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={() => {}}>
+      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onClickNextButton}>
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>

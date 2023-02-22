@@ -6,6 +6,12 @@ import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import SeedBox from '@components/seed-box';
+import { useAdenaContext } from '@hooks/use-context';
+import { WalletAccount } from 'adena-module';
+import { RoutePath } from '@router/path';
+import { useNavigate } from 'react-router-dom';
+import { useWalletAccounts } from '@hooks/use-wallet-accounts';
+import { useWallet } from '@hooks/use-wallet';
 
 const content = {
   title: 'Import Private Key',
@@ -14,9 +20,13 @@ const content = {
 };
 
 export const ImportPrivateKey = () => {
+  const navigate = useNavigate();
+  const { accountService } = useAdenaContext();
   const error = false;
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
+  const [wallet] = useWallet();
+  const { accounts, addAccount, initAccounts } = useWalletAccounts(wallet);
 
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
@@ -37,8 +47,11 @@ export const ImportPrivateKey = () => {
     }
   };
 
-  const nextButtonClick = () => {
-    // TODO
+  const nextButtonClick = async () => {
+    const privateKey = value.replace("0x", "");
+    const account = await WalletAccount.createByPrivateKeyHex(privateKey, "g");
+    await addAccount(account);
+    navigate(RoutePath.Wallet);
   };
 
   return (

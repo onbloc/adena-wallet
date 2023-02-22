@@ -14,7 +14,7 @@ export class WalletAccountService {
   }
 
   public saveCurrentAccountAddress = async (address: string) => {
-    await this.walletAccountRepository.updateCurrentAccountAddress(address);
+    return await this.walletAccountRepository.updateCurrentAccountAddress(address);
   };
 
   public loadCurrentAccountAddress = async () => {
@@ -40,6 +40,12 @@ export class WalletAccountService {
   public loadAccounts = async () => {
     const accounts = await this.walletAccountRepository.getAccounts();
     return accounts;
+  };
+
+  public insertAccount = async (account: InstanceType<typeof WalletAccount>) => {
+    const accounts = await this.walletAccountRepository.getAccounts();
+    await this.walletAccountRepository.updateAccounts([...accounts, account]);
+    return true;
   };
 
   /**

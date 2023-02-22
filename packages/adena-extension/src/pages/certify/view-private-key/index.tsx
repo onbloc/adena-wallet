@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 const text = {
   title: 'Export Private Key',
@@ -49,24 +50,26 @@ const KeyBox = styled.div`
 `;
 
 export const ViewPrivateKey = () => {
+  const [currentAccount] = useCurrentAccount();
   const navigate = useNavigate();
   const doneButtonClick = () => navigate(-1);
-  const location = useLocation();
-  const [privkey, setPrivkey] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
 
   useEffect(() => {
-    const state = location.state as string;
-    setPrivkey(state);
-  }, []);
+    const privateKey = currentAccount?.getPrivateKey();
+    if (privateKey) {
+      setPrivateKey(privateKey);
+    }
+  }, [currentAccount]);
 
   return (
     <Wrapper>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <CopyKeyBox>
         <KeyBox>
-          <p>{privkey && privkey}</p>
+          <p>{privateKey && privateKey}</p>
         </KeyBox>
-        <Copy copyStr={privkey} />
+        <Copy copyStr={privateKey} />
       </CopyKeyBox>
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>

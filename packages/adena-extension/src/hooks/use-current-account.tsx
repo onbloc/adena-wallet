@@ -71,10 +71,6 @@ export const useCurrentAccount = (): [
       currentAddress = currentAccounts[0].getAddress();
       await accountService.saveCurrentAccountAddress(currentAddress);
     }
-    // 
-
-    // const currentAddress = address ?? await walletService.loadCurrentAccountAddress();
-    // await walletService.saveCurrentAccountAddress(currentAddress);
 
     if (currentAccount?.getAddress() !== currentAddress) {
       setBalances([]);
@@ -82,10 +78,11 @@ export const useCurrentAccount = (): [
     const accountIndex = currentAccounts.findIndex(
       (account) => account.getAddress() === currentAddress,
     );
-    const changedCurrentAccount =
+    const account =
       accountIndex > 0 ?
         currentAccounts[accountIndex] :
         currentAccounts[0];
+    const changedCurrentAccount = account.clone();
 
     if (changedCurrentAccount.data.signerType === 'AMINO') {
       changedCurrentAccount.setSigner(wallet?.getSigner());

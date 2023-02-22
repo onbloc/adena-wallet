@@ -6,6 +6,7 @@ import theme from '@styles/theme';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
@@ -17,8 +18,10 @@ export const ResetWallet = () => {
     navigate(-1);
   };
 
-  const resetButtonClick = () => {
-    // TODO
+  const resetButtonClick = async () => {
+    await chrome.storage.local.clear();
+    await chrome.storage.session.clear();
+    navigate(RoutePath.Home);
   };
 
   return (

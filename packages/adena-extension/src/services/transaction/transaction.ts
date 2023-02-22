@@ -1,6 +1,6 @@
 import { WalletError } from '@common/errors';
 import { ChainRepository } from '@repositories/common';
-import { Transaction, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
+import { Secp256k1Wallet, Transaction, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletAccountService, WalletService } from '..';
 
@@ -62,7 +62,7 @@ export class TransactionService {
     const currentAccount = account.data.signerType === 'LEDGER' ?
       await this.createTransactionAccountByLedger(account) :
       await this.createTransactionAccount(account);
-    const chainId = await this.chainRepository.getCurrentChainId();
+    const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       currentAccount,
@@ -77,6 +77,7 @@ export class TransactionService {
       `${gasAmount.value}${gasAmount.denom}`,
     );
     const transactionSignature = await Transaction.generateSignature(currentAccount, document);
+    console.log(transactionSignature)
     const transaction = Transaction.builder()
       .fee(transactionFee)
       .messages([message])
@@ -97,8 +98,12 @@ export class TransactionService {
     const accountInfo = await this.gnoClient.getAccount(account.getAddress());
     const currentAccount = new WalletAccount(account.data);
     try {
-      const wallet = await this.walletService.loadWallet();
-      currentAccount.setSigner(wallet.getSigner());
+      if (currentAccount.data.accountType === "SEED") {
+        const wallet = await this.walletService.loadWallet();
+        currentAccount.setSigner(wallet.getSigner());
+      } else if (currentAccount.data.accountType === "PRIVATE_KEY") {
+        await currentAccount.initSignerByPrivateKey();
+      }
     } catch (e) {
       console.log(e);
     }
@@ -148,7 +153,7 @@ export class TransactionService {
     const currentAccount = account.data.signerType === 'LEDGER' ?
       await this.createTransactionAccountByLedger(account) :
       await this.createTransactionAccount(account);
-    const chainId = await this.chainRepository.getCurrentChainId();
+    const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       currentAccount,
@@ -189,7 +194,7 @@ export class TransactionService {
       accountNumber: accountInfo.accountNumber,
       sequence: accountInfo.sequence,
     });
-    const chainId = await this.chainRepository.getCurrentChainId();
+    const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       currentAccount,
@@ -258,7 +263,7 @@ export class TransactionService {
       accountNumber: accountInfo.accountNumber,
       sequence: accountInfo.sequence,
     });
-    const chainId = await this.chainRepository.getCurrentChainId();
+    const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const signedDocumnet = Transaction.generateDocument(
       currentAccount,

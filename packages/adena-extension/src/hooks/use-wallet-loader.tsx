@@ -1,8 +1,6 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
-import { WalletRepository } from '@repositories/wallet';
 import { useAdenaContext } from './use-context';
 
 /**
@@ -24,14 +22,9 @@ export const useWalletLoader = (): [
   const [, setWalletAccounts] = useRecoilState(WalletState.accounts);
 
   const validateWallet = async () => {
-    try {
-      const existWallet = await walletService.existsWallet();
-      if (existWallet) {
-        return true;
-      }
+    const existWallet = await walletService.existsWallet();
+    if (existWallet) {
       return true;
-    } catch (e) {
-      console.log(e);
     }
     setState('CREATE');
     return false;

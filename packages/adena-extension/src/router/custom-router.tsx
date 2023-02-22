@@ -44,7 +44,7 @@ import {
   ApproveConnectHardwareWalletInit,
   ApproveConnectHardwareWalletSelectAccount,
   ApproveHardwareWalletLedgerPassword,
-  ApproveHardwareWalletLedgerAllSet,
+  ApproveHardwareWalletLedgerAllSet
 } from '@pages/certify/approve-connect-hardware-wallet';
 import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 import { ApproveSign } from '@pages/wallet/approve-sign';

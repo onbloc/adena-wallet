@@ -5,6 +5,8 @@ import WarningBox from '@components/warning/warning-box';
 import SeedBox from '@components/seed-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const seeds = [
   'chimney',
@@ -24,9 +26,11 @@ const seeds = [
 const blurScreenText = 'Make sure no one is watching your screen';
 
 export const RevealPrivatePhrase = () => {
+  const navigate = useNavigate();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
+
   const doneButtonClick = () => {
-    // TODO
+    navigate(RoutePath.Setting);
   };
 
   return (

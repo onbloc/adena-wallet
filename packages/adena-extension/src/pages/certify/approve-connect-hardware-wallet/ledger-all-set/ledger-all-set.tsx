@@ -18,7 +18,7 @@ const Wrapper = styled.main`
   padding-top: 50px;
 `;
 
-export const LaunchAdena = () => {
+export const ApproveHardwareWalletLedgerAllSet = () => {
   const navigate = useNavigate();
   const handleNextButtonClick = () => navigate(RoutePath.Home);
 
