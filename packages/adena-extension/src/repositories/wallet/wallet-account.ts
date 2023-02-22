@@ -29,6 +29,11 @@ export class WalletAccountRepository {
     return true;
   };
 
+  public deleteCurrentAccountAddress = async () => {
+    await this.localStorage.remove('CURRENT_ACCOUNT_ADDRESS');
+    return true;
+  };
+
   public getAccounts = async () => {
     const serializedAccounts = await this.localStorage.getToObject('WALLET_ACCOUNTS');
     if (!Array.isArray(serializedAccounts)) {
@@ -49,6 +54,12 @@ export class WalletAccountRepository {
   public updateAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
     const serializedAccounts = walletAccounts.map(account => account.serialize());
     await this.localStorage.setByObject('WALLET_ACCOUNTS', serializedAccounts);
+    return true;
+  };
+
+  public deleteAccounts = async () => {
+    await this.localStorage.remove('WALLET_ACCOUNTS');
+    return true;
   };
 
   public getAccountPaths = async () => {
@@ -64,6 +75,11 @@ export class WalletAccountRepository {
     return true;
   };
 
+  public deleteAccountPaths = async () => {
+    await this.localStorage.remove('WALLET_ACCOUNT_PATHS');
+    return true;
+  };
+
   public getAccountNames = async () => {
     const accountNames = await this.localStorage.getToObject('WALLET_ACCOUNT_NAMES');
     return accountNames;
@@ -74,12 +90,17 @@ export class WalletAccountRepository {
     return true;
   };
 
-  public deleteAccounts = async () => {
-    await this.localStorage.remove('CURRENT_ACCOUNT_ADDRESS');
-    await this.localStorage.remove('WALLET_ACCOUNTS');
+  public deleteAccountNames = async () => {
     await this.localStorage.remove('WALLET_ACCOUNT_NAMES');
-    await this.localStorage.remove('WALLET_ACCOUNT_PATHS');
-    await this.localStorage.remove('CURRENT_CHAIN_ID');
-    await this.localStorage.remove('ESTABLISH_SITES');
-  }
+    return true;
+  };
+
+  // public deleteAccounts = async () => {
+  //   await this.localStorage.remove('CURRENT_ACCOUNT_ADDRESS');
+  //   await this.localStorage.remove('WALLET_ACCOUNTS');
+  //   await this.localStorage.remove('WALLET_ACCOUNT_NAMES');
+  //   await this.localStorage.remove('WALLET_ACCOUNT_PATHS');
+  //   await this.localStorage.remove('CURRENT_CHAIN_ID');
+  //   await this.localStorage.remove('ESTABLISH_SITES');
+  // }
 }

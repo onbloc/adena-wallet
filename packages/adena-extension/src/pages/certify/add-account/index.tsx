@@ -13,12 +13,12 @@ import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
+import { useAddAccount } from '@hooks/use-add-account';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
   const [wallet, walletState] = useWallet();
-  const { accounts, addAccount, initAccounts } = useWalletAccounts(wallet);
-  const [increaseAccount] = useWalletAccountPathController();
+  const { addAccount } = useAddAccount();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [currentState, setCurrentState] = useState('INIT');
 
@@ -26,7 +26,7 @@ export const AddAccount = () => {
     switch (currentState) {
       case 'LOADING':
         if (walletState === 'FINISH') {
-          updateCurrentAccount();
+          navigate(RoutePath.Home);
         }
         break;
       case 'FINISH':
@@ -49,8 +49,8 @@ export const AddAccount = () => {
 
   const onClickCreateAccount = async () => {
     await setCurrentState('INCREASE');
-    await increaseAccount();
-    await setCurrentState('LOADING');
+    await addAccount();
+    await setCurrentState('FINISH');
   };
 
   const existsPopups = async () => {
@@ -75,14 +75,6 @@ export const AddAccount = () => {
 
     window.close();
     chrome.windows.create(popupOption);
-  };
-
-  const updateCurrentAccount = async () => {
-    if (accounts) {
-      const address = accounts[accounts.length - 1].getAddress();
-      await initAccounts();
-      await changeCurrentAccount(address);
-    }
   };
 
   const onClickImportPrivateKey = () => {

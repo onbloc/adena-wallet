@@ -17,7 +17,6 @@ import { useWallet } from '@hooks/use-wallet';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
-import { WalletRepository } from '@repositories/wallet';
 import { useAdenaContext } from '@hooks/use-context';
 import { WalletAccount } from 'adena-module';
 
@@ -30,7 +29,7 @@ interface SubMenuProps {
 
 interface UserListProps {
   accounts: Array<InstanceType<typeof WalletAccount>>;
-  changeAccountHandler: (addr: string) => void;
+  changeAccountHandler: (currentAccount: InstanceType<typeof WalletAccount>) => void;
   currentAccount: InstanceType<typeof WalletAccount>;
 }
 
@@ -51,7 +50,7 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
 const UserListMaker = ({ accounts, changeAccountHandler, currentAccount }: UserListProps) => (
   <>
     {accounts.map((v, i) => (
-      <ListItem key={i} onClick={() => changeAccountHandler(v.data.address)}>
+      <ListItem key={i} onClick={() => changeAccountHandler(v)}>
         <Text type='body2Reg' display='inline-flex'>
           {formatNickname(v.data.name, 10)}
           <FromBadge from={'Google'} />
@@ -100,8 +99,8 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const helpSupportButtonClick = () =>
     window.open('https://docs.adena.app/resources/faq', '_blank');
 
-  const changeAccountHandler = async (addr: string) => {
-    await changeCurrentAccount(addr);
+  const changeAccountHandler = async (currentAccount: InstanceType<typeof WalletAccount>) => {
+    changeCurrentAccount(currentAccount);
     setOpen(false);
     navigate(RoutePath.Wallet);
   };

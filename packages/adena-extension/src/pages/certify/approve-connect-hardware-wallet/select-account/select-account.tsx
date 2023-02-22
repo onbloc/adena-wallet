@@ -207,7 +207,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   }, [location]);
 
   const initAccounts = async (accounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const storedAccounts = await accountService.loadAccounts();
+    const storedAccounts = await accountService.getAccounts();
     setStoredAccounts(storedAccounts);
     setAccounts(accounts);
     const lastPath = accounts.map((account) => account.data.path).reverse()[0];
@@ -246,7 +246,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const onClickNextButton = async () => {
     const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress()));
-    const storedAccounts = await accountService.loadAccounts();
+    const storedAccounts = await accountService.getAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
 
     selectAccounts.forEach((account) => {
@@ -258,9 +258,9 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       }
     });
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
-    await accountService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
+    await accountService.updateAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
-      await accountService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
+      await accountService.changeCurrentAccount(resultSavedAccounts[0]);
     }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };

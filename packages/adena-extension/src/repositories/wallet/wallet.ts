@@ -32,6 +32,18 @@ export class WalletRepository {
     return true;
   };
 
+  public deleteSerializedWallet = async () => {
+    await this.localStorage.remove("SERIALIZED");
+    return true;
+  };
+
+  public existsWalletPassword = async () => {
+    const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
+    const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
+
+    return Boolean(encryptedKey) && Boolean(encryptedPassword);
+  };
+
   public getWalletPassword = async () => {
     const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
     const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
@@ -54,16 +66,9 @@ export class WalletRepository {
     return true;
   };
 
-  public removePassword = async () => {
+  public deleteWalletPassword = async () => {
     await this.sessionStorage.remove('ENCRYPTED_KEY');
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
     return true;
-  };
-
-  public existsWalletPassword = async () => {
-    const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
-    const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
-
-    return Boolean(encryptedKey) && Boolean(encryptedPassword);
   };
 }

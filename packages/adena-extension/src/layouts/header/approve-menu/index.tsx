@@ -33,7 +33,7 @@ const ApproveMenu = () => {
     if (location.search) {
       const data = parseParmeters(location.search);
       setReqeustData(data);
-      changeCurrentAccount();
+      // changeCurrentAccount();
     }
   }, [location]);
 
@@ -55,16 +55,16 @@ const ApproveMenu = () => {
   }, [currentAccount?.getAddress()]);
 
   const initAddress = async () => {
-    const currentAddress = await accountService.loadCurrentAccountAddress();
-    const currentAccountNames = await accountService.loadAccountNames();
-    const currentAccountName = currentAccountNames[currentAddress] ?? 'Account';
+    const currentAccount = await accountService.getCurrentAccount();
+    const currentAddress = currentAccount.getAddress();
+    const currentAccountName = currentAccount.data.name;
     setAddress(currentAddress);
     setAccountName(currentAccountName);
   };
 
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
-      const address = await accountService.loadCurrentAccountAddress();
+      const address = currentAccount?.getAddress() ?? "";
       const currentIsEstablished = await establishService.isEstablished(requestData?.hostname, address);
       setIsEstablished(currentIsEstablished);
     }

@@ -24,13 +24,15 @@ export const ConnectedApps = () => {
   }, []);
 
   const onClickDisconnect = async (item: any) => {
-    const address = await accountService.loadCurrentAccountAddress();
+    const currentAccount = await accountService.getCurrentAccount();
+    const address = currentAccount.getAddress();
     await establishService.unestablish(item.hostname, address);
     await updateDatas();
   };
 
   const updateDatas = async () => {
-    const address = await accountService.loadCurrentAccountAddress();
+    const currentAccount = await accountService.getCurrentAccount();
+    const address = currentAccount.getAddress();
     const establishedSites = await establishService.getCurrentEstablisedSites(address);
     setDatas(establishedSites);
   };

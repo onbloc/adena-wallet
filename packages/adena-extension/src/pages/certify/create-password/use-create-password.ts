@@ -3,13 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWalletCreator } from '@hooks/use-wallet-creator';
 import { PasswordValidationError } from '@common/errors';
-import { useResetRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 
 export const useCreatePassword = () => {
-  const { accountService } = useAdenaContext();
+  const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -20,10 +18,9 @@ export const useCreatePassword = () => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [seeds, SetSeeds] = useState('');
+  const [seeds, setSeeds] = useState('');
   const [, createWallet] = useWalletCreator();
   const [errorMessage, setErrorMessage] = useState('');
-  const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -97,10 +94,13 @@ export const useCreatePassword = () => {
 
     try {
       if (isValidPassword && isValidConfirmPassword) {
-        clearCurrentAccount();
-        await accountService.clearWalletAccountData();
-        const walletState = await createWallet({ mnemonic: seeds, password: pwd });
-        return walletState;
+        await accountService.clear();
+
+        const createdWallet = await walletService.createWallet({ mnemonic: seeds, password: pwd });
+        await createdWallet.initAccounts();
+        const accounts = createdWallet.getAccounts();
+        await accountService.updateAccounts(accounts);
+        return 'FINISH';
       }
     } catch (error) {
       console.error(error);
@@ -137,7 +137,7 @@ export const useCreatePassword = () => {
       onClick: nextButtonClick,
       disabled: terms && pwd && confirmPwd ? false : true,
     },
-    setSeeds: SetSeeds,
+    setSeeds,
     onKeyDown,
   };
 };

@@ -2,7 +2,8 @@ import { AdenaStorage } from '@common/storage';
 import { encodeParameter } from '@common/utils/client-utils';
 import { ChainRepository } from '@repositories/common';
 import { WalletAccountRepository, WalletEstablishRepository } from '@repositories/wallet';
-import { WalletEstablishService } from '@services/index';
+import { ChainService, WalletEstablishService } from '@services/index';
+import axios from 'axios';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
 export const createPopup = async (
@@ -64,10 +65,12 @@ export const checkEstablished = async (
   sendResponse: (response: any) => void,
 ) => {
   const localStorage = AdenaStorage.local();
+  const axiosInstance = axios.create();
   const accountRepository = new WalletAccountRepository(localStorage);
   const establishRepository = new WalletEstablishRepository(localStorage);
-  const chainRepository = new ChainRepository(localStorage);
-  const establishService = new WalletEstablishService(establishRepository, chainRepository);
+  const chainRepository = new ChainRepository(localStorage, axiosInstance);
+  const chainService = new ChainService(chainRepository);
+  const establishService = new WalletEstablishService(establishRepository, chainService);
   const address = await accountRepository.getCurrentAccountAddress();
   const isEstablished = await establishService.isEstablished(requestData.hostname ?? '', address);
   if (!isEstablished) {

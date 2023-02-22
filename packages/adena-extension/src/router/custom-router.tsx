@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import { RoutePath } from './path';
 import { Header } from '@layouts/header';
@@ -58,8 +58,15 @@ import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
 import { ErrorContainer } from '@layouts/error-container';
 import { Background } from '@components/background';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export const CustomRouter = () => {
+  const { loadAccounts } = useLoadAccounts();
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
   return (
     <Router>
       <Background>

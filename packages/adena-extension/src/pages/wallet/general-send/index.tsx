@@ -12,11 +12,13 @@ import Icon from '@components/icons';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import theme from '@styles/theme';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 export const GeneralSend = () => {
   const { addressState, amountState, buttonState, textAreaRef, onKeyDown, accountsList } =
     useGeneralSend();
-  const [balances] = useWalletBalances();
+  const [gnoClient] = useGnoClient();
+  const [balances] = useWalletBalances(gnoClient);
 
   const existsAddressBookItems = () => {
     if (accountsList && accountsList.length > 0) {
@@ -194,10 +196,10 @@ const TextFieldWrap = styled.div<{ error: boolean; isOpen: boolean }>`
   border-bottom-right-radius: ${({ isOpen }) => (isOpen ? '0px' : '30px')};
   border: 1px solid
     ${({ isOpen, error, theme }) => {
-      if (isOpen) return theme.color.neutral[6];
-      if (error) return theme.color.red[2];
-      return theme.color.neutral[6];
-    }};
+    if (isOpen) return theme.color.neutral[6];
+    if (error) return theme.color.red[2];
+    return theme.color.neutral[6];
+  }};
   background-color: ${({ theme }) => theme.color.neutral[8]};
   padding: 0 16px;
   min-height: 48px;

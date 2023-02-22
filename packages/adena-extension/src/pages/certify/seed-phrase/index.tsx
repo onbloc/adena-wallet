@@ -43,7 +43,7 @@ export const SeedPhrase = () => {
   }, [password])
 
   const nextButtonClick = async () => {
-    await accountService.clearWalletAccountData();
+    await accountService.clear();
     const storedPassword = await walletService.loadWalletPassword();
     try {
       if (validateInvalidPassword(password, storedPassword)) {

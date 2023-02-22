@@ -15,6 +15,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -23,53 +24,31 @@ const Wrapper = styled.main`
 
 export const WalletMain = () => {
   const navigate = useNavigate();
-  const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
-  const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
-  const [wallet, state] = useWallet();
+
   const [gnoClient] = useGnoClient();
-  const { initAccounts } = useWalletAccounts(wallet);
-  const [balances, updateBalances] = useWalletBalances();
+  const [balances, updateBalances] = useWalletBalances(gnoClient);
   const [currentAccount] = useCurrentAccount();
   const [currentBalance, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
 
-  const currentAccountAddress = currentAccount?.getAddress();
-  const finishedWalletLoading = gnoClient && state === 'FINISH';
+  const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
+  const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
+
   const finishedBalanceLoading = balances && balances.length > 0;
 
   useEffect(() => {
-    if (finishedWalletLoading) {
-      updateAccounts();
+    if (currentAccount && gnoClient) {
+      updateBalances(currentAccount.getAddress());
+      updateLastHistory();
     }
-  }, [state, gnoClient]);
-
-  useEffect(() => {
-    if (currentAccountAddress) {
-      updateCurrentAccount();
-    }
-  }, [currentAccountAddress])
+  }, [gnoClient, currentAccount]);
 
   useEffect(() => {
     updateCurrentBalance();
   }, [balances]);
 
-  const updateAccounts = () => {
-    initAccounts();
-  };
-
-  const updateCurrentAccount = () => {
-    updateBalances();
-    updateLastHistory();
-  };
-
   const updateCurrentBalance = () => {
-    if (!finishedBalanceLoading) {
-      return;
-    }
-    if (balances[0]?.amountDenom.toUpperCase() !== balances[0]?.denom.toUpperCase()) {
-      return;
-    }
     setCurrentBalance({
       amount: balances[0]?.amount,
       denom: balances[0]?.amountDenom.toUpperCase()
@@ -83,7 +62,7 @@ export const WalletMain = () => {
     return `${maxFractionDigits(currentBalance.amount.toString(), 6)}\n${currentBalance.denom}`
   };
 
-  return (finishedWalletLoading && finishedBalanceLoading) ?
+  return finishedBalanceLoading ?
     (
       <Wrapper>
         <Text type='header2' textAlign='center'>

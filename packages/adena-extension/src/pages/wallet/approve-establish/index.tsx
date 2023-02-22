@@ -9,9 +9,11 @@ import { createFaviconByHostname, decodeParameter, parseParmeters } from '@commo
 import { InjectionMessageInstance } from '@inject/message';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 export const ApproveEstablish = () => {
-  const { accountService, establishService } = useAdenaContext();
+  const { establishService } = useAdenaContext();
+  const [currentAccount] = useCurrentAccount();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
@@ -44,7 +46,7 @@ export const ApproveEstablish = () => {
   }
 
   const checkEstablised = async () => {
-    const address = await accountService.loadCurrentAccountAddress();
+    const address = currentAccount?.getAddress() ?? "";
     const isEstablised = await establishService.isEstablished(hostname ?? '', address);
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
@@ -62,7 +64,7 @@ export const ApproveEstablish = () => {
   }
 
   const onClickConfirmButton = async () => {
-    const address = await accountService.loadCurrentAccountAddress();
+    const address = currentAccount?.getAddress() ?? "";
     await establishService.establish(hostname, address, appName, favicon);
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   }

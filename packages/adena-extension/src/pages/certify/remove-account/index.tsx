@@ -6,19 +6,27 @@ import theme from '@styles/theme';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
+import { useRemoveAccount } from '@hooks/use-remove-account';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { RoutePath } from '@router/path';
 
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = () => {
   const navigate = useNavigate();
+  const [currentAccount] = useCurrentAccount();
+  const { removeAccount } = useRemoveAccount();
 
   const cancelButtonClick = () => {
     navigate(-1);
   };
 
-  const removeButtonClick = () => {
-    // TODO
+  const removeButtonClick = async () => {
+    if (currentAccount) {
+      await removeAccount(currentAccount);
+    }
+    navigate(RoutePath.Home);
   };
 
   return (

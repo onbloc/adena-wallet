@@ -56,8 +56,8 @@ export const ApproveSign = () => {
   }, [gnoClient, currentAccount, requestData]);
 
   const initCurrentAccount = async () => {
-    const currentAccountAddress = await accountService.loadCurrentAccountAddress();
-    changeCurrentAccount(currentAccountAddress);
+    const currentAccount = await accountService.getCurrentAccount();
+    changeCurrentAccount(currentAccount);
   }
 
   const initFavicon = async () => {

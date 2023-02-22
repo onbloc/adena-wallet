@@ -10,6 +10,7 @@ import DefaultInput from '@components/default-input';
 import { maxFractionDigits, searchTextFilter } from '@common/utils/client-utils';
 import ListBox from '@components/list-box';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -69,7 +70,8 @@ export const WalletSearch = () => {
       : navigate(RoutePath.Deposit, { state: 'wallet' });
   };
 
-  const [balances] = useWalletBalances();
+  const [gnoClient] = useGnoClient();
+  const [balances] = useWalletBalances(gnoClient);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');

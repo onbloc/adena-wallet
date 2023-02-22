@@ -1,6 +1,6 @@
 import { WalletError } from '@common/errors';
 import { RoutePath } from '@router/path';
-import { WalletEstablishService, WalletService } from '@services/index';
+import { ChainService, WalletEstablishService, WalletService } from '@services/index';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
 import { WalletAccountRepository, WalletEstablishRepository, WalletRepository } from '@repositories/wallet';
@@ -8,6 +8,7 @@ import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { ChainRepository } from '@repositories/common';
 import { AdenaStorage } from '@common/storage';
+import axios from 'axios';
 
 export const getAccount = async (
   requestData: InjectionMessage,
@@ -52,13 +53,15 @@ export const addEstablish = async (
   message: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
+  const axiosInstanse = axios.create();
   const localStorage = AdenaStorage.local();
   const sessionStorage = AdenaStorage.session();
   const walletRepository = new WalletRepository(localStorage, sessionStorage);
   const accountRepository = new WalletAccountRepository(localStorage);
   const establishRepository = new WalletEstablishRepository(localStorage);
-  const chainRepository = new ChainRepository(localStorage);
-  const establishService = new WalletEstablishService(establishRepository, chainRepository);
+  const chainRepository = new ChainRepository(localStorage, axiosInstanse);
+  const chainService = new ChainService(chainRepository);
+  const establishService = new WalletEstablishService(establishRepository, chainService);
 
   const isLocked = await walletRepository.existsWalletPassword();
   const address = await accountRepository.getCurrentAccountAddress();
@@ -79,8 +82,9 @@ export const addEstablish = async (
 };
 
 export const loadGnoClient = async () => {
+  const axiosInstanse = axios.create();
   const localStorage = AdenaStorage.local();
-  const chainRepository = new ChainRepository(localStorage);
+  const chainRepository = new ChainRepository(localStorage, axiosInstanse);
 
   const storedChainId = await chainRepository.getCurrentChainId();
   const currentChainId = storedChainId !== '' ? storedChainId : 'test3';

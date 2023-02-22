@@ -41,9 +41,6 @@ export const CreatePassword = () => {
   useEffect(() => {
     const state = location.state as LocationSeeds;
     setSeeds(state.seeds);
-    if (!buttonState.disabled === false) {
-      //navigate(RoutePath.LaunchAdena);
-    }
   }, [buttonState]);
 
   return (

@@ -8,6 +8,7 @@ import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import BigNumber from 'bignumber.js';
 import { useAdenaContext } from '@hooks/use-context';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 const specialPatternCheck = /\W|\s/g;
 const fee = 0.000001;
@@ -16,7 +17,8 @@ export const useGeneralSend = () => {
   const { addressBookService } = useAdenaContext();
   const location = useLocation();
   const navigate = useNavigate();
-  const [balances] = useWalletBalances();
+  const [gnoClient] = useGnoClient();
+  const [balances] = useWalletBalances(gnoClient);
   const [wallet] = useWallet();
   const { accounts } = useWalletAccounts(wallet);
   const [currentAccount] = useCurrentAccount();

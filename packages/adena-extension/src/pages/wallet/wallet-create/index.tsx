@@ -5,73 +5,26 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import LoadingWallet from '@components/loading-screen/loading-wallet';
-import { useWallet } from '@hooks/use-wallet';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoClient } from '@hooks/use-gno-client';
-import { CommonState } from '@states/index';
-import { useRecoilState } from 'recoil';
 import GoogleSigninButton from '@components/buttons/google-signin-button';
 import theme from '@styles/theme';
 import DubbleButton from '@components/buttons/double-button';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export const WalletCreate = () => {
   const navigate = useNavigate();
-  const handleCreateButtonClick = () => navigate(RoutePath.YourSeedPhrase);
-  const handleRestoreButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
 
-  const [wallet, state, loadWallet] = useWallet();
-  const [gnoClient, , updateNetworks] = useGnoClient();
-  const { accounts, initAccounts } = useWalletAccounts(wallet);
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [balances, updateBalances] = useWalletBalances();
-  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
-
-  const finishedGnoClientLoading = Boolean(gnoClient?.chainId);
-  const finishedAccountsLoading = Boolean(accounts?.length);
-  const finishedCurrentAccountLoading = Boolean(currentAccount?.getAddress());
-  const finishedBalancesLoading = balances.length > 0;
-  const finishedWalletLoading = state === 'CREATE';
+  const { state, loadAccounts } = useLoadAccounts();
 
   useEffect(() => {
-    if (!finishedGnoClientLoading) {
-      updateNetworks();
-    }
-  }, [gnoClient]);
-
-  useEffect(() => {
-    if (finishedAccountsLoading) {
-      changeCurrentAccount();
-    }
-  }, [finishedAccountsLoading]);
-
-  useEffect(() => {
-    if (finishedCurrentAccountLoading && finishedGnoClientLoading) {
-      updateBalances();
-    }
-  }, [finishedGnoClientLoading, finishedCurrentAccountLoading]);
-
-  useEffect(() => {
-    if (finishedBalancesLoading) {
-      navigate(RoutePath.Wallet);
-    }
-  }, [finishedBalancesLoading]);
-
-  useEffect(() => {
-    if (failedNetwork) {
-      navigate(RoutePath.Wallet);
-    }
-  }, [failedNetwork]);
+    loadAccounts();
+  }, []);
 
   useEffect(() => {
     switch (state) {
       case 'NONE':
-        loadWallet();
         break;
       case 'FINISH':
-        initAccounts();
+        navigate(RoutePath.Wallet);
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);
@@ -80,6 +33,14 @@ export const WalletCreate = () => {
         break;
     }
   }, [state]);
+
+  const onCreateButtonClick = () => {
+    navigate(RoutePath.YourSeedPhrase)
+  };
+
+  const onRestoreButtonClick = () => {
+    navigate(RoutePath.EnterSeedPhrase)
+  };
 
   const importWalletHandler = () => {
     // TODO
@@ -90,12 +51,12 @@ export const WalletCreate = () => {
     // TODO
   };
 
-  return finishedWalletLoading ? (
+  return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <GoogleSigninButton onClick={() => {}} margin='auto auto 3px' />
+      <GoogleSigninButton onClick={() => { }} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={handleCreateButtonClick}>
+      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
       </Button>
       <DubbleButton
@@ -113,13 +74,11 @@ export const WalletCreate = () => {
           bgColor: theme.color.neutral[6],
         }}
       />
-      {/* <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={handleRestoreButtonClick}>
+      {/* <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={onRestoreButtonClick}>
           <Text type='body1Bold'>Restore Wallet</Text>
         </Button> */}
     </Wrapper>
-  ) : (
-    <LoadingWallet />
-  );
+  )
 };
 
 const ButtonWrap = styled.div`

@@ -35,13 +35,13 @@ export const ApproveTransactionMain = () => {
     if (!gnoClient) {
       updateGnoClient();
     }
-  }, [gnoClient])
+  }, [gnoClient]);
 
   useEffect(() => {
     if (location.state?.requestData) {
       setReqeustData(location.state?.requestData);
     }
-  }, [location])
+  }, [location]);
 
   useEffect(() => {
     if (gnoClient && currentAccount && requestData) {
@@ -53,8 +53,8 @@ export const ApproveTransactionMain = () => {
   }, [gnoClient, currentAccount, requestData]);
 
   const initCurrentAccount = async () => {
-    const currentAccountAddress = await accountService.loadCurrentAccountAddress();
-    changeCurrentAccount(currentAccountAddress);
+    const currentAccount = await accountService.getCurrentAccount();
+    changeCurrentAccount(currentAccount);
   }
 
   const initFavicon = async () => {

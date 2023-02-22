@@ -76,8 +76,8 @@ export const TokenDetails = () => {
   const SendButtonClick = () => navigate(RoutePath.GeneralSend, { state: 'token' });
   const historyItemClick = (item: any) => navigate(RoutePath.TransactionDetail, { state: item });
   const [currentAccount] = useCurrentAccount();
-  const [balances] = useWalletBalances(true);
   const [gnoClient] = useGnoClient();
+  const [balances, updateBalances] = useWalletBalances(gnoClient);
 
   const [balance, setBalance] = useState('');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();

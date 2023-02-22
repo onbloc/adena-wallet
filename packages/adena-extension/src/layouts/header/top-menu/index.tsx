@@ -58,7 +58,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
-      const address = await accountService.loadCurrentAccountAddress();
+      const address = currentAccount?.getAddress() ?? "";
       establishService.isEstablished(hostname, address).then((result) => {
         setIsEstablish(result);
         setHostname(hostname);
@@ -67,12 +67,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   }, [wallet, location]);
 
   const initAccountInfo = async () => {
-    const address = await accountService.loadCurrentAccountAddress();
+    const address = currentAccount?.getAddress() ?? "";
     setCurrentAccountAddress(address);
 
     let currentAccountName = currentAccount?.data.name;
     if (!currentAccountName) {
-      const accounts = await accountService.loadAccounts();
+      const accounts = await accountService.getAccounts();
       const walletAccount = accounts.find(account => account.getAddress() === currentAccountAddress);
       currentAccountName = walletAccount?.data.name ?? '';
     }

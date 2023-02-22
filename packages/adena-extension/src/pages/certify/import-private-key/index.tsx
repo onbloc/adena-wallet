@@ -12,6 +12,8 @@ import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { useWallet } from '@hooks/use-wallet';
+import { useAddAccount } from '@hooks/use-add-account';
+import { useImportAccount } from '@hooks/use-import-account';
 
 const content = {
   title: 'Import Private Key',
@@ -25,8 +27,7 @@ export const ImportPrivateKey = () => {
   const error = false;
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
-  const [wallet] = useWallet();
-  const { accounts, addAccount, initAccounts } = useWalletAccounts(wallet);
+  const { importAccount } = useImportAccount();
 
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
@@ -50,7 +51,7 @@ export const ImportPrivateKey = () => {
   const nextButtonClick = async () => {
     const privateKey = value.replace("0x", "");
     const account = await WalletAccount.createByPrivateKeyHex(privateKey, "g");
-    await addAccount(account);
+    await importAccount(account);
     navigate(RoutePath.Wallet);
   };
 
