@@ -1,4 +1,4 @@
-import { AccountData, Secp256k1HdWallet } from '@/amino';
+import { AccountData, OfflineAminoSigner, Secp256k1HdWallet, Secp256k1Wallet } from '@/amino';
 import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
 import { HdPath } from '@/crypto';
 import { WalletAccountConfig } from '.';
@@ -19,10 +19,17 @@ interface AccountHistory {
   fee: string;
 }
 
+export type SingerType = 'AMINO' | 'LEDGER';
+
+export type AccountType = 'GOOGLE' | 'LEDGER' | 'PRIVATE_KEY' | 'SEED' | 'NONE';
+
+export type AccountStatusType = 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
+
 interface WalletAccountArguments {
   index?: number;
-  signerType?: 'AMINO' | 'LEDGER';
-  status?: 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
+  accountType: AccountType;
+  signerType?: SingerType;
+  status?: AccountStatusType;
   name?: string;
   accountNumber?: string;
   sequence?: string;
@@ -40,11 +47,13 @@ interface WalletAccountArguments {
 export class WalletAccount {
   private index: number;
 
-  private signerType: 'AMINO' | 'LEDGER';
+  private accountType: AccountType;
 
-  private signer: Secp256k1HdWallet | LedgerSigner | undefined;
+  private signerType: SingerType;
 
-  private status: 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
+  private signer: OfflineAminoSigner | LedgerSigner | undefined;
+
+  private status: AccountStatusType;
 
   private name: string;
 
@@ -78,6 +87,8 @@ export class WalletAccount {
     this.balance = args.balance ?? '';
     this.histories = args.histories ? [...args.histories] : [];
     this.path = args.path ?? -1;
+    this.accountType = args.accountType ?? "NONE";
+    this.privateKey = args.privateKey;
   }
 
   public get data() {
@@ -94,12 +105,13 @@ export class WalletAccount {
       cryptoAlgorithm: this.cryptoAlgorithm,
       balance: this.balance,
       histories: [...this.histories],
-      path: this.path
+      path: this.path,
+      accountType: this.accountType
     };
   }
 
   public clone = () => {
-    const account = new WalletAccount(this.data);
+    const account = new WalletAccount({ ...this.data });
     try {
       account.setSigner(this.getSigner());
     } catch (e) { }
@@ -122,9 +134,9 @@ export class WalletAccount {
     return this.address;
   };
 
-  public getSigner = (): Secp256k1HdWallet | LedgerSigner => {
+  public getSigner = (): OfflineAminoSigner | LedgerSigner => {
     if (!this.signer) {
-      throw Error();
+      throw new Error("Not found signer.");
     }
     return this.signer;
   };
@@ -138,12 +150,23 @@ export class WalletAccount {
     this.name = name;
   };
 
-  public setSigner = (signer: Secp256k1HdWallet | LedgerSigner) => {
+  public setSigner = (signer: OfflineAminoSigner | LedgerSigner) => {
     this.signer = signer;
   };
 
   public setPath = (path: HdPath) => {
     this.path = path[-1].toNumber();
+  };
+
+  public setPrivateKey = (privateKey: Uint8Array) => {
+    this.privateKey = WalletAccount.arrayToHex(privateKey);
+  };
+
+  public getPrivateKey = () => {
+    if (this.privateKey) {
+      return this.privateKey;
+    }
+    return null;
   };
 
   public updateByGno = (accountInfo: {
@@ -161,14 +184,27 @@ export class WalletAccount {
     this.sequence = accountInfo.sequence ?? this.sequence;
   };
 
-  public static createByAminoAccount = (accountData: AccountData) => {
+  public initSignerByPrivateKey = async () => {
+    if (this.signerType !== "AMINO") {
+      return;
+    }
+    if (!this.privateKey) {
+      return;
+    }
+    const decodePrivateKey = WalletAccount.hexToArray(this.privateKey);
+    const signer = await Secp256k1Wallet.fromKey(decodePrivateKey, 'g');
+    this.signer = signer;
+  };
+
+  public static createByAminoAccount = (accountData: AccountData, accountType?: AccountType) => {
     const { address, algo, pubkey, hdPath } = accountData;
     const path = hdPath?.at(-1)?.toNumber() ?? -1;
     return new WalletAccount({
       address,
       cryptoAlgorithm: algo,
       publicKey: pubkey,
-      path
+      path,
+      accountType: accountType ?? "SEED"
     });
   };
 
@@ -190,8 +226,30 @@ export class WalletAccount {
       status: 'ACTIVE',
       name: name ?? 'Ledger',
       config,
-      path
+      path,
+      accountType: "LEDGER"
     });
+  };
+
+  public static async createByPrivateKeyHex(privateKeyHex: string, prefix: string, name?: string) {
+    const privateKey = this.hexToArray(privateKeyHex);
+    const wallet = await Secp256k1Wallet.fromKey(privateKey, prefix);
+    const accounts = await wallet.getAccounts();
+    if (accounts.length === 0) {
+      throw new Error('Not found accounts');
+    }
+
+    const account = WalletAccount.createByAminoAccount(accounts[0], "PRIVATE_KEY");
+    account.setSigner(wallet);
+    account.setName(name ?? 'Account');
+    account.setPrivateKey(privateKey);
+    return account;
+  };
+
+  public static async createByPrivateKey(privateKey: Uint8Array, prefix: string, name?: string) {
+    const privateKeyHex = this.arrayToHex(privateKey);
+    const account = await this.createByPrivateKeyHex(privateKeyHex, prefix, name);;
+    return account;
   };
 
   public static deserialize(serialized: string) {
@@ -204,5 +262,13 @@ export class WalletAccount {
       console.error(e);
     }
     throw new Error('Wallet Account deserialze error');
+  }
+
+  private static arrayToHex(data: Uint8Array) {
+    return Buffer.from(data).toString("hex");
+  }
+
+  private static hexToArray(hex: string) {
+    return Uint8Array.from(Buffer.from(hex, 'hex'))
   }
 }

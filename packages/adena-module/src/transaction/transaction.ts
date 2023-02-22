@@ -112,7 +112,6 @@ export class Transaction {
     }
     const signedResult = await signer.signAmino(account.getAddress(), documnet);
     const { pub_key, signature } = signedResult.signature;
-
     return {
       pubKey: {
         typeUrl: '/tm.PubKeySecp256k1', //pub_key.type,

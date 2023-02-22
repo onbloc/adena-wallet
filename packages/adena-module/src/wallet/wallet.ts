@@ -30,14 +30,22 @@ export class Wallet {
   public initAccounts = async (names: { [key in string]: string } = {}, config?: ChainConfig) => {
     const accounts = await this.aminoSigner.getAccounts();
     const walletAccounts = this.aminoSigner instanceof Secp256k1HdWallet ?
-      accounts.map(WalletAccount.createByAminoAccount) :
-      accounts.map(WalletAccount.createByLedgerAddress);
-    walletAccounts.map((walletAccount, index) => {
+      accounts.map(account => WalletAccount.createByAminoAccount(account, "SEED")) :
+      accounts.map(account => WalletAccount.createByLedgerAddress(account));
+
+    let index = 0;
+    for (const walletAccount of walletAccounts) {
+      const accountAddress = walletAccount.getAddress();
+      const privateKey = await this.getPrivateKey(accountAddress);
+      walletAccount.setPrivateKey(privateKey);
       walletAccount.setIndex(index + 1);
       walletAccount.setSigner(this.aminoSigner);
-      walletAccount.data.address in names &&
-        walletAccount.setName(names[walletAccount.data.address]);
-    });
+      walletAccount.setName(`Account ${walletAccount.data.index}`);
+      if (walletAccount.data.address in names) {
+        walletAccount.setName(names[accountAddress]);
+      }
+      index += 1;
+    }
 
     this.walletAccounts = [...walletAccounts];
   };
