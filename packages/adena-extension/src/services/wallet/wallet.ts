@@ -13,9 +13,11 @@ export class WalletService {
     this.walletAccountRepository = walletAccountRepository;
   }
 
-  public existsWallet = async () => {
+  public existsWallet = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    return this.walletRepository.getSerializedWallet().then(_ => true).catch(_ => false);
+    return this.walletRepository.getSerializedWallet()
+      .then(_ => true)
+      .catch(_ => false);
   };
 
   /**
@@ -38,6 +40,12 @@ export class WalletService {
    * @returns Wallet
    */
   public loadWallet = async () => {
+    const isExists = await this.existsWallet();
+    if (!isExists) {
+      throw new WalletError("NOT_FOUND_SERIALIZED");
+    }
+    const a = await chrome.storage.local.get("SERIALIZED");
+    console.log(a)
     const password = await this.walletRepository.getWalletPassword();
     const walletInstance = await this.deserializeWallet(password);
     return walletInstance;
@@ -50,6 +58,10 @@ export class WalletService {
    * @returns Wallet
    */
   public loadWalletWithPassword = async (password: string) => {
+    const isExists = await this.existsWallet();
+    if (!isExists) {
+      throw new WalletError("NOT_FOUND_SERIALIZED");
+    }
     const walletInstance = await this.deserializeWallet(password);
     await this.walletRepository.updateWalletPassword(password);
     return walletInstance;
@@ -128,10 +140,16 @@ export class WalletService {
 
   public lockWallet = async () => {
     try {
-      await this.walletRepository.removePassword();
+      await this.walletRepository.deleteWalletPassword();
     } catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
+
+  public clear = async () => {
+    await this.walletRepository.deleteSerializedWallet();
+    await this.walletRepository.deleteWalletPassword();
+    return true;
+  }
 }
 

@@ -1,6 +1,7 @@
 import { WalletAccount } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletAccountRepository } from '@repositories/wallet';
+import { WalletError } from '@common/errors';
 
 export class WalletAccountService {
 
@@ -13,22 +14,47 @@ export class WalletAccountService {
     this.walletAccountRepository = walletAccountRepository;
   }
 
-  public saveCurrentAccountAddress = async (address: string) => {
-    return await this.walletAccountRepository.updateCurrentAccountAddress(address);
-  };
-
-  public loadCurrentAccountAddress = async () => {
+  public getCurrentAccount = async () => {
+    const accounts = await this.getAccounts();
+    if (accounts.length === 0) {
+      throw new WalletError("NOT_FOUND_ACCOUNT");
+    }
     const currentAccountAddress = await this.walletAccountRepository.getCurrentAccountAddress();
-    return currentAccountAddress;
+    const currentAccount = accounts.find(account => account.getAddress() === currentAccountAddress) ?? accounts[0];
+    await this.updateCurrentAccount(currentAccount);
+    return currentAccount;
   };
 
-  /**
-   * This function saves accounts in the wallet.
-   *
-   * @param walletAccounts Wallet instnace arrays
-   */
-  public saveAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    await this.walletAccountRepository.updateAccounts(walletAccounts);
+  public getCurrentAccountAddress = async () => {
+    const currentAccount = await this.getCurrentAccount();
+    return currentAccount.getAddress();;
+  };
+
+  public updateCurrentAccount = async (
+    currentAccount: InstanceType<typeof WalletAccount>,
+  ) => {
+    const accounts = await this.getAccounts();
+    const changedAccounts = accounts.map(account => {
+      if (
+        account.data.address === currentAccount.data.address &&
+        account.data.index === currentAccount.data.index &&
+        account.data.accountType === currentAccount.data.accountType
+      ) {
+        return currentAccount;
+      }
+      return account;
+    });
+    await this.updateAccounts(changedAccounts);
+    return true;
+  };
+
+  public changeCurrentAccount = async (account: InstanceType<typeof WalletAccount>) => {
+    return await this.walletAccountRepository.updateCurrentAccountAddress(account.getAddress());
+  };
+
+  public existsAccounts = async () => {
+    const accounts = await this.getAccounts();
+    return accounts.length > 0;
   };
 
   /**
@@ -37,14 +63,45 @@ export class WalletAccountService {
    * @param wallet Wallet instnace
    * @returns WalletAccount instances
    */
-  public loadAccounts = async () => {
+  public getAccounts = async () => {
     const accounts = await this.walletAccountRepository.getAccounts();
     return accounts;
   };
 
-  public insertAccount = async (account: InstanceType<typeof WalletAccount>) => {
+  /**
+   * This function saves accounts in the wallet.
+   *
+   * @param accounts Wallet instnace arrays
+   */
+  public updateAccounts = async (accounts: Array<InstanceType<typeof WalletAccount>>) => {
+    await this.walletAccountRepository.updateAccounts(accounts);
+    return true;
+  };
+
+  /**
+   * 
+   * @param account s
+   * @returns 
+   */
+  public addAccount = async (account: InstanceType<typeof WalletAccount>) => {
     const accounts = await this.walletAccountRepository.getAccounts();
     await this.walletAccountRepository.updateAccounts([...accounts, account]);
+    return true;
+  };
+
+  public deleteAccount = async (account: InstanceType<typeof WalletAccount>) => {
+    const equalsAccount = (account1: InstanceType<typeof WalletAccount>, account2: InstanceType<typeof WalletAccount>) => {
+      return (account1.data.address === account2.data.address) && (account1.data.accountType === account2.data.accountType)
+    };
+
+    const accounts = await this.walletAccountRepository.getAccounts();
+    const currentIndex = accounts.findIndex(current => equalsAccount(current, account));
+    if (currentIndex > 0) {
+      await this.updateCurrentAccount(accounts[currentIndex - 1]);
+    }
+
+    const filteredAccounts = accounts.filter(current => !equalsAccount(current, account));
+    await this.walletAccountRepository.updateAccounts(filteredAccounts);
     return true;
   };
 
@@ -59,7 +116,7 @@ export class WalletAccountService {
     account: InstanceType<typeof WalletAccount>,
   ) => {
     if (!this.gnoClient) {
-      return null;
+      return account;
     }
     const currentAccount = account.clone();
     const { accountNumber, coins, sequence, status } = await this.gnoClient.getAccount(
@@ -67,6 +124,7 @@ export class WalletAccountService {
     );
 
     currentAccount.updateByGno({ accountNumber, coins, sequence, status });
+    await this.updateCurrentAccount(currentAccount);
     return currentAccount;
   };
 
@@ -75,7 +133,7 @@ export class WalletAccountService {
    *
    * @returns account's names
    */
-  public loadAccountNames = async () => {
+  public getAccountNames = async () => {
     const accountNames = await this.walletAccountRepository.getAccountNames();
     return accountNames;
   };
@@ -86,33 +144,17 @@ export class WalletAccountService {
    * @param address
    * @param name
    */
-  public updateAccountName = async (address: string, name: string) => {
-    const accountNames = await this.loadAccountNames();
-    const changedAccountNames: { [key in string]: string } = {
-      ...accountNames,
-      [address]: name,
-    };
-    await this.walletAccountRepository.updateAccountNames(changedAccountNames);
-  };
-
-  /**
-   * This function changes account names by accounts.
-   *
-   * @param accounts WalletAccount instances
-   * @returns changed WalletAccount instances
-   */
-  public changeAccountsByAccountNames = async (
-    accounts: Array<InstanceType<typeof WalletAccount>>,
-  ) => {
-    const accountNames = await this.loadAccountNames();
-    const changedAccounts = [...accounts].map((account) => this.getChangedAccount(account, accountNames));
-    return changedAccounts;
+  public updateAccountName = async (account: InstanceType<typeof WalletAccount>, name: string) => {
+    const clone = account.clone();
+    clone.setName(name);
+    await this.updateCurrentAccount(clone);
+    return true;
   };
 
   /**
    * This function increments the number of accounts in the wallet by 1.
    */
-  public increaseWalletAccountPaths = async () => {
+  public increaseAccountPaths = async () => {
     let accountPaths = await this.walletAccountRepository.getAccountPaths();
     if (accountPaths.length < 1) {
       accountPaths = [0];
@@ -125,7 +167,7 @@ export class WalletAccountService {
   /**
    * This function decrements the number of accounts in the wallet by 1.
    */
-  public decreaseWalletAccountPaths = async () => {
+  public decreaseAccountPaths = async () => {
     let accountPaths = await this.walletAccountRepository.getAccountPaths();
     if (accountPaths.length < 1) {
       accountPaths = [0];
@@ -134,19 +176,30 @@ export class WalletAccountService {
     await this.walletAccountRepository.updateAccountPaths(decreasedAccountPaths);
   };
 
-  public clearWalletAccountData = async () => {
-    await this.walletAccountRepository.deleteAccounts();
+  public getLastAccountIndex = async () => {
+    const accounts = await this.getAccounts();
+    const indices = accounts
+      .filter(account => Boolean(account.data.index))
+      .map(account => account.data.index);
+
+    return Math.max(...indices);
   };
 
-  private getChangedAccount = (
-    account: InstanceType<typeof WalletAccount>,
-    accountNames: { [key in string]: string },
-  ): InstanceType<typeof WalletAccount> => {
-    if (Object.keys(accountNames).includes(account.getAddress())) {
-      const name = accountNames[account.getAddress()];
-      return new WalletAccount({ ...account.data, name });
-    }
-    return account;
+  public getLastAccountPath = async () => {
+    const accounts = await this.getAccounts();
+    const paths = accounts
+      .filter(account => Boolean(account.data.path))
+      .map(account => account.data.path);
+
+    return Math.max(...paths);
+  };
+
+  public clear = async () => {
+    await this.walletAccountRepository.deleteCurrentAccountAddress();
+    await this.walletAccountRepository.deleteAccountNames();
+    await this.walletAccountRepository.deleteAccountPaths();
+    await this.walletAccountRepository.deleteAccounts();
+    return true;
   };
 
 }

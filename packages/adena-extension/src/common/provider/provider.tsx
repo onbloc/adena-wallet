@@ -1,14 +1,16 @@
+import React, { createContext, useEffect } from "react";
 import { AdenaStorage } from "@common/storage";
 import { WalletAccountRepository, WalletAddressRepository, WalletEstablishRepository, WalletRepository } from "@repositories/wallet";
 import { WalletAccountService, WalletAddressBookService, WalletBalanceService, WalletEstablishService, WalletService } from "@services/wallet";
-import { ResourceService } from "@services/resource";
+import { ChainService, TokenService } from "@services/resource";
 import { GnoClientState, WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import { GnoClient } from "gno-client";
-import React, { createContext, useEffect } from "react";
 import { useRecoilState } from "recoil";
 import { ChainRepository } from "@repositories/common";
 import { TransactionService } from "@services/transaction";
+import axios from "axios";
+import { TokenRepository } from "@repositories/common/token";
 
 interface AdenaContextProps {
   gnoClient: InstanceType<typeof GnoClient> | null;
@@ -18,7 +20,8 @@ interface AdenaContextProps {
   accountService: WalletAccountService;
   addressBookService: WalletAddressBookService;
   establishService: WalletEstablishService;
-  resourceService: ResourceService;
+  chainService: ChainService;
+  tokenService: TokenService;
   transactionService: TransactionService;
 }
 
@@ -26,9 +29,13 @@ export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
 
+  const axiosInstance = axios.create();
+
+  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
+
   const [tokenConfigs, setTokenConfigs] = useRecoilState(WalletState.tokenConfig);
 
-  const [gnoClient] = useRecoilState(GnoClientState.current);
+  const [gnoClient, setGnoClient] = useRecoilState(GnoClientState.current);
 
   const localStorage = AdenaStorage.local();
 
@@ -42,29 +49,50 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
 
   const addressBookRepository = new WalletAddressRepository(localStorage);
 
-  const chainRepository = new ChainRepository(localStorage);
+  const chainRepository = new ChainRepository(localStorage, axiosInstance);
+
+  const tokenRepository = new TokenRepository(axiosInstance);
+
+  const chainService = new ChainService(chainRepository);
+
+  const tokenService = new TokenService(tokenRepository);
 
   const walletService = new WalletService(walletRepository, accountRepository);
 
-  const balanceService = new WalletBalanceService(gnoClient, tokenConfigs);
+  const balanceService = new WalletBalanceService(chainService, tokenConfigs);
 
   const accountService = new WalletAccountService(gnoClient, accountRepository);
 
   const addressBookService = new WalletAddressBookService(accountRepository, addressBookRepository);
 
-  const resourceService = new ResourceService(chainRepository);
+  const establishService = new WalletEstablishService(establishRepository, chainService);
 
-  const establishService = new WalletEstablishService(establishRepository, chainRepository);
-
-  const transactionService = new TransactionService(gnoClient, chainRepository, walletService, accountService);
+  const transactionService = new TransactionService(gnoClient, chainService, walletService, accountService);
 
   useEffect(() => {
     initTokenConfig();
+    initNetworks();
+    initCurrentAccount();
   }, []);
 
+  const initCurrentAccount = async () => {
+    accountService.getCurrentAccount().then(setCurrentAccount);
+  };
+
   const initTokenConfig = async () => {
-    return resourceService.fetchTokenConfigs()
+    return tokenService.getTokenConfigs()
       .then(setTokenConfigs);
+  };
+
+  const initNetworks = async () => {
+    const networks = await chainRepository.fetchNetworks();
+    await chainService.updateNetworks(networks);
+    const currentNetwork = await chainService.getCurrentNetwork();
+    await chainService.updateCurrentNetwork(currentNetwork.chainId);
+
+    const gnoClient = await chainService.getCurrentClient();
+    setGnoClient(gnoClient);
+    return true;
   };
 
   return (
@@ -77,7 +105,8 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
         accountService,
         addressBookService,
         establishService,
-        resourceService,
+        chainService,
+        tokenService,
         transactionService
       }}>
       {children}

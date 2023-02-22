@@ -1,14 +1,13 @@
 import { WalletError } from '@common/errors';
-import { ChainRepository } from '@repositories/common';
-import { Secp256k1Wallet, Transaction, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
+import { Transaction, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
 import { GnoClient } from 'gno-client';
-import { WalletAccountService, WalletService } from '..';
+import { ChainService, WalletAccountService, WalletService } from '..';
 
 export class TransactionService {
 
   private gnoClient: InstanceType<typeof GnoClient> | null;
 
-  private chainRepository: ChainRepository;
+  private chainService: ChainService;
 
   private walletService: WalletService;
 
@@ -16,18 +15,18 @@ export class TransactionService {
 
   constructor(
     gnoClient: InstanceType<typeof GnoClient> | null,
-    chainRepository: ChainRepository,
+    chainService: ChainService,
     walletService: WalletService,
     accountService: WalletAccountService
   ) {
     this.gnoClient = gnoClient;
-    this.chainRepository = chainRepository;
+    this.chainService = chainService;
     this.walletService = walletService;
     this.accountService = accountService;
   }
 
   private getCurrentDenom = () => {
-    return this.chainRepository.getCurrentNetwork()
+    return this.chainService.getCurrentNetwork()
       .then(network => network.token.minimalDenom);
   }
 
@@ -239,7 +238,7 @@ export class TransactionService {
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    const accounts = await this.accountService.loadAccounts();
+    const accounts = await this.accountService.getAccounts();
     const account = accounts.find(
       (walletAccount: InstanceType<typeof WalletAccount>) =>
         walletAccount.getAddress() === accountAddress)?.clone();

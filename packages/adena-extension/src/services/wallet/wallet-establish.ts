@@ -1,5 +1,5 @@
-import { ChainRepository } from '@repositories/common';
 import { WalletEstablishRepository } from '@repositories/wallet';
+import { ChainService } from '..';
 
 interface EstablishSite {
   hostname: string;
@@ -14,14 +14,14 @@ export class WalletEstablishService {
 
   private walletEstablishRepository: WalletEstablishRepository;
 
-  private chainRepository: ChainRepository;
+  private chainService: ChainService;
 
   constructor(
     walletEstablishRepository: WalletEstablishRepository,
-    chainRepository: ChainRepository
+    chainService: ChainService
   ) {
     this.walletEstablishRepository = walletEstablishRepository;
-    this.chainRepository = chainRepository;
+    this.chainService = chainService;
   }
 
   public getCurrentEstablisedSites = async (address: string) => {
@@ -44,7 +44,8 @@ export class WalletEstablishService {
 
   public establish = async (hostname: string, address: string, appName: string, favicon?: string | null) => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const currentChainId = await this.chainRepository.getCurrentChainId();
+    const currentChain = await this.chainService.getCurrentNetwork();
+    const currentChainId = currentChain.chainId;
     const accountEstablishedSites = await this.getAccountEstablishedSites(
       establishedSites,
       address,
@@ -89,7 +90,8 @@ export class WalletEstablishService {
     establishedSites: { [key in string]: Array<EstablishSite> },
     address: string,
   ) => {
-    const currentChainId = await this.chainRepository.getCurrentChainId();
+    const currentChain = await this.chainService.getCurrentNetwork();
+    const currentChainId = currentChain.chainId;
     const accountEstablishedSites =
       Object.keys(establishedSites).findIndex((key) => key === address) > -1
         ? [...establishedSites[address]].filter(

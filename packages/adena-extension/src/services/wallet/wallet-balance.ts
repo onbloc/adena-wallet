@@ -1,8 +1,10 @@
+import { CommonError } from "@common/errors/common";
 import { optimizeNumber } from "@common/utils/client-utils";
 import { WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import BigNumber from "bignumber.js";
 import { GnoClient } from "gno-client";
+import { ChainService } from "..";
 
 interface BalanceInfo {
   unit: string;
@@ -11,22 +13,20 @@ interface BalanceInfo {
 
 export class WalletBalanceService {
 
-  private gnoClient: InstanceType<typeof GnoClient> | null;
+  private chainService: ChainService;
 
   private tokenConfigs: Array<TokenConfig>;
 
-  constructor(gnoClient: InstanceType<typeof GnoClient> | null, tokenConfigs: Array<TokenConfig>) {
-    this.gnoClient = gnoClient;
+  constructor(chainService: ChainService, tokenConfigs: Array<TokenConfig>) {
+    this.chainService = chainService;
     this.tokenConfigs = tokenConfigs;
   }
 
   public getTokenBalances = async (
     address: string,
   ) => {
-    if (!this.gnoClient) {
-      return null;
-    }
-    const response = await this.gnoClient.getBalances(address);
+    const gnoClient = await this.chainService.getCurrentClient();
+    const response = await gnoClient.getBalances(address);
     const balances: Array<BalanceInfo> = [...response.balances];
     const tokenBalances: Array<WalletState.Balance> = [];
 
@@ -38,7 +38,6 @@ export class WalletBalanceService {
     }
     return tokenBalances;
   };
-
 
   public convertUnit = (amount: BigNumber, denom: string, config: WalletState.TokenConfig, convertType?: 'COMMON' | 'MINIMAL'): { amount: BigNumber, denom: string } => {
     const convertDenomType = convertType ?? 'COMMON';
