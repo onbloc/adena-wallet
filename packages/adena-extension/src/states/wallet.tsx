@@ -78,10 +78,15 @@ export const balances = atom<Array<Balance>>({
   default: [],
 });
 
+export const accountBalances = atom<{ [key in string]: Array<Balance> }>({
+  key: `wallet/accountBalances`,
+  default: {},
+});
+
 export const currentBalance = atom<CuurentBalance>({
   key: `wallet/currentBalance`,
   default: {
-    amount: BigNumber(0),
+    amount: BigNumber(-1),
     denom: ''
   },
 });

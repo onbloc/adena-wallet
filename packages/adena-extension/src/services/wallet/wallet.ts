@@ -16,8 +16,8 @@ export class WalletService {
   public existsWallet = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return this.walletRepository.getSerializedWallet()
-      .then(_ => true)
-      .catch(_ => false);
+      .then(() => true)
+      .catch(() => false);
   };
 
   /**
@@ -144,6 +144,31 @@ export class WalletService {
     } catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
     }
+  };
+
+  public equalsPassowrd = async (password: string) => {
+    try {
+      const storedPassword = await this.walletRepository.getWalletPassword();
+      return storedPassword === password;
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
+  };
+
+  public updatePassowrd = async (password: string) => {
+    await this.walletRepository.updateWalletPassword(password);
+    return true;
+  };
+
+  public changePassowrd = async (password: string) => {
+    try {
+      const wallet = await this.loadWallet();
+      await this.saveWallet(wallet, password);
+    } catch (e) {
+      await this.walletRepository.updateWalletPassword(password);
+    }
+    return true;
   };
 
   public clear = async () => {

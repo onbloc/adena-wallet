@@ -91,13 +91,20 @@ export class WalletAccountService {
 
   public deleteAccount = async (account: InstanceType<typeof WalletAccount>) => {
     const equalsAccount = (account1: InstanceType<typeof WalletAccount>, account2: InstanceType<typeof WalletAccount>) => {
-      return (account1.data.address === account2.data.address) && (account1.data.accountType === account2.data.accountType)
+      return (account1.data.address === account2.data.address) &&
+        (account1.data.accountType === account2.data.accountType) &&
+        (account1.data.index === account2.data.index);
     };
 
     const accounts = await this.walletAccountRepository.getAccounts();
-    const currentIndex = accounts.findIndex(current => equalsAccount(current, account));
-    if (currentIndex > 0) {
-      await this.updateCurrentAccount(accounts[currentIndex - 1]);
+    const deletedIndex = accounts.findIndex(current => equalsAccount(current, account));
+    let currentIndex = 0;
+    if (deletedIndex > 0) {
+      currentIndex = deletedIndex - 1;
+    }
+
+    if (currentIndex > -1) {
+      await this.changeCurrentAccount(accounts[currentIndex]);
     }
 
     const filteredAccounts = accounts.filter(current => !equalsAccount(current, account));
@@ -151,47 +158,30 @@ export class WalletAccountService {
     return true;
   };
 
-  /**
-   * This function increments the number of accounts in the wallet by 1.
-   */
-  public increaseAccountPaths = async () => {
-    let accountPaths = await this.walletAccountRepository.getAccountPaths();
-    if (accountPaths.length < 1) {
-      accountPaths = [0];
-    }
-    const maxPathValue = Math.max(...accountPaths);
-    const increasedAccountPaths = [...accountPaths, maxPathValue + 1];
-    await this.walletAccountRepository.updateAccountPaths(increasedAccountPaths);
-  };
-
-  /**
-   * This function decrements the number of accounts in the wallet by 1.
-   */
-  public decreaseAccountPaths = async () => {
-    let accountPaths = await this.walletAccountRepository.getAccountPaths();
-    if (accountPaths.length < 1) {
-      accountPaths = [0];
-    }
-    const decreasedAccountPaths = [...accountPaths].slice(0, -1);
-    await this.walletAccountRepository.updateAccountPaths(decreasedAccountPaths);
-  };
-
   public getLastAccountIndex = async () => {
-    const accounts = await this.getAccounts();
-    const indices = accounts
-      .filter(account => Boolean(account.data.index))
-      .map(account => account.data.index);
+    try {
+      const accounts = await this.getAccounts();
+      const indices = accounts
+        .filter(account => Boolean(account.data.index))
+        .map(account => account.data.index);
 
-    return Math.max(...indices);
+      return Math.max(...indices);
+    } catch (e) {
+      return 0;
+    }
   };
 
   public getLastAccountPath = async () => {
-    const accounts = await this.getAccounts();
-    const paths = accounts
-      .filter(account => Boolean(account.data.path))
-      .map(account => account.data.path);
+    try {
+      const accounts = await this.getAccounts();
+      const paths = accounts
+        .filter(account => Boolean(account.data.path))
+        .map(account => account.data.path);
 
-    return Math.max(...paths);
+      return Math.max(...paths);
+    } catch (e) {
+      return 0;
+    }
   };
 
   public clear = async () => {

@@ -1,9 +1,7 @@
-import { CommonError } from "@common/errors/common";
 import { optimizeNumber } from "@common/utils/client-utils";
 import { WalletState } from "@states/index";
 import { TokenConfig } from "@states/wallet";
 import BigNumber from "bignumber.js";
-import { GnoClient } from "gno-client";
 import { ChainService } from "..";
 
 interface BalanceInfo {

@@ -98,9 +98,6 @@ export class TransactionService {
     const currentAccount = new WalletAccount(account.data);
     try {
       if (currentAccount.data.accountType === "SEED") {
-        const wallet = await this.walletService.loadWallet();
-        currentAccount.setSigner(wallet.getSigner());
-      } else if (currentAccount.data.accountType === "PRIVATE_KEY") {
         await currentAccount.initSignerByPrivateKey();
       }
     } catch (e) {
@@ -272,6 +269,7 @@ export class TransactionService {
       gasAmount,
       memo
     );
+    console.log("????")
     const signAminoResponse = currentAccount.getSigner()?.signAmino(accountAddress, signedDocumnet);
     return signAminoResponse;
   };
