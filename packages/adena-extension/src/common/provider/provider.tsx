@@ -31,7 +31,7 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
 
   const axiosInstance = axios.create();
 
-  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
+  const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
 
   const [tokenConfigs, setTokenConfigs] = useRecoilState(WalletState.tokenConfig);
 
@@ -71,9 +71,14 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     initTokenConfig();
-    initNetworks();
     initCurrentAccount();
   }, []);
+
+  useEffect(() => {
+    if (!gnoClient) {
+      initNetworks();
+    }
+  }, [gnoClient]);
 
   const initCurrentAccount = async () => {
     accountService.getCurrentAccount().then(setCurrentAccount);
