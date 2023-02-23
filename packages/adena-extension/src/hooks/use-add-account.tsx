@@ -8,6 +8,7 @@ export const useAddAccount = (): {
 } => {
   const { walletService, accountService } = useAdenaContext();
   const [, setAccounts] = useRecoilState(WalletState.accounts);
+  const [, setState] = useRecoilState(WalletState.state);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
   const availAddAccount = async () => {
@@ -16,11 +17,13 @@ export const useAddAccount = (): {
   };
 
   const addAccount = async () => {
+    setState("LOADING");
     const currentAccounts = await accountService.getAccounts();
     const accountPaths = currentAccounts
       .filter(account => account.data.accountType === "SEED")
       .map(account => account.data.path);
     const maxPath = Math.max(...accountPaths);
+    clearCurrentBalance();
 
     const wallet = await walletService.loadWallet();
     const mnemonic = wallet.getMnemonic();
@@ -33,11 +36,12 @@ export const useAddAccount = (): {
       const createdAccount = createdAccounts[0];
       createdAccount.setIndex(accountIndex);
       createdAccount.setName(`Account ${accountIndex}`);
+      createdAccount.setSigner(createdWallet);
       await accountService.addAccount(createdAccount);
       await accountService.changeCurrentAccount(createdAccount);
     }
-    clearCurrentBalance();
-    accountService.getAccounts().then(setAccounts);
+    const accounts = await accountService.getAccounts();
+    setAccounts(accounts);
     return true;
   };
 

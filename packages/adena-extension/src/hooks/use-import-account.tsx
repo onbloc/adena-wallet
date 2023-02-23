@@ -8,9 +8,11 @@ export const useImportAccount = (): {
 } => {
   const { accountService } = useAdenaContext();
   const [, setAccounts] = useRecoilState(WalletState.accounts);
+  const [, setState] = useRecoilState(WalletState.state);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
   const importAccount = async (account: InstanceType<typeof WalletAccount>) => {
+    setState("LOADING");
     const currentAccountIndex = await accountService.getLastAccountIndex();
     const index = currentAccountIndex + 1;
     account.setIndex(index);

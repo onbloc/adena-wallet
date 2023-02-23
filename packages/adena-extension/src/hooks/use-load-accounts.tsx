@@ -4,20 +4,20 @@ import { useAdenaContext } from './use-context';
 import { WalletAccount } from 'adena-module';
 
 export const useLoadAccounts = () => {
-  const { accountService } = useAdenaContext();
+  const { accountService, balanceService } = useAdenaContext();
   const [state, setState] = useRecoilState(WalletState.state);
   const [accounts, setAccounts] = useRecoilState(WalletState.accounts);
+  const [, setAccountBalances] = useRecoilState(WalletState.accountBalances);
 
   const loadAccounts = async () => {
-    setState("LOADING");
     const accounts = await accountService.getAccounts();
     if (accounts.length === 0) {
       setState("CREATE");
       return false;
     }
 
+    setState("LOADING");
     setAccounts(accounts);
-    setState("FINISH");
     return true;
   };
 
@@ -29,9 +29,22 @@ export const useLoadAccounts = () => {
 
     const accounts = await accountService.getAccounts();
     setAccounts(accounts);
-    setState("FINISH");
     return true;
   };
 
-  return { state, accounts, loadAccounts, addAccounts };
+  const updateAccountBalances = async () => {
+    if (!accounts) {
+      return false;
+    }
+
+    const accountBalances: { [key in string]: Array<WalletState.Balance> } = {};
+    for (const account of accounts) {
+      const balances = await balanceService.getTokenBalances(account.getAddress());
+      accountBalances[account.getAddress()] = balances;
+    }
+    setAccountBalances(accountBalances);
+    return true;
+  };
+
+  return { state, accounts, loadAccounts, addAccounts, updateAccountBalances };
 };

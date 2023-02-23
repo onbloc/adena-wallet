@@ -6,6 +6,9 @@ export const useClear = () => {
   const { walletService, accountService } = useAdenaContext();
 
   const clearAccounts = useResetRecoilState(WalletState.accounts);
+  const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+  const clearBalances = useResetRecoilState(WalletState.balances);
   const clearState = useResetRecoilState(WalletState.state);
   const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
   const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
@@ -19,6 +22,9 @@ export const useClear = () => {
     clearHistoryPosition();
     clearGnoClient();
     clearNetworks();
+    clearCurrentAccount();
+    clearCurrentBalance();
+    clearBalances();
     await walletService.clear();
     await accountService.clear();
     return true;
