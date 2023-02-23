@@ -59,13 +59,25 @@ import { ResetWallet } from '@pages/certify/reset-wallet';
 import { ErrorContainer } from '@layouts/error-container';
 import { Background } from '@components/background';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import LoadingMain from '@components/loading-screen/loading-main';
+import { useResetRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 export const CustomRouter = () => {
   const { loadAccounts } = useLoadAccounts();
 
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+  const clearBalances = useResetRecoilState(WalletState.balances);
+
   useEffect(() => {
+    clearStates();
     loadAccounts();
   }, []);
+
+  const clearStates = () => {
+    clearCurrentBalance();
+    clearBalances();
+  }
 
   return (
     <Router>
@@ -152,6 +164,7 @@ export const CustomRouter = () => {
         </Routes>
         <Navigation />
       </Background>
+      <LoadingMain />
     </Router>
   );
 };
