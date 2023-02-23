@@ -51,7 +51,7 @@ export class WalletAccount {
 
   private signerType: SingerType;
 
-  private signer: OfflineAminoSigner | LedgerSigner | undefined;
+  private signer: OfflineAminoSigner | LedgerSigner | null;
 
   private status: AccountStatusType;
 
@@ -78,7 +78,7 @@ export class WalletAccount {
   constructor(args: WalletAccountArguments) {
     this.index = args.index ?? 0;
     this.signerType = args.signerType ?? 'AMINO';
-    this.signer = args.signer;
+    this.signer = args.signer ?? null;
     this.name = args.name ?? `Account ${this.index}`;
     this.status = args.status ?? 'NONE';
     this.accountNumber = args.accountNumber;

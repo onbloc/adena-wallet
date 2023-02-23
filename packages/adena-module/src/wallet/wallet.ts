@@ -36,11 +36,15 @@ export class Wallet {
     let index = 0;
     for (const walletAccount of walletAccounts) {
       const accountAddress = walletAccount.getAddress();
-      const privateKey = await this.getPrivateKey(accountAddress);
-      walletAccount.setPrivateKey(privateKey);
       walletAccount.setIndex(index + 1);
       walletAccount.setSigner(this.aminoSigner);
       walletAccount.setName(`Account ${walletAccount.data.index}`);
+
+      try {
+        const privateKey = await this.getPrivateKey(accountAddress);
+        walletAccount.setPrivateKey(privateKey);
+      } catch (e) { }
+
       if (walletAccount.data.address in names) {
         walletAccount.setName(names[accountAddress]);
       }
