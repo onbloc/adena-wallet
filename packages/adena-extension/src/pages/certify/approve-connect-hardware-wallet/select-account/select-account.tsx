@@ -9,7 +9,6 @@ import IconAddSymbol from '@assets/add-symbol.svg';
 import IconCheck from '@assets/check.svg';
 import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
@@ -188,7 +187,7 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
-  const { accountService } = useAdenaContext();
+  const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>(
@@ -248,11 +247,13 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress()));
     const storedAccounts = await accountService.getAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
+    const accountLastIndex = await accountService.getLastAccountIndex() + 1;
 
-    selectAccounts.forEach((account) => {
+    selectAccounts.forEach((account, index) => {
       if (
         !storedAccounts.find((storedAccount) => storedAccount.getAddress() === account.getAddress())
       ) {
+        account.setIndex(accountLastIndex + index);
         account.setName(`Ledger ${account.data.path + 1}`);
         savedAccounts.push(account);
       }
@@ -261,6 +262,12 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     await accountService.updateAccounts([...storedAccounts, ...resultSavedAccounts]);
     if (resultSavedAccounts.length > 0) {
       await accountService.changeCurrentAccount(resultSavedAccounts[0]);
+    }
+
+    const existPassword = await walletService.existsWallet();
+    if (storedAccounts.length === 0 || existPassword === false) {
+      navigate(RoutePath.ApproveHardwareWalletLedgerPassword);
+      return;
     }
     navigate(RoutePath.ApproveHardwareWalletFinish);
   };

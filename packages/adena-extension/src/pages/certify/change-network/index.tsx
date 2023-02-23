@@ -38,36 +38,22 @@ const LeftWrap = styled.div`
 
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
-  const [loadinsgState, setLoadingState] = useState('INIT');
+  const [loadinsgState,] = useState('INIT');
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
-  const [finishedLoading, setFinishedLoading] = useState(false);
   const clearWalletBalance = useResetRecoilState(WalletState.balances);
-  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const [, setWalletState] = useRecoilState(WalletState.state);
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [, setState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
     updateNetworks();
   }, []);
 
   useEffect(() => {
-    if (loadinsgState === 'LOADING') {
-      clearWalletBalance();
-      setFailedNetwork(undefined);
-      setLoadingState('FINISH');
-    }
-  }, [currentNetwork]);
-
-  useEffect(() => {
     if (loadinsgState === 'FINISH') {
       checkHealth();
     }
   }, [loadinsgState]);
-
-  useEffect(() => {
-    if (finishedLoading && failedNetwork !== undefined) {
-      navigate(RoutePath.Home);
-    }
-  }, [finishedLoading, failedNetwork]);
 
   const checkHealth = async () => {
     let health = false;
@@ -76,18 +62,19 @@ export const ChangeNetwork = () => {
     } catch (e) {
       console.log(e)
     }
-    setWalletState('NONE');
+    setState('NONE');
     setFailedNetwork(!health);
-    setFinishedLoading(true);
   }
 
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
     if (network.chainId === currentNetwork?.chainId) {
-      setFinishedLoading(true);
       return;
     }
-    setLoadingState('LOADING');
+    setState("LOADING");
     await changeNetwork(network.chainId);
+    clearWalletBalance();
+    clearCurrentBalance();
+    navigate(RoutePath.Home);
   };
 
   return loadinsgState === 'INIT' ? (

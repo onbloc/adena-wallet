@@ -9,6 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
@@ -16,16 +19,20 @@ const content =
 export const RemoveAccount = () => {
   const navigate = useNavigate();
   const [currentAccount] = useCurrentAccount();
+  const { loadAccounts } = useLoadAccounts();
   const { removeAccount } = useRemoveAccount();
+  const [, setState] = useRecoilState(WalletState.state);
 
   const cancelButtonClick = () => {
     navigate(-1);
   };
 
   const removeButtonClick = async () => {
+    setState("LOADING");
     if (currentAccount) {
       await removeAccount(currentAccount);
     }
+    loadAccounts();
     navigate(RoutePath.Home);
   };
 

@@ -6,13 +6,9 @@ import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import SeedBox from '@components/seed-box';
-import { useAdenaContext } from '@hooks/use-context';
 import { WalletAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWallet } from '@hooks/use-wallet';
-import { useAddAccount } from '@hooks/use-add-account';
 import { useImportAccount } from '@hooks/use-import-account';
 
 const content = {
@@ -23,14 +19,13 @@ const content = {
 
 export const ImportPrivateKey = () => {
   const navigate = useNavigate();
-  const { accountService } = useAdenaContext();
   const error = false;
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
 
   const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
+    () => setTerms((prev: boolean) => !prev),
     [terms],
   );
 
@@ -51,7 +46,7 @@ export const ImportPrivateKey = () => {
   const nextButtonClick = async () => {
     const privateKey = value.replace("0x", "");
     const account = await WalletAccount.createByPrivateKeyHex(privateKey, "g");
-    await importAccount(account);
+    importAccount(account);
     navigate(RoutePath.Wallet);
   };
 

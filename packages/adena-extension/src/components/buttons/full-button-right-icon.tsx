@@ -57,7 +57,7 @@ const defaultIconStyle = css<ButtonStyleProps>`
 const hoverIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
     stroke: ${({ theme, mode }) =>
-      mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
+    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   }
 `;
 
@@ -74,9 +74,16 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
   & + & {
     margin-top: ${({ gap }) => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
-  &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[8]};
-    ${hoverIconStyle};
+
+  ${({ disabled, theme }) => disabled ?
+    `
+    color: ${theme.color.neutral[4]};
+    .icon-arrow-v2 * { stroke: ${theme.color.neutral[4]} }
+    ` :
+    `&:hover {
+      background-color: ${theme.color.neutral[8]};
+      ${hoverIconStyle};
+    }`
   }
 `;
 

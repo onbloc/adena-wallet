@@ -7,6 +7,9 @@ import styled from 'styled-components';
 import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
+import { useAdenaContext } from '@hooks/use-context';
+import { validateEmptyPassword, validateInvalidPassword, validateWrongPasswordLength } from '@common/validation';
+import { BaseError } from '@common/errors';
 
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';
@@ -14,14 +17,17 @@ const TermsBText = 'I will never share my seed phrase with anyone.';
 export const ApproachPasswordPhrase = () => {
   const navigate = useNavigate();
   const backButtonClick = () => navigate(-1);
+  const { walletService } = useAdenaContext();
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [termsA, setTermsA] = useState(false);
   const [termsB, setTermsB] = useState(false);
   const disabled = termsA && termsB && pwd;
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPwd(e.target.value);
+    setError(false);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -38,9 +44,19 @@ export const ApproachPasswordPhrase = () => {
     setTermsB((prev: boolean) => !prev);
   };
 
-  const confirmButtonClick = () => {
-    // TODO
-    navigate(RoutePath.ApproachPrivatePhrase);
+  const confirmButtonClick = async () => {
+    try {
+      validateEmptyPassword(pwd);
+      validateWrongPasswordLength(pwd);
+      const storedPassword = await walletService.loadWalletPassword();
+      validateInvalidPassword(pwd, storedPassword);
+      navigate(RoutePath.ApproachPrivatePhrase);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        setError(true);
+        setErrorMessage(e.message);
+      }
+    }
   };
 
   return (

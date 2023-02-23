@@ -1,56 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import Text from '@components/text';
-import theme from '@styles/theme';
-import arrowRight from '../../../assets/arrowS-right.svg';
-import arrowRightDisabled from '../../../assets/arrowS-right-disabled.svg';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useWalletAccountPathController } from '@hooks/use-wallet-account-path-controller';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWallet } from '@hooks/use-wallet';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import LoadingWallet from '@components/loading-screen/loading-wallet';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
-  const [wallet, walletState] = useWallet();
-  const { addAccount } = useAddAccount();
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [currentState, setCurrentState] = useState('INIT');
+  const { availAddAccount, addAccount } = useAddAccount();
+  const { loadAccounts } = useLoadAccounts();
+  const [availCreateAccount, setAvailCreateAccount] = useState(false);
 
   useEffect(() => {
-    switch (currentState) {
-      case 'LOADING':
-        if (walletState === 'FINISH') {
-          navigate(RoutePath.Home);
-        }
-        break;
-      case 'FINISH':
-        navigate(RoutePath.Wallet);
-        break;
-      default:
-        break;
-    }
-  }, [currentState, walletState]);
-
-  useEffect(() => {
-    if (currentState === 'LOADING') {
-      setCurrentState('FINISH');
-    }
-  }, [currentAccount]);
-
-  const isLoading = () => {
-    return currentState === 'INCREASE' || currentState === 'LOADING';
-  };
+    availAddAccount().then(setAvailCreateAccount);
+  }, [])
 
   const onClickCreateAccount = async () => {
-    await setCurrentState('INCREASE');
     await addAccount();
-    await setCurrentState('FINISH');
+    loadAccounts();
+    navigate(RoutePath.Home);
   };
 
   const existsPopups = async () => {
@@ -86,22 +57,23 @@ export const AddAccount = () => {
       title: 'Create New Account',
       subTitle: 'Generate a new account address',
       onClick: onClickCreateAccount,
+      disabled: !availCreateAccount
     },
     {
       title: 'Import Private Key',
       subTitle: 'Import an existing address',
       onClick: onClickImportPrivateKey,
+      disabled: false
     },
     {
       title: 'Connect Ledger',
       subTitle: 'Connect Ledger',
       onClick: onClickConnectHardwareWallet,
+      disabled: false
     },
   ];
 
-  return isLoading() ? (
-    <LoadingWallet />
-  ) : (
+  return (
     <Wrapper>
       <Text className='main-title' type='header4'>
         Add Account
@@ -112,6 +84,7 @@ export const AddAccount = () => {
           title={v.title}
           subTitle={v.subTitle}
           onClick={v.onClick}
+          disabled={v.disabled}
         />
       ))}
       <Button

@@ -3,8 +3,6 @@ import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
-import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
 
 const text = {
   title: 'You’re all set!',
@@ -19,8 +17,9 @@ const Wrapper = styled.main`
 `;
 
 export const ApproveHardwareWalletLedgerAllSet = () => {
-  const navigate = useNavigate();
-  const handleNextButtonClick = () => navigate(RoutePath.Home);
+  const handleNextButtonClick = () => {
+    window.close();
+  };
 
   return (
     <Wrapper>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
@@ -6,33 +6,17 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
 import DefaultInput from '@components/default-input';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useCreatePassword } from '@pages/certify/create-password/use-create-password';
-import { RoutePath } from '@router/path';
+import { useLedgerPassword } from './use-ledger-password';
 
 const text = {
   title: 'Create\na Password',
   desc: 'This will be used to unlock your wallet.',
 };
 
-type LocationSeeds = {
-  seeds: string;
-};
-
 export const ApproveHardwareWalletLedgerPassword = () => {
-  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, setSeeds, onKeyDown } =
-    useCreatePassword();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
+    useLedgerPassword();
   const handleLinkClick = () => window.open('https://adena.app/terms', '_blank');
-
-  useEffect(() => {
-    const state = location.state as LocationSeeds;
-    setSeeds(state.seeds);
-    if (!buttonState.disabled === false) {
-      navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);
-    }
-  }, [buttonState]);
 
   return (
     <Wrapper>

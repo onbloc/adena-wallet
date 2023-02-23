@@ -10,15 +10,14 @@ import Text from '@components/text';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useWalletLoader } from '@hooks/use-wallet-loader';
-import { formatNickname } from '@common/utils/client-utils';
+import { formatNickname, maxFractionDigits } from '@common/utils/client-utils';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWallet } from '@hooks/use-wallet';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { useAdenaContext } from '@hooks/use-context';
 import { WalletAccount } from 'adena-module';
+import { WalletState } from '@states/index';
 
 interface SubMenuProps {
   open: boolean;
@@ -29,8 +28,9 @@ interface SubMenuProps {
 
 interface UserListProps {
   accounts: Array<InstanceType<typeof WalletAccount>>;
-  changeAccountHandler: (currentAccount: InstanceType<typeof WalletAccount>) => void;
   currentAccount: InstanceType<typeof WalletAccount>;
+  accountBalances: { [key in string]: Array<WalletState.Balance> };
+  changeAccountHandler: (currentAccount: InstanceType<typeof WalletAccount>) => void;
 }
 
 const RestoreWallet = ({ onClick }: { onClick: () => void }) => (
@@ -47,37 +47,53 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
   </Button>
 );
 
-const UserListMaker = ({ accounts, changeAccountHandler, currentAccount }: UserListProps) => (
+const UserListMaker = ({ accounts, currentAccount, accountBalances, changeAccountHandler }: UserListProps) => (
   <>
-    {accounts.map((v, i) => (
-      <ListItem key={i} onClick={() => changeAccountHandler(v)}>
-        <Text type='body2Reg' display='inline-flex'>
-          {formatNickname(v.data.name, 10)}
-          <FromBadge from={'Google'} />
-        </Text>
-        <Text type='body3Reg' color={theme.color.neutral[9]}>
-          {'123,992.09 GNOT'}
-        </Text>
-        {currentAccount.getAddress() === v.getAddress() && (
-          <img src={statusCheck} alt='status icon' className='status-icon' />
-        )}
-      </ListItem>
-    ))}
+    {accounts.map((v, i) => {
+      const balance = accountBalances[v.getAddress()] && accountBalances[v.getAddress()].length > 0 ?
+        accountBalances[v.getAddress()][0] :
+        null;
+      const balanceString = balance ?
+        `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}` :
+        "-"
+
+      return (
+        <ListItem key={i} onClick={() => changeAccountHandler(v)}>
+          <Text type='body2Reg' display='inline-flex'>
+            {formatNickname(v.data.name, 10)}
+            <FromBadge from={v.data.accountType} />
+          </Text>
+          <Text type='body3Reg' color={theme.color.neutral[9]}>
+            {balanceString}
+          </Text>
+          {currentAccount.getAddress() === v.getAddress() && (
+            <img src={statusCheck} alt='status icon' className='status-icon' />
+          )}
+        </ListItem>
+      );
+    })}
   </>
 );
 
-const FromBadge = ({ from }: { from: string }) => (
-  <StyledBedge type='captionReg'>{from}</StyledBedge>
-);
+const FromBadge = ({ from }: { from: string }) => {
+  if (from === "GOOGLE") {
+    return <StyledBedge type='captionReg'>Google</StyledBedge>;
+  }
+  if (from === "PRIVATE_KEY") {
+    return <StyledBedge type='captionReg'>Imported</StyledBedge>;
+  }
+  if (from === "LEDGER") {
+    return <StyledBedge type='captionReg'>Ledger</StyledBedge>;
+  }
+  return <></>;
+};
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
   const { walletService } = useAdenaContext();
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
-  const [wallet] = useWallet();
-  const [, loadWallet] = useWalletLoader();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const { accounts } = useWalletAccounts(wallet);
+  const { accounts, accountBalances } = useWalletAccounts();
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -92,7 +108,6 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const lockClickHandler = async () => {
     setOpen(!open);
     await walletService.lockWallet();
-    await loadWallet();
     navigate(RoutePath.Login, { replace: true });
   };
 
@@ -122,6 +137,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
                 {accounts && accounts.length > 0 && (
                   <UserListMaker
                     accounts={accounts}
+                    accountBalances={accountBalances}
                     changeAccountHandler={changeAccountHandler}
                     currentAccount={currentAccount}
                   />

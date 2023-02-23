@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { useWallet } from '@hooks/use-wallet';
 import { WalletError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
@@ -28,7 +27,6 @@ export const SeedPhrase = () => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cancelButtonClick = () => navigate(-1);
-  const [wallet] = useWallet();
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
     error: false,
@@ -47,6 +45,7 @@ export const SeedPhrase = () => {
     const storedPassword = await walletService.loadWalletPassword();
     try {
       if (validateInvalidPassword(password, storedPassword)) {
+        const wallet = await walletService.loadWallet();
         if (wallet) {
           navigate(RoutePath.ViewSeedPhrase, {
             replace: true,

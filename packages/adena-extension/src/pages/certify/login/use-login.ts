@@ -1,22 +1,28 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { useWalletLoader } from '@hooks/use-wallet-loader';
+import { useAdenaContext } from '@hooks/use-context';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 export const useLogin = () => {
-  const [, , loadByPassword] = useWalletLoader();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const { walletService } = useAdenaContext();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [, setState] = useRecoilState(WalletState.state);
 
-  const tryLogin = (password: string) => {
-    loadByPassword(password);
+  const tryLogin = async (password: string) => {
+    const equalPassword = await walletService.equalsPassowrd(password);
+    if (equalPassword) {
+      setState("FINISH");
+    }
   };
 
   const tryLoginApprove = (password: string) => {
-    loadByPassword(password);
+    tryLogin(password);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -48,7 +54,7 @@ export const useLogin = () => {
     }
   }, [inputRef]);
 
-  const handlePwClick = (e: any) => {
+  const handlePwClick = () => {
     tryLogin(password);
   };
 

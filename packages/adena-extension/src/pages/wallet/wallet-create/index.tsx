@@ -9,6 +9,7 @@ import GoogleSigninButton from '@components/buttons/google-signin-button';
 import theme from '@styles/theme';
 import DubbleButton from '@components/buttons/double-button';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { existsPopups } from '@inject/message/methods';
 
 export const WalletCreate = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export const WalletCreate = () => {
   useEffect(() => {
     switch (state) {
       case 'NONE':
+        loadAccounts();
         break;
       case 'FINISH':
         navigate(RoutePath.Wallet);
@@ -47,14 +49,29 @@ export const WalletCreate = () => {
     navigate(RoutePath.EnterSeedPhrase);
   };
 
-  const ConnectLedgerHandler = () => {
-    // TODO
+  const ConnectLedgerHandler = async () => {
+    const isPopup = await existsPopups();
+    if (isPopup) {
+      return;
+    }
+
+    const popupOption: chrome.windows.CreateData = {
+      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletInit}`),
+      type: 'popup',
+      height: 590,
+      width: 380,
+      left: 800,
+      top: 300,
+    };
+
+    window.close();
+    chrome.windows.create(popupOption);
   };
 
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <GoogleSigninButton onClick={() => { }} margin='auto auto 3px' />
+      <GoogleSigninButton onClick={() => { console.log("Google") }} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>

@@ -7,7 +7,6 @@ import { useLocation } from 'react-router-dom';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { useWallet } from '@hooks/use-wallet';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
@@ -20,7 +19,6 @@ import { useAdenaContext } from '@hooks/use-context';
 export const ApproveTransactionMain = () => {
   const { accountService, transactionService } = useAdenaContext();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [, state] = useWallet();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -90,7 +88,7 @@ export const ApproveTransactionMain = () => {
   }
 
   const sendTransaction = async () => {
-    if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
+    if (transactionData && gnoClient && currentAccount) {
       try {
         const transactionValue = await transactionService.createTransactionByContract(
           currentAccount,

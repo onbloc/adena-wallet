@@ -8,10 +8,7 @@ import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
 import SubMenu from '@layouts/sub-menu';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
-import { useWallet } from '@hooks/use-wallet';
 import { useLocation } from 'react-router-dom';
-import { WalletAccountRepository } from '@repositories/wallet';
 import { useAdenaContext } from '@hooks/use-context';
 
 const Wrapper = styled.div`
@@ -46,7 +43,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const [currentAccount] = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
-  const [wallet] = useWallet();
   const location = useLocation();
   const [currentAccountAddress, setCurrentAccountAddress] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState('');
@@ -64,7 +60,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
         setHostname(hostname);
       });
     });
-  }, [wallet, location]);
+  }, [location]);
 
   const initAccountInfo = async () => {
     const address = currentAccount?.getAddress() ?? "";

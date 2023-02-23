@@ -4,7 +4,6 @@ import { addressValidationCheck } from '@common/utils/client-utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useWallet } from '@hooks/use-wallet';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import BigNumber from 'bignumber.js';
 import { useAdenaContext } from '@hooks/use-context';
@@ -19,8 +18,7 @@ export const useGeneralSend = () => {
   const navigate = useNavigate();
   const [gnoClient] = useGnoClient();
   const [balances] = useWalletBalances(gnoClient);
-  const [wallet] = useWallet();
-  const { accounts } = useWalletAccounts(wallet);
+  const { accounts } = useWalletAccounts();
   const [currentAccount] = useCurrentAccount();
   const [address, setAddress] = useState<string>('');
   const [selectName, setSelectName] = useState<string>('');

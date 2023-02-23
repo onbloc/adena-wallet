@@ -21,7 +21,6 @@ export const ResetWallet = () => {
   };
 
   const resetButtonClick = () => {
-    console.log("RESET")
     clear().then(() => navigate(RoutePath.Home));
   };
 

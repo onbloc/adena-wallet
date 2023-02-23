@@ -8,9 +8,7 @@ import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
-import { ForgotPassword } from '@pages/certify/forgot-password';
 import { ArrowTitleMenu } from './arrow-title-menu';
-import { ImportPrivateKey } from '@pages/certify/import-private-key';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -49,12 +47,11 @@ export const Header = () => {
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
-  const [currentBalance] = useRecoilState(WalletState.currentBalance);
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   const loadingComplete =
-    (currentBalance.denom !== '' && walletState === 'FINISH') || failedNetwork;
+    (walletState === 'FINISH') || failedNetwork;
 
   return (
     <Wrapper>

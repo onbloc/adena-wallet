@@ -5,8 +5,8 @@ import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 
-export const useCreatePassword = () => {
-  const { walletService, accountService } = useAdenaContext();
+export const useLedgerPassword = () => {
+  const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -17,7 +17,6 @@ export const useCreatePassword = () => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [seeds, setSeeds] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
@@ -92,12 +91,7 @@ export const useCreatePassword = () => {
 
     try {
       if (isValidPassword && isValidConfirmPassword) {
-        await accountService.clear();
-
-        const createdWallet = await walletService.createWallet({ mnemonic: seeds, password: pwd });
-        await createdWallet.initAccounts();
-        const accounts = createdWallet.getAccounts();
-        await accountService.updateAccounts(accounts);
+        await walletService.updatePassowrd(pwd);
         return 'FINISH';
       }
     } catch (error) {
@@ -109,7 +103,7 @@ export const useCreatePassword = () => {
   const nextButtonClick = async () => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
-      navigate(RoutePath.LaunchAdena);
+      navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);
       return;
     }
   };
@@ -135,7 +129,6 @@ export const useCreatePassword = () => {
       onClick: nextButtonClick,
       disabled: terms && pwd && confirmPwd ? false : true,
     },
-    setSeeds,
     onKeyDown,
   };
 };

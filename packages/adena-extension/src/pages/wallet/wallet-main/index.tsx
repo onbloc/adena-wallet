@@ -7,8 +7,6 @@ import LoadingWallet from '@components/loading-screen/loading-wallet';
 import DubbleButton from '@components/buttons/double-button';
 import ListBox from '@components/list-box';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
-import { useWallet } from '@hooks/use-wallet';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import { maxFractionDigits } from '@common/utils/client-utils';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -26,61 +24,46 @@ export const WalletMain = () => {
   const navigate = useNavigate();
 
   const [gnoClient] = useGnoClient();
-  const [balances, updateBalances] = useWalletBalances(gnoClient);
   const [currentAccount] = useCurrentAccount();
-  const [currentBalance, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
+  const [, updateBalances] = useWalletBalances(gnoClient);
+  const [balances] = useWalletBalances(gnoClient);
+  const [currentBalance] = useRecoilState(WalletState.currentBalance);
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
 
   const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
 
-  const finishedBalanceLoading = balances && balances.length > 0;
-
   useEffect(() => {
     if (currentAccount && gnoClient) {
-      updateBalances(currentAccount.getAddress());
       updateLastHistory();
+      updateBalances();
     }
-  }, [gnoClient, currentAccount]);
-
-  useEffect(() => {
-    updateCurrentBalance();
-  }, [balances]);
-
-  const updateCurrentBalance = () => {
-    setCurrentBalance({
-      amount: balances[0]?.amount,
-      denom: balances[0]?.amountDenom.toUpperCase()
-    });
-  }
+  }, [gnoClient, currentAccount?.getAddress()]);
 
   const getCurrentBalance = () => {
     if (!currentBalance.denom) {
-      return null;
+      return " \n";
     }
     return `${maxFractionDigits(currentBalance.amount.toString(), 6)}\n${currentBalance.denom}`
   };
 
-  return finishedBalanceLoading ?
-    (
-      <Wrapper>
-        <Text type='header2' textAlign='center'>
-          {getCurrentBalance()}
-        </Text>
-        <DubbleButton
-          margin='14px 0px 30px'
-          leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
-          rightProps={{
-            onClick: SendButtonClick,
-            text: 'Send',
-          }}
-        />
-        <WalletMainTokens tokenConfig={tokenConfig} balances={balances} />
-      </Wrapper>
-    ) : (
-      <LoadingWallet />
-    )
+  return (
+    <Wrapper>
+      <Text type='header2' textAlign='center'>
+        {getCurrentBalance()}
+      </Text>
+      <DubbleButton
+        margin='14px 0px 30px'
+        leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+        rightProps={{
+          onClick: SendButtonClick,
+          text: 'Send',
+        }}
+      />
+      <WalletMainTokens tokenConfig={tokenConfig} balances={balances} />
+    </Wrapper>
+  )
 };
 
 interface WalletMainTokensProps {

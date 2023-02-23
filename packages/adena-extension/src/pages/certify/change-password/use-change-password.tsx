@@ -1,9 +1,7 @@
 import { RoutePath } from '@router/path';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWallet } from '@hooks/use-wallet';
 import { PasswordValidationError } from '@common/errors';
-import { useWalletCreator } from '@hooks/use-wallet-creator';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateEqualsChangePassword, validateInvalidPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 
@@ -23,8 +21,6 @@ export const useChangePassword = () => {
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const [savedPassword, setSavedPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [wallet] = useWallet();
-  const [, createWallet] = useWalletCreator();
 
   useEffect(() => {
     initSavedPassword();
@@ -108,8 +104,8 @@ export const useChangePassword = () => {
     setErrorMessage(errorMessage);
     if (isValid) {
       try {
-        const walletState = await createWallet({ mnemonic: wallet?.getMnemonic(), password: newPassword }, true);
-        return walletState;
+        await walletService.changePassowrd(newPassword);
+        return 'FINISH';
       } catch (e) {
         console.error(e);
       }
@@ -121,9 +117,7 @@ export const useChangePassword = () => {
   const saveButtonClick = async () => {
     const state = await validationCheck();
     if (state === 'FINISH') {
-      if (wallet) {
-        return navigate(RoutePath.Setting);
-      }
+      return navigate(RoutePath.Setting);
     }
   };
 

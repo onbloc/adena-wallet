@@ -5,6 +5,7 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = {
   title: 'You’re all set!',
@@ -20,7 +21,12 @@ const Wrapper = styled.main`
 
 export const LaunchAdena = () => {
   const navigate = useNavigate();
-  const handleNextButtonClick = () => navigate(RoutePath.Home);
+  const { loadAccounts } = useLoadAccounts();
+
+  const handleNextButtonClick = () => {
+    loadAccounts();
+    navigate(RoutePath.Wallet);
+  };
 
   return (
     <Wrapper>

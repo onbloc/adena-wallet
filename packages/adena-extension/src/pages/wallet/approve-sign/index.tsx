@@ -8,7 +8,6 @@ import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService, WalletService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { useWallet } from '@hooks/use-wallet';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
@@ -23,7 +22,6 @@ export const ApproveSign = () => {
   const { accountService, transactionService } = useAdenaContext();
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [wallet, state] = useWallet();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
@@ -93,7 +91,7 @@ export const ApproveSign = () => {
   }
 
   const signTransaction = async () => {
-    if (state === 'FINISH' && transactionData && gnoClient && currentAccount) {
+    if (transactionData && gnoClient && currentAccount) {
       try {
         const signedAmino = await transactionService.createAminoSign(
           currentAccount.getAddress(),
