@@ -44,8 +44,9 @@ import {
   ApproveConnectHardwareWalletInit,
   ApproveConnectHardwareWalletSelectAccount,
   ApproveHardwareWalletLedgerPassword,
-  ApproveHardwareWalletLedgerAllSet
+  ApproveHardwareWalletLedgerAllSet,
 } from '@pages/certify/approve-connect-hardware-wallet';
+import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/connect';
 import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 import { ApproveSign } from '@pages/wallet/approve-sign';
 import { SecurityPrivacy } from '@pages/certify/security-privacy';
@@ -77,7 +78,7 @@ export const CustomRouter = () => {
   const clearStates = () => {
     clearCurrentBalance();
     clearBalances();
-  }
+  };
 
   return (
     <Router>
@@ -161,6 +162,8 @@ export const CustomRouter = () => {
           <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />
           <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
           <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
+          <Route path={RoutePath.GoogleConnect} element={<GoogleConnect />} />
+          <Route path={RoutePath.GoogleConnectFailed} element={<GoogleConnectFailed />} />
         </Routes>
         <Navigation />
       </Background>

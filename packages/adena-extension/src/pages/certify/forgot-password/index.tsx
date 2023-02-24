@@ -14,12 +14,12 @@ const text = {
 };
 
 export const ForgotPassword = () => {
-
   const navigate = useNavigate();
 
   const onClickLearnMore = () => {
     try {
-      const adenaDocsUrl = "https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet";
+      const adenaDocsUrl =
+        'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
       chrome.tabs.create({ url: adenaDocsUrl });
     } catch (e) {
       console.error(e);
@@ -31,7 +31,11 @@ export const ForgotPassword = () => {
   };
 
   const onClickNextButton = () => {
-    navigate(RoutePath.EnterSeedPhrase);
+    navigate(RoutePath.EnterSeedPhrase, {
+      state: {
+        from: 'forgot-password',
+      },
+    });
   };
 
   return (
