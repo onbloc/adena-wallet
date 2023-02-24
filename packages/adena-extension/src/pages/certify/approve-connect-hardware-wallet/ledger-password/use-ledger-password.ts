@@ -1,12 +1,19 @@
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
+import { WalletAccount } from 'adena-module';
+
+interface LocationState {
+  accounts: Array<string>;
+  currentAccount: string | null;
+};
 
 export const useLedgerPassword = () => {
-  const { walletService } = useAdenaContext();
+  const location = useLocation();
+  const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -103,6 +110,13 @@ export const useLedgerPassword = () => {
   const nextButtonClick = async () => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
+      const { accounts, currentAccount } = location.state as LocationState;
+      const deseriazedAccounts = accounts.map(WalletAccount.deserialize);
+      await accountService.updateAccounts(deseriazedAccounts);
+      if (currentAccount) {
+        await accountService.changeCurrentAccount(WalletAccount.deserialize(currentAccount));
+      }
+
       navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);
       return;
     }

@@ -13,6 +13,7 @@ const text = {
   desc: 'This will be used to unlock your wallet.',
 };
 
+
 export const ApproveHardwareWalletLedgerPassword = () => {
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useLedgerPassword();
@@ -66,8 +67,8 @@ export const ApproveHardwareWalletLedgerPassword = () => {
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  width: 100%;
-  height: 100%;
+  max-width: 380px;
+  min-height: 514px;
   padding-top: 50px;
 `;
 

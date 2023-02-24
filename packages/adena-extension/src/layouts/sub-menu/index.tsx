@@ -47,15 +47,21 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
   </Button>
 );
 
-const UserListMaker = ({ accounts, currentAccount, accountBalances, changeAccountHandler }: UserListProps) => (
+const UserListMaker = ({
+  accounts,
+  currentAccount,
+  accountBalances,
+  changeAccountHandler,
+}: UserListProps) => (
   <>
     {accounts.map((v, i) => {
-      const balance = accountBalances[v.getAddress()] && accountBalances[v.getAddress()].length > 0 ?
-        accountBalances[v.getAddress()][0] :
-        null;
-      const balanceString = balance ?
-        `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}` :
-        "-"
+      const balance =
+        accountBalances[v.getAddress()] && accountBalances[v.getAddress()].length > 0
+          ? accountBalances[v.getAddress()][0]
+          : null;
+      const balanceString = balance
+        ? `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}`
+        : '-';
 
       return (
         <ListItem key={i} onClick={() => changeAccountHandler(v)}>
@@ -76,13 +82,13 @@ const UserListMaker = ({ accounts, currentAccount, accountBalances, changeAccoun
 );
 
 const FromBadge = ({ from }: { from: string }) => {
-  if (from === "GOOGLE") {
+  if (from === 'GOOGLE') {
     return <StyledBedge type='captionReg'>Google</StyledBedge>;
   }
-  if (from === "PRIVATE_KEY") {
+  if (from === 'PRIVATE_KEY') {
     return <StyledBedge type='captionReg'>Imported</StyledBedge>;
   }
-  if (from === "LEDGER") {
+  if (from === 'LEDGER') {
     return <StyledBedge type='captionReg'>Ledger</StyledBedge>;
   }
   return <></>;

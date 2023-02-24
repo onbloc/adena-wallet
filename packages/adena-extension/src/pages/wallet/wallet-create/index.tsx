@@ -37,16 +37,19 @@ export const WalletCreate = () => {
   }, [state]);
 
   const onCreateButtonClick = () => {
-    navigate(RoutePath.YourSeedPhrase)
+    navigate(RoutePath.YourSeedPhrase);
   };
 
   const onRestoreButtonClick = () => {
-    navigate(RoutePath.EnterSeedPhrase)
+    navigate(RoutePath.EnterSeedPhrase);
   };
 
   const importWalletHandler = () => {
-    // TODO
-    navigate(RoutePath.EnterSeedPhrase);
+    navigate(RoutePath.EnterSeedPhrase, {
+      state: {
+        from: 'wallet-create',
+      },
+    });
   };
 
   const ConnectLedgerHandler = async () => {
@@ -68,10 +71,14 @@ export const WalletCreate = () => {
     chrome.windows.create(popupOption);
   };
 
+  const googleLoginHandler = () => {
+    navigate(RoutePath.GoogleConnect);
+  };
+
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <GoogleSigninButton onClick={() => { console.log("Google") }} margin='auto auto 3px' />
+      <GoogleSigninButton onClick={googleLoginHandler} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
@@ -95,7 +102,7 @@ export const WalletCreate = () => {
           <Text type='body1Bold'>Restore Wallet</Text>
         </Button> */}
     </Wrapper>
-  )
+  );
 };
 
 const ButtonWrap = styled.div`

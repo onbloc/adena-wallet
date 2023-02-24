@@ -7,7 +7,7 @@ import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
 import { useEnterSeed } from './use-enter-seed';
 import TermsCheckbox from '@components/terms-checkbox';
-import { Route, useMatch } from 'react-router-dom';
+import { Route, useLocation, useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 
 const walletContent = {
@@ -16,7 +16,7 @@ const walletContent = {
   terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
-const ForgotContent = {
+const forgotContent = {
   title: 'Enter Seed Phrase ',
   desc: 'Reset your password with\na 12 or 24-word seed phrase.',
   terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
@@ -25,9 +25,7 @@ const ForgotContent = {
 export const EnterSeedPharse = () => {
   const { seedState, buttonState } = useEnterSeed();
   const [terms, setTerms] = useState(false);
-  const wallet = useMatch(RoutePath.Wallet);
-  const forgot = useMatch(RoutePath.ForgotPassword);
-
+  const { state } = useLocation();
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
     [terms],
@@ -36,8 +34,8 @@ export const EnterSeedPharse = () => {
   return (
     <Wrapper>
       <TitleWithDesc
-        title={forgot ? ForgotContent.title : walletContent.title}
-        desc={forgot ? ForgotContent.desc : walletContent.desc}
+        title={state.from === 'forgot-password' ? forgotContent.title : walletContent.title}
+        desc={state.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
       />
       <SeedBox
         value={seedState.value}
@@ -52,7 +50,7 @@ export const EnterSeedPharse = () => {
           checked={terms}
           onChange={handleTermsChange}
           tabIndex={2}
-          text={forgot ? ForgotContent.terms : walletContent.terms}
+          text={state.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
           checkboxPos='TOP'
         />
         <Button

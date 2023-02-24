@@ -259,16 +259,22 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       }
     });
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
-    await accountService.updateAccounts([...storedAccounts, ...resultSavedAccounts]);
+    const resultAccounts = [...storedAccounts, ...resultSavedAccounts];
+    let currentAccount = null;
     if (resultSavedAccounts.length > 0) {
-      await accountService.changeCurrentAccount(resultSavedAccounts[0]);
+      currentAccount = resultSavedAccounts[0];
     }
 
-    if (storedAccounts.length === 0) {
-      navigate(RoutePath.ApproveHardwareWalletLedgerPassword);
-      return;
-    }
-    navigate(RoutePath.ApproveHardwareWalletFinish);
+    const locationState = {
+      accounts: resultAccounts.map(account => account.serialize()),
+      currentAccount: currentAccount?.serialize() ?? null
+    };
+
+    const routePath = storedAccounts.length === 0 ?
+      RoutePath.ApproveHardwareWalletLedgerPassword :
+      RoutePath.ApproveHardwareWalletFinish;
+
+    navigate(routePath, { state: locationState });
   };
 
   const renderAccount = (account: InstanceType<typeof WalletAccount>, index: number) => {

@@ -11,6 +11,8 @@ import {
   IconArrowV2,
   IconWebLink,
   IconHiddenEye,
+  IconConnectLoading,
+  IconConnectFailed,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -32,6 +34,8 @@ const ICONS = {
   iconArrowV2: IconArrowV2,
   iconWebLink: IconWebLink,
   iconHiddenEye: IconHiddenEye,
+  iconConnectLoading: IconConnectLoading,
+  iconConnectFailed: IconConnectFailed,
 } as const;
 
 const Icon = ({ name, className = '', ...rest }: IconProps) => {

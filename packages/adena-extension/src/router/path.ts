@@ -16,6 +16,10 @@ export enum RoutePath {
   ImportPrivateKey = '/popup/import-private-key',
   GenerateSeedPhrase = '/popup/generate-seed-phrase',
 
+  //google login
+  GoogleConnect = '/google-login',
+  GoogleConnectFailed = '/google-login/failed',
+
   //wallet
   Wallet = '/wallet',
   WalletSearch = '/wallet/search',

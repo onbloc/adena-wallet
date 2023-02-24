@@ -1,6 +1,5 @@
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import React, { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';

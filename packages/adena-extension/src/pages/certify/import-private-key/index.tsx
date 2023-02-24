@@ -24,10 +24,7 @@ export const ImportPrivateKey = () => {
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
 
-  const handleTermsChange = useCallback(
-    () => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -44,8 +41,8 @@ export const ImportPrivateKey = () => {
   };
 
   const nextButtonClick = async () => {
-    const privateKey = value.replace("0x", "");
-    const account = await WalletAccount.createByPrivateKeyHex(privateKey, "g");
+    const privateKey = value.replace('0x', '');
+    const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
     importAccount(account);
     navigate(RoutePath.Wallet);
   };
