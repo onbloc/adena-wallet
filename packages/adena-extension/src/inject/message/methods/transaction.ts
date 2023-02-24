@@ -1,16 +1,14 @@
-import { AdenaStorage } from '@common/storage';
-import { WalletAccountRepository } from '@repositories/wallet';
 import { RoutePath } from '@router/path';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const localStorage = AdenaStorage.local();
-  const accountRepository = new WalletAccountRepository(localStorage);
-  const address = await accountRepository.getCurrentAccountAddress();
+  const core = new InjectCore();
+  const address = await core.accountService.getCurrentAccountAddress();
   if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
@@ -29,9 +27,8 @@ export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const localStorage = AdenaStorage.local();
-  const accountRepository = new WalletAccountRepository(localStorage);
-  const address = await accountRepository.getCurrentAccountAddress();
+  const core = new InjectCore();
+  const address = await core.accountService.getCurrentAccountAddress();
   if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }

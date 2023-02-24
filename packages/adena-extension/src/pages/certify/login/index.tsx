@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = 'Enter\nYour Password';
 
@@ -36,6 +37,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [validateState, setValidateState] = useState(true);
+  const { loadAccounts } = useLoadAccounts();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -53,6 +55,8 @@ export const Login = () => {
           setValidateState(false);
           return;
         }
+        await walletService.updatePassowrd(password);
+        await loadAccounts();
         navigate(RoutePath.Home);
       }
     } catch (e) {

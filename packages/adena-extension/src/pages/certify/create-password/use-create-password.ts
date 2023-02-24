@@ -98,6 +98,7 @@ export const useCreatePassword = () => {
         await createdWallet.initAccounts();
         const accounts = createdWallet.getAccounts();
         await accountService.updateAccounts(accounts);
+        await walletService.changePassowrd(pwd);
         return 'FINISH';
       }
     } catch (error) {

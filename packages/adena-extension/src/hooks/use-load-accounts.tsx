@@ -4,7 +4,7 @@ import { useAdenaContext } from './use-context';
 import { WalletAccount } from 'adena-module';
 
 export const useLoadAccounts = () => {
-  const { accountService, balanceService } = useAdenaContext();
+  const { walletService, accountService, balanceService } = useAdenaContext();
   const [state, setState] = useRecoilState(WalletState.state);
   const [accounts, setAccounts] = useRecoilState(WalletState.accounts);
   const [, setAccountBalances] = useRecoilState(WalletState.accountBalances);
@@ -13,6 +13,12 @@ export const useLoadAccounts = () => {
     const accounts = await accountService.getAccounts();
     if (accounts.length === 0) {
       setState("CREATE");
+      return false;
+    }
+
+    const isLocked = await walletService.isLocked();
+    if (isLocked) {
+      setState("LOGIN");
       return false;
     }
 

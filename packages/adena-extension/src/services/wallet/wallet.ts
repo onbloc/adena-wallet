@@ -1,6 +1,7 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { Wallet } from 'adena-module';
 import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
+import { encryptSha256Password } from '@common/utils/crypto-utils';
 
 export class WalletService {
 
@@ -44,8 +45,6 @@ export class WalletService {
     if (!isExists) {
       throw new WalletError("NOT_FOUND_SERIALIZED");
     }
-    const a = await chrome.storage.local.get("SERIALIZED");
-    console.log(a)
     const password = await this.walletRepository.getWalletPassword();
     const walletInstance = await this.deserializeWallet(password);
     return walletInstance;
@@ -148,8 +147,9 @@ export class WalletService {
 
   public equalsPassowrd = async (password: string) => {
     try {
-      const storedPassword = await this.walletRepository.getWalletPassword();
-      return storedPassword === password;
+      const storedPassword = await this.walletRepository.getEncryptedPassword();
+      const encryptedPassword = encryptSha256Password(password);
+      return storedPassword === encryptedPassword;
     } catch (e) {
       console.error(e);
     }

@@ -52,7 +52,7 @@ export const AddAccount = () => {
     navigate(RoutePath.ImportPrivateKey);
   };
 
-  const addAccountContent = [
+  const getAddAccountContent = (availCreateAccount: boolean) => [
     {
       title: 'Create New Account',
       subTitle: 'Generate a new account address',
@@ -78,7 +78,7 @@ export const AddAccount = () => {
       <Text className='main-title' type='header4'>
         Add Account
       </Text>
-      {addAccountContent.map((v, i) => (
+      {getAddAccountContent(availCreateAccount).map((v, i) => (
         <MultilineTextWithArrowButton
           key={i}
           title={v.title}

@@ -63,6 +63,7 @@ export class TransactionService {
       await this.createTransactionAccount(account);
     const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
+    console.log("currentAccount", currentAccount);
     const document = Transaction.generateDocument(
       currentAccount,
       chainId,
@@ -76,7 +77,6 @@ export class TransactionService {
       `${gasAmount.value}${gasAmount.denom}`,
     );
     const transactionSignature = await Transaction.generateSignature(currentAccount, document);
-    console.log(transactionSignature)
     const transaction = Transaction.builder()
       .fee(transactionFee)
       .messages([message])
@@ -96,13 +96,7 @@ export class TransactionService {
     }
     const accountInfo = await this.gnoClient.getAccount(account.getAddress());
     const currentAccount = new WalletAccount(account.data);
-    try {
-      if (currentAccount.data.accountType === "SEED") {
-        await currentAccount.initSignerByPrivateKey();
-      }
-    } catch (e) {
-      console.log(e);
-    }
+    await currentAccount.initSignerByPrivateKey();
     currentAccount.updateByGno({
       accountNumber: accountInfo.accountNumber,
       sequence: accountInfo.sequence,

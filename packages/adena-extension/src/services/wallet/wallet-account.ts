@@ -26,8 +26,13 @@ export class WalletAccountService {
   };
 
   public getCurrentAccountAddress = async () => {
-    const currentAccount = await this.getCurrentAccount();
-    return currentAccount.getAddress();;
+    try {
+      const currentAccount = await this.getCurrentAccount();
+      return currentAccount.getAddress();
+    } catch (e) {
+      console.error(e);
+    }
+    return ""
   };
 
   public updateCurrentAccount = async (
@@ -44,6 +49,7 @@ export class WalletAccountService {
       }
       return account;
     });
+    await this.walletAccountRepository.updateCurrentAccountAddress(currentAccount.getAddress());
     await this.updateAccounts(changedAccounts);
     return true;
   };

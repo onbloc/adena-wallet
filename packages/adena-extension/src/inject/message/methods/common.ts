@@ -5,6 +5,7 @@ import { WalletAccountRepository, WalletEstablishRepository } from '@repositorie
 import { ChainService, WalletEstablishService } from '@services/index';
 import axios from 'axios';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const createPopup = async (
   popupPath: string,
@@ -64,15 +65,10 @@ export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
 ) => {
-  const localStorage = AdenaStorage.local();
-  const axiosInstance = axios.create();
-  const accountRepository = new WalletAccountRepository(localStorage);
-  const establishRepository = new WalletEstablishRepository(localStorage);
-  const chainRepository = new ChainRepository(localStorage, axiosInstance);
-  const chainService = new ChainService(chainRepository);
-  const establishService = new WalletEstablishService(establishRepository, chainService);
-  const address = await accountRepository.getCurrentAccountAddress();
-  const isEstablished = await establishService.isEstablished(requestData.hostname ?? '', address);
+  const core = new InjectCore();
+
+  const address = await core.accountService.getCurrentAccountAddress();
+  const isEstablished = await core.establishService.isEstablished(requestData.hostname ?? '', address);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));
     return false;

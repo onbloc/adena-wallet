@@ -4,10 +4,12 @@ import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export const useLogin = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { walletService } = useAdenaContext();
+  const { loadAccounts } = useLoadAccounts();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const location = useLocation();
@@ -16,8 +18,12 @@ export const useLogin = () => {
 
   const tryLogin = async (password: string) => {
     const equalPassword = await walletService.equalsPassowrd(password);
+    console.log("equalPassword", equalPassword)
     if (equalPassword) {
-      setState("FINISH");
+      await walletService.updatePassowrd(password);
+      setState("LOADING");
+      await loadAccounts();
+      navigate(RoutePath.Wallet);
     }
   };
 
