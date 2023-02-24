@@ -37,6 +37,7 @@ export const YourSeedPhrase = () => {
 
   const viewSeedAgreeButton = () => {
     if (terms) setViewSeedAgree(true);
+    setShowBlurScreen(false);
     setTerms(false);
   };
 
