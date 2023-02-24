@@ -264,8 +264,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       await accountService.changeCurrentAccount(resultSavedAccounts[0]);
     }
 
-    const existPassword = await walletService.existsWallet();
-    if (storedAccounts.length === 0 || existPassword === false) {
+    if (storedAccounts.length === 0) {
       navigate(RoutePath.ApproveHardwareWalletLedgerPassword);
       return;
     }
