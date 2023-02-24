@@ -29,7 +29,7 @@ export const ArrowTitleMenu = ({ title }: ArrowTitleMenuProps) => {
   return (
     <Wrapper>
       <Button onClick={handlePrevButtonClick} tabIndex={0} />
-      <Text type='body1Bold'>{title}</Text>
+      {title && <Text type='body1Bold'>{title}</Text>}
     </Wrapper>
   );
 };
