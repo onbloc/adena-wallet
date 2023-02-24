@@ -13,6 +13,7 @@ const text = {
   desc: 'This will be used to unlock your wallet.',
 };
 
+
 export const ApproveHardwareWalletLedgerPassword = () => {
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useLedgerPassword();
