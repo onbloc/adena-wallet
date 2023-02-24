@@ -37,7 +37,7 @@ const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
 }
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
-  const { accountService, establishService } = useAdenaContext();
+  const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [currentAccount] = useCurrentAccount();
@@ -49,30 +49,27 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
 
   useEffect(() => {
     initAccountInfo();
-  }, [currentAccount]);
+  }, [currentAccount, hostname]);
 
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
-      const address = currentAccount?.getAddress() ?? "";
-      establishService.isEstablished(hostname, address).then((result) => {
-        setIsEstablish(result);
+      if (hostname !== "") {
         setHostname(hostname);
-      });
+      }
     });
   }, [location]);
 
   const initAccountInfo = async () => {
-    const address = currentAccount?.getAddress() ?? "";
-    setCurrentAccountAddress(address);
-
-    let currentAccountName = currentAccount?.data.name;
-    if (!currentAccountName) {
-      const accounts = await accountService.getAccounts();
-      const walletAccount = accounts.find(account => account.getAddress() === currentAccountAddress);
-      currentAccountName = walletAccount?.data.name ?? '';
+    if (!currentAccount) {
+      return;
     }
-    setCurrentAccountName(currentAccountName);
+    const { address, name } = currentAccount.data;
+    setCurrentAccountAddress(address ?? "");
+    setCurrentAccountName(name ?? '');
+
+    const isEstablished = await establishService.isEstablished(hostname, address);
+    setIsEstablish(isEstablished);
   };
 
   const getCurrentUrl = () => {

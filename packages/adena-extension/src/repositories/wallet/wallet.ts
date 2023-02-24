@@ -1,9 +1,10 @@
 import { WalletError } from "@common/errors";
 import { StorageManager } from "@common/storage/storage-manager";
-import { encryptPassword, decryptPassword } from "@common/utils/crypto-utils";
+import { encryptPassword, decryptPassword, encryptSha256Password } from "@common/utils/crypto-utils";
 
 type LocalValueType =
-  | 'SERIALIZED';
+  | 'SERIALIZED'
+  | 'ENCRYPTED_STORED_PASSWORD';
 type SessionValueType =
   | 'ENCRYPTED_KEY'
   | 'ENCRYPTED_PASSWORD';
@@ -38,10 +39,16 @@ export class WalletRepository {
   };
 
   public existsWalletPassword = async () => {
-    const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
-    const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
+    try {
+      const password = await this.getWalletPassword();
+      if (password !== "") {
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
-    return Boolean(encryptedKey) && Boolean(encryptedPassword);
+    return false;
   };
 
   public getWalletPassword = async () => {
@@ -61,6 +68,8 @@ export class WalletRepository {
 
   public updateWalletPassword = async (password: string) => {
     const { encryptedKey, encryptedPassword } = encryptPassword(password);
+    const storedPassword = encryptSha256Password(password);
+    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', storedPassword);
     await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
     await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
     return true;
@@ -70,5 +79,10 @@ export class WalletRepository {
     await this.sessionStorage.remove('ENCRYPTED_KEY');
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
     return true;
+  };
+
+  public getEncryptedPassword = async () => {
+    const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
+    return encryptedPassword
   };
 }

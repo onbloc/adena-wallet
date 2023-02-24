@@ -39,7 +39,7 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
 
   const localStorage = AdenaStorage.local();
 
-  const sessionStorage = AdenaStorage.local();
+  const sessionStorage = AdenaStorage.session();
 
   const walletRepository = new WalletRepository(localStorage, sessionStorage);
 

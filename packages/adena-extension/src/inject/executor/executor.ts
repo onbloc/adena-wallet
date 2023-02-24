@@ -155,7 +155,7 @@ export class AdenaExecutor {
             this.resolver &&
               this.resolver({
                 status,
-                data: {},
+                data,
                 code,
                 message,
                 type,

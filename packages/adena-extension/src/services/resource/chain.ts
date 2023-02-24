@@ -42,7 +42,7 @@ export class ChainService {
 
   public getCurrentClient = async () => {
     const network = await this.getCurrentNetwork();
-    return GnoClient.createNetwork(network);
+    return GnoClient.createNetworkByType(network, 'TEST3');
   };
 
   public clear = async () => {

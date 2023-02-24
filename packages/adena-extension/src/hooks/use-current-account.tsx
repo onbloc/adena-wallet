@@ -1,6 +1,6 @@
 import { GnoClientState, WalletState } from '@states/index';
 import { WalletAccount } from 'adena-module';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 import { useLoadAccounts } from './use-load-accounts';

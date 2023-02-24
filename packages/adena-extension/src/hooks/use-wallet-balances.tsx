@@ -11,7 +11,7 @@ export const useWalletBalances = (
   const { accountService, balanceService } = useAdenaContext();
 
   const [balances, setBalances] = useRecoilState(WalletState.balances);
-  const [, setState] = useRecoilState(WalletState.state);
+  const [state, setState] = useRecoilState(WalletState.state);
   const [, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
 
@@ -34,13 +34,17 @@ export const useWalletBalances = (
       } else {
         setFailedNetwork(false);
       }
-      setState("FINISH");
+      if (state === "LOADING" || state === "NONE") {
+        setState("FINISH");
+      }
     } catch (e) {
       if (e instanceof CommonError) {
         console.log(e);
       } else {
         setFailedNetwork(true);
-        setState("FINISH");
+        if (state === "LOADING" || state === "NONE") {
+          setState("FINISH");
+        }
       }
     }
   };
