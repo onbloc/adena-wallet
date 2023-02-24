@@ -41,6 +41,7 @@ export const Header = () => {
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
+  const resetWallet = useMatch(RoutePath.ResetWallet);
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
 
   const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
@@ -88,6 +89,9 @@ export const Header = () => {
     }
     if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
       return <ProgressMenu showLogo progressLevel={'third'} />;
+    }
+    if (resetWallet) {
+      return <ArrowTitleMenu />;
     }
     if (forgotPassword) {
       return <ArrowTitleMenu title={'Forgot Password?'} />;
