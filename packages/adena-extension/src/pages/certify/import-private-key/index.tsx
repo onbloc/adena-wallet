@@ -10,6 +10,7 @@ import { WalletAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
 import { useImportAccount } from '@hooks/use-import-account';
+import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 
 const content = {
   title: 'Import Private Key',
@@ -19,16 +20,21 @@ const content = {
 
 export const ImportPrivateKey = () => {
   const navigate = useNavigate();
-  const error = false;
+  const { accounts } = useWalletAccounts();
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
+
+  const error = errorMessage !== '';
+  const isImportButton = terms && value.length > 0;
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
       setValue(e.target.value);
+      setErrorMessage('');
     },
     [value],
   );
@@ -41,10 +47,19 @@ export const ImportPrivateKey = () => {
   };
 
   const nextButtonClick = async () => {
-    const privateKey = value.replace('0x', '');
-    const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
-    importAccount(account);
-    navigate(RoutePath.Wallet);
+    try {
+      const privateKey = value.replace('0x', '');
+      const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
+
+      if (accounts.find(cur => cur.data.privateKey === privateKey)) {
+        setErrorMessage('Private key already registered')
+        return;
+      }
+      importAccount(account);
+      navigate(RoutePath.Wallet);
+    } catch (e) {
+      setErrorMessage('Invalid private key')
+    }
   };
 
   return (
@@ -57,7 +72,7 @@ export const ImportPrivateKey = () => {
         error={error}
         scroll={true}
       />
-      {error && <ErrorText text={''} />}
+      {error && <ErrorText text={errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
           checked={terms}
@@ -69,10 +84,10 @@ export const ImportPrivateKey = () => {
         <Button
           fullWidth
           hierarchy={ButtonHierarchy.Primary}
-          disabled={false}
+          disabled={!isImportButton}
           onClick={nextButtonClick}
         >
-          <Text type='body1Bold'>Next</Text>
+          <Text type='body1Bold'>Import</Text>
         </Button>
       </TermsWrap>
     </Wrapper>

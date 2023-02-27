@@ -1,6 +1,6 @@
 {
   "name": "adena-extension",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Adena Wallet",
   "scripts": {
     "build:dev": "webpack --mode=development --watch",
@@ -52,7 +52,6 @@
     "@tanstack/react-query": "^4.10.3",
     "@vespaiach/axios-fetch-adapter": "^0.3.0",
     "adena-module": "*",
-    "adena-torus-signin": "*",
     "axios": "^0.27.2",
     "bignumber.js": "^9.1.1",
     "crypto-js": "^4.1.1",
