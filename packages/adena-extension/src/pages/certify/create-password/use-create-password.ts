@@ -40,6 +40,7 @@ export const useCreatePassword = () => {
   const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(location.state);
   const [errorMessage, setErrorMessage] = useState('');
   const { importAccount } = useImportAccount();
+  const [activated, setActivated] = useState(false);
 
   useEffect(() => {
     const locationState = location.state;
@@ -58,6 +59,11 @@ export const useCreatePassword = () => {
     }
   }, [inputRef]);
 
+  useEffect(() => {
+    if (activated) {
+      create();
+    }
+  }, [activated]);
 
   const isSeedPharase = (state: CreatePasswordState): state is SeedState => {
     return state.type === 'SEED';
@@ -170,17 +176,27 @@ export const useCreatePassword = () => {
     return 'FINISH';
   };
 
-  const nextButtonClick = async () => {
+  const create = async () => {
     const validationState = await validationCheck();
     if (!validationState) {
+      setActivated(false);
       return;
     }
     await accountService.clear();
     const result = await createAccounts();
     if (result === 'FINISH') {
       navigate(RoutePath.LaunchAdena, { state: locationState });
+      setActivated(false);
       return;
     }
+  }
+
+  const nextButtonClick = async () => {
+    if (activated) {
+      return;
+    }
+
+    setActivated(true);
   };
 
   return {
