@@ -1,0 +1,46 @@
+{
+  "name": "adena-torus-signin",
+  "version": "1.4.4",
+  "description": "Adena wallet's torus sign in module",
+  "main": "./dist/index.umd.js",
+  "module": "./dist/index.esm.js",
+  "author": "jinoosss",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@ethereumjs/tx": "3.3.2",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@walletconnect/client": "^1.8.0",
+    "@web3auth/base": "^4.6.0",
+    "@web3auth/core": "^4.6.0",
+    "@web3auth/ethereum-provider": "^4.6.0",
+    "@web3auth/openlogin-adapter": "^4.6.0",
+    "ecdh": "^0.2.0",
+    "ethers": "^5.7.2",
+    "web3": "^1.8.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/preset-env": "^7.19.4",
+    "@babel/preset-flow": "^7.18.6",
+    "@babel/preset-typescript": "^7.21.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@solana/web3.js": "^1.73.3",
+    "@types/jest": "^29.2.4",
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
+    "@typescript-eslint/parser": "^5.40.0",
+    "c-kzg": "^1.0.9",
+    "eslint-config-react-app": "^7.0.1",
+    "fs": "^0.0.1-security",
+    "jest": "^29.2.0",
+    "lodash.merge": "^4.6.2",
+    "rollup": "^3.2.2",
+    "rollup-plugin-typescript2": "^0.34.1",
+    "typescript": "^4.8.4"
+  },
+  "scripts": {
+    "dev": "rollup -w -c --environment FORMAT:esm",
+    "build:default": "rollup -c",
+    "build": "rimraf dist/* && run-p build:default"
+  }
+}
