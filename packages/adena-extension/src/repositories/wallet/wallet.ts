@@ -41,14 +41,14 @@ export class WalletRepository {
   public existsWalletPassword = async () => {
     try {
       const password = await this.getWalletPassword();
-      if (password !== "") {
-        return true;
+      if (password === "") {
+        throw new WalletError("NOT_FOUND_PASSWORD");
       }
     } catch (e) {
-      console.error(e);
+      return false;
     }
 
-    return false;
+    return true;
   };
 
   public getWalletPassword = async () => {

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
@@ -19,13 +19,28 @@ const Wrapper = styled.main`
   padding-top: 50px;
 `;
 
+interface LaunchAdenaState {
+  type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
+}
+
 export const LaunchAdena = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { loadAccounts } = useLoadAccounts();
 
   const handleNextButtonClick = () => {
-    loadAccounts();
-    navigate(RoutePath.Wallet);
+    const locationState: LaunchAdenaState = location.state;
+    if (
+      locationState.type === "GOOGLE" ||
+      locationState.type === "LEDGER"
+    ) {
+      window.close();
+    }
+    if (locationState.type === "SEED") {
+      loadAccounts();
+      navigate(RoutePath.Wallet);
+      return;
+    }
   };
 
   return (

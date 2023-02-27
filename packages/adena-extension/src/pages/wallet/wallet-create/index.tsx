@@ -71,8 +71,23 @@ export const WalletCreate = () => {
     chrome.windows.create(popupOption);
   };
 
-  const googleLoginHandler = () => {
-    navigate(RoutePath.GoogleConnect);
+  const googleLoginHandler = async () => {
+    const isPopup = await existsPopups();
+    if (isPopup) {
+      return;
+    }
+
+    const popupOption: chrome.windows.CreateData = {
+      url: chrome.runtime.getURL(`popup.html#${RoutePath.GoogleConnect}`),
+      type: 'popup',
+      height: 590,
+      width: 380,
+      left: 800,
+      top: 300,
+    };
+
+    window.close();
+    chrome.windows.create(popupOption);
   };
 
   return (

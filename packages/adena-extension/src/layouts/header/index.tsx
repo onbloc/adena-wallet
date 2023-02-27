@@ -68,7 +68,7 @@ export const Header = () => {
     if (approveEstablish || approveTransaction || approveSign) {
       return <ApproveMenu />;
     }
-    if (yourSeedPhrase || enterSeedPhrase || importPrivateKey) {
+    if (yourSeedPhrase || enterSeedPhrase) {
       return <ProgressMenu progressLevel={'first'} />;
     }
     if (createPassword || approveHardwareWalletLedgerPassword) {
@@ -90,7 +90,7 @@ export const Header = () => {
     if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
       return <ProgressMenu showLogo progressLevel={'third'} />;
     }
-    if (resetWallet) {
+    if (resetWallet || importPrivateKey) {
       return <ArrowTitleMenu />;
     }
     if (forgotPassword) {

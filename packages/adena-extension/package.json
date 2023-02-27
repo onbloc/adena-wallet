@@ -1,6 +1,6 @@
 {
   "name": "adena-extension",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Adena Wallet",
   "scripts": {
     "build:dev": "webpack --mode=development --watch",
@@ -16,7 +16,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-react": "^7.12.1",
     "@svgr/webpack": "^6.5.1",
-    "@types/chrome": "0.0.195",
+    "@types/chrome": "^0.0.206",
     "@types/crypto-js": "^4.1.1",
     "@types/react": "^16.9.53",
     "@types/react-dom": "^16.9.8",

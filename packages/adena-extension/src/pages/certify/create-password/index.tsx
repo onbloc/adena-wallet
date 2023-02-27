@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
@@ -7,7 +7,6 @@ import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
 import { useCreatePassword } from './use-create-password';
 import DefaultInput from '@components/default-input';
-import { useLocation } from 'react-router-dom';
 
 const text = {
   title: 'Create\na Password',
@@ -28,20 +27,17 @@ const FormBox = styled.div`
   }
 `;
 
-type LocationSeeds = {
-  seeds: string;
-};
 
 export const CreatePassword = () => {
-  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, setSeeds, onKeyDown } =
-    useCreatePassword();
-  const location = useLocation();
+  const {
+    pwdState,
+    confirmPwdState,
+    termsState,
+    errorMessage,
+    buttonState,
+    onKeyDown
+  } = useCreatePassword();
   const handleLinkClick = () => window.open('https://adena.app/terms', '_blank');
-
-  useEffect(() => {
-    const state = location.state as LocationSeeds;
-    setSeeds(state.seeds);
-  }, [buttonState]);
 
   return (
     <Wrapper>

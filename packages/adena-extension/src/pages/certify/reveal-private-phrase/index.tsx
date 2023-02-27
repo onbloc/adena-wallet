@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import WarningBox from '@components/warning/warning-box';
@@ -7,27 +7,27 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-
-const seeds = [
-  'chimney',
-  'anchor',
-  'abuse',
-  'inhale',
-  'wide',
-  'virus',
-  'filter',
-  'heart',
-  'kingdom',
-  'need',
-  'open',
-  'dumb',
-];
+import { useAdenaContext } from '@hooks/use-context';
 
 const blurScreenText = 'Make sure no one is watching your screen';
 
 export const RevealPrivatePhrase = () => {
   const navigate = useNavigate();
+  const { walletService } = useAdenaContext();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
+  const [seeds, setSeeds] = useState<Array<string>>([]);
+
+  useEffect(() => {
+    init();
+  }, []);
+
+  const init = async () => {
+    const wallet = await walletService.loadWallet();
+    const mnemonic = wallet.getMnemonic();
+    console.log('mnemonic', mnemonic);
+    const seeds = `${mnemonic}`.split(' ');
+    setSeeds(seeds);
+  };
 
   const doneButtonClick = () => {
     navigate(RoutePath.Setting);

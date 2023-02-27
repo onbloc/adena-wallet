@@ -32,7 +32,10 @@ export const YourSeedPhrase = () => {
 
   const handleNextButtonClick = () =>
     navigate(RoutePath.CreatePassword, {
-      state: { seeds: seeds },
+      state: {
+        type: "SEED",
+        seeds
+      },
     });
 
   const viewSeedAgreeButton = () => {
