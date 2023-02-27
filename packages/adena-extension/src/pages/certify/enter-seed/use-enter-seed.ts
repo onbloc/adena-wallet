@@ -35,7 +35,10 @@ export const useEnterSeed = () => {
       const checkedMnemonic = new EnglishMnemonic(seed);
       if (checkedMnemonic) {
         navigate(RoutePath.CreatePassword, {
-          state: { seeds: seed },
+          state: {
+            type: "SEED",
+            seeds: seed
+          },
         });
         setError(false);
         return;

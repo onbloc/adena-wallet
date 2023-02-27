@@ -19,7 +19,7 @@ interface AccountHistory {
   fee: string;
 }
 
-export type SingerType = 'AMINO' | 'LEDGER';
+export type SignerType = 'AMINO' | 'LEDGER';
 
 export type AccountType = 'GOOGLE' | 'LEDGER' | 'PRIVATE_KEY' | 'SEED' | 'NONE';
 
@@ -28,7 +28,7 @@ export type AccountStatusType = 'ACTIVE' | 'IN_ACTIVE' | 'NONE';
 interface WalletAccountArguments {
   index?: number;
   accountType: AccountType;
-  signerType?: SingerType;
+  signerType?: SignerType;
   status?: AccountStatusType;
   name?: string;
   accountNumber?: string;
@@ -49,7 +49,7 @@ export class WalletAccount {
 
   private accountType: AccountType;
 
-  private signerType: SingerType;
+  private signerType: SignerType;
 
   private signer: OfflineAminoSigner | LedgerSigner | null;
 
@@ -154,6 +154,10 @@ export class WalletAccount {
     this.signer = signer;
   };
 
+  public setAccountType = (accountType: AccountType) => {
+    this.accountType = accountType;
+  };
+
   public setPath = (path: HdPath) => {
     this.path = path[-1].toNumber();
   };
@@ -249,6 +253,12 @@ export class WalletAccount {
   public static async createByPrivateKey(privateKey: Uint8Array, prefix: string, name?: string) {
     const privateKeyHex = this.arrayToHex(privateKey);
     const account = await this.createByPrivateKeyHex(privateKeyHex, prefix, name);;
+    return account;
+  };
+
+  public static async createByGooglePrivateKey(privateKeyHex: string, prefix: string, name?: string) {
+    const account = await WalletAccount.createByPrivateKeyHex(privateKeyHex, prefix, name);
+    account.setAccountType("GOOGLE");
     return account;
   };
 

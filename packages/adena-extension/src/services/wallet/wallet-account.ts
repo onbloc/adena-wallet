@@ -30,9 +30,8 @@ export class WalletAccountService {
       const currentAccount = await this.getCurrentAccount();
       return currentAccount.getAddress();
     } catch (e) {
-      console.error(e);
+      return "";
     }
-    return ""
   };
 
   public updateCurrentAccount = async (
@@ -171,6 +170,9 @@ export class WalletAccountService {
         .filter(account => Boolean(account.data.index))
         .map(account => account.data.index);
 
+      if (indices.length < 1) {
+        return 0;
+      }
       return Math.max(...indices);
     } catch (e) {
       return 0;

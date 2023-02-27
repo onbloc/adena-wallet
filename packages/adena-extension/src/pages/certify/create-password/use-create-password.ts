@@ -1,11 +1,31 @@
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
+import { useImportAccount } from '@hooks/use-import-account';
+import { WalletAccount } from 'adena-module';
+
+interface CreatePasswordState {
+  type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
+}
+
+interface SeedState extends CreatePasswordState {
+  seeds: string;
+}
+
+interface LedgerState extends CreatePasswordState {
+  accounts: Array<string>;
+  currentAccount: string | null;
+}
+
+interface GoogleState extends CreatePasswordState {
+  privateKey: string;
+}
 
 export const useCreatePassword = () => {
+  const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -17,8 +37,14 @@ export const useCreatePassword = () => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [seeds, setSeeds] = useState('');
+  const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(location.state);
   const [errorMessage, setErrorMessage] = useState('');
+  const { importAccount } = useImportAccount();
+
+  useEffect(() => {
+    const locationState = location.state;
+    setLocationState(locationState);
+  }, [location]);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -31,6 +57,19 @@ export const useCreatePassword = () => {
       inputRef.current.focus();
     }
   }, [inputRef]);
+
+
+  const isSeedPharase = (state: CreatePasswordState): state is SeedState => {
+    return state.type === 'SEED';
+  };
+
+  const isLedgerState = (state: CreatePasswordState): state is LedgerState => {
+    return state.type === 'LEDGER';
+  };
+
+  const isGoogleState = (state: CreatePasswordState): state is GoogleState => {
+    return state.type === 'GOOGLE';
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && terms && pwd && confirmPwd) {
@@ -89,28 +128,57 @@ export const useCreatePassword = () => {
   const validationCheck = async () => {
     const isValidPassword = validationPassword();
     const isValidConfirmPassword = validationConfirmPassword(isValidPassword);
+    return isValidPassword && isValidConfirmPassword;
+  };
 
-    try {
-      if (isValidPassword && isValidConfirmPassword) {
-        await accountService.clear();
-
-        const createdWallet = await walletService.createWallet({ mnemonic: seeds, password: pwd });
-        await createdWallet.initAccounts();
-        const accounts = createdWallet.getAccounts();
-        await accountService.updateAccounts(accounts);
-        await walletService.changePassowrd(pwd);
-        return 'FINISH';
-      }
-    } catch (error) {
-      console.error(error);
+  const createAccounts = () => {
+    if (isSeedPharase(locationState)) {
+      return createWalletAccountsBySeed(locationState);
+    }
+    if (isGoogleState(locationState)) {
+      return createWalletAccountsByGoogle(locationState);
+    }
+    if (isLedgerState(locationState)) {
+      return 'FAIL';
     }
     return 'FAIL';
   };
 
+  const createWalletAccountsBySeed = async (seedState: SeedState) => {
+    try {
+      const createdWallet = await walletService.createWallet({ mnemonic: seedState.seeds, password: pwd });
+      await createdWallet.initAccounts();
+      const accounts = createdWallet.getAccounts();
+      await accountService.updateAccounts(accounts);
+      await walletService.changePassowrd(pwd);
+    } catch (error) {
+      console.error(error);
+      return 'FAIL';
+    }
+    return 'FINISH';
+  };
+
+  const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
+    try {
+      const account = await WalletAccount.createByGooglePrivateKey(googleState.privateKey, 'g');
+      await importAccount(account);
+      await walletService.updatePassowrd(pwd);
+    } catch (error) {
+      console.error(error);
+      return 'FAIL';
+    }
+    return 'FINISH';
+  };
+
   const nextButtonClick = async () => {
     const validationState = await validationCheck();
-    if (validationState === 'FINISH') {
-      navigate(RoutePath.LaunchAdena);
+    if (!validationState) {
+      return;
+    }
+    await accountService.clear();
+    const result = await createAccounts();
+    if (result === 'FINISH') {
+      navigate(RoutePath.LaunchAdena, { state: locationState });
       return;
     }
   };
@@ -136,7 +204,6 @@ export const useCreatePassword = () => {
       onClick: nextButtonClick,
       disabled: terms && pwd && confirmPwd ? false : true,
     },
-    setSeeds,
     onKeyDown,
   };
 };

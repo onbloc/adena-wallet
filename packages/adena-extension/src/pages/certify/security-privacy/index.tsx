@@ -20,7 +20,7 @@ const getMenuMakerInfo = (account: InstanceType<typeof WalletAccount> | null, av
     title: 'Reveal Seed Phrase',
     navigatePath: RoutePath.RevealPasswoardPhrase,
     mode: 'DEFAULT',
-    disabled: account?.data.accountType === "SEED" ?? true
+    disabled: account?.data.accountType !== "SEED" ?? true
   },
   {
     title: 'Export Private Key',

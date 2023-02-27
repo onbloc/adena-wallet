@@ -31,7 +31,7 @@ export class WalletService {
    */
   public createWallet = async ({ mnemonic, password }: { mnemonic: string; password: string }) => {
     const wallet = await this.createWalletByMnemonic(mnemonic);
-    this.saveWallet(wallet, password);
+    await this.saveWallet(wallet, password);
     return wallet;
   };
 
@@ -151,9 +151,8 @@ export class WalletService {
       const encryptedPassword = encryptSha256Password(password);
       return storedPassword === encryptedPassword;
     } catch (e) {
-      console.error(e);
+      return false;
     }
-    return false;
   };
 
   public updatePassowrd = async (password: string) => {
