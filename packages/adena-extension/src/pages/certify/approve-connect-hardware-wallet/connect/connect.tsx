@@ -19,6 +19,7 @@ type ConnectType =
 
 export const ApproveConnectHardwareWalletConnect = () => {
   const navigate = useNavigate();
+  const [openConnected, setOpenConnected] = useState(false);
   const [connectState, setConnectState] = useState<ConnectType>('INIT');
   const [wallet, setWallet] = useState<InstanceType<typeof Wallet>>();
 
@@ -39,8 +40,13 @@ export const ApproveConnectHardwareWalletConnect = () => {
   }, [connectState, wallet]);
 
   const initWallet = async () => {
-    const isConnected = await TransportWebUSB.openConnected();
-    if (isConnected !== null) {
+    let webUSB: TransportWebUSB | null = null;
+    if (!openConnected) {
+      webUSB = await TransportWebUSB.openConnected();
+      setOpenConnected(webUSB !== null);
+    }
+
+    if (webUSB !== null) {
       setConnectState('REQUEST_WALLET');
       return;
     }
@@ -49,17 +55,13 @@ export const ApproveConnectHardwareWalletConnect = () => {
   };
 
   const requestPermission = async () => {
-    try {
-      const devices = await TransportWebUSB.list();
-      if (devices.length > 0) {
-        await TransportWebUSB.request();
-        setConnectState('REQUEST_WALLET');
-        return true;
-      }
-    } catch (e) {
+    const devices = await TransportWebUSB.list();
+    if (devices.length === 0) {
       setConnectState('NOT_PERMISSION');
+      return false;
     }
-    return false;
+    setConnectState('REQUEST_WALLET');
+    return true;
   };
 
   const checkHardwareConnect = async () => {
