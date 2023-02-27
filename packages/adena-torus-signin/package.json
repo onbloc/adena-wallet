@@ -17,6 +17,7 @@
     "@web3auth/openlogin-adapter": "^4.6.0",
     "ecdh": "^0.2.0",
     "ethers": "^5.7.2",
+    "@solana/web3.js": "^1.73.3",
     "web3": "^1.8.2"
   },
   "devDependencies": {
@@ -25,11 +26,9 @@
     "@babel/preset-flow": "^7.18.6",
     "@babel/preset-typescript": "^7.21.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
-    "@solana/web3.js": "^1.73.3",
     "@types/jest": "^29.2.4",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@typescript-eslint/parser": "^5.40.0",
-    "c-kzg": "^1.0.9",
     "eslint-config-react-app": "^7.0.1",
     "fs": "^0.0.1-security",
     "jest": "^29.2.0",

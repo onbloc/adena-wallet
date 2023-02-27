@@ -52,6 +52,7 @@
     "@tanstack/react-query": "^4.10.3",
     "@vespaiach/axios-fetch-adapter": "^0.3.0",
     "adena-module": "*",
+    "adena-torus-signin": "*",
     "axios": "^0.27.2",
     "bignumber.js": "^9.1.1",
     "crypto-js": "^4.1.1",
