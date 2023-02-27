@@ -7,6 +7,7 @@ export const useImportAccount = (): {
   importAccount: (account: InstanceType<typeof WalletAccount>) => Promise<boolean>,
 } => {
   const { accountService } = useAdenaContext();
+  const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
   const [, setAccounts] = useRecoilState(WalletState.accounts);
   const [, setState] = useRecoilState(WalletState.state);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
@@ -19,6 +20,7 @@ export const useImportAccount = (): {
     account.setName(`Account ${index}`)
     await accountService.addAccount(account);
     await accountService.changeCurrentAccount(account);
+    setCurrentAccount(account);
     clearCurrentBalance();
     accountService.getAccounts().then(setAccounts);
     return true;
