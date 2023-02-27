@@ -8,8 +8,8 @@ import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
 
-const TermsAText = 'Anyone with the phrase will have full control over my funds.';
-const TermsBText = 'I will never share my seed phrase with anyone.';
+const TermsAText = 'Anyone with my private key will have full control over my funds.';
+const TermsBText = 'I will never share my private key with anyone.';
 
 export const RevealPasswoardPhrase = () => {
   const navigate = useNavigate();

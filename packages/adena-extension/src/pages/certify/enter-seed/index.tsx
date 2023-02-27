@@ -7,12 +7,11 @@ import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
 import { useEnterSeed } from './use-enter-seed';
 import TermsCheckbox from '@components/terms-checkbox';
-import { Route, useLocation, useMatch } from 'react-router-dom';
-import { RoutePath } from '@router/path';
+import { useLocation } from 'react-router-dom';
 
 const walletContent = {
   title: 'Import with Seed Phrase',
-  desc: 'Import an existing account with\na 12 or 24-word seed phrase.',
+  desc: 'Import an existing wallet with\na 12 or 24-word seed phrase.',
   terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
@@ -26,6 +25,9 @@ export const EnterSeedPharse = () => {
   const { seedState, buttonState } = useEnterSeed();
   const [terms, setTerms] = useState(false);
   const { state } = useLocation();
+
+  const isNextButton = terms && buttonState.disabled === false;
+
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
     [terms],
@@ -57,7 +59,7 @@ export const EnterSeedPharse = () => {
           fullWidth
           hierarchy={ButtonHierarchy.Primary}
           margin='auto 0px 0px'
-          disabled={buttonState.disabled}
+          disabled={!isNextButton}
           onClick={buttonState.onClick}
         >
           <Text type='body1Bold'>Next</Text>

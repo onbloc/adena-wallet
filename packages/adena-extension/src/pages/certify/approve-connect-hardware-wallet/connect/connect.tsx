@@ -50,9 +50,12 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
   const requestPermission = async () => {
     try {
-      await TransportWebUSB.request();
-      setConnectState('REQUEST_WALLET');
-      return true;
+      const devices = await TransportWebUSB.list();
+      if (devices.length > 0) {
+        await TransportWebUSB.request();
+        setConnectState('REQUEST_WALLET');
+        return true;
+      }
     } catch (e) {
       setConnectState('NOT_PERMISSION');
     }
