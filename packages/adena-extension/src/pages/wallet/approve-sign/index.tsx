@@ -6,16 +6,15 @@ import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-butto
 import { useLocation } from 'react-router-dom';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { TransactionService, WalletService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { ApproveLdegerLoading } from './approve-ledger-loading';
 import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
+import { LedgerConnector } from 'adena-module';
 
 // TODO: ApproveTransaction
 export const ApproveSign = () => {
@@ -142,8 +141,7 @@ export const ApproveSign = () => {
   }
 
   const cancelLedger = async () => {
-    const connected = await TransportWebUSB.openConnected();
-    await connected?.close();
+    await LedgerConnector.closeConnected();
     window.close();
   };
 

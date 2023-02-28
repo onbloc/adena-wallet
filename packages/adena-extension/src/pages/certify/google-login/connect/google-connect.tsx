@@ -5,7 +5,7 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
-// import { GoogleTorusSigner, TorusSigner } from 'adena-torus-signin/src';
+import { GoogleTorusSigner, TorusSigner } from 'adena-torus-signin/src';
 import Icon from '@components/icons';
 
 const text = {
@@ -30,53 +30,53 @@ const Wrapper = styled.main`
 
 export const GoogleConnect = () => {
   const navigate = useNavigate();
-  // const [web3auth, setWeb3auth] = useState<TorusSigner>();
+  const [web3auth, setWeb3auth] = useState<TorusSigner>();
   const [privateKey, setPrivateKey] = useState('');
 
-  // useEffect(() => {
-  //   init();
-  // }, []);
+  useEffect(() => {
+    init();
+  }, []);
 
-  // useEffect(() => {
-  //   connect();
-  // }, [web3auth]);
+  useEffect(() => {
+    connect();
+  }, [web3auth]);
 
-  // useEffect(() => {
-  //   disconnect();
-  // }, [privateKey]);
+  useEffect(() => {
+    disconnect();
+  }, [privateKey]);
 
-  // const init = async () => {
-  //   const auth = GoogleTorusSigner.create();
-  //   await auth.init();
-  //   setWeb3auth(auth);
-  // }
+  const init = async () => {
+    const auth = GoogleTorusSigner.create();
+    await auth.init();
+    setWeb3auth(auth);
+  }
 
-  // const connect = () => {
-  //   if (!web3auth) {
-  //     return;
-  //   }
-  //   web3auth.connect().then(connected => {
-  //     if (connected) {
-  //       web3auth.getPrivateKey().then(setPrivateKey);
-  //     }
-  //   })
-  // }
+  const connect = () => {
+    if (!web3auth) {
+      return;
+    }
+    web3auth.connect().then(connected => {
+      if (connected) {
+        web3auth.getPrivateKey().then(setPrivateKey);
+      }
+    })
+  }
 
-  // const disconnect = async () => {
-  //   if (!web3auth) {
-  //     return;
-  //   }
-  //   if (privateKey.length === 0) {
-  //     return;
-  //   }
-  //   web3auth.disconnect();
-  //   navigate(RoutePath.CreatePassword, {
-  //     state: {
-  //       type: "GOOGLE",
-  //       privateKey
-  //     }
-  //   });
-  // };
+  const disconnect = async () => {
+    if (!web3auth) {
+      return;
+    }
+    if (privateKey.length === 0) {
+      return;
+    }
+    web3auth.disconnect();
+    navigate(RoutePath.CreatePassword, {
+      state: {
+        type: "GOOGLE",
+        privateKey
+      }
+    });
+  };
 
   return (
     <Wrapper>

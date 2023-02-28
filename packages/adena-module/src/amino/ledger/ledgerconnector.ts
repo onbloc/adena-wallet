@@ -7,6 +7,8 @@ import { HdPath } from '../../crypto';
 import { fromUtf8 } from '../../encoding/utf8';
 import { assert } from '../../utils';
 import Transport from '@ledgerhq/hw-transport';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import CosmosApp, {
   AddressAndPublicKeyResponse,
   AppInfoResponse,
@@ -231,5 +233,57 @@ export class LedgerConnector {
       default:
         throw new Error(`Ledger Native Error: ${errorMessage}`);
     }
+  }
+
+  public static isSupportHID() {
+    return TransportWebHID.isSupported();
+  }
+
+  public static async createTransport() {
+    const interactiveTimeout = 120_000;
+    const isHID = await LedgerConnector.isSupportHID();
+    if (isHID) {
+      return TransportWebHID.create(interactiveTimeout, interactiveTimeout);
+    }
+    return TransportWebUSB.create(interactiveTimeout, interactiveTimeout);
+  }
+
+  public static async openConnected() {
+    const isHID = await LedgerConnector.isSupportHID();
+    if (isHID) {
+      return TransportWebHID.openConnected();
+    }
+    return TransportWebUSB.openConnected();
+  }
+
+  public static async closeConnected() {
+    try {
+      const transport = await LedgerConnector.openConnected();
+      await transport?.close();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  public static async devices() {
+    const isHID = await LedgerConnector.isSupportHID();
+    if (isHID) {
+      return TransportWebHID.list();
+    }
+    return TransportWebUSB.list();
+  }
+
+  public static async request() {
+    const devices = await LedgerConnector.devices();
+    if (devices.length === 0) {
+      return null;
+    }
+
+    const isHID = await LedgerConnector.isSupportHID();
+    if (isHID) {
+      return TransportWebHID.request();
+    }
+    return TransportWebUSB.request();
   }
 }

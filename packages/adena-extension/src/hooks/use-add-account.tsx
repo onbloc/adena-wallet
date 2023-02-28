@@ -17,26 +17,24 @@ export const useAddAccount = (): {
   };
 
   const addAccount = async () => {
-    setState('LOADING');
-    const currentAccounts = await accountService.getAccounts();
-    const accountPaths = currentAccounts
-      .filter((account) => account.data.accountType === 'SEED')
-      .map((account) => account.data.path);
-    const maxPath = Math.max(...accountPaths);
+    setState("LOADING");
+    const maxPath = await accountService.getLastAccountPath();
+    const maxIndex = await accountService.getLastAccountIndex();
     clearCurrentBalance();
 
     const wallet = await walletService.loadWallet();
     const mnemonic = wallet.getMnemonic();
+    const accountIndex = maxIndex + 1;
+
     const createdWallet = await walletService.createWalletByMnemonic(mnemonic, [maxPath + 1]);
     await createdWallet.initAccounts();
-
     const createdAccounts = createdWallet.getAccounts();
     if (createdAccounts.length > 0) {
-      const accountIndex = maxPath + 2;
       const createdAccount = createdAccounts[0];
       createdAccount.setIndex(accountIndex);
       createdAccount.setName(`Account ${accountIndex}`);
       createdAccount.setSigner(createdWallet);
+      await accountService.updateLastAccountPath(maxPath + 1);
       await accountService.addAccount(createdAccount);
       await accountService.changeCurrentAccount(createdAccount);
     }

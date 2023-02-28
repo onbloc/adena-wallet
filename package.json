@@ -7,7 +7,7 @@
     "develop": "nx build:dev adena-extension",
     "build": "yarn build:module && yarn build:service && yarn",
     "build:changed": "nx affected --target=build",
-    "build:module": "nx run-many --target=build --projects=adena-module,gno-client",
+    "build:module": "nx run-many --target=build --projects=adena-module,gno-client,adena-torus-signin",
     "build:service": "nx run-many --target=build --projects=adena-extension",
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",

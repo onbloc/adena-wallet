@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Wallet, WalletAccount, LedgerSigner } from 'adena-module';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import { Wallet, WalletAccount, LedgerConnector } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
 import { ConnectFail } from './connect-fail';
@@ -40,13 +39,14 @@ export const ApproveConnectHardwareWalletConnect = () => {
   }, [connectState, wallet]);
 
   const initWallet = async () => {
-    let webUSB: TransportWebUSB | null = null;
+    let connected = false;
     if (!openConnected) {
-      webUSB = await TransportWebUSB.openConnected();
-      setOpenConnected(webUSB !== null);
+      const devices = await LedgerConnector.devices();
+      connected = devices.length > 0;
+      setOpenConnected(connected);
     }
 
-    if (webUSB !== null) {
+    if (connected) {
       setConnectState('REQUEST_WALLET');
       return;
     }
@@ -55,35 +55,43 @@ export const ApproveConnectHardwareWalletConnect = () => {
   };
 
   const requestPermission = async () => {
-    const devices = await TransportWebUSB.list();
-    if (devices.length === 0) {
+    const transport = await LedgerConnector.request();
+    console.log('transport', transport);
+    if (transport === null) {
       setConnectState('NOT_PERMISSION');
       return false;
     }
     setConnectState('REQUEST_WALLET');
+    checkHardwareConnect();
     return true;
   };
 
   const checkHardwareConnect = async () => {
-    try {
-      const wallet = await Wallet.createByLedger([0]);
-      await wallet.initAccounts();
-      setConnectState('REQUEST_WALLET_LOAD');
-    } catch (e) {
-      console.log(e)
+    const transport = await LedgerConnector.openConnected();
+    if (transport === null) {
       setConnectState('FAILED');
+      return false;
     }
+
+    await transport.close();
+    setConnectState('REQUEST_WALLET');
+    return true;
   };
 
   const requestHardwareWallet = async () => {
-    setConnectState('REQUEST_WALLET');
-    await checkHardwareConnect();
     try {
       const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
+      setConnectState('REQUEST_WALLET_LOAD');
       await wallet.initAccounts();
       setWallet(wallet);
       setConnectState('SUCCESS');
     } catch (e) {
+      if (e instanceof Error) {
+        if (e.message !== "The device is already open.") {
+          console.log(e);
+        }
+      }
+      setTimeout(requestHardwareWallet, 1000);
       setConnectState('FAILED');
     }
   };
@@ -99,7 +107,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {
-      return <ConnectRequestWallet active={connectState === 'FAILED'} requestHardwareWallet={requestHardwareWallet} />
+      return <ConnectRequestWallet requestHardwareWallet={requestHardwareWallet} />
     }
 
     if (connectState === 'REQUEST_WALLET_LOAD') {
