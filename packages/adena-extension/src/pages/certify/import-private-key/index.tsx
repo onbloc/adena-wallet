@@ -53,7 +53,7 @@ export const ImportPrivateKey = () => {
       const privateKey = value.replace('0x', '');
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
 
-      if (accounts.find((cur) => cur.data.privateKey === privateKey)) {
+      if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
         setErrorMessage('Private key already registered');
         return;
       }
