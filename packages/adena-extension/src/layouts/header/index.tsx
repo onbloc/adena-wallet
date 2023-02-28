@@ -85,10 +85,10 @@ export const Header = () => {
       approveHardwareWalletConnect ||
       approveHardwareWalletSelectAccount
     ) {
-      return <ProgressMenu showLogo progressLevel={'first'} />;
+      return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
     }
     if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
-      return <ProgressMenu showLogo progressLevel={'third'} />;
+      return <ProgressMenu showLogo progressLevel={'third'} hideArrow />;
     }
     if (resetWallet) {
       return <ArrowTitleMenu title={'Reset Wallet'} />;

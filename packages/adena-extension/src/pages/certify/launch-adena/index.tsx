@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = {
-  title: 'You’re all set!',
+  title: 'You’re All Set',
   desc: 'Click on the Start button to\nlaunch Adena.',
 };
 
@@ -30,13 +30,10 @@ export const LaunchAdena = () => {
 
   const handleNextButtonClick = () => {
     const locationState: LaunchAdenaState = location.state;
-    if (
-      locationState.type === "GOOGLE" ||
-      locationState.type === "LEDGER"
-    ) {
+    if (locationState.type === 'GOOGLE' || locationState.type === 'LEDGER') {
       window.close();
     }
-    if (locationState.type === "SEED") {
+    if (locationState.type === 'SEED') {
       loadAccounts();
       navigate(RoutePath.Wallet);
       return;

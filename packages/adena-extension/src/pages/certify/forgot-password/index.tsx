@@ -92,6 +92,7 @@ const TextStyled = styled.div`
   line-height: 21px;
   transition: all 0.3s ease;
   margin: auto 0px 20px;
+  cursor: pointer;
   &:hover {
     transition: all 0.3s ease;
     color: ${({ theme }) => theme.color.primary[3]};
