@@ -3,7 +3,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
-import { validateEqualsChangePassword, validateInvalidPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
+import {
+  validateEqualsChangePassword,
+  validateInvalidPassword,
+  validateNotMatchConfirmPassword,
+  validateWrongPasswordLength,
+} from '@common/validation';
 
 export const useChangePassword = () => {
   const { walletService } = useAdenaContext();
@@ -42,7 +47,7 @@ export const useChangePassword = () => {
   const initSavedPassword = async () => {
     const currentPassword = await walletService.loadWalletPassword();
     setSavedPassword(currentPassword);
-  }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currPwd && newPwd && confirmPwd) {
@@ -112,12 +117,12 @@ export const useChangePassword = () => {
     }
     return 'FAIL';
   };
-  const cancelButtonClick = () => navigate(RoutePath.Setting);
+  const cancelButtonClick = () => navigate(-1);
 
   const saveButtonClick = async () => {
     const state = await validationCheck();
     if (state === 'FINISH') {
-      return navigate(RoutePath.Setting);
+      return navigate(-1);
     }
   };
 

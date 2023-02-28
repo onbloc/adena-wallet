@@ -3,8 +3,8 @@ import { WalletState } from '@states/index';
 import { useAdenaContext } from './use-context';
 
 export const useAddAccount = (): {
-  availAddAccount: () => Promise<boolean>,
-  addAccount: () => Promise<boolean>,
+  availAddAccount: () => Promise<boolean>;
+  addAccount: () => Promise<boolean>;
 } => {
   const { walletService, accountService } = useAdenaContext();
   const [, setAccounts] = useRecoilState(WalletState.accounts);
@@ -17,11 +17,11 @@ export const useAddAccount = (): {
   };
 
   const addAccount = async () => {
-    setState("LOADING");
+    setState('LOADING');
     const currentAccounts = await accountService.getAccounts();
     const accountPaths = currentAccounts
-      .filter(account => account.data.accountType === "SEED")
-      .map(account => account.data.path);
+      .filter((account) => account.data.accountType === 'SEED')
+      .map((account) => account.data.path);
     const maxPath = Math.max(...accountPaths);
     clearCurrentBalance();
 

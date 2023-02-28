@@ -53,15 +53,13 @@ const AddressBook = () => {
               left={<Text type='body2Bold'>{formatNickname(v.name, 15)}</Text>}
               center={null}
               right={
-                <Text type='body2Reg' color={theme.color.neutral[9]}>
+                <Text type='body2Reg' color={theme.color.neutral[9]} margin='0px 0px 0px auto'>
                   {formatAddress(v.address)}
                 </Text>
               }
               cursor='pointer'
               hoverAction={true}
               key={i}
-              className='address-list'
-              padding='0 17px'
               onClick={() => addAddressHandler('edit', v)}
             />
           ))
@@ -88,9 +86,6 @@ const Wrapper = styled.main`
     left: 0px;
     width: 100%;
     text-align: center;
-  }
-  .address-list {
-    ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
   }
 `;
 

@@ -28,8 +28,8 @@ export const EnterSeedPharse = () => {
   return (
     <Wrapper onKeyDown={seedState.onKeyDown}>
       <TitleWithDesc
-        title={state.from === 'forgot-password' ? forgotContent.title : walletContent.title}
-        desc={state.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
+        title={state?.from === 'forgot-password' ? forgotContent.title : walletContent.title}
+        desc={state?.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
       />
       <SeedBox
         value={seedState.value}
@@ -44,7 +44,7 @@ export const EnterSeedPharse = () => {
           checked={termsState.terms}
           onChange={termsState.onChange}
           tabIndex={2}
-          text={state.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
+          text={state?.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
           checkboxPos='TOP'
         />
         <Button

@@ -32,14 +32,9 @@ const FullButtonRightIcon = ({
   gap = 12,
   icon = 'ARROW',
 }: ButtonProps) => {
+  if (disabled) return <></>;
   return (
-    <ButtonWrapper
-      disabled={disabled}
-      className={className}
-      onClick={onClick}
-      mode={mode}
-      gap={gap}
-    >
+    <ButtonWrapper className={className} onClick={onClick} mode={mode} gap={gap}>
       <Text type={textType} color='inherit'>
         {title}
       </Text>
@@ -76,16 +71,9 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
   transition: all 0.3s ease;
   background-color: ${({ theme }) => theme.color.neutral[6]};
   color: ${({ theme, mode }) => (mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0])};
-  &:not(:disabled):hover {
+  &:hover {
     background-color: ${({ theme }) => theme.color.neutral[11]};
     ${hoverIconStyle};
-  }
-  &:disabled {
-    background-color: ${({ theme }) => theme.color.neutral[6]};
-    color: ${({ theme }) => theme.color.neutral[4]};
-    & * {
-      stroke: ${({ theme }) => theme.color.neutral[5]};
-    }
   }
 `;
 

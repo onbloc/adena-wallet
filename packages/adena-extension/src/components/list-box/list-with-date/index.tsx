@@ -32,11 +32,7 @@ const SymbolImage = styled.div<{ status: boolean }>`
 `;
 
 export const ListWithDate = (props: HistoryItemProps) => {
-
-  const [{
-    getTransactionInfo,
-    getStatusColor,
-  }] = useTransactionHistoryInfo();
+  const [{ getTransactionInfo, getStatusColor }] = useTransactionHistoryInfo();
 
   const getDateText = () => {
     const currentDate = new Date(props.date);
@@ -52,15 +48,15 @@ export const ListWithDate = (props: HistoryItemProps) => {
       formatDate = `${result.month} ${result.day}, ${result.year}`;
     }
     return formatDate;
-  }
+  };
 
   const renderTransactionItem = (item: HistoryItemType, idx: number) => {
-    const info = getTransactionInfo(item)
+    const info = getTransactionInfo(item);
 
     return (
       <ListBox
         left={
-          <SymbolImage status={item.result.status === 'Success'}>
+          <SymbolImage status={item.result.status === 'Success'} className='logo'>
             <img src={info.icon} alt='_' />
           </SymbolImage>
         }
@@ -76,18 +72,16 @@ export const ListWithDate = (props: HistoryItemProps) => {
           </Center>
         }
         right={
-          <Text
-            type='body3Reg'
-            color={getStatusColor(item)}
-          >{info.amount}</Text>
+          <Text type='body3Reg' color={getStatusColor(item)}>
+            {info.amount}
+          </Text>
         }
         hoverAction={true}
-        gap={12}
         key={idx}
         onClick={() => props.onClick(item)}
       />
-    )
-  }
+    );
+  };
 
   return (
     <Wrapper>
@@ -111,7 +105,7 @@ const Wrapper = styled.div`
 
 const Center = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
-
+  margin-right: auto;
   & > div {
     align-items: center;
   }

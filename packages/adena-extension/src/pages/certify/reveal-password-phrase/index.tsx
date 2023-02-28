@@ -46,7 +46,7 @@ export const RevealPasswoardPhrase = () => {
   return (
     <Wrapper>
       <Text type='header4'>Reveal Seed Phrase</Text>
-      <WarningBox type='revealPassword' margin='12px 0px 20px' padding='10px 18px 9px;' />
+      <WarningBox type='revealPassword' margin='12px 0px 20px' />
       <DefaultInput
         type='password'
         placeholder='Password'
