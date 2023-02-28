@@ -9,11 +9,11 @@ import { inputStyle } from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoClient } from '@hooks/use-gno-client';
-import { TransactionMessage, TransactionService } from '@services/index';
+import { TransactionMessage } from '@services/index';
 import { SendConfirmLedgerLoading } from './ledger-loading';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { useAdenaContext } from '@hooks/use-context';
 import BigNumber from 'bignumber.js';
+import { LedgerConnector } from 'adena-module';
 
 const data = {
   amount: '4,000',
@@ -73,8 +73,7 @@ export const SendConfirm = () => {
   };
 
   const cancelLedger = async () => {
-    const connected = await TransportWebUSB.openConnected();
-    await connected?.close();
+    await LedgerConnector.closeConnected();
     setIsLoadingLedger(false);
     setSendState('INIT');
   };

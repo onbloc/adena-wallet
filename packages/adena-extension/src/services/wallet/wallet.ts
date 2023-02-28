@@ -96,10 +96,10 @@ export class WalletService {
   public createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<number>) => {
     try {
       if (accountPaths) {
-        await this.walletAccountRepository.updateAccountPaths(accountPaths);
+        await this.walletAccountRepository.updateAccountPath(Math.max(...accountPaths ?? [0]));
       }
-      const currentAccountPath = await this.walletAccountRepository.getAccountPaths();
-      const wallet = await Wallet.createByMnemonic(mnemonic, currentAccountPath ?? [0]);
+      const currentAccountPath = await this.walletAccountRepository.getAccountPath();
+      const wallet = await Wallet.createByMnemonic(mnemonic, [currentAccountPath]);
       return wallet;
     } catch (e) {
       throw new WalletError('FAILED_TO_CREATE');
