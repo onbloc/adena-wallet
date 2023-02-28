@@ -78,7 +78,7 @@ export const Header = () => {
       return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
     }
     if (launchAdena) {
-      return <ProgressMenu progressLevel={'third'} />;
+      return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
     if (
       approveHardwareWalletInit ||
@@ -90,7 +90,10 @@ export const Header = () => {
     if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
       return <ProgressMenu showLogo progressLevel={'third'} />;
     }
-    if (resetWallet || importPrivateKey) {
+    if (resetWallet) {
+      return <ArrowTitleMenu title={'Reset Wallet'} />;
+    }
+    if (importPrivateKey) {
       return <ArrowTitleMenu />;
     }
     if (forgotPassword) {

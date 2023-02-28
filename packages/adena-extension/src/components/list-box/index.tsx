@@ -46,7 +46,7 @@ const Wrapper = styled.div<ListBoxStyleProps>`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')}
   width: 100%;
   height: 60px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }) => theme.color.neutral[6]};
   padding: ${({ padding }) => (padding ? padding : '0px 17px 0px 14px')};
   transition: all 0.4s ease;
   cursor: ${({ cursor }) => cursor ?? 'pointer'};
@@ -55,7 +55,7 @@ const Wrapper = styled.div<ListBoxStyleProps>`
     margin-top: 12px;
   }
   &:hover {
-    background-color: ${({ hoverAction }) => hoverAction && theme.color.neutral[6]};
+    background-color: ${({ hoverAction }) => hoverAction && theme.color.neutral[11]};
   }
   & > :nth-child(2) {
     margin-left: 12px;

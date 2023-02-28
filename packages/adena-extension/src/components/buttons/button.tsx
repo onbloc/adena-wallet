@@ -51,6 +51,13 @@ export const modeVariants = {
   `,
   danger: css`
     background: ${({ theme }) => theme.color.red[2]};
+    &:hover {
+      background: ${({ theme }) => theme.color.neutral[7]};
+    }
+    &:disabled {
+      background: ${({ theme }) => theme.color.neutral[5]};
+      color: ${({ theme }) => theme.color.neutral[4]};
+    }
   `,
 };
 

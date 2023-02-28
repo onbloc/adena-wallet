@@ -33,7 +33,8 @@ export enum Red {
   '#D6160A', // 3
   '#BB0B00', // 4
   '#BB160B', // 5
-  '#E7323B' // 6
+  '#E7323B', // 6
+  '#B62E29' // 7
 }
 
 export enum Green {
