@@ -6,6 +6,8 @@ import { ConnectFail } from './connect-fail';
 import { ConnectRequestWallet } from './connect-request-wallet';
 import { useNavigate } from 'react-router-dom';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 
 type ConnectType =
   'INIT' |
@@ -21,6 +23,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
   const [openConnected, setOpenConnected] = useState(false);
   const [connectState, setConnectState] = useState<ConnectType>('INIT');
   const [wallet, setWallet] = useState<InstanceType<typeof Wallet>>();
+  const [transport, setTransport] = useState<TransportWebHID | TransportWebUSB | null>(null);
 
   useEffect(() => {
     if (connectState === 'INIT') {
@@ -56,11 +59,12 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
   const requestPermission = async () => {
     const transport = await LedgerConnector.request();
-    console.log('transport', transport);
+    setTransport(transport);
     if (transport === null) {
       setConnectState('NOT_PERMISSION');
       return false;
     }
+    await transport.close();
     setConnectState('REQUEST_WALLET');
     checkHardwareConnect();
     return true;
@@ -80,7 +84,8 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
   const requestHardwareWallet = async () => {
     try {
-      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
+      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4], transport);
+      await transport?.close();
       setConnectState('REQUEST_WALLET_LOAD');
       await wallet.initAccounts();
       setWallet(wallet);

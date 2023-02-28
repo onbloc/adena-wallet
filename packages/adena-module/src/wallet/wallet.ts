@@ -2,6 +2,7 @@ import { Secp256k1HdWallet, makeCosmoshubPath, LedgerConnector } from '@/amino';
 import { HdPath } from '..';
 import { WalletAccount } from './account';
 import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
+import Transport from '@ledgerhq/hw-transport';
 
 interface ChainConfig {
   chainId: string;
@@ -108,9 +109,13 @@ export class Wallet {
 
   public static createByLedger = async (
     accountPaths: Array<number> = [0],
+    transport?: Transport | null
   ): Promise<Wallet> => {
     const walletConfig = Wallet.createWalletConfig({ accountPaths });
-    const ledgerTransport = await LedgerConnector.createTransport();
+    let ledgerTransport = transport;
+    if (!ledgerTransport) {
+      ledgerTransport = await LedgerConnector.createTransport();
+    }
 
     const aminoSigner = new LedgerSigner(ledgerTransport, {
       hdPaths: walletConfig.hdPaths,
