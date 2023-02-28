@@ -58,7 +58,7 @@ const EtcIcon = styled.div`
   border-radius: 50%;
   cursor: pointer;
   &.show-tooltip {
-    background-color: ${({ theme }) => theme.color.neutral[3]};
+    background-color: ${({ theme }) => theme.color.neutral[6]};
     & > .static-tooltip {
       visibility: visible;
       transition: all 0.1s ease-in-out;
@@ -91,7 +91,7 @@ export const TokenDetails = () => {
   }, []);
 
   useEffect(() => {
-    setLoadingHistory(!transactionHistory.init)
+    setLoadingHistory(!transactionHistory.init);
   }, [transactionHistory.init]);
 
   useEffect(() => {
@@ -100,13 +100,13 @@ export const TokenDetails = () => {
 
   const initHistory = async () => {
     await updateLastHistory();
-  }
+  };
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
       setBodyElement(document.getElementsByTagName('body')[0]);
     }
-  }, [document.getElementsByTagName('body')])
+  }, [document.getElementsByTagName('body')]);
 
   useEffect(() => {
     bodyElement?.addEventListener('scroll', onScrollListener);
@@ -115,8 +115,7 @@ export const TokenDetails = () => {
 
   useEffect(() => {
     if (nextFetch) {
-      updateNextHistory().finally(() =>
-        setNextFetch(false))
+      updateNextHistory().finally(() => setNextFetch(false));
     }
   }, [nextFetch]);
 
@@ -127,7 +126,7 @@ export const TokenDetails = () => {
         setNextFetch(true);
       }
     }
-  }
+  };
 
   useEffect(() => {
     if (balances && balances.length > 0) {
@@ -147,11 +146,13 @@ export const TokenDetails = () => {
           <img src={etc} alt='View on Gnoscan' />
           <StaticTooltip
             tooltipText='View on Gnoscan'
-            bgColor={theme.color.neutral[3]}
+            bgColor={theme.color.neutral[6]}
             posTop='28px'
             onClick={() => {
               window.open(
-                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.data.address}`,
+                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${
+                  currentAccount?.data.address
+                }`,
                 '_blank',
               );
             }}
@@ -168,26 +169,22 @@ export const TokenDetails = () => {
           text: 'Send',
         }}
       />
-      {
-        loadingHistory ? (
-          <LoadingTokenDetails />
-        ) : (
-          Object.keys(historyItems).length > 0 ? (
-            Object.keys(historyItems).map((item, idx) => (
-              <ListWithDate
-                key={idx}
-                date={item}
-                transaction={historyItems[item]}
-                onClick={historyItemClick}
-              />
-            ))
-          ) : (
-            <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
-              No transaction to display
-            </Text>
-          )
-        )
-      }
+      {loadingHistory ? (
+        <LoadingTokenDetails />
+      ) : Object.keys(historyItems).length > 0 ? (
+        Object.keys(historyItems).map((item, idx) => (
+          <ListWithDate
+            key={idx}
+            date={item}
+            transaction={historyItems[item]}
+            onClick={historyItemClick}
+          />
+        ))
+      ) : (
+        <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+          No transaction to display
+        </Text>
+      )}
     </Wrapper>
   );
 };

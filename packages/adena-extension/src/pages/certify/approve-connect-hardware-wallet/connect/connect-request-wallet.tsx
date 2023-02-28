@@ -19,7 +19,7 @@ const Wrapper = styled.main`
   height: auto;
   padding: 24px 20px;
   margin: 0 auto;
-  
+
   .icon {
     width: 100px;
     height: 100px;
