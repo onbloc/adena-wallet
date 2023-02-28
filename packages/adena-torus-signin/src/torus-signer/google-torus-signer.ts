@@ -46,7 +46,7 @@ export class GoogleTorusSigner implements TorusSigner {
   }
 
   public static create() {
-    const clientId = "BKEMdiei3awFosbU-NjE7vTd6HRLVrp0_UaQJ2PZDJBIKtRNSAd-lKxiOOrE6DTOjRvE6zKSfcJzJXKvhP-1aTI";
+    const clientId = "";
     const web3auth = new Web3AuthCore({
       clientId,
       web3AuthNetwork: "testnet",
@@ -65,7 +65,7 @@ export class GoogleTorusSigner implements TorusSigner {
           google: {
             name: "Adenna",
             verifier: "adena-wallet",
-            clientId: "215912405850-hj6qkf617g5jc1re2s2kvcj482utbogs.apps.googleusercontent.com",
+            clientId: "",
             typeOfLogin: "google",
           },
         },
