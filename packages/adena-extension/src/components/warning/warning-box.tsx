@@ -23,20 +23,20 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
   revealPassword: {
     title: 'Approach with caution!',
     subTitle:
-      'You’re about to reveal your seed phrase.\nPlease carefully review the checklist\nbelow.',
+      'You’re about to reveal your seed phrase. Please carefully review the checklist below.',
   },
   revealPrivate: {
     subTitle:
-      'Your seed phrase is the only way to\nrecover your wallet. Keep it somewhere\nsafe and secret.',
+      'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.',
   },
   approachPassword: {
     title: 'Approach with caution!',
     subTitle:
-      'You’re about to reveal your private key.\nPlease carefully review the checklist\nbelow.',
+      'You’re about to reveal your private key. Please carefully review the checklist below.',
   },
   approachPrivate: {
     subTitle:
-      'Do not share your private key! Anyone\nwith your private key will have full control\nof your wallet.',
+      'Do not share your private key! Anyone with your private key will have full control of your wallet.',
   },
 };
 
@@ -60,7 +60,7 @@ const WarningBox = ({ type, margin, padding }: WarningBoxProps) => {
 const Wrapper = styled.div<WarningBoxStyleProps>`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
   width: 100%;
-  padding: ${(props) => props.padding};
+  padding: ${(props) => props.padding ?? '14px 16px'};
   gap: 11px;
   border-radius: 18px;
   background-color: rgba(231, 50, 59, 0.1);

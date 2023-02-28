@@ -5,7 +5,7 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 
 const text = {
-  title: 'You’re all set!',
+  title: 'You’re All Set!',
   desc: 'Click on the Start button to\nlaunch Adena.',
 };
 

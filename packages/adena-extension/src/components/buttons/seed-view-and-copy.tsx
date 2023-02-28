@@ -4,14 +4,21 @@ import Button from './button';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Copy from './copy-button';
+import { useMatch } from 'react-router-dom';
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean;
   setShowBlurScreen: React.Dispatch<React.SetStateAction<boolean>>;
   copyStr: string;
+  toggleText: string;
 }
 
-const SeedViewAndCopy = ({ showBlurScreen, setShowBlurScreen, copyStr }: SeedViewAndCopyProps) => {
+const SeedViewAndCopy = ({
+  showBlurScreen,
+  setShowBlurScreen,
+  copyStr,
+  toggleText,
+}: SeedViewAndCopyProps) => {
   const blurScreenHandler = useCallback(() => {
     setShowBlurScreen((prev: boolean) => !prev);
   }, [showBlurScreen]);
@@ -19,7 +26,7 @@ const SeedViewAndCopy = ({ showBlurScreen, setShowBlurScreen, copyStr }: SeedVie
   return (
     <Wrapper>
       <ButtonStyle bgColor={theme.color.neutral[6]} onClick={blurScreenHandler}>
-        <Text type='body2Reg'>{showBlurScreen ? 'View Seed Phrase' : 'Hide Seed Phrase'}</Text>
+        <Text type='body2Reg'>{showBlurScreen ? `View ${toggleText}` : `Hide ${toggleText}`}</Text>
       </ButtonStyle>
       <Copy copyStr={copyStr} />
     </Wrapper>

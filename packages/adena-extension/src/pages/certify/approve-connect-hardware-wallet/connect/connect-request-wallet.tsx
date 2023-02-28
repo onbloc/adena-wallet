@@ -19,7 +19,7 @@ const Wrapper = styled.main`
   height: auto;
   padding: 24px 20px;
   margin: 0 auto;
-  
+
   .icon {
     width: 100px;
     height: 100px;
@@ -32,22 +32,15 @@ const Wrapper = styled.main`
 `;
 
 interface Props {
-  active: boolean;
   requestHardwareWallet: () => Promise<void>;
 }
 
-export const ConnectRequestWallet = ({ active, requestHardwareWallet }: Props) => {
+export const ConnectRequestWallet = ({ requestHardwareWallet }: Props) => {
   const navigate = useNavigate();
 
   useEffect(() => {
     requestHardwareWallet();
   }, []);
-
-  useEffect(() => {
-    if (active) {
-      setTimeout(requestHardwareWallet, 1000);
-    }
-  }, [active]);
 
   const onClickClose = () => {
     navigate(RoutePath.ApproveHardwareWalletInit);

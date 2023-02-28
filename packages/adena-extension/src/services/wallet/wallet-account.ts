@@ -180,22 +180,19 @@ export class WalletAccountService {
   };
 
   public getLastAccountPath = async () => {
-    try {
-      const accounts = await this.getAccounts();
-      const paths = accounts
-        .filter(account => Boolean(account.data.path))
-        .map(account => account.data.path);
+    const accountPath = await this.walletAccountRepository.getAccountPath();
+    return accountPath;
+  };
 
-      return Math.max(...paths);
-    } catch (e) {
-      return 0;
-    }
+  public updateLastAccountPath = async (accountPath: number) => {
+    this.walletAccountRepository.updateAccountPath(accountPath);
+    return true;
   };
 
   public clear = async () => {
     await this.walletAccountRepository.deleteCurrentAccountAddress();
     await this.walletAccountRepository.deleteAccountNames();
-    await this.walletAccountRepository.deleteAccountPaths();
+    await this.walletAccountRepository.deleteAccountPath();
     await this.walletAccountRepository.deleteAccounts();
     return true;
   };

@@ -38,7 +38,7 @@ const LeftWrap = styled.div`
 
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
-  const [loadinsgState,] = useState('INIT');
+  const [loadinsgState] = useState('INIT');
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
   const clearWalletBalance = useResetRecoilState(WalletState.balances);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
@@ -58,19 +58,19 @@ export const ChangeNetwork = () => {
   const checkHealth = async () => {
     let health = false;
     try {
-      health = await currentNetwork?.isHealth() ?? false;
+      health = (await currentNetwork?.isHealth()) ?? false;
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
     setState('NONE');
     setFailedNetwork(!health);
-  }
+  };
 
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
     if (network.chainId === currentNetwork?.chainId) {
       return;
     }
-    setState("LOADING");
+    setState('LOADING');
     await changeNetwork(network.chainId);
     clearWalletBalance();
     clearCurrentBalance();
@@ -95,17 +95,12 @@ export const ChangeNetwork = () => {
               center={null}
               right={
                 network.chainId === currentNetwork?.chainId ? (
-                  <Button
-                    width='100px'
-                    height='25px'
-                    bgColor={theme.color.green[2]}
-                  >
+                  <Button width='100px' height='25px' bgColor={theme.color.green[2]}>
                     <Text type='body3Reg'>Connected</Text>
                   </Button>
                 ) : null
               }
               hoverAction={true}
-              gap={12}
               key={index}
               onClick={() => onClickNetwork(network)}
               className='network-list'

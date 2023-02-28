@@ -5,9 +5,8 @@ import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import LoadingNft from '@components/loading-screen/loading-nft';
-import ListBox from '@components/list-box';
+import ListBox, { ListHierarchy } from '@components/list-box';
 import DefaultImage from '../../../assets/favicon-default-small.svg';
-import Button from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
 import CloseShadowButton from '@components/buttons/close-shadow-button';
 import disconnected from '../../../assets/disconnected.svg';
@@ -40,7 +39,13 @@ export const ConnectedApps = () => {
   const renderAppItem = (item: any, index: number) => {
     return (
       <ListBox
-        left={<img className='logo' src={item.favicon !== null ? item.favicon : DefaultImage} alt='logo image' />}
+        left={
+          <img
+            className='logo'
+            src={item.favicon !== null ? item.favicon : DefaultImage}
+            alt='logo image'
+          />
+        }
         center={
           <Text type='body2Bold' className='connected-hostname'>
             {item.hostname}
@@ -54,15 +59,16 @@ export const ConnectedApps = () => {
         cursor='default'
         hoverAction={false}
         key={index}
-        className='connected-list'
-        padding='0px 17px'
+        mode={ListHierarchy.Static}
       />
     );
   };
 
   return (
     <Wrapper>
-      <Text type='header4'>Connected Apps</Text>
+      <Text type='header4' margin='0px 0px 12px'>
+        Connected Apps
+      </Text>
       {state === 'FINISH' ? (
         <>
           {datas.length > 0 ? (
@@ -88,9 +94,6 @@ const Wrapper = styled.main`
   padding-top: 24px;
   padding-bottom: 120px;
   background-color: ${({ theme }) => theme.color.neutral[7]};
-  .connected-hostname {
-    margin-left: 7px;
-  }
   .desc {
     position: absolute;
     top: 210px;
@@ -98,22 +101,16 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
   }
-  .connected-list {
-    margin-top: 12px;
-  }
-  .logo {
-    border-radius: 5px;
-    width: 16px;
-    height: 16px;
-  }
 `;
 
-const DisconnectedBtn = styled(Button)`
+const DisconnectedBtn = styled.button`
+  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
   width: 25px;
   height: 25px;
-  /* border-radius: 35px; */
+  border-radius: 35px;
   background-color: ${({ theme }) => theme.color.red[2]};
   transition: all ease 0.4s;
+  margin-left: auto;
   :hover {
     background-color: ${({ theme }) => theme.color.red[5]};
   }

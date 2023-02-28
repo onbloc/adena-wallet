@@ -36,7 +36,7 @@ export const ApproveConnectHardwareWalletInit = () => {
 
   const moveNextPage = () => {
     navigate(RoutePath.ApproveHardwareWalletConnect);
-  }
+  };
 
   const onClickConnectButton = () => {
     moveNextPage();
@@ -52,7 +52,7 @@ export const ApproveConnectHardwareWalletInit = () => {
         margin='auto 0px 0px'
         onClick={onClickConnectButton}
       >
-        <Text type='body1Bold'>Next</Text>
+        <Text type='body1Bold'>Connect</Text>
       </Button>
     </Wrapper>
   );

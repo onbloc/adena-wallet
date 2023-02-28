@@ -2,7 +2,7 @@ import { StorageManager } from "@common/storage/storage-manager";
 import { WalletAccount } from "adena-module";
 
 type LocalValueType =
-  | 'WALLET_ACCOUNT_PATHS'
+  | 'WALLET_ACCOUNT_PATH'
   | 'WALLET_ACCOUNT_NAMES'
   | 'CURRENT_ACCOUNT_ADDRESS'
   | 'ADDRESS_BOOK'
@@ -62,21 +62,21 @@ export class WalletAccountRepository {
     return true;
   };
 
-  public getAccountPaths = async () => {
-    const accountPaths = await this.localStorage.getToNumbers('WALLET_ACCOUNT_PATHS');
-    if (accountPaths.length === 0) {
-      return [0];
+  public getAccountPath = async () => {
+    const accountPath = await this.localStorage.get('WALLET_ACCOUNT_PATH');
+    if (accountPath === "") {
+      return 0;
     }
-    return accountPaths;
+    return parseInt(accountPath);
   };
 
-  public updateAccountPaths = async (accountPaths: Array<number>) => {
-    await this.localStorage.setByNumbers('WALLET_ACCOUNT_PATHS', accountPaths);
+  public updateAccountPath = async (accountPath: number) => {
+    await this.localStorage.set('WALLET_ACCOUNT_PATH', `${accountPath}`);
     return true;
   };
 
-  public deleteAccountPaths = async () => {
-    await this.localStorage.remove('WALLET_ACCOUNT_PATHS');
+  public deleteAccountPath = async () => {
+    await this.localStorage.remove('WALLET_ACCOUNT_PATH');
     return true;
   };
 
@@ -99,7 +99,7 @@ export class WalletAccountRepository {
   //   await this.localStorage.remove('CURRENT_ACCOUNT_ADDRESS');
   //   await this.localStorage.remove('WALLET_ACCOUNTS');
   //   await this.localStorage.remove('WALLET_ACCOUNT_NAMES');
-  //   await this.localStorage.remove('WALLET_ACCOUNT_PATHS');
+  //   await this.localStorage.remove('WALLET_ACCOUNT_PATH');
   //   await this.localStorage.remove('CURRENT_CHAIN_ID');
   //   await this.localStorage.remove('ESTABLISH_SITES');
   // }

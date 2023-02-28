@@ -33,8 +33,8 @@ export const YourSeedPhrase = () => {
   const handleNextButtonClick = () =>
     navigate(RoutePath.CreatePassword, {
       state: {
-        type: "SEED",
-        seeds
+        type: 'SEED',
+        seeds,
       },
     });
 
@@ -60,6 +60,7 @@ export const YourSeedPhrase = () => {
           showBlurScreen={showBlurScreen}
           setShowBlurScreen={setShowBlurScreen}
           copyStr={seeds}
+          toggleText='Seed Phrase'
         />
       )}
       <TermsWrap>

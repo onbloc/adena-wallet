@@ -108,7 +108,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 
   const restoreClickHandler = () => {
     setOpen(false);
-    navigate(RoutePath.EnterSeedPhrase, { state: { from: 'forgot-password' } });
+    navigate(RoutePath.EnterSeedPhrase);
   };
 
   const lockClickHandler = async () => {
@@ -259,8 +259,9 @@ const ListItem = styled.li`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'center')};
   position: relative;
   width: 100%;
+  height: 60px;
   cursor: pointer;
-  padding: 12px 20px;
+  padding: 0px 20px;
   background-color: ${({ theme }) => theme.color.neutral[7]};
   transition: all 0.4s ease;
   :hover {

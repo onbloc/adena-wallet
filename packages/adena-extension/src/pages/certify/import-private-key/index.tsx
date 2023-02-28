@@ -15,7 +15,7 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 const content = {
   title: 'Import Private Key',
   desc: 'Import an existing account\nwith a private key.',
-  terms: 'Private key is only stored on this device, and Adena can’t recover it for you.',
+  terms: 'This key will only be stored on this device. Adena can’t recover it for you.',
 };
 
 export const ImportPrivateKey = () => {
@@ -25,6 +25,7 @@ export const ImportPrivateKey = () => {
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
   const [errorMessage, setErrorMessage] = useState('');
+  const [enabled, setEnabled] = useState(true);
 
   const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
@@ -40,30 +41,37 @@ export const ImportPrivateKey = () => {
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    if (e.key === 'Enter' && terms && !error && value) {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      nextButtonClick();
+      if (terms && !error && value !== '') {
+        nextButtonClick();
+      } else return;
     }
   };
 
   const nextButtonClick = async () => {
+    if (!enabled) {
+      return;
+    }
+    setEnabled(false);
     try {
       const privateKey = value.replace('0x', '');
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
 
-      if (accounts.find(cur => cur.data.privateKey === privateKey)) {
-        setErrorMessage('Private key already registered')
+      if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
+        setErrorMessage('Private key already registered');
         return;
       }
-      importAccount(account);
+      await importAccount(account);
       navigate(RoutePath.Wallet);
     } catch (e) {
-      setErrorMessage('Invalid private key')
+      setErrorMessage('Invalid private key');
     }
+    setEnabled(true);
   };
 
   return (
-    <Wrapper>
+    <Wrapper onKeyDown={onKeyDown}>
       <TitleWithDesc title={content.title} desc={content.desc} />
       <SeedBox
         value={value}

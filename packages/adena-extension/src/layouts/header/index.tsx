@@ -43,7 +43,6 @@ export const Header = () => {
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
   const resetWallet = useMatch(RoutePath.ResetWallet);
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
-
   const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
@@ -71,6 +70,9 @@ export const Header = () => {
     if (yourSeedPhrase || enterSeedPhrase) {
       return <ProgressMenu progressLevel={'first'} />;
     }
+    if (location?.state?.type === 'GOOGLE' && createPassword) {
+      return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
+    }
     if (createPassword || approveHardwareWalletLedgerPassword) {
       return <ProgressMenu progressLevel={'second'} />;
     }
@@ -78,19 +80,22 @@ export const Header = () => {
       return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
     }
     if (launchAdena) {
-      return <ProgressMenu progressLevel={'third'} />;
+      return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
     if (
       approveHardwareWalletInit ||
       approveHardwareWalletConnect ||
       approveHardwareWalletSelectAccount
     ) {
-      return <ProgressMenu showLogo progressLevel={'first'} />;
+      return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
     }
     if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
-      return <ProgressMenu showLogo progressLevel={'third'} />;
+      return <ProgressMenu showLogo progressLevel={'third'} hideArrow />;
     }
-    if (resetWallet || importPrivateKey) {
+    if (resetWallet) {
+      return <ArrowTitleMenu title={'Reset Wallet'} />;
+    }
+    if (importPrivateKey) {
       return <ArrowTitleMenu />;
     }
     if (forgotPassword) {

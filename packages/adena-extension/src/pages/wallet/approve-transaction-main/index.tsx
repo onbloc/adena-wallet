@@ -9,12 +9,12 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createFaviconByHostname } from '@common/utils/client-utils';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
-import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 import { ApproveLdegerLoading } from './approve-ledger-loading';
 import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
+import { LedgerConnector } from 'adena-module';
 
 export const ApproveTransactionMain = () => {
   const { accountService, transactionService } = useAdenaContext();
@@ -143,8 +143,7 @@ export const ApproveTransactionMain = () => {
   }
 
   const cancelLedger = async () => {
-    const connected = await TransportWebUSB.openConnected();
-    await connected?.close();
+    await LedgerConnector.closeConnected();
     window.close();
   };
 

@@ -1,9 +1,4 @@
-import { AdenaStorage } from '@common/storage';
 import { encodeParameter } from '@common/utils/client-utils';
-import { ChainRepository } from '@repositories/common';
-import { WalletAccountRepository, WalletEstablishRepository } from '@repositories/wallet';
-import { ChainService, WalletEstablishService } from '@services/index';
-import axios from 'axios';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
