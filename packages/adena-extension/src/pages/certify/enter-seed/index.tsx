@@ -22,19 +22,11 @@ const forgotContent = {
 };
 
 export const EnterSeedPharse = () => {
-  const { seedState, buttonState } = useEnterSeed();
-  const [terms, setTerms] = useState(false);
+  const { seedState, termsState, buttonState } = useEnterSeed();
   const { state } = useLocation();
 
-  const isNextButton = terms && buttonState.disabled === false;
-
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
-
   return (
-    <Wrapper>
+    <Wrapper onKeyDown={seedState.onKeyDown}>
       <TitleWithDesc
         title={state.from === 'forgot-password' ? forgotContent.title : walletContent.title}
         desc={state.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
@@ -49,8 +41,8 @@ export const EnterSeedPharse = () => {
       {seedState.error && <ErrorText text={seedState.errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
-          checked={terms}
-          onChange={handleTermsChange}
+          checked={termsState.terms}
+          onChange={termsState.onChange}
           tabIndex={2}
           text={state.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
           checkboxPos='TOP'
@@ -59,7 +51,7 @@ export const EnterSeedPharse = () => {
           fullWidth
           hierarchy={ButtonHierarchy.Primary}
           margin='auto 0px 0px'
-          disabled={!isNextButton}
+          disabled={!buttonState.disabled}
           onClick={buttonState.onClick}
         >
           <Text type='body1Bold'>Next</Text>

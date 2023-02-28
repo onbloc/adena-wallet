@@ -16,7 +16,7 @@ export const AddAccount = () => {
 
   useEffect(() => {
     availAddAccount().then(setAvailCreateAccount);
-  }, [])
+  }, []);
 
   const onClickCreateAccount = async () => {
     await addAccount();
@@ -55,21 +55,21 @@ export const AddAccount = () => {
   const getAddAccountContent = (availCreateAccount: boolean) => [
     {
       title: 'Create New Account',
-      subTitle: 'Generate a new account address',
+      subTitle: 'Generate a new account',
       onClick: onClickCreateAccount,
-      disabled: !availCreateAccount
+      disabled: !availCreateAccount,
     },
     {
       title: 'Import Private Key',
-      subTitle: 'Import an existing address',
+      subTitle: 'Import an existing account',
       onClick: onClickImportPrivateKey,
-      disabled: false
+      disabled: false,
     },
     {
       title: 'Connect Ledger',
-      subTitle: 'Connect Ledger',
+      subTitle: 'Add a ledger account',
       onClick: onClickConnectHardwareWallet,
-      disabled: false
+      disabled: false,
     },
   ];
 

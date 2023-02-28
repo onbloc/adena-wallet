@@ -15,7 +15,7 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 const content = {
   title: 'Import Private Key',
   desc: 'Import an existing account\nwith a private key.',
-  terms: 'Private key is only stored on this device, and Adena can’t recover it for you.',
+  terms: 'This key will only be stored on this device. Adena can’t recover it for you.',
 };
 
 export const ImportPrivateKey = () => {
@@ -51,14 +51,14 @@ export const ImportPrivateKey = () => {
       const privateKey = value.replace('0x', '');
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
 
-      if (accounts.find(cur => cur.data.privateKey === privateKey)) {
-        setErrorMessage('Private key already registered')
+      if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
+        setErrorMessage('Private key already registered');
         return;
       }
       importAccount(account);
       navigate(RoutePath.Wallet);
     } catch (e) {
-      setErrorMessage('Invalid private key')
+      setErrorMessage('Invalid private key');
     }
   };
 

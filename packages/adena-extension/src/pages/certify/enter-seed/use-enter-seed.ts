@@ -8,7 +8,13 @@ const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 export const useEnterSeed = () => {
   const navigate = useNavigate();
   const [seed, setSeed] = useState('');
+  const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
+
+  const handleTermsChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
+    [terms],
+  );
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -27,7 +33,7 @@ export const useEnterSeed = () => {
   };
 
   const handleButtonClick = async () => {
-    if (seed.length === 0) {
+    if (seed.length === 0 || !terms) {
       return;
     }
 
@@ -63,9 +69,13 @@ export const useEnterSeed = () => {
       error: error,
       errorMessage: 'Invalid seed phrase',
     },
+    termsState: {
+      terms,
+      onChange: handleTermsChange
+    },
     buttonState: {
       onClick: handleButtonClick,
-      disabled: !seed,
+      disabled: seed !== '' && terms,
     },
   };
 };

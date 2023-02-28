@@ -103,14 +103,12 @@ export const WalletCreate = () => {
         leftProps={{
           onClick: importWalletHandler,
           text: 'Import Wallet',
-          hierarchy: ButtonHierarchy.Custom,
-          bgColor: theme.color.neutral[6],
+          hierarchy: ButtonHierarchy.Normal,
         }}
         rightProps={{
           onClick: ConnectLedgerHandler,
           text: 'Connect Ledger',
-          hierarchy: ButtonHierarchy.Custom,
-          bgColor: theme.color.neutral[6],
+          hierarchy: ButtonHierarchy.Normal,
         }}
       />
       {/* <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={onRestoreButtonClick}>

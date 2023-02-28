@@ -10,7 +10,7 @@ import Icon from '@components/icons';
 
 const text = {
   title: 'Waiting for Google Login',
-  desc: 'Please login with your Google account\nin your browser. This service is powered\nby Web3Auth.',
+  desc: 'Complete your login by signing in with\na Google account in your browser.',
 };
 
 const Wrapper = styled.main`
