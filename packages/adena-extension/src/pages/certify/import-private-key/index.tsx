@@ -40,9 +40,11 @@ export const ImportPrivateKey = () => {
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    if (e.key === 'Enter' && terms && !error && value) {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      nextButtonClick();
+      if (terms && !error && value !== '') {
+        nextButtonClick();
+      } else return;
     }
   };
 
@@ -63,7 +65,7 @@ export const ImportPrivateKey = () => {
   };
 
   return (
-    <Wrapper>
+    <Wrapper onKeyDown={onKeyDown}>
       <TitleWithDesc title={content.title} desc={content.desc} />
       <SeedBox
         value={value}

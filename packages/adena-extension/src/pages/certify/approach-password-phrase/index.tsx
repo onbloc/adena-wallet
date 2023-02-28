@@ -8,8 +8,13 @@ import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
-import { validateEmptyPassword, validateInvalidPassword, validateWrongPasswordLength } from '@common/validation';
+import {
+  validateEmptyPassword,
+  validateInvalidPassword,
+  validateWrongPasswordLength,
+} from '@common/validation';
 import { BaseError } from '@common/errors';
+import { ErrorText } from '@components/error-text';
 
 const TermsAText = 'Anyone with my private key will have full control over my funds.';
 const TermsBText = 'I will never share my private key with anyone.';
@@ -20,7 +25,7 @@ export const ApproachPasswordPhrase = () => {
   const { walletService } = useAdenaContext();
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
   const [termsA, setTermsA] = useState(false);
   const [termsB, setTermsB] = useState(false);
   const disabled = termsA && termsB && pwd;
@@ -62,7 +67,7 @@ export const ApproachPasswordPhrase = () => {
   return (
     <Wrapper>
       <Text type='header4'>Export Private Key</Text>
-      <WarningBox type='approachPassword' margin='12px 0px 20px' padding='10px 18px 9px;' />
+      <WarningBox type='approachPassword' margin='12px 0px 20px' />
       <DefaultInput
         type='password'
         placeholder='Password'
@@ -71,6 +76,7 @@ export const ApproachPasswordPhrase = () => {
         onKeyDown={onKeyDown}
         error={error}
       />
+      {Boolean(errorMessage) && <ErrorText text={errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
           checked={termsA}

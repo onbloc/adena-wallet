@@ -13,23 +13,23 @@ export const ApproachPrivatePhrase = () => {
   const navigate = useNavigate();
   const [currentAccount] = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
-  const [privateKey, setPrivateKey] = useState("");
+  const [privateKey, setPrivateKey] = useState('');
 
   useEffect(() => {
     const privateKey = currentAccount?.getPrivateKey();
     if (privateKey) {
-      setPrivateKey("0x" + privateKey);
+      setPrivateKey('0x' + privateKey);
     }
   }, [currentAccount]);
 
   const doneButtonClick = () => {
-    navigate(RoutePath.Setting);
+    navigate(RoutePath.SecurityPrivacy);
   };
 
   return (
     <Wrapper>
       <Text type='header4'>Export Private Key</Text>
-      <WarningBox type='approachPrivate' margin='12px 0px 20px' padding='14px 16px' />
+      <WarningBox type='approachPrivate' margin='12px 0px 20px' />
       <SeedBox
         seeds={privateKey}
         scroll={false}
@@ -40,6 +40,7 @@ export const ApproachPrivatePhrase = () => {
         showBlurScreen={showBlurScreen}
         setShowBlurScreen={setShowBlurScreen}
         copyStr={privateKey}
+        toggleText='Private Key'
       />
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>

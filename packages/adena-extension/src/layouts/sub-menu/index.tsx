@@ -108,7 +108,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
 
   const restoreClickHandler = () => {
     setOpen(false);
-    navigate(RoutePath.EnterSeedPhrase, { state: { from: 'forgot-password' } });
+    navigate(RoutePath.EnterSeedPhrase);
   };
 
   const lockClickHandler = async () => {

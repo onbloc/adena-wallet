@@ -8,7 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import { maxFractionDigits, searchTextFilter } from '@common/utils/client-utils';
-import ListBox from '@components/list-box';
+import ListBox, { ListHierarchy } from '@components/list-box';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { useGnoClient } from '@hooks/use-gno-client';
 
@@ -108,16 +108,21 @@ export const WalletSearch = () => {
           )
           .map((balance, idx) => (
             <ListBox
-              left={<img src={balance.imageData} alt='logo image' />}
-              center={<Text type='body1Bold'>{balance.name}</Text>}
+              left={<img src={balance.imageData} alt='logo image' className='logo' />}
+              center={
+                <Text type='body1Bold' margin='0px auto 0px 0px'>
+                  {balance.name}
+                </Text>
+              }
               right={
-                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${balance.type
-                  }`}</Text>
+                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${
+                  balance.type
+                }`}</Text>
               }
               hoverAction={true}
-              gap={12}
               key={idx}
               onClick={CoinBoxClick}
+              mode={ListHierarchy.Normal}
             />
           ))}
       </DataListWrap>

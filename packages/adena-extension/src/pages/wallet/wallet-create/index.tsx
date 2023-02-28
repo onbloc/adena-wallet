@@ -40,10 +40,6 @@ export const WalletCreate = () => {
     navigate(RoutePath.YourSeedPhrase);
   };
 
-  const onRestoreButtonClick = () => {
-    navigate(RoutePath.EnterSeedPhrase);
-  };
-
   const importWalletHandler = () => {
     navigate(RoutePath.EnterSeedPhrase, {
       state: {

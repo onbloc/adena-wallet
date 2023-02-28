@@ -3,8 +3,8 @@ import { WalletState } from '@states/index';
 import { useAdenaContext } from './use-context';
 
 export const useAddAccount = (): {
-  availAddAccount: () => Promise<boolean>,
-  addAccount: () => Promise<boolean>,
+  availAddAccount: () => Promise<boolean>;
+  addAccount: () => Promise<boolean>;
 } => {
   const { walletService, accountService } = useAdenaContext();
   const [, setAccounts] = useRecoilState(WalletState.accounts);

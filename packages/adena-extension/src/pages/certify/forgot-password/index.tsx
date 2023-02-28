@@ -30,7 +30,7 @@ export const ForgotPassword = () => {
     navigate(RoutePath.ResetWallet);
   };
 
-  const onClickNextButton = () => {
+  const onClickForgotButton = () => {
     navigate(RoutePath.EnterSeedPhrase, {
       state: {
         from: 'forgot-password',
@@ -52,7 +52,7 @@ export const ForgotPassword = () => {
         I don’t have my seed phrase
         <Icon name='iconArrowV2' />
       </TextStyled>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onClickNextButton}>
+      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onClickForgotButton}>
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>
