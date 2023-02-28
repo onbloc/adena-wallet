@@ -1,8 +1,6 @@
-# Adena Wallet
+# Adena Module
 
-This proejct is Adena Wallet.
-
-The wallet instance of Adena handles account information management, signature authentication, and transaction generation.
+The Adena Module handles the management of account information, transaction generation, and signature authentication.
 
 ## Index
 

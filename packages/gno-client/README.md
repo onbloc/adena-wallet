@@ -1,8 +1,6 @@
 # GNO Client
 
-This proejct is GNO Client.
-
-GNO Client handles bi-directional communication with RPCs and APIs of Gnoland to enable streamlined processing of responses from various iterations of the Gnoland Blockchain.
+The GNO Client handles bi-directional communication with the RPCs and APIs of Gnoland, enabling streamlined processing of responses from various iterations of the Gnoland Blockchain.
 
 ## Index
 

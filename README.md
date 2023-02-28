@@ -34,6 +34,7 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Multi-Accounts <br>
 ✅ Multi-Network <br>
 ✅ Ledger Support <br>
+✅ Web3 Login Support <br>
 ⬜ Airgap Support <br>
 ⬜ Multi-Chain <br>
 ⬜ Manage Custom Tokens <br>
@@ -76,4 +77,4 @@ Check out our official documentation page for guides and brand assets.
 
 ## Support
 
-If you need support, join [our channel](https://discord.gg/6eTSyZ3569) on Gnoland's Discord server and ask for help!
+If you need support or have suggestions for improvement, please open an [issue](https://github.com/onbloc/adena-wallet/issues) or join our [channel](https://discord.gg/6eTSyZ3569) on Gnoland's Discord server.
