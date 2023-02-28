@@ -49,18 +49,18 @@ export const GoogleConnect = () => {
     const auth = GoogleTorusSigner.create();
     await auth.init();
     setWeb3auth(auth);
-  }
+  };
 
   const connect = () => {
     if (!web3auth) {
       return;
     }
-    web3auth.connect().then(connected => {
+    web3auth.connect().then((connected: any) => {
       if (connected) {
         web3auth.getPrivateKey().then(setPrivateKey);
       }
-    })
-  }
+    });
+  };
 
   const disconnect = async () => {
     if (!web3auth) {
@@ -72,9 +72,9 @@ export const GoogleConnect = () => {
     web3auth.disconnect();
     navigate(RoutePath.CreatePassword, {
       state: {
-        type: "GOOGLE",
-        privateKey
-      }
+        type: 'GOOGLE',
+        privateKey,
+      },
     });
   };
 

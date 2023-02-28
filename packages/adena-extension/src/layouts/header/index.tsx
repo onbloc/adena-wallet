@@ -43,7 +43,6 @@ export const Header = () => {
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
   const resetWallet = useMatch(RoutePath.ResetWallet);
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
-
   const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
@@ -70,6 +69,9 @@ export const Header = () => {
     }
     if (yourSeedPhrase || enterSeedPhrase) {
       return <ProgressMenu progressLevel={'first'} />;
+    }
+    if (location?.state?.type === 'GOOGLE' && createPassword) {
+      return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
     }
     if (createPassword || approveHardwareWalletLedgerPassword) {
       return <ProgressMenu progressLevel={'second'} />;

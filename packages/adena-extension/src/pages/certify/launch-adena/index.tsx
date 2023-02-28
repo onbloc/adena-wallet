@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -12,11 +12,22 @@ const text = {
   desc: 'Click on the Start button to\nlaunch Adena.',
 };
 
-const Wrapper = styled.main`
+const popupStyle = css`
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  max-width: 380px;
+  min-height: 514px;
+  padding-top: 50px;
+`;
+
+const defaultStyle = css`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
+`;
+
+const Wrapper = styled.main<{ isPopup: boolean }>`
+  ${({ isPopup }) => (isPopup ? popupStyle : defaultStyle)};
 `;
 
 interface LaunchAdenaState {
@@ -41,7 +52,7 @@ export const LaunchAdena = () => {
   };
 
   return (
-    <Wrapper>
+    <Wrapper isPopup={location?.state?.type !== 'SEED'}>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth
