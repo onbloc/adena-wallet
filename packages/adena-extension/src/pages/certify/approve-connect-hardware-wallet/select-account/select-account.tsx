@@ -4,7 +4,7 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Wallet, WalletAccount } from 'adena-module';
+import { LedgerConnector, Wallet, WalletAccount } from 'adena-module';
 import IconAddSymbol from '@assets/add-symbol.svg';
 import IconCheck from '@assets/check.svg';
 import theme from '@styles/theme';
@@ -12,6 +12,8 @@ import { formatAddress } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 
 const text = {
   title: 'Select Accounts',
@@ -229,18 +231,27 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const onClickLoadMore = async () => {
     setLoadPath(true);
-    try {
-      const accountPaths = Array.from(
-        { length: LEDGER_ACCOUNT_LOAD_SIZE },
-        (_, index) => index + lastPath + 1,
+    const accountPaths = Array.from(
+      { length: LEDGER_ACCOUNT_LOAD_SIZE },
+      (_, index) => index + lastPath + 1,
+    );
+    const devices = await LedgerConnector.devices();
+    const isHID = await LedgerConnector.isSupportHID();
+    let deviceInterface: any = null;
+    if (!isHID) {
+      deviceInterface = devices[0].configurations[0].interfaces.find(({ alternates }: { alternates: any }) =>
+        alternates.some((a: any) => a.interfaceClass === 255)
       );
-      const ledgerWallet = await Wallet.createByLedger(accountPaths);
-      await ledgerWallet.initAccounts();
-      await initAccounts([...accounts, ...ledgerWallet.getAccounts()]);
-    } catch (e) {
-      console.error(e);
     }
-    setLoadPath(false);
+    const transport = isHID ?
+      new TransportWebHID(devices[0]) :
+      new TransportWebUSB(devices[0], deviceInterface?.interfaceNumber ?? 0);
+    Wallet.createByLedger(accountPaths, transport).then(async (wallet: InstanceType<typeof Wallet>) => {
+      await wallet.initAccounts();
+      await initAccounts([...accounts, ...wallet.getAccounts()]);
+    }).finally(() => {
+      setLoadPath(false);
+    });
   };
 
   const onClickNextButton = async () => {

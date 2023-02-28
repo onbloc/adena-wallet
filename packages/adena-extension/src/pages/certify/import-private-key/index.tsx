@@ -25,6 +25,7 @@ export const ImportPrivateKey = () => {
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
   const [errorMessage, setErrorMessage] = useState('');
+  const [enabled, setEnabled] = useState(true);
 
   const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
@@ -49,6 +50,10 @@ export const ImportPrivateKey = () => {
   };
 
   const nextButtonClick = async () => {
+    if (!enabled) {
+      return;
+    }
+    setEnabled(false);
     try {
       const privateKey = value.replace('0x', '');
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
@@ -57,11 +62,12 @@ export const ImportPrivateKey = () => {
         setErrorMessage('Private key already registered');
         return;
       }
-      importAccount(account);
+      await importAccount(account);
       navigate(RoutePath.Wallet);
     } catch (e) {
       setErrorMessage('Invalid private key');
     }
+    setEnabled(true);
   };
 
   return (
