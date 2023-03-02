@@ -63,6 +63,8 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import LoadingMain from '@components/loading-screen/loading-main';
 import { useResetRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { TabContainer } from '@layouts/tab-container';
+import { ProgressMenu } from '@layouts/header/progress-menu';
 
 export const CustomRouter = () => {
   const { loadAccounts } = useLoadAccounts();
@@ -132,27 +134,51 @@ export const CustomRouter = () => {
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route
             path={RoutePath.ApproveHardwareWalletInit}
-            element={<ApproveConnectHardwareWalletInit />}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+                <ApproveConnectHardwareWalletInit />
+              </TabContainer>
+            }
           />
           <Route
             path={RoutePath.ApproveHardwareWalletConnect}
-            element={<ApproveConnectHardwareWalletConnect />}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+                <ApproveConnectHardwareWalletConnect />
+              </TabContainer>
+            }
           />
           <Route
             path={RoutePath.ApproveHardwareWalletSelectAccount}
-            element={<ApproveConnectHardwareWalletSelectAccount />}
-          />
-          <Route
-            path={RoutePath.ApproveHardwareWalletFinish}
-            element={<ApproveConnectHardwareWalletFinish />}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+                <ApproveConnectHardwareWalletSelectAccount />
+              </TabContainer>
+            }
           />
           <Route
             path={RoutePath.ApproveHardwareWalletLedgerPassword}
-            element={<ApproveHardwareWalletLedgerPassword />}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'second'} hideArrow />}>
+                <ApproveHardwareWalletLedgerPassword />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletFinish}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
+                <ApproveConnectHardwareWalletFinish />
+              </TabContainer>
+            }
           />
           <Route
             path={RoutePath.ApproveHardwareWalletLedgerAllSet}
-            element={<ApproveHardwareWalletLedgerAllSet />}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
+                <ApproveHardwareWalletLedgerAllSet />
+              </TabContainer>
+            }
           />
           <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
