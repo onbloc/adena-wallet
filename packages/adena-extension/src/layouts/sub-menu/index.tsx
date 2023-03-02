@@ -260,6 +260,7 @@ const ListItem = styled.li`
   position: relative;
   width: 100%;
   height: 60px;
+  min-height: 60px;
   cursor: pointer;
   padding: 0px 20px;
   background-color: ${({ theme }) => theme.color.neutral[7]};
