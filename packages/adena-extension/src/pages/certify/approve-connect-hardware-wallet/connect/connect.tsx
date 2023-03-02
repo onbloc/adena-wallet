@@ -25,12 +25,16 @@ export const ApproveConnectHardwareWalletConnect = () => {
   useEffect(() => {
     if (connectState === 'INIT') {
       initWallet();
-      return;
+    }
+    if (connectState === 'FAILED') {
+      const intervalReqeust = setTimeout(() => {
+        requestHardwareWallet();
+      }, 1000);
+      return () => clearTimeout(intervalReqeust);
     }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.getAccounts().map((account: InstanceType<typeof WalletAccount>) => account.serialize());
       navigate(RoutePath.ApproveHardwareWalletSelectAccount, { state: { accounts: serializedAccounts } });
-      return;
     }
   }, [connectState, wallet]);
 
@@ -52,24 +56,25 @@ export const ApproveConnectHardwareWalletConnect = () => {
     setConnectState('NOT_PERMISSION');
   };
 
-  const retryRequestPermission = () => {
+  const retryRequestPermission = async () => {
     setConnectState('REQUEST');
-    LedgerConnector.request().then(() => {
+    try {
+      const transport = await LedgerConnector.request();
+      await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
-    }).catch((e: any) => {
+    } catch (e) {
       console.log(e);
       setConnectState('NOT_PERMISSION');
-    });
+    }
   };
 
   const checkHardwareConnect = async () => {
-    const transport = await LedgerConnector.openConnected();
-    if (transport === null) {
+    const devices = await LedgerConnector.devices();
+    if (devices.length === 0) {
       return false;
     }
 
-    await transport.close();
     return true;
   };
 
@@ -88,8 +93,10 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
     try {
       setConnectState('REQUEST_WALLET_LOAD');
-      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
+      const transport = await LedgerConnector.openConnected();
+      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4], transport);
       await wallet.initAccounts();
+      await transport?.close();
       setWallet(wallet);
       setConnectState('SUCCESS');
       retry = false;
@@ -102,7 +109,6 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     if (retry) {
-      setTimeout(requestHardwareWallet, 1000);
       setConnectState('FAILED');
     }
   };
