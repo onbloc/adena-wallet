@@ -14,6 +14,10 @@ export class WalletAccountService {
     this.walletAccountRepository = walletAccountRepository;
   }
 
+  public setGnoClient(gnoClient: InstanceType<typeof GnoClient>) {
+    this.gnoClient = gnoClient;
+  }
+
   public getCurrentAccount = async () => {
     const accounts = await this.getAccounts();
     if (accounts.length === 0) {
