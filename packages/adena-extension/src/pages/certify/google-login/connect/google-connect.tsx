@@ -57,8 +57,12 @@ export const GoogleConnect = () => {
     }
     web3auth.connect().then((connected: any) => {
       if (connected) {
-        web3auth.getPrivateKey().then(setPrivateKey);
+        web3auth.getPrivateKey().then(setPrivateKey).catch(() => {
+          navigate(RoutePath.GoogleConnectFailed);
+        });
       }
+    }).catch(() => {
+      window.close();
     });
   };
 
