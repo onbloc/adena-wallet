@@ -5,10 +5,14 @@ import SeedBox from '@components/seed-box';
 import TermsCheckbox from '@components/terms-checkbox';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { Wallet } from 'adena-module';
+import { makeCosmoshubPath, Wallet } from 'adena-module';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { useAdenaContext } from '@hooks/use-context';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 const text = {
   title: 'Seed Phrase',
@@ -19,24 +23,60 @@ const text = {
 };
 
 export const YourSeedPhrase = () => {
-  const [terms, setTerms] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { walletService, accountService } = useAdenaContext();
+  const [terms, setTerms] = useState(false);
   const [seeds, setSeeds] = useState(() => Wallet.generateMnemonic());
   const [viewSeedAgree, setViewSeedAgree] = useState(false);
   const [showBlurScreen, setShowBlurScreen] = useState(true);
+  const [clicked, setClicked] = useState(false);
+  const { loadAccounts } = useLoadAccounts();
+  const [, setState] = useRecoilState(WalletState.state);
 
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
     [terms],
   );
 
-  const handleNextButtonClick = () =>
+  const handleNextButtonClick = async () => {
+    if (clicked) {
+      return;
+    }
+    setClicked(true);
+    if (isAddAccount()) {
+      addAccount();
+      return;
+    }
+
+    setClicked(false);
     navigate(RoutePath.CreatePassword, {
       state: {
         type: 'SEED',
         seeds,
       },
     });
+  }
+
+  const isAddAccount = () => {
+    return location.state.type === "ADD_ACCOUNT";
+  };
+
+  const addAccount = async () => {
+    const password = "await walletService.getRawPassword()";
+    const createdWallet = await walletService.createWallet({ mnemonic: seeds, password });
+    await createdWallet.initAccounts();
+
+    const account = createdWallet.getAccounts()[0];
+    const accountIndex = await accountService.getLastAccountIndex();
+    account.setIndex(accountIndex + 1);
+    account.setAccountType("SEED");
+    account.setSigner(createdWallet);
+    await accountService.addAccount(account);
+    await accountService.updateCurrentAccount(account);
+    loadAccounts();
+    navigate(RoutePath.Wallet);
+  }
 
   const viewSeedAgreeButton = () => {
     if (terms) setViewSeedAgree(true);

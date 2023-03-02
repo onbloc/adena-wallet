@@ -1,5 +1,5 @@
 import BottomFixedButton from '@components/buttons/bottom-fixed-button';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import logo from '@assets/logo-default-v2.svg';
 import Text from '@components/text';
@@ -30,6 +30,17 @@ const menuMakerInfo = [
 ];
 
 export const AboutAdena = () => {
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    initVersion();
+  }, []);
+
+  const initVersion = () => {
+    const manifest = chrome.runtime.getManifest();
+    setVersion(`${manifest.version}`);
+  };
+
   const onClickWebLink = (path: string) => {
     return window.open(path, '_blank');
   };
@@ -38,7 +49,7 @@ export const AboutAdena = () => {
     <Wrapper>
       <Logo src={logo} alt='logo' />
       <Text type='light13' color={theme.color.neutral[9]} margin='0px 0px 22px'>
-        Version 2.1.1
+        {`Version ${version}`}
       </Text>
       {menuMakerInfo.map((v, i) => (
         <FullButtonRightIcon

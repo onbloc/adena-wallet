@@ -51,8 +51,6 @@ export const ApproachPasswordPhrase = () => {
 
   const confirmButtonClick = async () => {
     try {
-      validateEmptyPassword(pwd);
-      validateWrongPasswordLength(pwd);
       const storedPassword = await walletService.loadWalletPassword();
       validateInvalidPassword(pwd, storedPassword);
       navigate(RoutePath.ApproachPrivatePhrase);

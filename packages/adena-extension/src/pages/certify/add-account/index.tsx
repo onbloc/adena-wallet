@@ -7,21 +7,24 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { useAdenaContext } from '@hooks/use-context';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
-  const { availAddAccount, addAccount } = useAddAccount();
+  const { walletService } = useAdenaContext();
+  const { addAccount } = useAddAccount();
   const { loadAccounts } = useLoadAccounts();
-  const [availCreateAccount, setAvailCreateAccount] = useState(false);
-
-  useEffect(() => {
-    availAddAccount().then(setAvailCreateAccount);
-  }, []);
 
   const onClickCreateAccount = async () => {
-    await addAccount();
-    loadAccounts();
-    navigate(RoutePath.Home);
+    const existWallet = await walletService.existsWallet();
+    if (existWallet) {
+      await addAccount();
+      loadAccounts();
+      navigate(RoutePath.Home);
+      return;
+    }
+
+    navigate(RoutePath.GenerateSeedPhrase);
   };
 
   const existsPopups = async () => {
@@ -48,12 +51,11 @@ export const AddAccount = () => {
     navigate(RoutePath.ImportPrivateKey);
   };
 
-  const getAddAccountContent = (availCreateAccount: boolean) => [
+  const getAddAccountContent = () => [
     {
       title: 'Create New Account',
       subTitle: 'Generate a new account',
       onClick: onClickCreateAccount,
-      disabled: !availCreateAccount,
     },
     {
       title: 'Import Private Key',
@@ -74,7 +76,7 @@ export const AddAccount = () => {
       <Text className='main-title' type='header4'>
         Add Account
       </Text>
-      {getAddAccountContent(availCreateAccount).map((v, i) => (
+      {getAddAccountContent().map((v, i) => (
         <MultilineTextWithArrowButton
           key={i}
           title={v.title}
