@@ -30,7 +30,7 @@ const Wrapper = styled.main`
 export const GoogleConnectFailed = () => {
   const navigate = useNavigate()
 
-  const retryHandler = () => {
+  const onClickRetry = () => {
     navigate(RoutePath.GoogleConnect);
   };
 
@@ -41,7 +41,7 @@ export const GoogleConnectFailed = () => {
       <Button
         fullWidth
         hierarchy={ButtonHierarchy.Primary}
-        onClick={retryHandler}
+        onClick={onClickRetry}
         margin='auto 0px 0px'
       >
         <Text type='body1Bold'>Retry</Text>
