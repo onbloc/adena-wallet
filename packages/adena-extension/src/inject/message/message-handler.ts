@@ -1,9 +1,7 @@
-import { WalletService } from '@services/index';
-import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
 import { HandlerMethod } from '.';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups } from './methods';
-import { AdenaStorage } from '@common/storage';
+import { InjectCore } from './methods/core';
 
 export class MessageHandler {
   public static createHandler = (
@@ -42,10 +40,9 @@ export class MessageHandler {
   ) => {
     let existsWallet = false;
     try {
-      const walletRepsotiroy = new WalletRepository(AdenaStorage.local(), AdenaStorage.session());
-      const accountRepository = new WalletAccountRepository(AdenaStorage.local());
-      const walletService = new WalletService(walletRepsotiroy, accountRepository);
-      existsWallet = await walletService.existsWallet();
+      const core = new InjectCore();
+      const curreantAccount = await core.accountService.getCurrentAccount();
+      existsWallet = curreantAccount.data.address !== "";
     } catch (e) {
       existsWallet = false;
     }

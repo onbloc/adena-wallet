@@ -4,6 +4,8 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import Icon from '@components/icons';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Login Failed',
@@ -26,7 +28,11 @@ const Wrapper = styled.main`
 `;
 
 export const GoogleConnectFailed = () => {
-  const retryHandler = () => {};
+  const navigate = useNavigate()
+
+  const retryHandler = () => {
+    navigate(RoutePath.GoogleConnect);
+  };
 
   return (
     <Wrapper>

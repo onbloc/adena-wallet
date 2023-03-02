@@ -27,10 +27,6 @@ export const ApproveConnectHardwareWalletConnect = () => {
       initWallet();
       return;
     }
-    if (connectState === 'REQUEST') {
-      requestPermission();
-      return;
-    }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.getAccounts().map((account: InstanceType<typeof WalletAccount>) => account.serialize());
       navigate(RoutePath.ApproveHardwareWalletSelectAccount, { state: { accounts: serializedAccounts } });
@@ -39,6 +35,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
   }, [connectState, wallet]);
 
   const initWallet = async () => {
+    setConnectState('REQUEST');
     let connected = false;
     if (!openConnected) {
       const devices = await LedgerConnector.devices();
@@ -48,49 +45,63 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
     if (connected) {
       setConnectState('REQUEST_WALLET');
+      requestHardwareWallet();
       return;
     }
 
-    setConnectState('REQUEST');
+    setConnectState('NOT_PERMISSION');
   };
 
-  const requestPermission = async () => {
-    const transport = await LedgerConnector.request();
-    console.log('transport', transport);
-    if (transport === null) {
+  const retryRequestPermission = () => {
+    setConnectState('REQUEST');
+    LedgerConnector.request().then(() => {
+      setConnectState('REQUEST_WALLET');
+      requestHardwareWallet();
+    }).catch((e: any) => {
+      console.log(e);
       setConnectState('NOT_PERMISSION');
-      return false;
-    }
-    setConnectState('REQUEST_WALLET');
-    checkHardwareConnect();
-    return true;
+    });
   };
 
   const checkHardwareConnect = async () => {
     const transport = await LedgerConnector.openConnected();
     if (transport === null) {
-      setConnectState('FAILED');
       return false;
     }
 
     await transport.close();
-    setConnectState('REQUEST_WALLET');
     return true;
   };
 
   const requestHardwareWallet = async () => {
+    console.log("request");
+    let retry = true;
     try {
-      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
+      const connectedCosmosApp = await checkHardwareConnect();
+      if (!connectedCosmosApp) {
+        setConnectState('NOT_PERMISSION');
+        return;
+      }
+    } catch (e) {
+      setConnectState('NOT_PERMISSION');
+    }
+
+    try {
       setConnectState('REQUEST_WALLET_LOAD');
+      const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
       await wallet.initAccounts();
       setWallet(wallet);
       setConnectState('SUCCESS');
+      retry = false;
     } catch (e) {
       if (e instanceof Error) {
         if (e.message !== "The device is already open.") {
           console.log(e);
         }
       }
+    }
+
+    if (retry) {
       setTimeout(requestHardwareWallet, 1000);
       setConnectState('FAILED');
     }
@@ -103,7 +114,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     if (connectState === 'NOT_PERMISSION') {
-      return <ConnectFail retry={() => setConnectState('REQUEST')} />
+      return <ConnectFail retry={retryRequestPermission} />
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {

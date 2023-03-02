@@ -275,11 +275,6 @@ export class LedgerConnector {
   }
 
   public static async request() {
-    const devices = await LedgerConnector.devices();
-    if (devices.length === 0) {
-      return null;
-    }
-
     const isHID = await LedgerConnector.isSupportHID();
     if (isHID) {
       return TransportWebHID.request();

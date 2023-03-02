@@ -6,6 +6,7 @@ import Text from '@components/text';
 import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
+import { LedgerConnector } from 'adena-module';
 
 const text = {
   title: 'Connect a\nLedger Device',
@@ -34,7 +35,12 @@ const Wrapper = styled.main`
 export const ApproveConnectHardwareWalletInit = () => {
   const navigate = useNavigate();
 
-  const moveNextPage = () => {
+  const moveNextPage = async () => {
+    try {
+      await LedgerConnector.request();
+    } catch (e) {
+      console.log(e);
+    }
     navigate(RoutePath.ApproveHardwareWalletConnect);
   };
 
