@@ -25,9 +25,9 @@ interface AppInfoResponse {
 
 export class TokenRepository {
 
-  private static TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/tokens.json";
+  private static TOKEN_CONFIG_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json";
 
-  private static APP_INFO_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/apps.json";
+  private static APP_INFO_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/apps.json";
 
   private networkInstance: AxiosInstance;
 
