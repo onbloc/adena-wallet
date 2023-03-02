@@ -77,6 +77,9 @@ export const AdenaProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!gnoClient) {
       initNetworks();
+    } else {
+      accountService.setGnoClient(gnoClient);
+      transactionService.setGnoClient(gnoClient);
     }
   }, [gnoClient]);
 
