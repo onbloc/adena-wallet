@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
@@ -37,10 +37,6 @@ interface Props {
 
 export const ConnectRequestWallet = ({ requestHardwareWallet }: Props) => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    requestHardwareWallet();
-  }, []);
 
   const onClickClose = () => {
     navigate(RoutePath.ApproveHardwareWalletInit);

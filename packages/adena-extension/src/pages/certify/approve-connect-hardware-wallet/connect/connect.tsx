@@ -45,55 +45,63 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
     if (connected) {
       setConnectState('REQUEST_WALLET');
+      requestHardwareWallet();
       return;
     }
 
-    setConnectState('FAILED');
+    setConnectState('NOT_PERMISSION');
   };
 
   const retryRequestPermission = () => {
     setConnectState('REQUEST');
-    LedgerConnector.request().then(result => {
-      if (result === null) {
-        setConnectState('NOT_PERMISSION');
-        return;
-      }
+    LedgerConnector.request().then(() => {
       setConnectState('REQUEST_WALLET');
-      checkHardwareConnect();
+      requestHardwareWallet();
+    }).catch((e: any) => {
+      console.log(e);
+      setConnectState('NOT_PERMISSION');
     });
   };
 
   const checkHardwareConnect = async () => {
     const transport = await LedgerConnector.openConnected();
     if (transport === null) {
-      setConnectState('FAILED');
       return false;
     }
 
     await transport.close();
-    setConnectState('REQUEST_WALLET');
     return true;
   };
 
   const requestHardwareWallet = async () => {
+    console.log("request");
+    let retry = true;
     try {
       const connectedCosmosApp = await checkHardwareConnect();
       if (!connectedCosmosApp) {
         setConnectState('NOT_PERMISSION');
         return;
       }
+    } catch (e) {
+      setConnectState('NOT_PERMISSION');
+    }
 
+    try {
       setConnectState('REQUEST_WALLET_LOAD');
       const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4]);
       await wallet.initAccounts();
       setWallet(wallet);
       setConnectState('SUCCESS');
+      retry = false;
     } catch (e) {
       if (e instanceof Error) {
         if (e.message !== "The device is already open.") {
           console.log(e);
         }
       }
+    }
+
+    if (retry) {
       setTimeout(requestHardwareWallet, 1000);
       setConnectState('FAILED');
     }

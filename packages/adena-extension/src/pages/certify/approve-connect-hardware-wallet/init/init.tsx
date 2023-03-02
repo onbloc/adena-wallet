@@ -35,8 +35,12 @@ const Wrapper = styled.main`
 export const ApproveConnectHardwareWalletInit = () => {
   const navigate = useNavigate();
 
-  const moveNextPage = () => {
-    LedgerConnector.request();
+  const moveNextPage = async () => {
+    try {
+      await LedgerConnector.request();
+    } catch (e) {
+      console.log(e);
+    }
     navigate(RoutePath.ApproveHardwareWalletConnect);
   };
 
