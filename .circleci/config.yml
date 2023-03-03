@@ -17,7 +17,7 @@ jobs:
           command: echo insecure >> $HOME/.curlrc
       - run:
           name: Avoid hosts unknown for github
-          command: mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+          command: ssh-keyscan github.com >> ~/.ssh/known_hosts
       - run:
           name: Install project
           command: |
