@@ -1,7 +1,7 @@
 import React from 'react';
 import Text from '@components/text';
 import styled from 'styled-components';
-import IconLogo from './../../../assets/logo-withIcon.svg';
+import IconLogo from './../../../install/assets/logo-typeB.svg';
 import IconHelp from './../../../assets/help-fill.svg';
 
 const Container = styled.div`
