@@ -49,7 +49,7 @@ const WarningBox = ({ type, margin, padding }: WarningBoxProps) => {
         </Text>
       )}
       {warningType[type].subTitle && (
-        <Text type='body2Reg' color={theme.color.red[6]}>
+        <Text type='body2Reg' color={'rgba(231, 50, 59, 1)'}>
           {warningType[type].subTitle}
         </Text>
       )}
