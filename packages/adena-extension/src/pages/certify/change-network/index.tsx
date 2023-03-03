@@ -43,6 +43,7 @@ export const ChangeNetwork = () => {
   const clearWalletBalance = useResetRecoilState(WalletState.balances);
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
   const [, setState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
@@ -64,6 +65,10 @@ export const ChangeNetwork = () => {
     }
     setState('NONE');
     setFailedNetwork(!health);
+    if (!health) {
+      const chainId = currentNetwork?.chainId;
+      setFailedNetworkChainId(chainId ?? "");
+    }
   };
 
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {

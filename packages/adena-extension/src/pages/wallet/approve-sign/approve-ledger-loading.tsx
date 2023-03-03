@@ -11,12 +11,10 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  padding-top: 50px;
-  justify-content: space-between;
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  max-width: 380px;
+  min-height: 514px;
+  padding: 50px 20px 24px;
 
   @keyframes rotate {
     from {
@@ -35,7 +33,7 @@ const Wrapper = styled.main`
     width: 100px;
     height: 100px;
     margin: 20px auto;
-    animation: rotate 1.5s infinite
+    animation: rotate 1.5s infinite;
   }
 
   div {
@@ -49,7 +47,6 @@ interface Props {
 }
 
 export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
-
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -76,7 +73,7 @@ export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
     if (!isCreated) {
       setTimeout(fail, 1000);
     }
-  }
+  };
 
   return (
     <Wrapper>
@@ -86,7 +83,7 @@ export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
         fullWidth
         hierarchy={ButtonHierarchy.Dark}
         className={'cancel-button'}
-        margin='0px auto'
+        margin='auto 0px 0px'
         onClick={cancel}
       >
         <Text type='body1Bold'>Cancel</Text>

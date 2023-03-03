@@ -5,6 +5,7 @@ import { SkeletonBoxStyle } from '@components/loadings';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { Route, useLocation, useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
+import LoadingApproveTransaction from './loading-approve-transaction';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -37,11 +38,11 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 
 const LoadingMain = () => {
   const { state } = useLoadAccounts();
-  const isLoading = ["CREATE", "FINISH", "LOGIN", "FAIL"].includes(state) === false;
-  const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletInit + "/*");
+  const isLoading = ['CREATE', 'FINISH', 'LOGIN', 'FAIL'].includes(state) === false;
+  const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletInit + '/*');
+  const isNotMatch = useMatch('/approve/wallet/*');
 
-
-  return (!isApproveHardwarePath && isLoading) ? (
+  return !isApproveHardwarePath && isLoading && !isNotMatch ? (
     <Wrapper>
       {/* <Header /> */}
       <Round width='163px' height='14px' radius='24px' />
@@ -60,7 +61,9 @@ const LoadingMain = () => {
         ))}
       </ListBoxWrap>
     </Wrapper>
-  ) : <></>;
+  ) : (
+    <></>
+  );
 };
 
 export default LoadingMain;

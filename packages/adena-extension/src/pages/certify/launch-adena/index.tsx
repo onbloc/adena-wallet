@@ -10,7 +10,7 @@ import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 
 const text = {
-  title: 'You’re All Set',
+  title: 'You’re All Set!',
   desc: 'Click on the Start button to\nlaunch Adena.',
 };
 

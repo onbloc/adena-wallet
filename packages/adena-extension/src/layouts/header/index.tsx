@@ -60,13 +60,16 @@ export const Header = () => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   const loadingComplete = walletState === 'FINISH' || failedNetwork;
-
+  console.log('location : ', location);
   const renderHeader = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;
     }
     if (approveEstablish || approveTransaction || approveSign) {
       return <ApproveMenu />;
+    }
+    if (yourSeedPhrase && location?.state?.type === 'ADD_ACCOUNT') {
+      return <ArrowTitleMenu />;
     }
     if (yourSeedPhrase || enterSeedPhrase) {
       return <ProgressMenu progressLevel={'first'} />;
@@ -83,16 +86,6 @@ export const Header = () => {
     if (launchAdena) {
       return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
-    // if (
-    //   approveHardwareWalletInit ||
-    //   approveHardwareWalletConnect ||
-    //   approveHardwareWalletSelectAccount
-    // ) {
-    //   return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
-    // }
-    // if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
-    //   return <ProgressMenu showLogo progressLevel={'third'} hideArrow />;
-    // }
     if (resetWallet) {
       return <ArrowTitleMenu title={'Reset Wallet'} />;
     }
@@ -113,7 +106,7 @@ export const Header = () => {
       approveHardwareWalletLedgerPassword ||
       approveHardwareWalletLedgerAllSet
     ) {
-      return <TabMenu />
+      return <TabMenu />;
     }
 
     if (

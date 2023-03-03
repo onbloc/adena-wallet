@@ -5,56 +5,50 @@ import IconLogo from './../../../assets/logo-withIcon.svg';
 import IconHelp from './../../../assets/help-fill.svg';
 
 const Container = styled.div`
+  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')}
   position: absolute;
   top: 0;
   display: flex;
   width: 100%;
   height: 0;
   padding: 0;
-
-  .wrapper {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: fit-content;
-    background-color: ${({ theme }) => theme.color.neutral[8]};
-    padding: 40px;
+  width: 100%;
+  height: fit-content;
+  background-color: ${({ theme }) => theme.color.neutral[8]};
+  padding: 40px 40px 0px;
+  .help-text {
+    font-size: 19px;
   }
-
-  .section {
-    display: flex;
-    flex-direction: row;
-    height: 24px;
-  }
-
-  .icon {
-    padding: 0 7px;
-  }
-
-  .help {
+  .help-btn {
+    ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')}
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 24px;
     cursor: pointer;
+  }
+
+  .help-btn:before {
+    content: '';
+    display: inline-block;
+    background: url(${IconHelp}) no-repeat center left / 100% 100%;
+    width: 19px;
+    height: 19px;
+    margin-right: 7px;
   }
 `;
 
-
 export const TabMenu = () => {
-
   const onClickHelp = () => {
-    chrome.tabs.create({ url: "https://docs.adena.app/resources/faq" });
+    chrome.tabs.create({ url: 'https://docs.adena.app/resources/faq' });
   };
 
   return (
     <Container>
-      <div className='wrapper'>
-        <div className='logo section'>
-          <img className='icon' src={IconLogo} alt='logo-image' />
-        </div>
-        <div className='help section' onClick={onClickHelp}>
-          <img className='icon' src={IconHelp} alt='logo-image' />
-          <Text type='body1Bold'>{"Help"}</Text>
-        </div>
+      <img className='logo' src={IconLogo} alt='logo' />
+      <div className='help-btn' onClick={onClickHelp}>
+        <Text type='body1Bold' className='help-text'>
+          Help
+        </Text>
       </div>
     </Container>
   );

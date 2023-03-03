@@ -21,12 +21,14 @@ export const ApproveSign = () => {
   const { accountService, transactionService } = useAdenaContext();
   const getDataRef = useRef<HTMLInputElement | null>(null);
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(undefined);
+  const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
+    undefined,
+  );
   const [gnoClient, , updateGnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
   const [gasFee, setGasFee] = useState(0);
   const location = useLocation();
-  const [requestData, setReqeustData] = useState<InjectionMessage>()
+  const [requestData, setReqeustData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
@@ -35,13 +37,13 @@ export const ApproveSign = () => {
     if (!gnoClient) {
       updateGnoClient();
     }
-  }, [gnoClient])
+  }, [gnoClient]);
 
   useEffect(() => {
     if (location.state?.requestData) {
       setReqeustData(location.state?.requestData);
     }
-  }, [location])
+  }, [location]);
 
   useEffect(() => {
     if (gnoClient && currentAccount && requestData) {
@@ -55,12 +57,12 @@ export const ApproveSign = () => {
   const initCurrentAccount = async () => {
     const currentAccount = await accountService.getCurrentAccount();
     changeCurrentAccount(currentAccount);
-  }
+  };
 
   const initFavicon = async () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
     setFavicon(faviconData);
-  }
+  };
 
   const initTransactionData = async () => {
     if (!gnoClient || !currentAccount) {
@@ -72,22 +74,23 @@ export const ApproveSign = () => {
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
-        requestData?.data?.memo
+        requestData?.data?.memo,
       );
       setTrasactionData(transaction);
       setGasFee(requestData?.data?.gasFee ?? 0);
       setHostname(requestData?.hostname ?? '');
       return true;
-
     } catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key),
+        );
       }
     }
     return false;
-  }
+  };
 
   const signTransaction = async () => {
     if (transactionData && gnoClient && currentAccount) {
@@ -97,10 +100,12 @@ export const ApproveSign = () => {
           requestData?.data?.messages,
           requestData?.data?.gasWanted,
           requestData?.data?.gasFee,
-          requestData?.data?.memo
+          requestData?.data?.memo,
         );
         if (signedAmino) {
-          chrome.runtime.sendMessage(InjectionMessageInstance.success('SIGN_AMINO', signedAmino, requestData?.key));
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.success('SIGN_AMINO', signedAmino, requestData?.key),
+          );
         }
       } catch (e) {
         if (e instanceof Error) {
@@ -109,13 +114,17 @@ export const ApproveSign = () => {
             return false;
           }
         }
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key));
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key),
+        );
       }
     } else {
-      chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key));
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key),
+      );
     }
     return false;
-  }
+  };
 
   const approveEvent = async () => {
     if (currentAccount?.data.signerType === 'AMINO') {
@@ -127,10 +136,18 @@ export const ApproveSign = () => {
   };
 
   const cancelEvent = async () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key));
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key),
+    );
   };
 
-  const getContractFunctionText = ({ type = '', functionName = '' }: { type?: string; functionName?: string }) => {
+  const getContractFunctionText = ({
+    type = '',
+    functionName = '',
+  }: {
+    type?: string;
+    functionName?: string;
+  }) => {
     if (!transactionData) {
       return '';
     }
@@ -138,7 +155,7 @@ export const ApproveSign = () => {
       return 'Transfer';
     }
     return functionName;
-  }
+  };
 
   const cancelLedger = async () => {
     await LedgerConnector.closeConnected();
@@ -158,89 +175,87 @@ export const ApproveSign = () => {
         </BundleDL>
         <BundleDL>
           <dt>Function</dt>
-          <dd id='atv_function'>{getContractFunctionText({ type: contract?.type, functionName: contract?.function })}</dd>
+          <dd id='atv_function'>
+            {getContractFunctionText({ type: contract?.type, functionName: contract?.function })}
+          </dd>
         </BundleDL>
       </BundleDataBox>
-    )
-    );
+    ));
   };
 
   const renderTransactionInfo = () => {
-    const buttonText = visibleTransactionInfo ? 'Hide Transaction Data' : 'View Transaction Data'
+    const buttonText = visibleTransactionInfo ? 'Hide Transaction Data' : 'View Transaction Data';
     return (
       <TransactionInfoBox>
-        <Button className='visible-button' onClick={() => setVisibleTransactionInfo(!visibleTransactionInfo)}>
+        <Button
+          className='visible-button'
+          onClick={() => setVisibleTransactionInfo(!visibleTransactionInfo)}
+        >
           {`${buttonText}`}
           <img src={visibleTransactionInfo ? IconArraowUp : IconArraowDown} />
         </Button>
-        {
-          visibleTransactionInfo && (
-            <textarea className='raw-info-textarea' value={JSON.stringify(transactionData?.document ?? '', null, 4)} readOnly draggable={false} />
-          )
-        }
+        {visibleTransactionInfo && (
+          <textarea
+            className='raw-info-textarea'
+            value={JSON.stringify(transactionData?.document ?? '', null, 4)}
+            readOnly
+            draggable={false}
+          />
+        )}
       </TransactionInfoBox>
-    )
+    );
   };
 
   const renderApproveTransaction = () => {
-    return loadingLedger ? (
-      <LoadingWrapper>
-        <ApproveLdegerLoading createTransaction={signTransaction} cancel={cancelLedger} />
-      </LoadingWrapper>
-    ) : (
+    return (
       <Wrapper>
-        <Text type='header4'>Sign Transaction</Text>
-        <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
-        <RoundedBox>
-          <Text type='body2Reg' color={'#ffffff'}>
-            {hostname}
-          </Text>
-        </RoundedBox>
-        {renderContracts()}
-        <RoundedDataBox className='sub-info'>
-          <RoundedDL>
-            <dt>Network Fee:</dt>
-            <dd>{`${gasFee * 0.000001} GNOT`}</dd>
-          </RoundedDL>
-        </RoundedDataBox>
-        {renderTransactionInfo()}
-        <CancelAndConfirmButton
-          cancelButtonProps={{ onClick: cancelEvent }}
-          confirmButtonProps={{
-            onClick: approveEvent,
-            text: 'Sign',
-          }}
-        />
+        {loadingLedger ? (
+          <ApproveLdegerLoading createTransaction={signTransaction} cancel={cancelLedger} />
+        ) : (
+          <>
+            <Text type='header4'>Sign Transaction</Text>
+            <img className='logo' src={favicon ?? DefaultFavicon} alt='gnoland-logo' />
+            <RoundedBox>
+              <Text type='body2Reg' color={'#ffffff'}>
+                {hostname}
+              </Text>
+            </RoundedBox>
+            {renderContracts()}
+            <RoundedDataBox className='sub-info'>
+              <RoundedDL>
+                <dt>Network Fee:</dt>
+                <dd>{`${gasFee * 0.000001} GNOT`}</dd>
+              </RoundedDL>
+            </RoundedDataBox>
+            {renderTransactionInfo()}
+            <CancelAndConfirmButton
+              cancelButtonProps={{ onClick: cancelEvent }}
+              confirmButtonProps={{
+                onClick: approveEvent,
+                text: 'Sign',
+              }}
+            />
+          </>
+        )}
       </Wrapper>
     );
   };
 
-  return transactionData ?
-    renderApproveTransaction() :
-    (
-      <LoadingWrapper>
-        <LoadingApproveTransaction />
-      </LoadingWrapper>
-    )
+  return transactionData ? (
+    renderApproveTransaction()
+  ) : (
+    <LoadingApproveTransaction rightButtonText='Signin' />
+  );
 };
-
-const LoadingWrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
-  padding: 0 20px 24px 20px;
-`;
 
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
-  padding: 24px 20px;
+  max-width: 380px;
+  min-height: 514px;
+  padding: 20px 24px;
   .logo {
     margin: 24px auto;
-    width: 60px;
+    width: 100px;
     height: auto;
   }
 `;
@@ -332,11 +347,11 @@ const TransactionInfoBox = styled(DataBoxStyle)`
   .raw-info-textarea::-webkit-scrollbar-thumb {
     background-color: darkgrey;
   }
-  
+
   .raw-info-textarea::-webkit-resizer {
     display: none !important;
   }
-  
+
   margin-bottom: 10px;
 `;
 

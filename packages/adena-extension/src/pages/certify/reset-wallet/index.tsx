@@ -5,7 +5,7 @@ import Text from '@components/text';
 import theme from '@styles/theme';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ButtonHierarchy } from '@components/buttons/button';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 
@@ -14,10 +14,11 @@ const content =
 
 export const ResetWallet = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const { clear } = useClear();
 
   const cancelButtonClick = () => {
-    navigate(-1);
+    return state?.backStep ? navigate(state.backStep) : navigate(-1);
   };
 
   const resetButtonClick = () => {

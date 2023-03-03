@@ -10,7 +10,7 @@ import { useAdenaContext } from '@hooks/use-context';
 
 const text = {
   title: 'Account Added',
-  desc: 'You have successfully added your\nledger device account to Adena!',
+  desc: 'You have successfully added your\nledger device account to Adena!\nPlease return to your extension to continue.',
 };
 
 const Wrapper = styled.main`
@@ -31,20 +31,12 @@ const Wrapper = styled.main`
   }
 `;
 
-interface LocationState {
-  accounts: Array<string>;
-  currentAccount: string | null;
-};
-
 export const ApproveConnectHardwareWalletFinish = () => {
   const { accountService } = useAdenaContext();
   const location = useLocation();
 
   const onClickDoneButton = async () => {
     const { accounts, currentAccount } = location.state;
-    console.log(location.state)
-    console.log(location.state["accounts"])
-    console.log(accounts)
     const deseriazedAccounts = accounts.map(WalletAccount.deserialize);
     await accountService.updateAccounts(deseriazedAccounts);
     if (currentAccount) {

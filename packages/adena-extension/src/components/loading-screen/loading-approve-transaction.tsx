@@ -2,7 +2,17 @@ import { GhostButtons, Round, SkeletonBoxStyle } from '@components/loadings';
 import React from 'react';
 import styled from 'styled-components';
 
-const LoadingApproveTransaction = () => {
+interface ApproveProps {
+  leftButtonText?: string;
+  rightButtonText?: string;
+  className?: string;
+}
+
+const LoadingApproveTransaction = ({
+  leftButtonText,
+  rightButtonText,
+  className,
+}: ApproveProps) => {
   return (
     <Wrapper>
       <Round width='163px' height='14px' radius='24px' />
@@ -22,7 +32,11 @@ const LoadingApproveTransaction = () => {
         <Round width='65px' height='10px' radius='24px' />
         <Round width='70px' height='10px' radius='24px' />
       </AllRadiusBox>
-      <GhostButtons left='Cancel' right='Approve' className='l-approve' />
+      <GhostButtons
+        left={leftButtonText ?? 'Cancel'}
+        right={rightButtonText ?? ''}
+        className='l-approve'
+      />
     </Wrapper>
   );
 };
