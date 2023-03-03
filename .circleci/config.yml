@@ -16,9 +16,6 @@ jobs:
           name: 'Turn on insecure mode for curl'
           command: echo insecure >> $HOME/.curlrc
       - run:
-          name: Avoid hosts unknown for github
-          command: mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-      - run:
           name: Install project
           command: |
             sudo npm install -g nx
