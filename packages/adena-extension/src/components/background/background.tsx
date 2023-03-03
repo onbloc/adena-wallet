@@ -63,7 +63,9 @@ export const Background = ({ children }: Props) => {
         const balancesFetchTimer = setInterval(() => {
             updateAccountBalances();
         }, 5000);
-        return () => { clearInterval(balancesFetchTimer) }
+        return () => {
+            clearInterval(balancesFetchTimer);
+        }
     }, [gnoClient?.chainId, accounts?.length]);
 
     /**
@@ -71,10 +73,19 @@ export const Background = ({ children }: Props) => {
      */
     useEffect(() => {
         if (gnoClient?.chainId && currentAccount) {
+            clearTransactionHistory();
+            clearHistoryPosition();
+        }
+    }, [gnoClient?.chainId, currentAccount?.getAddress()]);
+
+    useEffect(() => {
+        if (gnoClient?.chainId && currentAccount) {
             const historyFetchTimer = setInterval(() => {
                 updateLastTransactionHistory();
             }, 5000);
-            return () => { clearInterval(historyFetchTimer) }
+            return () => {
+                clearInterval(historyFetchTimer);
+            }
         }
     }, [gnoClient?.chainId, currentAccount?.getAddress(), transactionHistory.currentPage]);
 

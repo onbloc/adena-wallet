@@ -102,7 +102,6 @@ export class WalletAccountRepository {
   };
 
   public updateCurrentAccountIndex = async (index: string | number) => {
-    console.log("SET", index)
     await this.localStorage.set('WALLET_ACCOUNT_NAMES', `${index}`);
     return true;
   };

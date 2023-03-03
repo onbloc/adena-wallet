@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import LoadingWallet from '@components/loading-screen/loading-wallet';
 import DubbleButton from '@components/buttons/double-button';
 import ListBox, { ListHierarchy } from '@components/list-box';
 import { useWalletBalances } from '@hooks/use-wallet-balances';
@@ -13,7 +12,6 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const Wrapper = styled.main`
   padding-top: 14px;
