@@ -1,4 +1,4 @@
-import theme from '@styles/theme';
+import theme, { FontsType } from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from './button';
@@ -10,6 +10,7 @@ interface ButtonProps {
   props?: React.ComponentPropsWithoutRef<'button'>;
   hierarchy?: ButtonHierarchy;
   bgColor?: string;
+  fontType?: FontsType;
 }
 
 interface WrapperStyleProps {
@@ -38,7 +39,7 @@ const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps) => {
         bgColor={leftProps.bgColor}
         {...leftProps.props}
       >
-        <Text type='body1Bold'>{leftProps.text}</Text>
+        <Text type={leftProps.fontType ?? 'body1Bold'}>{leftProps.text}</Text>
       </Button>
       <Button
         fullWidth
@@ -47,7 +48,7 @@ const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps) => {
         bgColor={rightProps.bgColor}
         {...rightProps.props}
       >
-        <Text type='body1Bold'>{rightProps.text}</Text>
+        <Text type={rightProps.fontType ?? 'body1Bold'}>{rightProps.text}</Text>
       </Button>
     </Wrapper>
   );

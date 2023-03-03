@@ -10,8 +10,8 @@ import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import { ErrorText } from '@components/error-text';
 
-const TermsAText = 'Anyone with my private key will have full control over my funds.';
-const TermsBText = 'I will never share my private key with anyone.';
+const TermsAText = 'Anyone with the phrase will have full control over my funds.';
+const TermsBText = 'I will never share my seed phrase with anyone.';
 
 export const RevealPasswoardPhrase = () => {
   const { walletService } = useAdenaContext();
@@ -19,7 +19,7 @@ export const RevealPasswoardPhrase = () => {
   const backButtonClick = () => navigate(-1);
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
   const [termsA, setTermsA] = useState(false);
   const [termsB, setTermsB] = useState(false);
   const disabled = termsA && termsB && pwd;
@@ -58,7 +58,7 @@ export const RevealPasswoardPhrase = () => {
 
     const equalPassword = await walletService.equalsPassowrd(pwd);
     if (!equalPassword) {
-      setErrorMessage("Invalid Password");
+      setErrorMessage('Invalid Password');
       setError(true);
       setClicked(false);
       return;

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
-import IconConnectRequestPermissionLoading from '@assets/connect-request-permission-loading.svg';
+import Icon from '@components/icons';
 
 const text = {
   title: 'Requesting Approval\non Hardware Wallet',
@@ -11,31 +11,13 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  padding-top: 50px;
-  justify-content: space-between;
-
-  @keyframes rotate {
-    from {
-      -webkit-transform: rotate(0deg);
-      -o-transform: rotate(0deg);
-      transform: rotate(0deg);
-    }
-    to {
-      -webkit-transform: rotate(360deg);
-      -o-transform: rotate(360deg);
-      transform: rotate(360deg);
-    }
-  }
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  max-width: 380px;
+  min-height: 514px;
+  padding: 50px 20px 24px;
 
   .icon {
-    width: 100px;
-    height: 100px;
     margin: 20px auto;
-    animation: rotate 1.5s infinite
   }
 
   div {
@@ -49,7 +31,6 @@ interface Props {
 }
 
 export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
-
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -76,17 +57,17 @@ export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
     if (!isCreated) {
       setTimeout(fail, 1000);
     }
-  }
+  };
 
   return (
     <Wrapper>
-      <img className='icon' src={IconConnectRequestPermissionLoading} alt='logo-image' />
+      <Icon name='iconConnectLoading' className='icon' />
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth
         hierarchy={ButtonHierarchy.Dark}
         className={'cancel-button'}
-        margin='0px auto'
+        margin='auto 0px 0px'
         onClick={cancel}
       >
         <Text type='body1Bold'>Cancel</Text>

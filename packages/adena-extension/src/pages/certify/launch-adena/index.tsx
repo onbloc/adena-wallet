@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = {
-  title: 'You’re All Set',
+  title: 'You’re All Set!',
   desc: 'Click on the Start button to\nlaunch Adena.',
 };
 

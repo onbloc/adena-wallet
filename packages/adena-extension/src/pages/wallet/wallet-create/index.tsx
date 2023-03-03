@@ -56,7 +56,7 @@ export const WalletCreate = () => {
 
     const popupOption: chrome.tabs.CreateProperties = {
       url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletInit}`),
-      active: true
+      active: true,
     };
 
     window.close();
@@ -96,16 +96,15 @@ export const WalletCreate = () => {
           onClick: importWalletHandler,
           text: 'Import Wallet',
           hierarchy: ButtonHierarchy.Normal,
+          fontType: 'body2Bold',
         }}
         rightProps={{
           onClick: ConnectLedgerHandler,
           text: 'Connect Ledger',
           hierarchy: ButtonHierarchy.Normal,
+          fontType: 'body2Bold',
         }}
       />
-      {/* <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={onRestoreButtonClick}>
-          <Text type='body1Bold'>Restore Wallet</Text>
-        </Button> */}
     </Wrapper>
   );
 };

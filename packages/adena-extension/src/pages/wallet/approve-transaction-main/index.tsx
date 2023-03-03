@@ -255,7 +255,11 @@ export const ApproveTransactionMain = () => {
     );
   };
 
-  return transactionData ? renderApproveTransaction() : <LoadingApproveTransaction />;
+  return transactionData ? (
+    renderApproveTransaction()
+  ) : (
+    <LoadingApproveTransaction rightButtonText='Approve' />
+  );
 };
 
 const Wrapper = styled.div`
@@ -265,7 +269,7 @@ const Wrapper = styled.div`
   padding: 20px 24px;
   .logo {
     margin: 24px auto;
-    width: 60px;
+    width: 100px;
     height: auto;
   }
 `;
