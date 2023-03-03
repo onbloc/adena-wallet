@@ -13,37 +13,37 @@ const getMenuMakerInfo = (
   account: InstanceType<typeof WalletAccount> | null,
   availRemove: boolean,
 ) => [
-  {
-    title: 'Change Password',
-    navigatePath: RoutePath.SettingChangePassword,
-    mode: 'DEFAULT',
-    disabled: false,
-  },
-  {
-    title: 'Reveal Seed Phrase',
-    navigatePath: RoutePath.RevealPasswoardPhrase,
-    mode: 'DEFAULT',
-    disabled: account?.data.accountType !== 'SEED' ?? true,
-  },
-  {
-    title: 'Export Private Key',
-    navigatePath: RoutePath.ApproachPasswordPhrase,
-    mode: 'DEFAULT',
-    disabled: account?.data.signerType === 'LEDGER' ?? true,
-  },
-  {
-    title: 'Remove Account',
-    navigatePath: RoutePath.RemoveAccount,
-    mode: 'DANGER',
-    disabled: !availRemove,
-  },
-  {
-    title: 'Reset Wallet',
-    navigatePath: RoutePath.ResetWallet,
-    mode: 'DANGER',
-    disabled: false,
-  },
-];
+    {
+      title: 'Change Password',
+      navigatePath: RoutePath.SettingChangePassword,
+      mode: 'DEFAULT',
+      disabled: false,
+    },
+    {
+      title: 'Reveal Seed Phrase',
+      navigatePath: RoutePath.RevealPasswoardPhrase,
+      mode: 'DEFAULT',
+      disabled: account?.data.accountType !== 'SEED' ?? true,
+    },
+    {
+      title: 'Export Private Key',
+      navigatePath: RoutePath.ApproachPasswordPhrase,
+      mode: 'DEFAULT',
+      disabled: account?.data.signerType === 'LEDGER' ?? true,
+    },
+    {
+      title: 'Remove Account',
+      navigatePath: RoutePath.RemoveAccount,
+      mode: 'DANGER',
+      disabled: !availRemove,
+    },
+    {
+      title: 'Reset Wallet',
+      navigatePath: RoutePath.ResetWallet,
+      mode: 'DANGER',
+      disabled: false,
+    },
+  ];
 
 export const SecurityPrivacy = () => {
   const navigate = useNavigate();
@@ -54,10 +54,6 @@ export const SecurityPrivacy = () => {
   useEffect(() => {
     availRemoveAccount().then(setAvailRemove);
   }, []);
-
-  const onClickClose = () => {
-    navigate(RoutePath.Setting);
-  };
 
   return (
     <Wrapper>
@@ -73,7 +69,7 @@ export const SecurityPrivacy = () => {
           disabled={v.disabled as boolean}
         />
       ))}
-      <BottomFixedButton onClick={onClickClose} />
+      <BottomFixedButton />
     </Wrapper>
   );
 };
