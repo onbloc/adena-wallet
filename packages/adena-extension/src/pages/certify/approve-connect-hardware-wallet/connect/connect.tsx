@@ -79,7 +79,6 @@ export const ApproveConnectHardwareWalletConnect = () => {
   };
 
   const requestHardwareWallet = async () => {
-    console.log("request");
     let retry = true;
     try {
       const connectedCosmosApp = await checkHardwareConnect();
@@ -92,8 +91,9 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     try {
-      setConnectState('REQUEST_WALLET_LOAD');
+      setConnectState('REQUEST_WALLET');
       const transport = await LedgerConnector.openConnected();
+      setConnectState('REQUEST_WALLET_LOAD');
       const wallet = await Wallet.createByLedger([0, 1, 2, 3, 4], transport);
       await wallet.initAccounts();
       await transport?.close();
