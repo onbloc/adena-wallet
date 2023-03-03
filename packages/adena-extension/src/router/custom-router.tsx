@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+import { HashRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { RoutePath } from './path';
 import { Header } from '@layouts/header';
 import { Navigation } from '@layouts/navigation';
@@ -67,8 +67,7 @@ import { TabContainer } from '@layouts/tab-container';
 import { ProgressMenu } from '@layouts/header/progress-menu';
 
 export const CustomRouter = () => {
-  const { loadAccounts } = useLoadAccounts();
-
+  const { loadAccounts, accounts } = useLoadAccounts();
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
   const clearBalances = useResetRecoilState(WalletState.balances);
 
@@ -151,7 +150,15 @@ export const CustomRouter = () => {
           <Route
             path={RoutePath.ApproveHardwareWalletSelectAccount}
             element={
-              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+              <TabContainer
+                header={
+                  <ProgressMenu
+                    showLogo
+                    progressLevel={accounts && accounts?.length > 0 ? 'second' : 'first'}
+                    hideArrow
+                  />
+                }
+              >
                 <ApproveConnectHardwareWalletSelectAccount />
               </TabContainer>
             }

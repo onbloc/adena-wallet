@@ -15,7 +15,7 @@ import { useGnoClient } from '@hooks/use-gno-client';
 import { maxFractionDigits } from '@common/utils/client-utils';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
 
 const Wrapper = styled.main`
@@ -72,10 +72,6 @@ export const TokenDetails = () => {
   const navigate = useNavigate();
   const [etcClicked, setEtcClicked] = useState(false);
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
-  const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
-  const SendButtonClick = () => navigate(RoutePath.GeneralSend, { state: 'token' });
-  const historyItemClick = (item: any) => navigate(RoutePath.TransactionDetail, { state: item });
   const [currentAccount] = useCurrentAccount();
   const [gnoClient] = useGnoClient();
   const [balances] = useWalletBalances(gnoClient);
@@ -85,15 +81,22 @@ export const TokenDetails = () => {
   const [nextFetch, setNextFetch] = useState(false);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [historyItems, setHistoryItems] = useState<{ [key in string]: any }>({});
-  const [loadingHistory, setLoadingHistory] = useState(!transactionHistory.init);
+  const finishedLoading = transactionHistory.init && Object.keys(historyItems).length > 0;
+  const [tokenDetailPosition, setTokenDetailPosition] = useRecoilState(
+    CommonState.tokenDetailPosition,
+  );
+
+  const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
+  const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
+  const SendButtonClick = () => navigate(RoutePath.GeneralSend, { state: 'token' });
+  const historyItemClick = (item: any) => {
+    setTokenDetailPosition({ position: bodyElement?.scrollTop ?? 0 });
+    navigate(RoutePath.TransactionDetail, { state: item });
+  };
 
   useEffect(() => {
     initHistory();
   }, []);
-
-  useEffect(() => {
-    setLoadingHistory(!transactionHistory.init);
-  }, [transactionHistory.init]);
 
   useEffect(() => {
     getHistory().then(setHistoryItems);
@@ -119,6 +122,14 @@ export const TokenDetails = () => {
       updateNextHistory().finally(() => setNextFetch(false));
     }
   }, [nextFetch]);
+
+  useEffect(() => {
+    if (finishedLoading) {
+      if (!bodyElement) return;
+      bodyElement.scrollTo(0, tokenDetailPosition.position);
+      setTokenDetailPosition({ position: 0 });
+    }
+  }, [finishedLoading]);
 
   const onScrollListener = async () => {
     if (bodyElement) {
@@ -170,7 +181,7 @@ export const TokenDetails = () => {
           text: 'Send',
         }}
       />
-      {loadingHistory ? (
+      {!transactionHistory.init ? (
         <LoadingTokenDetails />
       ) : Object.keys(historyItems).length > 0 ? (
         Object.keys(historyItems).map((item, idx) => (

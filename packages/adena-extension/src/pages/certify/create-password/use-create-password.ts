@@ -6,6 +6,8 @@ import { useAdenaContext } from '@hooks/use-context';
 import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
 import { useImportAccount } from '@hooks/use-import-account';
 import { WalletAccount } from 'adena-module';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 interface CreatePasswordState {
   type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
@@ -41,6 +43,7 @@ export const useCreatePassword = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const { importAccount } = useImportAccount();
   const [activated, setActivated] = useState(false);
+  const [state, setState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
     const locationState = location.state;
