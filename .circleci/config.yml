@@ -18,6 +18,7 @@ jobs:
       - run:
           name: Init Submodules
           command: |
+            git submodule deinit packages/adena-torus-signin
             git rm --cached packages/adena-torus-signin
             rm -rf .git/modules/packages/adena-torus-signin
             rm -rf packages/adena-torus-signin
@@ -26,7 +27,6 @@ jobs:
           name: Install project
           command: |
             sudo npm install -g nx
-            sudo bash scripts/update-submodule.sh
             sudo yarn
       - run:
           name: Build project
