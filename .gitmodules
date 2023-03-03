@@ -1,4 +1,3 @@
-[submodule "adena-torus-signin"]
-    path = packages/adena-torus-signin
-    url = https://github.com/onbloc/adena-torus-signin-mock.git
-    branch = main
+[submodule "packages/adena-torus-signin"]
+	path = packages/adena-torus-signin
+	url = https://github.com/onbloc/adena-torus-signin-mock.git
