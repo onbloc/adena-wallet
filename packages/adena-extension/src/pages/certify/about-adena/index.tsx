@@ -38,7 +38,7 @@ export const AboutAdena = () => {
     <Wrapper>
       <Logo src={logo} alt='logo' />
       <Text type='light13' color={theme.color.neutral[9]} margin='0px 0px 22px'>
-        Version 2.1.1
+        Version 1.4.4
       </Text>
       {menuMakerInfo.map((v, i) => (
         <FullButtonRightIcon

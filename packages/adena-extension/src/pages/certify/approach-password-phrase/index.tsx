@@ -59,7 +59,7 @@ export const ApproachPasswordPhrase = () => {
     } catch (e) {
       if (e instanceof BaseError) {
         setError(true);
-        setErrorMessage(e.message);
+        setErrorMessage('Invalid pasword');
       }
     }
   };
