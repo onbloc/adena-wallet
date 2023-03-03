@@ -28,7 +28,7 @@ export const RevealPrivatePhrase = () => {
   };
 
   const doneButtonClick = () => {
-    navigate(RoutePath.SecurityPrivacy);
+    navigate(-2);
   };
 
   return (
