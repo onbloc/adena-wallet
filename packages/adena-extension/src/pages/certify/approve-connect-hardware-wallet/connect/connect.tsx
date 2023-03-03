@@ -4,7 +4,7 @@ import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
 import { ConnectFail } from './connect-fail';
 import { ConnectRequestWallet } from './connect-request-wallet';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
 
 type ConnectType =
@@ -14,13 +14,23 @@ type ConnectType =
   'REQUEST_WALLET' |
   'REQUEST_WALLET_LOAD' |
   'FAILED' |
-  'SUCCESS';
+  'SUCCESS' |
+  'NONE';
 
 export const ApproveConnectHardwareWalletConnect = () => {
   const navigate = useNavigate();
   const [openConnected, setOpenConnected] = useState(false);
-  const [connectState, setConnectState] = useState<ConnectType>('INIT');
+  const [connectState, setConnectState] = useState<ConnectType>('NONE');
   const [wallet, setWallet] = useState<InstanceType<typeof Wallet>>();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.success === false) {
+      setConnectState('NOT_PERMISSION');
+      return;
+    }
+    setConnectState('INIT');
+  }, []);
 
   useEffect(() => {
     if (connectState === 'INIT') {
@@ -64,7 +74,6 @@ export const ApproveConnectHardwareWalletConnect = () => {
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
     } catch (e) {
-      console.log(e);
       setConnectState('NOT_PERMISSION');
     }
   };

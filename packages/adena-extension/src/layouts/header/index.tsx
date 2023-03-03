@@ -60,7 +60,6 @@ export const Header = () => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
   const loadingComplete = walletState === 'FINISH' || failedNetwork;
-  console.log('location : ', location);
   const renderHeader = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;

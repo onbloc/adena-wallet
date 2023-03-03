@@ -36,13 +36,18 @@ export const ApproveConnectHardwareWalletInit = () => {
   const navigate = useNavigate();
 
   const moveNextPage = async () => {
+    let success = false;
     try {
       const transport = await LedgerConnector.request();
+      console.log(transport);
+      if (transport !== null) {
+        success = true;
+      }
       await transport.close();
     } catch (e) {
       console.log(e);
     }
-    navigate(RoutePath.ApproveHardwareWalletConnect);
+    navigate(RoutePath.ApproveHardwareWalletConnect, { state: { success } });
   };
 
   const onClickConnectButton = () => {

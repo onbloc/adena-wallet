@@ -6,7 +6,7 @@ import Text from '@components/text';
 
 const text = {
   title: 'You’re All Set!',
-  desc: 'Your Ledger account has been successfully added to Adena. Please return to your extension.',
+  desc: 'Your Ledger account has been successfully added to Adena.\nPlease return to your extension.',
 };
 
 const Wrapper = styled.main`
