@@ -9,38 +9,41 @@ import { WalletAccount } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 
-const getMenuMakerInfo = (account: InstanceType<typeof WalletAccount> | null, availRemove: boolean) => [
-  {
-    title: 'Change Password',
-    navigatePath: RoutePath.SettingChangePassword,
-    mode: 'DEFAULT',
-    disabled: false
-  },
-  {
-    title: 'Reveal Seed Phrase',
-    navigatePath: RoutePath.RevealPasswoardPhrase,
-    mode: 'DEFAULT',
-    disabled: account?.data.accountType !== "SEED" ?? true
-  },
-  {
-    title: 'Export Private Key',
-    navigatePath: RoutePath.ApproachPasswordPhrase,
-    mode: 'DEFAULT',
-    disabled: account?.data.signerType === "LEDGER" ?? true
-  },
-  {
-    title: 'Remove Account',
-    navigatePath: RoutePath.RemoveAccount,
-    mode: 'DANGER',
-    disabled: !availRemove
-  },
-  {
-    title: 'Reset Wallet',
-    navigatePath: RoutePath.ResetWallet,
-    mode: 'DANGER',
-    disabled: false
-  },
-];
+const getMenuMakerInfo = (
+  account: InstanceType<typeof WalletAccount> | null,
+  availRemove: boolean,
+) => [
+    {
+      title: 'Change Password',
+      navigatePath: RoutePath.SettingChangePassword,
+      mode: 'DEFAULT',
+      disabled: false,
+    },
+    {
+      title: 'Reveal Seed Phrase',
+      navigatePath: RoutePath.RevealPasswoardPhrase,
+      mode: 'DEFAULT',
+      disabled: account?.data.accountType !== 'SEED' ?? true,
+    },
+    {
+      title: 'Export Private Key',
+      navigatePath: RoutePath.ApproachPasswordPhrase,
+      mode: 'DEFAULT',
+      disabled: account?.data.signerType === 'LEDGER' ?? true,
+    },
+    {
+      title: 'Remove Account',
+      navigatePath: RoutePath.RemoveAccount,
+      mode: 'DANGER',
+      disabled: !availRemove,
+    },
+    {
+      title: 'Reset Wallet',
+      navigatePath: RoutePath.ResetWallet,
+      mode: 'DANGER',
+      disabled: false,
+    },
+  ];
 
 export const SecurityPrivacy = () => {
   const navigate = useNavigate();

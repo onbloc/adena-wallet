@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
@@ -15,8 +15,7 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
@@ -37,10 +36,6 @@ interface Props {
 
 export const ConnectRequestWallet = ({ requestHardwareWallet }: Props) => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    requestHardwareWallet();
-  }, []);
 
   const onClickClose = () => {
     navigate(RoutePath.ApproveHardwareWalletInit);

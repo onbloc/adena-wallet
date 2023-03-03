@@ -19,6 +19,7 @@ jobs:
           name: Install project
           command: |
             sudo npm install -g nx
+            sudo bash scripts/update-submodule.sh
             sudo yarn
       - run:
           name: Build project

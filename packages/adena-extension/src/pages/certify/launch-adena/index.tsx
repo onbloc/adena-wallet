@@ -6,6 +6,8 @@ import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 const text = {
   title: 'You’re All Set',
@@ -37,6 +39,7 @@ interface LaunchAdenaState {
 export const LaunchAdena = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [, setState] = useRecoilState(WalletState.state);
   const { loadAccounts } = useLoadAccounts();
 
   const handleNextButtonClick = () => {
@@ -44,11 +47,9 @@ export const LaunchAdena = () => {
     if (locationState.type === 'GOOGLE' || locationState.type === 'LEDGER') {
       window.close();
     }
-    if (locationState.type === 'SEED') {
-      loadAccounts();
-      navigate(RoutePath.Wallet);
-      return;
-    }
+    setState("NONE");
+    loadAccounts();
+    navigate(RoutePath.Wallet);
   };
 
   return (

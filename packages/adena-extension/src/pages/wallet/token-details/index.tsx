@@ -29,6 +29,7 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
     margin: 0px auto;
+    line-height: 36px;
   }
   .desc {
     position: absolute;
@@ -160,7 +161,7 @@ export const TokenDetails = () => {
         </EtcIcon>
       </HeaderWrap>
 
-      <Text className='gnot-title' type='title1'>{`${balance}\nGNOT`}</Text>
+      <Text className='gnot-title' type='header2'>{`${balance}\nGNOT`}</Text>
       <DubbleButton
         margin='28px 0px 25px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}

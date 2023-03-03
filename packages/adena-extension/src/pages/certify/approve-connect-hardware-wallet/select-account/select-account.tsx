@@ -22,8 +22,7 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
@@ -189,7 +188,7 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
-  const { walletService, accountService } = useAdenaContext();
+  const { accountService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>(
@@ -235,17 +234,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       { length: LEDGER_ACCOUNT_LOAD_SIZE },
       (_, index) => index + lastPath + 1,
     );
-    const devices = await LedgerConnector.devices();
-    const isHID = await LedgerConnector.isSupportHID();
-    let deviceInterface: any = null;
-    if (!isHID) {
-      deviceInterface = devices[0].configurations[0].interfaces.find(({ alternates }: { alternates: any }) =>
-        alternates.some((a: any) => a.interfaceClass === 255)
-      );
-    }
-    const transport = isHID ?
-      new TransportWebHID(devices[0]) :
-      new TransportWebUSB(devices[0], deviceInterface?.interfaceNumber ?? 0);
+    const transport = await LedgerConnector.openConnected();
     Wallet.createByLedger(accountPaths, transport).then(async (wallet: InstanceType<typeof Wallet>) => {
       await wallet.initAccounts();
       await initAccounts([...accounts, ...wallet.getAccounts()]);

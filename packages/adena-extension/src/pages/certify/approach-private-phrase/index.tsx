@@ -23,7 +23,7 @@ export const ApproachPrivatePhrase = () => {
   }, [currentAccount]);
 
   const doneButtonClick = () => {
-    navigate(RoutePath.SecurityPrivacy);
+    navigate(-2);
   };
 
   return (

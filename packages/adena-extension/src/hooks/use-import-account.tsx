@@ -17,9 +17,10 @@ export const useImportAccount = (): {
     setState("LOADING");
     clearCurrentBalance();
     const currentAccountIndex = await accountService.getLastAccountIndex();
+    const currentAccountNumber = await accountService.getAddedAccountNumber();
     const index = currentAccountIndex + 1;
     account.setIndex(index);
-    account.setName(`Account ${index}`)
+    account.setName(`Account ${currentAccountNumber}`)
     await accountService.addAccount(account);
     const accounts = await accountService.getAccounts();
     const currentAccount = accounts[accounts.length - 1];

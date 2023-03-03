@@ -51,15 +51,20 @@ export const GoogleConnect = () => {
     setWeb3auth(auth);
   };
 
-  const connect = () => {
+  const connect = async () => {
     if (!web3auth) {
       return;
     }
-    web3auth.connect().then((connected: any) => {
-      if (connected) {
-        web3auth.getPrivateKey().then(setPrivateKey);
+    try {
+      const connected = await web3auth.connect();
+      if (!connected) {
+        throw new Error("Failed to connect web3auth.")
       }
-    });
+      const privateKey = await web3auth.getPrivateKey();
+      setPrivateKey(privateKey);
+    } catch (e) {
+      navigate(RoutePath.GoogleConnectFailed);
+    }
   };
 
   const disconnect = async () => {
@@ -86,7 +91,7 @@ export const GoogleConnect = () => {
         fullWidth
         hierarchy={ButtonHierarchy.Dark}
         margin='auto 0px 0px'
-        onClick={() => navigate(RoutePath.GoogleConnectFailed)}
+        onClick={() => window.close()}
       >
         <Text type='body1Bold'>Cancel</Text>
       </Button>

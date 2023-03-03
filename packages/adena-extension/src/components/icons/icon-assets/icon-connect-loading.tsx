@@ -48,8 +48,8 @@ const IconConnectLoading = ({ className }: { className: string }) => {
           y2='43.1492'
           gradientUnits='userSpaceOnUse'
         >
-          <stop stopColor='#0059FF' />
-          <stop offset='1' stopColor='#0058C9' stopOpacity='0' />
+          <stop stop-color='#0059FF' />
+          <stop offset='1' stop-color='#0058C9' stop-opacity='0' />
         </linearGradient>
       </defs>
     </SVG>

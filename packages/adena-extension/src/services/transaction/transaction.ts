@@ -25,6 +25,10 @@ export class TransactionService {
     this.accountService = accountService;
   }
 
+  public setGnoClient(gnoClient: InstanceType<typeof GnoClient>) {
+    this.gnoClient = gnoClient;
+  }
+
   private getCurrentDenom = () => {
     return this.chainService.getCurrentNetwork()
       .then(network => network.token.minimalDenom);

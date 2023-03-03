@@ -47,7 +47,7 @@ export interface Network {
 
 export class ChainRepository {
 
-  private static CHAIN_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/feature/structure/configs/chains.json";
+  private static CHAIN_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json";
 
   private localStorage: StorageManager<LocalValueType>;
 

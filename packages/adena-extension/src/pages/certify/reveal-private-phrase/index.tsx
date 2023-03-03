@@ -22,13 +22,12 @@ export const RevealPrivatePhrase = () => {
   const init = async () => {
     const wallet = await walletService.loadWallet();
     const mnemonic = wallet.getMnemonic();
-    console.log('mnemonic', mnemonic);
     const seeds = `${mnemonic}`.split(' ');
     setSeeds(seeds);
   };
 
   const doneButtonClick = () => {
-    navigate(RoutePath.SecurityPrivacy);
+    navigate(-2);
   };
 
   return (
