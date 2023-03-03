@@ -26,6 +26,7 @@ const Container = styled.div`
   .section {
     display: flex;
     flex-direction: row;
+    height: 24px;
   }
 
   .icon {
