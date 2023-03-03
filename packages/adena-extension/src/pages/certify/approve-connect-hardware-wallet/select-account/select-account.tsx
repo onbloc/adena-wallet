@@ -188,7 +188,7 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
-  const { walletService, accountService } = useAdenaContext();
+  const { accountService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>(

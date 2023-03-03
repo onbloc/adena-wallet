@@ -18,23 +18,23 @@ export const useAddAccount = (): {
 
   const addAccount = async () => {
     setState("LOADING");
-    const maxPath = await accountService.getLastAccountPath();
+    const maxPath = await accountService.getAddedAccountPath();
     const maxIndex = await accountService.getLastAccountIndex();
+    const accountNumber = await accountService.getAddedAccountNumber();
     clearCurrentBalance();
 
     const wallet = await walletService.loadWallet();
     const mnemonic = wallet.getMnemonic();
-    const accountIndex = maxIndex + 1;
 
-    const createdWallet = await walletService.createWalletByMnemonic(mnemonic, [maxPath + 1]);
+    const createdWallet = await walletService.createWalletByMnemonic(mnemonic, [maxPath]);
     await createdWallet.initAccounts();
     const createdAccounts = createdWallet.getAccounts();
     if (createdAccounts.length > 0) {
       const createdAccount = createdAccounts[0];
-      createdAccount.setIndex(accountIndex);
-      createdAccount.setName(`Account ${accountIndex}`);
+      createdAccount.setIndex(maxIndex + 1);
+      createdAccount.setName(`Account ${accountNumber}`);
       createdAccount.setSigner(createdWallet);
-      await accountService.updateLastAccountPath(maxPath + 1);
+      await accountService.updateLastAccountPath(maxPath);
       await accountService.addAccount(createdAccount);
       await accountService.changeCurrentAccount(createdAccount);
     }

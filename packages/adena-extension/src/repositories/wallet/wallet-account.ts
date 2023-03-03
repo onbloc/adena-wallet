@@ -5,6 +5,7 @@ type LocalValueType =
   | 'WALLET_ACCOUNT_PATH'
   | 'WALLET_ACCOUNT_NAMES'
   | 'CURRENT_ACCOUNT_ADDRESS'
+  | 'CURRENT_ACCOUNT_INDEX'
   | 'ADDRESS_BOOK'
   | 'WALLET_ACCOUNTS'
   | 'CURRENT_CHAIN_ID'
@@ -95,12 +96,19 @@ export class WalletAccountRepository {
     return true;
   };
 
-  // public deleteAccounts = async () => {
-  //   await this.localStorage.remove('CURRENT_ACCOUNT_ADDRESS');
-  //   await this.localStorage.remove('WALLET_ACCOUNTS');
-  //   await this.localStorage.remove('WALLET_ACCOUNT_NAMES');
-  //   await this.localStorage.remove('WALLET_ACCOUNT_PATH');
-  //   await this.localStorage.remove('CURRENT_CHAIN_ID');
-  //   await this.localStorage.remove('ESTABLISH_SITES');
-  // }
+  public getCurrentAccountIndex = async () => {
+    const index = await this.localStorage.get("CURRENT_ACCOUNT_INDEX");
+    return parseInt(index);
+  };
+
+  public updateCurrentAccountIndex = async (index: string | number) => {
+    console.log("SET", index)
+    await this.localStorage.set('WALLET_ACCOUNT_NAMES', `${index}`);
+    return true;
+  };
+
+  public deleteCurrentAccountIndex = async () => {
+    await this.localStorage.remove('WALLET_ACCOUNT_NAMES');
+    return true;
+  };
 }

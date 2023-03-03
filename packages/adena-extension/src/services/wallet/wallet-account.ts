@@ -29,6 +29,11 @@ export class WalletAccountService {
     return currentAccount;
   };
 
+  public getCurrentAccountIndex = async () => {
+    const currentIndex = await this.walletAccountRepository.getCurrentAccountIndex();
+    return Number.isNaN(currentIndex) ? 0 : currentIndex;
+  };
+
   public getCurrentAccountAddress = async () => {
     try {
       const currentAccount = await this.getCurrentAccount();
@@ -52,13 +57,16 @@ export class WalletAccountService {
       }
       return account;
     });
+    await this.walletAccountRepository.updateCurrentAccountIndex(currentAccount.data.index);
     await this.walletAccountRepository.updateCurrentAccountAddress(currentAccount.getAddress());
     await this.updateAccounts(changedAccounts);
     return true;
   };
 
   public changeCurrentAccount = async (account: InstanceType<typeof WalletAccount>) => {
-    return await this.walletAccountRepository.updateCurrentAccountAddress(account.getAddress());
+    await this.walletAccountRepository.updateCurrentAccountIndex(account.data.index);
+    await this.walletAccountRepository.updateCurrentAccountAddress(account.getAddress());
+    return true;
   };
 
   public existsAccounts = async () => {
@@ -95,6 +103,7 @@ export class WalletAccountService {
   public addAccount = async (account: InstanceType<typeof WalletAccount>) => {
     const accounts = await this.walletAccountRepository.getAccounts();
     await this.walletAccountRepository.updateAccounts([...accounts, account]);
+    await this.walletAccountRepository.updateCurrentAccountIndex(account.data.index);
     return true;
   };
 
@@ -183,9 +192,28 @@ export class WalletAccountService {
     }
   };
 
-  public getLastAccountPath = async () => {
-    const accountPath = await this.walletAccountRepository.getAccountPath();
-    return accountPath;
+  public getAddedAccountNumber = async () => {
+    try {
+      const accounts = await this.getAccounts();
+      const aminoAccounts = accounts
+        .filter(account => account.data.signerType === 'AMINO')
+      return aminoAccounts.length + 1;
+    } catch (e) {
+      return 1;
+    }
+  };
+
+  public getAddedAccountPath = async () => {
+    const accounts = await this.getAccounts();
+    const accountPaths = accounts.map(account => account.data.path);
+    const maxPath = Math.max(...accountPaths);
+
+    for (let path = 0; path < maxPath; path++) {
+      if (!accountPaths.includes(path)) {
+        return path;
+      }
+    }
+    return maxPath + 1;
   };
 
   public updateLastAccountPath = async (accountPath: number) => {

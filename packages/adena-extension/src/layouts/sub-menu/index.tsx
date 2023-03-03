@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Portal from '@layouts/portal';
 import logo from '../../assets/logo-withIcon.svg';
@@ -30,6 +30,7 @@ interface UserListProps {
   accounts: Array<InstanceType<typeof WalletAccount>>;
   currentAccount: InstanceType<typeof WalletAccount>;
   accountBalances: { [key in string]: Array<WalletState.Balance> };
+  currentAccountIndex: number;
   changeAccountHandler: (currentAccount: InstanceType<typeof WalletAccount>) => void;
 }
 
@@ -51,6 +52,7 @@ const UserListMaker = ({
   accounts,
   currentAccount,
   accountBalances,
+  currentAccountIndex,
   changeAccountHandler,
 }: UserListProps) => (
   <>
@@ -72,7 +74,7 @@ const UserListMaker = ({
           <Text type='body3Reg' color={theme.color.neutral[9]}>
             {balanceString}
           </Text>
-          {currentAccount.getAddress() === v.getAddress() && (
+          {currentAccount.data.index === v.data.index && (
             <img src={statusCheck} alt='status icon' className='status-icon' />
           )}
         </ListItem>
@@ -95,11 +97,16 @@ const FromBadge = ({ from }: { from: string }) => {
 };
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
-  const { walletService } = useAdenaContext();
+  const { walletService, accountService } = useAdenaContext();
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const { accounts, accountBalances } = useWalletAccounts();
+  const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
+
+  useEffect(() => {
+    accountService.getCurrentAccountIndex().then(setCurrentAccountIndex);
+  }, [accounts]);
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -146,6 +153,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
                     accountBalances={accountBalances}
                     changeAccountHandler={changeAccountHandler}
                     currentAccount={currentAccount}
+                    currentAccountIndex={currentAccountIndex}
                   />
                 )}
               </ListWrapper>
