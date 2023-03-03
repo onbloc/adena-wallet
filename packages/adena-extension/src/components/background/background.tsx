@@ -21,6 +21,7 @@ export const Background = ({ children }: Props) => {
     const [, updateLastTransactionHistory] = useTransactionHistory();
     const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
     const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+    const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
     const [currentAccount] = useRecoilState(WalletState.currentAccount);
     const [currentBalance] = useRecoilState(WalletState.currentBalance);
     const [, updateBalances] = useWalletBalances(gnoClient);
@@ -107,6 +108,7 @@ export const Background = ({ children }: Props) => {
     }, [gnoClient?.chainId]);
 
     const checkNetwork = async (gnoClient: InstanceType<typeof GnoClient>) => {
+        const chainId = gnoClient.chainId;
         let health = false;
         try {
             health = await gnoClient.isHealth();
@@ -114,6 +116,9 @@ export const Background = ({ children }: Props) => {
             console.log(e);
         }
         setFailedNetwork(!health);
+        if (!health) {
+            setFailedNetworkChainId(chainId);
+        }
     };
 
     const fetchAppInfos = async () => {
