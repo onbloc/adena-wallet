@@ -15,3 +15,8 @@ export const failedNetwork = atom<boolean | undefined>({
   key: `common/failed-network`,
   default: false
 });
+
+export const failedNetworkChainId = atom<string>({
+  key: `common/failed-network-chainId`,
+  default: ""
+});
