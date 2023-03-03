@@ -9,7 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { InjectionMessageInstance } from '@inject/message';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
-import { MessageKeyType } from '@inject/message'
+import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
 import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
@@ -21,12 +21,9 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  position: fixed;
-  top: 48px;
-  left: 0px;
-  right: 0px;
-  bottom: 0px;
-  padding: 0px 20px 24px;
+  max-width: 380px;
+  min-height: 514px;
+  padding: 29px 20px 24px;
 `;
 
 export const ApproveLogin = () => {
@@ -39,7 +36,6 @@ export const ApproveLogin = () => {
   const [error, setError] = useState<PasswordValidationError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
-
 
   useEffect(() => {
     const data = parseParmeters(location.search);
@@ -79,7 +75,7 @@ export const ApproveLogin = () => {
       validateWrongPasswordLength(password);
       const equalPassword = await walletService.equalsPassowrd(password);
       if (equalPassword) {
-        setState("FINISH");
+        setState('FINISH');
       }
     } catch (error) {
       if (error instanceof PasswordValidationError) {
@@ -104,10 +100,12 @@ export const ApproveLogin = () => {
         navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
         break;
       default:
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData));
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData),
+        );
         break;
     }
-  }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') tryLoginApprove(password);
@@ -121,12 +119,10 @@ export const ApproveLogin = () => {
   const approveButtonClick = () => tryLoginApprove(password);
 
   return (
-    <Wrapper>
+    <>
       {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
-        <>
-          <Title>
-            {text}
-          </Title>
+        <Wrapper>
+          <Title>{text}</Title>
           <DefaultInput
             type='password'
             placeholder='Password'
@@ -144,10 +140,10 @@ export const ApproveLogin = () => {
           >
             <Text type='body1Bold'>Unlock</Text>
           </Button>
-        </>
+        </Wrapper>
       ) : (
         <LoadingApproveTransaction />
       )}
-    </Wrapper>
+    </>
   );
 };

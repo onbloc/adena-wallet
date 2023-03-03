@@ -22,7 +22,6 @@ const LoadingApproveTransaction = () => {
         <Round width='65px' height='10px' radius='24px' />
         <Round width='70px' height='10px' radius='24px' />
       </AllRadiusBox>
-
       <GhostButtons left='Cancel' right='Approve' className='l-approve' />
     </Wrapper>
   );
@@ -30,9 +29,9 @@ const LoadingApproveTransaction = () => {
 
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  width: 100%;
-  height: calc(100vh - 48px);
-  padding-top: 29px;
+  max-width: 380px;
+  min-height: 514px;
+  padding: 29px 20px 24px;
   .l-approve {
     margin-top: auto;
   }
