@@ -5,8 +5,9 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
 import { LedgerConnector } from 'adena-module';
+import { ProgressMenu } from '@layouts/header/progress-menu';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Connect a\nLedger Device',
@@ -16,8 +17,7 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
@@ -37,7 +37,8 @@ export const ApproveConnectHardwareWalletInit = () => {
 
   const moveNextPage = async () => {
     try {
-      await LedgerConnector.request();
+      const transport = await LedgerConnector.request();
+      await transport.close();
     } catch (e) {
       console.log(e);
     }

@@ -54,17 +54,13 @@ export const WalletCreate = () => {
       return;
     }
 
-    const popupOption: chrome.windows.CreateData = {
+    const popupOption: chrome.tabs.CreateProperties = {
       url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletInit}`),
-      type: 'popup',
-      height: 590,
-      width: 380,
-      left: 800,
-      top: 300,
+      active: true
     };
 
     window.close();
-    chrome.windows.create(popupOption);
+    chrome.tabs.create(popupOption);
   };
 
   const googleLoginHandler = async () => {

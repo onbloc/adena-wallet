@@ -12,7 +12,6 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
-  min-height: 514px;
   padding-top: 50px;
 `;
 

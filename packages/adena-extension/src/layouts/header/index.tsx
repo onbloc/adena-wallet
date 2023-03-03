@@ -9,6 +9,7 @@ import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
 import { ArrowTitleMenu } from './arrow-title-menu';
+import { TabMenu } from './tab-menu';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -73,7 +74,7 @@ export const Header = () => {
     if (location?.state?.type === 'GOOGLE' && createPassword) {
       return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
     }
-    if (createPassword || approveHardwareWalletLedgerPassword) {
+    if (createPassword) {
       return <ProgressMenu progressLevel={'second'} />;
     }
     if (googleConnect || googleFailed) {
@@ -82,16 +83,16 @@ export const Header = () => {
     if (launchAdena) {
       return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
-    if (
-      approveHardwareWalletInit ||
-      approveHardwareWalletConnect ||
-      approveHardwareWalletSelectAccount
-    ) {
-      return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
-    }
-    if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
-      return <ProgressMenu showLogo progressLevel={'third'} hideArrow />;
-    }
+    // if (
+    //   approveHardwareWalletInit ||
+    //   approveHardwareWalletConnect ||
+    //   approveHardwareWalletSelectAccount
+    // ) {
+    //   return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
+    // }
+    // if (approveHardwareWalletFinish || approveHardwareWalletLedgerAllSet) {
+    //   return <ProgressMenu showLogo progressLevel={'third'} hideArrow />;
+    // }
     if (resetWallet) {
       return <ArrowTitleMenu title={'Reset Wallet'} />;
     }
@@ -104,6 +105,17 @@ export const Header = () => {
     if (generateSeedPhrase) {
       return <ArrowTitleMenu title={'Generate Seed Phrase'} />;
     }
+    if (
+      approveHardwareWalletInit ||
+      approveHardwareWalletConnect ||
+      approveHardwareWalletSelectAccount ||
+      approveHardwareWalletFinish ||
+      approveHardwareWalletLedgerPassword ||
+      approveHardwareWalletLedgerAllSet
+    ) {
+      return <TabMenu />
+    }
+
     if (
       wallet ||
       nft ||

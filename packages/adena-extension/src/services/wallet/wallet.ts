@@ -155,6 +155,15 @@ export class WalletService {
     }
   };
 
+  public getRawPassword = async () => {
+    try {
+      const rawPassword = await this.walletRepository.getWalletPassword();
+      return rawPassword;
+    } catch (e) {
+      return "";
+    }
+  };
+
   public updatePassowrd = async (password: string) => {
     await this.walletRepository.updateWalletPassword(password);
     return true;

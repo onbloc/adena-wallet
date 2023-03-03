@@ -4,13 +4,17 @@ import addSymbol from '@assets/add-symbol.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const content =
   'To add new accounts, you need to generate a seed phrase as you created your existing accounts with Google or Ledger, which didn’t require seed phrase generation.';
 
 export const GenerateSeedPhrase = () => {
+  const navigate = useNavigate();
+
   const onclick = () => {
-    // TODO
+    navigate(RoutePath.YourSeedPhrase, { state: { type: 'ADD_ACCOUNT' } });
   };
 
   return (

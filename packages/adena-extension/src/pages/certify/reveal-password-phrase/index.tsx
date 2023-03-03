@@ -7,21 +7,27 @@ import styled from 'styled-components';
 import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
+import { useAdenaContext } from '@hooks/use-context';
+import { ErrorText } from '@components/error-text';
 
 const TermsAText = 'Anyone with my private key will have full control over my funds.';
 const TermsBText = 'I will never share my private key with anyone.';
 
 export const RevealPasswoardPhrase = () => {
+  const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const backButtonClick = () => navigate(-1);
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [termsA, setTermsA] = useState(false);
   const [termsB, setTermsB] = useState(false);
   const disabled = termsA && termsB && pwd;
+  const [clicked, setClicked] = useState(false);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPwd(e.target.value);
+    setError(false);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -38,9 +44,27 @@ export const RevealPasswoardPhrase = () => {
     setTermsB((prev: boolean) => !prev);
   };
 
-  const confirmButtonClick = () => {
-    // TODO
+  const confirmButtonClick = async () => {
+    if (clicked) {
+      return;
+    }
+    if (!termsA) {
+      return;
+    }
+    if (!termsB) {
+      return;
+    }
+    setClicked(true);
+
+    const equalPassword = await walletService.equalsPassowrd(pwd);
+    if (!equalPassword) {
+      setErrorMessage("Invalid Password");
+      setError(true);
+      setClicked(false);
+      return;
+    }
     navigate(RoutePath.RevealPrivatePhrase);
+    setClicked(false);
   };
 
   return (
@@ -55,6 +79,7 @@ export const RevealPasswoardPhrase = () => {
         onKeyDown={onKeyDown}
         error={error}
       />
+      {error && <ErrorText text={errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
           checked={termsA}

@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { Route, useLocation, useMatch } from 'react-router-dom';
+import { RoutePath } from '@router/path';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -36,12 +38,10 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 const LoadingMain = () => {
   const { state } = useLoadAccounts();
   const isLoading = ["CREATE", "FINISH", "LOGIN", "FAIL"].includes(state) === false;
+  const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletInit + "/*");
 
-  useEffect(() => {
-    console.log("LOADING STATE: ", state);
-  }, [state]);
 
-  return isLoading ? (
+  return (!isApproveHardwarePath && isLoading) ? (
     <Wrapper>
       {/* <Header /> */}
       <Round width='163px' height='14px' radius='24px' />
