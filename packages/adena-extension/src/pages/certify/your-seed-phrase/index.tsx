@@ -63,7 +63,7 @@ export const YourSeedPhrase = () => {
   };
 
   const addAccount = async () => {
-    const password = "await walletService.getRawPassword()";
+    const password = await walletService.getRawPassword();
     const createdWallet = await walletService.createWallet({ mnemonic: seeds, password });
     await createdWallet.initAccounts();
 
