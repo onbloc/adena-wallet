@@ -59,7 +59,7 @@ export const YourSeedPhrase = () => {
   }
 
   const isAddAccount = () => {
-    return location.state.type === "ADD_ACCOUNT";
+    return location?.state?.type === "ADD_ACCOUNT";
   };
 
   const addAccount = async () => {
