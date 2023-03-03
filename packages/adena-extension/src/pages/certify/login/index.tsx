@@ -4,10 +4,11 @@ import Text from '@components/text';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import DefaultInput from '@components/default-input';
-import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { ValidationService } from '@services/index';
+import { validateWrongPasswordLength } from '@common/validation';
+import { useAdenaContext } from '@hooks/use-context';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = 'Enter\nYour Password';
 
@@ -31,21 +32,12 @@ export const ForgetPwd = styled.button`
 
 export const Login = () => {
   const navigate = useNavigate();
+  const { walletService } = useAdenaContext();
   const location = useLocation();
   const [password, setPassword] = useState('');
-  const [state, , loadWalletByPassword] = useWalletLoader();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [validateState, setValidateState] = useState(true);
-
-  useEffect(() => {
-    switch (state) {
-      case 'FINISH':
-        navigate(RoutePath.Home);
-        break;
-      default:
-        break;
-    }
-  }, [state]);
+  const { loadAccounts } = useLoadAccounts();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -57,11 +49,15 @@ export const Login = () => {
 
   const login = async () => {
     try {
-      if (ValidationService.validateWrongPasswordLength(password)) {
-        const result = await loadWalletByPassword(password);
-        if (result !== 'FINISH') {
+      if (validateWrongPasswordLength(password)) {
+        const result = await walletService.equalsPassowrd(password);
+        if (!result) {
           setValidateState(false);
+          return;
         }
+        await walletService.updatePassowrd(password);
+        await loadAccounts();
+        navigate(RoutePath.Home);
       }
     } catch (e) {
       setValidateState(false);
@@ -84,7 +80,7 @@ export const Login = () => {
     }
   };
 
-  const onClickForgotButton = () => navigate(RoutePath.EnterSeedPhrase);
+  const onClickForgotButton = () => navigate(RoutePath.ForgotPassword);
 
   return (
     <Wrapper>

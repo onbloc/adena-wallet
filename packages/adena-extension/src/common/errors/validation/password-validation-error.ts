@@ -9,7 +9,7 @@ const ERROR_VALUE = {
   WRONG_PASSWORD_LENGTH: {
     status: 1001,
     type: 'WRONG_PASSWORD_LENGTH',
-    message: 'Password must be 8~23 characters',
+    message: 'Password must be 8~256 characters',
   },
   INVALID_PASSWORD: {
     status: 1002,

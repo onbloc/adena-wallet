@@ -6,6 +6,7 @@ import Text from '@components/text';
 import IconConnectRequestPermissionLoading from '@assets/connect-request-permission-loading.svg';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
+import Icon from '@components/icons';
 
 const text = {
   title: 'Requesting Approval\non Hardware Wallet',
@@ -37,7 +38,7 @@ const Wrapper = styled.main`
     width: 100px;
     height: 100px;
     margin: 20px auto;
-    animation: rotate 1.5s infinite
+    animation: rotate 1.5s infinite;
   }
 
   div {
@@ -51,7 +52,6 @@ interface Props {
 }
 
 export const SendConfirmLedgerLoading = ({ sendToken, cancel }: Props) => {
-
   const navigate = useNavigate();
   const [failed, setFailed] = useState(false);
 
@@ -77,7 +77,7 @@ export const SendConfirmLedgerLoading = ({ sendToken, cancel }: Props) => {
     init();
     try {
       await sendToken();
-      navigate(RoutePath.History)
+      navigate(RoutePath.History);
     } catch (e) {
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -86,11 +86,11 @@ export const SendConfirmLedgerLoading = ({ sendToken, cancel }: Props) => {
         setTimeout(fail, 1000);
       }
     }
-  }
+  };
 
   return (
     <Wrapper>
-      <img className='icon' src={IconConnectRequestPermissionLoading} alt='logo-image' />
+      <Icon name='iconConnectLoading' className='icon' />
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth

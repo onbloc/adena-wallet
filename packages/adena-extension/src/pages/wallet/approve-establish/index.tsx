@@ -5,12 +5,19 @@ import DefaultFavicon from './../../../assets/favicon-default.svg';
 import Text from '@components/text';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import theme from '@styles/theme';
-import { WalletService } from '@services/index';
-import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
+import {
+  createFaviconByHostname,
+  decodeParameter,
+  parseParmeters,
+} from '@common/utils/client-utils';
 import { InjectionMessageInstance } from '@inject/message';
 import { useLocation } from 'react-router-dom';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 export const ApproveEstablish = () => {
+  const { establishService } = useAdenaContext();
+  const [currentAccount] = useCurrentAccount();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
@@ -25,7 +32,7 @@ export const ApproveEstablish = () => {
     if (key !== '' && hostname !== '') {
       checkEstablised();
     }
-  }, [key, hostname])
+  }, [key, hostname]);
 
   const initRequestSite = async () => {
     try {
@@ -40,34 +47,36 @@ export const ApproveEstablish = () => {
     } catch (e) {
       console.log(e);
     }
-  }
+  };
 
   const checkEstablised = async () => {
-    const isEstablised = await WalletService.isEstablished(hostname ?? '');
+    const address = currentAccount?.getAddress() ?? '';
+    const isEstablised = await establishService.isEstablished(hostname ?? '', address);
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
       return;
     }
-  }
+  };
 
   const updateFavicon = async (hostname: string) => {
     const faviconData = await createFaviconByHostname(hostname);
     setFavicon(faviconData);
-  }
+  };
 
   const onClickCancleButton = () => {
     window.close();
-  }
+  };
 
   const onClickConfirmButton = async () => {
-    await WalletService.establish(hostname, appName, favicon);
+    const address = currentAccount?.getAddress() ?? '';
+    await establishService.establish(hostname, address, appName, favicon);
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
-  }
+  };
 
   return (
     <Wrapper>
       <Text className='main-title' type='header4'>
-        {`Connect to ${(appName && appName !== '') ? appName : 'Unknown'}`}
+        {`Connect to ${appName && appName !== '' ? appName : 'Unknown'}`}
       </Text>
       <img className='logo' src={favicon !== null ? favicon : DefaultFavicon} alt='gnoland-logo' />
       <UrlBox>
@@ -103,8 +112,8 @@ export const ApproveEstablish = () => {
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  width: 100%;
-  height: 100%;
+  max-width: 380px;
+  min-height: 514px;
   padding-top: 24px;
   overflow-y: auto;
   align-self: center;
@@ -124,8 +133,7 @@ const Wrapper = styled.main`
 
 const UrlBox = styled.div`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  width
-  : 100%;
+  width: 100%;
   height: 41px;
   border-radius: 24px;
   background-color: ${({ theme }) => theme.color.neutral[8]};

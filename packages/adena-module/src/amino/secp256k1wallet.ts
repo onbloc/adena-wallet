@@ -1,9 +1,10 @@
-import { Secp256k1, Sha256 } from '../crypto';
+import { Secp256k1, sha256 } from '../crypto';
 import { toBech32 } from '../encoding';
 
 import { rawSecp256k1PubkeyToRawAddress } from './addresses';
+import { serializeSignToGnoDoc } from './secp256k1hdwallet';
 import { encodeSecp256k1Signature } from './signature';
-import { serializeSignDoc, StdSignDoc } from './signdoc';
+import { StdSignDoc } from './signdoc';
 import { AccountData, AminoSignResponse, OfflineAminoSigner } from './signer';
 
 /**
@@ -51,9 +52,12 @@ export class Secp256k1Wallet implements OfflineAminoSigner {
     if (signerAddress !== this.address) {
       throw new Error(`Address ${signerAddress} not found in wallet`);
     }
-    const message = new Sha256(serializeSignDoc(signDoc)).digest();
+    const message = sha256(serializeSignToGnoDoc(signDoc));
     const signature = await Secp256k1.createSignature(message, this.privkey);
-    const signatureBytes = new Uint8Array([...signature.r(32), ...signature.s(32)]);
+    const signatureBytes = new Uint8Array([
+      ...(signature.r(32) as any),
+      ...(signature.s(32) as any),
+    ]);
     return {
       signed: signDoc,
       signature: encodeSecp256k1Signature(this.pubkey, signatureBytes),

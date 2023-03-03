@@ -1,13 +1,34 @@
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useWalletCreator } from '@hooks/use-wallet-creator';
-import { ValidationService, WalletService } from '@services/index';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
-import { useResetRecoilState } from 'recoil';
+import { useAdenaContext } from '@hooks/use-context';
+import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
+import { useImportAccount } from '@hooks/use-import-account';
+import { WalletAccount } from 'adena-module';
+import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 
+interface CreatePasswordState {
+  type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
+}
+
+interface SeedState extends CreatePasswordState {
+  seeds: string;
+}
+
+interface LedgerState extends CreatePasswordState {
+  accounts: Array<string>;
+  currentAccount: string | null;
+}
+
+interface GoogleState extends CreatePasswordState {
+  privateKey: string;
+}
+
 export const useCreatePassword = () => {
+  const location = useLocation();
+  const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -18,10 +39,16 @@ export const useCreatePassword = () => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [seeds, SetSeeds] = useState('');
-  const [, createWallet] = useWalletCreator();
+  const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(location.state);
   const [errorMessage, setErrorMessage] = useState('');
-  const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
+  const { importAccount } = useImportAccount();
+  const [activated, setActivated] = useState(false);
+  const [state, setState] = useRecoilState(WalletState.state);
+
+  useEffect(() => {
+    const locationState = location.state;
+    setLocationState(locationState);
+  }, [location]);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -35,14 +62,32 @@ export const useCreatePassword = () => {
     }
   }, [inputRef]);
 
+  useEffect(() => {
+    if (activated) {
+      create();
+    }
+  }, [activated]);
+
+  const isSeedPharase = (state: CreatePasswordState): state is SeedState => {
+    return state.type === 'SEED';
+  };
+
+  const isLedgerState = (state: CreatePasswordState): state is LedgerState => {
+    return state.type === 'LEDGER';
+  };
+
+  const isGoogleState = (state: CreatePasswordState): state is GoogleState => {
+    return state.type === 'GOOGLE';
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && terms && pwd && confirmPwd) {
       nextButtonClick();
     }
   };
 
-  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setTerms((prev: boolean) => !prev);
+  const handleTermsChange = () => setTerms((prev: boolean) => !prev);
+
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const { name, value } = e.target;
@@ -55,7 +100,7 @@ export const useCreatePassword = () => {
     const password = pwd;
     const confirmPassword = confirmPwd;
     try {
-      if (ValidationService.validateNotMatchConfirmPassword(password, confirmPassword)) return true;
+      if (validateNotMatchConfirmPassword(password, confirmPassword)) return true;
     } catch (error) {
       if (error instanceof PasswordValidationError) {
         switch (error.getType()) {
@@ -76,8 +121,8 @@ export const useCreatePassword = () => {
   const validationPassword = () => {
     const password = pwd;
     try {
-      ValidationService.validateEmptyPassword(password);
-      ValidationService.validateWrongPasswordLength(password);
+      validateEmptyPassword(password);
+      validateWrongPasswordLength(password);
       return true;
     } catch (error) {
       console.log(error);
@@ -92,26 +137,69 @@ export const useCreatePassword = () => {
   const validationCheck = async () => {
     const isValidPassword = validationPassword();
     const isValidConfirmPassword = validationConfirmPassword(isValidPassword);
+    return isValidPassword && isValidConfirmPassword;
+  };
 
-    try {
-      if (isValidPassword && isValidConfirmPassword) {
-        clearCurrentAccount();
-        await WalletService.clearWalletAccountData();
-        const walletState = await createWallet({ mnemonic: seeds, password: pwd });
-        return walletState;
-      }
-    } catch (error) {
-      console.error(error);
+  const createAccounts = () => {
+    if (isSeedPharase(locationState)) {
+      return createWalletAccountsBySeed(locationState);
+    }
+    if (isGoogleState(locationState)) {
+      return createWalletAccountsByGoogle(locationState);
+    }
+    if (isLedgerState(locationState)) {
+      return 'FAIL';
     }
     return 'FAIL';
   };
 
-  const nextButtonClick = async () => {
-    const walletState = await validationCheck();
-    if (walletState === 'FINISH') {
-      navigate(RoutePath.LaunchAdena);
+  const createWalletAccountsBySeed = async (seedState: SeedState) => {
+    try {
+      const createdWallet = await walletService.createWallet({ mnemonic: seedState.seeds, password: pwd });
+      await createdWallet.initAccounts();
+      const accounts = createdWallet.getAccounts();
+      await accountService.updateAccounts(accounts);
+      await walletService.changePassowrd(pwd);
+    } catch (error) {
+      console.error(error);
+      return 'FAIL';
+    }
+    return 'FINISH';
+  };
+
+  const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
+    try {
+      const account = await WalletAccount.createByGooglePrivateKey(googleState.privateKey, 'g');
+      await importAccount(account);
+      await walletService.updatePassowrd(pwd);
+    } catch (error) {
+      console.error(error);
+      return 'FAIL';
+    }
+    return 'FINISH';
+  };
+
+  const create = async () => {
+    const validationState = await validationCheck();
+    if (!validationState) {
+      setActivated(false);
       return;
     }
+    await accountService.clear();
+    const result = await createAccounts();
+    if (result === 'FINISH') {
+      navigate(RoutePath.LaunchAdena, { state: locationState });
+      setActivated(false);
+      return;
+    }
+  }
+
+  const nextButtonClick = async () => {
+    if (activated) {
+      return;
+    }
+
+    setActivated(true);
   };
 
   return {
@@ -135,7 +223,6 @@ export const useCreatePassword = () => {
       onClick: nextButtonClick,
       disabled: terms && pwd && confirmPwd ? false : true,
     },
-    setSeeds: SetSeeds,
     onKeyDown,
   };
 };

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import styled from 'styled-components';
+import React from 'react';
+import styled, { css } from 'styled-components';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -10,15 +10,26 @@ import DefaultInput from '@components/default-input';
 import { useLocation } from 'react-router-dom';
 
 const text = {
-  title: 'Create a\npassword',
+  title: 'Create\na Password',
   desc: 'This will be used to unlock your wallet.',
 };
 
-const Wrapper = styled.main`
+const popupStyle = css`
+  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  max-width: 380px;
+  min-height: 514px;
+  padding-top: 50px;
+`;
+
+const defaultStyle = css`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
+`;
+
+const Wrapper = styled.main<{ isPopup: boolean }>`
+  ${({ isPopup }) => (isPopup ? popupStyle : defaultStyle)};
 `;
 
 const FormBox = styled.div`
@@ -28,26 +39,14 @@ const FormBox = styled.div`
   }
 `;
 
-type LocationSeeds = {
-  seeds: string;
-};
-
 export const CreatePassword = () => {
-  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, setSeeds, onKeyDown } =
+  const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useCreatePassword();
   const location = useLocation();
   const handleLinkClick = () => window.open('https://adena.app/terms', '_blank');
 
-  useEffect(() => {
-    const state = location.state as LocationSeeds;
-    setSeeds(state.seeds);
-    if (!buttonState.disabled === false) {
-      //navigate(RoutePath.LaunchAdena);
-    }
-  }, [buttonState]);
-
   return (
-    <Wrapper>
+    <Wrapper isPopup={location?.state?.type !== 'SEED'}>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <FormBox>
         <DefaultInput

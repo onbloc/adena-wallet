@@ -16,8 +16,8 @@ export class TransactionEncode {
   public static fee = (writer: protobuf.Writer, fee: TransactionFee) => {
     writer = writer.uint32(18).fork();
 
-    if (fee.gasWanted !== 0) {
-      writer.uint32(8).sint64(Long.fromNumber(fee.gasWanted));
+    if (fee.gasWanted !== "0") {
+      writer.uint32(8).sint64(Long.fromString(fee.gasWanted));
     }
     if (fee.gasFee !== '') {
       writer.uint32(18).string(fee.gasFee);

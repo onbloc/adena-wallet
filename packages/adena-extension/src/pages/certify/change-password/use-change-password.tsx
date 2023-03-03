@@ -1,12 +1,17 @@
 import { RoutePath } from '@router/path';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ValidationService, WalletService } from '@services/index';
-import { useWallet } from '@hooks/use-wallet';
 import { PasswordValidationError } from '@common/errors';
-import { useWalletCreator } from '@hooks/use-wallet-creator';
+import { useAdenaContext } from '@hooks/use-context';
+import {
+  validateEqualsChangePassword,
+  validateInvalidPassword,
+  validateNotMatchConfirmPassword,
+  validateWrongPasswordLength,
+} from '@common/validation';
 
 export const useChangePassword = () => {
+  const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -21,8 +26,6 @@ export const useChangePassword = () => {
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const [savedPassword, setSavedPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [wallet] = useWallet();
-  const [, createWallet] = useWalletCreator();
 
   useEffect(() => {
     initSavedPassword();
@@ -42,9 +45,9 @@ export const useChangePassword = () => {
   }, [inputRef]);
 
   const initSavedPassword = async () => {
-    const currentPassword = await WalletService.loadWalletPassword();
+    const currentPassword = await walletService.loadWalletPassword();
     setSavedPassword(currentPassword);
-  }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && currPwd && newPwd && confirmPwd) {
@@ -69,7 +72,7 @@ export const useChangePassword = () => {
     let isValid = true;
     let errorMessage = '';
     try {
-      ValidationService.validateInvalidPassword(currentPassword, storedPassword);
+      validateInvalidPassword(currentPassword, storedPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -80,8 +83,8 @@ export const useChangePassword = () => {
       }
     }
     try {
-      ValidationService.validateWrongPasswordLength(newPassword);
-      ValidationService.validateEqualsChangePassword(newPassword, currentPassword);
+      validateWrongPasswordLength(newPassword);
+      validateEqualsChangePassword(newPassword, currentPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -92,7 +95,7 @@ export const useChangePassword = () => {
       }
     }
     try {
-      ValidationService.validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
+      validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -106,22 +109,20 @@ export const useChangePassword = () => {
     setErrorMessage(errorMessage);
     if (isValid) {
       try {
-        const walletState = await createWallet({ mnemonic: wallet?.getMnemonic(), password: newPassword }, true);
-        return walletState;
+        await walletService.changePassowrd(newPassword);
+        return 'FINISH';
       } catch (e) {
         console.error(e);
       }
     }
     return 'FAIL';
   };
-  const cancelButtonClick = () => navigate(RoutePath.Setting);
+  const cancelButtonClick = () => navigate(-1);
 
   const saveButtonClick = async () => {
     const state = await validationCheck();
     if (state === 'FINISH') {
-      if (wallet) {
-        return navigate(RoutePath.Setting);
-      }
+      return navigate(-1);
     }
   };
 

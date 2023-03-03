@@ -42,7 +42,6 @@ export const Navigation = () => {
   const settings = useMatch(RoutePath.Setting);
   const tokenDetails = useMatch(RoutePath.TokenDetails);
   const [state] = useRecoilState(WalletState.state);
-  const [currentBalance] = useRecoilState(WalletState.currentBalance);
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
@@ -74,7 +73,7 @@ export const Navigation = () => {
     },
   ];
 
-  const loadingComplete = currentBalance.denom !== '' && walletState === 'FINISH';
+  const loadingComplete = walletState === 'FINISH';
 
   const isRender = () => {
     if (wallet || tokenDetails || nft || explore || history || settings) {

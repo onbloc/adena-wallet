@@ -8,13 +8,25 @@ type XOR<T, U> = T | U extends Record<string, unknown>
   : T | U;
 
 export enum ButtonHierarchy {
+  Normal = 'normal',
   Primary = 'Primary',
   Ghost = 'Ghost',
   Dark = 'Dark',
   Danger = 'Danger',
+  Custom = 'Custom',
 }
 
 export const modeVariants = {
+  normal: css`
+    background: ${({ theme }) => theme.color.neutral[6]};
+    &:hover {
+      background: ${({ theme }) => theme.color.neutral[11]};
+    }
+    /* &:disabled {
+      background: ${({ theme }) => theme.color.primary[6]};
+      color: ${({ theme }) => theme.color.neutral[4]};
+    } */
+  `,
   primary: css`
     background: ${({ theme }) => theme.color.primary[3]};
     &:hover {
@@ -50,6 +62,13 @@ export const modeVariants = {
   `,
   danger: css`
     background: ${({ theme }) => theme.color.red[2]};
+    &:hover {
+      background: ${({ theme }) => theme.color.red[8]};
+    }
+    /* &:disabled {
+      background: ${({ theme }) => theme.color.neutral[5]};
+      color: ${({ theme }) => theme.color.neutral[4]};
+    } */
   `,
 };
 
@@ -98,11 +117,16 @@ const ButtonWrapper = styled.button<ButtonProps>`
     return 'auto';
   }};
   margin: ${(props) => props.margin};
-  ${({ hierarchy }) => {
+  ${({ hierarchy, bgColor }) => {
     if (hierarchy === ButtonHierarchy.Primary) return modeVariants.primary;
+    if (hierarchy === ButtonHierarchy.Normal) return modeVariants.normal;
     if (hierarchy === ButtonHierarchy.Ghost) return modeVariants.ghost;
     if (hierarchy === ButtonHierarchy.Dark) return modeVariants.dark;
     if (hierarchy === ButtonHierarchy.Danger) return modeVariants.danger;
+    if (hierarchy === ButtonHierarchy.Custom)
+      return css`
+        background-color: ${bgColor};
+      `;
   }};
   border-radius: ${({ radius }) => (radius ? radius : '30px')};
   transition: all 0.4s ease;

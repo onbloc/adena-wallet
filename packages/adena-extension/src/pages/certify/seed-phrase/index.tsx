@@ -6,9 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { useWallet } from '@hooks/use-wallet';
-import { ValidationService, WalletService } from '@services/index';
 import { WalletError } from '@common/errors';
+import { useAdenaContext } from '@hooks/use-context';
+import { validateInvalidPassword } from '@common/validation';
 
 const text = {
   title: 'Reveal Seed Phrase',
@@ -23,10 +23,10 @@ const Wrapper = styled.main`
 `;
 
 export const SeedPhrase = () => {
+  const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cancelButtonClick = () => navigate(-1);
-  const [wallet] = useWallet();
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
     error: false,
@@ -41,10 +41,11 @@ export const SeedPhrase = () => {
   }, [password])
 
   const nextButtonClick = async () => {
-    await WalletService.clearWalletAccountData();
-    const storedPassword = await WalletService.loadWalletPassword();
+    await accountService.clear();
+    const storedPassword = await walletService.loadWalletPassword();
     try {
-      if (ValidationService.validateInvalidPassword(password, storedPassword)) {
+      if (validateInvalidPassword(password, storedPassword)) {
+        const wallet = await walletService.loadWallet();
         if (wallet) {
           navigate(RoutePath.ViewSeedPhrase, {
             replace: true,

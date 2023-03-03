@@ -45,7 +45,7 @@ export const ViewSeedPhrase = () => {
       <TitleWithDesc title={text.title} desc={text.desc} />
       <SeedBoxWrap>
         <SeedBox seeds={mnemonic.split(' ')} scroll={false} />
-        <Copy seeds={mnemonic} />
+        <Copy copyStr={mnemonic} />
       </SeedBoxWrap>
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>

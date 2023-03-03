@@ -1,20 +1,21 @@
 import { GnoClientState, WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
 import { HistoryItem, HistoryItemType } from "gno-client/src/api/response";
-import { WalletService } from "@services/index";
 import { dateToLocal } from "@common/utils/client-utils";
+import { useAdenaContext } from "./use-context";
 
 export const useTransactionHistory = (): [
     getHistory: () => Promise<{ [key in string]: Array<HistoryItem> }>,
     updateLastTransactionHistory: () => Promise<boolean>,
     updateNextTransactionHistory: () => Promise<boolean>
 ] => {
-
+    const { accountService } = useAdenaContext();
     const [gnoClient] = useRecoilState(GnoClientState.current);
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
     const getHistory = async () => {
-        const address = await WalletService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (transactionHistory.address === address) {
             return formatTransactionHistory(transactionHistory.items);
         }
@@ -42,7 +43,8 @@ export const useTransactionHistory = (): [
     }
 
     const updateNextTransactionHistory = async () => {
-        const address = await WalletService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (address && !transactionHistory.isFinish) {
             if (address === transactionHistory.address) {
                 return await fetchTransactionHistory(transactionHistory.currentPage + 1);
@@ -52,7 +54,8 @@ export const useTransactionHistory = (): [
     }
 
     const fetchTransactionHistory = async (page: number) => {
-        const address = await WalletService.loadCurrentAccountAddress();
+        const currentAccount = await accountService.getCurrentAccount();
+        const address = currentAccount.getAddress();
         if (gnoClient && address) {
             const currentPage = page ?? 0;
             try {

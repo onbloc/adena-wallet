@@ -5,3 +5,8 @@ export { default as IconClock } from './icon-clock';
 export { default as IconSetting } from './icon-setting';
 export * from './icon-address-book';
 export { default as IconCancel } from './icon-cancel';
+export { default as IconArrowV2 } from './icon-arrow-v2';
+export { default as IconWebLink } from './icon-weblink';
+export { default as IconHiddenEye } from './icon-hidden-eye';
+export { default as IconConnectLoading } from './icon-connect-loading';
+export { default as IconConnectFailed } from './icon-connect-failed';

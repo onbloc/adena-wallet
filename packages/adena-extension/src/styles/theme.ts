@@ -13,6 +13,7 @@ export enum Neutral {
   '#191920', // 8
   '#777777', // 9
   '#636368', // 10
+  '#454554', //11
 }
 
 export enum Primary {
@@ -32,6 +33,9 @@ export enum Red {
   '#D6160A', // 3
   '#BB0B00', // 4
   '#BB160B', // 5
+  '#E7323B', // 6
+  '#B62E29', // 7
+  '#BB150B' // 8
 }
 
 export enum Green {
@@ -72,6 +76,11 @@ export const fonts: FontsKeyType = {
     font-weight: 700;
     font-size: 18px;
     line-height: 27px;
+  `,
+  header7: css`
+   font-weight: 700;
+    font-size: 14px;
+    line-height: 21px;
   `,
   body1Bold: css`
     font-weight: 600;
@@ -128,6 +137,21 @@ export const fonts: FontsKeyType = {
     font-size: 11px;
     line-height: 18px;
   `,
+  light1Reg: css`
+    font-weight: 400;
+    font-size: 10.5px;
+    line-height: 18px;
+  `,
+  light13: css`
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 19.5px;
+  `,
+  light11: css`
+    font-weight: 300;
+    font-size: 11px;
+    line-height: 16px;
+  `
 } as const;
 
 export type FontsType =
@@ -137,6 +161,7 @@ export type FontsType =
   | 'header4'
   | 'header5'
   | 'header6'
+  | 'header7'
   | 'body1Bold'
   | 'body1Reg'
   | 'body2Bold'
@@ -147,7 +172,10 @@ export type FontsType =
   | 'body4Reg'
   | 'title1'
   | 'captionBold'
-  | 'captionReg';
+  | 'captionReg'
+  | 'light1Reg'
+  | 'light13'
+  | 'light11';
 
 type FontsKeyType = { [key in FontsType]: FlattenSimpleInterpolation };
 

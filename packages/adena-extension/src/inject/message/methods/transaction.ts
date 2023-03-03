@@ -1,17 +1,18 @@
 import { RoutePath } from '@router/path';
-import { WalletService } from '@services/index';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+  const core = new InjectCore();
+  const address = await core.accountService.getCurrentAccountAddress();
+  if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
-  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+  if (!validateTransactionMessage(address, requestData, sendResponse)) {
     return;
   }
   HandlerMethod.createPopup(
@@ -26,11 +27,12 @@ export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  const currentAccountAddress = await WalletService.loadCurrentAccountAddress();
-  if (!validateTransaction(currentAccountAddress, requestData, sendResponse)) {
+  const core = new InjectCore();
+  const address = await core.accountService.getCurrentAccountAddress();
+  if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
-  if (!validateTransactionMessage(currentAccountAddress, requestData, sendResponse)) {
+  if (!validateTransactionMessage(address, requestData, sendResponse)) {
     return;
   }
   HandlerMethod.createPopup(

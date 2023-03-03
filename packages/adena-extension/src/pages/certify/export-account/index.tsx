@@ -6,9 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { useWallet } from '@hooks/use-wallet';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { toBase64 } from 'adena-module/src/encoding';
 
 const text = {
   title: 'Export Private Key',
@@ -24,8 +21,6 @@ const Wrapper = styled.main`
 
 export const ExportAccount = () => {
   const navigate = useNavigate();
-  const [wallet] = useWallet();
-  const [currentAccount] = useCurrentAccount();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
@@ -37,8 +32,7 @@ export const ExportAccount = () => {
 
   const nextButtonClick = async () => {
     try {
-      const privateKey = await wallet?.getPrivateKey(currentAccount?.getAddress() ?? '');
-      navigate(RoutePath.ViewPrivateKey, { replace: true, state: toBase64(privateKey) });
+      navigate(RoutePath.ViewPrivateKey, { replace: true });
     } catch (error) {
       setError({ error: true, message: 'Invalid password' });
     }

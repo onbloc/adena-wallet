@@ -1,39 +1,54 @@
 import { CommonState, WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { useGnoClient } from './use-gno-client';
-import { useEffect } from 'react';
-import { useTokenConfig } from './use-token-config';
 import { Balance } from '@states/wallet';
-import { WalletService } from '@services/index';
+import { useAdenaContext } from './use-context';
+import { GnoClient } from 'gno-client';
+import { CommonError } from '@common/errors/common';
 
 export const useWalletBalances = (
-  initialize?: boolean,
+  gnoClient: InstanceType<typeof GnoClient> | null,
 ): [balances: Array<Balance>, updateBalances: () => void] => {
-  const [gnoClient, ,] = useGnoClient();
-  const [currentAccount] = useRecoilState(WalletState.currentAccount);
+  const { accountService, balanceService } = useAdenaContext();
+
   const [balances, setBalances] = useRecoilState(WalletState.balances);
-  const [getTokenConfig] = useTokenConfig();
+  const [state, setState] = useRecoilState(WalletState.state);
+  const [, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
-
-  useEffect(() => {
-    if (initialize) {
-      updateBalances();
-    }
-  }, [gnoClient, currentAccount?.getAddress()]);
-
+  const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
 
   const updateBalances = async () => {
-    if (currentAccount && gnoClient) {
-      const tokenConfigs = await getTokenConfig();
-      try {
-        const tokenBalances = await WalletService.getTokenBalances(gnoClient, currentAccount.getAddress(), tokenConfigs);
+    if (!gnoClient) {
+      console.error('Not initialize gno client');
+      return;
+    }
 
-        if (tokenBalances.length > 0) {
-          setBalances(tokenBalances as Array<Balance>);
-          setFailedNetwork(false);
-        }
-      } catch (e) {
+    const chainId = gnoClient.chainId;
+    try {
+      const address = await accountService.getCurrentAccountAddress();
+      const tokenBalances = await balanceService.getTokenBalances(address);
+      if (tokenBalances.length > 0) {
+        setBalances(tokenBalances as Array<Balance>);
+        const mainToken = tokenBalances.find((token) => token.main);
+        mainToken &&
+          setCurrentBalance({
+            amount: mainToken.amount,
+            denom: mainToken?.amountDenom ?? '',
+          });
+      } else {
+        setFailedNetwork(false);
+        setFailedNetworkChainId(chainId);
+      }
+      if (state === 'LOADING' || state === 'NONE') {
+        setState('FINISH');
+      }
+    } catch (e) {
+      if (e instanceof CommonError) {
+        console.log(e);
+      } else {
         setFailedNetwork(true);
+        if (state === 'LOADING' || state === 'NONE') {
+          setState('FINISH');
+        }
       }
     }
   };

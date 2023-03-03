@@ -1,1 +1,2 @@
-export * as ChainRepository from './chain';
+export * from './chain';
+export * from './token';

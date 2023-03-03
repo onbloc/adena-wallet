@@ -8,6 +8,11 @@ import {
   IconAddressBookLarge,
   IconAddressBookSmall,
   IconCancel,
+  IconArrowV2,
+  IconWebLink,
+  IconHiddenEye,
+  IconConnectLoading,
+  IconConnectFailed,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -26,6 +31,11 @@ const ICONS = {
   iconAddressBookLarge: IconAddressBookLarge,
   iconAddressBookSmall: IconAddressBookSmall,
   iconCancel: IconCancel,
+  iconArrowV2: IconArrowV2,
+  iconWebLink: IconWebLink,
+  iconHiddenEye: IconHiddenEye,
+  iconConnectLoading: IconConnectLoading,
+  iconConnectFailed: IconConnectFailed,
 } as const;
 
 const Icon = ({ name, className = '', ...rest }: IconProps) => {

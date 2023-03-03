@@ -6,34 +6,36 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useWalletLoader } from '@hooks/use-wallet-loader';
 import { InjectionMessageInstance } from '@inject/message';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
-import { ValidationService } from '@services/index';
-import { MessageKeyType } from '@inject/message'
+import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
+import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
+import { useAdenaContext } from '@hooks/use-context';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
-  position: fixed;
-  top: 48px;
-  left: 0px;
-  right: 0px;
-  bottom: 0px;
-  padding: 0px 20px 24px;
+  max-width: 380px;
+  min-height: 514px;
+  padding: 29px 20px 24px;
 `;
 
 export const ApproveLogin = () => {
   const navigate = useNavigate();
-  const [state, loadWallet, loadWalletByPassword] = useWalletLoader();
+  const location = useLocation();
+  const { walletService } = useAdenaContext();
+  const [, setState] = useRecoilState(WalletState.state);
+  const { state, loadAccounts } = useLoadAccounts();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<PasswordValidationError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
-  const location = useLocation();
 
   useEffect(() => {
     const data = parseParmeters(location.search);
@@ -44,7 +46,7 @@ export const ApproveLogin = () => {
   useEffect(() => {
     switch (state) {
       case 'NONE':
-        loadWallet();
+        loadAccounts();
         break;
       case 'FINISH':
         redirect();
@@ -69,9 +71,12 @@ export const ApproveLogin = () => {
   const tryLoginApprove = async (password: string) => {
     let currentError = null;
     try {
-      ValidationService.validateEmptyPassword(password);
-      ValidationService.validateWrongPasswordLength(password);
-      await loadWalletByPassword(password);
+      validateEmptyPassword(password);
+      validateWrongPasswordLength(password);
+      const equalPassword = await walletService.equalsPassowrd(password);
+      if (equalPassword) {
+        setState('FINISH');
+      }
     } catch (error) {
       if (error instanceof PasswordValidationError) {
         currentError = error;
@@ -95,10 +100,12 @@ export const ApproveLogin = () => {
         navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
         break;
       default:
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData));
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData),
+        );
         break;
     }
-  }
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') tryLoginApprove(password);
@@ -112,12 +119,10 @@ export const ApproveLogin = () => {
   const approveButtonClick = () => tryLoginApprove(password);
 
   return (
-    <Wrapper>
+    <>
       {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
-        <>
-          <Title>
-            {text}
-          </Title>
+        <Wrapper>
+          <Title>{text}</Title>
           <DefaultInput
             type='password'
             placeholder='Password'
@@ -135,10 +140,10 @@ export const ApproveLogin = () => {
           >
             <Text type='body1Bold'>Unlock</Text>
           </Button>
-        </>
+        </Wrapper>
       ) : (
-        <LoadingApproveTransaction />
+        <LoadingApproveTransaction rightButtonText='Login' />
       )}
-    </Wrapper>
+    </>
   );
 };

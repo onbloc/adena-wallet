@@ -1,25 +1,27 @@
+import theme from '@styles/theme';
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '../text';
+import Button from './button';
 
-const Button = styled.button<{ isClicked: boolean }>`
+const CopyButton = styled(Button)<{ isClicked: boolean }>`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  width: fit-content;
   height: 25px;
-  background-color: ${(props) =>
-    props.isClicked ? props.theme.color.primary[4] : props.theme.color.primary[3]};
-  border-radius: 24px;
+  border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
+  &:hover {
+    background-color: ${({ theme }) => theme.color.neutral[11]};
+  }
 `;
 
-const Copy = ({ seeds, tabIndex }: { seeds: string; tabIndex?: number }) => {
+const Copy = ({ copyStr, tabIndex }: { copyStr: string; tabIndex?: number }) => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
   const handleButtonClick = useCallback(() => {
     setIsClicked((prev: boolean) => !prev);
-    navigator.clipboard.writeText(seeds);
-  }, [isClicked, seeds]);
+    navigator.clipboard.writeText(copyStr);
+  }, [isClicked, copyStr]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsClicked(false), 2000);
@@ -29,14 +31,15 @@ const Copy = ({ seeds, tabIndex }: { seeds: string; tabIndex?: number }) => {
   }, [isClicked]);
 
   return (
-    <Button
+    <CopyButton
       isClicked={isClicked}
       onClick={handleButtonClick}
       disabled={isClicked}
       tabIndex={tabIndex && tabIndex}
+      bgColor={theme.color.neutral[6]}
     >
       <Text type='body2Reg'>{isClicked ? 'Copied!' : 'Copy'}</Text>
-    </Button>
+    </CopyButton>
   );
 };
 

@@ -1,10 +1,9 @@
 import { NetworkConfig, NetworkTest2, NetworkTest3 } from './network';
 import { GnoClientApi } from './api';
-import { NetworkCommon } from './network/common';
 import { AxiosAdapter } from 'axios';
 
-export type NetworkMapperType = 'MAIN' | 'TEST2' | 'TEST3' | 'COMMON' | 'NONE';
-export class GnoClient implements GnoClientApi {
+export type NetworkMapperType = 'TEST2' | 'TEST3';
+export class GnoClient {
   private network: GnoClientApi;
 
   private networkConfig: NetworkConfig;
@@ -33,17 +32,8 @@ export class GnoClient implements GnoClientApi {
     return this.networkConfig.linkUrl;
   }
 
-  public get token() {
-    return this.networkConfig.token;
-  }
-
   public get config() {
-    return {
-      chainId: this.chainId,
-      coinDenom: this.token.denom,
-      coinMinimalDenom: this.token.minimalDenom,
-      coinDecimals: Math.abs(Math.log10(this.token.minimalUnit)),
-    };
+    return this.networkConfig;
   }
 
   public clone = () => {
@@ -51,7 +41,7 @@ export class GnoClient implements GnoClientApi {
   };
 
   public static createNetwork(networkConfig: NetworkConfig) {
-    return new GnoClient(new NetworkCommon(networkConfig), networkConfig, 'COMMON');
+    return new GnoClient(new NetworkTest3(networkConfig), networkConfig, 'TEST3');
   }
 
   public static createNetworkByType(
@@ -67,15 +57,9 @@ export class GnoClient implements GnoClientApi {
           mapperType,
         );
       case 'TEST3':
-        return new GnoClient(
-          new NetworkTest3(networkConfig, axiosAdapter),
-          networkConfig,
-          mapperType,
-        );
-      case 'MAIN':
       default:
         return new GnoClient(
-          new NetworkCommon(networkConfig, axiosAdapter),
+          new NetworkTest3(networkConfig, axiosAdapter),
           networkConfig,
           mapperType,
         );
@@ -86,43 +70,78 @@ export class GnoClient implements GnoClientApi {
     return this.mapperType;
   }
 
-  public isHealth = async () => this.network.isHealth();
+  public isHealth = async () =>
+    this.network.isHealth();
 
-  public getNetwrokInfo = async () => this.network.getNetwrokInfo();
+  public getNetwrokInfo = async () =>
+    this.network.getNetwrokInfo();
 
-  public getGenesis = async () => this.network.getGenesis();
+  public getGenesis = async () =>
+    this.network.getGenesis();
 
   public getBlocks = async (minHeight: number, maxHeight: number) =>
     this.network.getBlocks(minHeight, maxHeight);
 
-  public getBlock = async (height: number) => this.network.getBlock(height);
+  public getBlock = async (height: number) =>
+    this.network.getBlock(height);
 
-  public getBlockResults = async (height: number) => this.network.getBlockResults(height);
+  public getBlockResults = async (height: number) =>
+    this.network.getBlockResults(height);
 
-  public getBlockCommit = async (height: number) => this.network.getBlockCommit(height);
+  public getBlockCommit = async (height: number) =>
+    this.network.getBlockCommit(height);
 
-  public getValidators = async () => this.network.getValidators();
+  public getValidators = async () =>
+    this.network.getValidators();
 
-  public getConsensusState = async () => this.network.getConsensusState();
+  public getConsensusState = async () =>
+    this.network.getConsensusState();
 
-  public getConsensusParams = async (height: number) => this.network.getConsensusParams(height);
+  public getConsensusParams = async (height: number) =>
+    this.network.getConsensusParams(height);
 
-  public getUnconfirmedTxs = async () => this.network.getUnconfirmedTxs();
+  public getUnconfirmedTxs = async () =>
+    this.network.getUnconfirmedTxs();
 
-  public getNumUnconfirmedTxs = async () => this.network.getNumUnconfirmedTxs();
+  public getNumUnconfirmedTxs = async () =>
+    this.network.getNumUnconfirmedTxs();
 
-  public getAbciInfo = async () => this.network.getAbciInfo();
+  public getAbciInfo = async () =>
+    this.network.getAbciInfo();
 
-  public broadcastTxCommit = async (tx: string) => this.network.broadcastTxCommit(tx);
+  public broadcastTxCommit = async (tx: string) =>
+    this.network.broadcastTxCommit(tx);
 
-  public broadcastTxSync = async (tx: string) => this.network.broadcastTxSync(tx);
+  public broadcastTxSync = async (tx: string) =>
+    this.network.broadcastTxSync(tx);
 
-  public broadcastTxAsync = async (tx: string) => this.network.broadcastTxAsync(tx);
+  public broadcastTxAsync = async (tx: string) =>
+    this.network.broadcastTxAsync(tx);
 
-  public getAccount = async (address: string) => this.network.getAccount(address);
+  public getAccount = async (address: string) =>
+    this.network.getAccount(address);
 
-  public getBalances = async (address: string) => this.network.getBalances(address);
+  public getBalances = async (address: string) =>
+    this.network.getBalances(address);
 
   public getTransactionHistory = async (address: string, page?: number) =>
     this.network.getTransactionHistory(address, page ?? 0);
+
+  public queryRender = async (packagePath: string, data?: Array<string>) =>
+    this.network.queryRender(packagePath, data);
+
+  public queryEval = async (packagePath: string, functionName: string, data?: Array<string>) =>
+    this.network.queryEval(packagePath, functionName, data);
+
+  public queryPackage = async (packagePath: string) =>
+    this.network.queryPackage(packagePath);
+
+  public queryFunctions = async (packagePath: string) =>
+    this.network.queryFunctions(packagePath);
+
+  public queryFile = async (packagePath: string) =>
+    this.network.queryFile(packagePath);
+
+  public queryStore = async (packagePath: string) =>
+    this.network.queryStore(packagePath);
 }

@@ -8,7 +8,6 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  verbose: true,
   testMatch: ['<rootDir>/**/*.spec.(js|jsx|ts|tsx)'],
   transformIgnorePatterns: ['<rootDir>/node_modules/'],
   setupFiles: ['<rootDir>/.jest/environment.js'],

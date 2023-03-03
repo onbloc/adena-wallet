@@ -38,24 +38,17 @@ const LeftWrap = styled.div`
 
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
-  const [loadinsgState, setLoadingState] = useState('INIT');
+  const [loadinsgState] = useState('INIT');
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
-  const [finishedLoading, setFinishedLoading] = useState(false);
   const clearWalletBalance = useResetRecoilState(WalletState.balances);
-  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const [, setWalletState] = useRecoilState(WalletState.state);
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
+  const [, setState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
     updateNetworks();
   }, []);
-
-  useEffect(() => {
-    if (loadinsgState === 'LOADING') {
-      clearWalletBalance();
-      setFailedNetwork(undefined);
-      setLoadingState('FINISH');
-    }
-  }, [currentNetwork]);
 
   useEffect(() => {
     if (loadinsgState === 'FINISH') {
@@ -63,31 +56,30 @@ export const ChangeNetwork = () => {
     }
   }, [loadinsgState]);
 
-  useEffect(() => {
-    if (finishedLoading && failedNetwork !== undefined) {
-      navigate(RoutePath.Home);
-    }
-  }, [finishedLoading, failedNetwork]);
-
   const checkHealth = async () => {
     let health = false;
     try {
-      health = await currentNetwork?.isHealth() ?? false;
+      health = (await currentNetwork?.isHealth()) ?? false;
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
-    setWalletState('NONE');
+    setState('NONE');
     setFailedNetwork(!health);
-    setFinishedLoading(true);
-  }
+    if (!health) {
+      const chainId = currentNetwork?.chainId;
+      setFailedNetworkChainId(chainId ?? "");
+    }
+  };
 
   const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
     if (network.chainId === currentNetwork?.chainId) {
-      setFinishedLoading(true);
       return;
     }
-    setLoadingState('LOADING');
+    setState('LOADING');
     await changeNetwork(network.chainId);
+    clearWalletBalance();
+    clearCurrentBalance();
+    navigate(RoutePath.Home);
   };
 
   return loadinsgState === 'INIT' ? (
@@ -108,17 +100,12 @@ export const ChangeNetwork = () => {
               center={null}
               right={
                 network.chainId === currentNetwork?.chainId ? (
-                  <Button
-                    width='100px'
-                    height='25px'
-                    bgColor={theme.color.green[2]}
-                  >
+                  <Button width='100px' height='25px' bgColor={theme.color.green[2]}>
                     <Text type='body3Reg'>Connected</Text>
                   </Button>
                 ) : null
               }
               hoverAction={true}
-              gap={12}
               key={index}
               onClick={() => onClickNetwork(network)}
               className='network-list'

@@ -1,27 +1,23 @@
-import { ResourceService } from "@services/index";
 import { GnoClientState } from "@states/index";
 import { GnoClient } from "gno-client";
 import { useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { WalletRepository } from "@repositories/wallet";
+import { useAdenaContext } from "./use-context";
 
 const getNetworkMapperType = (chainId: string) => {
     switch (chainId) {
         case 'test2':
             return 'TEST2';
         case 'test3':
-            return 'TEST3';
-        case 'main':
-            return 'MAIN';
         default:
-            return 'COMMON';
+            return 'TEST3';
     }
 }
 
-const DEFAULT_CHAIN_ID = 'test3';
+const DEFAULT_CHAIN_ID = 'TEST3';
 
 export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> | null, networks: Array<InstanceType<typeof GnoClient>>, update: () => void, changeCurrentNetwork: (chainId: string) => void] => {
-
+    const { chainService } = useAdenaContext();
     const [currentNetwork, setCurrentNetwork] = useRecoilState(GnoClientState.current);
     const [networks, setNetworks] = useRecoilState(GnoClientState.networks);
 
@@ -31,34 +27,36 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
 
     const initCurrentNetwork = async () => {
         const chainId = await getCurrentChainId();
-        if (chainId !== currentNetwork?.chainId) {
+        if (chainId.toUpperCase() !== currentNetwork?.chainId.toUpperCase()) {
             changeCurrentNetwork(chainId);
         }
     }
 
     const getCurrentChainId = async () => {
-        const storedChainId = await WalletRepository.getCurrentChainId();
-        if (storedChainId !== '') {
-            return storedChainId;
+        if (!currentNetwork) {
+            return DEFAULT_CHAIN_ID;
         }
-        if (currentNetwork) {
-            return currentNetwork.chainId;
-        }
-        return DEFAULT_CHAIN_ID;
+        const network = await chainService.getCurrentNetwork();
+        return network.chainId;
     }
 
     const updateNetworks = async () => {
-        const networkConfigs = await ResourceService.fetchChainNetworks();
+        const networkConfigs = await chainService.getNetworks();
         const currentChainId = await getCurrentChainId();
-        WalletRepository.updateCurrentChainId(currentChainId);
-        const createdNetworks = networkConfigs.map(config => GnoClient.createNetworkByType({ ...config, chainId: config.networkId, chainName: config.networkName }, getNetworkMapperType(config.networkId)));
+        chainService.updateCurrentNetwork(currentChainId);
+        const createdNetworks = networkConfigs.map(config =>
+            GnoClient.createNetworkByType(
+                { ...config, chainId: config.chainId, chainName: config.chainName },
+                getNetworkMapperType(config.chainId)
+            ));
 
         setNetworks(createdNetworks);
     }
 
     const changeCurrentNetwork = async (chainId: string) => {
         let currentNetwork: InstanceType<typeof GnoClient> | null = null;
-        const currentNetworkIndex = networks.findIndex(network => network.chainId === chainId);
+        const currentNetworkIndex = networks.findIndex(network =>
+            network.chainId.toUpperCase() === chainId.toUpperCase());
         if (currentNetworkIndex > -1) {
             currentNetwork = networks[currentNetworkIndex].clone();
         } else {
@@ -69,7 +67,7 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
 
         if (currentNetwork !== null) {
             setCurrentNetwork(currentNetwork.clone());
-            await WalletRepository.updateCurrentChainId(currentNetwork.chainId);
+            await chainService.updateCurrentNetwork(currentNetwork.chainId);
         }
     }
 

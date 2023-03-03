@@ -1,4 +1,4 @@
-export * as WalletService from './wallet';
-export * as TransactionService from './transaction';
-export * as ValidationService from './validation';
-export * as ResourceService from './resource';
+export * from './wallet';
+export * from './transaction';
+export * from '../common/validation';
+export * from './resource';

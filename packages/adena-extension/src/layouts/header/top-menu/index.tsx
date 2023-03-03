@@ -8,10 +8,8 @@ import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
 import SubMenu from '@layouts/sub-menu';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
-import { useWallet } from '@hooks/use-wallet';
 import { useLocation } from 'react-router-dom';
-import { WalletAccountRepository } from '@repositories/wallet';
+import { useAdenaContext } from '@hooks/use-context';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -39,41 +37,39 @@ const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
 }
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
+  const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [currentAccount] = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
-  const [wallet] = useWallet();
   const location = useLocation();
   const [currentAccountAddress, setCurrentAccountAddress] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState('');
 
   useEffect(() => {
     initAccountInfo();
-  }, [currentAccount]);
+  }, [currentAccount, hostname]);
 
   useEffect(() => {
-    getCurrentUrl().then((currentUrl) => {
+    getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
-      WalletService.isEstablished(hostname).then((result) => {
-        setIsEstablish(result);
+      if (hostname !== "") {
         setHostname(hostname);
-      });
+      }
     });
-  }, [wallet, location]);
+  }, [location]);
 
   const initAccountInfo = async () => {
-    const currentAccountAddress = await WalletAccountRepository.getCurrentAccountAddress();
-    setCurrentAccountAddress(currentAccountAddress);
-
-    let currentAccountName = currentAccount?.data.name;
-    if (!currentAccountName) {
-      const accounts = await WalletService.loadAccounts();
-      const walletAccount = accounts.find(account => account.getAddress() === currentAccountAddress);
-      currentAccountName = walletAccount?.data.name ?? '';
+    if (!currentAccount) {
+      return;
     }
-    setCurrentAccountName(currentAccountName);
+    const { address, name } = currentAccount.data;
+    setCurrentAccountAddress(address ?? "");
+    setCurrentAccountName(name ?? '');
+
+    const isEstablished = await establishService.isEstablished(hostname, address);
+    setIsEstablish(isEstablished);
   };
 
   const getCurrentUrl = () => {

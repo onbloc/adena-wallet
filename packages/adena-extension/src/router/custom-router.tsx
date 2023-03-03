@@ -1,5 +1,5 @@
-import React from 'react';
-import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { HashRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { RoutePath } from './path';
 import { Header } from '@layouts/header';
 import { Navigation } from '@layouts/navigation';
@@ -7,10 +7,13 @@ import { WalletCreate } from '@pages/wallet/wallet-create';
 import { ApproveTransactionMain } from '@pages/wallet/approve-transaction-main';
 import { ApproveLogin } from '@pages/wallet/approve-login';
 import { YourSeedPhrase } from '@pages/certify/your-seed-phrase';
+import { ImportPrivateKey } from '@pages/certify/import-private-key';
+import { GenerateSeedPhrase } from '@pages/certify/generate-seed-phrase';
 import { CreatePassword } from '@pages/certify/create-password';
 import { LaunchAdena } from '@pages/certify/launch-adena';
 import { WalletMain } from '@pages/wallet/wallet-main';
 import { Login } from '@pages/certify/login';
+import { ForgotPassword } from '@pages/certify/forgot-password';
 import { EnterSeedPharse } from '@pages/certify/enter-seed';
 import { Nft } from '@pages/wallet/nft';
 import { Staking } from '@pages/wallet/staking';
@@ -39,14 +42,44 @@ import {
   ApproveConnectHardwareWalletConnect,
   ApproveConnectHardwareWalletFinish,
   ApproveConnectHardwareWalletInit,
-  ApproveConnectHardwareWalletSelectAccount
+  ApproveConnectHardwareWalletSelectAccount,
+  ApproveHardwareWalletLedgerPassword,
+  ApproveHardwareWalletLedgerAllSet,
 } from '@pages/certify/approve-connect-hardware-wallet';
+import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/connect';
 import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 import { ApproveSign } from '@pages/wallet/approve-sign';
+import { SecurityPrivacy } from '@pages/certify/security-privacy';
+import { AboutAdena } from '@pages/certify/about-adena';
+import { RevealPasswoardPhrase } from '@pages/certify/reveal-password-phrase';
+import { RevealPrivatePhrase } from '@pages/certify/reveal-private-phrase';
+import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase';
+import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
+import { RemoveAccount } from '@pages/certify/remove-account';
+import { ResetWallet } from '@pages/certify/reset-wallet';
 import { ErrorContainer } from '@layouts/error-container';
 import { Background } from '@components/background';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
+import LoadingMain from '@components/loading-screen/loading-main';
+import { useResetRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
+import { TabContainer } from '@layouts/tab-container';
+import { ProgressMenu } from '@layouts/header/progress-menu';
 
 export const CustomRouter = () => {
+  const { loadAccounts, accounts } = useLoadAccounts();
+  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
+  const clearBalances = useResetRecoilState(WalletState.balances);
+
+  useEffect(() => {
+    clearStates();
+    loadAccounts();
+  }, []);
+
+  const clearStates = () => {
+    clearCurrentBalance();
+    clearBalances();
+  };
 
   return (
     <Router>
@@ -55,11 +88,21 @@ export const CustomRouter = () => {
         <Routes>
           <Route path={RoutePath.Home} element={<WalletCreate />} />
           <Route path={RoutePath.YourSeedPhrase} element={<YourSeedPhrase />} />
+          <Route path={RoutePath.ImportPrivateKey} element={<ImportPrivateKey />} />
+          <Route path={RoutePath.GenerateSeedPhrase} element={<GenerateSeedPhrase />} />
           <Route path={RoutePath.CreatePassword} element={<CreatePassword />} />
           <Route path={RoutePath.LaunchAdena} element={<LaunchAdena />} />
-          <Route path={RoutePath.Wallet} element={<ErrorContainer><WalletMain /></ErrorContainer>} />
+          <Route
+            path={RoutePath.Wallet}
+            element={
+              <ErrorContainer>
+                <WalletMain />
+              </ErrorContainer>
+            }
+          />
           <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPharse />} />
           <Route path={RoutePath.Login} element={<Login />} />
+          <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
           <Route path={RoutePath.Nft} element={<Nft />} />
           <Route path={RoutePath.Staking} element={<Staking />} />
           <Route path={RoutePath.Explore} element={<Explore />} />
@@ -88,13 +131,76 @@ export const CustomRouter = () => {
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
-          <Route path={RoutePath.ApproveHardwareWalletInit} element={<ApproveConnectHardwareWalletInit />} />
-          <Route path={RoutePath.ApproveHardwareWalletConnect} element={<ApproveConnectHardwareWalletConnect />} />
-          <Route path={RoutePath.ApproveHardwareWalletSelectAccount} element={<ApproveConnectHardwareWalletSelectAccount />} />
-          <Route path={RoutePath.ApproveHardwareWalletFinish} element={<ApproveConnectHardwareWalletFinish />} />
+          <Route
+            path={RoutePath.ApproveHardwareWalletInit}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+                <ApproveConnectHardwareWalletInit />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletConnect}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
+                <ApproveConnectHardwareWalletConnect />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletSelectAccount}
+            element={
+              <TabContainer
+                header={
+                  <ProgressMenu
+                    showLogo
+                    progressLevel={accounts && accounts?.length > 0 ? 'second' : 'first'}
+                    hideArrow
+                  />
+                }
+              >
+                <ApproveConnectHardwareWalletSelectAccount />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletLedgerPassword}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'second'} hideArrow />}>
+                <ApproveHardwareWalletLedgerPassword />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletFinish}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
+                <ApproveConnectHardwareWalletFinish />
+              </TabContainer>
+            }
+          />
+          <Route
+            path={RoutePath.ApproveHardwareWalletLedgerAllSet}
+            element={
+              <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
+                <ApproveHardwareWalletLedgerAllSet />
+              </TabContainer>
+            }
+          />
+          <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
+          <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
+          <Route path={RoutePath.RevealPasswoardPhrase} element={<RevealPasswoardPhrase />} />
+          <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
+          <Route path={RoutePath.ApproachPasswordPhrase} element={<ApproachPasswordPhrase />} />
+          <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />
+          <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
+          <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
+          <Route path={RoutePath.GoogleConnect} element={<GoogleConnect />} />
+          <Route path={RoutePath.GoogleConnectFailed} element={<GoogleConnectFailed />} />
         </Routes>
         <Navigation />
       </Background>
+      <LoadingMain />
     </Router>
   );
 };

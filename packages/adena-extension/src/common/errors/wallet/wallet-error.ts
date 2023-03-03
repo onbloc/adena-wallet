@@ -19,7 +19,7 @@ const ERROR_VALUE = {
   },
   NOT_FOUND_ACCOUNT: {
     status: 1004,
-    type: 'NOT_FOUND_PASSWORD',
+    type: 'NOT_FOUND_ACCOUNT',
   },
 };
 

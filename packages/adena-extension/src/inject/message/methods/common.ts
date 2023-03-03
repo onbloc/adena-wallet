@@ -1,6 +1,6 @@
 import { encodeParameter } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const createPopup = async (
   popupPath: string,
@@ -60,7 +60,10 @@ export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
 ) => {
-  const isEstablished = await WalletService.isEstablished(requestData.hostname ?? '');
+  const core = new InjectCore();
+
+  const address = await core.accountService.getCurrentAccountAddress();
+  const isEstablished = await core.establishService.isEstablished(requestData.hostname ?? '', address);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));
     return false;

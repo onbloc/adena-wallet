@@ -30,11 +30,9 @@ dist
 dist/
 
 # setup
-yarn.lock
 package-lock.json
 
 .vscode
-yarn.lock
 package.lock
 node_modules
 node_modules/

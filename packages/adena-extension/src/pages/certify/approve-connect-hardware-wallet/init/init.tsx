@@ -5,6 +5,8 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import { useNavigate } from 'react-router-dom';
+import { LedgerConnector } from 'adena-module';
+import { ProgressMenu } from '@layouts/header/progress-menu';
 import { RoutePath } from '@router/path';
 
 const text = {
@@ -15,8 +17,7 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
@@ -34,9 +35,20 @@ const Wrapper = styled.main`
 export const ApproveConnectHardwareWalletInit = () => {
   const navigate = useNavigate();
 
-  const moveNextPage = () => {
-    navigate(RoutePath.ApproveHardwareWalletConnect);
-  }
+  const moveNextPage = async () => {
+    let success = false;
+    try {
+      const transport = await LedgerConnector.request();
+      console.log(transport);
+      if (transport !== null) {
+        success = true;
+      }
+      await transport.close();
+    } catch (e) {
+      console.log(e);
+    }
+    navigate(RoutePath.ApproveHardwareWalletConnect, { state: { success } });
+  };
 
   const onClickConnectButton = () => {
     moveNextPage();
@@ -52,7 +64,7 @@ export const ApproveConnectHardwareWalletInit = () => {
         margin='auto 0px 0px'
         onClick={onClickConnectButton}
       >
-        <Text type='body1Bold'>Next</Text>
+        <Text type='body1Bold'>Connect</Text>
       </Button>
     </Wrapper>
   );

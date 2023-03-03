@@ -5,9 +5,9 @@ import styled from 'styled-components';
 import { CopyTooltip } from '@components/tooltips';
 import { StatusDot } from '@components/status-dot';
 import { formatAddress, formatNickname, parseParmeters } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
+import { useAdenaContext } from '@hooks/use-context';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -21,6 +21,7 @@ const Wrapper = styled.div`
 `;
 
 const ApproveMenu = () => {
+  const { accountService, establishService } = useAdenaContext();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -32,7 +33,7 @@ const ApproveMenu = () => {
     if (location.search) {
       const data = parseParmeters(location.search);
       setReqeustData(data);
-      changeCurrentAccount();
+      // changeCurrentAccount();
     }
   }, [location]);
 
@@ -54,16 +55,17 @@ const ApproveMenu = () => {
   }, [currentAccount?.getAddress()]);
 
   const initAddress = async () => {
-    const currentAddress = await WalletService.loadCurrentAccountAddress();
-    const currentAccountNames = await WalletService.loadAccountNames();
-    const currentAccountName = currentAccountNames[currentAddress] ?? 'Account';
+    const currentAccount = await accountService.getCurrentAccount();
+    const currentAddress = currentAccount.getAddress();
+    const currentAccountName = currentAccount.data.name;
     setAddress(currentAddress);
     setAccountName(currentAccountName);
   };
 
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
-      const currentIsEstablished = await WalletService.isEstablished(requestData?.hostname);
+      const address = currentAccount?.getAddress() ?? "";
+      const currentIsEstablished = await establishService.isEstablished(requestData?.hostname, address);
       setIsEstablished(currentIsEstablished);
     }
   };

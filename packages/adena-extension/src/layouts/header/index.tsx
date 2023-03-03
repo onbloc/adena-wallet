@@ -8,6 +8,8 @@ import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
+import { ArrowTitleMenu } from './arrow-title-menu';
+import { TabMenu } from './tab-menu';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -35,37 +37,90 @@ export const Header = () => {
   const changeNetwork = useMatch(RoutePath.ChangeNetwork);
 
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
+  const importPrivateKey = useMatch(RoutePath.ImportPrivateKey);
   const yourSeedPhrase = useMatch(RoutePath.YourSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
-
+  const forgotPassword = useMatch(RoutePath.ForgotPassword);
+  const resetWallet = useMatch(RoutePath.ResetWallet);
+  const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
   const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
-  const [currentBalance] = useRecoilState(WalletState.currentBalance);
+  const approveHardwareWalletLedgerPassword = useMatch(
+    RoutePath.ApproveHardwareWalletLedgerPassword,
+  );
+  const approveHardwareWalletLedgerAllSet = useMatch(RoutePath.ApproveHardwareWalletLedgerAllSet);
+
+  const googleConnect = useMatch(RoutePath.GoogleConnect);
+  const googleFailed = useMatch(RoutePath.GoogleConnectFailed);
+
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
 
-  const loadingComplete = (currentBalance.denom !== '' && walletState === 'FINISH') || failedNetwork;
+  const loadingComplete = walletState === 'FINISH' || failedNetwork;
+  const renderHeader = () => {
+    if (login || ApproveLogin) {
+      return <HomeMenu entry={location.pathname as string} />;
+    }
+    if (approveEstablish || approveTransaction || approveSign) {
+      return <ApproveMenu />;
+    }
+    if (yourSeedPhrase && location?.state?.type === 'ADD_ACCOUNT') {
+      return <ArrowTitleMenu />;
+    }
+    if (yourSeedPhrase || enterSeedPhrase) {
+      return <ProgressMenu progressLevel={'first'} />;
+    }
+    if (location?.state?.type === 'GOOGLE' && createPassword) {
+      return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
+    }
+    if (createPassword) {
+      return <ProgressMenu progressLevel={'second'} />;
+    }
+    if (googleConnect || googleFailed) {
+      return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
+    }
+    if (launchAdena) {
+      return <ProgressMenu progressLevel={'third'} hideArrow />;
+    }
+    if (resetWallet) {
+      return <ArrowTitleMenu title={'Reset Wallet'} />;
+    }
+    if (importPrivateKey) {
+      return <ArrowTitleMenu />;
+    }
+    if (forgotPassword) {
+      return <ArrowTitleMenu title={'Forgot Password?'} />;
+    }
+    if (generateSeedPhrase) {
+      return <ArrowTitleMenu title={'Generate Seed Phrase'} />;
+    }
+    if (
+      approveHardwareWalletInit ||
+      approveHardwareWalletConnect ||
+      approveHardwareWalletSelectAccount ||
+      approveHardwareWalletFinish ||
+      approveHardwareWalletLedgerPassword ||
+      approveHardwareWalletLedgerAllSet
+    ) {
+      return <TabMenu />;
+    }
 
-  return (
-    <Wrapper>
-      {(login || ApproveLogin) && <HomeMenu entry={location.pathname as string} />}
-      {(approveEstablish || approveTransaction || approveSign) && <ApproveMenu />}
-      {(wallet ||
-        nft ||
-        explore ||
-        history ||
-        settings ||
-        connectedApps ||
-        changeNetwork) && loadingComplete && <TopMenu />}
-      {(yourSeedPhrase || enterSeedPhrase) && <ProgressMenu progressLevel={'first'} />}
-      {(createPassword) && <ProgressMenu progressLevel={'second'} />}
-      {(launchAdena) && <ProgressMenu progressLevel={'third'} />}
-      {(approveHardwareWalletInit || approveHardwareWalletConnect) && <ProgressMenu showLogo progressLevel={'first'} />}
-      {(approveHardwareWalletSelectAccount) && <ProgressMenu showLogo progressLevel={'second'} />}
-      {(approveHardwareWalletFinish) && <ProgressMenu showLogo progressLevel={'third'} />}
-    </Wrapper>
-  );
+    if (
+      wallet ||
+      nft ||
+      explore ||
+      history ||
+      settings ||
+      connectedApps ||
+      changeNetwork ||
+      loadingComplete
+    ) {
+      return <TopMenu />;
+    }
+  };
+
+  return <Wrapper>{renderHeader()}</Wrapper>;
 };

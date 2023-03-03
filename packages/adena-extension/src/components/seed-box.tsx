@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { css } from 'styled-components';
+import BlurScreen from './blur-screen';
 import Text from './text';
 interface SeedScrollBoxProps {
   value?: string;
@@ -7,10 +8,15 @@ interface SeedScrollBoxProps {
   onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   error?: boolean;
   scroll: boolean;
-  seeds?: string[];
+  seeds?: string[] | string;
+  hasBlurScreen?: boolean;
+  hasBlurText?: boolean;
+  blurScreenText?: string;
+  className?: string;
 }
 
 const Wrapper = styled.div<{ error: boolean; scroll: boolean }>`
+  position: relative;
   width: 100%;
   height: 140px;
   border: 1px solid ${({ error, theme }) => (error ? theme.color.red[2] : theme.color.neutral[6])};
@@ -59,12 +65,17 @@ const SeedBox = ({
   onKeyDown,
   error = false,
   scroll,
+  hasBlurScreen = false,
+  hasBlurText = false,
+  blurScreenText = '',
+  className = '',
 }: SeedScrollBoxProps) => {
   return (
-    <Wrapper error={error} scroll={scroll}>
-      {scroll ? (
+    <Wrapper error={error} scroll={scroll} className={className}>
+      {scroll && (
         <Textarea rows={5} value={value} onChange={onChange} onKeyDown={onKeyDown} autoFocus />
-      ) : (
+      )}
+      {Array.isArray(seeds) && (
         <Inner>
           {seeds?.map((seed: string) => (
             <Text className='seed-text' key={seed} type='captionReg'>
@@ -73,6 +84,12 @@ const SeedBox = ({
           ))}
         </Inner>
       )}
+      {typeof seeds === 'string' && (
+        <Text className='seed-text' type='captionReg'>
+          {seeds}
+        </Text>
+      )}
+      {hasBlurScreen && <BlurScreen hasText={hasBlurText} text={blurScreenText} />}
     </Wrapper>
   );
 };

@@ -4,7 +4,7 @@ import {
   validateDoContractRequest,
   validateTrasactionMessageOfBankSend,
   validateTrasactionMessageOfVmCall,
-} from '@services/validation/validation-message';
+} from '@common/validation/validation-message';
 
 type Params = { [key in string]: any };
 
@@ -52,7 +52,7 @@ export class AdenaExecutor {
 
   public AddEstablish = (name?: string) => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_ESTABLISH', {
-      name: name ? name : 'Unknown',
+      name: name ?? 'Unknown',
     });
     return this.sendEventMessage(eventMessage);
   };
@@ -155,7 +155,7 @@ export class AdenaExecutor {
             this.resolver &&
               this.resolver({
                 status,
-                data: {},
+                data: null,
                 code,
                 message,
                 type,

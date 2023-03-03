@@ -4,24 +4,25 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Wallet, WalletAccount } from 'adena-module';
+import { LedgerConnector, Wallet, WalletAccount } from 'adena-module';
 import IconAddSymbol from '@assets/add-symbol.svg';
 import IconCheck from '@assets/check.svg';
 import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
-import { WalletService } from '@services/index';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import { useAdenaContext } from '@hooks/use-context';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 
 const text = {
-  title: 'Select Accounts'
+  title: 'Select Accounts',
 };
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
-  min-height: calc(100vh - 48px);
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
@@ -105,7 +106,7 @@ const AccountListContainer = styled.div`
       align-items: center;
       justify-content: center;
       svg {
-        animation: rotate 1.5s infinite
+        animation: rotate 1.5s infinite;
       }
       circle {
         stroke: ${theme.color.neutral[9]};
@@ -156,7 +157,8 @@ const AccountListContainer = styled.div`
         margin: auto;
       }
 
-      &.active, &.disabled {
+      &.active,
+      &.disabled {
         background-color: ${theme.color.primary[4]};
         border: 1px solid ${theme.color.primary[4]};
         img {
@@ -186,9 +188,12 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
+  const { accountService } = useAdenaContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
+  const [storedAccounts, setStoredAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>(
+    [],
+  );
   const [accounts, setAccounts] = useState<Array<InstanceType<typeof WalletAccount>>>([]);
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
@@ -202,20 +207,22 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   }, [location]);
 
   const initAccounts = async (accounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const storedAccounts = await WalletService.loadAccounts();
+    const storedAccounts = await accountService.getAccounts();
     setStoredAccounts(storedAccounts);
     setAccounts(accounts);
-    const lastPath = accounts.map(account => account.data.path).reverse()[0];
+    const lastPath = accounts.map((account) => account.data.path).reverse()[0];
     setLastPath(lastPath);
   };
 
   const isStoredAccount = (adderss: string) => {
-    return storedAccounts.find(account => account.getAddress() === adderss) !== undefined;
+    return storedAccounts.find((account) => account.getAddress() === adderss) !== undefined;
   };
 
   const onClickSelectButton = (address: string) => {
     if (selectAccountAddresses.includes(address)) {
-      setSelectAccountAddresses(selectAccountAddresses.filter(selectAddress => selectAddress !== address));
+      setSelectAccountAddresses(
+        selectAccountAddresses.filter((selectAddress) => selectAddress !== address),
+      );
       return;
     }
     setSelectAccountAddresses([...selectAccountAddresses, address]);
@@ -223,34 +230,51 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const onClickLoadMore = async () => {
     setLoadPath(true);
-    try {
-      const accountPaths = Array.from({ length: LEDGER_ACCOUNT_LOAD_SIZE }, (_, index) => index + lastPath + 1);
-      const ledgerWallet = await Wallet.createByLedger(accountPaths);
-      await ledgerWallet.initAccounts();
-      await initAccounts([...accounts, ...ledgerWallet.getAccounts()]);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoadPath(false);
+    const accountPaths = Array.from(
+      { length: LEDGER_ACCOUNT_LOAD_SIZE },
+      (_, index) => index + lastPath + 1,
+    );
+    const transport = await LedgerConnector.openConnected();
+    Wallet.createByLedger(accountPaths, transport).then(async (wallet: InstanceType<typeof Wallet>) => {
+      await wallet.initAccounts();
+      await initAccounts([...accounts, ...wallet.getAccounts()]);
+    }).finally(() => {
+      setLoadPath(false);
+    });
   };
 
   const onClickNextButton = async () => {
     const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress()));
-    const storedAccounts = await WalletService.loadAccounts();
+    const storedAccounts = await accountService.getAccounts();
     const savedAccounts: Array<InstanceType<typeof WalletAccount>> = [];
+    const accountLastIndex = await accountService.getLastAccountIndex() + 1;
 
-    selectAccounts.forEach(account => {
-      if (!storedAccounts.find(storedAccount => storedAccount.getAddress() === account.getAddress())) {
+    selectAccounts.forEach((account, index) => {
+      if (
+        !storedAccounts.find((storedAccount) => storedAccount.getAddress() === account.getAddress())
+      ) {
+        account.setIndex(accountLastIndex + index);
         account.setName(`Ledger ${account.data.path + 1}`);
         savedAccounts.push(account);
       }
     });
     const resultSavedAccounts = savedAccounts.sort(account => account.data.path);
-    await WalletService.saveAccounts([...storedAccounts, ...resultSavedAccounts]);
+    const resultAccounts = [...storedAccounts, ...resultSavedAccounts];
+    let currentAccount = null;
     if (resultSavedAccounts.length > 0) {
-      await WalletService.saveCurrentAccountAddress(resultSavedAccounts[0].getAddress());
+      currentAccount = resultSavedAccounts[0];
     }
-    navigate(RoutePath.ApproveHardwareWalletFinish);
+
+    const locationState = {
+      accounts: resultAccounts.map(account => account.serialize()),
+      currentAccount: currentAccount?.serialize() ?? null
+    };
+
+    const routePath = storedAccounts.length === 0 ?
+      RoutePath.ApproveHardwareWalletLedgerPassword :
+      RoutePath.ApproveHardwareWalletFinish;
+
+    navigate(routePath, { state: locationState });
   };
 
   const renderAccount = (account: InstanceType<typeof WalletAccount>, index: number) => {
@@ -262,31 +286,32 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
           <span className='address'>{formatAddress(account.getAddress())}</span>
           <span className='path'>{`m/44'/118'/0'/0/${account.data.path}`}</span>
         </div>
-        {
-          stored ? (
-            <span className={'check disabled'}>
-              <img className='icon-check' src={IconCheck} alt='check-image' />
-              <span className={'mask'}></span>
-            </span>
-          ) : (
-            <span className={selected ? 'check active' : 'check'} onClick={() => onClickSelectButton(account.getAddress())}>
-              <img className='icon-check' src={IconCheck} alt='check-image' />
-            </span>
-          )
-        }
+        {stored ? (
+          <span className={'check disabled'}>
+            <img className='icon-check' src={IconCheck} alt='check-image' />
+            <span className={'mask'}></span>
+          </span>
+        ) : (
+          <span
+            className={selected ? 'check active' : 'check'}
+            onClick={() => onClickSelectButton(account.getAddress())}
+          >
+            <img className='icon-check' src={IconCheck} alt='check-image' />
+          </span>
+        )}
       </div>
-    )
-  }
+    );
+  };
 
   const renderLoading = () => {
     return (
       <div className='icon-loading'>
-        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="4.5" cy="4.5" r="3.5" fill="current" />
+        <svg width='9' height='9' viewBox='0 0 9 9' fill='none' xmlns='http://www.w3.org/2000/svg'>
+          <circle cx='4.5' cy='4.5' r='3.5' fill='current' />
         </svg>
       </div>
     );
-  }
+  };
 
   return (
     <Wrapper>
@@ -297,7 +322,11 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
       <AccountListContainer>
         <div className='list-wrapper'>
-          {accounts.length > 0 ? accounts.map(renderAccount) : <span className='description'>{'No data to display'}</span>}
+          {accounts.length > 0 ? (
+            accounts.map(renderAccount)
+          ) : (
+            <span className='description'>{'No data to display'}</span>
+          )}
         </div>
         <Button className='load-more-button' onClick={onClickLoadMore} disabled={loadPath}>
           {loadPath ? 'Loading' : 'Load more accounts'}
