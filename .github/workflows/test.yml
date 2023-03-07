@@ -1,0 +1,22 @@
+name: Test
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches-ignore: [develop, main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: nx run-many --target=build --projects=adena-module,gno-client
+      - run: yarn run test
+
+  # TODO: Apply when you're done setting up your storybook environment
+  # storybook-tests:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: ./.github/actions/setup
+  #     - run: run test:storybook

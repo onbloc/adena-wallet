@@ -1,0 +1,70 @@
+name: Build And Deploy
+on:
+  push:
+    branches: [develop, main]
+jobs:
+  wait-on-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - id: unit-tests
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: unit-tests
+
+  aws-deployment:
+    needs: wait-on-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Update torus repository
+        run: |
+          git submodule deinit packages/adena-torus-signin
+          git rm --cached packages/adena-torus-signin
+          rm -rf .git/modules/packages/adena-torus-signin
+          rm -rf packages/adena-torus-signin
+          git submodule add https://github.com/onbloc/adena-torus-signin.git packages/adena-torus-signin
+
+      - name: Build project
+        run: |
+          nx run-many --target=build --projects=adena-module,gno-client,adena-torus-signin
+          nx run-many --target=build --projects=adena-extension
+
+      - name: Make build files
+        run: |
+          bash scripts/build-qa.sh
+
+      - name: Deploy AWS S3 (QA)
+        uses: shallwefootball/s3-upload-action@master
+        with:
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: 'deploy/*'
+
+      - name: Deploy AWS S3 (Latest)
+        uses: shallwefootball/s3-upload-action@master
+        with:
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: 'deploy-latest/*'
+
+  # TODO: Discuss and decide to adopt Chromatic UI
+  # chromatic-deployment:
+  #   needs: wait-on-tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+  #     - name: Setup
+  #       uses: ./.github/actions/setup
+
+  #     - name: Push chromatic UI
+  #       uses: chromaui/action@v1
+  #       with:
+  #         projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN_2 }}
+  #         workingDir: packages/web
