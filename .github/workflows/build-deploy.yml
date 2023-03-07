@@ -1,7 +1,7 @@
 name: Build And Deploy
 on:
   push:
-    branches: [develop, main]
+    branches: [qa, main]
 jobs:
   wait-on-tests:
     runs-on: ubuntu-latest
@@ -16,21 +16,35 @@ jobs:
     needs: wait-on-tests
     runs-on: ubuntu-latest
     steps:
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
 
-      - name: Update torus repository
+      - name: Remove adena-torus-signin mock repository
         run: |
           git submodule deinit packages/adena-torus-signin
           git rm --cached packages/adena-torus-signin
           rm -rf .git/modules/packages/adena-torus-signin
           rm -rf packages/adena-torus-signin
-          git submodule add https://github.com/onbloc/adena-torus-signin.git packages/adena-torus-signin
+
+      - name: Clone adena-torus-signin repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PRIVATE_ACCESS_TOKEN }}
+          repository: onbloc/adena-torus-signin
+          path: 'packages/adena-torus-signin'
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Reinstall dependencies
+        run: yarn install
 
       - name: Build project
         run: |
-          nx run-many --target=build --projects=adena-module,gno-client,adena-torus-signin
-          nx run-many --target=build --projects=adena-extension
+          npx nx run-many --target=build --projects=adena-module,gno-client,adena-torus-signin
+          npx nx run-many --target=build --projects=adena-extension
 
       - name: Make build files
         run: |
@@ -42,7 +56,8 @@ jobs:
           aws_key_id: ${{ secrets.AWS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
           aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: 'deploy/*'
+          source_dir: 'deploy'
+          destination_dir: '.'
 
       - name: Deploy AWS S3 (Latest)
         uses: shallwefootball/s3-upload-action@master
@@ -50,7 +65,15 @@ jobs:
           aws_key_id: ${{ secrets.AWS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
           aws_bucket: ${{ secrets.AWS_BUCKET }}
-          source_dir: 'deploy-latest/*'
+          source_dir: 'deploy-latest'
+          destination_dir: '.'
+
+      - name: Run notification scripts
+        env:
+          RESOURCE_URI: ${{ secrets.RESOURCE_URI }}
+          HOOK_URI: ${{ secrets.HOOK_URI }}
+        run: |
+          bash scripts/notification-success.sh "$RESOURCE_URI" "$HOOK_URI"
 
   # TODO: Discuss and decide to adopt Chromatic UI
   # chromatic-deployment:
