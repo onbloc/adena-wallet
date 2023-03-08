@@ -56,6 +56,11 @@ export const ImportPrivateKey = () => {
     setEnabled(false);
     try {
       const privateKey = value.replace('0x', '');
+      const regExp = /[0-9A-Fa-f]{64}/g;
+      if (privateKey.length !== 64 || !privateKey.match(regExp)) {
+        setErrorMessage('Private key already registered');
+        return;
+      }
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
 
       if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
