@@ -101,6 +101,7 @@ export class AdenaExecutor {
     this.eventMessage = {
       ...eventMessage,
       hostname: window.location.hostname,
+      url: window.location.href,
       key: this.eventKey,
     };
     window.postMessage(this.eventMessage, '*');
