@@ -2,14 +2,14 @@ import { InfoType } from './message-info-type';
 import protobuf from 'protobufjs';
 
 interface Package {
-  name: string;
-  path: string;
-  files: Array<PackageFile>;
+  Name: string;
+  Path: string;
+  Files: Array<PackageFile>;
 }
 
 interface PackageFile {
-  name: string;
-  body: string;
+  Name: string;
+  Body: string;
 }
 
 export interface VmCall extends InfoType {
@@ -46,23 +46,23 @@ export const encodeVmCall = (writer: protobuf.Writer, messageInfo: VmCall) => {
 };
 
 const encodePackageFile = (writer: protobuf.Writer, messageInfo: PackageFile) => {
-  if (messageInfo.name !== '') {
-    writer.uint32(10).string(messageInfo.name);
+  if (messageInfo.Name !== '') {
+    writer.uint32(10).string(messageInfo.Name);
   }
-  if (messageInfo.body !== '') {
-    writer.uint32(18).string(messageInfo.body);
+  if (messageInfo.Body !== '') {
+    writer.uint32(18).string(messageInfo.Body);
   }
   return writer;
 };
 
 const encodePackage = (writer: protobuf.Writer, messageInfo: Package) => {
-  if (messageInfo.name !== '') {
-    writer.uint32(10).string(messageInfo.name);
+  if (messageInfo.Name !== '') {
+    writer.uint32(10).string(messageInfo.Name);
   }
-  if (messageInfo.path !== '') {
-    writer.uint32(18).string(messageInfo.path);
+  if (messageInfo.Path !== '') {
+    writer.uint32(18).string(messageInfo.Path);
   }
-  for (const file of messageInfo.files) {
+  for (const file of messageInfo.Files) {
     encodePackageFile(writer.uint32(26).fork(), file).ldelim();
   }
   return writer;
