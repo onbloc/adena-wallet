@@ -44,7 +44,6 @@ export const Header = () => {
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
   const resetWallet = useMatch(RoutePath.ResetWallet);
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
-  const approveHardwareWalletInit = useMatch(RoutePath.ApproveHardwareWalletInit);
   const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
   const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
@@ -98,7 +97,6 @@ export const Header = () => {
       return <ArrowTitleMenu title={'Generate Seed Phrase'} />;
     }
     if (
-      approveHardwareWalletInit ||
       approveHardwareWalletConnect ||
       approveHardwareWalletSelectAccount ||
       approveHardwareWalletFinish ||

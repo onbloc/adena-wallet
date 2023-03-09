@@ -39,7 +39,7 @@ export const AddAccount = () => {
     }
 
     const popupOption: chrome.tabs.CreateProperties = {
-      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletInit}`),
+      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletConnect}`),
       active: true
     };
 

@@ -41,7 +41,6 @@ import AddAddress from '@pages/certify/add-address';
 import {
   ApproveConnectHardwareWalletConnect,
   ApproveConnectHardwareWalletFinish,
-  ApproveConnectHardwareWalletInit,
   ApproveConnectHardwareWalletSelectAccount,
   ApproveHardwareWalletLedgerPassword,
   ApproveHardwareWalletLedgerAllSet,
@@ -131,14 +130,6 @@ export const CustomRouter = () => {
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
-          <Route
-            path={RoutePath.ApproveHardwareWalletInit}
-            element={
-              <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
-                <ApproveConnectHardwareWalletInit />
-              </TabContainer>
-            }
-          />
           <Route
             path={RoutePath.ApproveHardwareWalletConnect}
             element={

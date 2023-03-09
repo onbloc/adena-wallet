@@ -225,6 +225,8 @@ const Button = styled.button`
     border-top: 1px solid ${({ theme }) => theme.color.neutral[6]};
   }
   & > img {
+    width: 16px;
+    height: auto;
     margin-right: 12px;
   }
 `;
