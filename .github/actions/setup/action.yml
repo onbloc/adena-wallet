@@ -21,6 +21,6 @@ runs:
 
     - if: steps.install-cache.outputs.cache-hit != 'true'
       run: |
-        yarn install -g nx
+        npm install -g nx
         yarn install
       shell: bash
