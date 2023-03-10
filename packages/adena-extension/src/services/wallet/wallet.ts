@@ -152,11 +152,15 @@ export class WalletService {
         const encryptedPassword = encryptSha256Password(password);
         return storedPassword === encryptedPassword;
       }
+
       // For migration
-      const wallet = await this.deserializeWallet(password);
-      if (wallet) {
-        await this.updatePassowrd(password);
-        return true;
+      const isWallet = await this.existsWallet();
+      if (isWallet) {
+        const wallet = await this.deserializeWallet(password);
+        if (wallet) {
+          await this.updatePassowrd(password);
+          return true;
+        }
       }
     } catch (e) {
       return false;

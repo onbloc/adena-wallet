@@ -18,7 +18,6 @@ export const useLogin = () => {
 
   const tryLogin = async (password: string) => {
     const equalPassword = await walletService.equalsPassowrd(password);
-    console.log("equalPassword", equalPassword)
     if (equalPassword) {
       await walletService.updatePassowrd(password);
       setState("LOADING");

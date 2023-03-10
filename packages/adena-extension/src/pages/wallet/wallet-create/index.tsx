@@ -26,7 +26,7 @@ export const WalletCreate = () => {
         loadAccounts();
         break;
       case 'FINISH':
-        navigate(RoutePath.Wallet);
+        window.location.replace("popup.html#" + RoutePath.Wallet);
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);

@@ -7,7 +7,7 @@ import { StatusDot } from '@components/status-dot';
 import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
 import SubMenu from '@layouts/sub-menu';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 
@@ -28,18 +28,11 @@ const Header = styled.div`
   }
 `;
 
-const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
-  let currentHostname = hostname;
-  if (!hostname.includes('.')) {
-    currentHostname = 'chrome-extension';
-  }
-  return isEstablish ? `You are connected to ${currentHostname}` : `You are not connected to ${currentHostname}`;
-}
-
 export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
+  const [url, setUrl] = useState('');
   const [currentAccount] = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
@@ -54,8 +47,10 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
+      const href = new URL(currentUrl as string).href;
       if (hostname !== "") {
         setHostname(hostname);
+        setUrl(href);
       }
     });
   }, [location]);
@@ -68,9 +63,18 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     setCurrentAccountAddress(address ?? "");
     setCurrentAccountName(name ?? '');
 
-    const isEstablished = await establishService.isEstablished(hostname, address);
+    const siteName = getSiteName(hostname);
+    const isEstablished = await establishService.isEstablished(siteName, address);
     setIsEstablish(isEstablished);
   };
+
+  const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
+    let currentHostname = hostname;
+    if (!hostname.includes('.')) {
+      currentHostname = 'chrome-extension';
+    }
+    return isEstablish ? `You are connected to ${currentHostname}` : `You are not connected to ${currentHostname}`;
+  }
 
   const getCurrentUrl = () => {
     return new Promise((resolver) => {

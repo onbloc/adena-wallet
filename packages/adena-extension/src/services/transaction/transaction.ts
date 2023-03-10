@@ -67,7 +67,6 @@ export class TransactionService {
       await this.createTransactionAccount(account);
     const chainId = this.gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
-    console.log("currentAccount", currentAccount);
     const document = Transaction.generateDocument(
       currentAccount,
       chainId,
@@ -87,7 +86,6 @@ export class TransactionService {
       .signatures([transactionSignature])
       .memo('')
       .build();
-    console.log(document)
     const transactionValue = uint8ArrayToArray(transaction.encodedValue);
     return transactionValue;
   };
@@ -267,7 +265,6 @@ export class TransactionService {
       gasAmount,
       memo
     );
-    console.log("????")
     const signAminoResponse = currentAccount.getSigner()?.signAmino(accountAddress, signedDocumnet);
     return signAminoResponse;
   };

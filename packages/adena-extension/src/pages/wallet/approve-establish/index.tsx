@@ -8,6 +8,7 @@ import theme from '@styles/theme';
 import {
   createFaviconByHostname,
   decodeParameter,
+  getSiteName,
   parseParmeters,
 } from '@common/utils/client-utils';
 import { InjectionMessageInstance } from '@inject/message';
@@ -21,6 +22,7 @@ export const ApproveEstablish = () => {
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
+  const [url, setUrl] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
   const location = useLocation();
 
@@ -37,8 +39,10 @@ export const ApproveEstablish = () => {
   const initRequestSite = async () => {
     try {
       const data = parseParmeters(location.search);
+      console.log(data)
       setKey(data['key']);
       setHostname(data['hostname']);
+      setUrl(data['url']);
       updateFavicon(data['hostname']);
       if (data?.data) {
         const message = decodeParameter(data.data);
@@ -50,8 +54,9 @@ export const ApproveEstablish = () => {
   };
 
   const checkEstablised = async () => {
+    const siteName = getSiteName(hostname);
     const address = currentAccount?.getAddress() ?? '';
-    const isEstablised = await establishService.isEstablished(hostname ?? '', address);
+    const isEstablised = await establishService.isEstablished(siteName, address);
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
       return;
@@ -68,8 +73,9 @@ export const ApproveEstablish = () => {
   };
 
   const onClickConfirmButton = async () => {
+    const siteName = getSiteName(hostname);
     const address = currentAccount?.getAddress() ?? '';
-    await establishService.establish(hostname, address, appName, favicon);
+    await establishService.establish(siteName, address, appName, favicon);
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   };
 
@@ -80,7 +86,7 @@ export const ApproveEstablish = () => {
       </Text>
       <img className='logo' src={favicon !== null ? favicon : DefaultFavicon} alt='gnoland-logo' />
       <UrlBox>
-        <Text type='body2Reg'>{hostname}</Text>
+        <Text type='body2Reg'>{getSiteName(hostname)}</Text>
       </UrlBox>
       <AllowSiteWrap>
         <Text className='allow-title' type='body2Bold' color={theme.color.neutral[9]}>

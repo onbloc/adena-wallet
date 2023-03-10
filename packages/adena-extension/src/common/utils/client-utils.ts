@@ -273,19 +273,16 @@ const fetchFavicon = async (hostname: string) => {
   let response = null;
 
   response = await fetchArrayData(`https://${hostname}/apple-touch-icon.png`);
-  console.log("apple");
   if (response?.data) {
     return response.data;
   }
 
   response = await fetchArrayData(`https://${hostname}/favicon.ico`);
-  console.log("favicon");
   if (response?.data) {
     return response.data;
   }
 
   response = await fetchArrayData(`https://www.google.com/s2/favicons?domain=${hostname}&sz=256`);
-  console.log("Google API");
   if (response?.data) {
     return response.data;
   }
@@ -312,6 +309,14 @@ export const createImageDataBySvg = async (imageUri: string) => {
 
 const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
+};
+
+// TODO: CHECK SSL
+export const getSiteName = (hostname: string | undefined) => {
+  if (!hostname) {
+    return "-";
+  }
+  return hostname.replace("www.", "");
 };
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {

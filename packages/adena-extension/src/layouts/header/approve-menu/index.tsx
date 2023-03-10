@@ -4,7 +4,7 @@ import Text from '@components/text';
 import styled from 'styled-components';
 import { CopyTooltip } from '@components/tooltips';
 import { StatusDot } from '@components/status-dot';
-import { formatAddress, formatNickname, parseParmeters } from '@common/utils/client-utils';
+import { formatAddress, formatNickname, getSiteName, parseParmeters } from '@common/utils/client-utils';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
@@ -65,7 +65,8 @@ const ApproveMenu = () => {
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
       const address = currentAccount?.getAddress() ?? "";
-      const currentIsEstablished = await establishService.isEstablished(requestData?.hostname, address);
+      const siteName = getSiteName(requestData.hostname);
+      const currentIsEstablished = await establishService.isEstablished(siteName, address);
       setIsEstablished(currentIsEstablished);
     }
   };

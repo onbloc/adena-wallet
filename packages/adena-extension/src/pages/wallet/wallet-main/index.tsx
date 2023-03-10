@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +38,7 @@ export const WalletMain = () => {
     updateAccountBalances();
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (currentAccount && gnoClient) {
       updateLastHistory();
       updateBalances();
