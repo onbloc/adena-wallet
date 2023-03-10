@@ -5,7 +5,7 @@ export class ChromeSessionStorage implements Storage {
   private storage: chrome.storage.SessionStorageArea;
 
   constructor() {
-    this.storage = chrome.storage.local;
+    this.storage = chrome.storage.session;
   }
 
   public get = async (key: string) => {
