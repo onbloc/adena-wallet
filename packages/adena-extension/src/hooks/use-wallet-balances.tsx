@@ -12,6 +12,7 @@ export const useWalletBalances = (
 
   const [balances, setBalances] = useRecoilState(WalletState.balances);
   const [state, setState] = useRecoilState(WalletState.state);
+  const [currenctAccount] = useRecoilState(WalletState.currentAccount);
   const [, setCurrentBalance] = useRecoilState(WalletState.currentBalance);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
@@ -22,10 +23,19 @@ export const useWalletBalances = (
       return;
     }
 
+    if (!currenctAccount?.getAddress()) {
+      return;
+    }
+
     const chainId = gnoClient.chainId;
     try {
-      const address = await accountService.getCurrentAccountAddress();
+      const address = currenctAccount.getAddress();
       const tokenBalances = await balanceService.getTokenBalances(address);
+      const currentAddress = await accountService.getCurrentAccountAddress();
+      if (address !== currentAddress) {
+        return;
+      }
+
       if (tokenBalances.length > 0) {
         setBalances(tokenBalances as Array<Balance>);
         const mainToken = tokenBalances.find((token) => token.main);

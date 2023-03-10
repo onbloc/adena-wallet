@@ -18,6 +18,11 @@ const menuMakerInfo = [
     mode: 'DEFAULT',
   },
   {
+    title: 'GitHub',
+    navigatePath: 'https://github.com/onbloc/adena-wallet',
+    mode: 'DEFAULT',
+  },
+  {
     title: 'Terms of Use',
     navigatePath: 'https://adena.app/terms',
     mode: 'DEFAULT',

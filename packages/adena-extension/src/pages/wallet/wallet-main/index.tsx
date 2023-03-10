@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -25,6 +26,7 @@ export const WalletMain = () => {
   const [currentAccount] = useCurrentAccount();
   const [, updateBalances] = useWalletBalances(gnoClient);
   const [balances] = useWalletBalances(gnoClient);
+  const { updateAccountBalances } = useLoadAccounts();
   const [currentBalance] = useRecoilState(WalletState.currentBalance);
   const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
   const [, updateLastHistory] = useTransactionHistory();
@@ -33,6 +35,10 @@ export const WalletMain = () => {
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
 
   useEffect(() => {
+    updateAccountBalances();
+  }, []);
+
+  useLayoutEffect(() => {
     if (currentAccount && gnoClient) {
       updateLastHistory();
       updateBalances();

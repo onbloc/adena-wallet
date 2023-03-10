@@ -1,4 +1,4 @@
-import { encodeParameter } from '@common/utils/client-utils';
+import { encodeParameter, getSiteName } from '@common/utils/client-utils';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
@@ -10,7 +10,7 @@ export const createPopup = async (
 ) => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
-      `popup.html#${popupPath}?key=${message.key}&hostname=${message.hostname}&data=${encodeParameter(message)}`,
+      `popup.html#${popupPath}?key=${message.key}&url=${message.url}&hostname=${message.hostname}&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
     height: 590,
@@ -63,7 +63,8 @@ export const checkEstablished = async (
   const core = new InjectCore();
 
   const address = await core.accountService.getCurrentAccountAddress();
-  const isEstablished = await core.establishService.isEstablished(requestData.hostname ?? '', address);
+  const siteName = getSiteName(requestData.hostname);
+  const isEstablished = await core.establishService.isEstablished(siteName, address);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));
     return false;

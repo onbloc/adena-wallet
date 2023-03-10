@@ -1,7 +1,7 @@
-import { Secp256k1HdWallet, makeCosmoshubPath, LedgerConnector } from '@/amino';
+import { Secp256k1HdWallet, makeCosmoshubPath, LedgerConnector } from './../amino';
 import { HdPath } from '..';
 import { WalletAccount } from './account';
-import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
+import { LedgerSigner } from './../amino/ledger/ledgerwallet';
 import Transport from '@ledgerhq/hw-transport';
 
 interface ChainConfig {

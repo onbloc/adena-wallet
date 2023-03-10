@@ -1,3 +1,4 @@
+import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
@@ -47,7 +48,8 @@ export const addEstablish = async (
 
   const isLocked = await core.walletService.isLocked();
   const address = await core.accountService.getCurrentAccountAddress();
-  const isEstablised = await core.establishService.isEstablished(message.hostname ?? '', address);
+  const siteName = getSiteName(message.hostname);
+  const isEstablised = await core.establishService.isEstablished(siteName, address);
 
   if (isLocked) {
     HandlerMethod.createPopup(

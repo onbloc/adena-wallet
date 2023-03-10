@@ -57,7 +57,8 @@ export const Login = () => {
         }
         await walletService.updatePassowrd(password);
         await loadAccounts();
-        navigate(RoutePath.Home);
+        navigate(RoutePath.Wallet);
+        return;
       }
     } catch (e) {
       setValidateState(false);

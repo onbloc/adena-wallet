@@ -4,8 +4,9 @@ import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
 import { ConnectFail } from './connect-fail';
 import { ConnectRequestWallet } from './connect-request-wallet';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
+import { ConnectInit } from './connect-init';
 
 type ConnectType =
   'INIT' |
@@ -19,23 +20,14 @@ type ConnectType =
 
 export const ApproveConnectHardwareWalletConnect = () => {
   const navigate = useNavigate();
-  const [openConnected, setOpenConnected] = useState(false);
   const [connectState, setConnectState] = useState<ConnectType>('NONE');
   const [wallet, setWallet] = useState<InstanceType<typeof Wallet>>();
-  const location = useLocation();
 
   useEffect(() => {
-    if (location.state?.success === false) {
-      setConnectState('NOT_PERMISSION');
-      return;
-    }
     setConnectState('INIT');
   }, []);
 
   useEffect(() => {
-    if (connectState === 'INIT') {
-      initWallet();
-    }
     if (connectState === 'FAILED') {
       const intervalReqeust = setTimeout(() => {
         requestHardwareWallet();
@@ -49,24 +41,10 @@ export const ApproveConnectHardwareWalletConnect = () => {
   }, [connectState, wallet]);
 
   const initWallet = async () => {
-    setConnectState('REQUEST');
-    let connected = false;
-    if (!openConnected) {
-      const devices = await LedgerConnector.devices();
-      connected = devices.length > 0;
-      setOpenConnected(connected);
-    }
-
-    if (connected) {
-      setConnectState('REQUEST_WALLET');
-      requestHardwareWallet();
-      return;
-    }
-
-    setConnectState('NOT_PERMISSION');
+    requestPermission();
   };
 
-  const retryRequestPermission = async () => {
+  const requestPermission = async () => {
     setConnectState('REQUEST');
     try {
       const transport = await LedgerConnector.request();
@@ -124,16 +102,20 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
   const renderByState = () => {
 
+    if (connectState === 'INIT') {
+      return <ConnectInit init={initWallet} />
+    }
+
     if (connectState === 'REQUEST') {
       return <ConnectRequest />
     }
 
     if (connectState === 'NOT_PERMISSION') {
-      return <ConnectFail retry={retryRequestPermission} />
+      return <ConnectFail retry={requestPermission} />
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {
-      return <ConnectRequestWallet requestHardwareWallet={requestHardwareWallet} />
+      return <ConnectRequestWallet />
     }
 
     if (connectState === 'REQUEST_WALLET_LOAD') {

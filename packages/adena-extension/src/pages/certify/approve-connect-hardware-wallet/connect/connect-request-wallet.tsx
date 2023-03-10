@@ -34,11 +34,10 @@ interface Props {
   requestHardwareWallet: () => Promise<void>;
 }
 
-export const ConnectRequestWallet = ({ requestHardwareWallet }: Props) => {
-  const navigate = useNavigate();
+export const ConnectRequestWallet = () => {
 
   const onClickClose = () => {
-    navigate(RoutePath.ApproveHardwareWalletInit);
+    window.close();
   };
 
   return (

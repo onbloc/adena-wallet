@@ -26,7 +26,7 @@ export const WalletCreate = () => {
         loadAccounts();
         break;
       case 'FINISH':
-        navigate(RoutePath.Wallet);
+        window.location.replace("popup.html#" + RoutePath.Wallet);
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);
@@ -55,7 +55,7 @@ export const WalletCreate = () => {
     }
 
     const popupOption: chrome.tabs.CreateProperties = {
-      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletInit}`),
+      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletConnect}`),
       active: true,
     };
 

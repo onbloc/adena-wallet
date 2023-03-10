@@ -259,20 +259,42 @@ export const decodeParameter = (data: string) => {
 
 export const createFaviconByHostname = async (hostname: string) => {
   try {
-    const response = await axios.get(
-      `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://${hostname}&size=512`,
-      {
-        responseType: 'arraybuffer',
-      },
-    );
+    const faviconData = await fetchFavicon(hostname);
     const encodeImageData =
-      'data:image/;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+      'data:image/;base64,' + Buffer.from(faviconData, 'binary').toString('base64');
     return encodeImageData;
   } catch (e) {
     console.log(e);
   }
   return null;
 };
+
+const fetchFavicon = async (hostname: string) => {
+  let response = null;
+
+  response = await fetchArrayData(`https://${hostname}/apple-touch-icon.png`);
+  if (response?.data) {
+    return response.data;
+  }
+
+  response = await fetchArrayData(`https://${hostname}/favicon.ico`);
+  if (response?.data) {
+    return response.data;
+  }
+
+  response = await fetchArrayData(`https://www.google.com/s2/favicons?domain=${hostname}&sz=256`);
+  if (response?.data) {
+    return response.data;
+  }
+
+  return null;
+}
+
+const fetchArrayData = (uri: string) => {
+  return axios.get(uri, { responseType: 'arraybuffer' })
+    .then(response => response.headers['content-type'].startsWith("image") ? response : null)
+    .catch(() => null);
+}
 
 export const createImageDataBySvg = async (imageUri: string) => {
   try {
@@ -287,6 +309,14 @@ export const createImageDataBySvg = async (imageUri: string) => {
 
 const isFailedReceive = (cur: any) => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
+};
+
+// TODO: CHECK SSL
+export const getSiteName = (hostname: string | undefined) => {
+  if (!hostname) {
+    return "-";
+  }
+  return hostname.replace("www.", "");
 };
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {

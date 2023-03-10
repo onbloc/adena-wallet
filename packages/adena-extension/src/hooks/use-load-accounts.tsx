@@ -40,13 +40,15 @@ export const useLoadAccounts = () => {
 
   const updateAccountBalances = async () => {
     if (!accounts) {
+      setAccountBalances({});
       return false;
     }
 
     const accountBalances: { [key in string]: Array<WalletState.Balance> } = {};
     for (const account of accounts) {
-      const balances = await balanceService.getTokenBalances(account.getAddress());
-      accountBalances[account.getAddress()] = balances;
+      const address = account.getAddress();
+      const balances = await balanceService.getTokenBalances(address);
+      accountBalances[address] = balances;
     }
     setAccountBalances(accountBalances);
     return true;

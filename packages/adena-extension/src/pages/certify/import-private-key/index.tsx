@@ -56,16 +56,21 @@ export const ImportPrivateKey = () => {
     setEnabled(false);
     try {
       const privateKey = value.replace('0x', '');
+      const regExp = /[0-9A-Fa-f]{64}/g;
+      if (privateKey.length !== 64 || !privateKey.match(regExp)) {
+        throw new Error("Invalid private key");
+      }
       const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
 
       if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
-        setErrorMessage('Private key already registered');
-        return;
+        throw new Error("Private key already registered");
       }
       await importAccount(account);
       navigate(RoutePath.Wallet);
     } catch (e) {
-      setErrorMessage('Invalid private key');
+      if (e instanceof Error) {
+        setErrorMessage(e.message);
+      }
     }
     setEnabled(true);
   };
