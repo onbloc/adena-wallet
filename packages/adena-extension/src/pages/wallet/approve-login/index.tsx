@@ -75,6 +75,7 @@ export const ApproveLogin = () => {
       validateWrongPasswordLength(password);
       const equalPassword = await walletService.equalsPassowrd(password);
       if (equalPassword) {
+        await walletService.updatePassowrd(password);
         setState('FINISH');
       }
     } catch (error) {

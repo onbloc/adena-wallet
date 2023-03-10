@@ -14,8 +14,7 @@ export const useTransactionHistory = (): [
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
     const getHistory = async () => {
-        const currentAccount = await accountService.getCurrentAccount();
-        const address = currentAccount.getAddress();
+        const address = await accountService.getCurrentAccountAddress();
         if (transactionHistory.address === address) {
             return formatTransactionHistory(transactionHistory.items);
         }
@@ -43,8 +42,7 @@ export const useTransactionHistory = (): [
     }
 
     const updateNextTransactionHistory = async () => {
-        const currentAccount = await accountService.getCurrentAccount();
-        const address = currentAccount.getAddress();
+        const address = await accountService.getCurrentAccountAddress();
         if (address && !transactionHistory.isFinish) {
             if (address === transactionHistory.address) {
                 return await fetchTransactionHistory(transactionHistory.currentPage + 1);
@@ -54,8 +52,7 @@ export const useTransactionHistory = (): [
     }
 
     const fetchTransactionHistory = async (page: number) => {
-        const currentAccount = await accountService.getCurrentAccount();
-        const address = currentAccount.getAddress();
+        const address = await accountService.getCurrentAccountAddress();
         if (gnoClient && address) {
             const currentPage = page ?? 0;
             try {
@@ -77,7 +74,10 @@ export const useTransactionHistory = (): [
                     isFinish,
                     items: [...items, ...newItems].sort(compareTransactionItem)
                 };
-                setTransactionHistory(changedHistory);
+                const currentAddress = await accountService.getCurrentAccountAddress();
+                if (currentAddress === address) {
+                    setTransactionHistory(changedHistory);
+                }
                 return true;
             } catch (e) {
                 console.log(e);

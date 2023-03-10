@@ -39,7 +39,6 @@ export const Background = ({ children }: Props) => {
                 setState("NONE");
                 return;
             }
-            updateBalances();
         }
     }, [location]);
 
@@ -53,21 +52,17 @@ export const Background = ({ children }: Props) => {
         if (!accounts || accounts.length === 0) {
             return;
         }
-        updateBalances();
         updateAccountBalances();
-    }, [accounts?.length, currentAccount?.getAddress(), gnoClient?.chainId]);
+        updateBalances();
 
-    useEffect(() => {
-        if (!accounts || accounts.length === 0) {
-            return;
-        }
         const balancesFetchTimer = setInterval(() => {
+            updateBalances();
             updateAccountBalances();
-        }, 5000);
+        }, 10 * 1000);
         return () => {
             clearInterval(balancesFetchTimer);
         }
-    }, [gnoClient?.chainId, accounts?.length]);
+    }, [gnoClient?.chainId, accounts?.length, currentAccount?.getAddress()]);
 
     /**
      * History Data Interval Fetch
@@ -83,7 +78,8 @@ export const Background = ({ children }: Props) => {
         if (gnoClient?.chainId && currentAccount) {
             const historyFetchTimer = setInterval(() => {
                 updateLastTransactionHistory();
-            }, 5000);
+            }, 10 * 1000);
+
             return () => {
                 clearInterval(historyFetchTimer);
             }

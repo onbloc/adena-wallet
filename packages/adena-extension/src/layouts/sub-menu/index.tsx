@@ -18,6 +18,7 @@ import Icon from '@components/icons';
 import { useAdenaContext } from '@hooks/use-context';
 import { WalletAccount } from 'adena-module';
 import { WalletState } from '@states/index';
+import { useRecoilValue } from 'recoil';
 
 interface SubMenuProps {
   open: boolean;
@@ -52,7 +53,6 @@ const UserListMaker = ({
   accounts,
   currentAccount,
   accountBalances,
-  currentAccountIndex,
   changeAccountHandler,
 }: UserListProps) => (
   <>
@@ -63,7 +63,7 @@ const UserListMaker = ({
           : null;
       const balanceString = balance
         ? `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}`
-        : '-';
+        : ' ';
 
       return (
         <ListItem key={i} onClick={() => changeAccountHandler(v)}>
@@ -101,7 +101,8 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
   const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
-  const { accounts, accountBalances } = useWalletAccounts();
+  const { accounts } = useWalletAccounts();
+  const accountBalances = useRecoilValue(WalletState.accountBalances);
   const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
 
   useEffect(() => {
