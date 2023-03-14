@@ -13,7 +13,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: true
       - uses: ./.github/actions/setup
-      - run: npx nx run-many --target=build --projects=adena-module,gno-client
+      - run: yarn build:module
       - run: yarn run test
 
   # TODO: Apply when you're done setting up your storybook environment

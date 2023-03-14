@@ -21,6 +21,6 @@ runs:
 
     - if: steps.install-cache.outputs.cache-hit != 'true'
       run: |
-        npm install -g nx
-        yarn install
+        yarn set version berry
+        yarn
       shell: bash
