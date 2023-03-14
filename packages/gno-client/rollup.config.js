@@ -18,12 +18,10 @@ const jobs = [
     file: pkg.main,
     format: 'umd',
     name: pkg.name,
-    sourcemap: true,
   },
   {
     file: pkg.module,
     format: 'esm',
-    sourcemap: true,
   },
 ];
 

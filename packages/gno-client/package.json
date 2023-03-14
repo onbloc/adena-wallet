@@ -1,5 +1,6 @@
 {
   "name": "gno-client",
+  "private": true,
   "version": "1.4.4",
   "description": "Gno API interface",
   "main": "./dist/index.umd.js",
@@ -8,7 +9,7 @@
     "lint": "eslint 'src/**/*.{js,ts}'",
     "dev": "rollup -w -c --environment FORMAT:esm",
     "build:default": "rollup -c",
-    "build": "rimraf dist/* && run-p build:default",
+    "build": "rollup -c",
     "test": "jest"
   },
   "devDependencies": {
