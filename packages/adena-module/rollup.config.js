@@ -1,6 +1,5 @@
 const path = require('path');
 const nodeResolve = require('@rollup/plugin-node-resolve');
-const nodePolyfills = require('rollup-plugin-polyfill-node');
 const merge = require('lodash.merge');
 const pkg = require('./package.json');
 
@@ -27,10 +26,9 @@ const jobs = [
 ];
 
 module.exports = merge({
-  input: resolve('./src/index.ts'),
+  input: resolve('./index.ts'),
   output: jobs,
   plugins: [
-    nodePolyfills(),
     nodeResolve({
       extensions,
       modulesOnly: true,
