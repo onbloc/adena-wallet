@@ -1,6 +1,6 @@
-import { AccountData, OfflineAminoSigner, Secp256k1HdWallet, Secp256k1Wallet } from '@/amino';
-import { LedgerSigner } from '@/amino/ledger/ledgerwallet';
-import { HdPath } from '@/crypto';
+import { AccountData, OfflineAminoSigner, Secp256k1HdWallet, Secp256k1Wallet } from '../../amino';
+import { LedgerSigner } from '../../amino/ledger/ledgerwallet';
+import { HdPath } from '../../crypto';
 import { WalletAccountConfig } from '.';
 
 interface AccountHistory {

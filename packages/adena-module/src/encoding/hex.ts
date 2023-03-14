@@ -1,7 +1,11 @@
 export function toHex(data: Uint8Array): string {
   let out = '';
-  for (const byte of data) {
-    out += ('0' + byte.toString(16)).slice(-2);
+  const bytes = data.entries();
+
+  let byte = bytes.next();
+  while (!byte.done) {
+    out += ('0' + byte.value[1].toString(16)).slice(-2);
+    byte = bytes.next();
   }
   return out;
 }

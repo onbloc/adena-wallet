@@ -65,8 +65,8 @@ export async function encrypt(
       const nonce = Random.getBytes(xchacha20NonceLength);
       // Prepend fixed-length nonce to ciphertext as suggested in the example from https://github.com/jedisct1/libsodium.js#api
       return new Uint8Array([
-        ...nonce,
-        ...(await Xchacha20poly1305Ietf.encrypt(plaintext, encryptionKey, nonce)),
+        ...Array.from(nonce),
+        ...Array.from(await Xchacha20poly1305Ietf.encrypt(plaintext, encryptionKey, nonce)),
       ]);
     }
     default:

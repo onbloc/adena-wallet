@@ -1,5 +1,5 @@
 import { WalletError } from '@common/errors';
-import { Transaction, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
+import { Transaction, TransactionBuilder, uint8ArrayToArray, Wallet, WalletAccount } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { ChainService, WalletAccountService, WalletService } from '..';
 
@@ -80,7 +80,7 @@ export class TransactionService {
       `${gasAmount.value}${gasAmount.denom}`,
     );
     const transactionSignature = await Transaction.generateSignature(currentAccount, document);
-    const transaction = Transaction.builder()
+    const transaction = TransactionBuilder.builder()
       .fee(transactionFee)
       .messages([message])
       .signatures([transactionSignature])
@@ -160,7 +160,7 @@ export class TransactionService {
       `${gasAmount.value}${gasAmount.denom}`,
     );
     const transactionSignature = await Transaction.generateSignature(currentAccount, document);
-    const transaction = Transaction.builder()
+    const transaction = TransactionBuilder.builder()
       .fee(transactionFee)
       .messages(messages)
       .signatures([transactionSignature])

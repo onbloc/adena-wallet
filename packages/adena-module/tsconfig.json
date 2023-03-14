@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "preserve",
-    "module": "es6",
+    "module": "ES6",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "allowUmdGlobalAccess": true,
@@ -9,20 +9,14 @@
     "strict": true,
     "allowJs": true,
     "noEmit": false,
-    "target": "es5",
-    "downlevelIteration": true,
-    "lib": ["dom", "es5", "es6"],
+    "target": "ES5",
+    "lib": ["dom", "ES5", "ES6"],
     "baseUrl": ".",
     "rootDir": ".",
     "outDir": "./dist",
-    "declaration": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "declarationDir": "dist/@types",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "declaration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.*"]

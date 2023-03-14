@@ -1,13 +1,13 @@
-import { TransactionBuilder } from './transaction-builder';
 import protobuf from 'protobufjs/minimal';
-import { TransactionMessageInfo, TransactionEncode } from '.';
-import { WalletAccount, Document, StdSignDoc } from '..';
+import { TransactionEncode } from './transaction-encode';
+import { WalletAccount } from '../wallet';
+import { Document, StdSignDoc } from '../amino';
 
 type MessageTypeUrl = '/vm.m_call' | '/vm.m_addpkg' | '/bank.MsgSend';
 
 export interface TransactionMessage {
   type: MessageTypeUrl;
-  value: TransactionMessageInfo.InfoType;
+  value: { [key in string]: any };
 }
 
 export interface TransactionEncodedMessage {
@@ -119,9 +119,5 @@ export class Transaction {
       },
       signature: signature,
     };
-  };
-
-  public static builder = (): TransactionBuilder => {
-    return new TransactionBuilder();
   };
 }

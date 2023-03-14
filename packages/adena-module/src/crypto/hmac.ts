@@ -24,7 +24,10 @@ export class Hmac<H extends HashFunction> implements HashFunction {
 
     if (key.length < blockSize) {
       const zeroPadding = new Uint8Array(blockSize - key.length);
-      key = new Uint8Array([...key, ...zeroPadding]);
+      const newKey = new Uint8Array(key.length + zeroPadding.length);
+      newKey.set(key);
+      newKey.set(zeroPadding, key.length);
+      key = newKey;
     }
 
     // eslint-disable-next-line no-bitwise
@@ -44,6 +47,9 @@ export class Hmac<H extends HashFunction> implements HashFunction {
 
   public digest(): Uint8Array {
     const innerHash = this.messageHasher.digest();
-    return this.hash(new Uint8Array([...this.oKeyPad, ...innerHash]));
+    const hashArray = new Uint8Array(this.oKeyPad.length + innerHash.length);
+    hashArray.set(this.oKeyPad);
+    hashArray.set(innerHash, this.oKeyPad.length);
+    return this.hash(hashArray);
   }
 }

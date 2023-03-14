@@ -1,4 +1,4 @@
-import { Test3ApiFetcher } from '.';
+import { Test3ApiFetcher } from './test3-api-fetcher';
 
 let fetcher: Test3ApiFetcher;
 
