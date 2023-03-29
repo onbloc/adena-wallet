@@ -1,8 +1,8 @@
-name: Test
+name: Pull Request Test
+
 on:
-  push:
-    branches: [qa, main]
   pull_request:
+    branches: [main, release/*]
 
 jobs:
   unit-tests:

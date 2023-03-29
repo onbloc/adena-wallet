@@ -1,22 +1,13 @@
 name: Build And Deploy
 on:
   workflow_run:
-    workflows: ['Test']
-    branches: [qa, main]
+    workflows: ['Pull Request Test']
+    branches: [release/*]
     types:
       - completed
-jobs:
-  wait-on-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - id: unit-tests
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: unit-tests
 
+jobs:
   aws-deployment:
-    needs: wait-on-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
