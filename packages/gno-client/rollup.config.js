@@ -1,5 +1,6 @@
 const path = require('path');
-const nodeResolve = require('@rollup/plugin-node-resolve');
+const babel = require('rollup-plugin-babel');
+const rollupNodeResolve = require('rollup-plugin-node-resolve');
 const merge = require('lodash.merge');
 const pkg = require('./package.json');
 
@@ -31,13 +32,12 @@ module.exports = merge({
   input: resolve('./index.ts'),
   output: jobs,
   plugins: [
-    nodeResolve({
-      extensions,
-      modulesOnly: true,
-    }),
+    rollupNodeResolve({ preferBuiltins: true, browser: true }),
     typescript({
-      tsconfig: 'tsconfig.json',
-      useTsconfigDeclarationDir: true,
+      tsconfig: 'tsconfig.json'
+    }),
+    babel({
+      extensions,
     }),
   ],
 });

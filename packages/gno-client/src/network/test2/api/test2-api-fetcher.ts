@@ -1,7 +1,7 @@
-import { NetworkInstance, NetworkConfig } from './../../';
+import { NetworkInstance, NetworkConfig } from '../..';
 import { Test2Response } from '.';
-import { Test2Api } from '.';
-import { Test2ApiPath } from '.';
+import { Test2Api } from './test2-api';
+import { Test2ApiPath } from './test2-api-path';
 import { AxiosAdapter } from 'axios';
 import { QueryType } from '../../../api';
 

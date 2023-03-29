@@ -5,6 +5,7 @@ import elliptic from 'elliptic';
 
 import { Hmac } from './hmac';
 import { Sha512 } from './sha';
+import { mergeUintArray } from './utils';
 
 export interface Slip10Result {
   readonly chainCode: Uint8Array;
@@ -102,7 +103,7 @@ export class Slip10 {
   ): Slip10Result {
     let i: Uint8Array;
     if (rawIndex.isHardened()) {
-      const payload = new Uint8Array([0x00, ...parentPrivkey, ...rawIndex.toBytesBigEndian()]);
+      const payload = mergeUintArray(0x00, parentPrivkey, rawIndex.toBytesBigEndian());
       i = new Hmac(Sha512, parentChainCode).update(payload).digest();
     } else {
       if (curve === Slip10Curve.Ed25519) {
@@ -111,10 +112,10 @@ export class Slip10 {
         // Step 1 of https://github.com/satoshilabs/slips/blob/master/slip-0010.md#private-parent-key--private-child-key
         // Calculate I = HMAC-SHA512(Key = c_par, Data = ser_P(point(k_par)) || ser_32(i)).
         // where the functions point() and ser_p() are defined in BIP-0032
-        const data = new Uint8Array([
-          ...Slip10.serializedPoint(curve, new BN(parentPrivkey)),
-          ...rawIndex.toBytesBigEndian(),
-        ]);
+        const data = mergeUintArray(
+          Slip10.serializedPoint(curve, new BN(parentPrivkey)),
+          rawIndex.toBytesBigEndian()
+        );
         i = new Hmac(Sha512, parentChainCode).update(data).digest();
       }
     }
@@ -167,7 +168,7 @@ export class Slip10 {
     // step 6
     if (this.isGteN(curve, il) || this.isZero(returnChildKey)) {
       const newI = new Hmac(Sha512, parentChainCode)
-        .update(new Uint8Array([0x01, ...ir, ...rawIndex.toBytesBigEndian()]))
+        .update(mergeUintArray(0x01, ir, rawIndex.toBytesBigEndian()))
         .digest();
       return this.childImpl(curve, parentPrivkey, parentChainCode, rawIndex, newI);
     }

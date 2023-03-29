@@ -1,34 +1,23 @@
 name: Build And Deploy
 on:
   workflow_run:
-    workflows: ['Test']
-    branches: [qa, main]
+    workflows: ['Pull Request Test']
+    branches: [release/*]
     types:
       - completed
-jobs:
-  wait-on-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - id: unit-tests
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: unit-tests
 
+jobs:
   aws-deployment:
-    needs: wait-on-tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: true
+
+      - name: Setup
+        uses: ./.github/actions/setup
 
       - name: Remove adena-torus-signin mock repository
         run: |
-          git submodule deinit packages/adena-torus-signin
-          git rm --cached packages/adena-torus-signin
-          rm -rf .git/modules/packages/adena-torus-signin
           rm -rf packages/adena-torus-signin
 
       - name: Clone adena-torus-signin repository
@@ -38,16 +27,10 @@ jobs:
           repository: onbloc/adena-torus-signin
           path: 'packages/adena-torus-signin'
 
-      - name: Setup
-        uses: ./.github/actions/setup
-
-      - name: Reinstall dependencies
-        run: yarn install
-
       - name: Build project
         run: |
-          npx nx run-many --target=build --projects=adena-module,gno-client,adena-torus-signin
-          npx nx run-many --target=build --projects=adena-extension
+          yarn
+          yarn build
 
       - name: Make build files
         run: |

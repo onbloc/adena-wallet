@@ -206,13 +206,13 @@ export function encodeAminoPubkey(pubkey: Pubkey): Uint8Array {
     for (const pubkeyData of pubkey.value.pubkeys.map((p) => encodeAminoPubkey(p))) {
       out.push(0x12); // TODO: What is this?
       out.push(...encodeUvarint(pubkeyData.length));
-      out.push(...pubkeyData);
+      out.push(...Array.from(pubkeyData));
     }
     return new Uint8Array(out);
   } else if (isEd25519Pubkey(pubkey)) {
-    return new Uint8Array([...pubkeyAminoPrefixEd25519, ...fromBase64(pubkey.value)]);
+    return new Uint8Array([...Array.from(pubkeyAminoPrefixEd25519), ...Array.from(fromBase64(pubkey.value))]);
   } else if (isSecp256k1Pubkey(pubkey)) {
-    return new Uint8Array([...pubkeyAminoPrefixSecp256k1, ...fromBase64(pubkey.value)]);
+    return new Uint8Array([...Array.from(pubkeyAminoPrefixSecp256k1), ...Array.from(fromBase64(pubkey.value))]);
   } else {
     throw new Error('Unsupported pubkey type');
   }

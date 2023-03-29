@@ -8,7 +8,8 @@ export class AbciQueryMapper {
     let mappedReponse = { ...response };
     const queryData = mappedReponse.response.ResponseBase?.Data;
     if (queryData !== null) {
-      mappedReponse.response.ResponseBase.Data = atob(queryData);
+      const plainData = Buffer.from(queryData, 'base64').toString();
+      mappedReponse.response.ResponseBase.Data = plainData;;
     }
 
     return mappedReponse.response;

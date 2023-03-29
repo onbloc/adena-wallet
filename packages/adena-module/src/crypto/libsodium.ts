@@ -69,7 +69,10 @@ export class Ed25519Keypair {
   }
 
   public toLibsodiumPrivkey(): Uint8Array {
-    return new Uint8Array([...this.privkey, ...this.pubkey]);
+    const privateKeyArray = new Uint8Array(this.privkey.length + this.pubkey.length);
+    privateKeyArray.set(this.privkey);
+    privateKeyArray.set(this.pubkey, this.privkey.length);
+    return privateKeyArray;
   }
 }
 

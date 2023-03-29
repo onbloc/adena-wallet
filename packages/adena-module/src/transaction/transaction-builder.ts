@@ -1,5 +1,5 @@
 import protobuf from 'protobufjs';
-import { TransactionMessageInfo } from '.';
+import { BankSend, encodeBankSend, encodeVmAddPackage, encodeVmCall, VmAddPackage, VmCall } from './message-info';
 import {
   Transaction,
   TransactionFee,
@@ -49,6 +49,10 @@ export class TransactionBuilder {
     return this;
   };
 
+  public static builder = (): TransactionBuilder => {
+    return new TransactionBuilder();
+  };
+
   public build = (): Transaction => {
     return this.transaction;
   };
@@ -67,16 +71,16 @@ export class TransactionBuilder {
 
     switch (message.type) {
       case '/bank.MsgSend':
-        messageInfo = message.value as TransactionMessageInfo.BankSend;
-        TransactionMessageInfo.encodeBankSend(writer, messageInfo);
+        messageInfo = message.value as BankSend;
+        encodeBankSend(writer, messageInfo);
         break;
       case '/vm.m_call':
-        messageInfo = message.value as TransactionMessageInfo.VmCall;
-        TransactionMessageInfo.encodeVmCall(writer, messageInfo);
+        messageInfo = message.value as VmCall;
+        encodeVmCall(writer, messageInfo);
         break;
       case '/vm.m_addpkg':
-        messageInfo = message.value as TransactionMessageInfo.VmAddPackage;
-        TransactionMessageInfo.encodeVmAddPackage(writer, messageInfo);
+        messageInfo = message.value as VmAddPackage;
+        encodeVmAddPackage(writer, messageInfo);
         break;
       default:
         throw new Error('Not Found Transaction Message Type');

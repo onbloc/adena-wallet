@@ -1,4 +1,6 @@
-import { NetworkConfig, NetworkTest2, NetworkTest3 } from './network';
+import { NetworkConfig } from './network';
+import { NetworkTest2 } from './network/test2';
+import { NetworkTest3 } from './network/test3';
 import { GnoClientApi } from './api';
 import { AxiosAdapter } from 'axios';
 

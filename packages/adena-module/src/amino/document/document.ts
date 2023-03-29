@@ -1,4 +1,4 @@
-import { WalletAccount } from '@/wallet';
+import { WalletAccount } from '../../wallet';
 import { StdSignDoc } from '../signdoc';
 
 export class Document {

@@ -1,19 +1,18 @@
-name: Test
+name: Pull Request Test
+
 on:
-  push:
-    branches: [qa, main]
   pull_request:
+    branches: [main, release/*]
 
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          submodules: true
       - uses: ./.github/actions/setup
-      - run: npx nx run-many --target=build --projects=adena-module,gno-client
+      - run: |
+          yarn
+          yarn build:module
       - run: yarn run test
 
   # TODO: Apply when you're done setting up your storybook environment

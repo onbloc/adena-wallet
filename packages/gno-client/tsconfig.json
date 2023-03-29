@@ -14,13 +14,9 @@
     "baseUrl": ".",
     "rootDir": ".",
     "outDir": "./dist",
-    "declaration": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "declarationDir": "dist/@types",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "declaration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.*"]
