@@ -226,14 +226,17 @@ export const parseParmeters = (url: string) => {
   }
 
   const params: { [key in string]: string } = {};
-  for (const parameterValue of hash[1].split('&')) {
-    const values = parameterValue.split('=');
-    if (values.length > 1) {
-      const key = values[0];
-      const value = values[1];
-      params[key] = value;
+  for (const hashValue of hash) {
+    for (const parameterValue of hashValue.split('&')) {
+      const values = parameterValue.split('=');
+      if (values.length > 1) {
+        const key = values[0];
+        const value = values[1];
+        params[key] = value;
+      }
     }
   }
+
   return params;
 };
 
