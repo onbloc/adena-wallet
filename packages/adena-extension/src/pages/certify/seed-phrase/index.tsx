@@ -49,7 +49,7 @@ export const SeedPhrase = () => {
         if (wallet) {
           navigate(RoutePath.ViewSeedPhrase, {
             replace: true,
-            state: wallet.getMnemonic(),
+            state: wallet.mnemonic
           });
         }
       }

@@ -55,7 +55,7 @@ export const ApproveEstablish = () => {
 
   const checkEstablised = async () => {
     const siteName = getSiteName(hostname);
-    const address = currentAccount?.getAddress() ?? '';
+    const address = currentAccount?.getAddress('g') ?? '';
     const isEstablised = await establishService.isEstablished(siteName, address);
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
@@ -74,7 +74,7 @@ export const ApproveEstablish = () => {
 
   const onClickConfirmButton = async () => {
     const siteName = getSiteName(hostname);
-    const address = currentAccount?.getAddress() ?? '';
+    const address = currentAccount?.getAddress('g') ?? '';
     await establishService.establish(siteName, address, appName, favicon);
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   };

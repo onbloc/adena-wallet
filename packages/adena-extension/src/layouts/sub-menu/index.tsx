@@ -16,7 +16,7 @@ import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { useAdenaContext } from '@hooks/use-context';
-import { WalletAccount } from 'adena-module';
+import { Account } from 'adena-module';
 import { WalletState } from '@states/index';
 import { useRecoilValue } from 'recoil';
 
@@ -28,11 +28,11 @@ interface SubMenuProps {
 }
 
 interface UserListProps {
-  accounts: Array<InstanceType<typeof WalletAccount>>;
-  currentAccount: InstanceType<typeof WalletAccount>;
+  accounts: Array<Account>;
+  currentAccount: Account;
   accountBalances: { [key in string]: Array<WalletState.Balance> };
   currentAccountIndex: number;
-  changeAccountHandler: (currentAccount: InstanceType<typeof WalletAccount>) => void;
+  changeAccountHandler: (currentAccount: Account) => void;
 }
 
 const RestoreWallet = ({ onClick }: { onClick: () => void }) => (
@@ -58,8 +58,8 @@ const UserListMaker = ({
   <>
     {accounts.map((v, i) => {
       const balance =
-        accountBalances[v.getAddress()] && accountBalances[v.getAddress()].length > 0
-          ? accountBalances[v.getAddress()][0]
+        accountBalances[v.getAddress('g')] && accountBalances[v.getAddress('g')].length > 0
+          ? accountBalances[v.getAddress('g')][0]
           : null;
       const balanceString = balance
         ? `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}`
@@ -68,13 +68,13 @@ const UserListMaker = ({
       return (
         <ListItem key={i} onClick={() => changeAccountHandler(v)}>
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(v.data.name, 10)}
-            <FromBadge from={v.data.accountType} />
+            {formatNickname(v.name, 10)}
+            <FromBadge from={v.type} />
           </Text>
           <Text type='body3Reg' color={theme.color.neutral[9]}>
             {balanceString}
           </Text>
-          {currentAccount.data.index === v.data.index && (
+          {currentAccount.index === v.index && (
             <img src={statusCheck} alt='status icon' className='status-icon' />
           )}
         </ListItem>
@@ -128,7 +128,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const helpSupportButtonClick = () =>
     window.open('https://docs.adena.app/resources/faq', '_blank');
 
-  const changeAccountHandler = async (currentAccount: InstanceType<typeof WalletAccount>) => {
+  const changeAccountHandler = async (currentAccount: Account) => {
     changeCurrentAccount(currentAccount);
     setOpen(false);
     navigate(RoutePath.Wallet);

@@ -42,7 +42,7 @@ export class MessageHandler {
     try {
       const core = new InjectCore();
       const curreantAccount = await core.accountService.getCurrentAccount();
-      existsWallet = curreantAccount.data.address !== "";
+      existsWallet = curreantAccount.getAddress('g') !== '';
     } catch (e) {
       existsWallet = false;
     }

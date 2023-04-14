@@ -1,153 +1,278 @@
-import { Secp256k1HdWallet, makeCosmoshubPath, LedgerConnector } from './../amino';
-import { HdPath } from '..';
-import { WalletAccount } from './account';
-import { LedgerSigner } from './../amino/ledger/ledgerwallet';
-import Transport from '@ledgerhq/hw-transport';
+import {
+  Account,
+  AccountInfo,
+  LedgerAccount,
+  makeAccount,
+  SeedAccount,
+  SingleAccount,
+} from './account';
+import {
+  hasPrivateKey,
+  HDWalletKeyring,
+  isHDWalletKeyring,
+  isPrivateKeyKeyring,
+  Keyring,
+  KeyringData,
+  LedgerKeyring,
+  makeKeyring,
+  Web3AuthKeyring,
+} from './keyring';
+import { decryptAES, encryptAES } from './wallet-crypto-util';
+import { hasHDPath, isSeedAccount } from './account/account-util';
+import { LedgerConnector, StdSignature, StdSignDoc } from '../amino';
+import { Bip39, Random } from '../crypto';
+import { arrayToHex, hexToArray } from '../utils/data';
+export interface Wallet {
+  accounts: Account[];
+  currentAccount: Account;
+  currentKeyring: Keyring;
+  hdWalletKeyring: HDWalletKeyring | undefined;
+  nextAccountName: string;
+  nextLedgerAccountName: string;
+  nextHDPath: number;
+  privateKeyStr: string;
+  mnemonic: string;
 
-interface ChainConfig {
-  chainId: string;
-  coinDenom: string;
-  coinDecimals: number;
-  coinMinimalDenom: string;
+  addAccount: (account: Account) => number;
+  removeAccount: (account: Account) => boolean;
+  isEmpty: () => boolean;
+  hasHDWallet: () => boolean;
+  hasPrivateKey: (privateKey: Uint8Array) => boolean;
+  sign: (
+    document: StdSignDoc,
+  ) => Promise<{
+    signed: StdSignDoc;
+    signature: StdSignature;
+  }>;
+  signByAccountId: (
+    accountId: string,
+    document: StdSignDoc,
+  ) => Promise<{
+    signed: StdSignDoc;
+    signature: StdSignature;
+  }>;
+  serialize: (password: string) => Promise<string>;
+}
+export interface WalletData {
+  accounts: AccountInfo[];
+  keyrings: KeyringData[];
+  currentAccountId?: string;
+  lastAccountIndex: number;
+  lastLedgerAccountIndex: number;
 }
 
-export class Wallet {
-  private walletAccounts: Array<WalletAccount>;
+const defaultWalletData: WalletData = {
+  accounts: [] as AccountInfo[],
+  keyrings: [] as KeyringData[],
+  lastAccountIndex: 0,
+  lastLedgerAccountIndex: 0,
+};
 
-  private aminoSigner: Secp256k1HdWallet | LedgerSigner;
+export class AdenaWallet implements Wallet {
+  private _accounts: Account[];
 
-  constructor(aminoSigner: Secp256k1HdWallet | LedgerSigner) {
-    this.aminoSigner = aminoSigner;
-    this.walletAccounts = [];
+  private _keyrings: Keyring[];
+
+  private _currentAccountId: string | undefined;
+
+  private _lastAccountIndex: number;
+
+  private _lastLedgerAccountIndex: number;
+
+  constructor(walletData?: WalletData) {
+    const { accounts, keyrings, currentAccountId, lastAccountIndex, lastLedgerAccountIndex } =
+      walletData ?? defaultWalletData;
+    this._accounts = accounts.map(makeAccount);
+    this._keyrings = keyrings.map(makeKeyring);
+    this._currentAccountId = currentAccountId;
+    this._lastAccountIndex = lastAccountIndex ?? 0;
+    this._lastLedgerAccountIndex = lastLedgerAccountIndex ?? 0;
   }
 
-  public clone = () => {
-    const wallet = new Wallet(this.aminoSigner);
-    wallet.setAccounts(wallet.walletAccounts);
-    return wallet;
-  };
+  get accounts() {
+    return this._accounts;
+  }
 
-  public initAccounts = async (names: { [key in string]: string } = {}, config?: ChainConfig) => {
-    const accounts = await this.aminoSigner.getAccounts();
-    const walletAccounts = this.aminoSigner instanceof Secp256k1HdWallet ?
-      accounts.map(account => WalletAccount.createByAminoAccount(account, "SEED")) :
-      accounts.map(account => WalletAccount.createByLedgerAddress(account));
+  get currentAccount() {
+    const currentAccount = this._accounts.find((account) => account.id === this._currentAccountId);
+    if (!currentAccount) {
+      throw new Error('Current account not found');
+    }
+    return currentAccount;
+  }
 
-    let index = 0;
-    for (const walletAccount of walletAccounts) {
-      const accountAddress = walletAccount.getAddress();
-      walletAccount.setIndex(index + 1);
-      walletAccount.setSigner(this.aminoSigner);
-      walletAccount.setName(`Account ${walletAccount.data.index}`);
+  get currentKeyring() {
+    const currentKeryingId = this.currentAccount.keyringId;
+    const currentKeyring = this._keyrings.find((keyring) => keyring.id === currentKeryingId);
+    if (!currentKeyring) {
+      throw new Error('Current keyring not found');
+    }
+    return currentKeyring;
+  }
 
-      try {
-        const privateKey = await this.getPrivateKey(accountAddress);
-        walletAccount.setPrivateKey(privateKey);
-      } catch (e) { }
+  get hdWalletKeyring() {
+    return this._keyrings.find(isHDWalletKeyring);
+  }
 
-      if (walletAccount.data.address in names) {
-        walletAccount.setName(names[accountAddress]);
+  get nextAccountName() {
+    const nextIndex = this._lastAccountIndex + 1;
+    return `Account ${nextIndex}`;
+  }
+
+  get nextLedgerAccountName() {
+    const nextIndex = this._lastLedgerAccountIndex + 1;
+    return `Ledger ${nextIndex}`;
+  }
+
+  get nextHDPath() {
+    const lastHdPath = this.accounts
+      .filter(isSeedAccount)
+      .reduce((account1, account2) => (account1.hdPath > account2.hdPath ? account1 : account2))
+      .hdPath;
+    return lastHdPath + 1;
+  }
+
+  set currentAccountId(currentAccountId: string) {
+    this._currentAccountId = currentAccountId;
+  }
+
+  get privateKeyStr() {
+    return arrayToHex(this.getPrivateKey());
+  }
+
+  get mnemonic() {
+    if (!isHDWalletKeyring(this.currentKeyring)) {
+      throw new Error('Mnemonic words not found');
+    }
+    return this.currentKeyring.mnemonic;
+  }
+
+  isEmpty() {
+    return this._accounts.length === 0;
+  }
+
+  hasHDWallet() {
+    return this.hdWalletKeyring ? true : false;
+  }
+
+  hasPrivateKey(privateKey: Uint8Array) {
+    const keyring = this._keyrings
+      .filter(isPrivateKeyKeyring)
+      .find((keyring) => JSON.stringify(keyring.privateKey) === JSON.stringify(privateKey));
+    return keyring !== undefined;
+  }
+
+  addAccount(account: Account) {
+    return this._accounts.push(account);
+  }
+
+  removeAccount(removedAccount: Account) {
+    const filteredAccounts = this._accounts.filter((account) => account.id !== removedAccount.id);
+    this._accounts = filteredAccounts;
+
+    const removedKeyringId = removedAccount.keyringId;
+    const keyringUsedCount = filteredAccounts.filter(
+      (account) => account.keyringId === removedKeyringId,
+    ).length;
+    if (keyringUsedCount === 0) {
+      const filteredKeyrings = this._keyrings.filter((keyring) => keyring.id !== removedKeyringId);
+      this._keyrings = filteredKeyrings;
+    }
+    return true;
+  }
+
+  addKeyring(keyring: Keyring) {
+    return this._keyrings.push(keyring);
+  }
+
+  getPrivateKey() {
+    if (!hasPrivateKey(this.currentKeyring)) {
+      throw new Error('Current account does not have a private key');
+    }
+    if (isHDWalletKeyring(this.currentKeyring)) {
+      if (this.currentAccount instanceof SeedAccount) {
+        return this.currentKeyring.getPrivateKey(this.currentAccount.hdPath);
       }
-      index += 1;
+      throw new Error('Problems with account types');
     }
+    return this.currentKeyring.privateKey;
+  }
 
-    this.walletAccounts = [...walletAccounts];
-  };
+  async sign(document: StdSignDoc) {
+    return this.signByAccountId(this.currentAccount.id, document);
+  }
 
-  public setAccounts = (accounts: Array<WalletAccount>) => {
-    this.walletAccounts = accounts.map((account) => account.clone());
-  };
-
-  public serialize = async (password: string): Promise<string> => {
-    if (this.aminoSigner instanceof LedgerSigner) {
-      throw new Error('Ledger wallet cannot be serialized');
+  async signByAccountId(accountId: string, document: StdSignDoc) {
+    const account = this._accounts.find((account) => account.id === accountId);
+    if (!account) {
+      throw new Error('Account not found');
     }
-    return await this.aminoSigner.serialize(password);
-  };
-
-  public getMnemonic = () => {
-    if (this.aminoSigner instanceof LedgerSigner) {
-      throw new Error('Ledger wallet does not have mnemonic');
+    const keyring = this._keyrings.find((keyring) => (keyring.id = account.keyringId));
+    if (!keyring) {
+      throw new Error('Keyring not found');
     }
-    return this.aminoSigner.mnemonic;
-  };
-
-  public getAccounts = () => {
-    return this.walletAccounts;
-  };
-
-  public getPrivateKey = async (address: string) => {
-    if (this.aminoSigner instanceof LedgerSigner) {
-      throw new Error('Ledger wallet does not have private key');
+    if (hasHDPath(account)) {
+      return keyring.sign(document, account.hdPath);
     }
-    const privateKey = await this.aminoSigner.getPrivkey(address);
-    return privateKey;
-  };
+    return keyring.sign(document);
+  }
 
-  public getSigner = () => {
-    return this.aminoSigner;
-  };
-
-  public static createByMnemonic = async (
-    seeds: string,
-    accountPaths: Array<number> = [0],
-  ): Promise<Wallet> => {
-    const walletConfig = Wallet.createWalletConfig({ accountPaths });
-    const aminoSigner = await Secp256k1HdWallet.fromMnemonic(seeds, walletConfig);
-    return new Wallet(aminoSigner);
-  };
-
-  public static createByMnemonicAndPassword = async (
-    seeds: string,
-    password: string,
-    accountPaths: Array<number> = [0],
-  ): Promise<Wallet> => {
-    const walletConfig = Wallet.createWalletConfig({ password, accountPaths });
-    const aminoSigner = await Secp256k1HdWallet.fromMnemonic(seeds, walletConfig);
-    return new Wallet(aminoSigner);
-  };
-
-  public static createByLedger = async (
-    accountPaths: Array<number> = [0],
-    transport?: Transport | null
-  ): Promise<Wallet> => {
-    const walletConfig = Wallet.createWalletConfig({ accountPaths });
-    let ledgerTransport = transport;
-    if (!ledgerTransport) {
-      ledgerTransport = await LedgerConnector.createTransport();
-    }
-
-    const aminoSigner = new LedgerSigner(ledgerTransport, {
-      hdPaths: walletConfig.hdPaths,
-    });
-    return new Wallet(aminoSigner);
-  };
-
-  public static createBySerialized = async (
-    serializedKey: string,
-    serializedPassword: string,
-  ): Promise<Wallet> => {
-    const aminoSigner = await Secp256k1HdWallet.deserialize(serializedKey, serializedPassword);
-    return new Wallet(aminoSigner);
-  };
-
-  public static generateMnemonic = (length: 12 | 15 | 18 | 21 | 24 = 12): string => {
-    return Secp256k1HdWallet.mnemonicGenerate(length);
-  };
-
-  public static createWalletConfig = (config?: {
-    password?: string;
-    accountPaths?: Array<number>;
-  }) => {
-    const password = config?.password ?? '';
-    const accountPaths = config?.accountPaths ?? [0];
-    const prefix = process.env.SIGNER_PREFIX;
-    const hdPaths: Array<HdPath> = accountPaths.map(makeCosmoshubPath);
-
-    return {
-      hdPaths,
-      prefix,
-      bip39Password: password,
+  async serialize(password: string) {
+    const plain: WalletData = {
+      currentAccountId: this._currentAccountId,
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
+      lastAccountIndex: this._lastAccountIndex,
+      lastLedgerAccountIndex: this._lastLedgerAccountIndex,
     };
-  };
+    const serialized = JSON.stringify(plain);
+    const encryptedSerialize = await encryptAES(serialized, password);
+    return encryptedSerialize;
+  }
+
+  public static async deserialize(encryptedSerialize: string, password: string) {
+    const serialized = await decryptAES(encryptedSerialize, password);
+    const plain: WalletData = JSON.parse(serialized);
+    return new AdenaWallet(plain);
+  }
+
+  public static async createByMnemonic(mnemonic: string, paths: Array<number> = [0]) {
+    const wallet = new AdenaWallet();
+    const keyring = await HDWalletKeyring.fromMnemonic(mnemonic);
+    for (const path of paths) {
+      const account = await SeedAccount.createBy(keyring, wallet.nextAccountName, path);
+      wallet.currentAccountId = account.id;
+      wallet.addAccount(account);
+      wallet.addKeyring(keyring);
+    }
+    return wallet;
+  }
+
+  public static async createByLedger(connector: LedgerConnector) {
+    const wallet = new AdenaWallet();
+    const keyring = await LedgerKeyring.fromLedger(connector);
+    const account = await LedgerAccount.createBy(keyring, wallet.nextLedgerAccountName, 0);
+    wallet.currentAccountId = account.id;
+    wallet.addAccount(account);
+    wallet.addKeyring(keyring);
+    return wallet;
+  }
+
+  public static async createByWeb3Auth(privateKeyStr: string) {
+    const privateKey = hexToArray(privateKeyStr);
+    const wallet = new AdenaWallet();
+    const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey);
+    const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
+    wallet.currentAccountId = account.id;
+    wallet.addAccount(account);
+    wallet.addKeyring(keyring);
+    return wallet;
+  }
+
+  public static generateMnemonic(length: 12 | 15 | 18 | 21 | 24 = 12): string {
+    const entropyLength = 4 * Math.floor((11 * length) / 33);
+    const entropy = Random.getBytes(entropyLength);
+    const mnemonic = Bip39.encode(entropy);
+    return mnemonic.toString();
+  }
 }

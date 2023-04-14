@@ -1,9 +1,10 @@
-const path = require('path');
+const builtins = require('rollup-plugin-node-builtins');
 const nodeResolve = require('@rollup/plugin-node-resolve');
+const { default: dotenv } = require("rollup-plugin-dotenv");
+const typescript = require('rollup-plugin-typescript2');
+const path = require('path');
 const merge = require('lodash.merge');
 const pkg = require('./package.json');
-
-const typescript = require('rollup-plugin-typescript2');
 
 const extensions = ['.js', '.ts', '.jsx', '.tsx'];
 
@@ -26,16 +27,20 @@ const jobs = [
 ];
 
 module.exports = merge({
-  input: resolve('./index.ts'),
+  input: resolve('index.ts'),
   output: jobs,
   plugins: [
+    builtins(),
+    dotenv(),
     nodeResolve({
       extensions,
       modulesOnly: true,
     }),
     typescript({
       tsconfig: 'tsconfig.json',
-      useTsconfigDeclarationDir: true,
     }),
   ],
+  onwarn: function (warning) {
+    if (warning.code === 'THIS_IS_UNDEFINED') { return; }
+  }
 });

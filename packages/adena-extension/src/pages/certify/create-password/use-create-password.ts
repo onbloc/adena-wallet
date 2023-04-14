@@ -3,11 +3,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
-import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
+import {
+  validateEmptyPassword,
+  validateNotMatchConfirmPassword,
+  validateWrongPasswordLength,
+} from '@common/validation';
 import { useImportAccount } from '@hooks/use-import-account';
-import { WalletAccount } from 'adena-module';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { AdenaWallet } from 'adena-module';
 
 interface CreatePasswordState {
   type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
@@ -39,7 +43,9 @@ export const useCreatePassword = () => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(location.state);
+  const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(
+    location.state,
+  );
   const [errorMessage, setErrorMessage] = useState('');
   const { importAccount } = useImportAccount();
   const [activated, setActivated] = useState(false);
@@ -155,9 +161,11 @@ export const useCreatePassword = () => {
 
   const createWalletAccountsBySeed = async (seedState: SeedState) => {
     try {
-      const createdWallet = await walletService.createWallet({ mnemonic: seedState.seeds, password: pwd });
-      await createdWallet.initAccounts();
-      const accounts = createdWallet.getAccounts();
+      const createdWallet = await walletService.createWallet({
+        mnemonic: seedState.seeds,
+        password: pwd,
+      });
+      const accounts = createdWallet.accounts;
       await accountService.updateAccounts(accounts);
       await walletService.changePassowrd(pwd);
     } catch (error) {
@@ -169,8 +177,8 @@ export const useCreatePassword = () => {
 
   const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
     try {
-      const account = await WalletAccount.createByGooglePrivateKey(googleState.privateKey, 'g');
-      await importAccount(account);
+      const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
+      await importAccount(wallet.accounts[0]);
       await walletService.updatePassowrd(pwd);
     } catch (error) {
       console.error(error);
@@ -192,7 +200,7 @@ export const useCreatePassword = () => {
       setActivated(false);
       return;
     }
-  }
+  };
 
   const nextButtonClick = async () => {
     if (activated) {

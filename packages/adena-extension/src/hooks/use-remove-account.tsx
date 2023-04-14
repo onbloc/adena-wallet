@@ -1,11 +1,11 @@
 import { useResetRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useAdenaContext } from './use-context';
-import { WalletAccount } from 'adena-module';
+import { Account } from 'adena-module';
 
 export const useRemoveAccount = (): {
   availRemoveAccount: () => Promise<boolean>,
-  removeAccount: (account: InstanceType<typeof WalletAccount>) => Promise<boolean>,
+  removeAccount: (account: Account) => Promise<boolean>,
 } => {
   const { accountService } = useAdenaContext();
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);

@@ -1,6 +1,7 @@
 import { useRecoilState, useResetRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useAdenaContext } from './use-context';
+import { SeedAccount } from 'adena-module';
 
 export const useAddAccount = (): {
   availAddAccount: () => Promise<boolean>;
@@ -24,22 +25,15 @@ export const useAddAccount = (): {
     clearCurrentBalance();
 
     const wallet = await walletService.loadWallet();
-    const mnemonic = wallet.getMnemonic();
+    const createdAccount = await SeedAccount.createByWallet(wallet);
+    createdAccount.index = maxIndex + 1;
+    createdAccount.name = `Account ${accountNumber}`;
+    wallet.addAccount(createdAccount);
 
-    const createdWallet = await walletService.createWalletByMnemonic(mnemonic, [maxPath]);
-    await createdWallet.initAccounts();
-    const createdAccounts = createdWallet.getAccounts();
-    if (createdAccounts.length > 0) {
-      const createdAccount = createdAccounts[0];
-      createdAccount.setIndex(maxIndex + 1);
-      createdAccount.setName(`Account ${accountNumber}`);
-      createdAccount.setSigner(createdWallet);
-      await accountService.updateLastAccountPath(maxPath);
-      await accountService.addAccount(createdAccount);
-      await accountService.changeCurrentAccount(createdAccount);
-    }
-    const accounts = await accountService.getAccounts();
-    setAccounts(accounts);
+    await accountService.updateLastAccountPath(maxPath);
+    await accountService.addAccount(createdAccount);
+    await accountService.changeCurrentAccount(createdAccount);
+    setAccounts(wallet.accounts);
     return true;
   };
 

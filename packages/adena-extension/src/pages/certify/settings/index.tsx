@@ -12,6 +12,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useUpdateWalletAccountName } from '@hooks/use-update-wallet-account-name';
 import { useGnoClient } from '@hooks/use-gno-client';
 import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
+import { isLedgerAccount } from 'adena-module';
 
 const menuMakerInfo = [
   {
@@ -43,12 +44,12 @@ export const Settings = () => {
   const updateAccountName = useUpdateWalletAccountName();
   const navigate = useNavigate();
   const revealSeedClick = () => navigate(RoutePath.SettingSeedPhrase);
-  const [text, setText] = useState<string>(() => currnetAccount?.data.name || '');
+  const [text, setText] = useState<string>(() => currnetAccount?.name || '');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
   const shareButtonClick = async () => {
     window.open(
-      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.data.address}`,
+      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.getAddress('g')}`,
       '_blank',
     );
   };
@@ -57,24 +58,27 @@ export const Settings = () => {
     const name = e.target.value;
     if (name.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
       await setText(name);
-      await updateAccountName(currnetAccount?.data.address || '', name);
+      await updateAccountName(currnetAccount?.getAddress('g') || '', name);
     }
   };
 
   const handleTextBlur = () => {
     const changedName = text === '' ? `${getDefaultAccountName()}` : text;
-    updateAccountName(currnetAccount?.data.address || '', changedName);
+    updateAccountName(currnetAccount?.getAddress('g') || '', changedName);
   };
 
   const handleFocus = async () => {
     await setText('');
-    await updateAccountName(currnetAccount?.data.address || '', '');
+    await updateAccountName(currnetAccount?.getAddress('g') || '', '');
     inputRef.current?.focus();
   };
 
   const getDefaultAccountName = () => {
-    const accountType = currnetAccount?.data.signerType !== 'LEDGER' ? 'Account' : 'Ledger';
-    const accountNumber = (currnetAccount?.data.path ?? 0) + 1;
+    if (!currnetAccount) {
+      return 'Account';
+    }
+    const accountType = isLedgerAccount(currnetAccount) ? 'Ledger' : 'Account';
+    const accountNumber = currnetAccount.index;
     return `${accountType} ${accountNumber}`;
   };
 
@@ -93,7 +97,7 @@ export const Settings = () => {
       </IconInputBox>
       <GnoLinkBox>
         <Text type='light1Reg' className='link-text'>
-          {currnetAccount?.data.address}
+          {currnetAccount?.getAddress('g')}
         </Text>
         <LinkIcon type='button' onClick={shareButtonClick} />
       </GnoLinkBox>

@@ -45,9 +45,9 @@ export const Deposit = () => {
   const [currentAccount] = useCurrentAccount();
   useEffect(() => {
     setDisplayaddr(
-      currentAccount?.data.address.slice(0, 4) + '...' + currentAccount?.data.address.slice(-4),
+      currentAccount?.getAddress('g').slice(0, 4) + '...' + currentAccount?.getAddress('g').slice(-4),
     );
-  }, [currentAccount?.data.address, displayaddr]);
+  }, [currentAccount?.getAddress('g'), displayaddr]);
 
   const closeButtonClick = () =>
     location.state === 'token' ? navigate(RoutePath.TokenDetails) : navigate(RoutePath.Wallet);
@@ -56,19 +56,19 @@ export const Deposit = () => {
     <Wrapper>
       <Text type='header4'>Deposit GNOT</Text>
       <QRCodeBox>
-        <QRCodeSVG value={currentAccount?.data.address || ''} size={150} />
+        <QRCodeSVG value={currentAccount?.getAddress('g') || ''} size={150} />
       </QRCodeBox>
       <CopyInputBox>
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(currentAccount.data.name, 12)}
+            {formatNickname(currentAccount.name, 12)}
             <Text type='body2Reg' color={theme.color.neutral[9]}>
-              {` (${formatAddress(currentAccount?.data.address)})`}
+              {` (${formatAddress(currentAccount?.getAddress('g'))})`}
             </Text>
           </Text>
         )}
 
-        <Copy copyStr={currentAccount?.data.address || ''} />
+        <Copy copyStr={currentAccount?.getAddress('g') || ''} />
       </CopyInputBox>
       <Text type='captionReg' color={theme.color.neutral[9]}>
         Only use this address to receive tokens on Gnoland.

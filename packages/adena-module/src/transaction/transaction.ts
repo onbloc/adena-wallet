@@ -1,9 +1,10 @@
+import { Document } from '../amino/document';
+import { Keyring } from '../wallet/keyring';
 import protobuf from 'protobufjs/minimal';
+import { StdSignDoc } from '..';
 import { TransactionEncode } from './transaction-encode';
-import { WalletAccount } from '../wallet';
-import { Document, StdSignDoc } from '../amino';
 
-type MessageTypeUrl = '/vm.m_call' | '/vm.m_addpkg' | '/bank.MsgSend';
+export type MessageTypeUrl = '/vm.m_call' | '/vm.m_addpkg' | '/bank.MsgSend';
 
 export interface TransactionMessage {
   type: MessageTypeUrl;
@@ -11,7 +12,7 @@ export interface TransactionMessage {
 }
 
 export interface TransactionEncodedMessage {
-  type: MessageTypeUrl;
+  type: string;
   value: Uint8Array;
 }
 
@@ -77,10 +78,7 @@ export class Transaction {
     this.memo = memo;
   };
 
-  public static generateTransactionFee = (
-    gasWanted: string,
-    gasFee?: string,
-  ): TransactionFee => {
+  public static generateTransactionFee = (gasWanted: string, gasFee?: string): TransactionFee => {
     return {
       gasFee: gasFee ?? '1ugnot',
       gasWanted,
@@ -88,36 +86,31 @@ export class Transaction {
   };
 
   public static generateDocument = (
-    account: WalletAccount,
+    accountNumber: string,
+    sequence: string,
     chainId: string,
     messages: Array<any>,
     gasWanted: string,
     gasFee: {
-      value: string,
-      denom: string
+      value: string;
+      denom: string;
     },
-    memo?: string
+    memo?: string,
   ): StdSignDoc => {
-
-    return Document.createDocument(account, chainId, messages, gasWanted, gasFee, memo ?? "");
+    return Document.createDocument(
+      accountNumber,
+      sequence,
+      chainId,
+      messages,
+      gasWanted,
+      gasFee,
+      memo ?? '',
+    );
   };
 
-  public static generateSignature = async (
-    account: WalletAccount,
-    documnet: StdSignDoc,
-  ): Promise<TransactionSignature> => {
-    const signer = account.getSigner();
-    if (!signer) {
-      throw new Error("Not initialized account's signer");
-    }
-    const signedResult = await signer.signAmino(account.getAddress(), documnet);
-    const { pub_key, signature } = signedResult.signature;
-    return {
-      pubKey: {
-        typeUrl: '/tm.PubKeySecp256k1', //pub_key.type,
-        value: pub_key.value,
-      },
-      signature: signature,
-    };
+  public static generateSignature = async (keyring: Keyring, documnet: StdSignDoc) => {
+    const signedResult = await keyring.sign(documnet);
+    const { signature } = signedResult;
+    return signature;
   };
 }

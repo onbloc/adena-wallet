@@ -1,0 +1,38 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "name": "gno-client",
+      "path": "packages/gno-client"
+    },
+    {
+      "name": "adena-module",
+      "path": "packages/adena-module"
+    },
+    {
+      "name": "adena-extension",
+      "path": "packages/adena-extension"
+    },
+    {
+      "name": "adena-torus-signin",
+      "path": "packages/adena-torus-signin"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "search.exclude": {
+      "**/.yarn": true,
+      "**/.pnp.*": true
+    },
+    "typescript.tsdk": "adena-wallet/.yarn/sdks/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "jest.disabledWorkspaceFolders": ["adena-extension", "adena-torus-signin"],
+    "extensions": {
+      "recommendations": ["esbenp.prettier-vscode", "editorconfig.editorconfig"]
+    }
+  }
+}

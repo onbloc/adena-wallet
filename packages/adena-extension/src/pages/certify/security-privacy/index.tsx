@@ -5,12 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import FullButtonRightIcon, { ButtonMode } from '@components/buttons/full-button-right-icon';
 import BottomFixedButton from '@components/buttons/bottom-fixed-button';
 import { RoutePath } from '@router/path';
-import { WalletAccount } from 'adena-module';
+import { Account } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 
 const getMenuMakerInfo = (
-  account: InstanceType<typeof WalletAccount> | null,
+  account: Account | null,
   availRemove: boolean,
 ) => [
     {
@@ -23,13 +23,13 @@ const getMenuMakerInfo = (
       title: 'Reveal Seed Phrase',
       navigatePath: RoutePath.RevealPasswoardPhrase,
       mode: 'DEFAULT',
-      disabled: account?.data.accountType !== 'SEED' ?? true,
+      disabled: account?.type !== 'LEDGER' ?? true,
     },
     {
       title: 'Export Private Key',
       navigatePath: RoutePath.ApproachPasswordPhrase,
       mode: 'DEFAULT',
-      disabled: account?.data.signerType === 'LEDGER' ?? true,
+      disabled: account?.type === 'LEDGER' ?? true,
     },
     {
       title: 'Remove Account',

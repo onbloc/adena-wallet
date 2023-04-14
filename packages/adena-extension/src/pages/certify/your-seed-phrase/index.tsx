@@ -7,7 +7,7 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { makeCosmoshubPath, Wallet } from 'adena-module';
+import { AdenaWallet } from 'adena-module';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useAdenaContext } from '@hooks/use-context';
@@ -27,7 +27,7 @@ export const YourSeedPhrase = () => {
   const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
   const [terms, setTerms] = useState(false);
-  const [seeds, setSeeds] = useState(() => Wallet.generateMnemonic());
+  const [seeds, setSeeds] = useState(() => AdenaWallet.generateMnemonic());
   const [viewSeedAgree, setViewSeedAgree] = useState(false);
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [clicked, setClicked] = useState(false);
@@ -65,13 +65,10 @@ export const YourSeedPhrase = () => {
   const addAccount = async () => {
     const password = await walletService.getRawPassword();
     const createdWallet = await walletService.createWallet({ mnemonic: seeds, password });
-    await createdWallet.initAccounts();
 
-    const account = createdWallet.getAccounts()[0];
+    const account = createdWallet.accounts[0];
     const accountIndex = await accountService.getLastAccountIndex();
-    account.setIndex(accountIndex + 1);
-    account.setAccountType("SEED");
-    account.setSigner(createdWallet);
+    account.index = accountIndex + 1;
     await accountService.addAccount(account);
     await accountService.updateCurrentAccount(account);
     loadAccounts();

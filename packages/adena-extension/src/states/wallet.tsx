@@ -1,5 +1,5 @@
 import { atom } from 'recoil';
-import { WalletAccount } from 'adena-module';
+import { Account } from 'adena-module';
 import { HistoryItem } from 'gno-client/src/api/response';
 import BigNumber from 'bignumber.js';
 
@@ -47,12 +47,12 @@ export const state = atom<StateType>({
   default: 'NONE',
 });
 
-export const currentAccount = atom<InstanceType<typeof WalletAccount> | null>({
+export const currentAccount = atom<Account | null>({
   key: `wallet/currentAccount`,
   default: null,
 });
 
-export const accounts = atom<Array<InstanceType<typeof WalletAccount>> | null>({
+export const accounts = atom<Array<Account> | null>({
   key: `wallet/accounts`,
   default: [],
 });

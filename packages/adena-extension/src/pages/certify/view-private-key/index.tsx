@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useAdenaContext } from '@hooks/use-context';
 
 const text = {
   title: 'Export Private Key',
@@ -51,16 +52,22 @@ const KeyBox = styled.div`
 
 export const ViewPrivateKey = () => {
   const [currentAccount] = useCurrentAccount();
+  const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const doneButtonClick = () => navigate(-1);
   const [privateKey, setPrivateKey] = useState('');
 
   useEffect(() => {
-    const privateKey = currentAccount?.getPrivateKey();
+    initPrivateKey();
+  }, [currentAccount]);
+
+  const initPrivateKey = async () => {
+    const wallet = await walletService.loadWallet();
+    const privateKey = wallet.privateKeyStr;
     if (privateKey) {
       setPrivateKey(privateKey);
     }
-  }, [currentAccount]);
+  };
 
   return (
     <Wrapper>

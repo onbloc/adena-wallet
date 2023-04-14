@@ -1,4 +1,6 @@
 module.exports = {
+  roots: ["<rootDir>"],
+  testEnvironment: "node",
   moduleFileExtensions: ['js', 'json', 'jsx', 'ts', 'tsx', 'json'],
   transform: {
     '^.+\\.ts?$': 'babel-jest',
