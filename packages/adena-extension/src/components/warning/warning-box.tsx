@@ -15,7 +15,7 @@ interface WarningBoxStyleProps {
   padding?: CSSProperties['padding'];
 }
 
-interface WarningBoxProps extends WarningBoxStyleProps {
+export interface WarningBoxProps extends WarningBoxStyleProps {
   type: WarningKeyType;
 }
 
