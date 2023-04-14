@@ -162,8 +162,7 @@ export const TokenDetails = () => {
             posTop='28px'
             onClick={() => {
               window.open(
-                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${
-                  currentAccount?.data.address
+                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')
                 }`,
                 '_blank',
               );

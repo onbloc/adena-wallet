@@ -1,5 +1,5 @@
 import { RoutePath } from '@router/path';
-import { EnglishMnemonic } from 'adena-module/src/crypto';
+import { EnglishMnemonic } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -42,8 +42,8 @@ export const useEnterSeed = () => {
       if (checkedMnemonic) {
         navigate(RoutePath.CreatePassword, {
           state: {
-            type: "SEED",
-            seeds: seed
+            type: 'SEED',
+            seeds: seed,
           },
         });
         setError(false);
@@ -71,7 +71,7 @@ export const useEnterSeed = () => {
     },
     termsState: {
       terms,
-      onChange: handleTermsChange
+      onChange: handleTermsChange,
     },
     buttonState: {
       onClick: handleButtonClick,

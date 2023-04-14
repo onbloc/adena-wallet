@@ -1,7 +1,7 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
-import { WalletAccount } from 'adena-module';
+import { Account } from 'adena-module';
 
 export const useLoadAccounts = () => {
   const { walletService, accountService, balanceService } = useAdenaContext();
@@ -27,7 +27,7 @@ export const useLoadAccounts = () => {
     return true;
   };
 
-  const addAccounts = async (addedAccounts: Array<InstanceType<typeof WalletAccount>>) => {
+  const addAccounts = async (addedAccounts: Array<Account>) => {
     setState("LOADING");
     for (const account of addedAccounts) {
       await accountService.addAccount(account);
@@ -46,7 +46,7 @@ export const useLoadAccounts = () => {
 
     const accountBalances: { [key in string]: Array<WalletState.Balance> } = {};
     for (const account of accounts) {
-      const address = account.getAddress();
+      const address = account.getAddress('g');
       const balances = await balanceService.getTokenBalances(address);
       accountBalances[address] = balances;
     }

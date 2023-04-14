@@ -1,11 +1,11 @@
 import { useRecoilState, useResetRecoilState } from 'recoil';
+import { Account } from 'adena-module';
 import { WalletState } from '@states/index';
 import { useAdenaContext } from './use-context';
-import { WalletAccount } from 'adena-module';
 import { useLoadAccounts } from './use-load-accounts';
 
 export const useImportAccount = (): {
-  importAccount: (account: InstanceType<typeof WalletAccount>) => Promise<boolean>,
+  importAccount: (account: Account) => Promise<boolean>,
 } => {
   const { accountService } = useAdenaContext();
   const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
@@ -13,14 +13,14 @@ export const useImportAccount = (): {
   const { loadAccounts } = useLoadAccounts();
   const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
 
-  const importAccount = async (account: InstanceType<typeof WalletAccount>) => {
+  const importAccount = async (account: Account) => {
     setState("LOADING");
     clearCurrentBalance();
     const currentAccountIndex = await accountService.getLastAccountIndex();
     const currentAccountNumber = await accountService.getAddedAccountNumber();
     const index = currentAccountIndex + 1;
-    account.setIndex(index);
-    account.setName(`Account ${currentAccountNumber}`)
+    account.index = index;
+    account.name = `Account ${currentAccountNumber}`;
     await accountService.addAccount(account);
     const accounts = await accountService.getAccounts();
     const currentAccount = accounts[accounts.length - 1];

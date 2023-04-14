@@ -15,6 +15,7 @@ import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { LedgerConnector } from 'adena-module';
+import { isLedgerAccount } from 'adena-module';
 
 export const ApproveTransactionMain = () => {
   const { accountService, transactionService } = useAdenaContext();
@@ -139,12 +140,15 @@ export const ApproveTransactionMain = () => {
   };
 
   const approveEvent = async () => {
-    if (currentAccount?.data.signerType === 'AMINO') {
-      sendTransaction();
+    if (!currentAccount) {
+      return;
     }
-    if (currentAccount?.data.signerType === 'LEDGER') {
+    if (isLedgerAccount(currentAccount)) {
       setLoadingLedger(true);
+      return;
     }
+
+    sendTransaction();
   };
 
   const cancelEvent = async () => {

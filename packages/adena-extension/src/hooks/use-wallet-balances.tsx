@@ -23,13 +23,13 @@ export const useWalletBalances = (
       return;
     }
 
-    if (!currenctAccount?.getAddress()) {
+    if (!currenctAccount?.getAddress('g')) {
       return;
     }
 
     const chainId = gnoClient.chainId;
     try {
-      const address = currenctAccount.getAddress();
+      const address = currenctAccount.getAddress('g');
       const tokenBalances = await balanceService.getTokenBalances(address);
       const currentAddress = await accountService.getCurrentAccountAddress();
       if (address !== currentAddress) {

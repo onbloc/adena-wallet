@@ -1,22 +1,26 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
+import { AdenaWallet } from 'adena-module';
 import { Wallet } from 'adena-module';
 import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
 import { encryptSha256Password } from '@common/utils/crypto-utils';
 
 export class WalletService {
-
   private walletRepository: WalletRepository;
 
   private walletAccountRepository: WalletAccountRepository;
 
-  constructor(walletRepository: WalletRepository, walletAccountRepository: WalletAccountRepository) {
+  constructor(
+    walletRepository: WalletRepository,
+    walletAccountRepository: WalletAccountRepository,
+  ) {
     this.walletRepository = walletRepository;
     this.walletAccountRepository = walletAccountRepository;
   }
 
   public existsWallet = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    return this.walletRepository.getSerializedWallet()
+    return this.walletRepository
+      .getSerializedWallet()
       .then(() => true)
       .catch(() => false);
   };
@@ -43,7 +47,7 @@ export class WalletService {
   public loadWallet = async () => {
     const isExists = await this.existsWallet();
     if (!isExists) {
-      throw new WalletError("NOT_FOUND_SERIALIZED");
+      throw new WalletError('NOT_FOUND_SERIALIZED');
     }
     const password = await this.walletRepository.getWalletPassword();
     const walletInstance = await this.deserializeWallet(password);
@@ -59,7 +63,7 @@ export class WalletService {
   public loadWalletWithPassword = async (password: string) => {
     const isExists = await this.existsWallet();
     if (!isExists) {
-      throw new WalletError("NOT_FOUND_SERIALIZED");
+      throw new WalletError('NOT_FOUND_SERIALIZED');
     }
     const walletInstance = await this.deserializeWallet(password);
     await this.walletRepository.updateWalletPassword(password);
@@ -96,10 +100,10 @@ export class WalletService {
   public createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<number>) => {
     try {
       if (accountPaths) {
-        await this.walletAccountRepository.updateAccountPath(Math.max(...accountPaths ?? [0]));
+        await this.walletAccountRepository.updateAccountPath(Math.max(...(accountPaths ?? [0])));
       }
       const currentAccountPath = await this.walletAccountRepository.getAccountPath();
-      const wallet = await Wallet.createByMnemonic(mnemonic, [currentAccountPath]);
+      const wallet = await AdenaWallet.createByMnemonic(mnemonic, [currentAccountPath]);
       return wallet;
     } catch (e) {
       throw new WalletError('FAILED_TO_CREATE');
@@ -112,10 +116,7 @@ export class WalletService {
    * @param wallet Wallet instance
    * @param password wallet's password
    */
-  public saveWallet = async (
-    wallet: InstanceType<typeof Wallet>,
-    password: string,
-  ) => {
+  public saveWallet = async (wallet: Wallet, password: string) => {
     const serializedWallet = await wallet.serialize(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     await this.walletRepository.updateWalletPassword(password);
@@ -130,7 +131,7 @@ export class WalletService {
   public deserializeWallet = async (password: string) => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
-      const walletInstance = await Wallet.createBySerialized(serializedWallet, password);
+      const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
       return walletInstance;
     } catch (e) {
       throw new WalletError('FAILED_TO_LOAD');
@@ -148,7 +149,7 @@ export class WalletService {
   public equalsPassowrd = async (password: string) => {
     try {
       const storedPassword = await this.walletRepository.getEncryptedPassword();
-      if (storedPassword !== "") {
+      if (storedPassword !== '') {
         const encryptedPassword = encryptSha256Password(password);
         return storedPassword === encryptedPassword;
       }
@@ -173,7 +174,7 @@ export class WalletService {
       const rawPassword = await this.walletRepository.getWalletPassword();
       return rawPassword;
     } catch (e) {
-      return "";
+      return '';
     }
   };
 
@@ -196,6 +197,5 @@ export class WalletService {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     return true;
-  }
+  };
 }
-

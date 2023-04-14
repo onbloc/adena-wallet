@@ -3,13 +3,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
-import { validateEmptyPassword, validateNotMatchConfirmPassword, validateWrongPasswordLength } from '@common/validation';
-import { WalletAccount } from 'adena-module';
+import {
+  validateEmptyPassword,
+  validateNotMatchConfirmPassword,
+  validateWrongPasswordLength,
+} from '@common/validation';
+import { deserializeAccount } from 'adena-module';
 
 interface LocationState {
   accounts: Array<string>;
   currentAccount: string | null;
-};
+}
 
 export const useLedgerPassword = () => {
   const location = useLocation();
@@ -111,10 +115,10 @@ export const useLedgerPassword = () => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
       const { accounts, currentAccount } = location.state as LocationState;
-      const deseriazedAccounts = accounts.map(WalletAccount.deserialize);
+      const deseriazedAccounts = accounts.map(deserializeAccount);
       await accountService.updateAccounts(deseriazedAccounts);
       if (currentAccount) {
-        await accountService.changeCurrentAccount(WalletAccount.deserialize(currentAccount));
+        await accountService.changeCurrentAccount(deserializeAccount(currentAccount));
       }
 
       navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);

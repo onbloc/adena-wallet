@@ -1,18 +1,11 @@
-import {
-  encodeSecp256k1Signature,
-} from '../signature';
-import {
-  AccountData,
-  AminoSignResponse,
-  OfflineAminoSigner,
-} from '../signer';
-import { StdSignDoc } from '../signdoc'
+import { encodeSecp256k1Signature } from '../signature';
+import { AccountData, AminoSignResponse, OfflineAminoSigner } from '../signer';
+import { StdSignDoc } from '../signdoc';
 import { makeCosmoshubPath } from '../paths';
 import { HdPath } from '../../crypto';
 import { serializeSignToGnoDoc } from '../secp256k1hdwallet';
 import Transport from '@ledgerhq/hw-transport';
-import { AddressAndPubkey, LedgerConnector, LedgerConnectorOptions } from './ledgerconnector';
-
+import { AddressAndPubkey, LedgerConnector, LedgerConnectorOptions } from './ledger-connector';
 
 export class LedgerSigner implements OfflineAminoSigner {
   private readonly connector: LedgerConnector;
@@ -30,7 +23,7 @@ export class LedgerSigner implements OfflineAminoSigner {
       this.accounts = await Promise.all(
         pubkeys.map(async (pubkey, index) => ({
           hdPath: this.hdPaths[index],
-          algo: "secp256k1" as const,
+          algo: 'secp256k1' as const,
           address: await this.connector.getCosmosAddress(pubkey),
           pubkey: pubkey,
         })),

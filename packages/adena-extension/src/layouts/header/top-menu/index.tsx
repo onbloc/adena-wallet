@@ -59,7 +59,8 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     if (!currentAccount) {
       return;
     }
-    const { address, name } = currentAccount.data;
+    const name = currentAccount.name;
+    const address = currentAccount.getAddress('g');
     setCurrentAccountAddress(address ?? "");
     setCurrentAccountName(name ?? '');
 

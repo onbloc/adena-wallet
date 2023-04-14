@@ -7,20 +7,26 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
+import { useAdenaContext } from '@hooks/use-context';
 
 export const ApproachPrivatePhrase = () => {
   const navigate = useNavigate();
+  const { walletService } = useAdenaContext();
   const [currentAccount] = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [privateKey, setPrivateKey] = useState('');
 
   useEffect(() => {
-    const privateKey = currentAccount?.getPrivateKey();
+    initPrivateKey();
+  }, [currentAccount]);
+
+  const initPrivateKey = async () => {
+    const wallet = await walletService.loadWallet();
+    const privateKey = wallet.privateKeyStr;
     if (privateKey) {
       setPrivateKey('0x' + privateKey);
     }
-  }, [currentAccount]);
+  }
 
   const doneButtonClick = () => {
     navigate(-2);

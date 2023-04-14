@@ -59,7 +59,7 @@ export const SendConfirm = () => {
   }, [sendState]);
 
   const sendBySigner = () => {
-    if (currentAccount?.data.signerType === 'LEDGER') {
+    if (currentAccount?.type === 'LEDGER') {
       setIsLoadingLedger(true);
     } else {
       sendToken().then(() => navigate(RoutePath.History));
@@ -81,7 +81,7 @@ export const SendConfirm = () => {
   const sendToken = async () => {
     if (gnoClient && currentAccount) {
       const gasWanted = 60000;
-      const fromAddress = currentAccount.getAddress() || '';
+      const fromAddress = currentAccount.getAddress('g') || '';
       const sendAmount = `${BigNumber(toamount).multipliedBy(10 ** 6)}${'ugnot'}`;
       const message = TransactionMessage.createMessageOfBankSend({
         fromAddress,

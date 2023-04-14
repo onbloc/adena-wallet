@@ -72,6 +72,36 @@ export function makeSignDoc(
   };
 }
 
+export function generateSignDocument(
+  accountNumber: number | string,
+  sequence: number | string,
+  chainId: string,
+  msgs: Array<any>,
+  gasWanted: string,
+  gasFee: {
+    value: string;
+    denom: string;
+  },
+  memo?: string,
+): StdSignDoc {
+  return {
+    msgs: [...msgs],
+    fee: {
+      amount: [
+        {
+          amount: gasFee.value,
+          denom: gasFee.denom,
+        },
+      ],
+      gas: gasWanted,
+    },
+    chain_id: chainId,
+    memo: memo ?? '',
+    account_number: `${accountNumber}` || '',
+    sequence: `${sequence}`,
+  };
+}
+
 export function serializeSignDoc(signDoc: StdSignDoc): Uint8Array {
   return toUtf8(sortedJsonStringify(signDoc));
 }

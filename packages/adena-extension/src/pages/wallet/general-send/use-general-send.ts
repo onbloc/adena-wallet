@@ -37,9 +37,9 @@ export const useGeneralSend = () => {
     (async () => {
       if (accounts && currentAccount) {
         const result = await Promise.all([
-          addressBookService.getAddressBookByWalletAccounts(accounts).filter(
-            (v) => currentAccount.getAddress() !== v.address,
-          ),
+          addressBookService
+            .getAddressBookByWalletAccounts(accounts)
+            .filter((v) => currentAccount.getAddress('g') !== v.address),
           addressBookService.getAddressBook(),
         ]);
         setAccountsList(result.flat());
@@ -112,7 +112,7 @@ export const useGeneralSend = () => {
 
   const availAmount = () => {
     return BigNumber(amount).isLessThanOrEqualTo(nowAmount.minus(fee));
-  }
+  };
 
   const maxButtonClick = () => {
     if (nowAmount <= BigNumber(fee)) {
@@ -120,7 +120,7 @@ export const useGeneralSend = () => {
       return;
     }
     setAmount(nowAmount.minus(fee).toFixed(6).toString());
-  }
+  };
 
   const nextButtonClick = () => {
     const addressErrorCheck = addressValidationCheck(address);

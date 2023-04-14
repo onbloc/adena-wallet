@@ -48,23 +48,23 @@ const ApproveMenu = () => {
   }, []);
 
   useEffect(() => {
-    if (currentAccount?.getAddress()) {
-      setAddress(currentAccount.getAddress());
-      setAccountName(currentAccount.data.name);
+    if (currentAccount?.getAddress('g')) {
+      setAddress(currentAccount.getAddress('g'));
+      setAccountName(currentAccount.name);
     }
-  }, [currentAccount?.getAddress()]);
+  }, [currentAccount?.getAddress('g')]);
 
   const initAddress = async () => {
     const currentAccount = await accountService.getCurrentAccount();
-    const currentAddress = currentAccount.getAddress();
-    const currentAccountName = currentAccount.data.name;
+    const currentAddress = currentAccount.getAddress('g');
+    const currentAccountName = currentAccount.name;
     setAddress(currentAddress);
     setAccountName(currentAccountName);
   };
 
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
-      const address = currentAccount?.getAddress() ?? "";
+      const address = currentAccount?.getAddress('g') ?? "";
       const siteName = getSiteName(requestData.hostname);
       const currentIsEstablished = await establishService.isEstablished(siteName, address);
       setIsEstablished(currentIsEstablished);

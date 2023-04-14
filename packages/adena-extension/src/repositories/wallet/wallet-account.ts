@@ -1,5 +1,6 @@
-import { StorageManager } from "@common/storage/storage-manager";
-import { WalletAccount } from "adena-module";
+import { StorageManager } from '@common/storage/storage-manager';
+import { Account, LedgerAccount, SeedAccount, SingleAccount } from 'adena-module';
+import { deserializeAccount, serializeAccount } from 'adena-module';
 
 type LocalValueType =
   | 'WALLET_ACCOUNT_PATH'
@@ -12,15 +13,13 @@ type LocalValueType =
   | 'ESTABLISH_SITES';
 
 export class WalletAccountRepository {
-
   private localStorage: StorageManager<LocalValueType>;
 
   constructor(localStorage: StorageManager) {
     this.localStorage = localStorage;
   }
 
-  public getCurrentAccountAddress = async (
-  ) => {
+  public getCurrentAccountAddress = async () => {
     const currentAccountAddress = await this.localStorage.get('CURRENT_ACCOUNT_ADDRESS');
     return currentAccountAddress;
   };
@@ -41,19 +40,23 @@ export class WalletAccountRepository {
       return [];
     }
 
-    const accounts = serializedAccounts.map(serializedAccount => {
-      try {
-        const account = WalletAccount.deserialize(serializedAccount);
-        return account;
-      } catch (e) {
-        return null;
-      }
-    }).filter(account => account !== null);
-    return accounts as Array<InstanceType<typeof WalletAccount>>;
+    const accounts = serializedAccounts
+      .map((serializedAccount) => {
+        try {
+          const account: LedgerAccount | SeedAccount | SingleAccount = deserializeAccount(
+            serializedAccount,
+          );
+          return account;
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter((account) => account !== null);
+    return accounts as Array<LedgerAccount | SeedAccount | SingleAccount>;
   };
 
-  public updateAccounts = async (walletAccounts: Array<InstanceType<typeof WalletAccount>>) => {
-    const serializedAccounts = walletAccounts.map(account => account.serialize());
+  public updateAccounts = async (walletAccounts: Array<Account>) => {
+    const serializedAccounts = walletAccounts.map((account) => serializeAccount(account));
     await this.localStorage.setByObject('WALLET_ACCOUNTS', serializedAccounts);
     return true;
   };
@@ -65,7 +68,7 @@ export class WalletAccountRepository {
 
   public getAccountPath = async () => {
     const accountPath = await this.localStorage.get('WALLET_ACCOUNT_PATH');
-    if (accountPath === "") {
+    if (accountPath === '') {
       return 0;
     }
     return parseInt(accountPath);
@@ -97,7 +100,7 @@ export class WalletAccountRepository {
   };
 
   public getCurrentAccountIndex = async () => {
-    const index = await this.localStorage.get("CURRENT_ACCOUNT_INDEX");
+    const index = await this.localStorage.get('CURRENT_ACCOUNT_INDEX');
     return parseInt(index);
   };
 

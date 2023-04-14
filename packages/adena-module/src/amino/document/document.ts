@@ -1,17 +1,17 @@
-import { WalletAccount } from '../../wallet';
 import { StdSignDoc } from '../signdoc';
 
 export class Document {
   public static createDocument(
-    account: WalletAccount,
+    accountNumber: string,
+    sequence: string,
     chainId: string,
     msgs: Array<any>,
     gasWanted: string,
     gasFee: {
-      value: string,
-      denom: string
+      value: string;
+      denom: string;
     },
-    memo: string
+    memo: string,
   ): StdSignDoc {
     return {
       msgs: [...msgs],
@@ -26,8 +26,8 @@ export class Document {
       },
       chain_id: chainId,
       memo: memo,
-      account_number: account.getAccountNumber() || '',
-      sequence: account.getSequence() || '',
+      account_number: accountNumber,
+      sequence: sequence,
     };
   }
 }

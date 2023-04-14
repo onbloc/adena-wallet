@@ -21,7 +21,7 @@ export const RevealPrivatePhrase = () => {
 
   const init = async () => {
     const wallet = await walletService.loadWallet();
-    const mnemonic = wallet.getMnemonic();
+    const mnemonic = wallet.mnemonic;
     const seeds = `${mnemonic}`.split(' ');
     setSeeds(seeds);
   };

@@ -30,9 +30,9 @@ function unharden(hdPath: HdPath): number[] {
 }
 
 const cosmosHdPath = makeCosmoshubPath(0);
-const cosmosBech32Prefix = "g";
-const cosmosLedgerAppName = "Cosmos";
-const requiredCosmosAppVersion = "1.5.3";
+const cosmosBech32Prefix = 'g';
+const cosmosLedgerAppName = 'Cosmos';
+const requiredCosmosAppVersion = '1.5.3';
 
 export interface LedgerConnectorOptions {
   readonly hdPaths?: readonly HdPath[];
@@ -84,7 +84,8 @@ export class LedgerConnector {
     this.hdPaths = options.hdPaths ?? defaultOptions.hdPaths;
     this.prefix = options.prefix ?? defaultOptions.prefix;
     this.ledgerAppName = options.ledgerAppName ?? defaultOptions.ledgerAppName;
-    this.minLedgerAppVersion = options.minLedgerAppVersion ?? defaultOptions.requiredLedgerAppVersion;
+    this.minLedgerAppVersion =
+      options.minLedgerAppVersion ?? defaultOptions.requiredLedgerAppVersion;
     this.app = new CosmosApp(transport);
   }
 
@@ -131,7 +132,7 @@ export class LedgerConnector {
     const hdPathToUse = hdPath || this.hdPaths[0];
     // ledger-cosmos-js hardens the first three indices
     const response = await this.app.sign(unharden(hdPathToUse), fromUtf8(message));
-    this.handleLedgerErrors(response, "Transaction signing request was rejected by the user");
+    this.handleLedgerErrors(response, 'Transaction signing request was rejected by the user');
     return Secp256k1Signature.fromDer((response as SignResponse).signature).toFixedLength();
   }
 
@@ -204,31 +205,31 @@ export class LedgerConnector {
   private handleLedgerErrors(
     /* eslint-disable @typescript-eslint/naming-convention */
     {
-      error_message: errorMessage = "No errors",
+      error_message: errorMessage = 'No errors',
       device_locked: deviceLocked = false,
     }: LedgerAppErrorResponse,
     /* eslint-enable */
-    rejectionMessage = "Request was rejected by the user",
+    rejectionMessage = 'Request was rejected by the user',
   ): void {
     if (deviceLocked) {
-      throw new Error("Ledger’s screensaver mode is on");
+      throw new Error('Ledger’s screensaver mode is on');
     }
     switch (errorMessage) {
-      case "U2F: Timeout":
-        throw new Error("Connection timed out. Please try again.");
-      case "Cosmos app does not seem to be open":
+      case 'U2F: Timeout':
+        throw new Error('Connection timed out. Please try again.');
+      case 'Cosmos app does not seem to be open':
         throw new Error(`${this.ledgerAppName} app is not open`);
-      case "Command not allowed":
-        throw new Error("Transaction rejected");
-      case "Transaction rejected":
+      case 'Command not allowed':
+        throw new Error('Transaction rejected');
+      case 'Transaction rejected':
         throw new Error(rejectionMessage);
-      case "Unknown Status Code: 26628":
-        throw new Error("Ledger’s screensaver mode is on");
-      case "Instruction not supported":
+      case 'Unknown Status Code: 26628':
+        throw new Error('Ledger’s screensaver mode is on');
+      case 'Instruction not supported':
         throw new Error(
           `Your ${this.ledgerAppName} Ledger App is not up to date. Please update to version ${this.minLedgerAppVersion} or newer.`,
         );
-      case "No errors":
+      case 'No errors':
         break;
       default:
         throw new Error(`Ledger Native Error: ${errorMessage}`);

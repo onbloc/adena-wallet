@@ -15,6 +15,7 @@ import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { LedgerConnector } from 'adena-module';
+import { isLedgerAccount } from 'adena-module';
 
 // TODO: ApproveTransaction
 export const ApproveSign = () => {
@@ -96,7 +97,7 @@ export const ApproveSign = () => {
     if (transactionData && gnoClient && currentAccount) {
       try {
         const signedAmino = await transactionService.createAminoSign(
-          currentAccount.getAddress(),
+          currentAccount.getAddress('g'),
           requestData?.data?.messages,
           requestData?.data?.gasWanted,
           requestData?.data?.gasFee,
@@ -127,10 +128,10 @@ export const ApproveSign = () => {
   };
 
   const approveEvent = async () => {
-    if (currentAccount?.data.signerType === 'AMINO') {
+    if (currentAccount && !isLedgerAccount(currentAccount)) {
       signTransaction();
     }
-    if (currentAccount?.data.signerType === 'LEDGER') {
+    if (currentAccount?.type === 'LEDGER') {
       setLoadingLedger(true);
     }
   };

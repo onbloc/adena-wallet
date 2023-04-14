@@ -6,11 +6,13 @@ import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import SeedBox from '@components/seed-box';
-import { WalletAccount } from 'adena-module';
+import { SingleAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
+import { useAdenaContext } from '@hooks/use-context';
+import { PrivateKeyKeyring } from 'adena-module';
 
 const content = {
   title: 'Import Private Key',
@@ -20,6 +22,7 @@ const content = {
 
 export const ImportPrivateKey = () => {
   const navigate = useNavigate();
+  const { walletService } = useAdenaContext();
   const { accounts } = useWalletAccounts();
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
@@ -60,9 +63,11 @@ export const ImportPrivateKey = () => {
       if (privateKey.length !== 64 || !privateKey.match(regExp)) {
         throw new Error("Invalid private key");
       }
-      const account = await WalletAccount.createByPrivateKeyHex(privateKey, 'g');
+      const wallet = await walletService.loadWallet();
+      const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKey);
+      const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
 
-      if (accounts.find((cur) => cur.data.privateKey === account.getPrivateKey())) {
+      if (wallet.hasPrivateKey(keyring.privateKey)) {
         throw new Error("Private key already registered");
       }
       await importAccount(account);

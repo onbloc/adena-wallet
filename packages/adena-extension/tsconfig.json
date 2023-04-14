@@ -8,6 +8,7 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
+    "skipLibCheck": true,
     "strict": true,
     "allowJs": true,
     "downlevelIteration": true,

@@ -43,7 +43,7 @@ export const WalletMain = () => {
       updateLastHistory();
       updateBalances();
     }
-  }, [gnoClient, currentAccount?.getAddress()]);
+  }, [gnoClient, currentAccount?.getAddress('g')]);
 
   const getCurrentBalance = () => {
     if (!currentBalance.denom) {
