@@ -40,7 +40,7 @@ export const CopyTooltip = ({ children, copyText, className }: CopyTooltipProps)
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
   const handleButtonClick = useCallback(
-    (e) => {
+    () => {
       setIsClicked(true);
       navigator.clipboard.writeText(copyText);
     },
