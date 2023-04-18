@@ -75,6 +75,10 @@ Check out our official documentation page for guides and brand assets.
   ​
   ​
 
-## Support
+## Contribution & Support
 
-If you need support or have suggestions for improvement, please open an [issue](https://github.com/onbloc/adena-wallet/issues) or join our [channel](https://discord.gg/6eTSyZ3569) on Gnoland's Discord server.
+We welcome contributions from the community and are always eager to hear your ideas and feedback! If you have suggestions for improvement, want to contribute to Adena, or need support, please consider the following options:
+
+- Read our contributing guidelines: Our [CONTRIBUTING.md](https://github.com/onbloc/adena-wallet/blob/main/CONTRIBUTING.md) file provides information on how to contribute to the project, including submitting pull requests, reporting issues, and suggesting improvements.
+- Open an issue: If you encounter a bug, have a feature request, or want to suggest improvements, feel free to open an [issue](https://github.com/onbloc/adena-wallet/issues) on our GitHub repository.
+- Join our community: For discussions, questions, or support, join our [channel](https://discord.com/invite/6eTSyZ3569) on Gnoland's Discord server. We're excited to collaborate and help!
