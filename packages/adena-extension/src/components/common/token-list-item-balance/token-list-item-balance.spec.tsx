@@ -4,11 +4,11 @@ import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
 import { GlobalStyle } from '@styles/global-style';
-import MainTokenListItemBalance, { MainTokenListItemBalanceProps } from './main-token-list-item-balance';
+import TokenListItemBalance, { TokenListItemBalanceProps } from './token-list-item-balance';
 
-describe('MainTokenListItemBalance Component', () => {
-  it('MainTokenListItemBalance render', () => {
-    const args: MainTokenListItemBalanceProps = {
+describe('TokenListItemBalance Component', () => {
+  it('TokenListItemBalance render', () => {
+    const args: TokenListItemBalanceProps = {
       amount: {
         value: "240,255.241155",
         denom: "GNOT"
@@ -19,7 +19,7 @@ describe('MainTokenListItemBalance Component', () => {
       <RecoilRoot>
         <GlobalStyle />
         <ThemeProvider theme={theme}>
-          <MainTokenListItemBalance {...args} />
+          <TokenListItemBalance {...args} />
         </ThemeProvider>
       </RecoilRoot>,
     );
