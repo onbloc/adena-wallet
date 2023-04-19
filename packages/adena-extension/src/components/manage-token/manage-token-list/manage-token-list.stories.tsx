@@ -1,0 +1,38 @@
+import ManageTokenList, { type ManageTokenListProps } from './manage-token-list';
+import { Meta, StoryObj } from '@storybook/react';
+import { action } from "@storybook/addon-actions";
+
+export default {
+  title: 'components/manage-token/ManageTokenList',
+  component: ManageTokenList,
+} as Meta<typeof ManageTokenList>;
+
+const tokens = [
+  {
+    tokenId: "token1",
+    logo: "https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg",
+    name: "Gnoland",
+    balanceAmount: {
+      value: "240,255.241155",
+      denom: "GNOT",
+    },
+    activated: true,
+    main: true
+  }, {
+    tokenId: "token2",
+    logo: "https://avatars.githubusercontent.com/u/118414737?s=200&v=4",
+    name: "Gnoswap",
+    balanceAmount: {
+      value: "252.844",
+      denom: "GNOS",
+    },
+    activated: true
+  }
+];
+
+export const Default: StoryObj<ManageTokenListProps> = {
+  args: {
+    tokens,
+    onToggleActiveItem: action("token item click")
+  },
+};
