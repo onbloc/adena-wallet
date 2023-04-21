@@ -1,0 +1,36 @@
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { render } from '@testing-library/react';
+import theme from '@styles/theme';
+import { GlobalStyle } from '@styles/global-style';
+import TransactionHistoryListItem, { TransactionHistoryListItemProps } from './transaction-history-list-item';
+
+describe('TransactionHistoryListItem Component', () => {
+  it('TransactionHistoryListItem render', () => {
+    const args: TransactionHistoryListItemProps = {
+      hash: 'hash1',
+      logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+      type: 'TRANSFER',
+      status: 'SUCCESS',
+      title: 'Send',
+      description: 'To: g1n5...123n',
+      extraInfo: '',
+      amount: {
+        value: '-4,000',
+        denom: 'GNOT'
+      },
+      valueType: 'DEFAULT',
+      onClickItem: () => { return; },
+    };
+
+    render(
+      <RecoilRoot>
+        <GlobalStyle />
+        <ThemeProvider theme={theme}>
+          <TransactionHistoryListItem {...args} />
+        </ThemeProvider>
+      </RecoilRoot>,
+    );
+  });
+});
