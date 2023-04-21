@@ -9,6 +9,12 @@ import BalanceInput, { BalanceInputProps } from './balance-input';
 describe('BalanceInput Component', () => {
   it('BalanceInput render', () => {
     const args: BalanceInputProps = {
+      hasError: false,
+      amount: '132123123123',
+      denom: 'GNOT',
+      description: 'Insufficient balance',
+      onChangeAmount: () => { return; },
+      onClickMax: () => { return; },
     };
 
     render(
