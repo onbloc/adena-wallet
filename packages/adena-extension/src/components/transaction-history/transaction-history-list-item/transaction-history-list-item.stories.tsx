@@ -26,9 +26,9 @@ export const Default: StoryObj<TransactionHistoryListItemProps> = {
 };
 
 
-export const TransferRSendSuccess: StoryObj<TransactionHistoryListItemProps> = {
+export const TransferSendSuccess: StoryObj<TransactionHistoryListItemProps> = {
   args: {
-    hash: 'transferRSendSuccessInfoHash',
+    hash: 'transferSendSuccessInfoHash',
     logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
     type: 'TRANSFER',
     status: 'SUCCESS',
@@ -62,9 +62,9 @@ export const TransferReceiveSuccess: StoryObj<TransactionHistoryListItemProps> =
   }
 }
 
-export const TransferRSendFailed: StoryObj<TransactionHistoryListItemProps> = {
+export const TransferSendFailed: StoryObj<TransactionHistoryListItemProps> = {
   args: {
-    hash: 'transferRSendFailedInfoHash',
+    hash: 'transferSendFailedInfoHash',
     logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
     type: 'TRANSFER',
     status: 'FAIL',
