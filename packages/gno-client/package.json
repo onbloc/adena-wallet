@@ -5,6 +5,7 @@
   "description": "Gno API interface",
   "main": "./dist/index.umd.js",
   "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
   "license": "MIT",
   "scripts": {
     "lint": "eslint 'src/**/*.{js,ts}'",

@@ -42,7 +42,7 @@ export const Deposit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [displayaddr, setDisplayaddr] = useState('');
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   useEffect(() => {
     setDisplayaddr(
       currentAccount?.getAddress('g').slice(0, 4) + '...' + currentAccount?.getAddress('g').slice(-4),

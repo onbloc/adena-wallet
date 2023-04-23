@@ -165,8 +165,6 @@ export const useCreatePassword = () => {
         mnemonic: seedState.seeds,
         password: pwd,
       });
-      const accounts = createdWallet.accounts;
-      await accountService.updateAccounts(accounts);
       await walletService.changePassowrd(pwd);
     } catch (error) {
       console.error(error);

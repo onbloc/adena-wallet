@@ -17,16 +17,11 @@ export const WalletCreate = () => {
   const { state, loadAccounts } = useLoadAccounts();
 
   useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  useEffect(() => {
     switch (state) {
       case 'NONE':
-        loadAccounts();
         break;
       case 'FINISH':
-        window.location.replace("popup.html#" + RoutePath.Wallet);
+        navigate(RoutePath.Wallet);
         break;
       case 'LOGIN':
         navigate(RoutePath.Login);

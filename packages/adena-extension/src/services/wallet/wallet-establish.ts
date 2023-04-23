@@ -1,5 +1,4 @@
 import { WalletEstablishRepository } from '@repositories/wallet';
-import { ChainService } from '..';
 
 interface EstablishSite {
   hostname: string;
@@ -11,55 +10,62 @@ interface EstablishSite {
 }
 
 export class WalletEstablishService {
-
   private walletEstablishRepository: WalletEstablishRepository;
 
-  private chainService: ChainService;
-
-  constructor(
-    walletEstablishRepository: WalletEstablishRepository,
-    chainService: ChainService
-  ) {
+  constructor(walletEstablishRepository: WalletEstablishRepository) {
     this.walletEstablishRepository = walletEstablishRepository;
-    this.chainService = chainService;
   }
 
-  public getCurrentEstablisedSites = async (address: string) => {
+  public getEstablisedSitesBy = async (accountId: string, chainId: string) => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.getAccountEstablishedSites(
+    const accountEstablishedSites = await this.selectEstablishedSitesBy(
+      accountId,
+      chainId,
       establishedSites,
-      address,
     );
     return accountEstablishedSites;
   };
 
-  public isEstablished = async (hostname: string, address: string) => {
+  public isEstablishedBy = async (accountId: string, chainId: string, hostname: string) => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.getAccountEstablishedSites(
+    const accountEstablishedSites = await this.selectEstablishedSitesBy(
+      accountId,
+      chainId,
       establishedSites,
-      address,
     );
-    return accountEstablishedSites.findIndex((site: EstablishSite) => site.hostname === hostname) > -1;
+    return (
+      accountEstablishedSites.findIndex((site: EstablishSite) => site.hostname === hostname) > -1
+    );
   };
 
-  public establish = async (hostname: string, address: string, appName: string, favicon?: string | null) => {
+  public establishBy = async (
+    accountId: string,
+    chainId: string,
+    establishedInfo: {
+      hostname: string;
+      accountId: string;
+      appName: string;
+      favicon?: string | null;
+    },
+  ) => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const currentChain = await this.chainService.getCurrentNetwork();
-    const currentChainId = currentChain.chainId;
-    const accountEstablishedSites = await this.getAccountEstablishedSites(
+    const accountEstablishedSites = await this.selectEstablishedSitesBy(
+      accountId,
+      chainId,
       establishedSites,
-      address,
     );
     const changedEstablishedSites: { [key in string]: Array<EstablishSite> } = {
       ...establishedSites,
-      [address]: [
-        ...accountEstablishedSites.filter((site: EstablishSite) => site.hostname !== hostname),
+      [accountId]: [
+        ...accountEstablishedSites.filter(
+          (site: EstablishSite) => site.hostname !== establishedInfo.hostname,
+        ),
         {
-          hostname,
-          chainId: currentChainId !== '' ? currentChainId : 'test3',
-          account: address,
-          name: appName,
-          favicon: favicon ?? null,
+          hostname: establishedInfo.hostname,
+          chainId,
+          account: establishedInfo.accountId,
+          name: establishedInfo.appName,
+          favicon: establishedInfo.favicon ?? null,
           establishedTime: `${new Date().getTime()}`,
         },
       ],
@@ -67,11 +73,12 @@ export class WalletEstablishService {
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
-  public unestablish = async (hostname: string, address: string) => {
+  public unestablishBy = async (accountId: string, chainId: string, hostname: string) => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
-    const accountEstablishedSites = await this.getAccountEstablishedSites(
+    const accountEstablishedSites = await this.selectEstablishedSitesBy(
+      accountId,
+      chainId,
       establishedSites,
-      address,
     );
 
     const changedAccountEstablishedSites = accountEstablishedSites.filter(
@@ -81,24 +88,20 @@ export class WalletEstablishService {
     // eslint-disable-next-line prefer-const
     let changedEstablishedSites = {
       ...establishedSites,
-      [address]: changedAccountEstablishedSites,
+      [accountId]: changedAccountEstablishedSites,
     };
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
-  private getAccountEstablishedSites = async (
+  private selectEstablishedSitesBy = async (
+    accountId: string,
+    chainId: string,
     establishedSites: { [key in string]: Array<EstablishSite> },
-    address: string,
   ) => {
-    const currentChain = await this.chainService.getCurrentNetwork();
-    const currentChainId = currentChain.chainId;
     const accountEstablishedSites =
-      Object.keys(establishedSites).findIndex((key) => key === address) > -1
-        ? [...establishedSites[address]].filter(
-          (site) => site.chainId === currentChainId,
-        )
+      Object.keys(establishedSites).findIndex((key) => key === accountId) > -1
+        ? [...establishedSites[accountId]].filter((site) => site.chainId === chainId)
         : [];
     return accountEstablishedSites;
   };
 }
-

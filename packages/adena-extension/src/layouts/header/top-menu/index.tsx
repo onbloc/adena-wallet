@@ -10,6 +10,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -33,12 +34,13 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [url, setUrl] = useState('');
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountAddress, setCurrentAccountAddress] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState('');
+  const [gnoClient] = useGnoClient();
 
   useEffect(() => {
     initAccountInfo();
@@ -65,7 +67,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     setCurrentAccountName(name ?? '');
 
     const siteName = getSiteName(hostname);
-    const isEstablished = await establishService.isEstablished(siteName, address);
+    const isEstablished = await establishService.isEstablishedBy(address, gnoClient?.chainId ?? '', siteName);
     setIsEstablish(isEstablished);
   };
 

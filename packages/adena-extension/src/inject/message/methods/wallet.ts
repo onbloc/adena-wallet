@@ -1,6 +1,5 @@
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
-import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
@@ -19,12 +18,14 @@ export const getAccount = async (
       return;
     }
 
-    const currentAccountAddress = await core.accountService.getCurrentAccountAddress();
+    const currentAccountAddress = await core.getCurrentAddress();
+    if (!currentAccountAddress) {
+      return;
+    }
     const currentNetwork = await core.chainService.getCurrentNetwork();
     const gnoClient = GnoClient.createNetworkByType(
       { ...currentNetwork },
       getNetworkMapperType(currentNetwork.chainId),
-      fetchAdapter,
     );
 
     const account = await gnoClient.getAccount(currentAccountAddress);
@@ -45,11 +46,16 @@ export const addEstablish = async (
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
+  const account = await core.getCurrentAccount();
+  if (!account) {
+    return false;
+  }
+
+  const chainId = core.gnoClient?.chainId ?? '';
 
   const isLocked = await core.walletService.isLocked();
-  const address = await core.accountService.getCurrentAccountAddress();
   const siteName = getSiteName(message.hostname);
-  const isEstablised = await core.establishService.isEstablished(siteName, address);
+  const isEstablised = await core.establishService.isEstablishedBy(account.id, chainId, siteName);
 
   if (isLocked) {
     HandlerMethod.createPopup(

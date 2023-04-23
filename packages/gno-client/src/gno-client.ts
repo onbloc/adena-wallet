@@ -22,6 +22,10 @@ export class GnoClient {
     return this.networkConfig.chainId;
   }
 
+  public get networkId() {
+    return this.networkConfig.networkId;
+  }
+
   public get chainName() {
     return this.networkConfig.chainName;
   }
@@ -72,59 +76,42 @@ export class GnoClient {
     return this.mapperType;
   }
 
-  public isHealth = async () =>
-    this.network.isHealth();
+  public isHealth = async () => this.network.isHealth();
 
-  public getNetwrokInfo = async () =>
-    this.network.getNetwrokInfo();
+  public getNetwrokInfo = async () => this.network.getNetwrokInfo();
 
-  public getGenesis = async () =>
-    this.network.getGenesis();
+  public getGenesis = async () => this.network.getGenesis();
 
   public getBlocks = async (minHeight: number, maxHeight: number) =>
     this.network.getBlocks(minHeight, maxHeight);
 
-  public getBlock = async (height: number) =>
-    this.network.getBlock(height);
+  public getBlock = async (height: number) => this.network.getBlock(height);
 
-  public getBlockResults = async (height: number) =>
-    this.network.getBlockResults(height);
+  public getBlockResults = async (height: number) => this.network.getBlockResults(height);
 
-  public getBlockCommit = async (height: number) =>
-    this.network.getBlockCommit(height);
+  public getBlockCommit = async (height: number) => this.network.getBlockCommit(height);
 
-  public getValidators = async () =>
-    this.network.getValidators();
+  public getValidators = async () => this.network.getValidators();
 
-  public getConsensusState = async () =>
-    this.network.getConsensusState();
+  public getConsensusState = async () => this.network.getConsensusState();
 
-  public getConsensusParams = async (height: number) =>
-    this.network.getConsensusParams(height);
+  public getConsensusParams = async (height: number) => this.network.getConsensusParams(height);
 
-  public getUnconfirmedTxs = async () =>
-    this.network.getUnconfirmedTxs();
+  public getUnconfirmedTxs = async () => this.network.getUnconfirmedTxs();
 
-  public getNumUnconfirmedTxs = async () =>
-    this.network.getNumUnconfirmedTxs();
+  public getNumUnconfirmedTxs = async () => this.network.getNumUnconfirmedTxs();
 
-  public getAbciInfo = async () =>
-    this.network.getAbciInfo();
+  public getAbciInfo = async () => this.network.getAbciInfo();
 
-  public broadcastTxCommit = async (tx: string) =>
-    this.network.broadcastTxCommit(tx);
+  public broadcastTxCommit = async (tx: string) => this.network.broadcastTxCommit(tx);
 
-  public broadcastTxSync = async (tx: string) =>
-    this.network.broadcastTxSync(tx);
+  public broadcastTxSync = async (tx: string) => this.network.broadcastTxSync(tx);
 
-  public broadcastTxAsync = async (tx: string) =>
-    this.network.broadcastTxAsync(tx);
+  public broadcastTxAsync = async (tx: string) => this.network.broadcastTxAsync(tx);
 
-  public getAccount = async (address: string) =>
-    this.network.getAccount(address);
+  public getAccount = async (address: string) => this.network.getAccount(address);
 
-  public getBalances = async (address: string) =>
-    this.network.getBalances(address);
+  public getBalances = async (address: string) => this.network.getBalances(address);
 
   public getTransactionHistory = async (address: string, page?: number) =>
     this.network.getTransactionHistory(address, page ?? 0);
@@ -135,15 +122,11 @@ export class GnoClient {
   public queryEval = async (packagePath: string, functionName: string, data?: Array<string>) =>
     this.network.queryEval(packagePath, functionName, data);
 
-  public queryPackage = async (packagePath: string) =>
-    this.network.queryPackage(packagePath);
+  public queryPackage = async (packagePath: string) => this.network.queryPackage(packagePath);
 
-  public queryFunctions = async (packagePath: string) =>
-    this.network.queryFunctions(packagePath);
+  public queryFunctions = async (packagePath: string) => this.network.queryFunctions(packagePath);
 
-  public queryFile = async (packagePath: string) =>
-    this.network.queryFile(packagePath);
+  public queryFile = async (packagePath: string) => this.network.queryFile(packagePath);
 
-  public queryStore = async (packagePath: string) =>
-    this.network.queryStore(packagePath);
+  public queryStore = async (packagePath: string) => this.network.queryStore(packagePath);
 }

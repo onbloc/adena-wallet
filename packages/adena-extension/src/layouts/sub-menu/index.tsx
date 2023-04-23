@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import Portal from '@layouts/portal';
 import logo from '../../assets/logo-withIcon.svg';
@@ -17,8 +17,8 @@ import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { useAdenaContext } from '@hooks/use-context';
 import { Account } from 'adena-module';
-import { WalletState } from '@states/index';
-import { useRecoilValue } from 'recoil';
+import { AccountTokenBalance } from '@states/balance';
+import { useTokenBalance } from '@hooks/use-token-balance';
 
 interface SubMenuProps {
   open: boolean;
@@ -30,8 +30,7 @@ interface SubMenuProps {
 interface UserListProps {
   accounts: Array<Account>;
   currentAccount: Account;
-  accountBalances: { [key in string]: Array<WalletState.Balance> };
-  currentAccountIndex: number;
+  accountBalances: AccountTokenBalance[];
   changeAccountHandler: (currentAccount: Account) => void;
 }
 
@@ -56,25 +55,22 @@ const UserListMaker = ({
   changeAccountHandler,
 }: UserListProps) => (
   <>
-    {accounts.map((v, i) => {
-      const balance =
-        accountBalances[v.getAddress('g')] && accountBalances[v.getAddress('g')].length > 0
-          ? accountBalances[v.getAddress('g')][0]
-          : null;
+    {accounts.map((account, i) => {
+      const balance = accountBalances.find(ab => ab.accountId === account.id)?.tokenBalances.find(b => b.main)?.amount ?? null;
       const balanceString = balance
-        ? `${maxFractionDigits(balance.amount.toString(), 6)} ${balance.amountDenom.toUpperCase()}`
+        ? `${maxFractionDigits(balance.value.toString(), 6)} ${balance.denom.toUpperCase()}`
         : ' ';
 
       return (
-        <ListItem key={i} onClick={() => changeAccountHandler(v)}>
+        <ListItem key={i} onClick={() => changeAccountHandler(account)}>
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(v.name, 10)}
-            <FromBadge from={v.type} />
+            {formatNickname(account.name, 10)}
+            <FromBadge from={account.type} />
           </Text>
           <Text type='body3Reg' color={theme.color.neutral[9]}>
             {balanceString}
           </Text>
-          {currentAccount.index === v.index && (
+          {currentAccount.index === account.index && (
             <img src={statusCheck} alt='status icon' className='status-icon' />
           )}
         </ListItem>
@@ -97,17 +93,12 @@ const FromBadge = ({ from }: { from: string }) => {
 };
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
-  const { walletService, accountService } = useAdenaContext();
+  const { walletService } = useAdenaContext();
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
+  const { currentAccount, changeCurrentAccount } = useCurrentAccount();
   const { accounts } = useWalletAccounts();
-  const accountBalances = useRecoilValue(WalletState.accountBalances);
-  const [currentAccountIndex, setCurrentAccountIndex] = useState(0);
-
-  useEffect(() => {
-    accountService.getCurrentAccountIndex().then(setCurrentAccountIndex);
-  }, [accounts]);
+  const { accountTokenBalances } = useTokenBalance();
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -151,10 +142,9 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
                 {accounts && accounts.length > 0 && (
                   <UserListMaker
                     accounts={accounts}
-                    accountBalances={accountBalances}
+                    accountBalances={accountTokenBalances}
                     changeAccountHandler={changeAccountHandler}
                     currentAccount={currentAccount}
-                    currentAccountIndex={currentAccountIndex}
                   />
                 )}
               </ListWrapper>

@@ -41,8 +41,8 @@ export class MessageHandler {
     let existsWallet = false;
     try {
       const core = new InjectCore();
-      const curreantAccount = await core.accountService.getCurrentAccount();
-      existsWallet = curreantAccount.getAddress('g') !== '';
+      const curreantAccount = await core.getCurrentAccount();
+      existsWallet = curreantAccount?.getAddress('g') !== '';
     } catch (e) {
       existsWallet = false;
     }

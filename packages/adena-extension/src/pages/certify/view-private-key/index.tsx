@@ -51,7 +51,7 @@ const KeyBox = styled.div`
 `;
 
 export const ViewPrivateKey = () => {
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const doneButtonClick = () => navigate(-1);

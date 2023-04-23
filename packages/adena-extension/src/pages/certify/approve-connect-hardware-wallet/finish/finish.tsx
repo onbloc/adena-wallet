@@ -5,8 +5,7 @@ import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useLocation } from 'react-router-dom';
-import { useAdenaContext } from '@hooks/use-context';
-import { deserializeAccount } from 'adena-module';
+import { useWalletContext } from '@hooks/use-context';
 
 const text = {
   title: 'Account Added',
@@ -32,15 +31,15 @@ const Wrapper = styled.main`
 `;
 
 export const ApproveConnectHardwareWalletFinish = () => {
-  const { accountService } = useAdenaContext();
+  const { wallet } = useWalletContext();
   const location = useLocation();
 
   const onClickDoneButton = async () => {
-    const { accounts, currentAccount } = location.state;
-    const deseriazedAccounts = accounts.map(deserializeAccount);
-    await accountService.updateAccounts(deseriazedAccounts);
-    if (currentAccount) {
-      await accountService.changeCurrentAccount(deserializeAccount(currentAccount));
+    const { accounts } = location.state;
+    if (wallet) {
+      for (const account of accounts) {
+        wallet.addAccount(account);
+      }
     }
     window.close();
   };

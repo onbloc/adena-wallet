@@ -40,45 +40,54 @@ const menuMakerInfo = [
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 export const Settings = () => {
-  const [currnetAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const updateAccountName = useUpdateWalletAccountName();
   const navigate = useNavigate();
   const revealSeedClick = () => navigate(RoutePath.SettingSeedPhrase);
-  const [text, setText] = useState<string>(() => currnetAccount?.name || '');
+  const [text, setText] = useState<string>(() => currentAccount?.name || '');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
   const shareButtonClick = async () => {
     window.open(
-      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currnetAccount?.getAddress('g')}`,
+      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')}`,
       '_blank',
     );
   };
 
   const onChangeAccountName = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentAccount) {
+      return;
+    }
     const name = e.target.value;
     if (name.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
       await setText(name);
-      await updateAccountName(currnetAccount?.getAddress('g') || '', name);
+      await updateAccountName(currentAccount, name);
     }
   };
 
   const handleTextBlur = () => {
+    if (!currentAccount) {
+      return;
+    }
     const changedName = text === '' ? `${getDefaultAccountName()}` : text;
-    updateAccountName(currnetAccount?.getAddress('g') || '', changedName);
+    updateAccountName(currentAccount, changedName);
   };
 
   const handleFocus = async () => {
+    if (!currentAccount) {
+      return;
+    }
     await setText('');
-    await updateAccountName(currnetAccount?.getAddress('g') || '', '');
+    await updateAccountName(currentAccount, '');
     inputRef.current?.focus();
   };
 
   const getDefaultAccountName = () => {
-    if (!currnetAccount) {
+    if (!currentAccount) {
       return 'Account';
     }
-    const accountType = isLedgerAccount(currnetAccount) ? 'Ledger' : 'Account';
-    const accountNumber = currnetAccount.index;
+    const accountType = isLedgerAccount(currentAccount) ? 'Ledger' : 'Account';
+    const accountNumber = currentAccount.index;
     return `${accountType} ${accountNumber}`;
   };
 
@@ -97,7 +106,7 @@ export const Settings = () => {
       </IconInputBox>
       <GnoLinkBox>
         <Text type='light1Reg' className='link-text'>
-          {currnetAccount?.getAddress('g')}
+          {currentAccount?.getAddress('g')}
         </Text>
         <LinkIcon type='button' onClick={shareButtonClick} />
       </GnoLinkBox>

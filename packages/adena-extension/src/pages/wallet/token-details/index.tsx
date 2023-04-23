@@ -10,13 +10,12 @@ import DubbleButton from '@components/buttons/double-button';
 import { StaticTooltip } from '@components/tooltips';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { maxFractionDigits } from '@common/utils/client-utils';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
 import { useTransactionHistory } from '@hooks/use-transaction-history';
+import { useTokenBalance } from '@hooks/use-token-balance';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -72,9 +71,8 @@ export const TokenDetails = () => {
   const navigate = useNavigate();
   const [etcClicked, setEtcClicked] = useState(false);
   const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
-  const [currentAccount] = useCurrentAccount();
-  const [gnoClient] = useGnoClient();
-  const [balances] = useWalletBalances(gnoClient);
+  const { currentAccount } = useCurrentAccount();
+  const { tokenBalances } = useTokenBalance();
 
   const [balance, setBalance] = useState('');
   const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
@@ -141,11 +139,13 @@ export const TokenDetails = () => {
   };
 
   useEffect(() => {
-    if (balances && balances.length > 0) {
-      const currentBalance = maxFractionDigits(balances[0]?.amount.toString() ?? 0, 6);
+    const currentBalanceAmount = tokenBalances.find(tokenBalance => tokenBalance.main)?.amount;
+    if (currentBalanceAmount) {
+      const { value } = currentBalanceAmount;
+      const currentBalance = maxFractionDigits(value, 6);
       setBalance(currentBalance);
     }
-  }, [balances]);
+  }, [tokenBalances]);
 
   const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
 
@@ -162,7 +162,7 @@ export const TokenDetails = () => {
             posTop='28px'
             onClick={() => {
               window.open(
-                `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')
+                `https://gnoscan.io/accounts/${currentAccount?.getAddress('g')
                 }`,
                 '_blank',
               );

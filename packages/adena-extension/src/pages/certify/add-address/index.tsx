@@ -10,7 +10,12 @@ import DefaultInput, { inputStyle } from '@components/default-input';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ErrorText } from '@components/error-text';
 import theme from '@styles/theme';
-import { validateAlreadyAddress, validateAlreadyName, validateInvalidAddress, WalletService } from '@services/index';
+import {
+  validateAlreadyAddress,
+  validateAlreadyName,
+  validateInvalidAddress,
+  WalletService,
+} from '@services/index';
 import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { useAdenaContext } from '@hooks/use-context';
@@ -97,19 +102,31 @@ const AddAddress = () => {
   };
 
   const addHandler = async () =>
-    await addressBookService.addAddressBookItem(name, address).then(() => backButtonClick());
+    await addressBookService
+      .addAddressBookItemByAccountId(name, address)
+      .then(() => backButtonClick());
+
   const editHandler = async () =>
-    await addressBookService.updateAddressBookItem(location.state.curr.id, name, address).then(() =>
-      backButtonClick(),
-    );
+    await addressBookService
+      .updateAddressBookItemById(address, {
+        id: location.state.curr.id,
+        name,
+        address,
+      })
+      .then(() => backButtonClick());
+
   const removeHandler = async () =>
-    await addressBookService.removeAddressBookItem(location.state.curr.id).then(() => backButtonClick());
+    await addressBookService
+      .removeAddressBookItemByAccountId(address, location.state.curr.id)
+      .then(() => backButtonClick());
 
   useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
+
   useEffect(() => {
     setAddressError(false);
     setErrorMsg('');
   }, [address]);
+
   useEffect(() => {
     setNameError(false);
     setErrorMsg('');

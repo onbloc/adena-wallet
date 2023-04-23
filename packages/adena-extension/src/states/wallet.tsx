@@ -1,7 +1,6 @@
 import { atom } from 'recoil';
-import { Account } from 'adena-module';
+import { Account, Wallet } from 'adena-module';
 import { HistoryItem } from 'gno-client/src/api/response';
-import BigNumber from 'bignumber.js';
 
 export interface TransactionHistoryState {
   address: string | null;
@@ -11,27 +10,6 @@ export interface TransactionHistoryState {
   items: Array<HistoryItem>;
 };
 
-export interface TokenConfig {
-  main: boolean;
-  type: string;
-  name: string;
-  denom: string;
-  unit: number;
-  minimalDenom: string;
-  minimalUnit: number;
-  image: string;
-  imageData?: string;
-}
-
-export interface Balance extends TokenConfig {
-  amount: BigNumber;
-  amountDenom: string;
-};
-
-export interface CuurentBalance {
-  amount: BigNumber;
-  denom: string;
-};
 
 /**
  * CREATE: When there is no stored serialized wallet value
@@ -41,6 +19,11 @@ export interface CuurentBalance {
  * FAIL: When deserialization has failed
  */
 type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+
+export const wallet = atom<Wallet | null>({
+  key: `wallet/wallet`,
+  default: null,
+});
 
 export const state = atom<StateType>({
   key: `wallet/state`,
@@ -52,11 +35,6 @@ export const currentAccount = atom<Account | null>({
   default: null,
 });
 
-export const accounts = atom<Array<Account> | null>({
-  key: `wallet/accounts`,
-  default: [],
-});
-
 export const transactionHistory = atom<TransactionHistoryState>({
   key: `wallet/transactionHistory`,
   default: {
@@ -65,28 +43,5 @@ export const transactionHistory = atom<TransactionHistoryState>({
     currentPage: -1,
     isFinish: false,
     items: []
-  },
-});
-
-export const tokenConfig = atom<Array<TokenConfig>>({
-  key: `wallet/tokenConfig`,
-  default: [],
-});
-
-export const balances = atom<Array<Balance>>({
-  key: `wallet/balances`,
-  default: [],
-});
-
-export const accountBalances = atom<{ [key in string]: Array<Balance> }>({
-  key: `wallet/accountBalances`,
-  default: {},
-});
-
-export const currentBalance = atom<CuurentBalance>({
-  key: `wallet/currentBalance`,
-  default: {
-    amount: BigNumber(-1),
-    denom: ''
   },
 });

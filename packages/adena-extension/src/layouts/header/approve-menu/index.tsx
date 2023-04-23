@@ -8,6 +8,7 @@ import { formatAddress, formatNickname, getSiteName, parseParmeters } from '@com
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -21,13 +22,14 @@ const Wrapper = styled.div`
 `;
 
 const ApproveMenu = () => {
-  const { accountService, establishService } = useAdenaContext();
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
+  const { establishService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
   const [requestData, setReqeustData] = useState<any>();
+  const [gnoClient] = useGnoClient();
 
   useEffect(() => {
     if (location.search) {
@@ -55,7 +57,9 @@ const ApproveMenu = () => {
   }, [currentAccount?.getAddress('g')]);
 
   const initAddress = async () => {
-    const currentAccount = await accountService.getCurrentAccount();
+    if (!currentAccount) {
+      return;
+    }
     const currentAddress = currentAccount.getAddress('g');
     const currentAccountName = currentAccount.name;
     setAddress(currentAddress);
@@ -66,7 +70,7 @@ const ApproveMenu = () => {
     if (requestData?.hostname) {
       const address = currentAccount?.getAddress('g') ?? "";
       const siteName = getSiteName(requestData.hostname);
-      const currentIsEstablished = await establishService.isEstablished(siteName, address);
+      const currentIsEstablished = await establishService.isEstablishedBy(address, gnoClient?.chainId ?? '', siteName);
       setIsEstablished(currentIsEstablished);
     }
   };

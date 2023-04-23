@@ -40,8 +40,6 @@ export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState] = useState('INIT');
   const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
-  const clearWalletBalance = useResetRecoilState(WalletState.balances);
-  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
   const [, setState] = useRecoilState(WalletState.state);
@@ -71,14 +69,12 @@ export const ChangeNetwork = () => {
     }
   };
 
-  const onClickNetwork = async (network: InstanceType<typeof GnoClient>) => {
+  const onClickNetwork = async (network: GnoClient) => {
     if (network.chainId === currentNetwork?.chainId) {
       return;
     }
     setState('LOADING');
     await changeNetwork(network.chainId);
-    clearWalletBalance();
-    clearCurrentBalance();
     navigate(RoutePath.Home);
   };
 
@@ -87,7 +83,7 @@ export const ChangeNetwork = () => {
       <Text type='header4'>Change Network</Text>
       {networks.length > 0 ? (
         <>
-          {networks.map((network: InstanceType<typeof GnoClient>, index: number) => (
+          {networks.map((network: GnoClient, index: number) => (
             <ListBox
               left={
                 <LeftWrap>

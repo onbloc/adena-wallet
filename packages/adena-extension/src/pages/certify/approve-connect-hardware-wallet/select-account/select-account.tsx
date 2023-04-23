@@ -12,8 +12,9 @@ import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
-import { useAdenaContext } from '@hooks/use-context';
+import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
+import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 
 const text = {
   title: 'Select Accounts',
@@ -188,12 +189,10 @@ const AccountListContainer = styled.div`
 `;
 
 export const ApproveConnectHardwareWalletSelectAccount = () => {
-  const { accountService } = useAdenaContext();
+  const { accounts: walletAccounts } = useWalletAccounts();
+  const { wallet } = useWalletContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const [storedAccounts, setStoredAccounts] = useState<Array<Account>>(
-    [],
-  );
   const [accounts, setAccounts] = useState<Array<Account>>([]);
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
@@ -207,15 +206,13 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
   }, [location]);
 
   const initAccounts = async (accounts: Array<Account>) => {
-    const storedAccounts = await accountService.getAccounts();
-    setStoredAccounts(storedAccounts);
     setAccounts(accounts);
     const lastPath = accounts.map((account) => account.toData().hdPath ?? 0).reverse()[0];
     setLastPath(lastPath);
   };
 
   const isStoredAccount = (adderss: string) => {
-    return storedAccounts.find((account) => account.getAddress('g') === adderss) !== undefined;
+    return walletAccounts.find((account) => account.getAddress('g') === adderss) !== undefined;
   };
 
   const onClickSelectButton = (address: string) => {
@@ -252,22 +249,18 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
 
   const onClickNextButton = async () => {
     const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress('g')));
-    const storedAccounts = await accountService.getAccounts();
     const savedAccounts: Array<Account> = [];
-    const accountLastIndex = await accountService.getLastAccountIndex() + 1;
 
-    selectAccounts.forEach((account, index) => {
+    selectAccounts.forEach((account) => {
       if (
-        !storedAccounts.find((storedAccount) => storedAccount.getAddress('g') === account.getAddress('g'))
+        !walletAccounts.find((storedAccount) => storedAccount.getAddress('g') === account.getAddress('g'))
       ) {
-        const hdPath = account.toData().hdPath ?? 0;
-        account.index = accountLastIndex + index;
-        account.name = `Ledger ${hdPath + 1}`;
+        account.name = `${wallet?.nextLedgerAccountName}`;
         savedAccounts.push(account);
       }
     });
     const resultSavedAccounts = savedAccounts.sort(account => account.toData().hdPath ?? 0);
-    const resultAccounts = [...storedAccounts, ...resultSavedAccounts];
+    const resultAccounts = [...walletAccounts, ...resultSavedAccounts];
     let currentAccount = null;
     if (resultSavedAccounts.length > 0) {
       currentAccount = resultSavedAccounts[0];
@@ -278,7 +271,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       currentAccount: currentAccount ? serializeAccount(currentAccount) : null
     };
 
-    const routePath = storedAccounts.length === 0 ?
+    const routePath = walletAccounts.length === 0 ?
       RoutePath.ApproveHardwareWalletLedgerPassword :
       RoutePath.ApproveHardwareWalletFinish;
 

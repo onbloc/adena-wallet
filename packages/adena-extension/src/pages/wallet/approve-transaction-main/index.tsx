@@ -18,8 +18,8 @@ import { LedgerConnector } from 'adena-module';
 import { isLedgerAccount } from 'adena-module';
 
 export const ApproveTransactionMain = () => {
-  const { accountService, transactionService } = useAdenaContext();
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
+  const { transactionService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
@@ -48,16 +48,8 @@ export const ApproveTransactionMain = () => {
     if (gnoClient && currentAccount && requestData) {
       initFavicon();
       initTransactionData();
-    } else if (gnoClient && requestData) {
-      initCurrentAccount();
     }
   }, [gnoClient, currentAccount, requestData]);
-
-  const initCurrentAccount = async () => {
-    const currentAccount = await accountService.getCurrentAccount();
-    changeCurrentAccount(currentAccount);
-  };
-
   const initFavicon = async () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
     setFavicon(faviconData);
@@ -69,6 +61,7 @@ export const ApproveTransactionMain = () => {
     }
     try {
       const transaction = await transactionService.createTransactionData(
+        gnoClient,
         currentAccount,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
@@ -99,13 +92,14 @@ export const ApproveTransactionMain = () => {
     if (transactionData && gnoClient && currentAccount) {
       try {
         const transactionValue = await transactionService.createTransactionByContract(
+          gnoClient,
           currentAccount,
           requestData?.data?.messages,
           requestData?.data?.gasWanted,
           requestData?.data?.gasFee,
           requestData?.data?.memo,
         );
-        const result = await transactionService.sendTransaction(transactionValue);
+        const result = await transactionService.sendTransaction(gnoClient, transactionValue);
         if (result.height && result.height !== '0') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),

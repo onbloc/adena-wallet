@@ -115,8 +115,6 @@ export const useLedgerPassword = () => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
       const { accounts, currentAccount } = location.state as LocationState;
-      const deseriazedAccounts = accounts.map(deserializeAccount);
-      await accountService.updateAccounts(deseriazedAccounts);
       if (currentAccount) {
         await accountService.changeCurrentAccount(deserializeAccount(currentAccount));
       }

@@ -1,64 +1,89 @@
-import { optimizeNumber } from "@common/utils/client-utils";
-import { WalletState } from "@states/index";
-import { TokenConfig } from "@states/wallet";
-import BigNumber from "bignumber.js";
-import { ChainService } from "..";
-
-interface BalanceInfo {
-  unit: string;
-  amount: string;
-}
+import { BalanceState, TokenState } from '@states/index';
+import { TokenMetainfo } from '@states/token';
+import BigNumber from 'bignumber.js';
+import { GnoClient } from 'gno-client';
 
 export class WalletBalanceService {
+  private tokenMetainfos: TokenMetainfo[];
 
-  private chainService: ChainService;
-
-  private tokenConfigs: Array<TokenConfig>;
-
-  constructor(chainService: ChainService, tokenConfigs: Array<TokenConfig>) {
-    this.chainService = chainService;
-    this.tokenConfigs = tokenConfigs;
+  constructor() {
+    this.tokenMetainfos = [];
   }
 
-  public getTokenBalances = async (
-    address: string,
-  ) => {
-    const gnoClient = await this.chainService.getCurrentClient();
-    const response = await gnoClient.getBalances(address);
-    const balances: Array<BalanceInfo> = [...response.balances];
-    const tokenBalances: Array<WalletState.Balance> = [];
+  public setTokenMetainfos(tokenMetainfos: Array<TokenMetainfo>) {
+    this.tokenMetainfos = tokenMetainfos;
+  }
 
-    for (const config of this.tokenConfigs) {
-      const tokenBalance = balances.find(balance => balance.unit.toUpperCase() === config.denom.toUpperCase() || balance.unit.toUpperCase() === config.minimalDenom.toUpperCase());
+  public getTokenBalances = async (gnoClient: GnoClient, address: string) => {
+    const response = await gnoClient.getBalances(address);
+    const balances = response.balances.map((balance) => {
+      return {
+        value: balance.amount,
+        denom: balance.unit,
+      };
+    });
+    const tokenBalances: Array<BalanceState.TokenBalance> = [];
+
+    for (const tokenMetainfo of this.tokenMetainfos) {
+      const tokenBalance = balances.find(
+        (balance) =>
+          balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase() ||
+          balance.denom.toUpperCase() === tokenMetainfo.minimalDenom.toUpperCase(),
+      );
       if (tokenBalance) {
-        tokenBalances.push(this.createTokenBalance(tokenBalance, config));
+        tokenBalances.push(this.createTokenBalance(tokenBalance, tokenMetainfo));
       }
     }
     return tokenBalances;
   };
 
-  public convertUnit = (amount: BigNumber, denom: string, config: WalletState.TokenConfig, convertType?: 'COMMON' | 'MINIMAL'): { amount: BigNumber, denom: string } => {
-    const convertDenomType = convertType ?? 'COMMON';
-    const denomType = config.denom.toUpperCase() === denom.toUpperCase() ? 'COMMON' : 'MINIMAL';
-    const currentUnit = denomType === 'COMMON' ? config.unit : config.minimalUnit;
-    const convertUnit = convertDenomType === 'COMMON' ? config.unit : config.minimalUnit;
+  public convertDenom = (
+    value: string,
+    denom: string,
+    tokenMetainfo: TokenState.TokenMetainfo,
+    convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
+  ) => {
+    const decimals = tokenMetainfo.decimals;
+    let shift = 1;
+    let convertedDenom = tokenMetainfo.denom;
+    if (convertType === 'COMMON') {
+      if (tokenMetainfo.denom.toUpperCase() !== denom.toUpperCase()) {
+        shift = decimals * -1;
+      }
+    }
 
-    const currentAmount = optimizeNumber(amount, BigNumber(currentUnit).dividedBy(convertUnit));
-    const currentDenom = convertDenomType === 'COMMON' ? config.denom.toUpperCase() : config.minimalDenom;
+    if (convertType === 'MINIMAL') {
+      convertedDenom = tokenMetainfo.minimalDenom;
+      if (tokenMetainfo.minimalDenom.toUpperCase() !== denom.toUpperCase()) {
+        shift = decimals;
+      }
+    }
 
     return {
-      amount: currentAmount,
-      denom: currentDenom
-    }
+      value: new BigNumber(value).shiftedBy(shift).toString(),
+      denom: convertedDenom,
+    };
   };
 
-  private createTokenBalance = (balance: BalanceInfo, config: TokenConfig): WalletState.Balance => {
-    const amount = BigNumber(balance.amount);
-    const result = this.convertUnit(amount, balance.unit, config, 'COMMON');
+  private createTokenBalance = (
+    balance: {
+      value: string;
+      denom: string;
+    },
+    tokenMetainfo: TokenMetainfo,
+  ): BalanceState.TokenBalance => {
+    const { value, denom } = this.convertDenom(
+      balance.value,
+      balance.denom,
+      tokenMetainfo,
+      'COMMON',
+    );
     return {
-      ...config,
-      amount: result.amount,
-      amountDenom: result.denom
+      ...tokenMetainfo,
+      amount: {
+        value,
+        denom,
+      },
     };
   };
 }

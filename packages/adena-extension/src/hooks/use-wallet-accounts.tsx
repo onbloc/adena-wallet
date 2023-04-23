@@ -1,19 +1,12 @@
-import { WalletState } from '@states/index';
-import { useRecoilState } from 'recoil';
-import { useAdenaContext } from './use-context';
-import { useEffect } from 'react';
+import { useWalletContext } from './use-context';
+import { useTokenBalance } from './use-token-balance';
 
 export const useWalletAccounts = () => {
-  const { accountService } = useAdenaContext();
-  const [walletAccounts, setWalletAccounts] = useRecoilState(WalletState.accounts);
-  const [accountBalances] = useRecoilState(WalletState.accountBalances);
-
-  useEffect(() => {
-    accountService.getAccounts().then(setWalletAccounts);
-  }, []);
+  const { wallet } = useWalletContext();
+  const { accountTokenBalances } = useTokenBalance();
 
   return {
-    accounts: walletAccounts ?? [],
-    accountBalances
+    accounts: wallet?.accounts ?? [],
+    accountBalances: accountTokenBalances
   };
 };

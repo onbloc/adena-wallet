@@ -1,24 +1,17 @@
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { AdenaWallet } from 'adena-module';
 import { Wallet } from 'adena-module';
-import { WalletAccountRepository, WalletRepository } from '@repositories/wallet';
+import { WalletRepository } from '@repositories/wallet';
 import { encryptSha256Password } from '@common/utils/crypto-utils';
 
 export class WalletService {
   private walletRepository: WalletRepository;
 
-  private walletAccountRepository: WalletAccountRepository;
-
-  constructor(
-    walletRepository: WalletRepository,
-    walletAccountRepository: WalletAccountRepository,
-  ) {
+  constructor(walletRepository: WalletRepository) {
     this.walletRepository = walletRepository;
-    this.walletAccountRepository = walletAccountRepository;
   }
 
   public existsWallet = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return this.walletRepository
       .getSerializedWallet()
       .then(() => true)
@@ -99,11 +92,7 @@ export class WalletService {
    */
   public createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<number>) => {
     try {
-      if (accountPaths) {
-        await this.walletAccountRepository.updateAccountPath(Math.max(...(accountPaths ?? [0])));
-      }
-      const currentAccountPath = await this.walletAccountRepository.getAccountPath();
-      const wallet = await AdenaWallet.createByMnemonic(mnemonic, [currentAccountPath]);
+      const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
       return wallet;
     } catch (e) {
       throw new WalletError('FAILED_TO_CREATE');

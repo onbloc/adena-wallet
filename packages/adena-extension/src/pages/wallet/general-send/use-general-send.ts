@@ -1,4 +1,3 @@
-import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { RoutePath } from '@router/path';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -8,6 +7,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import BigNumber from 'bignumber.js';
 import { useAdenaContext } from '@hooks/use-context';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useTokenBalance } from '@hooks/use-token-balance';
 
 const specialPatternCheck = /\W|\s/g;
 const fee = 0.000001;
@@ -17,9 +17,9 @@ export const useGeneralSend = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [gnoClient] = useGnoClient();
-  const [balances] = useWalletBalances(gnoClient);
+  const { mainTokenBalance } = useTokenBalance();
   const { accounts } = useWalletAccounts();
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [address, setAddress] = useState<string>('');
   const [selectName, setSelectName] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
@@ -38,9 +38,9 @@ export const useGeneralSend = () => {
       if (accounts && currentAccount) {
         const result = await Promise.all([
           addressBookService
-            .getAddressBookByWalletAccounts(accounts)
+            .getAddressBookByAccounts(accounts)
             .filter((v) => currentAccount.getAddress('g') !== v.address),
-          addressBookService.getAddressBook(),
+          addressBookService.getAddressBookByAccountId(currentAccount.id),
         ]);
         setAccountsList(result.flat());
       }
@@ -48,14 +48,8 @@ export const useGeneralSend = () => {
   }, []);
 
   useEffect(() => {
-    if (balances.length > 0) {
-      try {
-        setNowAmount(BigNumber(balances[0]?.amount ?? 0));
-      } catch (e) {
-        setNowAmount(BigNumber(0));
-      }
-    }
-  }, [balances]);
+    setNowAmount(BigNumber(mainTokenBalance?.value ?? 0));
+  }, [mainTokenBalance]);
 
   useEffect(() => {
     let result = false;

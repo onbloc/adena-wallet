@@ -10,7 +10,7 @@ import { RoutePath } from '@router/path';
 import { AdenaWallet } from 'adena-module';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 
@@ -25,6 +25,7 @@ const text = {
 export const YourSeedPhrase = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { wallet } = useWalletContext();
   const { walletService, accountService } = useAdenaContext();
   const [terms, setTerms] = useState(false);
   const [seeds, setSeeds] = useState(() => AdenaWallet.generateMnemonic());
@@ -67,11 +68,7 @@ export const YourSeedPhrase = () => {
     const createdWallet = await walletService.createWallet({ mnemonic: seeds, password });
 
     const account = createdWallet.accounts[0];
-    const accountIndex = await accountService.getLastAccountIndex();
-    account.index = accountIndex + 1;
-    await accountService.addAccount(account);
-    await accountService.updateCurrentAccount(account);
-    loadAccounts();
+    wallet?.addAccount(account);
     navigate(RoutePath.Wallet);
   }
 

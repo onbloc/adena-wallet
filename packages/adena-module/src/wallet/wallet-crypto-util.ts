@@ -29,9 +29,6 @@ export async function executeKdf(
 
 export const makeCryptKey = async (password: string) => {
   const SALT_KEY = process.env.SALT_KEY ?? '';
-  console.log('process.env', process.env);
-  console.log('process.env.SALT_KEY', process.env.SALT_KEY);
-  console.log('SALT_KEY', SALT_KEY);
   const kdfConfiguration = {
     algorithm: 'argon2id',
     params: {
