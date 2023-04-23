@@ -1,5 +1,5 @@
 import { Account } from 'adena-module';
-import { WalletAccountRepository, WalletAddressRepository } from '@repositories/wallet';
+import { WalletAddressRepository } from '@repositories/wallet';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AddressBookItem {
@@ -10,32 +10,20 @@ interface AddressBookItem {
 }
 
 export class WalletAddressBookService {
-  private walletAccountRepository: WalletAccountRepository;
-
   private walletAddressRepository: WalletAddressRepository;
 
-  constructor(
-    walletAccountRepository: WalletAccountRepository,
-    walletAddressRepository: WalletAddressRepository,
-  ) {
-    this.walletAccountRepository = walletAccountRepository;
+  constructor(walletAddressRepository: WalletAddressRepository) {
     this.walletAddressRepository = walletAddressRepository;
   }
 
-  public getAddressBook = async () => {
+  public getAddressBookByAccountId = async (accountId: string) => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    const currentAccountAddress = await this.walletAccountRepository.getCurrentAccountAddress();
-    const currentAccountAddressBook = await this.getAddressBookItems(
-      addressBook,
-      currentAccountAddress,
-    );
-    return currentAccountAddressBook;
+    const currentAddressBook = await this.selectAddressBookItemsBy(accountId, addressBook);
+    return currentAddressBook;
   };
 
-  public getAddressBookByWalletAccounts = (
-    walletAccounts: Array<Account>,
-  ): Array<AddressBookItem> => {
-    return walletAccounts.map((walletAccount) => {
+  public getAddressBookByAccounts = (accounts: Array<Account>): Array<AddressBookItem> => {
+    return accounts.map((walletAccount) => {
       return {
         id: `${walletAccount.index}`,
         name: `${walletAccount.name}`,
@@ -45,18 +33,23 @@ export class WalletAddressBookService {
     });
   };
 
-  public addAddressBookItem = async (name: string, address: string) => {
+  public addAddressBookItemByAccountId = async (
+    accountId: string,
+    addressBookItem: {
+      name: string;
+      address: string;
+    },
+  ) => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    const currentAccountAddress = await this.walletAccountRepository.getCurrentAccountAddress();
-    const accountAddressBook = await this.getAddressBookItems(addressBook, currentAccountAddress);
+    const accountAddressBook = await this.selectAddressBookItemsBy(accountId, addressBook);
     const changedaddressBook: { [key in string]: Array<AddressBookItem> } = {
       ...addressBook,
-      [currentAccountAddress]: [
+      [accountId]: [
         ...accountAddressBook,
         {
           id: uuidv4(),
-          name,
-          address,
+          name: addressBookItem.name,
+          address: addressBookItem.address,
           createdAt: `${new Date().getTime()}`,
         },
       ],
@@ -64,59 +57,65 @@ export class WalletAddressBookService {
     this.walletAddressRepository.updateAddressBooke(changedaddressBook);
   };
 
-  public updateAddressBookItem = async (id: string, name: string, address: string) => {
+  public updateAddressBookItemById = async (
+    accountId: string,
+    addressBookItem: {
+      id: string;
+      name: string;
+      address: string;
+    },
+  ) => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    const currentAccountAddress = await this.walletAccountRepository.getCurrentAccountAddress();
-    const accountAddressBook = await this.getAddressBookItems(addressBook, currentAccountAddress);
+    const accountAddressBook = await this.selectAddressBookItemsBy(accountId, addressBook);
 
-    const currentIndex = accountAddressBook.findIndex((item: AddressBookItem) => item.id === id);
+    const currentIndex = accountAddressBook.findIndex(
+      (item: AddressBookItem) => item.id === addressBookItem.id,
+    );
     if (currentIndex > -1) {
       accountAddressBook[currentIndex] = {
         ...accountAddressBook[currentIndex],
-        name,
-        address,
+        name: addressBookItem.name,
+        address: addressBookItem.address,
       };
     }
 
     // eslint-disable-next-line prefer-const
     const changedaddressBook = {
       ...addressBook,
-      [currentAccountAddress]: accountAddressBook,
+      [accountId]: accountAddressBook,
     };
     this.walletAddressRepository.updateAddressBooke(changedaddressBook);
   };
 
-  public removeAddressBookItem = async (id: string) => {
+  public removeAddressBookItemByAccountId = async (accountId: string, addressBookId: string) => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    const currentAccountAddress = await this.walletAccountRepository.getCurrentAccountAddress();
-    const accountAddressBook = await this.getAddressBookItems(addressBook, currentAccountAddress);
+    const accountAddressBook = await this.selectAddressBookItemsBy(accountId, addressBook);
 
     const changedAccountAddressBook = accountAddressBook.filter(
-      (item: AddressBookItem) => item.id !== id,
+      (item: AddressBookItem) => item.id !== addressBookId,
     );
 
-    // eslint-disable-next-line prefer-const
-    let changedaddressBook = {
+    const changedaddressBook = {
       ...addressBook,
-      [currentAccountAddress]: changedAccountAddressBook,
+      [accountId]: changedAccountAddressBook,
     };
     this.walletAddressRepository.updateAddressBooke(changedaddressBook);
   };
 
-  private getAddressBookItems = async (
+  private selectAddressBookItemsBy = async (
+    accountId: string,
     addressBook: { [key in string]: Array<AddressBookItem> },
-    currentAccountAddress: string,
   ): Promise<Array<AddressBookItem>> => {
-    const currentAccountAddressBook =
-      Object.keys(addressBook).findIndex((key) => key === currentAccountAddress) > -1
-        ? addressBook[currentAccountAddress]
+    const currentAddressBook =
+      Object.keys(addressBook).findIndex((key) => key === accountId) > -1
+        ? addressBook[accountId]
         : [];
-    return currentAccountAddressBook.map((item: AddressBookItem) => {
+    return currentAddressBook.map(({ id, name, address, createdAt }: AddressBookItem) => {
       return {
-        id: item.id,
-        name: item.name,
-        address: item.address,
-        createdAt: item.createdAt,
+        id,
+        name,
+        address,
+        createdAt,
       };
     });
   };

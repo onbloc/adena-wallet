@@ -10,6 +10,7 @@ import { RoutePath } from '@router/path';
 import { useEffect } from 'react';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 type navigateStatus = 'add' | 'edit';
 
@@ -24,6 +25,7 @@ const AddressBook = () => {
   const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
   const [datas, setDatas] = useState<any>([]);
+  const { currentAccount } = useCurrentAccount();
   const addAddressHandler = (status: navigateStatus, curr?: BookListProps) =>
     navigate(RoutePath.AddAddress, {
       state: {
@@ -35,7 +37,7 @@ const AddressBook = () => {
 
   useEffect(() => {
     (async () => {
-      const addressList = await addressBookService.getAddressBook();
+      const addressList = await addressBookService.getAddressBookByAccountId(currentAccount?.id ?? '');
       setDatas(addressList);
     })();
   }, []);

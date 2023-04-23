@@ -41,7 +41,7 @@ export const SendConfirm = () => {
   const handlePrevButtonClick = () => navigate(-1);
   const cancelButtonClick = () =>
     state.from === 'token' ? navigate(RoutePath.TokenDetails) : navigate(RoutePath.Wallet);
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [sendState, setSendState] = useState('INIT');
   const [gnoClient] = useGnoClient();
   const [isLoadingLedger, setIsLoadingLedger] = useState(false);
@@ -90,12 +90,13 @@ export const SendConfirm = () => {
       });
       const gasFeeAmount = 1;
       const transaction = await transactionService.createTransaction(
+        gnoClient,
         currentAccount,
         message,
         gasWanted,
         gasFeeAmount
       );
-      await transactionService.sendTransaction(transaction);
+      await transactionService.sendTransaction(gnoClient, transaction);
     }
   };
 

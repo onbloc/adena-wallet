@@ -1,11 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { Route, useLocation, useMatch } from 'react-router-dom';
+import { useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import LoadingApproveTransaction from './loading-approve-transaction';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -44,7 +43,6 @@ const LoadingMain = () => {
 
   return !isApproveHardwarePath && isLoading && !isNotMatch ? (
     <Wrapper>
-      {/* <Header /> */}
       <Round width='163px' height='14px' radius='24px' />
       <Round width='91px' height='14px' radius='24px' margin='36px 0px 31px' />
       <GhostButtons left='Deposit' right='Send' />

@@ -8,7 +8,10 @@ export const signAmino = async (
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
-  const address = await core.accountService.getCurrentAccountAddress();
+  const address = await core.getCurrentAddress();
+  if (!address) {
+    return;
+  }
   if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
@@ -21,14 +24,17 @@ export const signAmino = async (
     InjectionMessageInstance.failure('SIGN_REJECTED', requestData, requestData.key),
     sendResponse,
   );
-}
+};
 
 export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
-  const address = await core.accountService.getCurrentAccountAddress();
+  const address = await core.getCurrentAddress();
+  if (!address) {
+    return;
+  }
   if (!validateTransaction(address, requestData, sendResponse)) {
     return;
   }
@@ -67,7 +73,11 @@ const validateTransactionMessage = (
       case '/bank.MsgSend':
         if (currentAccountAddress !== message.value.from_address) {
           sendResponse(
-            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+            InjectionMessageInstance.failure(
+              'ACCOUNT_MISMATCH',
+              requestData?.data,
+              requestData?.key,
+            ),
           );
           return false;
         }
@@ -75,7 +85,11 @@ const validateTransactionMessage = (
       case '/vm.m_call':
         if (currentAccountAddress !== message.value.caller) {
           sendResponse(
-            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+            InjectionMessageInstance.failure(
+              'ACCOUNT_MISMATCH',
+              requestData?.data,
+              requestData?.key,
+            ),
           );
           return false;
         }
@@ -83,7 +97,11 @@ const validateTransactionMessage = (
       case '/vm.m_addpkg':
         if (currentAccountAddress !== message.value.creator) {
           sendResponse(
-            InjectionMessageInstance.failure('ACCOUNT_MISMATCH', requestData?.data, requestData?.key),
+            InjectionMessageInstance.failure(
+              'ACCOUNT_MISMATCH',
+              requestData?.data,
+              requestData?.key,
+            ),
           );
           return false;
         }

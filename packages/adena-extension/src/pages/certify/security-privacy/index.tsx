@@ -47,7 +47,7 @@ const getMenuMakerInfo = (
 
 export const SecurityPrivacy = () => {
   const navigate = useNavigate();
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
 

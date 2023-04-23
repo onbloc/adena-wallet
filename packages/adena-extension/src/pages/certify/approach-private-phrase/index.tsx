@@ -12,7 +12,7 @@ import { useAdenaContext } from '@hooks/use-context';
 export const ApproachPrivatePhrase = () => {
   const navigate = useNavigate();
   const { walletService } = useAdenaContext();
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [privateKey, setPrivateKey] = useState('');
 

@@ -5,58 +5,44 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DubbleButton from '@components/buttons/double-button';
 import ListBox, { ListHierarchy } from '@components/list-box';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { maxFractionDigits } from '@common/utils/client-utils';
-import { useGnoClient } from '@hooks/use-gno-client';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
-import { useTransactionHistory } from '@hooks/use-transaction-history';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { TokenMetainfo } from '@states/token';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import TokenBalance from '@components/common/token-balance/token-balance';
+import { BalanceState } from '@states/index';
 
 const Wrapper = styled.main`
   padding-top: 14px;
   text-align: center;
+
+  .token-balance-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 `;
 
 export const WalletMain = () => {
   const navigate = useNavigate();
-
-  const [gnoClient] = useGnoClient();
-  const [currentAccount] = useCurrentAccount();
-  const [, updateBalances] = useWalletBalances(gnoClient);
-  const [balances] = useWalletBalances(gnoClient);
-  const { updateAccountBalances } = useLoadAccounts();
-  const [currentBalance] = useRecoilState(WalletState.currentBalance);
-  const [tokenConfig] = useRecoilState(WalletState.tokenConfig);
-  const [, updateLastHistory] = useTransactionHistory();
+  const { mainTokenBalance, tokenBalances } = useTokenBalance();
+  const { tokenMetainfos } = useTokenMetainfo();
 
   const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
 
-  useEffect(() => {
-    updateAccountBalances();
-  }, []);
-
-  useLayoutEffect(() => {
-    if (currentAccount && gnoClient) {
-      updateLastHistory();
-      updateBalances();
-    }
-  }, [gnoClient, currentAccount?.getAddress('g')]);
-
-  const getCurrentBalance = () => {
-    if (!currentBalance.denom) {
-      return ' \n';
-    }
-    return `${maxFractionDigits(currentBalance.amount.toString(), 6)}\n${currentBalance.denom}`;
-  };
-
   return (
     <Wrapper>
-      <Text type='header2' textAlign='center'>
-        {getCurrentBalance()}
-      </Text>
+      <div className='token-balance-wrapper'>
+        <TokenBalance
+          value={maxFractionDigits(`${mainTokenBalance?.value ?? 0}`, 6)}
+          denom={mainTokenBalance?.denom ?? 'GNOT'}
+          orientation='VERTICAL'
+          fontStyleKey='header2'
+          minimumFontSize='24px'
+        />
+      </div>
+
       <DubbleButton
         margin='14px 0px 30px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
@@ -65,34 +51,29 @@ export const WalletMain = () => {
           text: 'Send',
         }}
       />
-      <WalletMainTokens tokenConfig={tokenConfig} balances={balances} />
+      <WalletMainTokens balances={tokenBalances} />
     </Wrapper>
   );
 };
 
 interface WalletMainTokensProps {
-  tokenConfig: Array<WalletState.TokenConfig>;
-  balances: Array<WalletState.Balance>;
+  balances: BalanceState.TokenBalance[];
 }
 
-const WalletMainTokens = ({ tokenConfig, balances }: WalletMainTokensProps) => {
+const WalletMainTokens = ({ balances }: WalletMainTokensProps) => {
   const navigate = useNavigate();
   const onClickToken = () => navigate(RoutePath.TokenDetails);
 
-  const getItemBalance = (item: WalletState.TokenConfig) => {
-    const balance = balances.find((balance) => balance.denom === item.denom);
-    if (!balance) {
-      return '';
-    }
+  const getItemBalance = (balance: BalanceState.TokenBalance) => {
     const { amount, denom } = balance;
-    return `${maxFractionDigits(amount.toString(), 6)} ${denom.toUpperCase()}`;
+    return `${maxFractionDigits(amount.value.toString(), 6)} ${denom.toUpperCase()}`;
   };
 
   return (
     <>
-      {tokenConfig.map((item, index) => (
+      {balances.map((item, index) => (
         <ListBox
-          left={<img src={item.imageData} alt='logo image' className='logo' />}
+          left={<img src={item.image} alt='logo image' className='logo' />}
           center={
             <Text type='body1Bold' margin='0px auto 0px 0px'>
               {item.name || ''}

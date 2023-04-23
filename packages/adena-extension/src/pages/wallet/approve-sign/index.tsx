@@ -19,9 +19,8 @@ import { isLedgerAccount } from 'adena-module';
 
 // TODO: ApproveTransaction
 export const ApproveSign = () => {
-  const { accountService, transactionService } = useAdenaContext();
-  const getDataRef = useRef<HTMLInputElement | null>(null);
-  const [currentAccount, , changeCurrentAccount] = useCurrentAccount();
+  const { transactionService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
@@ -50,15 +49,8 @@ export const ApproveSign = () => {
     if (gnoClient && currentAccount && requestData) {
       initFavicon();
       initTransactionData();
-    } else if (gnoClient && requestData) {
-      initCurrentAccount();
     }
   }, [gnoClient, currentAccount, requestData]);
-
-  const initCurrentAccount = async () => {
-    const currentAccount = await accountService.getCurrentAccount();
-    changeCurrentAccount(currentAccount);
-  };
 
   const initFavicon = async () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
@@ -71,6 +63,7 @@ export const ApproveSign = () => {
     }
     try {
       const transaction = await transactionService.createTransactionData(
+        gnoClient,
         currentAccount,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
@@ -97,6 +90,7 @@ export const ApproveSign = () => {
     if (transactionData && gnoClient && currentAccount) {
       try {
         const signedAmino = await transactionService.createAminoSign(
+          gnoClient,
           currentAccount.getAddress('g'),
           requestData?.data?.messages,
           requestData?.data?.gasWanted,

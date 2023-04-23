@@ -15,16 +15,18 @@ import { InjectionMessageInstance } from '@inject/message';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useGnoClient } from '@hooks/use-gno-client';
 
 export const ApproveEstablish = () => {
   const { establishService } = useAdenaContext();
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
   const [url, setUrl] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
   const location = useLocation();
+  const [gnoClient] = useGnoClient();
 
   useEffect(() => {
     initRequestSite();
@@ -39,7 +41,6 @@ export const ApproveEstablish = () => {
   const initRequestSite = async () => {
     try {
       const data = parseParmeters(location.search);
-      console.log(data)
       setKey(data['key']);
       setHostname(data['hostname']);
       setUrl(data['url']);
@@ -55,8 +56,13 @@ export const ApproveEstablish = () => {
 
   const checkEstablised = async () => {
     const siteName = getSiteName(hostname);
-    const address = currentAccount?.getAddress('g') ?? '';
-    const isEstablised = await establishService.isEstablished(siteName, address);
+    const accountId = currentAccount?.id ?? '';
+    const networkId = gnoClient?.chainId ?? '';
+    const isEstablised = await establishService.isEstablishedBy(
+      accountId,
+      networkId,
+      siteName
+    );
     if (isEstablised) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
       return;
@@ -74,8 +80,17 @@ export const ApproveEstablish = () => {
 
   const onClickConfirmButton = async () => {
     const siteName = getSiteName(hostname);
-    const address = currentAccount?.getAddress('g') ?? '';
-    await establishService.establish(siteName, address, appName, favicon);
+    const accountId = currentAccount?.id ?? '';
+    const networkId = gnoClient?.chainId ?? '';
+    await establishService.establishBy(
+      accountId,
+      networkId,
+      {
+        hostname: siteName,
+        accountId,
+        appName,
+        favicon
+      });
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   };
 

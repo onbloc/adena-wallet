@@ -9,8 +9,8 @@ import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import { maxFractionDigits, searchTextFilter } from '@common/utils/client-utils';
 import ListBox, { ListHierarchy } from '@components/list-box';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useTokenBalance } from '@hooks/use-token-balance';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -70,8 +70,7 @@ export const WalletSearch = () => {
       : navigate(RoutePath.Deposit, { state: 'wallet' });
   };
 
-  const [gnoClient] = useGnoClient();
-  const [balances] = useWalletBalances(gnoClient);
+  const { tokenBalances } = useTokenBalance();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');
@@ -100,7 +99,7 @@ export const WalletSearch = () => {
         {Boolean(searchText) && <InputResetBtn onClick={inputResetClick} type='button' />}
       </SearchBox>
       <DataListWrap>
-        {balances
+        {tokenBalances
           .filter(
             (balance) =>
               searchTextFilter(balance.name ?? '', searchText) ||
@@ -108,16 +107,15 @@ export const WalletSearch = () => {
           )
           .map((balance, idx) => (
             <ListBox
-              left={<img src={balance.imageData} alt='logo image' className='logo' />}
+              left={<img src={balance.image} alt='logo image' className='logo' />}
               center={
                 <Text type='body1Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
               }
               right={
-                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${
-                  balance.type
-                }`}</Text>
+                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${balance.type
+                  }`}</Text>
               }
               hoverAction={true}
               key={idx}

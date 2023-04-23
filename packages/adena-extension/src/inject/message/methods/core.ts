@@ -1,15 +1,24 @@
-import { AdenaStorage } from "@common/storage";
-import { ChainRepository, TokenRepository } from "@repositories/common";
-import { WalletAccountRepository, WalletAddressRepository, WalletEstablishRepository, WalletRepository } from "@repositories/wallet";
-import { ChainService, TokenService } from "@services/resource";
-import { TransactionService } from "@services/transaction";
-import { WalletAccountService, WalletAddressBookService, WalletEstablishService, WalletService } from "@services/wallet";
-import axios from "axios";
-import { GnoClient } from "gno-client";
+import { AdenaStorage } from '@common/storage';
+import { ChainRepository, TokenRepository } from '@repositories/common';
+import {
+  WalletAccountRepository,
+  WalletAddressRepository,
+  WalletEstablishRepository,
+  WalletRepository,
+} from '@repositories/wallet';
+import { ChainService, TokenService } from '@services/resource';
+import { TransactionService } from '@services/transaction';
+import {
+  WalletAccountService,
+  WalletAddressBookService,
+  WalletEstablishService,
+  WalletService,
+} from '@services/wallet';
+import axios from 'axios';
+import { GnoClient } from 'gno-client';
 
 export class InjectCore {
-
-  public gnoClient: InstanceType<typeof GnoClient> | null = null;
+  public gnoClient: GnoClient | null = null;
 
   private axiosInstance = axios.create();
 
@@ -33,18 +42,40 @@ export class InjectCore {
 
   public tokenService = new TokenService(this.tokenRepository);
 
-  public walletService = new WalletService(this.walletRepository, this.accountRepository);
+  public walletService = new WalletService(this.walletRepository);
 
-  public accountService = new WalletAccountService(this.gnoClient, this.accountRepository);
+  public accountService = new WalletAccountService(this.accountRepository);
 
-  public addressBookService = new WalletAddressBookService(this.accountRepository, this.addressBookRepository);
+  public addressBookService = new WalletAddressBookService(this.addressBookRepository);
 
-  public establishService = new WalletEstablishService(this.establishRepository, this.chainService);
+  public establishService = new WalletEstablishService(this.establishRepository);
 
-  public transactionService = new TransactionService(this.gnoClient, this.chainService, this.walletService, this.accountService);
+  public transactionService = new TransactionService(this.walletService, this.accountService);
+
+  public getCurrentAccountId() {
+    return this.accountRepository.getCurrentAccountId().catch(() => '');
+  }
+
+  public getCurrentNetworkId() {
+    return this.chainRepository.getCurrentNetworkId().catch(() => '');
+  }
 
   public getGnoClient() {
     return this.chainService.getCurrentClient();
   }
 
+  public async getCurrentAccount() {
+    const wallet = await this.walletService.loadWallet();
+    const accountId = await this.accountService.getCurrentAccountId();
+    const currentAccount = wallet.accounts.find((account) => account.id === accountId);
+    return currentAccount;
+  }
+
+  public async getCurrentAddress() {
+    const currentAccount = await this.getCurrentAccount();
+    if (!currentAccount) {
+      return null;
+    }
+    return currentAccount.getAddress('g');
+  }
 }

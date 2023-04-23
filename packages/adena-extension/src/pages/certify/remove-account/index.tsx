@@ -18,7 +18,7 @@ const content =
 
 export const RemoveAccount = () => {
   const navigate = useNavigate();
-  const [currentAccount] = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const { loadAccounts } = useLoadAccounts();
   const { removeAccount } = useRemoveAccount();
   const [, setState] = useRecoilState(WalletState.state);

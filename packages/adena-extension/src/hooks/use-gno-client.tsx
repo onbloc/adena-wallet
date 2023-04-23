@@ -1,6 +1,6 @@
 import { GnoClientState } from "@states/index";
 import { GnoClient } from "gno-client";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useRecoilState } from "recoil";
 import { useAdenaContext } from "./use-context";
 
@@ -16,13 +16,13 @@ const getNetworkMapperType = (chainId: string) => {
 
 const DEFAULT_CHAIN_ID = 'TEST3';
 
-export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> | null, networks: Array<InstanceType<typeof GnoClient>>, update: () => void, changeCurrentNetwork: (chainId: string) => void] => {
+export const useGnoClient = (): [currentNetwork: GnoClient | null, networks: Array<GnoClient>, update: () => void, changeCurrentNetwork: (chainId: string) => void] => {
     const { chainService } = useAdenaContext();
     const [currentNetwork, setCurrentNetwork] = useRecoilState(GnoClientState.current);
     const [networks, setNetworks] = useRecoilState(GnoClientState.networks);
 
     useEffect(() => {
-        initCurrentNetwork();
+        // initCurrentNetwork();
     }, [networks.length])
 
     const initCurrentNetwork = async () => {
@@ -40,10 +40,10 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
         return network.chainId;
     }
 
-    const updateNetworks = async () => {
+    const updateNetworks = useCallback(async () => {
         const networkConfigs = await chainService.getNetworks();
         const currentChainId = await getCurrentChainId();
-        chainService.updateCurrentNetwork(currentChainId);
+        chainService.updateCurrentNetworkId(currentChainId);
         const createdNetworks = networkConfigs.map(config =>
             GnoClient.createNetworkByType(
                 { ...config, chainId: config.chainId, chainName: config.chainName },
@@ -51,10 +51,10 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
             ));
 
         setNetworks(createdNetworks);
-    }
+    }, [])
 
     const changeCurrentNetwork = async (chainId: string) => {
-        let currentNetwork: InstanceType<typeof GnoClient> | null = null;
+        let currentNetwork: GnoClient | null = null;
         const currentNetworkIndex = networks.findIndex(network =>
             network.chainId.toUpperCase() === chainId.toUpperCase());
         if (currentNetworkIndex > -1) {
@@ -67,7 +67,10 @@ export const useGnoClient = (): [currentNetwork: InstanceType<typeof GnoClient> 
 
         if (currentNetwork !== null) {
             setCurrentNetwork(currentNetwork.clone());
-            await chainService.updateCurrentNetwork(currentNetwork.chainId);
+            await chainService.updateCurrentNetworkId(currentNetwork.chainId);
+        }
+        if (!currentNetwork) {
+            updateNetworks();
         }
     }
 

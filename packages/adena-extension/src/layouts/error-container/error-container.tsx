@@ -19,6 +19,6 @@ export const ErrorContainer = ({ children }: Props) => {
 
   return isError() ?
     <ErrorNetwork /> :
-    <>{children}</>
+    <div>{children}</div>
     ;
 };

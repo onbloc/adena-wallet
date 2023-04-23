@@ -9,16 +9,16 @@ import DefaultInput from '@components/default-input';
 import { useGeneralSend } from './use-general-send';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import Icon from '@components/icons';
-import { useWalletBalances } from '@hooks/use-wallet-balances';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import theme from '@styles/theme';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useTokenBalance } from '@hooks/use-token-balance';
 
 export const GeneralSend = () => {
   const { addressState, amountState, buttonState, textAreaRef, onKeyDown, accountsList } =
     useGeneralSend();
   const [gnoClient] = useGnoClient();
-  const [balances] = useWalletBalances(gnoClient);
+  const { mainTokenBalance } = useTokenBalance();
 
   const existsAddressBookItems = () => {
     if (accountsList && accountsList.length > 0) {
@@ -37,7 +37,7 @@ export const GeneralSend = () => {
         color='#777777'
         type='captionReg'
         textAlign='left'
-      >{`Balance: ${balances[0]?.amount} ${balances[0]?.amountDenom}`}</Text>
+      >{`Balance: ${mainTokenBalance?.value} ${mainTokenBalance?.denom}`}</Text>
     );
   };
   return (

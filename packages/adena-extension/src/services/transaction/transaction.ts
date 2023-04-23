@@ -2,42 +2,22 @@ import { WalletError } from '@common/errors';
 import { Transaction, TransactionBuilder, uint8ArrayToArray } from 'adena-module';
 import { Account } from 'adena-module';
 import { GnoClient } from 'gno-client';
-import { ChainService, WalletAccountService, WalletService } from '..';
+import { WalletAccountService, WalletService } from '..';
 
 export class TransactionService {
-  private gnoClient: InstanceType<typeof GnoClient> | null;
-
-  private chainService: ChainService;
-
   private walletService: WalletService;
 
   private accountService: WalletAccountService;
 
-  constructor(
-    gnoClient: InstanceType<typeof GnoClient> | null,
-    chainService: ChainService,
-    walletService: WalletService,
-    accountService: WalletAccountService,
-  ) {
-    this.gnoClient = gnoClient;
-    this.chainService = chainService;
+  constructor(walletService: WalletService, accountService: WalletAccountService) {
     this.walletService = walletService;
     this.accountService = accountService;
   }
 
-  public setGnoClient(gnoClient: InstanceType<typeof GnoClient>) {
-    this.gnoClient = gnoClient;
-  }
-
-  private getCurrentDenom = () => {
-    return this.chainService.getCurrentNetwork().then((network) => network.token.minimalDenom);
-  };
-
   private getGasAmount = async (gasFee?: number) => {
-    const currentMinimalDenom = await this.getCurrentDenom();
     const gasFeeAmount = {
       value: `${gasFee ?? 1}`,
-      denom: currentMinimalDenom,
+      denom: 'ugnot',
     };
     return gasFeeAmount;
   };
@@ -52,17 +32,15 @@ export class TransactionService {
    * @returns transaction value
    */
   public createTransaction = async (
+    gnoClient: GnoClient,
     account: Account,
     message: any,
     gasWanted: number,
     gasFee?: number,
     memo?: string,
   ) => {
-    if (!this.gnoClient) {
-      throw new Error('Not found gno client');
-    }
-    const accountInfo = await this.gnoClient.getAccount(account.getAddress('g'));
-    const chainId = this.gnoClient.chainId;
+    const accountInfo = await gnoClient.getAccount(account.getAddress('g'));
+    const chainId = gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       accountInfo.accountNumber,
@@ -92,17 +70,15 @@ export class TransactionService {
    * @returns transaction value
    */
   public createTransactionByContract = async (
+    gnoClient: GnoClient,
     account: Account,
     messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    if (!this.gnoClient) {
-      throw new Error('Not found gno client');
-    }
-    const accountInfo = await this.gnoClient.getAccount(account.getAddress('g'));
-    const chainId = this.gnoClient.chainId;
+    const accountInfo = await gnoClient.getAccount(account.getAddress('g'));
+    const chainId = gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       accountInfo.accountNumber,
@@ -124,17 +100,15 @@ export class TransactionService {
   };
 
   public createTransactionData = async (
+    gnoClient: GnoClient,
     account: Account,
     messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    if (!this.gnoClient) {
-      throw new Error('Not found gno client');
-    }
-    const accountInfo = await this.gnoClient.getAccount(account.getAddress('g'));
-    const chainId = this.gnoClient.chainId;
+    const accountInfo = await gnoClient.getAccount(account.getAddress('g'));
+    const chainId = gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const document = Transaction.generateDocument(
       accountInfo.accountNumber,
@@ -174,13 +148,15 @@ export class TransactionService {
    * @returns signed document
    */
   public createAminoSign = async (
+    gnoClient: GnoClient,
     accountAddress: string,
     messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    const accounts = await this.accountService.getAccounts();
+    const wallet = await this.walletService.loadWallet();
+    const accounts = wallet.accounts;
     const account = accounts.find((account: Account) => account.getAddress('g') === accountAddress);
     if (!account) {
       throw new WalletError('NOT_FOUND_ACCOUNT');
@@ -189,12 +165,8 @@ export class TransactionService {
       throw new WalletError('FAILED_TO_LOAD');
     }
 
-    if (!this.gnoClient) {
-      throw new Error('Not found gno client');
-    }
-
-    const accountInfo = await this.gnoClient.getAccount(accountAddress);
-    const chainId = this.gnoClient.chainId;
+    const accountInfo = await gnoClient.getAccount(accountAddress);
+    const chainId = gnoClient.chainId;
     const gasAmount = await this.getGasAmount(gasFee);
     const signedDocumnet = Transaction.generateDocument(
       accountInfo.accountNumber,
@@ -205,7 +177,6 @@ export class TransactionService {
       gasAmount,
       memo,
     );
-    const wallet = await this.walletService.loadWallet();
     const signAminoResponse = wallet.sign(signedDocumnet);
     return signAminoResponse;
   };
@@ -216,12 +187,8 @@ export class TransactionService {
    * @param gnoClient gno api client
    * @param transaction created transaction
    */
-  public sendTransaction = async (transaction: Array<number>) => {
-    if (!this.gnoClient) {
-      throw new Error('Not found gno client');
-    }
-
-    const result = await this.gnoClient.broadcastTxCommit(`${transaction}`);
+  public sendTransaction = async (gnoClient: GnoClient, transaction: Array<number>) => {
+    const result = await gnoClient.broadcastTxCommit(`${transaction}`);
     return result;
   };
 }

@@ -1,14 +1,17 @@
-import { CommonError } from "@common/errors/common";
-import { ChainRepository, Network } from "@repositories/common";
-import { GnoClient } from "gno-client";
+import { CommonError } from '@common/errors/common';
+import { ChainRepository, Network } from '@repositories/common';
+import { GnoClient } from 'gno-client';
 
 export class ChainService {
-
   private chainRepository: ChainRepository;
 
   constructor(chainRepository: ChainRepository) {
     this.chainRepository = chainRepository;
   }
+
+  public fetchNetworkMetainfos = () => {
+    return this.chainRepository.fetchNetworkMetainfos();
+  };
 
   public getNetworks = async () => {
     const networks = await this.chainRepository.getNetworks();
@@ -18,7 +21,7 @@ export class ChainService {
 
     const fetchedNetworks = await this.chainRepository.fetchNetworks();
     if (fetchedNetworks.length === 0) {
-      throw new CommonError("NOT_FOUND_NETWORKS")
+      throw new CommonError('NOT_FOUND_NETWORKS');
     }
 
     return fetchedNetworks;
@@ -29,13 +32,17 @@ export class ChainService {
     return true;
   };
 
-  public getCurrentNetwork = async () => {
-    const networks = await this.getNetworks();
-    const currentChaindId = await this.chainRepository.getCurrentChainId();
-    return networks.find(network => network.chainId === currentChaindId) ?? networks[0];
+  public getCurrentNetworkId = async () => {
+    return this.chainRepository.getCurrentNetworkId();
   };
 
-  public updateCurrentNetwork = async (chainId: string) => {
+  public getCurrentNetwork = async () => {
+    const networks = await this.getNetworks();
+    const networkId = await this.chainRepository.getCurrentNetworkId();
+    return networks.find((network) => network.chainId === networkId) ?? networks[0];
+  };
+
+  public updateCurrentNetworkId = async (chainId: string) => {
     await this.chainRepository.updateCurrentChainId(chainId);
     return true;
   };
@@ -46,8 +53,7 @@ export class ChainService {
   };
 
   public clear = async () => {
-    await this.chainRepository.deleteCurrentChainId();;
+    await this.chainRepository.deleteCurrentChainId();
     await this.chainRepository.deleteNetworks();
   };
-
 }

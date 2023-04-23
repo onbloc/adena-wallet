@@ -58,27 +58,14 @@ import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
 import { ErrorContainer } from '@layouts/error-container';
 import { Background } from '@components/background';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import LoadingMain from '@components/loading-screen/loading-main';
-import { useResetRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import { TabContainer } from '@layouts/tab-container';
 import { ProgressMenu } from '@layouts/header/progress-menu';
+import { useWalletContext } from '@hooks/use-context';
+import LoadingMain from '@components/loading-screen/loading-main';
 
 export const CustomRouter = () => {
-  const { loadAccounts, accounts } = useLoadAccounts();
-  const clearCurrentBalance = useResetRecoilState(WalletState.currentBalance);
-  const clearBalances = useResetRecoilState(WalletState.balances);
 
-  useEffect(() => {
-    clearStates();
-    loadAccounts();
-  }, []);
-
-  const clearStates = () => {
-    clearCurrentBalance();
-    clearBalances();
-  };
+  const { wallet } = useWalletContext();
 
   return (
     <Router>
@@ -145,7 +132,7 @@ export const CustomRouter = () => {
                 header={
                   <ProgressMenu
                     showLogo
-                    progressLevel={accounts && accounts?.length > 0 ? 'second' : 'first'}
+                    progressLevel={wallet && wallet.accounts?.length > 0 ? 'second' : 'first'}
                     hideArrow
                   />
                 }
@@ -190,8 +177,8 @@ export const CustomRouter = () => {
           <Route path={RoutePath.GoogleConnectFailed} element={<GoogleConnectFailed />} />
         </Routes>
         <Navigation />
+        <LoadingMain />
       </Background>
-      <LoadingMain />
     </Router>
   );
 };

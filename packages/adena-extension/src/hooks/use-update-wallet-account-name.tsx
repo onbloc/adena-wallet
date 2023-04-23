@@ -1,24 +1,17 @@
 import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { useAdenaContext } from './use-context';
+import { Account } from 'adena-module';
 
 /**
  *
  * @returns
  */
-export const useUpdateWalletAccountName = (): ((address: string, name: string) => void) => {
-  const { accountService } = useAdenaContext();
-  const [, setAccounts] = useRecoilState(WalletState.accounts);
+export const useUpdateWalletAccountName = (): ((account: Account, name: string) => void) => {
   const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
 
-  const updateAccountName = async (address: string, name: string) => {
-    const account = await accountService.getCurrentAccount();
-    await accountService.updateAccountName(account, name);
-    const changedAccounts = await accountService.getAccounts();
-    setAccounts(changedAccounts);
-
-    const currentAccount = await accountService.getCurrentAccount();
-    setCurrentAccount(currentAccount);
+  const updateAccountName = async (account: Account, name: string) => {
+    account.name = name;
+    setCurrentAccount(account);
   };
 
   return updateAccountName;

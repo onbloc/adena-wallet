@@ -27,7 +27,7 @@ export class TransactionBuilder {
     const encodedSignatures: Array<TransactionSignature> = signatures.map((signature) => {
       return {
         pubKey: {
-          typeUrl: signature.pub_key.type,
+          typeUrl: '/tm.PubKeySecp256k1',
           value: TransactionBuilder.generateEncodedPublicKey(signature.pub_key.value as string),
         },
         signature: Buffer.from(signature.signature as string, 'base64'),

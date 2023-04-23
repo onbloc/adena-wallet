@@ -1,18 +1,14 @@
-import { StorageManager } from "@common/storage/storage-manager";
-import { AxiosInstance } from "axios";
+import { StorageManager } from '@common/storage/storage-manager';
+import { AxiosInstance } from 'axios';
+import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
+import { NetworkMetainfo } from '@states/network';
 
-type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID';
+type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
 
-interface ChainResponse {
+export interface Network {
   main: boolean;
   chainId: string;
   chainName: string;
-  order: number;
-  networks: Array<NetworkResponse>;
-};
-
-interface NetworkResponse {
-  main: boolean;
   networkId: string;
   networkName: string;
   addressPrefix: string;
@@ -25,29 +21,12 @@ interface NetworkResponse {
     unit: number;
     minimalDenom: string;
     minimalUnit: number;
-  }
-};
-
-export interface Network {
-  main: boolean;
-  chainId: string;
-  chainName: string;
-  addressPrefix: string;
-  rpcUrl: string;
-  gnoUrl: string;
-  apiUrl: string;
-  linkUrl: string;
-  token: {
-    denom: string;
-    unit: number;
-    minimalDenom: string;
-    minimalUnit: number;
-  }
-};
+  };
+}
 
 export class ChainRepository {
-
-  private static CHAIN_URI = "https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json";
+  private static CHAIN_URI =
+    'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json';
 
   private localStorage: StorageManager<LocalValueType>;
 
@@ -58,17 +37,26 @@ export class ChainRepository {
     this.networkInstance = networkInstance;
   }
 
+  public fetchNetworkMetainfos = async () => {
+    const response = await this.networkInstance.get<Array<ChainMetainfoResponse>>(
+      ChainRepository.CHAIN_URI,
+    );
+    const chain = response.data.find((chain) => chain.main);
+    if (!chain) {
+      return [];
+    }
+    return NetworkMetainfoMapper.fromChainMetainfoResponse(chain);
+  };
+
   public fetchNetworks = async () => {
-    const response = await this.networkInstance.get<Array<ChainResponse>>(ChainRepository.CHAIN_URI);
-    const networks = response.data.find(chain => chain.main)?.networks ?? [];
-    const mappedNetworks = networks.map(network => {
-      return {
-        ...network,
-        chainId: network.networkId,
-        chainName: network.networkName
-      }
-    });
-    return mappedNetworks;
+    const response = await this.networkInstance.get<Array<ChainMetainfoResponse>>(
+      ChainRepository.CHAIN_URI,
+    );
+    const chain = response.data.find((chain) => chain.main);
+    if (!chain) {
+      return [];
+    }
+    return NetworkMetainfoMapper.fromChainMetainfoResponse(chain);
   };
 
   public getNetworks = async () => {
@@ -76,7 +64,7 @@ export class ChainRepository {
     return networks;
   };
 
-  public updateNetworks = async (networks: Array<Network>) => {
+  public updateNetworks = async (networks: Array<NetworkMetainfo>) => {
     await this.localStorage.setByObject('NETWORKS', networks);
     return true;
   };
@@ -86,8 +74,8 @@ export class ChainRepository {
     return true;
   };
 
-  public getCurrentChainId = async () => {
-    return await this.localStorage.get('CURRENT_CHAIN_ID');
+  public getCurrentChainId = () => {
+    return this.localStorage.get('CURRENT_CHAIN_ID');
   };
 
   public updateCurrentChainId = async (chainId: string) => {
@@ -97,6 +85,20 @@ export class ChainRepository {
 
   public deleteCurrentChainId = async () => {
     await this.localStorage.remove('CURRENT_CHAIN_ID');
+    return true;
+  };
+
+  public getCurrentNetworkId = () => {
+    return this.localStorage.get('CURRENT_NETWORK_ID');
+  };
+
+  public updateCurrentNetworkId = async (networkId: string) => {
+    await this.localStorage.set('CURRENT_NETWORK_ID', networkId);
+    return true;
+  };
+
+  public deleteCurrentNetworkId = async () => {
+    await this.localStorage.remove('CURRENT_NETWORK_ID');
     return true;
   };
 }
