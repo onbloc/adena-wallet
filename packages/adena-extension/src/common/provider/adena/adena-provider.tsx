@@ -21,11 +21,7 @@ interface AdenaContextProps {
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
-interface AdenaProviderProps {
-  children: React.ReactNode;
-}
-
-export const AdenaProvider: React.FC<AdenaProviderProps> = ({ children }) => {
+export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
 
   const axiosInstance = axios.create();
 

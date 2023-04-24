@@ -18,11 +18,7 @@ interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 
-interface WalletProviderProps {
-  children: React.ReactNode;
-}
-
-export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
 
   const { walletService, balanceService, accountService, chainService, tokenService } = useAdenaContext();
 
