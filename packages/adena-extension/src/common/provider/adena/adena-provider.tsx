@@ -39,7 +39,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const chainRepository = new ChainRepository(localStorage, axiosInstance);
 
-  const tokenRepository = new TokenRepository(axiosInstance);
+  const tokenRepository = new TokenRepository(localStorage, axiosInstance);
 
   const chainService = new ChainService(chainRepository);
 

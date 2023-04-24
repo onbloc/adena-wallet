@@ -121,6 +121,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     const tokenMetainfos = await tokenService.fetchTokenMetainfos();
     setTokenMetainfos(tokenMetainfos);
     balanceService.setTokenMetainfos(tokenMetainfos);
+
+    const currentAccountId = await accountService.getCurrentAccountId();
+    tokenService.initAccountTokenMetainfos(currentAccountId);
   }
 
 

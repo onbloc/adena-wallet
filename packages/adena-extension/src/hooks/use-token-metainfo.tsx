@@ -1,22 +1,27 @@
 import { TokenState } from "@states/index";
 import { useRecoilState } from "recoil";
 import { useAdenaContext } from "./use-context";
-import { TokenMetainfo } from "@states/token";
+import { useCurrentAccount } from "./use-current-account";
 
-export const useTokenMetainfo = (): {
-  tokenMetainfos: TokenMetainfo[],
-  getTokenMetainfo: () => Promise<TokenMetainfo[]>,
-  convertDenom: (amount: string, denom: string, convertType?: 'COMMON' | 'MINIMAL') => { value: string, denom: string },
-  getTokenImage: (denom: string) => string | undefined
-} => {
+export const useTokenMetainfo = () => {
   const { balanceService, tokenService } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
+  const [accountTokenMetainfos, setAccountTokenMetainfos] = useRecoilState(TokenState.accountTokenMetainfos);
+  const { currentAccount } = useCurrentAccount();
 
-  const getTokenMetainfo = async () => {
-    if (tokenMetainfos.length > 0) {
-      return tokenMetainfos;
+  const initTokenMetainfos = async () => {
+    if (currentAccount) {
+      const tokenMetainfos = await tokenService.fetchTokenMetainfos();
+      setTokenMetainfo(tokenMetainfos);
     }
-    return fetchTokenMetainfo();
+  }
+
+  const initAccountTokenMetainfos = async () => {
+    if (currentAccount) {
+      await tokenService.initAccountTokenMetainfos(currentAccount?.id);
+      const accountTokenMetainfos = await tokenService.getAccountTokenMetainfos(currentAccount.id);
+      setAccountTokenMetainfos(accountTokenMetainfos);
+    }
   }
 
   const convertDenom = (amount: string, denom: string, convertType?: 'COMMON' | 'MINIMAL'): { value: string, denom: string } => {
@@ -34,12 +39,6 @@ export const useTokenMetainfo = (): {
     }
   }
 
-  const fetchTokenMetainfo = async () => {
-    const tokenMetainfos = await tokenService.fetchTokenMetainfos();
-    setTokenMetainfo(tokenMetainfos);
-    return tokenMetainfos;
-  }
-
   const getTokenImage = (denom: string) => {
     const tokenMetainfo = tokenMetainfos.find(
       tokenMetainfo =>
@@ -49,5 +48,5 @@ export const useTokenMetainfo = (): {
     return tokenMetainfo?.image;
   }
 
-  return { tokenMetainfos, getTokenMetainfo, convertDenom, getTokenImage }
+  return { tokenMetainfos, accountTokenMetainfos, initTokenMetainfos, initAccountTokenMetainfos, convertDenom, getTokenImage }
 }

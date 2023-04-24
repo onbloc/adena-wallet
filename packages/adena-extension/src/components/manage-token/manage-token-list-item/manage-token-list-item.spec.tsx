@@ -10,6 +10,7 @@ const token = {
   tokenId: 'token1',
   logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
   name: 'Gnoland',
+  symbol: 'GNOT',
   balanceAmount: {
     value: '240,255.241155',
     denom: 'GNOT',

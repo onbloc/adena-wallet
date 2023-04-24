@@ -9,6 +9,7 @@ import ManageTokenList, { ManageTokenListProps } from './manage-token-list';
 const tokens = [
   {
     tokenId: "token1",
+    symbol: 'GNOT',
     logo: "https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg",
     name: "Gnoland",
     balanceAmount: {
@@ -18,6 +19,7 @@ const tokens = [
     activated: true
   }, {
     tokenId: "token2",
+    symbol: 'GNOS',
     logo: "https://avatars.githubusercontent.com/u/118414737?s=200&v=4",
     name: "Gnoswap",
     balanceAmount: {

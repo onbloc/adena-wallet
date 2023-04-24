@@ -1,6 +1,6 @@
 import ManageTokenListItem, { type ManageTokenListItemProps } from './manage-token-list-item';
 import { Meta, StoryObj } from '@storybook/react';
-import { action } from "@storybook/addon-actions";
+import { action } from '@storybook/addon-actions';
 
 export default {
   title: 'components/manage-token/ManageTokenListItem',
@@ -8,14 +8,15 @@ export default {
 } as Meta<typeof ManageTokenListItem>;
 
 const token = {
-  tokenId: "token1",
-  logo: "https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg",
-  name: "Gnoland",
+  tokenId: 'token1',
+  logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+  name: 'Gnoland',
+  symbol: 'GNOT',
   balanceAmount: {
-    value: "240,255.241155",
-    denom: "GNOT",
+    value: '240,255.241155',
+    denom: 'GNOT',
   },
-  activated: true
+  display: true
 };
 
 export const Main: StoryObj<ManageTokenListItemProps> = {
@@ -24,14 +25,14 @@ export const Main: StoryObj<ManageTokenListItemProps> = {
       ...token,
       main: true
     },
-    onToggleActiveItem: action("token item click")
+    onToggleActiveItem: action('token item click')
   },
 };
 
-export const Activeated: StoryObj<ManageTokenListItemProps> = {
+export const Activated: StoryObj<ManageTokenListItemProps> = {
   args: {
     token,
-    onToggleActiveItem: action("token item click")
+    onToggleActiveItem: action('token item click')
   },
 };
 
@@ -39,8 +40,8 @@ export const Deactivated: StoryObj<ManageTokenListItemProps> = {
   args: {
     token: {
       ...token,
-      activated: false
+      display: false,
     },
-    onToggleActiveItem: action("token item click")
+    onToggleActiveItem: action('token item click')
   },
 };

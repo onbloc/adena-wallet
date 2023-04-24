@@ -37,6 +37,29 @@ export class WalletBalanceService {
     return tokenBalances;
   };
 
+  public getGRC20TokenBalance = async (
+    gnoClient: GnoClient,
+    address: string,
+    packagePath: string,
+    symbol: string,
+  ) => {
+    const response = await gnoClient.queryEval(packagePath, 'BalanceOf', [address]);
+    const rawData = response?.ResponseBase.Data ?? '';
+    const parseDatas = rawData.replace('(', '').replace(')', '').split(' ');
+    const value = parseDatas[0] ?? '0';
+    const balanceAmount = {
+      value,
+      denom: symbol.toUpperCase(),
+    };
+    const tokenBalance = this.tokenMetainfos.find(
+      (tokenMetainfo) => tokenMetainfo.symbol === symbol && tokenMetainfo.pkgPath === packagePath,
+    );
+    if (tokenBalance) {
+      return [this.createTokenBalance(balanceAmount, tokenBalance)];
+    }
+    return [];
+  };
+
   public convertDenom = (
     value: string,
     denom: string,

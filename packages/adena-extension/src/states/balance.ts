@@ -1,18 +1,7 @@
 import { atom } from 'recoil';
+import { TokenMetainfo } from './token';
 
-export interface TokenBalance {
-  main: boolean;
-  tokenId: string;
-  chainId: string;
-  networkId: string;
-  image?: string;
-  pkgPath: string;
-  symbol: string;
-  type: 'NATIVE' | 'GRC20';
-  name: string;
-  decimals: number;
-  denom: string;
-  minimalDenom: string;
+export interface TokenBalance extends TokenMetainfo {
   amount: Amount;
 }
 
