@@ -24,6 +24,7 @@
       "@styles/*": ["src/styles/*"],
       "@layouts/*": ["src/layouts/*"],
       "@components/*": ["src/components/*"],
+      "@containers/*": ["src/containers/*"],
       "@states/*": ["src/states/*"],
       "@common/*": ["src/common/*"],
       "@inject/*": ["src/inject/*"],

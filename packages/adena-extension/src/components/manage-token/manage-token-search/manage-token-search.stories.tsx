@@ -1,11 +1,11 @@
-import ManageTokenList, { type ManageTokenListProps } from './manage-token-list';
+import ManageTokenSearch, { type ManageTokenSearchProps } from './manage-token-search';
 import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 
 export default {
-  title: 'components/manage-token/ManageTokenList',
-  component: ManageTokenList,
-} as Meta<typeof ManageTokenList>;
+  title: 'components/manage-token/ManageTokenSearch',
+  component: ManageTokenSearch,
+} as Meta<typeof ManageTokenSearch>;
 
 const tokens = [
   {
@@ -17,6 +17,7 @@ const tokens = [
       value: '240,255.241155',
       denom: 'GNOT',
     },
+    main: true,
     activated: true
   }, {
     tokenId: 'token2',
@@ -31,9 +32,12 @@ const tokens = [
   }
 ];
 
-export const Default: StoryObj<ManageTokenListProps> = {
+export const Default: StoryObj<ManageTokenSearchProps> = {
   args: {
     tokens,
-    onToggleActiveItem: action('token item click')
+    keyword: '',
+    onChangeKeyword: action('change keyword'),
+    onClickAdded: action('click add button'),
+    onToggleActiveItem: action('toggle item')
   },
 };

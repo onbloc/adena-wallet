@@ -1,7 +1,6 @@
 import { QueryType, QUERY_PATH } from '../../../api';
 
 export class Test3ApiPath {
-
   public static createPathOfHealth = () => `/health`;
 
   public static createPathOfNetwrokInfo = () => `/status`;
@@ -40,17 +39,17 @@ export class Test3ApiPath {
     queryType: QueryType,
     request: {
       query?: { [key in string]: string };
-      data?: Array<string>
-    }
+      data?: Array<string>;
+    },
   ) => {
     const { query, data } = request;
     let queryPath = QUERY_PATH[queryType];
-    let dataPath = "";
+    let dataPath = '';
     if (query) {
-      Object.keys(query).forEach(key => queryPath = queryPath.replace(`:${key}`, query[key]));
+      Object.keys(query).forEach((key) => (queryPath = queryPath.replace(`:${key}`, query[key])));
     }
     if (data) {
-      dataPath = `&data="${data.join("\\n")}"`
+      dataPath = `&data="${data.join('\\n')}"`;
     }
     return `/abci_query?path="${queryPath}"${dataPath}`;
   };

@@ -36,6 +36,8 @@ export enum RoutePath {
   ApproveEstablish = '/approve/wallet/establish',
   ImportAccount = '/wallet/import-account',
   AddAccount = '/wallet/add-account',
+  ManageToken = '/wallet/manage-token',
+  ManageTokenAdded = '/wallet/manage-token/added',
 
   // settings
   Setting = '/settings',

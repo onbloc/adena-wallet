@@ -62,6 +62,7 @@ import { TabContainer } from '@layouts/tab-container';
 import { ProgressMenu } from '@layouts/header/progress-menu';
 import { useWalletContext } from '@hooks/use-context';
 import LoadingMain from '@components/loading-screen/loading-main';
+import ManageToken from '@pages/wallet/manage-token';
 
 export const CustomRouter = () => {
 
@@ -94,6 +95,7 @@ export const CustomRouter = () => {
           <Route path={RoutePath.Explore} element={<Explore />} />
           <Route path={RoutePath.History} element={<History />} />
           <Route path={RoutePath.TransactionDetail} element={<TransactionDetail />} />
+          <Route path={RoutePath.ManageToken} element={<ManageToken />} />
           <Route path={RoutePath.Setting} element={<Settings />} />
           <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
           <Route path={RoutePath.SettingExportAccount} element={<ExportAccount />} />

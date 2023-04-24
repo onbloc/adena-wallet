@@ -13,9 +13,15 @@ export interface TokenMetainfo {
   decimals: number;
   denom: string;
   minimalDenom: string;
+  display?: boolean;
 }
 
 export const tokenMetainfos = atom<TokenMetainfo[]>({
   key: `token/tokenMetainfos`,
+  default: [],
+});
+
+export const accountTokenMetainfos = atom<TokenMetainfo[]>({
+  key: `token/accountTokenMetainfos`,
   default: [],
 });

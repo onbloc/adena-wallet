@@ -36,7 +36,7 @@ export class InjectCore {
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 
-  private tokenRepository = new TokenRepository(this.axiosInstance);
+  private tokenRepository = new TokenRepository(this.localStorage, this.axiosInstance);
 
   public chainService = new ChainService(this.chainRepository);
 

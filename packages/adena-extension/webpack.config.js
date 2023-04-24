@@ -77,6 +77,7 @@ const config = {
       '@inject': path.resolve(__dirname, 'src/inject'),
       '@assets': path.resolve(__dirname, 'src/assets'),
       '@repositories': path.resolve(__dirname, 'src/repositories'),
+      '@containers': path.resolve(__dirname, 'src/containers'),
     },
   },
   plugins: [

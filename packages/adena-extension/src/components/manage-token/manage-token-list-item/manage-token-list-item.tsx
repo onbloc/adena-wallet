@@ -1,12 +1,12 @@
 import React from 'react';
 import { ManageTokenListItemWrapper } from './manage-token-list-item.styles';
-import { ManageToken } from '@components/manage-token/manage-token-list/manage-token-list';
+import { ManageTokenInfo } from '@containers/manage-token-search-container/manage-token-search-container';
 import ManageTokenListItemBalance from '@components/manage-token/manage-token-list-item-balance/manage-token-list-item-balance';
 import Toggle from '@components/common/toggle/toggle';
 
 export interface ManageTokenListItemProps {
-  token: ManageToken;
-  onToggleActiveItem: (tokenId: string) => void;
+  token: ManageTokenInfo;
+  onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }
 
 const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({ token, onToggleActiveItem }) => {
@@ -16,7 +16,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({ token, onTogg
     logo,
     name,
     balanceAmount,
-    activated
+    display
   } = token;
 
   return (
@@ -34,8 +34,8 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({ token, onTogg
         {
           !main && (
             <Toggle
-              activated={activated}
-              onToggle={() => onToggleActiveItem(tokenId)}
+              activated={display === true}
+              onToggle={() => onToggleActiveItem(tokenId, !display)}
             />
           )
         }
