@@ -63,6 +63,8 @@ import { ProgressMenu } from '@layouts/header/progress-menu';
 import { useWalletContext } from '@hooks/use-context';
 import LoadingMain from '@components/loading-screen/loading-main';
 import ManageToken from '@pages/wallet/manage-token';
+import TransferInput from '@pages/wallet/transfer/transfer-input';
+import TransferSummary from '@pages/wallet/transfer/transfer-summary';
 
 export const CustomRouter = () => {
 
@@ -105,6 +107,8 @@ export const CustomRouter = () => {
           <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
           <Route path={RoutePath.GeneralSend} element={<GeneralSend />} />
           <Route path={RoutePath.SendConfirm} element={<SendConfirm />} />
+          <Route path={RoutePath.TransferInput} element={<TransferInput />} />
+          <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />
           <Route path={RoutePath.SendLedgerReject} element={<SendConfirmReject />} />
           <Route path={RoutePath.Deposit} element={<Deposit />} />
           <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
