@@ -13,12 +13,6 @@ describe('AdditionalToken Component', () => {
       selected: true,
       keyword: '',
       tokenInfos: [],
-      selectedTokenInfo: {
-        title: 'Gnoswap (GNOS)',
-        path: 'gno.land/gnos',
-        symbol: 'GNOS',
-        decimals: '6'
-      },
       onChangeKeyword: () => { return; },
       onClickOpenButton: () => { return; },
       onClickListItem: () => { return; },

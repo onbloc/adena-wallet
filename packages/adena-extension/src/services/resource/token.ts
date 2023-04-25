@@ -1,5 +1,6 @@
 import { TokenRepository } from '@repositories/common';
 import { AccountTokenBalance } from '@states/balance';
+import { TokenMetainfo } from '@states/token';
 
 export class TokenService {
   private tokenRepository: TokenRepository;
@@ -12,43 +13,41 @@ export class TokenService {
     return this.tokenRepository.fetchTokenMetainfos();
   }
 
+  public async fetchGRC20Tokens(keyword: string) {
+    return this.tokenRepository.fetchGRC20TokensBy(keyword);
+  }
+
   public async getAppInfos() {
     const response = await this.tokenRepository.fetchAppInfos();
     return response;
   }
 
   public async initAccountTokenMetainfos(accountId: string) {
-    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    const addedTokenMetainfos = fetchedTokenMetainfos.filter((metainfo) =>
-      storedTokenMetainfos.find(
-        (storedMetainfo) =>
-          storedMetainfo.chainId === metainfo.chainId &&
-          storedMetainfo.networkId === metainfo.networkId &&
-          storedMetainfo.tokenId === metainfo.tokenId,
-      ),
-    );
-    this.tokenRepository.updateTokenMetainfos(accountId, [
-      ...storedTokenMetainfos,
-      ...addedTokenMetainfos,
-    ]);
-    return;
+    if (storedTokenMetainfos.length === 0) {
+      const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
+      await this.tokenRepository.updateTokenMetainfos(accountId, fetchedTokenMetainfos);
+    }
+    return true;
   }
 
-  public async getAccountTokenMetainfos(accountId: string) {
+  public async getTokenMetainfosByAccountId(accountId: string) {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     return storedTokenMetainfos;
   }
 
+  public async updateTokenMetainfosByAccountId(accountId: string, tokenMetainfos: TokenMetainfo[]) {
+    await this.tokenRepository.updateTokenMetainfos(accountId, tokenMetainfos);
+    return true;
+  }
+
   public async updateAccountTokenMetainfos(accountTokenMetainfos: AccountTokenBalance[]) {
-    await Promise.all(
-      accountTokenMetainfos.map((accountTokenMetainfo) =>
-        this.tokenRepository.updateTokenMetainfos(
-          accountTokenMetainfo.accountId,
-          accountTokenMetainfo.tokenBalances,
-        ),
-      ),
-    );
+    for (const accountTokenMetainfo of accountTokenMetainfos) {
+      await this.tokenRepository.updateTokenMetainfos(
+        accountTokenMetainfo.accountId,
+        accountTokenMetainfo.tokenBalances,
+      );
+    }
     return true;
   }
 
@@ -57,7 +56,7 @@ export class TokenService {
     tokenId: string,
     display: boolean,
   ) {
-    const storedTokenMetainfos = await this.getAccountTokenMetainfos(accountId);
+    const storedTokenMetainfos = await this.getTokenMetainfosByAccountId(accountId);
     const changedTokenMetainfos = storedTokenMetainfos.map((metainfo) => {
       if (metainfo.tokenId === tokenId) {
         return {

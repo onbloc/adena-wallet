@@ -2,6 +2,16 @@ import { TokenState } from "@states/index";
 import { useRecoilState } from "recoil";
 import { useAdenaContext } from "./use-context";
 import { useCurrentAccount } from "./use-current-account";
+import { TokenMetainfo } from "@states/token";
+
+interface GRC20Token {
+  tokenId: string;
+  name: string;
+  symbol: string;
+  path: string;
+  decimals: number;
+  chainId: string;
+}
 
 export const useTokenMetainfo = () => {
   const { balanceService, tokenService } = useAdenaContext();
@@ -11,15 +21,10 @@ export const useTokenMetainfo = () => {
 
   const initTokenMetainfos = async () => {
     if (currentAccount) {
-      const tokenMetainfos = await tokenService.fetchTokenMetainfos();
+      await tokenService.initAccountTokenMetainfos(currentAccount.id);
+      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+      const accountTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
       setTokenMetainfo(tokenMetainfos);
-    }
-  }
-
-  const initAccountTokenMetainfos = async () => {
-    if (currentAccount) {
-      await tokenService.initAccountTokenMetainfos(currentAccount?.id);
-      const accountTokenMetainfos = await tokenService.getAccountTokenMetainfos(currentAccount.id);
       setAccountTokenMetainfos(accountTokenMetainfos);
     }
   }
@@ -33,6 +38,7 @@ export const useTokenMetainfo = () => {
         return balanceService.convertDenom(amount, denom, tokenMetainfo, convertType);
       }
     }
+
     return {
       value: amount,
       denom
@@ -48,5 +54,62 @@ export const useTokenMetainfo = () => {
     return tokenMetainfo?.image;
   }
 
-  return { tokenMetainfos, accountTokenMetainfos, initTokenMetainfos, initAccountTokenMetainfos, convertDenom, getTokenImage }
+  const addTokenMetainfo = async (tokenMetainfo: TokenMetainfo) => {
+    if (!currentAccount) {
+      return false;
+    }
+
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    if (tokenMetainfos.find(item => item.tokenId === tokenMetainfo.tokenId)) {
+      return false;
+    }
+
+    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, tokenMetainfo]);
+    await updateTokenMetainfos();
+    return true;
+  };
+
+  const addGRC20TokenMetainfo = async ({
+    tokenId,
+    name,
+    symbol,
+    path,
+    decimals,
+    chainId,
+  }: GRC20Token) => {
+    const tokenMetainfo: TokenMetainfo = {
+      main: false,
+      tokenId,
+      chainId,
+      networkId: chainId,
+      pkgPath: path,
+      symbol,
+      type: 'GRC20',
+      name,
+      decimals,
+      denom: symbol,
+      minimalDenom: symbol,
+      display: false
+    }
+    return addTokenMetainfo(tokenMetainfo);
+  };
+
+  const updateTokenMetainfos = async () => {
+    if (!currentAccount) {
+      return false;
+    }
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    setTokenMetainfo(tokenMetainfos);
+    return true;
+  };
+
+  return {
+    tokenMetainfos,
+    accountTokenMetainfos,
+    initTokenMetainfos,
+    addTokenMetainfo,
+    addGRC20TokenMetainfo,
+    convertDenom,
+    getTokenImage
+  };
 }

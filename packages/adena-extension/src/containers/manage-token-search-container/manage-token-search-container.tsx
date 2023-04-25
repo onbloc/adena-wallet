@@ -3,7 +3,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { RoutePath } from '@router/path';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 
@@ -23,8 +23,15 @@ export interface ManageTokenInfo {
 const ManageTokenSearchContainer: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
-  const { tokenBalances, toggleDisplayOption, updateBalanceByAccountAndToken } = useTokenBalance();
+  const { toggleDisplayOption } = useTokenBalance();
   const { currentAccount } = useCurrentAccount();
+  const { tokenBalances, updateBalanceAmountByAccount } = useTokenBalance();
+
+  useEffect(() => {
+    if (currentAccount) {
+      updateBalanceAmountByAccount(currentAccount);
+    }
+  }, [currentAccount]);
 
   const filterTokens = useCallback((keyword: string) => {
     const comparedKeyword = keyword.toLowerCase();
@@ -47,7 +54,7 @@ const ManageTokenSearchContainer: React.FC = () => {
   }, [tokenBalances]);
 
   const moveTokenAddedPage = useCallback(() => {
-    navigate(RoutePath.ManageTokenAdded)
+    navigate(RoutePath.ManageTokenAdded);
   }, [navigate]);
 
   const onChangeKeyword = useCallback((keyword: string) => {
@@ -64,11 +71,16 @@ const ManageTokenSearchContainer: React.FC = () => {
     }
   }, [tokenBalances])
 
+  const onClickClose = useCallback(() => {
+    navigate(-1);
+  }, []);
+
   return (
     <ManageTokenSearch
       keyword={searchKeyword}
       tokens={filterTokens(searchKeyword)}
       onClickAdded={moveTokenAddedPage}
+      onClickClose={onClickClose}
       onChangeKeyword={onChangeKeyword}
       onToggleActiveItem={onToggleActiveItem}
     />

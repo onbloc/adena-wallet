@@ -9,16 +9,20 @@ export interface AdditionalTokenSearchListProps {
 
 interface AdditionalTokenSearchListItem {
   tokenId: string;
-  title: string;
-  description: string;
+  name: string;
+  symbol: string;
+  path: string;
   onClickListItem: (tokenId: string) => void;
 }
 
-const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({ tokenId, title, description, onClickListItem }) => {
+const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({ tokenId, name, symbol, path, onClickListItem }) => {
   return (
     <AdditionalTokenSearchListItemWrapper onClick={() => onClickListItem(tokenId)}>
-      <span className='title'>{title}</span>
-      <span className='token-id'>{description}</span>
+      <span className='title'>
+        <span className='name'>{name}</span>
+        <span className='symbol'>{`(${symbol})`}</span>
+      </span>
+      <span className='path'>{path}</span>
     </AdditionalTokenSearchListItemWrapper>
   )
 };
@@ -32,8 +36,9 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({ t
             <AdditionalTokenSearchListItem
               key={index}
               tokenId={tokenInfo.tokenId}
-              title={tokenInfo.title}
-              description={tokenInfo.description}
+              symbol={tokenInfo.symbol}
+              name={tokenInfo.name}
+              path={tokenInfo.path}
               onClickListItem={onClickListItem}
             />
           )

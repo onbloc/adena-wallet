@@ -18,6 +18,6 @@ export interface AccountTokenBalance {
 }
 
 export const accountTokenBalances = atom<AccountTokenBalance[]>({
-  key: `balance/account-toke-balances`,
+  key: `balance/account-token-balances`,
   default: [],
 });

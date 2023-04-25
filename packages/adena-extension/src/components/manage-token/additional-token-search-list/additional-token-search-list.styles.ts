@@ -30,12 +30,29 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
   }
 
   .title {
+    display: inline-block;
+    flex-shrink: 0;
+    max-width: 50%;
     color: ${({ theme }) => theme.color.neutral[0]};
     ${({ theme }) => theme.fonts.body2Reg};
+
+    .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 3px;
+    }
   }
 
-  .token-id {
+  .path {
+    display: inline-block;
+    flex-shrink: 0;
+    max-width: 50%;
     color: ${({ theme }) => theme.color.neutral[9]};
     ${({ theme }) => theme.fonts.body2Reg}
+    max-width: 50%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;

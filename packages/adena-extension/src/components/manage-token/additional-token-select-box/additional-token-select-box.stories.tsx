@@ -10,23 +10,35 @@ export default {
 const tokenInfos = [
   {
     tokenId: 'token1',
-    title: 'Gnoswap (GNOS)',
-    description: 'gno.land/gnoswap'
+    name: 'Gnoswap',
+    symbol: 'GNOS',
+    chainId: 'test3',
+    path: 'gno.land/gnoswap',
+    decimals: 6,
   },
   {
     tokenId: 'token2',
-    title: 'Gnoswim (SWIM)',
-    description: 'gno.land/gnoswim'
+    name: 'Gnoswim',
+    symbol: 'SWIM',
+    chainId: 'test3',
+    path: 'gno.land/gnoswim',
+    decimals: 6,
   },
   {
     tokenId: 'token3',
-    title: 'Gnosmosi.. (OSMO)',
-    description: 'gno.land/gnosmo...'
+    name: 'Gnosmosi',
+    symbol: 'OSMO',
+    chainId: 'test3',
+    path: 'gno.land/gnosmo...',
+    decimals: 6,
   },
   {
     tokenId: 'token4',
-    title: 'Gnostu.. (GNOSTU..)',
-    description: 'gno.land/gnostuck'
+    name: 'Gnostu',
+    symbol: 'GNOSTU',
+    chainId: 'test3',
+    path: 'gno.land/gnostuck',
+    decimals: 6,
   },
 ];
 

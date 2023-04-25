@@ -6,6 +6,11 @@ export const AdditionalTokenWrapper = styled.div`
   flex-direction: column;
   width: 100%;
   height: 100%;
+  min-height: 430px;
+
+  .sub-header-container {
+    margin-bottom: 30px;
+  }
 
   .select-box-wrapper {
     display: flex;
@@ -18,8 +23,11 @@ export const AdditionalTokenWrapper = styled.div`
     overflow-y: auto;
   }
 
-  .button-wrapper {
+  .button-group {
+    position: absolute;
     display: flex;
+    width: 100%;
+    bottom: 0;
     flex-direction: row;
     justify-content: space-between;
 
