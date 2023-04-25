@@ -38,6 +38,8 @@ export enum RoutePath {
   AddAccount = '/wallet/add-account',
   ManageToken = '/wallet/manage-token',
   ManageTokenAdded = '/wallet/manage-token/added',
+  TransferInput = '/wallet/transfer-input',
+  TransferSummary = '/wallet/transfer-summary',
 
   // settings
   Setting = '/settings',

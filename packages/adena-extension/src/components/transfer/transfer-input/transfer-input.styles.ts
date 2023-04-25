@@ -1,29 +1,31 @@
 import styled from 'styled-components';
 
-export const TransferSummaryWrapper = styled.div`
+export const TransferInputWrapper = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
   min-height: 450px;
-  align-items: center;
-  justify-content: flex-start;
 
-  .info-wrapper {
-    width: 100%;
+  .logo-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px 0;
+    .logo {
+      width: 100px;
+      height: 100px;
+    }
   }
 
-  .direction-icon-wrapper {
-    width: 100%;
-    text-align: center;
-    margin: 10px 0;
+  .address-input-wrapper {
+    display: flex;
+    margin-bottom: 12px;
   }
 
-  .network-fee-wrapper {
-    width: 100%;
+  .balance-input-wrapper {
+    display: flex;
     height: 100%;
-    margin-top: 20px;
   }
 
   .button-group {
@@ -41,12 +43,20 @@ export const TransferSummaryWrapper = styled.div`
       background-color: ${({ theme }) => theme.color.neutral[5]};
       transition: 0.2s;
 
+      :hover {
+        background-color: ${({ theme }) => theme.color.neutral[11]};
+      }
+
       &:last-child {
         margin-left: 10px;
       }
 
-      &.send {
+      &.next {
         background-color: ${({ theme }) => theme.color.primary[3]};
+
+        :hover {
+          background-color: ${({ theme }) => theme.color.primary[2]};
+        }
       }
     }
   }
