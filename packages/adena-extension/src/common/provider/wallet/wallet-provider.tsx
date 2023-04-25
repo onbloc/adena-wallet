@@ -41,7 +41,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   useEffect(() => {
     initWallet();
     initNetworkMetainfos();
-    initTokenMetainfos();
     initAppInfos();
   }, []);
 
@@ -87,7 +86,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
       wallet.accounts[0];
     if (currentAccount) {
       setCurrentAccount(currentAccount);
-      accountService.changeCurrentAccount(currentAccount);
+      await accountService.changeCurrentAccount(currentAccount);
+      initTokenMetainfos(currentAccount.id);
     }
     return true;
   }
@@ -117,13 +117,11 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
-  async function initTokenMetainfos() {
-    const tokenMetainfos = await tokenService.fetchTokenMetainfos();
+  async function initTokenMetainfos(accountId: string) {
+    await tokenService.initAccountTokenMetainfos(accountId);
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(accountId);
     setTokenMetainfos(tokenMetainfos);
     balanceService.setTokenMetainfos(tokenMetainfos);
-
-    const currentAccountId = await accountService.getCurrentAccountId();
-    tokenService.initAccountTokenMetainfos(currentAccountId);
   }
 
 

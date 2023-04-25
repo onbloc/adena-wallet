@@ -1,21 +1,15 @@
-import React, { useCallback, useEffect, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import styled from 'styled-components';
-import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DubbleButton from '@components/buttons/double-button';
-import ListBox, { ListHierarchy } from '@components/list-box';
-import { maxFractionDigits } from '@common/utils/client-utils';
-import { TokenMetainfo } from '@states/token';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import TokenBalance from '@components/common/token-balance/token-balance';
-import { BalanceState } from '@states/index';
 import MainTokenBalance from '@components/main/main-token-balance/main-token-balance';
-import TokenList, { MainToken } from '@components/common/token-list/token-list';
+import TokenList from '@components/common/token-list/token-list';
 import MainManageTokenButton from '@components/main/main-manage-token-button/main-manage-token-button';
 import BigNumber from 'bignumber.js';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -29,7 +23,7 @@ const Wrapper = styled.main`
 
   .manage-token-button-wrapper {
     display: flex;
-    margin: 24px auto;
+    margin: 24px auto 60px auto;
     align-items: center;
     justify-content: center;
   }
@@ -37,12 +31,19 @@ const Wrapper = styled.main`
 
 export const WalletMain = () => {
   const navigate = useNavigate();
-  const { mainTokenBalance, tokenBalances } = useTokenBalance();
+  const { currentAccount } = useCurrentAccount();
+  const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } = useTokenBalance();
 
   const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
 
-  const tokens = tokenBalances.map(tokenBalance => {
+  useEffect(() => {
+    if (currentAccount && displayTokenBalances.length > 0) {
+      updateBalanceAmountByAccount(currentAccount);
+    }
+  }, [currentAccount?.id, displayTokenBalances.length]);
+
+  const tokens = displayTokenBalances.map(tokenBalance => {
     return {
       tokenId: tokenBalance.tokenId,
       logo: tokenBalance.image || `${UnknownTokenIcon}`,
@@ -55,7 +56,9 @@ export const WalletMain = () => {
   });
 
   const onClickTokenListItem = useCallback((tokenId: string) => {
-    navigate(RoutePath.TokenDetails);
+    navigate(RoutePath.TokenDetails, {
+      state: displayTokenBalances.find(tokenBalance => tokenBalance.tokenId === tokenId)
+    });
   }, [tokens]);
 
   const onClickManageButton = useCallback(() => {

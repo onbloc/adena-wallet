@@ -36,6 +36,7 @@ export const Default: StoryObj<ManageTokenSearchProps> = {
   args: {
     tokens,
     keyword: '',
+    onClickClose: action('click close'),
     onChangeKeyword: action('change keyword'),
     onClickAdded: action('click add button'),
     onToggleActiveItem: action('toggle item')

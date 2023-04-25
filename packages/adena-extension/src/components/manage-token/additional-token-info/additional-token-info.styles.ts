@@ -23,12 +23,19 @@ export const AdditionalTokenInfoItemWrapper = styled.div`
   }
 
   .title {
+    display: inline-flex;
+    flex-shrink: 0;
     color: ${({ theme }) => theme.color.neutral[9]};
     ${({ theme }) => theme.fonts.body2Reg};
   }
 
   .value {
+    display: inline-block;
+    max-width: 50%;
     color: ${({ theme }) => theme.color.neutral[0]};
     ${({ theme }) => theme.fonts.body2Reg};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;

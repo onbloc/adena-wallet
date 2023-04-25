@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { HashRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import React from 'react';
+import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import { RoutePath } from './path';
 import { Header } from '@layouts/header';
 import { Navigation } from '@layouts/navigation';
@@ -65,6 +65,7 @@ import LoadingMain from '@components/loading-screen/loading-main';
 import ManageToken from '@pages/wallet/manage-token';
 import TransferInput from '@pages/wallet/transfer/transfer-input';
 import TransferSummary from '@pages/wallet/transfer/transfer-summary';
+import ManageTokenAdded from '@pages/wallet/manage-token/added';
 
 export const CustomRouter = () => {
 
@@ -98,6 +99,7 @@ export const CustomRouter = () => {
           <Route path={RoutePath.History} element={<History />} />
           <Route path={RoutePath.TransactionDetail} element={<TransactionDetail />} />
           <Route path={RoutePath.ManageToken} element={<ManageToken />} />
+          <Route path={RoutePath.ManageTokenAdded} element={<ManageTokenAdded />} />
           <Route path={RoutePath.Setting} element={<Settings />} />
           <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
           <Route path={RoutePath.SettingExportAccount} element={<ExportAccount />} />

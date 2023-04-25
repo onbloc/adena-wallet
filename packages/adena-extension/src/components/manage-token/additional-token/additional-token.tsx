@@ -2,11 +2,16 @@ import React from 'react';
 import { AdditionalTokenWrapper } from './additional-token.styles';
 import AdditionalTokenSelectBox from '@components/manage-token/additional-token-select-box/additional-token-select-box';
 import AdditionalTokenInfo from '@components/manage-token/additional-token-info/additional-token-info';
+import SubHeader from '@components/common/sub-header/sub-header';
+import LeftArrowIcon from '@assets/arrowL-left.svg';
 
 export interface TokenInfo {
   tokenId: string;
-  title: string;
-  description: string;
+  name: string;
+  symbol: string;
+  path: string;
+  decimals: number;
+  chainId: string;
 }
 
 export interface AdditionalTokenProps {
@@ -14,12 +19,7 @@ export interface AdditionalTokenProps {
   selected: boolean;
   keyword: string;
   tokenInfos: TokenInfo[];
-  selectedTokenInfo: {
-    title: string;
-    symbol: string;
-    path: string;
-    decimals: string;
-  }
+  selectedTokenInfo?: TokenInfo;
   onChangeKeyword: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
   onClickListItem: (tokenId: string) => void;
@@ -41,13 +41,23 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
 }) => {
   return (
     <AdditionalTokenWrapper>
+      <div className='sub-header-container'>
+        <SubHeader
+          title='Add Custom Token'
+          leftElement={{
+            element: <img src={LeftArrowIcon} alt={'back icon'} />,
+            onClick: onClickCancel
+          }}
+        />
+      </div>
+
       <div className='select-box-wrapper'>
         <AdditionalTokenSelectBox
           opened={opened}
           selected={selected}
           keyword={keyword}
           tokenInfos={tokenInfos}
-          selectedTitle={selectedTokenInfo.title}
+          selectedTitle={selectedTokenInfo ? `${selectedTokenInfo.name} (${selectedTokenInfo.symbol})` : ''}
           onChangeKeyword={onChangeKeyword}
           onClickOpenButton={onClickOpenButton}
           onClickListItem={onClickListItem}
@@ -55,12 +65,12 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
       </div>
       <div className='info-wrapper'>
         <AdditionalTokenInfo
-          symbol={selectedTokenInfo.symbol}
-          path={selectedTokenInfo.path}
-          decimals={selectedTokenInfo.decimals}
+          symbol={selectedTokenInfo?.symbol || ''}
+          path={selectedTokenInfo?.path || ''}
+          decimals={selectedTokenInfo ? `${selectedTokenInfo.decimals}` : ''}
         />
       </div>
-      <div className='button-wrapper'>
+      <div className='button-group'>
         <button className='cancel-button' onClick={onClickCancel}>Cancel</button>
         <button className={selected ? 'add-button' : 'add-button disabled'} onClick={onClickAdd}>Add</button>
       </div>

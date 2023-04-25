@@ -37,6 +37,7 @@ describe('ManageTokenSearch Component', () => {
       keyword: '',
       onChangeKeyword: () => { return; },
       onClickAdded: () => { return; },
+      onClickClose: () => { return; },
       onToggleActiveItem: () => { return; }
     };
 

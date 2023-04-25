@@ -1,6 +1,8 @@
 import { StorageManager } from '@common/storage/storage-manager';
 import { TokenMetainfo } from '@states/token';
 import { AxiosInstance } from 'axios';
+import { SearchGRC20TokenResponse } from './response/search-grc20-token-response';
+import { GRC20TokenMapper } from './mapper/grc20-token-mapper';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
 
@@ -18,21 +20,6 @@ const TOKEN_METAINFOS: TokenMetainfo[] = [
     decimals: 6,
     denom: 'GNOT',
     minimalDenom: 'ugnot',
-    display: true,
-  },
-  {
-    main: false,
-    tokenId: 'gno.land/r/demo/foo20',
-    name: 'Foo',
-    chainId: 'GNOLAND',
-    networkId: 'test3',
-    image: '',
-    pkgPath: 'gno.land/r/demo/foo20',
-    symbol: 'FOO',
-    type: 'GRC20',
-    decimals: 4,
-    denom: 'FOO',
-    minimalDenom: 'ufoo',
     display: true,
   },
 ];
@@ -74,6 +61,25 @@ export class TokenRepository {
     return response.data;
   };
 
+  public fetchGRC20TokensBy = async (keyword: string) => {
+    const body = {
+      keyword,
+    };
+    const response = await this.networkInstance.post<SearchGRC20TokenResponse>(
+      'https://dev-api.adena.app/test3/search-grc20-tokens',
+      body,
+    );
+    return GRC20TokenMapper.fromSearchTokensResponse(response.data);
+  };
+
+  public getAllTokenMetainfos = async (): Promise<{ [key in string]: TokenMetainfo[] }> => {
+    const accountTokenMetainfos = await this.localStorage.getToObject<
+      { [key in string]: TokenMetainfo[] }
+    >('ACCOUNT_TOKEN_METAINFOS');
+
+    return accountTokenMetainfos;
+  };
+
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenMetainfo[]> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<
       { [key in string]: TokenMetainfo[] }
@@ -90,9 +96,13 @@ export class TokenRepository {
       { [key in string]: TokenMetainfo[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
+    const filteredTokenMetainfos = tokenMetainfos.filter((info1, index) => {
+      return tokenMetainfos.findIndex((info2) => info1.tokenId === info2.tokenId) === index;
+    });
+
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
-      [accountId]: tokenMetainfos,
+      [accountId]: filteredTokenMetainfos,
     };
 
     await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', changedAccountTokenMetainfos);
