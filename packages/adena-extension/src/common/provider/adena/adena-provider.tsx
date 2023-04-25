@@ -5,8 +5,9 @@ import { WalletAccountRepository, WalletAddressRepository, WalletEstablishReposi
 import { WalletAccountService, WalletAddressBookService, WalletBalanceService, WalletEstablishService, WalletService } from "@services/wallet";
 import { ChainService, TokenService } from "@services/resource";
 import { ChainRepository } from "@repositories/common";
-import { TransactionService } from "@services/transaction";
+import { TransactionHistoryService, TransactionService } from "@services/transaction";
 import { TokenRepository } from "@repositories/common/token";
+import { TransactionHistoryRepository } from "@repositories/transaction";
 
 interface AdenaContextProps {
   walletService: WalletService;
@@ -17,6 +18,7 @@ interface AdenaContextProps {
   chainService: ChainService;
   tokenService: TokenService;
   transactionService: TransactionService;
+  transactionHistoryService: TransactionHistoryService;
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
@@ -41,6 +43,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const tokenRepository = new TokenRepository(localStorage, axiosInstance);
 
+  const transactionHistoryRepository = new TransactionHistoryRepository(axiosInstance);
+
   const chainService = new ChainService(chainRepository);
 
   const tokenService = new TokenService(tokenRepository);
@@ -57,6 +61,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const transactionService = new TransactionService(walletService, accountService);
 
+  const transactionHistoryService = new TransactionHistoryService(transactionHistoryRepository);
+
   return (
     <AdenaContext.Provider
       value={{
@@ -67,7 +73,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         establishService,
         chainService,
         tokenService,
-        transactionService
+        transactionService,
+        transactionHistoryService
       }}>
       {children}
     </AdenaContext.Provider>

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { getStatusStyle } from '@common/utils/client-utils';
+import { getDateText, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TransactionDetailInfo, useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
-import { HistoryItemType } from 'gno-client/src/api/response';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
+import TokenBalance from '@components/common/token-balance/token-balance';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
 interface DLProps {
   color?: string;
@@ -15,73 +17,96 @@ interface DLProps {
 
 export const TransactionDetail = () => {
   const [gnoClient] = useGnoClient();
+  const { convertDenom } = useTokenMetainfo();
   const location = useLocation();
-  const [transactionItem, setTransactionItem] = useState<HistoryItemType | undefined>();
+  const [transactionItem, setTransactionItem] = useState<TransactionInfo>();
   const navigate = useNavigate();
   const closeButtonClick = () => navigate(-1);
-  const [{ getTransactionDetailInfo }] = useTransactionHistoryInfo();
-  const [detailInfo, setDetailInfo] = useState<TransactionDetailInfo | undefined>();
 
   useEffect(() => {
     setTransactionItem(location.state);
   }, [location])
-
-  useEffect(() => {
-    if (transactionItem) {
-      const detailInfo = getTransactionDetailInfo(transactionItem);
-      setDetailInfo(detailInfo);
-    }
-  }, [transactionItem])
 
 
   const handleLinkClick = (hash: string) => {
     window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
   };
 
-  return detailInfo ? (
+  return transactionItem ? (
     <Wrapper>
-      <img className='status-icon' src={getStatusStyle(detailInfo.status).statusIcon} alt='status icon' />
-      <TokenBox color={getStatusStyle(detailInfo.status).color}>
-        <img className='tx-symbol' src={detailInfo.icon} alt='logo image' />
-        <Text display={'flex'} className='main-text' type='header6'>
-          {detailInfo.main}
-          {detailInfo.msgNum > 1 && <Text type='body2Bold'>{` +${detailInfo.msgNum - 1}`}</Text>}
-        </Text>
+      <img className='status-icon' src={getStatusStyle(transactionItem.status).statusIcon} alt='status icon' />
+      <TokenBox color={getStatusStyle(transactionItem.status).color}>
+        <img className='tx-symbol' src={transactionItem.logo} alt='logo image' />
+        {transactionItem.type === 'TRANSFER' ? (
+          <TokenBalance
+            value={transactionItem.amount.value || '0'}
+            denom={transactionItem.amount.denom || '0'}
+            fontStyleKey='header6'
+            minimumFontSize='14px'
+            orientation='HORIZONTAL'
+          />
+        ) : (
+          <Text display={'flex'} className='main-text' type='header6'>
+            {transactionItem.title}
+            {transactionItem.extraInfo && <Text type='body2Bold'>{transactionItem.extraInfo}</Text>}
+          </Text>
+        )}
       </TokenBox>
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{detailInfo.date}</dd>
+          <dd>{getDateTimeText(transactionItem.date)}</dd>
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>
           <dd>
-            {detailInfo.type}
-            {detailInfo.msgNum > 1 && <Text type='body3Bold'>{` +${detailInfo.msgNum - 1}`}</Text>}
+            {transactionItem.typeName || ''}
+            {transactionItem.extraInfo && <Text type='body3Bold'>{transactionItem.extraInfo}</Text>}
           </dd>
         </DLWrap>
-        <DLWrap color={getStatusStyle(detailInfo.status).color}>
+        <DLWrap color={getStatusStyle(transactionItem.status).color}>
           <dt>Status</dt>
           <StatusInfo>
-            <dd>{detailInfo.status}</dd>
+            <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
             <dd
               className='link-icon'
-              onClick={() => transactionItem?.hash && handleLinkClick(transactionItem?.hash ?? '')}
+              onClick={() => transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')}
             >
               <img src={link} alt='link' />
             </dd>
           </StatusInfo>
         </DLWrap>
-        {detailInfo.transfer && (
+        {transactionItem.type === 'TRANSFER' && (
           <DLWrap>
-            <dt>{detailInfo.transfer.type}</dt>
-            <dd>{detailInfo.transfer.address}</dd>
+            <dt>{
+              transactionItem.title === 'Send' ?
+                'To' :
+                'From'
+            }</dt>
+            <dd>{
+              transactionItem.title === 'Send' ?
+                transactionItem.to :
+                transactionItem.from
+            }</dd>
           </DLWrap>
         )}
-        <DLWrap>
-          <dt>Network Fee</dt>
-          <dd>{detailInfo.networkFee}</dd>
-        </DLWrap>
+        {
+          transactionItem.networkFee && (
+            <DLWrap>
+              <dt>Network Fee</dt>
+              <dd>
+                <TokenBalance
+                  {...convertDenom(
+                    transactionItem.networkFee.value,
+                    transactionItem.networkFee.denom)
+                  }
+                  fontStyleKey='body1Reg'
+                  orientation='HORIZONTAL'
+                />
+              </dd>
+            </DLWrap>
+          )
+        }
       </DataBox>
       <Button
         margin='auto 0px 0px'

@@ -166,12 +166,12 @@ export function removeUgly(target: any) {
 
 export function getStatusStyle(status: string) {
   switch (status) {
-    case 'Success' || 'Send':
+    case 'SUCCESS':
       return {
         color: theme.color.green[2],
         statusIcon: success,
       };
-    case 'Fail':
+    case 'FAIL':
       return {
         color: theme.color.red[2],
         statusIcon: failed,
@@ -291,18 +291,20 @@ const fetchFavicon = async (hostname: string) => {
   }
 
   return null;
-}
+};
 
 const fetchArrayData = (uri: string) => {
-  return axios.get(uri, { responseType: 'arraybuffer' })
-    .then(response => response.headers['content-type'].startsWith("image") ? response : null)
+  return axios
+    .get(uri, { responseType: 'arraybuffer' })
+    .then((response) => (response.headers['content-type'].startsWith('image') ? response : null))
     .catch(() => null);
-}
+};
 
 export const createImageDataBySvg = async (imageUri: string) => {
   try {
-    const response = await axios.get(imageUri, { responseType: 'arraybuffer', });
-    const imageData = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    const response = await axios.get(imageUri, { responseType: 'arraybuffer' });
+    const imageData =
+      'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
     return imageData;
   } catch (e) {
     console.log(e);
@@ -317,16 +319,16 @@ const isFailedReceive = (cur: any) => {
 // TODO: CHECK SSL
 export const getSiteName = (hostname: string | undefined) => {
   if (!hostname) {
-    return "-";
+    return '-';
   }
-  return hostname.replace("www.", "");
+  return hostname.replace('www.', '');
 };
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
   const decimalPosition = multiply.toString().indexOf('.');
   const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
   const extraValue = Math.pow(10, decimalLength);
-  const currentAmount = (value.multipliedBy(multiply).multipliedBy(extraValue)).dividedBy(extraValue);
+  const currentAmount = value.multipliedBy(multiply).multipliedBy(extraValue).dividedBy(extraValue);
   return currentAmount;
 };
 
@@ -341,4 +343,27 @@ export const dateToLocal = (utcDateStr: string) => {
     value: currentDate.format('YYYY-MM-DD HH:mm:ss'),
     offsetHours: -timezoneOffset / 60,
   };
+};
+
+export const getDateText = (date: string) => {
+  const currentDate = new Date(date);
+  const dateDiff = getDateDiff(currentDate);
+  let formatDate = '';
+
+  if (dateDiff === 0) {
+    formatDate = 'Today';
+  } else if (dateDiff === 1) {
+    formatDate = 'Yesterday';
+  } else {
+    const result = dateTimeFormatEn(currentDate);
+    formatDate = `${result.month} ${result.day}, ${result.year}`;
+  }
+  return formatDate;
+};
+
+export const getDateTimeText = (date: string) => {
+  const currentDate = new Date(date);
+  const result = dateTimeFormatEn(currentDate);
+  const formatDate = `${result.month} ${result.day}, ${result.year} ${result.time}`;
+  return formatDate;
 };

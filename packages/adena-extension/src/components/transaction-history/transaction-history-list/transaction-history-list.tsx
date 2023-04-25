@@ -6,11 +6,13 @@ import { TransactionInfo } from '@components/transaction-history/transaction-his
 export interface TransactionHistoryListProps {
   title: string;
   transactions: TransactionInfo[];
+  onClickItem: (hash: string) => void;
 }
 
 const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
   title,
-  transactions
+  transactions,
+  onClickItem,
 }) => {
   return (
     <TransactionHistoryListWrapper>
@@ -20,6 +22,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
           <TransactionHistoryListItem
             key={index}
             {...transaction}
+            onClickItem={onClickItem}
           />
         )}
       </div>
