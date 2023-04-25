@@ -10,7 +10,8 @@ describe('TransactionHistoryList Component', () => {
   it('TransactionHistoryList render', () => {
     const args: TransactionHistoryListProps = {
       title: '',
-      transactions: []
+      transactions: [],
+      onClickItem: () => { return; }
     };
 
     render(

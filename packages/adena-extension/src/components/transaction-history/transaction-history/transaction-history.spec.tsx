@@ -9,7 +9,9 @@ import TransactionHistory, { TransactionHistoryProps } from './transaction-histo
 describe('TransactionHistory Component', () => {
   it('TransactionHistory render', () => {
     const args: TransactionHistoryProps = {
-      transactionInfoLists: []
+      status: 'success',
+      transactionInfoLists: [],
+      onClickItem: () => { return; }
     };
 
     render(
