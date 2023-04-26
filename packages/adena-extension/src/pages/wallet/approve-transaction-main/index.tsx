@@ -16,6 +16,23 @@ import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { LedgerConnector } from 'adena-module';
 import { isLedgerAccount } from 'adena-module';
+import { StdSignDoc } from 'adena-module/src';
+
+function mappedTransactionData(document: StdSignDoc) {
+  return {
+    messages: document.msgs,
+    contracts: document.msgs.map((message) => {
+      return {
+        type: message?.type || '',
+        function: message?.value?.func || '',
+        value: message?.value || '',
+      };
+    }),
+    gasWanted: document.fee.gas,
+    gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
+    document,
+  }
+}
 
 export const ApproveTransactionMain = () => {
   const { transactionService } = useAdenaContext();
@@ -31,6 +48,7 @@ export const ApproveTransactionMain = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
+  const [document, setDocument] = useState<StdSignDoc>();
 
   useEffect(() => {
     if (!gnoClient) {
@@ -60,7 +78,7 @@ export const ApproveTransactionMain = () => {
       return false;
     }
     try {
-      const transaction = await transactionService.createTransactionData(
+      const document = await transactionService.createDocument(
         gnoClient,
         currentAccount,
         requestData?.data?.messages,
@@ -68,7 +86,8 @@ export const ApproveTransactionMain = () => {
         requestData?.data?.gasFee,
         requestData?.data?.memo,
       );
-      setTrasactionData(transaction);
+      setDocument(document);
+      setTrasactionData(mappedTransactionData(document));
       setGasFee(requestData?.data?.gasFee ?? 0);
       setHostname(requestData?.hostname ?? '');
       return true;
@@ -89,17 +108,14 @@ export const ApproveTransactionMain = () => {
   };
 
   const sendTransaction = async () => {
-    if (transactionData && gnoClient && currentAccount) {
+    if (document && gnoClient && currentAccount) {
       try {
-        const transactionValue = await transactionService.createTransactionByContract(
-          gnoClient,
+        const signature = await transactionService.createSignature(
           currentAccount,
-          requestData?.data?.messages,
-          requestData?.data?.gasWanted,
-          requestData?.data?.gasFee,
-          requestData?.data?.memo,
+          document
         );
-        const result = await transactionService.sendTransaction(gnoClient, transactionValue);
+        const transaction = await transactionService.createTransaction(document, signature);
+        const result = await transactionService.sendTransaction(gnoClient, transaction);
         if (result.height && result.height !== '0') {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),

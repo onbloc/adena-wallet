@@ -77,40 +77,4 @@ export class Transaction {
   public setMemeo = (memo: string) => {
     this.memo = memo;
   };
-
-  public static generateTransactionFee = (gasWanted: string, gasFee?: string): TransactionFee => {
-    return {
-      gasFee: gasFee ?? '1ugnot',
-      gasWanted,
-    };
-  };
-
-  public static generateDocument = (
-    accountNumber: string,
-    sequence: string,
-    chainId: string,
-    messages: Array<any>,
-    gasWanted: string,
-    gasFee: {
-      value: string;
-      denom: string;
-    },
-    memo?: string,
-  ): StdSignDoc => {
-    return Document.createDocument(
-      accountNumber,
-      sequence,
-      chainId,
-      messages,
-      gasWanted,
-      gasFee,
-      memo ?? '',
-    );
-  };
-
-  public static generateSignature = async (keyring: Keyring, documnet: StdSignDoc) => {
-    const signedResult = await keyring.sign(documnet);
-    const { signature } = signedResult;
-    return signature;
-  };
 }

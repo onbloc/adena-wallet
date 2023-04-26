@@ -70,13 +70,14 @@ const TransferSummaryContainer: React.FC = () => {
       getNativeTransferMessage() :
       getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
-    const transaction = await transactionService.createTransaction(
+    const { document, signature } = await transactionService.createSignDocument(
       gnoClient,
       currentAccount,
-      message,
+      [message],
       GAS_WANTED,
       networkFeeAmount
     );
+    const transaction = await transactionService.createTransaction(document, signature);
     return transactionService.sendTransaction(gnoClient, transaction);
   }, [summaryInfo, currentAccount, currentAccount])
 

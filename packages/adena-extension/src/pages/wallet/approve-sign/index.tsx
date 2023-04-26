@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -16,6 +16,23 @@ import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { LedgerConnector } from 'adena-module';
 import { isLedgerAccount } from 'adena-module';
+import { StdSignDoc } from 'adena-module/src';
+
+function mappedTransactionData(document: StdSignDoc) {
+  return {
+    messages: document.msgs,
+    contracts: document.msgs.map((message) => {
+      return {
+        type: message?.type || '',
+        function: message?.value?.func || '',
+        value: message?.value || '',
+      };
+    }),
+    gasWanted: document.fee.gas,
+    gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
+    document,
+  }
+}
 
 // TODO: ApproveTransaction
 export const ApproveSign = () => {
@@ -32,6 +49,7 @@ export const ApproveSign = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
+  const [document, setDocument] = useState<StdSignDoc>();
 
   useEffect(() => {
     if (!gnoClient) {
@@ -62,7 +80,7 @@ export const ApproveSign = () => {
       return false;
     }
     try {
-      const transaction = await transactionService.createTransactionData(
+      const document = await transactionService.createDocument(
         gnoClient,
         currentAccount,
         requestData?.data?.messages,
@@ -70,7 +88,8 @@ export const ApproveSign = () => {
         requestData?.data?.gasFee,
         requestData?.data?.memo,
       );
-      setTrasactionData(transaction);
+      setDocument(document);
+      setTrasactionData(mappedTransactionData(document));
       setGasFee(requestData?.data?.gasFee ?? 0);
       setHostname(requestData?.hostname ?? '');
       return true;
@@ -89,9 +108,9 @@ export const ApproveSign = () => {
   const signTransaction = async () => {
     if (transactionData && gnoClient && currentAccount) {
       try {
-        const signedAmino = await transactionService.createAminoSign(
+        const signedAmino = await transactionService.createSignDocument(
           gnoClient,
-          currentAccount.getAddress('g'),
+          currentAccount,
           requestData?.data?.messages,
           requestData?.data?.gasWanted,
           requestData?.data?.gasFee,
