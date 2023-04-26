@@ -12,6 +12,7 @@ interface WalletContextProps {
   walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
   tokenMetainfos: TokenMetainfo[];
   networkMetainfos: NetworkMetainfo[];
+  updateWallet: (wallet: Wallet) => Promise<boolean>;
   initWallet: () => Promise<boolean>;
 }
 
@@ -76,6 +77,13 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
       setWalletStatus('FAIL');
       return false;
     }
+    return true;
+  }
+
+  async function updateWallet(wallet: Wallet) {
+    setWallet(wallet);
+    const password = await walletService.loadWalletPassword();
+    await walletService.saveWallet(wallet, password);
     return true;
   }
 
@@ -144,7 +152,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         walletStatus,
         tokenMetainfos,
         networkMetainfos,
-        initWallet
+        initWallet,
+        updateWallet
       }}>
       {children}
     </WalletContext.Provider>

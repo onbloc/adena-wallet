@@ -11,7 +11,7 @@ import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { PrivateKeyKeyring } from 'adena-module';
 
 const content = {
@@ -22,8 +22,7 @@ const content = {
 
 export const ImportPrivateKey = () => {
   const navigate = useNavigate();
-  const { walletService } = useAdenaContext();
-  const { accounts } = useWalletAccounts();
+  const { wallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');
   const { importAccount } = useImportAccount();
@@ -63,7 +62,10 @@ export const ImportPrivateKey = () => {
       if (privateKey.length !== 64 || !privateKey.match(regExp)) {
         throw new Error("Invalid private key");
       }
-      const wallet = await walletService.loadWallet();
+      if (!wallet) {
+        setEnabled(true);
+        return;
+      }
       const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKey);
       const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
 

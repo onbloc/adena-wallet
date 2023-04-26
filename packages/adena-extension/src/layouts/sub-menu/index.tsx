@@ -15,7 +15,7 @@ import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { Account } from 'adena-module';
 import { AccountTokenBalance } from '@states/balance';
 import { useTokenBalance } from '@hooks/use-token-balance';
@@ -94,10 +94,10 @@ const FromBadge = ({ from }: { from: string }) => {
 
 const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'portal-root' }) => {
   const { walletService } = useAdenaContext();
+  const { wallet } = useWalletContext();
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
   const { currentAccount, changeCurrentAccount } = useCurrentAccount();
-  const { accounts } = useWalletAccounts();
   const { accountTokenBalances } = useTokenBalance();
 
   const addAccountHandler = () => {
@@ -139,9 +139,9 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
           {!login && currentAccount && (
             <Body>
               <ListWrapper>
-                {accounts && accounts.length > 0 && (
+                {wallet?.accounts && wallet.accounts.length > 0 && (
                   <UserListMaker
-                    accounts={accounts}
+                    accounts={wallet.accounts}
                     accountBalances={accountTokenBalances}
                     changeAccountHandler={changeAccountHandler}
                     currentAccount={currentAccount}

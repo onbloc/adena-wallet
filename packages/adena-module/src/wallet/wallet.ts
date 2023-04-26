@@ -18,7 +18,7 @@ import {
   Web3AuthKeyring,
 } from './keyring';
 import { decryptAES, encryptAES } from './wallet-crypto-util';
-import { hasHDPath, isSeedAccount } from './account/account-util';
+import { hasHDPath, isLedgerAccount, isSeedAccount } from './account/account-util';
 import { LedgerConnector, StdSignature, StdSignDoc } from '../amino';
 import { Bip39, Random } from '../crypto';
 import { arrayToHex, hexToArray } from '../utils/data';
@@ -32,6 +32,8 @@ export interface Wallet {
   nextHDPath: number;
   privateKeyStr: string;
   mnemonic: string;
+  lastAccountIndex: number;
+  lastLedgerAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
@@ -52,20 +54,17 @@ export interface Wallet {
     signature: StdSignature;
   }>;
   serialize: (password: string) => Promise<string>;
+  clone: () => AdenaWallet;
 }
 export interface WalletData {
   accounts: AccountInfo[];
   keyrings: KeyringData[];
   currentAccountId?: string;
-  lastAccountIndex: number;
-  lastLedgerAccountIndex: number;
 }
 
 const defaultWalletData: WalletData = {
   accounts: [] as AccountInfo[],
   keyrings: [] as KeyringData[],
-  lastAccountIndex: 0,
-  lastLedgerAccountIndex: 0,
 };
 
 export class AdenaWallet implements Wallet {
@@ -75,18 +74,11 @@ export class AdenaWallet implements Wallet {
 
   private _currentAccountId: string | undefined;
 
-  private _lastAccountIndex: number;
-
-  private _lastLedgerAccountIndex: number;
-
   constructor(walletData?: WalletData) {
-    const { accounts, keyrings, currentAccountId, lastAccountIndex, lastLedgerAccountIndex } =
-      walletData ?? defaultWalletData;
+    const { accounts, keyrings, currentAccountId } = walletData ?? defaultWalletData;
     this._accounts = accounts.map(makeAccount);
     this._keyrings = keyrings.map(makeKeyring);
     this._currentAccountId = currentAccountId;
-    this._lastAccountIndex = lastAccountIndex ?? 0;
-    this._lastLedgerAccountIndex = lastLedgerAccountIndex ?? 0;
   }
 
   get accounts() {
@@ -115,12 +107,12 @@ export class AdenaWallet implements Wallet {
   }
 
   get nextAccountName() {
-    const nextIndex = this._lastAccountIndex + 1;
+    const nextIndex = this.lastAccountIndex + 1;
     return `Account ${nextIndex}`;
   }
 
   get nextLedgerAccountName() {
-    const nextIndex = this._lastLedgerAccountIndex + 1;
+    const nextIndex = this.lastLedgerAccountIndex + 1;
     return `Ledger ${nextIndex}`;
   }
 
@@ -145,6 +137,18 @@ export class AdenaWallet implements Wallet {
       throw new Error('Mnemonic words not found');
     }
     return this.currentKeyring.mnemonic;
+  }
+
+  get lastAccountIndex() {
+    const indices = this.accounts
+      .filter((account) => !isLedgerAccount(account))
+      .map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
+  get lastLedgerAccountIndex() {
+    const indices = this.accounts.filter(isLedgerAccount).map((account) => account.index);
+    return Math.max(0, ...indices);
   }
 
   isEmpty() {
@@ -228,12 +232,18 @@ export class AdenaWallet implements Wallet {
       currentAccountId: this._currentAccountId,
       accounts: this._accounts.map((account) => account.toData()),
       keyrings: this._keyrings.map((keyring) => keyring.toData()),
-      lastAccountIndex: this._lastAccountIndex,
-      lastLedgerAccountIndex: this._lastLedgerAccountIndex,
     };
     const serialized = JSON.stringify(plain);
     const encryptedSerialize = await encryptAES(serialized, password);
     return encryptedSerialize;
+  }
+
+  clone() {
+    return new AdenaWallet({
+      accounts: this._accounts.map((account) => account.toData()),
+      keyrings: this._keyrings.map((keyring) => keyring.toData()),
+      currentAccountId: this._currentAccountId,
+    });
   }
 
   public static async deserialize(encryptedSerialize: string, password: string) {
