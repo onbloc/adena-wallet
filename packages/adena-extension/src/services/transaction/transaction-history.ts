@@ -7,11 +7,11 @@ export class TransactionHistoryService {
     this.transactionHisotyrRepository = transactionHisotyrRepository;
   }
 
-  public fetchAllTransactionHistory(address: string, page: number, from: number) {
-    return this.transactionHisotyrRepository.fetchAllTransactionHistoryBy(address, page, from);
+  public fetchAllTransactionHistory(address: string, from: number, size?: number) {
+    return this.transactionHisotyrRepository.fetchAllTransactionHistoryBy(address, from, size);
   }
 
-  public fetchGRC20TransactionHistory(address: string, page: number, from: number) {
-    return this.transactionHisotyrRepository.fetchGRC20TransactionHistoryBy(address, page, from);
+  public fetchGRC20TransactionHistory(address: string, from: number, size?: number) {
+    return this.transactionHisotyrRepository.fetchGRC20TransactionHistoryBy(address, from, size);
   }
 }

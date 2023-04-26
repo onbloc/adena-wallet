@@ -6,13 +6,13 @@ import { dateTimeFormatEn, getDateDiff } from '@common/utils/client-utils';
 import ListBox from '../index';
 import success from '../../../assets/success.svg';
 import failed from '../../../assets/failed.svg';
-import { HistoryItemType } from 'gno-client/src/api/response';
 import { useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
+import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
 
 interface HistoryItemProps {
   onClick: (item: any) => void;
   date: string;
-  transaction: Array<HistoryItemType>;
+  transaction: Array<HistoryItem>;
 }
 
 const SymbolImage = styled.div<{ status: boolean }>`
@@ -50,7 +50,7 @@ export const ListWithDate = (props: HistoryItemProps) => {
     return formatDate;
   };
 
-  const renderTransactionItem = (item: HistoryItemType, idx: number) => {
+  const renderTransactionItem = (item: HistoryItem, idx: number) => {
     const info = getTransactionInfo(item);
 
     return (

@@ -113,9 +113,6 @@ export class GnoClient {
 
   public getBalances = async (address: string) => this.network.getBalances(address);
 
-  public getTransactionHistory = async (address: string, page?: number) =>
-    this.network.getTransactionHistory(address, page ?? 0);
-
   public queryRender = async (packagePath: string, data?: Array<string>) =>
     this.network.queryRender(packagePath, data);
 

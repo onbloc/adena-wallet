@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getDateText, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
+import { getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TransactionDetailInfo, useTransactionHistoryInfo } from '@hooks/use-transaction-history-info';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 import TokenBalance from '@components/common/token-balance/token-balance';

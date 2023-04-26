@@ -33,6 +33,4 @@ export interface GnoClientApi extends GnoClientApiAbciQuery {
   broadcastTxSync: (tx: string) => Promise<GnoClientResnpose.BroadcastTxSync>;
 
   broadcastTxAsync: (tx: string) => Promise<GnoClientResnpose.BroadcastTxAsync>;
-
-  getTransactionHistory: (address: string, page?: number) => Promise<GnoClientResnpose.History>;
 }

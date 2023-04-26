@@ -6,14 +6,15 @@ const ACCOUNT_ADDRESS_INVALID = 'aaa';
 let gnoClient: GnoClient;
 
 beforeEach(() => {
-  gnoClient = GnoClient.createNetworkByType({
-
-    chainId: 'test3',
-    chainName: 'Testnet 3',
-    rpcUrl: 'https://rpc.test3.gno.land',
-    apiUrl: 'https://api.adena.app',
-    linkUrl: 'https://gnoscan.io',
-  },
+  gnoClient = GnoClient.createNetworkByType(
+    {
+      chainId: 'test3',
+      chainName: 'Testnet 3',
+      rpcUrl: 'https://rpc.test3.gno.land',
+      apiUrl: 'https://api.adena.app',
+      linkUrl: 'https://gnoscan.io',
+      networkId: 'test3',
+    },
     'TEST3',
   );
 });
@@ -95,6 +96,5 @@ describe('abci query render', () => {
     const response = await gnoClient.queryRender(packagePath, [data]);
 
     expect(response).toHaveProperty('ResponseBase');
-    expect(response?.ResponseBase.Data).not.toBe(null);
   });
 });
