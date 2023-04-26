@@ -9,8 +9,10 @@ import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import { maxFractionDigits, searchTextFilter } from '@common/utils/client-utils';
 import ListBox, { ListHierarchy } from '@components/list-box';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import TokenBalanceComponent from '@components/common/token-balance/token-balance';
+import { TokenBalance } from '@states/balance';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -64,11 +66,6 @@ const ButtonWrap = styled.div`
 export const WalletSearch = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const CoinBoxClick = () => {
-    location.state === 'send'
-      ? navigate(RoutePath.GeneralSend, { state: 'search' })
-      : navigate(RoutePath.Deposit, { state: 'wallet' });
-  };
 
   const { tokenBalances } = useTokenBalance();
 
@@ -76,6 +73,12 @@ export const WalletSearch = () => {
   const [searchText, setSearchText] = useState('');
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
+  };
+
+  const onClickItem = (tokenBalance: TokenBalance) => {
+    location.state === 'send'
+      ? navigate(RoutePath.TransferInput, { state: tokenBalance })
+      : navigate(RoutePath.Deposit, { state: 'wallet' });
   };
 
   const inputResetClick = () => {
@@ -107,19 +110,24 @@ export const WalletSearch = () => {
           )
           .map((balance, idx) => (
             <ListBox
-              left={<img src={balance.image} alt='logo image' className='logo' />}
+              left={<img src={balance.image || `${UnknownTokenIcon}`} alt='logo image' className='logo' />}
               center={
                 <Text type='body1Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
               }
               right={
-                <Text type='body2Reg'>{`${maxFractionDigits(balance.amount.toString() ?? 0, 6)} ${balance.type
-                  }`}</Text>
+                <TokenBalanceComponent
+                  value={balance.amount.value}
+                  denom={balance.amount.denom}
+                  fontStyleKey='body2Reg'
+                  minimumFontSize='11px'
+                  orientation='HORIZONTAL'
+                />
               }
               hoverAction={true}
               key={idx}
-              onClick={CoinBoxClick}
+              onClick={() => onClickItem(balance)}
               mode={ListHierarchy.Normal}
             />
           ))}

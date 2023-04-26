@@ -59,7 +59,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const establishService = new WalletEstablishService(establishRepository);
 
-  const transactionService = new TransactionService(walletService, accountService);
+  const transactionService = new TransactionService(walletService);
 
   const transactionHistoryService = new TransactionHistoryService(transactionHistoryRepository);
 

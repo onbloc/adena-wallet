@@ -48,17 +48,6 @@ export class ChainRepository {
     return NetworkMetainfoMapper.fromChainMetainfoResponse(chain);
   };
 
-  public fetchNetworks = async () => {
-    const response = await this.networkInstance.get<Array<ChainMetainfoResponse>>(
-      ChainRepository.CHAIN_URI,
-    );
-    const chain = response.data.find((chain) => chain.main);
-    if (!chain) {
-      return [];
-    }
-    return NetworkMetainfoMapper.fromChainMetainfoResponse(chain);
-  };
-
   public getNetworks = async () => {
     const networks = await this.localStorage.getToObject<Array<Network>>('NETWORKS');
     return networks;

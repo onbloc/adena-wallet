@@ -1,13 +1,6 @@
 import { Account } from 'adena-module';
-import { WalletAddressRepository } from '@repositories/wallet';
+import { AddressBookItem, WalletAddressRepository } from '@repositories/wallet';
 import { v4 as uuidv4 } from 'uuid';
-
-interface AddressBookItem {
-  id: string;
-  name: string;
-  address: string;
-  createdAt: string;
-}
 
 export class WalletAddressBookService {
   private walletAddressRepository: WalletAddressRepository;

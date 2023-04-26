@@ -19,7 +19,7 @@ export class ChainService {
       return networks;
     }
 
-    const fetchedNetworks = await this.chainRepository.fetchNetworks();
+    const fetchedNetworks = await this.chainRepository.fetchNetworkMetainfos();
     if (fetchedNetworks.length === 0) {
       throw new CommonError('NOT_FOUND_NETWORKS');
     }

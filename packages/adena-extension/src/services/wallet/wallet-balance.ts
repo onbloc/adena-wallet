@@ -67,7 +67,7 @@ export class WalletBalanceService {
     convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
   ) => {
     const decimals = tokenMetainfo.decimals;
-    let shift = 1;
+    let shift = 0;
     let convertedDenom = tokenMetainfo.denom;
     if (convertType === 'COMMON') {
       if (tokenMetainfo.denom.toUpperCase() !== denom.toUpperCase()) {

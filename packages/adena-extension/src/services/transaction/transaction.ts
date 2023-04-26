@@ -2,16 +2,13 @@ import { WalletError } from '@common/errors';
 import { Transaction, TransactionBuilder, uint8ArrayToArray } from 'adena-module';
 import { Account } from 'adena-module';
 import { GnoClient } from 'gno-client';
-import { WalletAccountService, WalletService } from '..';
+import { WalletService } from '..';
 
 export class TransactionService {
   private walletService: WalletService;
 
-  private accountService: WalletAccountService;
-
-  constructor(walletService: WalletService, accountService: WalletAccountService) {
+  constructor(walletService: WalletService) {
     this.walletService = walletService;
-    this.accountService = accountService;
   }
 
   private getGasAmount = async (gasFee?: number) => {
