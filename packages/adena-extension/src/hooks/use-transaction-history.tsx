@@ -1,16 +1,17 @@
-import { GnoClientState, WalletState } from "@states/index"
+import { WalletState } from "@states/index"
 import { useRecoilState } from "recoil";
-import { HistoryItem, HistoryItemType } from "gno-client/src/api/response";
 import { dateToLocal } from "@common/utils/client-utils";
 import { useCurrentAccount } from "./use-current-account";
+import { useAdenaContext } from "./use-context";
+import { HistoryItem } from "@repositories/transaction/response/transaction-history-response";
 
 export const useTransactionHistory = (): [
     getHistory: () => Promise<{ [key in string]: Array<HistoryItem> }>,
     updateLastTransactionHistory: () => Promise<boolean>,
     updateNextTransactionHistory: () => Promise<boolean>
 ] => {
+    const { transactionHistoryService } = useAdenaContext();
     const { currentAccount } = useCurrentAccount();
-    const [gnoClient] = useRecoilState(GnoClientState.current);
     const [transactionHistory, setTransactionHistory] = useRecoilState(WalletState.transactionHistory);
 
     const getHistory = async () => {
@@ -53,20 +54,20 @@ export const useTransactionHistory = (): [
 
     const fetchTransactionHistory = async (page: number) => {
         const address = currentAccount?.getAddress('g');
-        if (gnoClient && address) {
+        if (address) {
             const currentPage = page ?? 0;
             try {
-                const response = await gnoClient.getTransactionHistory(address, currentPage * 20);
+                const transactions = await transactionHistoryService.fetchGRC20TransactionHistory(address, currentPage * 20, 20);
                 const lastPage = currentPage > transactionHistory.currentPage ? currentPage : transactionHistory.currentPage;
-                const newItems = response.txs.map((tx: HistoryItemType) => {
+                const newItems: HistoryItem[] = transactions.map((tx: HistoryItem) => {
                     return {
                         ...tx,
                         date: dateToLocal(tx.date).value
                     }
                 });
-                const newItemHashes = response.txs.map((item: HistoryItem) => item.hash);
+                const newItemHashes = transactions.map((item) => item.hash);
                 const items = transactionHistory.items.filter(item => !newItemHashes.includes(item.hash));
-                const isFinish = transactionHistory.isFinish ? true : !response.next;
+                const isFinish = transactionHistory.isFinish ? true : !(transactions.length < 20);
                 const changedHistory = {
                     init: true,
                     address,

@@ -3,9 +3,8 @@ import { amountSetSymbol, formatAddress, fullDateFormat, minFractionDigits } fro
 import { useTokenMetainfo } from "./use-token-metainfo";
 import IconAddPkg from '../assets/addpkg.svg';
 import IconContract from '../assets/contract.svg';
-import { GnoClientResnpose } from "gno-client/src/api";
-import { useGnoClient } from "./use-gno-client";
 import { useTokenBalance } from "./use-token-balance";
+import { HistoryItem, HistoryItemBankMsgSend, HistoryItemVmMAddPkg, HistoryItemVmMCall } from "@repositories/transaction/response/transaction-history-response";
 
 export interface TransactionInfo {
   icon: any;
@@ -30,29 +29,29 @@ export interface TransactionDetailInfo {
 }
 
 export const useTransactionHistoryInfo = (): [{
-  getTransactionInfo: (transactionItem: GnoClientResnpose.HistoryItemType) => TransactionInfo,
-  getTransactionDetailInfo: (transactionItem: GnoClientResnpose.HistoryItemType) => TransactionDetailInfo,
-  getStatusColor: (transactionItem: GnoClientResnpose.HistoryItemType) => string,
-  getAmountValue: (transactionItem: GnoClientResnpose.HistoryItemType) => string,
-  getAmountFullValue: (transactionItem: GnoClientResnpose.HistoryItemType) => string,
-  getNetworkFee: (transactionItem: GnoClientResnpose.HistoryItemType) => string,
-  getTransferInfo: (transactionItem: GnoClientResnpose.HistoryItemType) => { type: string, address: string },
+  getTransactionInfo: (transactionItem: HistoryItem) => TransactionInfo,
+  getTransactionDetailInfo: (transactionItem: HistoryItem) => TransactionDetailInfo,
+  getStatusColor: (transactionItem: HistoryItem) => string,
+  getAmountValue: (transactionItem: HistoryItem) => string,
+  getAmountFullValue: (transactionItem: HistoryItem) => string,
+  getNetworkFee: (transactionItem: HistoryItem) => string,
+  getTransferInfo: (transactionItem: HistoryItem) => { type: string, address: string },
 }] => {
 
   const { tokenBalances } = useTokenBalance();
   const { convertDenom, getTokenImage } = useTokenMetainfo();
 
-  const isBankMsgSend = (transactionItem: GnoClientResnpose.HistoryItemType): transactionItem is GnoClientResnpose.HistoryItemBankMsgSend => {
+  const isBankMsgSend = (transactionItem: HistoryItem): transactionItem is HistoryItemBankMsgSend => {
     return transactionItem.type === '/bank.MsgSend';
   }
-  const isVmMCall = (transactionItem: GnoClientResnpose.HistoryItemType): transactionItem is GnoClientResnpose.HistoryItemVmMCall => {
+  const isVmMCall = (transactionItem: HistoryItem): transactionItem is HistoryItemVmMCall => {
     return transactionItem.type === '/vm.m_call';
   }
-  const isVmMAddPkg = (transactionItem: GnoClientResnpose.HistoryItemType): transactionItem is GnoClientResnpose.HistoryItemVmMAddPkg => {
+  const isVmMAddPkg = (transactionItem: HistoryItem): transactionItem is HistoryItemVmMAddPkg => {
     return transactionItem.type === '/vm.m_addpkg';
   }
 
-  const getTransactionInfo = (transactionItem: GnoClientResnpose.HistoryItemType): TransactionInfo => {
+  const getTransactionInfo = (transactionItem: HistoryItem): TransactionInfo => {
     if (isBankMsgSend(transactionItem)) {
       return mappedBankMsgSend(transactionItem);
     }
@@ -65,7 +64,7 @@ export const useTransactionHistoryInfo = (): [{
     return mappedCommon(transactionItem);
   }
 
-  const getTransactionDetailInfo = (transactionItem: GnoClientResnpose.HistoryItemType): TransactionDetailInfo => {
+  const getTransactionDetailInfo = (transactionItem: HistoryItem): TransactionDetailInfo => {
     if (isBankMsgSend(transactionItem)) {
       return mappedBankMsgSendDetail(transactionItem);
     }
@@ -78,7 +77,7 @@ export const useTransactionHistoryInfo = (): [{
     return mappedCommonDetail(transactionItem);
   }
 
-  const mappedCommon = (transactionItem: GnoClientResnpose.HistoryItemType): TransactionInfo => {
+  const mappedCommon = (transactionItem: HistoryItem): TransactionInfo => {
     const func = transactionItem.func ?? '';
     const icon = IconContract;
     const title = func;
@@ -94,7 +93,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedBankMsgSend = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionInfo => {
+  const mappedBankMsgSend = (transactionItem: HistoryItemBankMsgSend): TransactionInfo => {
     const func = getFunctionName(transactionItem);
     const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? tokenBalances[0]?.denom);
     const title = (['Fail'].includes(func)) ? 'Send' : func;
@@ -110,7 +109,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedVMAddPkg = (transactionItem: GnoClientResnpose.HistoryItemVmMAddPkg): TransactionInfo => {
+  const mappedVMAddPkg = (transactionItem: HistoryItemVmMAddPkg): TransactionInfo => {
     const icon = IconAddPkg;
     const title = "AddPkg";
     const titleDescription = '';
@@ -125,7 +124,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedVMCall = (transactionItem: GnoClientResnpose.HistoryItemVmMCall): TransactionInfo => {
+  const mappedVMCall = (transactionItem: HistoryItemVmMCall): TransactionInfo => {
     const func = transactionItem.func ?? 'Contract';
     const icon = IconContract;
     const title = func;
@@ -141,7 +140,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedCommonDetail = (transactionItem: GnoClientResnpose.HistoryItemType): TransactionDetailInfo => {
+  const mappedCommonDetail = (transactionItem: HistoryItem): TransactionDetailInfo => {
     const icon = IconContract;
     const main = transactionItem.func ?? '';
     const date = fullDateFormat(transactionItem.date);
@@ -160,7 +159,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedBankMsgSendDetail = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend): TransactionDetailInfo => {
+  const mappedBankMsgSendDetail = (transactionItem: HistoryItemBankMsgSend): TransactionDetailInfo => {
     const icon = transactionItem.msgNum > 1 ? IconContract : getTokenImage(transactionItem.transfer?.denom ?? tokenBalances[0]?.denom);
     const main = getAmountFullValue(transactionItem);
     const date = fullDateFormat(transactionItem.date);
@@ -181,7 +180,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedVMAddPkgDetail = (transactionItem: GnoClientResnpose.HistoryItemVmMAddPkg): TransactionDetailInfo => {
+  const mappedVMAddPkgDetail = (transactionItem: HistoryItemVmMAddPkg): TransactionDetailInfo => {
     const icon = IconAddPkg;
     const main = 'AddPkg';
     const date = fullDateFormat(transactionItem.date);
@@ -200,7 +199,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const mappedVMCallDetail = (transactionItem: GnoClientResnpose.HistoryItemVmMCall): TransactionDetailInfo => {
+  const mappedVMCallDetail = (transactionItem: HistoryItemVmMCall): TransactionDetailInfo => {
     const icon = IconContract;
     const main = transactionItem.func ?? '';
     const date = fullDateFormat(transactionItem.date);
@@ -219,7 +218,7 @@ export const useTransactionHistoryInfo = (): [{
     };
   }
 
-  const getStatusColor = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getStatusColor = (transactionItem: HistoryItem) => {
     const { func, result } = transactionItem;
     if (func === 'Receive' && result.status === 'Success') {
       return theme.color.green[2];
@@ -231,7 +230,7 @@ export const useTransactionHistoryInfo = (): [{
     return theme.color.neutral[9];
   }
 
-  const getFunctionName = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getFunctionName = (transactionItem: HistoryItem) => {
     if (isBankMsgSend(transactionItem)) {
       if (transactionItem?.func === 'Fail') {
         return 'Send';
@@ -240,7 +239,7 @@ export const useTransactionHistoryInfo = (): [{
     return transactionItem?.func ?? '';
   }
 
-  const getTransferDescription = (transactionItem: GnoClientResnpose.HistoryItemBankMsgSend) => {
+  const getTransferDescription = (transactionItem: HistoryItemBankMsgSend) => {
     if (transactionItem.msgNum > 1) {
       return '';
     }
@@ -258,7 +257,7 @@ export const useTransactionHistoryInfo = (): [{
     }
   }
 
-  const getAmountValue = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getAmountValue = (transactionItem: HistoryItem) => {
     if (transactionItem.msgNum > 1) {
       return 'More';
     }
@@ -275,7 +274,7 @@ export const useTransactionHistoryInfo = (): [{
     }
   }
 
-  const getAmountFullValue = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getAmountFullValue = (transactionItem: HistoryItem) => {
     if (transactionItem.msgNum > 1) {
       return transactionItem.func ?? 'More';
     }
@@ -292,13 +291,13 @@ export const useTransactionHistoryInfo = (): [{
     }
   }
 
-  const getNetworkFee = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getNetworkFee = (transactionItem: HistoryItem) => {
     const feeAmount = transactionItem.fee.amount ?? '0';
     const result = convertDenom(feeAmount, transactionItem.fee.denom, 'COMMON');
     return `${minFractionDigits(result.value.toString(), 6)} ${result.denom}`;
   }
 
-  const getTransferInfo = (transactionItem: GnoClientResnpose.HistoryItemType) => {
+  const getTransferInfo = (transactionItem: HistoryItem) => {
     if (!isBankMsgSend(transactionItem)) {
       return { type: '', address: '' };
     }

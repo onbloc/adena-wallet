@@ -95,18 +95,11 @@ export class Test3ApiFetcher implements Test3Api {
     queryType: QueryType,
     request: {
       query?: { [key in string]: string };
-      data?: Array<string>
-    }
+      data?: Array<string>;
+    },
   ) => {
     return this.get<Test3Response.AbciQuery>(
       Test3ApiPath.createPathOfAbciQuery(queryType, request),
     );
-  };
-
-  public getTransactionHistory = async (address: string, page: number) => {
-    const result = await axios.get<Test3Response.History>(
-      Test3ApiPath.createPathOfHistoryTemp(address, page),
-    );
-    return result.data;
   };
 }

@@ -113,12 +113,6 @@ export class NetworkTest3 implements GnoClientApi {
     return balanceData;
   };
 
-  public getTransactionHistory = async (address: string, page?: number) => {
-    const result = await this.fetcher.getTransactionHistory(address, page ?? 0);
-    const history = Test3Mapper.HistoryMapper.toHistory(result);
-    return history;
-  };
-
   public queryRender = async (packagePath: string, data?: Array<string>) => {
     const result = await this.fetcher.executeAbciQuery('QUERY_RENDER', {
       data: [packagePath, ...(data ?? [''])],

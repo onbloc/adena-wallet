@@ -1,6 +1,6 @@
 import { atom } from 'recoil';
 import { Account, Wallet } from 'adena-module';
-import { HistoryItem } from 'gno-client/src/api/response';
+import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
 
 export interface TransactionHistoryState {
   address: string | null;

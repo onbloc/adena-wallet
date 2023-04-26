@@ -35,6 +35,8 @@ interface AppInfoResponse {
 }
 
 export class TokenRepository {
+  private static ADENA_API_URI = 'https://dev-api.adena.app';
+
   private static TOKEN_CONFIG_URI =
     'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json';
 
@@ -66,7 +68,7 @@ export class TokenRepository {
       keyword,
     };
     const response = await this.networkInstance.post<SearchGRC20TokenResponse>(
-      'https://dev-api.adena.app/test3/search-grc20-tokens',
+      `${TokenRepository.ADENA_API_URI}/test3/search-grc20-tokens`,
       body,
     );
     return GRC20TokenMapper.fromSearchTokensResponse(response.data);
