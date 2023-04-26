@@ -89,13 +89,8 @@ export const SendConfirm = () => {
         amount: sendAmount,
       });
       const gasFeeAmount = 1;
-      const transaction = await transactionService.createTransaction(
-        gnoClient,
-        currentAccount,
-        message,
-        gasWanted,
-        gasFeeAmount
-      );
+      const { document, signature } = await transactionService.createSignDocument(gnoClient, currentAccount, [message], gasWanted, gasFeeAmount);
+      const transaction = await transactionService.createTransaction(document, signature);
       await transactionService.sendTransaction(gnoClient, transaction);
     }
   };

@@ -102,8 +102,8 @@ export class AdenaWallet implements Wallet {
   }
 
   get currentKeyring() {
-    const currentKeryingId = this.currentAccount.keyringId;
-    const currentKeyring = this._keyrings.find((keyring) => keyring.id === currentKeryingId);
+    const currentkeyringId = this.currentAccount.keyringId;
+    const currentKeyring = this._keyrings.find((keyring) => keyring.id === currentkeyringId);
     if (!currentKeyring) {
       throw new Error('Current keyring not found');
     }
@@ -163,6 +163,9 @@ export class AdenaWallet implements Wallet {
   }
 
   addAccount(account: Account) {
+    if (this._accounts.find((_account) => _account.id === account.id)) {
+      return this._accounts.length;
+    }
     return this._accounts.push(account);
   }
 
@@ -182,6 +185,9 @@ export class AdenaWallet implements Wallet {
   }
 
   addKeyring(keyring: Keyring) {
+    if (this._keyrings.find((_keyring) => _keyring.id === keyring.id)) {
+      return this._keyrings.length;
+    }
     return this._keyrings.push(keyring);
   }
 
@@ -248,13 +254,15 @@ export class AdenaWallet implements Wallet {
     return wallet;
   }
 
-  public static async createByLedger(connector: LedgerConnector) {
+  public static async createByLedger(connector: LedgerConnector, paths: Array<number> = [0]) {
     const wallet = new AdenaWallet();
     const keyring = await LedgerKeyring.fromLedger(connector);
-    const account = await LedgerAccount.createBy(keyring, wallet.nextLedgerAccountName, 0);
-    wallet.currentAccountId = account.id;
-    wallet.addAccount(account);
-    wallet.addKeyring(keyring);
+    for (const path of paths) {
+      const account = await LedgerAccount.createBy(keyring, wallet.nextLedgerAccountName, path);
+      wallet.currentAccountId = account.id;
+      wallet.addAccount(account);
+      wallet.addKeyring(keyring);
+    }
     return wallet;
   }
 
