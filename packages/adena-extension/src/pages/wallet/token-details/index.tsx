@@ -1,21 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import Text from '@components/text';
 import etc from '../../../assets/etc.svg';
-import ListWithDate from '@components/list-box/list-with-date';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DubbleButton from '@components/buttons/double-button';
 import { StaticTooltip } from '@components/tooltips';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { maxFractionDigits } from '@common/utils/client-utils';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
-import { useTransactionHistory } from '@hooks/use-transaction-history';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { TokenBalance } from '@states/balance';
+import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { useAdenaContext } from '@hooks/use-context';
+import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import HighlightNumber from '@components/common/highlight-number/highlight-number';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -36,6 +41,12 @@ const Wrapper = styled.main`
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
+  }
+  .balance-wrapper {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
   }
 `;
 
@@ -69,40 +80,48 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const [etcClicked, setEtcClicked] = useState(false);
-  const [transactionHistory] = useRecoilState(WalletState.transactionHistory);
   const { currentAccount } = useCurrentAccount();
-  const { tokenBalances } = useTokenBalance();
-
-  const [balance, setBalance] = useState('');
-  const [getHistory, updateLastHistory, updateNextHistory] = useTransactionHistory();
-  const [nextFetch, setNextFetch] = useState(false);
+  const [tokenBalance, setTokenBalance] = useState<TokenBalance>(state);
+  const [balance, setBalance] = useState(tokenBalance.amount.value);
+  const { currentAddress } = useCurrentAccount();
+  const { convertDenom, getTokenImage } = useTokenMetainfo();
+  const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
-  const [historyItems, setHistoryItems] = useState<{ [key in string]: any }>({});
-  const finishedLoading = transactionHistory.init && Object.keys(historyItems).length > 0;
-  const [tokenDetailPosition, setTokenDetailPosition] = useRecoilState(
-    CommonState.tokenDetailPosition,
+  const [loadingNextFetch, setLoadingNextFetch] = useState(false);
+  const {
+    status,
+    isLoading,
+    isFetching,
+    data,
+    refetch,
+    fetchNextPage,
+  } = useInfiniteQuery(
+    ['history/grc20-token-history', currentAddress, tokenBalance.pkgPath],
+    ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
+    {
+      getNextPageParam: (lastPage, allPosts) => {
+        const from = allPosts.reduce((sum, { txs }) => sum + txs.length, 0);
+        return lastPage.next ? from : undefined;
+      },
+    },
   );
 
-  const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
-  const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
-  const SendButtonClick = () => navigate(RoutePath.GeneralSend, { state: 'token' });
-  const historyItemClick = (item: any) => {
-    setTokenDetailPosition({ position: bodyElement?.scrollTop ?? 0 });
-    navigate(RoutePath.TransactionDetail, { state: item });
-  };
+  useEffect(() => {
+    if (currentAddress) {
+      const historyFetchTimer = setInterval(() => {
+        refetch({ refetchPage: (page, index) => index === 0 })
+      }, 10 * 1000);
+      return () => clearInterval(historyFetchTimer);
+    }
+  }, [currentAddress, refetch]);
 
   useEffect(() => {
-    initHistory();
-  }, []);
-
-  useEffect(() => {
-    getHistory().then(setHistoryItems);
-  }, [transactionHistory.address, transactionHistory.items.length]);
-
-  const initHistory = async () => {
-    await updateLastHistory();
-  };
+    if (loadingNextFetch && !isLoading && !isFetching) {
+      fetchNextPage().then(() => setLoadingNextFetch(false));
+    }
+  }, [loadingNextFetch, isLoading, isFetching]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -115,45 +134,65 @@ export const TokenDetails = () => {
     return () => bodyElement?.removeEventListener('scroll', onScrollListener);
   }, [bodyElement]);
 
-  useEffect(() => {
-    if (nextFetch) {
-      updateNextHistory().finally(() => setNextFetch(false));
-    }
-  }, [nextFetch]);
-
-  useEffect(() => {
-    if (finishedLoading) {
-      if (!bodyElement) return;
-      bodyElement.scrollTo(0, tokenDetailPosition.position);
-      setTokenDetailPosition({ position: 0 });
-    }
-  }, [finishedLoading]);
-
-  const onScrollListener = async () => {
+  const onScrollListener = () => {
     if (bodyElement) {
       const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
-      if (remain < 60 && !nextFetch) {
-        setNextFetch(true);
+      if (remain < 20) {
+        setLoadingNextFetch(true);
       }
     }
   };
 
-  useEffect(() => {
-    const currentBalanceAmount = tokenBalances.find(tokenBalance => tokenBalance.main)?.amount;
-    if (currentBalanceAmount) {
-      const { value } = currentBalanceAmount;
-      const currentBalance = maxFractionDigits(value, 6);
-      setBalance(currentBalance);
+  const fetchTokenHistories = async (pageParam: number) => {
+    if (!currentAddress) {
+      return {
+        hits: 0,
+        next: false,
+        txs: []
+      };
     }
-  }, [tokenBalances]);
+    const size = 20;
+    const histories = tokenBalance.type === 'NATIVE' ?
+      await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size) :
+      await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size);
+    const txs = histories.txs.map(transaction => {
+      return {
+        ...transaction,
+        logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
+        amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON')
+      }
+    });
+    return {
+      hits: histories.hits,
+      next: histories.next,
+      txs: txs
+    }
+  };
 
+  const onClickItem = useCallback((hash: string) => {
+    const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
+    const transactionInfo = transactions.find(transaction => transaction.hash === hash);
+    if (transactionInfo) {
+      navigate(RoutePath.TransactionDetail, {
+        state: transactionInfo
+      })
+    }
+  }, [data]);
+
+  const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
+  const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: 'token' });
+  const SendButtonClick = () => navigate(RoutePath.TransferInput, { state: tokenBalance });
   const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
+
+  const getTransactionInfoLists = useCallback(() => {
+    return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
+  }, [data]);
 
   return (
     <Wrapper>
       <HeaderWrap>
         <LeftArrowBtn onClick={handlePrevButtonClick} />
-        <Text type='header4'>Gnoland</Text>
+        <Text type='header4'>{tokenBalance.name}</Text>
         <EtcIcon className={etcClicked ? 'show-tooltip' : ''} onClick={etcButtonClick}>
           <img src={etc} alt='View on Gnoscan' />
           <StaticTooltip
@@ -171,26 +210,31 @@ export const TokenDetails = () => {
         </EtcIcon>
       </HeaderWrap>
 
-      <Text className='gnot-title' type='header2'>{`${balance}\nGNOT`}</Text>
+      <div className='balance-wrapper'>
+        <HighlightNumber
+          value={balance}
+          fontColor={theme.color.neutral[0]}
+          fontStyleKey={'header2'}
+          minimumFontSize={'24px'}
+        />
+      </div>
+
       <DubbleButton
-        margin='28px 0px 25px'
+        margin='20px 0px 25px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
         }}
       />
-      {!transactionHistory.init ? (
+      {isLoading ? (
         <LoadingTokenDetails />
-      ) : Object.keys(historyItems).length > 0 ? (
-        Object.keys(historyItems).map((item, idx) => (
-          <ListWithDate
-            key={idx}
-            date={item}
-            transaction={historyItems[item]}
-            onClick={historyItemClick}
-          />
-        ))
+      ) : getTransactionInfoLists().length > 0 ? (
+        <TransactionHistory
+          status={status}
+          transactionInfoLists={getTransactionInfoLists()}
+          onClickItem={onClickItem}
+        />
       ) : (
         <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
           No transaction to display

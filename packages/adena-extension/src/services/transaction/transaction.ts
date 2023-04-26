@@ -1,4 +1,4 @@
-import { StdSignature, Transaction, TransactionBuilder, uint8ArrayToArray } from 'adena-module';
+import { StdSignature, TransactionBuilder, uint8ArrayToArray } from 'adena-module';
 import { Account } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletService } from '..';
@@ -44,7 +44,7 @@ export class TransactionService {
 
   public createSignature = async (account: Account, document: StdSignDoc) => {
     const wallet = await this.walletService.loadWallet();
-    const { signature } = await wallet.signByAccountId(account.getAddress('g'), document);
+    const { signature } = await wallet.signByAccountId(account.id, document);
     return signature;
   };
 
