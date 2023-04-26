@@ -11,7 +11,17 @@ export class TransactionHistoryService {
     return this.transactionHisotyrRepository.fetchAllTransactionHistoryBy(address, from, size);
   }
 
-  public fetchGRC20TransactionHistory(address: string, from: number, size?: number) {
-    return this.transactionHisotyrRepository.fetchGRC20TransactionHistoryBy(address, from, size);
+  public fetchGRC20TransactionHistory(
+    address: string,
+    packagePath: string,
+    from: number,
+    size?: number,
+  ) {
+    return this.transactionHisotyrRepository.fetchGRC20TransactionHistoryBy(
+      address,
+      packagePath,
+      from,
+      size,
+    );
   }
 }

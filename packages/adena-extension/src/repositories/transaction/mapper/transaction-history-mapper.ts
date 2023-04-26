@@ -1,4 +1,4 @@
-import { formatAddress } from '@common/utils/client-utils';
+import { formatAddress, getDateText } from '@common/utils/client-utils';
 import {
   HistoryItem,
   HistoryItemBankMsgSend,
@@ -9,6 +9,7 @@ import {
 
 interface TransactionInfo {
   hash: string;
+  logo: string;
   type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
   typeName?: string;
   status: 'SUCCESS' | 'FAIL';
@@ -20,10 +21,10 @@ interface TransactionInfo {
     denom: string;
   };
   valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
+  date: string;
   from?: string;
   to?: string;
-  date: string;
-  networkFee: {
+  networkFee?: {
     value: string;
     denom: string;
   };
@@ -42,10 +43,50 @@ function isHistoryItemVmMAddPkg(historyItem: HistoryItem): historyItem is Histor
 }
 
 export class TransactionHistoryMapper {
+  public static queryToDisplay(
+    datas: {
+      next: boolean;
+      hits: number;
+      txs: TransactionInfo[];
+    }[],
+  ) {
+    const transactions =
+      datas.flatMap((history) => {
+        if (Array.isArray(history)) {
+          return [];
+        }
+        return history.txs;
+      }) ?? [];
+    const initValue: { title: string; transactions: TransactionInfo[] }[] = [];
+
+    return transactions.reduce(
+      (accum: { title: string; transactions: TransactionInfo[] }[], current) => {
+        const title = getDateText(current.date.slice(0, 10));
+        const accumIndex = accum.findIndex((item) => item.title === title);
+        if (accumIndex < 0) {
+          accum.push({
+            title,
+            transactions: [current],
+          });
+        } else {
+          accum[accumIndex].transactions.push(current);
+        }
+        return accum;
+      },
+      initValue,
+    );
+  }
+
   public static fromResposne(response: TransactionHistoryResponse) {
-    return response.txs
+    const { hits, next, txs } = response;
+    const mappedTxs = txs
       .sort(TransactionHistoryMapper.compareTransactionItem)
       .map(TransactionHistoryMapper.mappedHistoryItem);
+    return {
+      hits,
+      next,
+      txs: mappedTxs,
+    };
   }
 
   private static mappedHistoryItem(historyItem: HistoryItem): TransactionInfo {
@@ -69,6 +110,7 @@ export class TransactionHistoryMapper {
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
+      logo: '',
       type: 'MULTI_CONTRACT_CALL',
       typeName: 'Contract Interaction',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
@@ -94,6 +136,7 @@ export class TransactionHistoryMapper {
       func === 'Send' ? `To: ${formatAddress(to, 4)}` : `From: ${formatAddress(from, 4)}`;
     return {
       hash,
+      logo: '',
       type: 'TRANSFER',
       typeName: func || '',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
@@ -119,6 +162,7 @@ export class TransactionHistoryMapper {
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
+      logo: '',
       type: 'CONTRACT_CALL',
       typeName: 'Contract Interaction',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
@@ -141,6 +185,7 @@ export class TransactionHistoryMapper {
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
+      logo: '',
       type: 'ADD_PACKAGE',
       typeName: 'Add Package',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
@@ -163,6 +208,7 @@ export class TransactionHistoryMapper {
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
+      logo: '',
       type: 'CONTRACT_CALL',
       typeName: 'Contract Interaction',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',

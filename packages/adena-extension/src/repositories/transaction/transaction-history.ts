@@ -22,14 +22,19 @@ export class TransactionHistoryRepository {
     return TransactionHistoryMapper.fromResposne(response.data);
   }
 
-  public async fetchGRC20TransactionHistoryBy(address: string, from: number, size?: number) {
-    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/multi_history/${address}`;
+  public async fetchGRC20TransactionHistoryBy(
+    address: string,
+    packagePath: string,
+    from: number,
+    size?: number,
+  ) {
+    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/grc20-token-history/${address}/${packagePath}`;
     const response = await this.axiosInstance.get<TransactionHistoryResponse>(requestUri, {
       params: {
         from,
         size: size || 20,
       },
     });
-    return response.data.txs;
+    return TransactionHistoryMapper.fromResposne(response.data);
   }
 }

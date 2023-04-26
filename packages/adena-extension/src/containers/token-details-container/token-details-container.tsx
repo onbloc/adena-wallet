@@ -9,7 +9,7 @@ import { RoutePath } from '@router/path';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 
-const HistoryContainer: React.FC = () => {
+const TokenDetailsContainer: React.FC = () => {
   const navigate = useNavigate();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
@@ -26,7 +26,7 @@ const HistoryContainer: React.FC = () => {
     fetchNextPage,
   } = useInfiniteQuery(
     ['history/all', currentAddress],
-    ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
+    ({ pageParam = 0 }) => fetchHistories(pageParam),
     {
       getNextPageParam: (lastPage, allPosts) => {
         const from = allPosts.reduce((sum, { txs }) => sum + txs.length, 0);
@@ -70,7 +70,7 @@ const HistoryContainer: React.FC = () => {
     }
   };
 
-  const fetchTokenHistories = async (pageParam: number) => {
+  const fetchHistories = async (pageParam: number) => {
     if (!currentAddress) {
       return {
         hits: 0,
@@ -113,4 +113,4 @@ const HistoryContainer: React.FC = () => {
   );
 };
 
-export default HistoryContainer;
+export default TokenDetailsContainer;
