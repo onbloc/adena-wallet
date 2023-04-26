@@ -15,6 +15,7 @@ export const useTokenBalance = (): {
   tokenBalances: TokenBalance[];
   displayTokenBalances: TokenBalance[];
   accountTokenBalances: AccountTokenBalance[];
+  fetchBalanceBy: (account: Account, token: TokenMetainfo) => Promise<TokenBalance>;
   toggleDisplayOption: (account: Account, token: TokenMetainfo, activated: boolean) => void;
   updateBalanceAmountByAccount: (account: Account) => Promise<boolean>;
   updateMainBalanceByAccount: (account: Account) => Promise<boolean>;
@@ -215,6 +216,7 @@ export const useTokenBalance = (): {
     tokenBalances: getTokenBalances(),
     displayTokenBalances: getDisplayTokenBalances(),
     accountTokenBalances: accountTokenBalances.filter(matchChainIdAndNetworkId),
+    fetchBalanceBy,
     toggleDisplayOption,
     updateBalanceAmountByAccount,
     updateMainBalanceByAccount,

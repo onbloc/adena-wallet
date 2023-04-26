@@ -23,7 +23,9 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
       <div className='input-wrapper'>
         <input
           className='amount-input'
+          type='number'
           value={amount}
+          autoComplete='off'
           onChange={event => onChangeAmount(event.target.value)}
           placeholder='Amount'
         />

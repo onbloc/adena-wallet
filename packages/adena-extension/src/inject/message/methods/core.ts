@@ -50,7 +50,7 @@ export class InjectCore {
 
   public establishService = new WalletEstablishService(this.establishRepository);
 
-  public transactionService = new TransactionService(this.walletService, this.accountService);
+  public transactionService = new TransactionService(this.walletService);
 
   public getCurrentAccountId() {
     return this.accountRepository.getCurrentAccountId().catch(() => '');

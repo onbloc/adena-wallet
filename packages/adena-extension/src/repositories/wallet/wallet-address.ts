@@ -1,9 +1,15 @@
-import { StorageManager } from "@common/storage/storage-manager";
+import { StorageManager } from '@common/storage/storage-manager';
 
 type LocalValueType = 'ADDRESS_BOOK';
 
-export class WalletAddressRepository {
+export interface AddressBookItem {
+  id: string;
+  name: string;
+  address: string;
+  createdAt: string;
+}
 
+export class WalletAddressRepository {
   private localStorage: StorageManager<LocalValueType>;
 
   constructor(localStorage: StorageManager) {
@@ -21,5 +27,5 @@ export class WalletAddressRepository {
 
   public deleteAddress = async () => {
     await this.localStorage.remove('ADDRESS_BOOK');
-  }
+  };
 }
