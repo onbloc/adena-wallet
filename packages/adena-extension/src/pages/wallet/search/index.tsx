@@ -106,7 +106,7 @@ export const WalletSearch = () => {
           .filter(
             (balance) =>
               searchTextFilter(balance.name ?? '', searchText) ||
-              searchTextFilter(balance.type ?? '', searchText),
+              searchTextFilter(balance.symbol ?? '', searchText),
           )
           .map((balance, idx) => (
             <ListBox
