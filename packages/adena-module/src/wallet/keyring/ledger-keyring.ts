@@ -18,6 +18,14 @@ export class LedgerKeyring implements Keyring {
     this.connector = connector;
   }
 
+  getPublicKey(hdPath: number) {
+    if (!this.connector) {
+      throw new Error('Ledger connector does not found');
+    }
+    const gnoHdPath = makeGnolandPath(hdPath);
+    return this.connector.getPubkey(gnoHdPath);
+  }
+
   toData() {
     return {
       id: this.id,
@@ -31,7 +39,7 @@ export class LedgerKeyring implements Keyring {
     }
     const message = serializeSignToGnoDoc(document);
     const gnoHdPath = makeGnolandPath(hdPath);
-    const publicKey = await this.connector.getPubkey(gnoHdPath);
+    const publicKey = await this.getPublicKey(hdPath);
     const signature = await this.connector.sign(message, gnoHdPath);
     return {
       signed: document,

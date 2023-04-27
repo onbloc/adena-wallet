@@ -142,7 +142,6 @@ export const useTokenBalance = (): {
       return accountTokenBalance;
     });
     setAccountTokenBalances(changedAccountTokenBalances);
-    console.log(changedAccountTokenBalances);
     return true;
   }
 
