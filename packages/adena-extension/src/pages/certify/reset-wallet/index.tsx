@@ -10,7 +10,7 @@ import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 
 const content =
-  'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
+  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
 export const ResetWallet = () => {
   const navigate = useNavigate();
