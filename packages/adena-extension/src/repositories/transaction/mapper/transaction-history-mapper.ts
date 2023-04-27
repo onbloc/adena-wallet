@@ -90,7 +90,7 @@ export class TransactionHistoryMapper {
   }
 
   private static mappedHistoryItem(historyItem: HistoryItem): TransactionInfo {
-    if (historyItem.msgNum > 1) {
+    if (historyItem.msg_num > 1) {
       return TransactionHistoryMapper.mappedHistoryItemMutiCall(historyItem);
     }
     if (isHistoryItemBankMsgSend(historyItem)) {
@@ -106,16 +106,16 @@ export class TransactionHistoryMapper {
   }
 
   private static mappedHistoryItemMutiCall(historyItem: HistoryItem): TransactionInfo {
-    const { hash, result, func, msgNum, date, fee } = historyItem;
+    const { hash, result, func, msg_num, date, fee } = historyItem;
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
-      typeName: 'Contract Interaction',
+      typeName: func ?? '',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
       title: func ?? '',
-      extraInfo: `+${msgNum - 1}`,
+      extraInfo: `+${msg_num - 1}`,
       amount: {
         value: '',
         denom: '',

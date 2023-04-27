@@ -36,8 +36,7 @@ module.exports = merge({
       modulesOnly: true,
     }),
     typescript({
-      tsconfig: 'tsconfig.json',
-      useTsconfigDeclarationDir: true,
+      tsconfig: 'tsconfig.json'
     }),
   ],
 });

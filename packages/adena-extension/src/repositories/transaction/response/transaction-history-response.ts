@@ -16,7 +16,7 @@ export interface HistoryItem {
     };
   };
   type: string;
-  msgNum: number;
+  msg_num: number;
   func?: string;
   transfer: {
     amount: string;
