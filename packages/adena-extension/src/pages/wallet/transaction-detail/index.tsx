@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -9,6 +9,8 @@ import { useGnoClient } from '@hooks/use-gno-client';
 import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 import TokenBalance from '@components/common/token-balance/token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import ContractIcon from '@assets/contract.svg';
+import AddPackageIcon from '@assets/addpkg.svg';
 
 interface DLProps {
   color?: string;
@@ -26,6 +28,19 @@ export const TransactionDetail = () => {
     setTransactionItem(location.state);
   }, [location])
 
+  const getLogoImage = useCallback(() => {
+    if (transactionItem?.type === 'ADD_PACKAGE') {
+      return `${AddPackageIcon}`;
+    }
+    if (transactionItem?.type === 'CONTRACT_CALL') {
+      return `${ContractIcon}`;
+    }
+    if (transactionItem?.type === 'MULTI_CONTRACT_CALL') {
+      return `${ContractIcon}`;
+    }
+    return `${transactionItem?.logo}`;
+  }, [transactionItem])
+
 
   const handleLinkClick = (hash: string) => {
     window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
@@ -35,7 +50,7 @@ export const TransactionDetail = () => {
     <Wrapper>
       <img className='status-icon' src={getStatusStyle(transactionItem.status).statusIcon} alt='status icon' />
       <TokenBox color={getStatusStyle(transactionItem.status).color}>
-        <img className='tx-symbol' src={transactionItem.logo} alt='logo image' />
+        <img className='tx-symbol' src={getLogoImage()} alt='logo image' />
         {transactionItem.type === 'TRANSFER' ? (
           <TokenBalance
             value={transactionItem.amount.value || '0'}
