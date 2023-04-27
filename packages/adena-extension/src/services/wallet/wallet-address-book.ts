@@ -95,6 +95,11 @@ export class WalletAddressBookService {
     this.walletAddressRepository.updateAddressBooke(changedaddressBook);
   };
 
+  public clear = async () => {
+    await this.walletAddressRepository.deleteAddress();
+    return true;
+  };
+
   private selectAddressBookItemsBy = async (
     accountId: string,
     addressBook: { [key in string]: Array<AddressBookItem> },

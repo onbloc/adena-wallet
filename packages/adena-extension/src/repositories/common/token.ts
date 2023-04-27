@@ -125,15 +125,8 @@ export class TokenRepository {
     return true;
   };
 
-  private fetchResource = async (imageUri: string) => {
-    try {
-      const response = await this.networkInstance.get(imageUri, { responseType: 'arraybuffer' });
-      const imageData =
-        'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
-      return imageData;
-    } catch (e) {
-      console.error(e);
-    }
-    return undefined;
+  public deleteAllTokenMetainfo = async (): Promise<boolean> => {
+    await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', {});
+    return true;
   };
 }
