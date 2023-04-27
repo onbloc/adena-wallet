@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import SeedBox from '@components/seed-box';
@@ -7,12 +7,10 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { AdenaWallet } from 'adena-module';
+import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 const text = {
   title: 'Seed Phrase',
@@ -25,15 +23,13 @@ const text = {
 export const YourSeedPhrase = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { wallet } = useWalletContext();
-  const { walletService, accountService } = useAdenaContext();
+  const { wallet, updateWallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
-  const [seeds, setSeeds] = useState(() => AdenaWallet.generateMnemonic());
+  const [seeds,] = useState(() => AdenaWallet.generateMnemonic());
   const [viewSeedAgree, setViewSeedAgree] = useState(false);
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [clicked, setClicked] = useState(false);
-  const { loadAccounts } = useLoadAccounts();
-  const [, setState] = useRecoilState(WalletState.state);
+  const { changeCurrentAccount } = useCurrentAccount();
 
   const handleTermsChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
@@ -64,11 +60,18 @@ export const YourSeedPhrase = () => {
   };
 
   const addAccount = async () => {
-    const password = await walletService.getRawPassword();
-    const createdWallet = await walletService.createWallet({ mnemonic: seeds, password });
+    if (!wallet) {
+      return;
+    }
+    const keyring = await HDWalletKeyring.fromMnemonic(seeds);
+    const account = await SeedAccount.createBy(keyring, `Account ${wallet.lastAccountIndex + 1}`, 0);
+    account.index = wallet.lastAccountIndex + 1;
 
-    const account = createdWallet.accounts[0];
-    wallet?.addAccount(account);
+    const clone = wallet.clone();
+    clone.addAccount(account);
+    clone.addKeyring(keyring);
+    await updateWallet(clone);
+    await changeCurrentAccount(account);
     navigate(RoutePath.Wallet);
   }
 

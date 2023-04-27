@@ -25,7 +25,7 @@ export const useAddAccount = (): {
     setState('LOADING');
     const account = await SeedAccount.createByWallet(wallet);
     account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${account.index + 1}`;
+    account.name = `Account ${wallet.lastAccountIndex + 1}`;
     const clone = wallet.clone();
     clone.addAccount(account);
     const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
