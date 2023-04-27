@@ -41,8 +41,8 @@ export class MessageHandler {
     let existsWallet = false;
     try {
       const core = new InjectCore();
-      const curreantAccount = await core.getCurrentAccount();
-      existsWallet = curreantAccount?.getAddress('g') !== '';
+      const currentAccountId = await core.getCurrentAccountId();
+      existsWallet = currentAccountId?.length > 0;
     } catch (e) {
       existsWallet = false;
     }
@@ -66,11 +66,21 @@ export class MessageHandler {
         });
         break;
       case 'GET_ACCOUNT':
-        HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
-          if (isEstablished) {
-            HandlerMethod.getAccount(message, sendResponse);
-          }
-        });
+        HandlerMethod.checkEstablished(message, sendResponse)
+          .then((isEstablished) => {
+            if (isEstablished) {
+              HandlerMethod.getAccount(message, sendResponse);
+            }
+          })
+          .catch((e) => {
+            sendResponse(
+              InjectionMessageInstance.success(
+                'UNRESOLVED_TRANSACTION_EXISTS',
+                message,
+                message.key,
+              ),
+            );
+          });
         break;
       case 'ADD_ESTABLISH':
         HandlerMethod.addEstablish(message, sendResponse);

@@ -1,13 +1,4 @@
-import { WalletEstablishRepository } from '@repositories/wallet';
-
-interface EstablishSite {
-  hostname: string;
-  chainId: string;
-  account: string;
-  name: string;
-  favicon: string | null;
-  establishedTime: string;
-}
+import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
 
 export class WalletEstablishService {
   private walletEstablishRepository: WalletEstablishRepository;

@@ -1,9 +1,17 @@
-import { StorageManager } from "@common/storage/storage-manager";
+import { StorageManager } from '@common/storage/storage-manager';
 
 type LocalValueType = 'ESTABLISH_SITES';
 
-export class WalletEstablishRepository {
+export interface EstablishSite {
+  hostname: string;
+  chainId: string;
+  account: string;
+  name: string;
+  favicon: string | null;
+  establishedTime: string;
+}
 
+export class WalletEstablishRepository {
   private localStorage: StorageManager<LocalValueType>;
 
   constructor(localStorage: StorageManager) {
@@ -15,7 +23,7 @@ export class WalletEstablishRepository {
     return establishedSites;
   };
 
-  public updateEstablishedSites = async (addressBook: { [key in string]: any }) => {
+  public updateEstablishedSites = async (addressBook: { [key in string]: EstablishSite[] }) => {
     await this.localStorage.setByObject('ESTABLISH_SITES', addressBook);
   };
 

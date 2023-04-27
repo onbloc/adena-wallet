@@ -78,7 +78,7 @@ export class WalletService {
   };
 
   public loadWalletPassword = async () => {
-    return await this.walletRepository.getWalletPassword();
+    return this.walletRepository.getWalletPassword();
   };
 
   /**
