@@ -117,10 +117,14 @@ export class AdenaWallet implements Wallet {
   }
 
   get nextHDPath() {
-    const lastHdPath = this.accounts
-      .filter(isSeedAccount)
-      .reduce((account1, account2) => (account1.hdPath > account2.hdPath ? account1 : account2))
-      .hdPath;
+    const seedAccounts = this.accounts.filter(isSeedAccount);
+    if (seedAccounts.length === 0) {
+      return 0;
+    }
+
+    const lastHdPath = seedAccounts.reduce((account1, account2) =>
+      account1.hdPath > account2.hdPath ? account1 : account2,
+    ).hdPath;
     return lastHdPath + 1;
   }
 

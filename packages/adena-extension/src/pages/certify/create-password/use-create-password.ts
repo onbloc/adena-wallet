@@ -9,8 +9,6 @@ import {
   validateWrongPasswordLength,
 } from '@common/validation';
 import { useImportAccount } from '@hooks/use-import-account';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import { AdenaWallet } from 'adena-module';
 
 interface CreatePasswordState {
@@ -47,9 +45,8 @@ export const useCreatePassword = () => {
     location.state,
   );
   const [errorMessage, setErrorMessage] = useState('');
-  const { importAccount } = useImportAccount();
+  const { importAccountByWallet } = useImportAccount();
   const [activated, setActivated] = useState(false);
-  const [state, setState] = useRecoilState(WalletState.state);
 
   useEffect(() => {
     const locationState = location.state;
@@ -161,7 +158,7 @@ export const useCreatePassword = () => {
 
   const createWalletAccountsBySeed = async (seedState: SeedState) => {
     try {
-      const createdWallet = await walletService.createWallet({
+      await walletService.createWallet({
         mnemonic: seedState.seeds,
         password: pwd,
       });
@@ -176,8 +173,8 @@ export const useCreatePassword = () => {
   const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
     try {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
-      await importAccount(wallet.accounts[0]);
-      await walletService.updatePassowrd(pwd);
+      await walletService.saveWallet(wallet, pwd);
+      await importAccountByWallet(wallet, wallet.accounts[0]);
     } catch (error) {
       console.error(error);
       return 'FAIL';

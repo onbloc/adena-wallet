@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
@@ -6,24 +6,19 @@ import { RoutePath } from '@router/path';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { useAdenaContext } from '@hooks/use-context';
+import { useWalletContext } from '@hooks/use-context';
 
 export const AddAccount = () => {
   const navigate = useNavigate();
-  const { walletService } = useAdenaContext();
+  const { wallet } = useWalletContext();
   const { addAccount } = useAddAccount();
-  const { loadAccounts } = useLoadAccounts();
 
   const onClickCreateAccount = async () => {
-    const existWallet = await walletService.existsWallet();
-    if (existWallet) {
+    if (wallet && wallet.hasHDWallet()) {
       await addAccount();
-      loadAccounts();
       navigate(RoutePath.Home);
       return;
     }
-
     navigate(RoutePath.GenerateSeedPhrase);
   };
 
