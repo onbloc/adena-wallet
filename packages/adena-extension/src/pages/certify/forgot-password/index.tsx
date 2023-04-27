@@ -93,8 +93,11 @@ const TextStyled = styled.div`
   transition: all 0.3s ease;
   margin: auto 0px 20px;
   cursor: pointer;
-  &:hover {
+  transition: all 0.3s ease;
+  svg * {
     transition: all 0.3s ease;
+  }
+  &:hover {
     color: ${({ theme }) => theme.color.primary[3]};
     svg * {
       stroke: ${({ theme }) => theme.color.primary[3]};
