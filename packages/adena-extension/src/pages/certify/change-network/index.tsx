@@ -10,8 +10,9 @@ import { useGnoClient } from '@hooks/use-gno-client';
 import { GnoClient } from 'gno-client';
 import { RoutePath } from '@router/path';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
-import { useRecoilState, useResetRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
+import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -39,14 +40,11 @@ const LeftWrap = styled.div`
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState] = useState('INIT');
-  const [currentNetwork, networks, updateNetworks, changeNetwork] = useGnoClient();
+  const [gnoClient, gnoClients] = useGnoClient();
+  const { changeNetwork } = useNetwork();
   const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
   const [, setState] = useRecoilState(WalletState.state);
-
-  useEffect(() => {
-    updateNetworks();
-  }, []);
 
   useEffect(() => {
     if (loadinsgState === 'FINISH') {
@@ -57,20 +55,20 @@ export const ChangeNetwork = () => {
   const checkHealth = async () => {
     let health = false;
     try {
-      health = (await currentNetwork?.isHealth()) ?? false;
+      health = (await gnoClient?.isHealth()) ?? false;
     } catch (e) {
       console.log(e);
     }
     setState('NONE');
     setFailedNetwork(!health);
     if (!health) {
-      const chainId = currentNetwork?.chainId;
+      const chainId = gnoClient?.chainId;
       setFailedNetworkChainId(chainId ?? "");
     }
   };
 
   const onClickNetwork = async (network: GnoClient) => {
-    if (network.chainId === currentNetwork?.chainId) {
+    if (network.chainId === gnoClient?.chainId) {
       return;
     }
     setState('LOADING');
@@ -81,9 +79,9 @@ export const ChangeNetwork = () => {
   return loadinsgState === 'INIT' ? (
     <Wrapper>
       <Text type='header4'>Change Network</Text>
-      {networks.length > 0 ? (
+      {gnoClients.length > 0 ? (
         <>
-          {networks.map((network: GnoClient, index: number) => (
+          {gnoClients.map((network: GnoClient, index: number) => (
             <ListBox
               left={
                 <LeftWrap>
@@ -95,7 +93,7 @@ export const ChangeNetwork = () => {
               }
               center={null}
               right={
-                network.chainId === currentNetwork?.chainId ? (
+                network.chainId === gnoClient?.chainId ? (
                   <Button width='100px' height='25px' bgColor={theme.color.green[2]}>
                     <Text type='body3Reg'>Connected</Text>
                   </Button>

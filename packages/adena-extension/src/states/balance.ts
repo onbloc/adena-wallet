@@ -17,6 +17,11 @@ export interface AccountTokenBalance {
   tokenBalances: TokenBalance[];
 }
 
+export const isLoading = atom({
+  key: `balance/is-loading`,
+  default: false,
+});
+
 export const accountTokenBalances = atom<AccountTokenBalance[]>({
   key: `balance/account-token-balances`,
   default: [],

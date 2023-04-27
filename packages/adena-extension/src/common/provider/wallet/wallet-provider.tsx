@@ -117,10 +117,14 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     const currentNetwork =
       networkMetainfos.find(info => info.networkId === currentNetworkId) ??
       networkMetainfos[0];
-    chainService.updateCurrentNetworkId(currentNetwork.networkId);
+    await chainService.updateCurrentNetworkId(currentNetwork.networkId);
     setCurrentNetwrok(currentNetwork);
 
-    const gnoClient = GnoClient.createNetwork(currentNetwork);
+    const gnoClient = GnoClient.createNetwork({
+      ...currentNetwork,
+      chainId: currentNetwork.networkId,
+      chainName: currentNetwork.networkName,
+    });
     setGnoClient(gnoClient);
     return true;
   }

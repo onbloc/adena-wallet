@@ -40,7 +40,7 @@ export const ApproveTransactionMain = () => {
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
-  const [gnoClient, , updateGnoClient] = useGnoClient();
+  const [gnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
   const [gasFee, setGasFee] = useState(0);
   const location = useLocation();
@@ -49,12 +49,6 @@ export const ApproveTransactionMain = () => {
   const [loadingLedger, setLoadingLedger] = useState(false);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
-
-  useEffect(() => {
-    if (!gnoClient) {
-      updateGnoClient();
-    }
-  }, [gnoClient]);
 
   useEffect(() => {
     if (location.state?.requestData) {

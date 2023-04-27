@@ -34,18 +34,13 @@ export const useTokenBalance = (): {
     updateTokenBalanceInfos(tokenMetainfos);
   }, [tokenMetainfos]);
 
-  function matchChainIdAndNetworkId(accountTokenBalance: AccountTokenBalance) {
-    return (
-      accountTokenBalance.chainId === currentNetwork?.chainId &&
-      accountTokenBalance.networkId === currentNetwork?.networkId
-    );
+  function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
+    return accountTokenBalance.networkId === currentNetwork?.networkId;
   }
 
   function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
     if (!account) return false;
-    return (
-      accountTokenBalance.accountId === account.id && matchChainIdAndNetworkId(accountTokenBalance)
-    );
+    return accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance);
   }
 
   function getTokenBalances() {
@@ -102,6 +97,7 @@ export const useTokenBalance = (): {
     }
     changedAccountTokenBalances.push(changedAccountTokenBalance);
     setAccountTokenBalances(changedAccountTokenBalances);
+    updateBalanceAmountByAccount(currentAccount);
     return true;
   }
 
@@ -146,6 +142,7 @@ export const useTokenBalance = (): {
       return accountTokenBalance;
     });
     setAccountTokenBalances(changedAccountTokenBalances);
+    console.log(changedAccountTokenBalances);
     return true;
   }
 
@@ -215,7 +212,7 @@ export const useTokenBalance = (): {
     mainTokenBalance: getTokenBalances().find((tokenBalance) => tokenBalance.main)?.amount,
     tokenBalances: getTokenBalances(),
     displayTokenBalances: getDisplayTokenBalances(),
-    accountTokenBalances: accountTokenBalances.filter(matchChainIdAndNetworkId),
+    accountTokenBalances: accountTokenBalances.filter(matchNetworkId),
     fetchBalanceBy,
     toggleDisplayOption,
     updateBalanceAmountByAccount,
