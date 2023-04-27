@@ -38,7 +38,6 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 
 const LoadingMain = () => {
   const { state } = useLoadAccounts();
-  const isLoadingState = ['CREATE', 'FINISH', 'LOGIN', 'FAIL'].includes(state) === false;
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
   const { displayTokenBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
@@ -47,11 +46,14 @@ const LoadingMain = () => {
     if (isApproveHardwarePath || isNotMatch) {
       return false;
     }
-    if (isLoadingState || displayTokenBalances.length === 0) {
+    if (state === 'LOADING') {
+      return true;
+    }
+    if (state === 'FINISH' && displayTokenBalances.length === 0) {
       return true;
     }
     return false;
-  }, [isLoadingState, isApproveHardwarePath, isNotMatch, displayTokenBalances]);
+  }, [state, isApproveHardwarePath, isNotMatch, displayTokenBalances]);
 
   return isLoading() ? (
     <Wrapper>

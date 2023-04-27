@@ -2,13 +2,20 @@ import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
   validateWrongPasswordLength,
 } from '@common/validation';
-import { deserializeAccount } from 'adena-module';
+import {
+  AdenaWallet,
+  LedgerAccount,
+  LedgerConnector,
+  LedgerKeyring,
+  deserializeAccount,
+  isLedgerAccount,
+} from 'adena-module';
 
 interface LocationState {
   accounts: Array<string>;
@@ -18,6 +25,7 @@ interface LocationState {
 export const useLedgerPassword = () => {
   const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
+  const { updateWallet } = useWalletContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -102,7 +110,6 @@ export const useLedgerPassword = () => {
 
     try {
       if (isValidPassword && isValidConfirmPassword) {
-        await walletService.updatePassowrd(pwd);
         return 'FINISH';
       }
     } catch (error) {
@@ -114,11 +121,27 @@ export const useLedgerPassword = () => {
   const nextButtonClick = async () => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
-      const { accounts, currentAccount } = location.state as LocationState;
-      if (currentAccount) {
-        await accountService.changeCurrentAccount(deserializeAccount(currentAccount));
+      const { accounts } = location.state as LocationState;
+      const transport = await LedgerConnector.openConnected();
+      if (!transport) {
+        return;
       }
-
+      const deserializeAccounts = accounts.map(deserializeAccount).filter(isLedgerAccount);
+      const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
+      const mappedAccounts = deserializeAccounts.map((account) => {
+        return {
+          ...account.toData(),
+          name: `Ledger ${account.hdPath + 1}`,
+          keyringId: keyring.id,
+        };
+      });
+      const ledgerWallet = new AdenaWallet({
+        accounts: [...mappedAccounts],
+        keyrings: [keyring.toData()],
+        currentAccountId: mappedAccounts[0]?.id,
+      });
+      await walletService.saveWallet(ledgerWallet, pwd);
+      await transport.close();
       navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);
       return;
     }

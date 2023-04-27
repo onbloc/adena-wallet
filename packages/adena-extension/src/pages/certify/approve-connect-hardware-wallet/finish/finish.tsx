@@ -6,6 +6,7 @@ import Text from '@components/text';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useLocation } from 'react-router-dom';
 import { useWalletContext } from '@hooks/use-context';
+import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
 
 const text = {
   title: 'Account Added',
@@ -31,16 +32,32 @@ const Wrapper = styled.main`
 `;
 
 export const ApproveConnectHardwareWalletFinish = () => {
-  const { wallet } = useWalletContext();
+  const { wallet, updateWallet } = useWalletContext();
   const location = useLocation();
 
   const onClickDoneButton = async () => {
     const { accounts } = location.state;
-    if (wallet) {
-      for (const account of accounts) {
-        wallet.addAccount(account);
-      }
+    if (!wallet) {
+      return;
     }
+    const transport = await LedgerConnector.openConnected();
+    if (!transport) {
+      return;
+    }
+    const deserializeAccounts: LedgerAccount[] = accounts.map(deserializeAccount);
+    const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
+    const accountInfos = deserializeAccounts.map(account => account.toData())
+    const clone = wallet.clone();
+    for (const accountInfo of accountInfos) {
+      clone.addKeyring(keyring);
+      clone.addAccount(LedgerAccount.fromData({
+        ...accountInfo,
+        name: `Ledger ${accountInfo.hdPath + 1}`,
+        keyringId: keyring.id
+      }));
+    }
+    await updateWallet(clone);
+    await transport.close();
     window.close();
   };
 

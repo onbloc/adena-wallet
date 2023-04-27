@@ -86,7 +86,8 @@ export const ApproveConnectHardwareWalletConnect = () => {
       if (!transport) {
         throw new Error('Not found Connect');
       }
-      const wallet = await AdenaWallet.createByLedger(new LedgerConnector(transport));
+      const initHdPaths = [0, 1, 2, 3, 4];
+      const wallet = await AdenaWallet.createByLedger(new LedgerConnector(transport), initHdPaths);
       await transport?.close();
       setWallet(wallet);
       setConnectState('SUCCESS');

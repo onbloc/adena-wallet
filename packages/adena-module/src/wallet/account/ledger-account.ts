@@ -66,7 +66,7 @@ export class LedgerAccount implements Account {
       throw new Error('Invalid account type');
     }
 
-    const publicKey = new Uint8Array();
+    const publicKey = await keyring.getPublicKey(hdPath);
     const { id: keyringId, type } = keyring;
     return new LedgerAccount({
       keyringId,
