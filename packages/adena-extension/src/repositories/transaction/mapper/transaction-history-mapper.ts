@@ -30,6 +30,12 @@ interface TransactionInfo {
   };
 }
 
+function isHistoryItemGRC20Transfer(
+  historyItem: HistoryItem,
+): historyItem is HistoryItemBankMsgSend {
+  return historyItem.type === '/vm.m_call' && historyItem.func === 'Send';
+}
+
 function isHistoryItemBankMsgSend(historyItem: HistoryItem): historyItem is HistoryItemBankMsgSend {
   return historyItem.type === '/bank.MsgSend';
 }
@@ -92,6 +98,9 @@ export class TransactionHistoryMapper {
   private static mappedHistoryItem(historyItem: HistoryItem): TransactionInfo {
     if (historyItem.msg_num > 1) {
       return TransactionHistoryMapper.mappedHistoryItemMutiCall(historyItem);
+    }
+    if (isHistoryItemGRC20Transfer(historyItem)) {
+      return TransactionHistoryMapper.mappedBankMsgSend(historyItem);
     }
     if (isHistoryItemBankMsgSend(historyItem)) {
       return TransactionHistoryMapper.mappedBankMsgSend(historyItem);
