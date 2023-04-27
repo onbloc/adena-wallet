@@ -18,7 +18,7 @@ export const useImportAccount = (): {
     }
     setState('LOADING');
     account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${account.index + 1}`;
+    account.name = `Account ${account.index}`;
     const clone = wallet.clone();
     clone.addAccount(account);
     const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);

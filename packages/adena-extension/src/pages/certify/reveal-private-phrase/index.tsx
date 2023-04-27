@@ -6,12 +6,11 @@ import SeedBox from '@components/seed-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
-import { useAdenaContext } from '@hooks/use-context';
+import { useWalletContext } from '@hooks/use-context';
 
 export const RevealPrivatePhrase = () => {
   const navigate = useNavigate();
-  const { walletService } = useAdenaContext();
+  const { wallet } = useWalletContext();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [seeds, setSeeds] = useState<Array<string>>([]);
 
@@ -20,8 +19,7 @@ export const RevealPrivatePhrase = () => {
   }, []);
 
   const init = async () => {
-    const wallet = await walletService.loadWallet();
-    const mnemonic = wallet.mnemonic;
+    const mnemonic = wallet?.mnemonic || '';
     const seeds = `${mnemonic}`.split(' ');
     setSeeds(seeds);
   };
