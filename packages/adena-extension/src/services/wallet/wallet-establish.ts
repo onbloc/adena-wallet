@@ -84,6 +84,11 @@ export class WalletEstablishService {
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
+  public clear = async () => {
+    await this.walletEstablishRepository.deleteEstablishedSites();
+    return true;
+  };
+
   private selectEstablishedSitesBy = async (
     accountId: string,
     chainId: string,

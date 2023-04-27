@@ -75,4 +75,9 @@ export class TokenService {
     await this.tokenRepository.deleteTokenMetainfos(accountId);
     return true;
   }
+
+  public clear = async () => {
+    await this.tokenRepository.deleteAllTokenMetainfo();
+    return true;
+  };
 }

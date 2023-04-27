@@ -1,9 +1,16 @@
-import { CommonState, GnoClientState, WalletState } from '@states/index';
+import { BalanceState, CommonState, GnoClientState, WalletState } from '@states/index';
 import { useResetRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 
 export const useClear = () => {
-  const { walletService, accountService } = useAdenaContext();
+  const {
+    walletService,
+    accountService,
+    addressBookService,
+    chainService,
+    establishService,
+    tokenService,
+  } = useAdenaContext();
 
   const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
   const clearState = useResetRecoilState(WalletState.state);
@@ -11,6 +18,8 @@ export const useClear = () => {
   const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
   const clearGnoClient = useResetRecoilState(GnoClientState.current);
   const clearNetworks = useResetRecoilState(GnoClientState.networks);
+  const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
+  const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
 
   const clear = async () => {
     clearState();
@@ -19,8 +28,14 @@ export const useClear = () => {
     clearGnoClient();
     clearNetworks();
     clearCurrentAccount();
+    clearIsLoading();
+    clearAccountTokenBalances();
     await walletService.clear();
     await accountService.clear();
+    await addressBookService.clear();
+    await chainService.clear();
+    await establishService.clear();
+    await tokenService.clear();
     return true;
   };
 
