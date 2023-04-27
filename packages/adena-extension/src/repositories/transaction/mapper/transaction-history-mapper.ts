@@ -1,4 +1,4 @@
-import { formatAddress, getDateText } from '@common/utils/client-utils';
+import { dateToLocal, formatAddress, getDateText } from '@common/utils/client-utils';
 import {
   HistoryItem,
   HistoryItemBankMsgSend,
@@ -130,7 +130,7 @@ export class TransactionHistoryMapper {
         denom: '',
       },
       valueType,
-      date,
+      date: dateToLocal(date).value,
       networkFee: {
         value: `${fee.amount}`,
         denom: `${fee.denom}`,
@@ -158,7 +158,7 @@ export class TransactionHistoryMapper {
       to: `${formatAddress(to, 4)}`,
       from: `${formatAddress(from, 4)}`,
       valueType,
-      date,
+      date: dateToLocal(date).value,
       networkFee: {
         value: `${fee.amount}`,
         denom: `${fee.denom}`,
@@ -181,7 +181,7 @@ export class TransactionHistoryMapper {
         denom: transfer.denom || 'GNOT',
       },
       valueType,
-      date,
+      date: dateToLocal(date).value,
       networkFee: {
         value: `${fee.amount}`,
         denom: `${fee.denom}`,
@@ -204,7 +204,7 @@ export class TransactionHistoryMapper {
         denom: transfer.denom || 'GNOT',
       },
       valueType,
-      date,
+      date: dateToLocal(date).value,
       networkFee: {
         value: `${fee.amount}`,
         denom: `${fee.denom}`,
@@ -227,7 +227,7 @@ export class TransactionHistoryMapper {
         denom: transfer.denom || 'GNOT',
       },
       valueType,
-      date,
+      date: dateToLocal(date).value,
       networkFee: {
         value: `${fee.amount}`,
         denom: `${fee.denom}`,
