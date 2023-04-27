@@ -1,16 +1,15 @@
-import { WalletError } from "@common/errors";
-import { StorageManager } from "@common/storage/storage-manager";
-import { encryptPassword, decryptPassword, encryptSha256Password } from "@common/utils/crypto-utils";
+import { WalletError } from '@common/errors';
+import { StorageManager } from '@common/storage/storage-manager';
+import {
+  encryptPassword,
+  decryptPassword,
+  encryptSha256Password,
+} from '@common/utils/crypto-utils';
 
-type LocalValueType =
-  | 'SERIALIZED'
-  | 'ENCRYPTED_STORED_PASSWORD';
-type SessionValueType =
-  | 'ENCRYPTED_KEY'
-  | 'ENCRYPTED_PASSWORD';
+type LocalValueType = 'SERIALIZED' | 'ENCRYPTED_STORED_PASSWORD';
+type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
-
   private localStorage: StorageManager<LocalValueType>;
 
   private sessionStorage: StorageManager<SessionValueType>;
@@ -34,15 +33,15 @@ export class WalletRepository {
   };
 
   public deleteSerializedWallet = async () => {
-    await this.localStorage.remove("SERIALIZED");
+    await this.localStorage.remove('SERIALIZED');
     return true;
   };
 
   public existsWalletPassword = async () => {
     try {
       const password = await this.getWalletPassword();
-      if (password === "") {
-        throw new WalletError("NOT_FOUND_PASSWORD");
+      if (password === '') {
+        throw new WalletError('NOT_FOUND_PASSWORD');
       }
     } catch (e) {
       return false;
@@ -83,6 +82,6 @@ export class WalletRepository {
 
   public getEncryptedPassword = async () => {
     const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
-    return encryptedPassword
+    return encryptedPassword;
   };
 }

@@ -67,7 +67,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     setCurrentAccountName(name ?? '');
 
     const siteName = getSiteName(hostname);
-    const isEstablished = await establishService.isEstablishedBy(address, gnoClient?.chainId ?? '', siteName);
+    const isEstablished = await establishService.isEstablishedBy(currentAccount.id, gnoClient?.chainId ?? '', siteName);
     setIsEstablish(isEstablished);
   };
 

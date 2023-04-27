@@ -23,7 +23,7 @@ const Wrapper = styled.div`
 
 const ApproveMenu = () => {
   const { establishService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
@@ -35,7 +35,6 @@ const ApproveMenu = () => {
     if (location.search) {
       const data = parseParmeters(location.search);
       setReqeustData(data);
-      // changeCurrentAccount();
     }
   }, [location]);
 
@@ -50,27 +49,27 @@ const ApproveMenu = () => {
   }, []);
 
   useEffect(() => {
-    if (currentAccount?.getAddress('g')) {
-      setAddress(currentAccount.getAddress('g'));
+    if (currentAccount?.id) {
+      setAddress(currentAddress || '');
       setAccountName(currentAccount.name);
     }
-  }, [currentAccount?.getAddress('g')]);
+  }, [currentAccount?.id]);
 
   const initAddress = async () => {
     if (!currentAccount) {
       return;
     }
-    const currentAddress = currentAccount.getAddress('g');
+    const address = currentAddress || '';
     const currentAccountName = currentAccount.name;
-    setAddress(currentAddress);
+    setAddress(address);
     setAccountName(currentAccountName);
   };
 
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
-      const address = currentAccount?.getAddress('g') ?? "";
+      const id = currentAccount?.id ?? "";
       const siteName = getSiteName(requestData.hostname);
-      const currentIsEstablished = await establishService.isEstablishedBy(address, gnoClient?.chainId ?? '', siteName);
+      const currentIsEstablished = await establishService.isEstablishedBy(id, gnoClient?.chainId ?? '', siteName);
       setIsEstablished(currentIsEstablished);
     }
   };

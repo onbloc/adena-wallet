@@ -1,5 +1,6 @@
 import { CommonError } from '@common/errors/common';
 import { ChainRepository, Network } from '@repositories/common';
+import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { GnoClient } from 'gno-client';
 
 export class ChainService {
@@ -43,13 +44,14 @@ export class ChainService {
   };
 
   public updateCurrentNetworkId = async (chainId: string) => {
-    await this.chainRepository.updateCurrentChainId(chainId);
+    await this.chainRepository.updateCurrentNetworkId(chainId);
     return true;
   };
 
   public getCurrentClient = async () => {
     const network = await this.getCurrentNetwork();
-    return GnoClient.createNetworkByType(network, 'TEST3');
+    const currentNetworkId = network.networkId.toUpperCase() === 'TEST3' ? 'TEST3' : 'TEST2';
+    return GnoClient.createNetworkByType(network, currentNetworkId, fetchAdapter);
   };
 
   public clear = async () => {

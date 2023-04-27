@@ -1,4 +1,4 @@
-import axios, { AxiosAdapter, AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosAdapter, AxiosResponse } from 'axios';
 import { NetworkInstanceConfig } from '.';
 
 export class NetworkInstance {

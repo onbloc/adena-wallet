@@ -1,6 +1,5 @@
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
-import { GnoClient } from 'gno-client';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
@@ -12,22 +11,12 @@ export const getAccount = async (
   try {
     const core = new InjectCore();
 
-    const isLocked = await core.walletService.isLocked();
-    if (isLocked) {
-      sendReponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
-      return;
-    }
-
     const currentAccountAddress = await core.getCurrentAddress();
     if (!currentAccountAddress) {
+      sendReponse(InjectionMessageInstance.success('NO_ACCOUNT', {}, requestData.key));
       return;
     }
-    const currentNetwork = await core.chainService.getCurrentNetwork();
-    const gnoClient = GnoClient.createNetworkByType(
-      { ...currentNetwork },
-      getNetworkMapperType(currentNetwork.chainId),
-    );
-
+    const gnoClient = await core.chainService.getCurrentClient();
     const account = await gnoClient.getAccount(currentAccountAddress);
     sendReponse(
       InjectionMessageInstance.success(
@@ -37,7 +26,7 @@ export const getAccount = async (
       ),
     );
   } catch (error) {
-    sendReponse(InjectionMessageInstance.response('NO_ACCOUNT', { error }, requestData.key));
+    sendReponse(InjectionMessageInstance.success('NO_ACCOUNT', { error }, requestData.key));
   }
 };
 
@@ -46,16 +35,11 @@ export const addEstablish = async (
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
-  const account = await core.getCurrentAccount();
-  if (!account) {
-    return false;
-  }
-
-  const chainId = core.gnoClient?.chainId ?? '';
-
+  const accountId = await core.getCurrentAccountId();
+  const networkId = await core.getCurrentNetworkId();
   const isLocked = await core.walletService.isLocked();
   const siteName = getSiteName(message.hostname);
-  const isEstablised = await core.establishService.isEstablishedBy(account.id, chainId, siteName);
+  const isEstablised = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
 
   if (isLocked) {
     HandlerMethod.createPopup(
@@ -79,14 +63,4 @@ export const addEstablish = async (
     sendResponse,
   );
   return true;
-};
-
-const getNetworkMapperType = (chainId: string) => {
-  switch (chainId) {
-    case 'test2':
-      return 'TEST2';
-    case 'test3':
-    default:
-      return 'TEST3';
-  }
 };
