@@ -99,6 +99,7 @@ export const TransactionDetail = () => {
                     transactionItem.networkFee.value,
                     transactionItem.networkFee.denom)
                   }
+                  minimumFontSize='12px'
                   fontStyleKey='body1Reg'
                   orientation='HORIZONTAL'
                 />
