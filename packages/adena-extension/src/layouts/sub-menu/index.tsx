@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import Portal from '@layouts/portal';
 import logo from '../../assets/logo-withIcon.svg';
@@ -16,8 +16,9 @@ import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { Account } from 'adena-module';
-import { AccountTokenBalance, TokenBalance } from '@states/balance';
+import { TokenBalance } from '@states/balance';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useAccountName } from '@hooks/use-account-name';
 
 interface SubMenuProps {
   open: boolean;
@@ -27,6 +28,7 @@ interface SubMenuProps {
 }
 
 interface UserListProps {
+  accountNames: { [key in string]: string };
   accounts: Array<Account>;
   currentAccount: Account;
   accountBalances: { [key in string]: TokenBalance };
@@ -48,6 +50,7 @@ const LockWallet = ({ onClick }: { onClick: () => void }) => (
 );
 
 const UserListMaker = ({
+  accountNames,
   accounts,
   currentAccount,
   accountBalances,
@@ -55,6 +58,7 @@ const UserListMaker = ({
 }: UserListProps) => (
   <>
     {accounts.map((account, i) => {
+      const accountName = accountNames[account.id] || account.name;
       const balance = accountBalances[account.id]?.amount || null;
       const balanceString = balance
         ? `${maxFractionDigits(balance.value.toString(), 6)} ${balance.denom.toUpperCase()}`
@@ -63,7 +67,7 @@ const UserListMaker = ({
       return (
         <ListItem key={i} onClick={() => changeAccountHandler(account)}>
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(account.name, 10)}
+            {formatNickname(accountName, 10)}
             <FromBadge from={account.type} />
           </Text>
           <Text type='body3Reg' color={theme.color.neutral[9]}>
@@ -98,6 +102,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const navigate = useNavigate();
   const { currentAccount, changeCurrentAccount } = useCurrentAccount();
   const { accountNativeBalances } = useTokenBalance();
+  const { accountNames } = useAccountName();
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -140,6 +145,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
               <ListWrapper>
                 {wallet?.accounts && wallet.accounts.length > 0 && (
                   <UserListMaker
+                    accountNames={accountNames}
                     accounts={wallet.accounts}
                     accountBalances={accountNativeBalances}
                     changeAccountHandler={changeAccountHandler}

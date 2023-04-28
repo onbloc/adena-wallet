@@ -59,11 +59,11 @@ export const ChangeNetwork = () => {
     } catch (e) {
       console.log(e);
     }
-    setState('NONE');
     setFailedNetwork(!health);
     if (!health) {
       const chainId = gnoClient?.chainId;
       setFailedNetworkChainId(chainId ?? "");
+      setState('FAIL');
     }
   };
 
@@ -73,7 +73,7 @@ export const ChangeNetwork = () => {
     }
     setState('LOADING');
     await changeNetwork(network.chainId);
-    navigate(RoutePath.Home);
+    navigate(RoutePath.Wallet);
   };
 
   return loadinsgState === 'INIT' ? (

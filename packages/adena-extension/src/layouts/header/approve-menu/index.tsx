@@ -9,6 +9,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useAccountName } from '@hooks/use-account-name';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -30,6 +31,7 @@ const ApproveMenu = () => {
   const location = useLocation();
   const [requestData, setReqeustData] = useState<any>();
   const [gnoClient] = useGnoClient();
+  const { accountNames } = useAccountName();
 
   useEffect(() => {
     if (location.search) {
@@ -51,7 +53,7 @@ const ApproveMenu = () => {
   useEffect(() => {
     if (currentAccount?.id) {
       setAddress(currentAddress || '');
-      setAccountName(currentAccount.name);
+      setAccountName(accountNames[currentAccount.id] || currentAccount.name);
     }
   }, [currentAccount?.id]);
 
@@ -60,7 +62,7 @@ const ApproveMenu = () => {
       return;
     }
     const address = currentAddress || '';
-    const currentAccountName = currentAccount.name;
+    const currentAccountName = accountNames[currentAccount.id] || currentAccount.name;
     setAddress(address);
     setAccountName(currentAccountName);
   };

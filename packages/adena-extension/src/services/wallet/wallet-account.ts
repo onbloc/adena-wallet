@@ -21,4 +21,16 @@ export class WalletAccountService {
     await this.walletAccountRepository.deleteCurrentAccountId();
     return true;
   };
+
+  public getAccountNames = async () => {
+    return this.walletAccountRepository.getAccountNames();
+  };
+
+  public updateAccountNames = async (accountNames: { [key in string]: string }) => {
+    return this.walletAccountRepository.updateAccountNames(accountNames);
+  };
+
+  public deleteAccountNames = async () => {
+    return this.walletAccountRepository.deleteAccountNames();
+  };
 }

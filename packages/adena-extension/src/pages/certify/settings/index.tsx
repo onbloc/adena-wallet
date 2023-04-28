@@ -1,10 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import pencil from '../../../assets/pencil.svg';
 import share from '../../../assets/share.svg';
 import arrowRight from '../../../assets/arrowS-right.svg';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
@@ -13,6 +12,7 @@ import { useUpdateWalletAccountName } from '@hooks/use-update-wallet-account-nam
 import { useGnoClient } from '@hooks/use-gno-client';
 import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
 import { isLedgerAccount } from 'adena-module';
+import { useAccountName } from '@hooks/use-account-name';
 
 const menuMakerInfo = [
   {
@@ -41,12 +41,17 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 export const Settings = () => {
   const { currentAccount } = useCurrentAccount();
-  const updateAccountName = useUpdateWalletAccountName();
   const navigate = useNavigate();
-  const revealSeedClick = () => navigate(RoutePath.SettingSeedPhrase);
-  const [text, setText] = useState<string>(() => currentAccount?.name || '');
+  const [text, setText] = useState<string>('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [gnoClient] = useGnoClient();
+  const { accountNames, changeAccountName } = useAccountName();
+
+  useEffect(() => {
+    if (currentAccount)
+      setText(accountNames[currentAccount.id])
+  }, [currentAccount]);
+
   const shareButtonClick = async () => {
     window.open(
       `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')}`,
@@ -61,7 +66,7 @@ export const Settings = () => {
     const name = e.target.value;
     if (name.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
       await setText(name);
-      await updateAccountName(currentAccount, name);
+      await changeAccountName(currentAccount, name);
     }
   };
 
@@ -70,7 +75,7 @@ export const Settings = () => {
       return;
     }
     const changedName = text === '' ? `${getDefaultAccountName()}` : text;
-    updateAccountName(currentAccount, changedName);
+    changeAccountName(currentAccount, changedName);
   };
 
   const handleFocus = async () => {
@@ -78,17 +83,12 @@ export const Settings = () => {
       return;
     }
     await setText('');
-    await updateAccountName(currentAccount, '');
+    await changeAccountName(currentAccount, '');
     inputRef.current?.focus();
   };
 
   const getDefaultAccountName = () => {
-    if (!currentAccount) {
-      return 'Account';
-    }
-    const accountType = isLedgerAccount(currentAccount) ? 'Ledger' : 'Account';
-    const accountNumber = currentAccount.index;
-    return `${accountType} ${accountNumber}`;
+    return currentAccount?.name || 'Account';
   };
 
   return (

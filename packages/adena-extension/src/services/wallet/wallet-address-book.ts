@@ -15,11 +15,14 @@ export class WalletAddressBookService {
     return currentAddressBook;
   };
 
-  public getAddressBookByAccounts = (accounts: Array<Account>): Array<AddressBookItem> => {
+  public getAddressBookByAccounts = (
+    accounts: Array<Account>,
+    accountNames: { [key in string]: string },
+  ): Array<AddressBookItem> => {
     return accounts.map((walletAccount) => {
       return {
         id: `${walletAccount.index}`,
-        name: `${walletAccount.name}`,
+        name: `${accountNames[walletAccount.id] || walletAccount.name}`,
         address: `${walletAccount.getAddress('g')}`,
         createdAt: `${new Date().getTime()}`,
       };
