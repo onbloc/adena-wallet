@@ -9,8 +9,25 @@ import TransferSummary, { TransferSummaryProps } from './transfer-summary';
 describe('TransferSummary Component', () => {
   it('TransferSummary render', () => {
     const args: TransferSummaryProps = {
+      tokenMetainfo: {
+        main: true,
+        tokenId: 'Gnoland',
+        name: 'Gnoland',
+        chainId: 'GNOLAND',
+        networkId: 'test3',
+        image: '',
+        pkgPath: '',
+        symbol: 'GNOT',
+        type: 'NATIVE',
+        decimals: 6,
+        denom: 'GNOT',
+        minimalDenom: 'ugnot',
+      },
       tokenImage: '',
-      transferBalance: '',
+      transferBalance: {
+        value: '4,000.123',
+        denom: 'GNOT',
+      },
       toAddress: '',
       networkFee: {
         value: '0.0048',

@@ -33,7 +33,10 @@ const TransferSummaryContainer: React.FC = () => {
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
-    return `${BigNumber(value).toFormat()} ${denom}`;
+    return {
+      value: `${BigNumber(value).toFormat()}`,
+      denom
+    };
   }, [summaryInfo]);
 
   const getNativeTransferMessage = useCallback(() => {
@@ -97,6 +100,7 @@ const TransferSummaryContainer: React.FC = () => {
 
   return (
     <TransferSummary
+      tokenMetainfo={summaryInfo.tokenMetainfo}
       tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
       toAddress={summaryInfo.toAddress}
       transferBalance={getTransferBalance()}

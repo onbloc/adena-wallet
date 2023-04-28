@@ -5,7 +5,7 @@ import SubHeader from '@components/common/sub-header/sub-header';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
-import ArrowLeftIcon from '@assets/arrowS-left.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
 
 export interface TransferInputProps {
   tokenMetainfo: TokenMetainfo;
