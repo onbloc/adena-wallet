@@ -49,6 +49,14 @@ export const ManageTokenSearchInputWrapper = styled.div`
     .added {
       width: 100%;
       height: 100%;
+      fill: ${({ theme }) => theme.color.neutral[6]};
+      transition: 0.2s;
+    }
+
+    :hover {
+      .added {
+        fill: ${({ theme }) => theme.color.neutral[11]};
+      }
     }
   }
 `;

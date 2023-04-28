@@ -10,3 +10,4 @@ export { default as IconWebLink } from './icon-weblink';
 export { default as IconHiddenEye } from './icon-hidden-eye';
 export { default as IconConnectLoading } from './icon-connect-loading';
 export { default as IconConnectFailed } from './icon-connect-failed';
+export { default as IconTokenAdded } from './icon-token-added';
