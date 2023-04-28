@@ -1,18 +1,17 @@
 import { useRecoilState } from 'recoil';
-import { Account, Wallet } from 'adena-module';
+import { Account, Keyring } from 'adena-module';
 import { WalletState } from '@states/index';
 import { useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 
 export const useImportAccount = (): {
-  importAccount: (account: Account) => Promise<boolean>,
-  importAccountByWallet: (wallet: Wallet, account: Account) => Promise<boolean>,
+  importAccount: (account: Account, keyring: Keyring) => Promise<boolean>,
 } => {
   const { wallet, updateWallet } = useWalletContext();
   const [, setState] = useRecoilState(WalletState.state);
   const { changeCurrentAccount } = useCurrentAccount();
 
-  const importAccount = async (account: Account) => {
+  const importAccount = async (account: Account, keyring: Keyring) => {
     if (!wallet) {
       return false;
     }
@@ -21,6 +20,7 @@ export const useImportAccount = (): {
     account.name = `Account ${account.index}`;
     const clone = wallet.clone();
     clone.addAccount(account);
+    clone.addKeyring(keyring);
     const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
@@ -30,18 +30,5 @@ export const useImportAccount = (): {
     return true;
   };
 
-  const importAccountByWallet = async (wallet: Wallet, account: Account) => {
-    account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${account.index}`;
-    const clone = wallet.clone();
-    clone.addAccount(account);
-    const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
-    if (storedAccount) {
-      await changeCurrentAccount(storedAccount);
-    }
-    await updateWallet(clone);
-    return true;
-  };
-
-  return { importAccount, importAccountByWallet };
+  return { importAccount };
 };

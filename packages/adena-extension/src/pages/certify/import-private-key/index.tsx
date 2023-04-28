@@ -73,7 +73,7 @@ export const ImportPrivateKey = () => {
         throw new Error("Private key already registered");
       }
 
-      await importAccount(account);
+      await importAccount(account, keyring);
       navigate(RoutePath.Wallet);
     } catch (e) {
       if (e instanceof Error) {
