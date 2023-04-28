@@ -11,7 +11,6 @@ import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatNickname, maxFractionDigits } from '@common/utils/client-utils';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
 import plus from '../../assets/plus.svg';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
@@ -80,7 +79,7 @@ const UserListMaker = ({
 );
 
 const FromBadge = ({ from }: { from: string }) => {
-  if (from === 'GOOGLE') {
+  if (from === 'WEB3_AUTH') {
     return <StyledBedge type='captionReg'>Google</StyledBedge>;
   }
   if (from === 'PRIVATE_KEY') {
