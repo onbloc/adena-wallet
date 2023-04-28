@@ -17,7 +17,7 @@ import theme from '@styles/theme';
 import Icon from '@components/icons';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { Account } from 'adena-module';
-import { AccountTokenBalance } from '@states/balance';
+import { AccountTokenBalance, TokenBalance } from '@states/balance';
 import { useTokenBalance } from '@hooks/use-token-balance';
 
 interface SubMenuProps {
@@ -30,7 +30,7 @@ interface SubMenuProps {
 interface UserListProps {
   accounts: Array<Account>;
   currentAccount: Account;
-  accountBalances: AccountTokenBalance[];
+  accountBalances: { [key in string]: TokenBalance };
   changeAccountHandler: (currentAccount: Account) => void;
 }
 
@@ -56,7 +56,7 @@ const UserListMaker = ({
 }: UserListProps) => (
   <>
     {accounts.map((account, i) => {
-      const balance = accountBalances.find(ab => ab.accountId === account.id)?.tokenBalances.find(b => b.main)?.amount ?? null;
+      const balance = accountBalances[account.id]?.amount || null;
       const balanceString = balance
         ? `${maxFractionDigits(balance.value.toString(), 6)} ${balance.denom.toUpperCase()}`
         : ' ';
@@ -98,7 +98,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
   const login = useMatch(RoutePath.Login);
   const navigate = useNavigate();
   const { currentAccount, changeCurrentAccount } = useCurrentAccount();
-  const { accountTokenBalances } = useTokenBalance();
+  const { accountNativeBalances } = useTokenBalance();
 
   const addAccountHandler = () => {
     setOpen(false);
@@ -142,7 +142,7 @@ const SubMenu: React.FC<SubMenuProps> = ({ open, setOpen, onClick, selector = 'p
                 {wallet?.accounts && wallet.accounts.length > 0 && (
                   <UserListMaker
                     accounts={wallet.accounts}
-                    accountBalances={accountTokenBalances}
+                    accountBalances={accountNativeBalances}
                     changeAccountHandler={changeAccountHandler}
                     currentAccount={currentAccount}
                   />

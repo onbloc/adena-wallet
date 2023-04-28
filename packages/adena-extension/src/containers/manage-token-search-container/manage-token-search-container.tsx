@@ -6,6 +6,7 @@ import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
 export interface ManageTokenInfo {
   tokenId: string;
@@ -23,15 +24,15 @@ export interface ManageTokenInfo {
 const ManageTokenSearchContainer: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
-  const { toggleDisplayOption } = useTokenBalance();
+  const { tokenMetainfos } = useTokenMetainfo();
   const { currentAccount } = useCurrentAccount();
-  const { tokenBalances, updateBalanceAmountByAccount } = useTokenBalance();
+  const { tokenBalances, toggleDisplayOption, updateTokenBalanceInfos } = useTokenBalance();
 
   useEffect(() => {
     if (currentAccount) {
-      updateBalanceAmountByAccount(currentAccount);
+      updateTokenBalanceInfos(tokenMetainfos);
     }
-  }, [currentAccount]);
+  }, [tokenMetainfos, currentAccount]);
 
   const filterTokens = useCallback((keyword: string) => {
     const comparedKeyword = keyword.toLowerCase();
