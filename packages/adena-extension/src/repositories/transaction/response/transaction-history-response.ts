@@ -26,6 +26,8 @@ export interface HistoryItem {
     amount: string;
     denom: string;
   };
+  to?: string;
+  from?: string;
 }
 
 export interface HistoryItemBankMsgSend extends HistoryItem {

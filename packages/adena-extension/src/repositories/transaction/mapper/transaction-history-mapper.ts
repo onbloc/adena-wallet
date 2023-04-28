@@ -115,7 +115,7 @@ export class TransactionHistoryMapper {
   }
 
   private static mappedHistoryItemMutiCall(historyItem: HistoryItem): TransactionInfo {
-    const { hash, result, func, msg_num, date, fee } = historyItem;
+    const { hash, result, func, msg_num, date, fee, to, from } = historyItem;
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
     return {
       hash,
@@ -129,6 +129,8 @@ export class TransactionHistoryMapper {
         value: '',
         denom: '',
       },
+      to: to ? `${formatAddress(to, 4)}` : undefined,
+      from: from ? `${formatAddress(from, 4)}` : undefined,
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
