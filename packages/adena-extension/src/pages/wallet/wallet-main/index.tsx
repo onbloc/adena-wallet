@@ -42,7 +42,7 @@ export const WalletMain = () => {
 
   useEffect(() => {
     if (state === 'CREATE') {
-      navigate(RoutePath.Create);
+      navigate(RoutePath.Home);
     }
   }, [state]);
 
