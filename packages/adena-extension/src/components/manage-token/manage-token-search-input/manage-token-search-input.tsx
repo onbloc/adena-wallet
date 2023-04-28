@@ -1,7 +1,7 @@
 import React from 'react';
 import { ManageTokenSearchInputWrapper } from './manage-token-search-input.styles';
 import ManageTokenSearchIcon from '@assets/manage-token-search.svg';
-import ManageTokenAddedIcon from '@assets/manage-token-added.svg';
+import Icon from '@components/icons';
 
 export interface ManageTokenSearchInputProps {
   keyword: string;
@@ -34,11 +34,7 @@ const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({
       </div>
 
       <div className='added-icon-wrapper' onClick={onClickAdded}>
-        <img
-          className='added'
-          src={ManageTokenAddedIcon}
-          alt='search icon'
-        />
+        <Icon className='added' name='iconTokenAdded' />
       </div>
     </ManageTokenSearchInputWrapper>
   );
