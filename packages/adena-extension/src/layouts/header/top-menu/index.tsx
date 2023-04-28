@@ -45,7 +45,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
 
   useEffect(() => {
     initAccountInfo();
-    console.log(hostname)
   }, [currentAccount, hostname, accountNames]);
 
   useEffect(() => {
@@ -55,8 +54,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
       if (hostname !== '') {
         setHostname(hostname);
         setUrl(href);
-        console.log(hostname)
-        console.log(href)
       }
     });
   }, [location.pathname]);

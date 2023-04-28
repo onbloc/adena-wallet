@@ -8,7 +8,7 @@ import { TokenMetainfo } from '@states/token';
 import { useGnoClient } from './use-gno-client';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;

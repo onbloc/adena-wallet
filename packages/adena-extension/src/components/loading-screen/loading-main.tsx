@@ -2,10 +2,11 @@ import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useRecoilState } from 'recoil';
+import { CommonState, WalletState } from '@states/index';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -37,7 +38,8 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 const LoadingMain = () => {
-  const { state } = useLoadAccounts();
+  const [state] = useRecoilState(WalletState.state);
+  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
   const { mainTokenBalance } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
@@ -49,6 +51,9 @@ const LoadingMain = () => {
     }
     if (state === 'NONE' || state === 'LOADING') {
       return true;
+    }
+    if (failedNetwork) {
+      return false;
     }
     if (state === 'FINISH' && (!mainTokenBalance || mainTokenBalance.denom === '')) {
       return true;
