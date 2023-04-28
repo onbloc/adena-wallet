@@ -8,7 +8,6 @@ import {
   validateNotMatchConfirmPassword,
   validateWrongPasswordLength,
 } from '@common/validation';
-import { useImportAccount } from '@hooks/use-import-account';
 import { AdenaWallet } from 'adena-module';
 
 interface CreatePasswordState {
@@ -45,7 +44,6 @@ export const useCreatePassword = () => {
     location.state,
   );
   const [errorMessage, setErrorMessage] = useState('');
-  const { importAccountByWallet } = useImportAccount();
   const [activated, setActivated] = useState(false);
 
   useEffect(() => {
@@ -174,7 +172,6 @@ export const useCreatePassword = () => {
     try {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
       await walletService.saveWallet(wallet, pwd);
-      await importAccountByWallet(wallet, wallet.accounts[0]);
     } catch (error) {
       console.error(error);
       return 'FAIL';
