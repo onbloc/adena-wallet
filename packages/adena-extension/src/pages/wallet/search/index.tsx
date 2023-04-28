@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import search from '../../../assets/search.svg';
@@ -7,7 +7,7 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
-import { maxFractionDigits, searchTextFilter } from '@common/utils/client-utils';
+import { searchTextFilter } from '@common/utils/client-utils';
 import ListBox, { ListHierarchy } from '@components/list-box';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
@@ -78,7 +78,12 @@ export const WalletSearch = () => {
   const onClickItem = (tokenBalance: TokenBalance) => {
     location.state === 'send'
       ? navigate(RoutePath.TransferInput, { state: tokenBalance })
-      : navigate(RoutePath.Deposit, { state: 'wallet' });
+      : navigate(RoutePath.Deposit, {
+        state: {
+          type: 'wallet',
+          tokenMetainfo: tokenBalance
+        }
+      });
   };
 
   const inputResetClick = () => {

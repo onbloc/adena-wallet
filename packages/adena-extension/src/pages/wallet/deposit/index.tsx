@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { QRCodeSVG } from 'qrcode.react';
@@ -11,6 +11,7 @@ import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
+import { TokenMetainfo } from '@states/token';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -39,38 +40,57 @@ const CopyInputBox = styled.div`
   margin-bottom: 8px;
 `;
 
+interface DepositState {
+  type: 'token' | 'wallet';
+  tokenMetainfo: TokenMetainfo;
+}
+
 export const Deposit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [displayaddr, setDisplayaddr] = useState('');
-  const { currentAccount } = useCurrentAccount();
+  const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
-  useEffect(() => {
-    setDisplayaddr(
-      currentAccount?.getAddress('g').slice(0, 4) + '...' + currentAccount?.getAddress('g').slice(-4),
-    );
-  }, [currentAccount?.getAddress('g'), displayaddr]);
+  const [type, setType] = useState('');
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenMetainfo>();
 
-  const closeButtonClick = () =>
-    location.state === 'token' ? navigate(RoutePath.TokenDetails) : navigate(RoutePath.Wallet);
+  useEffect(() => {
+    if (currentAddress) {
+      setDisplayaddr(formatAddress(currentAddress, 4));
+    }
+  }, [currentAddress]);
+
+  useEffect(() => {
+    const state = location.state as DepositState;
+    setType(state.type);
+    setTokenMetainfo(state.tokenMetainfo);
+  }, [location]);
+
+  const closeButtonClick = useCallback(() => {
+    if (type === 'wallet') {
+      navigate(RoutePath.Wallet);
+      return;
+    }
+    navigate(-1);
+  }, [type]);
 
   return (
     <Wrapper>
-      <Text type='header4'>Deposit GNOT</Text>
+      <Text type='header4'>{`Deposit ${tokenMetainfo?.symbol || ''}`}</Text>
       <QRCodeBox>
-        <QRCodeSVG value={currentAccount?.getAddress('g') || ''} size={150} />
+        <QRCodeSVG value={currentAddress || ''} size={150} />
       </QRCodeBox>
       <CopyInputBox>
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)}
+            {formatNickname(accountNames[currentAccount.id], 12)}
             <Text type='body2Reg' color={theme.color.neutral[9]}>
-              {` (${formatAddress(currentAccount?.getAddress('g'))})`}
+              {` (${displayaddr})`}
             </Text>
           </Text>
         )}
 
-        <Copy copyStr={currentAccount?.getAddress('g') || ''} />
+        <Copy copyStr={currentAddress || ''} />
       </CopyInputBox>
       <Text type='captionReg' color={theme.color.neutral[9]}>
         Only use this address to receive tokens on Gnoland.
