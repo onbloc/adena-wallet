@@ -18,10 +18,11 @@ export const MainManageTokenButtonWrapper = styled.div`
   .icon {
     width: 24px;
     height: 24px;
-    margin-right: 10px;
+    margin-right: 5px;
   }
 
   .title {
     color: ${({ theme }) => theme.color.neutral[9]};
+    ${({ theme }) => theme.fonts.body1Reg};
   }
 `;
