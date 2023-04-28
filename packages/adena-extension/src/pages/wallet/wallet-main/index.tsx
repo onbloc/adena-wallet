@@ -38,10 +38,10 @@ export const WalletMain = () => {
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
 
   useEffect(() => {
-    if (currentAccount && displayTokenBalances.length > 0) {
+    if (currentAccount) {
       updateBalanceAmountByAccount(currentAccount);
     }
-  }, [currentAccount?.id, displayTokenBalances.length]);
+  }, [currentAccount]);
 
   const tokens = displayTokenBalances.map(tokenBalance => {
     return {

@@ -8,10 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { useNetwork } from '@hooks/use-network';
 
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
   const { currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
   const { convertDenom, getTokenImage } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
@@ -71,7 +73,7 @@ const HistoryContainer: React.FC = () => {
   };
 
   const fetchTokenHistories = async (pageParam: number) => {
-    if (!currentAddress) {
+    if (!currentAddress || currentNetwork.networkId !== 'test3') {
       return {
         hits: 0,
         next: false,
