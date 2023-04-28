@@ -11,6 +11,7 @@ import { formatAddress, formatNickname, getSiteName } from '@common/utils/client
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useAccountName } from '@hooks/use-account-name';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -41,10 +42,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const [currentAccountAddress, setCurrentAccountAddress] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState('');
   const [gnoClient] = useGnoClient();
+  const { accountNames } = useAccountName();
 
   useEffect(() => {
     initAccountInfo();
-  }, [currentAccount, hostname]);
+  }, [currentAccount, hostname, accountNames]);
 
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
@@ -61,7 +63,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     if (!currentAccount) {
       return;
     }
-    const name = currentAccount.name;
+    const name = accountNames[currentAccount.id] || currentAccount.name;
     const address = currentAccount.getAddress('g');
     setCurrentAccountAddress(address ?? "");
     setCurrentAccountName(name ?? '');

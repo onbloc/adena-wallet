@@ -35,6 +35,11 @@ export const currentAccount = atom<Account | null>({
   default: null,
 });
 
+export const accountNames = atom<{ [key in string]: string }>({
+  key: `wallet/accountNames`,
+  default: {},
+});
+
 export const transactionHistory = atom<TransactionHistoryState>({
   key: `wallet/transactionHistory`,
   default: {

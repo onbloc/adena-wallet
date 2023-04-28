@@ -8,6 +8,7 @@ import BigNumber from 'bignumber.js';
 import { useAdenaContext } from '@hooks/use-context';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useAccountName } from '@hooks/use-account-name';
 
 const specialPatternCheck = /\W|\s/g;
 const fee = 0.000001;
@@ -32,13 +33,14 @@ export const useGeneralSend = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const [accountsList, setAccountsList] = useState<any>([]);
+  const { accountNames } = useAccountName();
 
   useEffect(() => {
     (async () => {
       if (accounts && currentAccount) {
         const result = await Promise.all([
           addressBookService
-            .getAddressBookByAccounts(accounts)
+            .getAddressBookByAccounts(accounts, accountNames)
             .filter((v) => currentAccount.getAddress('g') !== v.address),
           addressBookService.getAddressBookByAccountId(currentAccount.id),
         ]);

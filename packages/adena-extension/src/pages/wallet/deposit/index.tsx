@@ -10,6 +10,7 @@ import { RoutePath } from '@router/path';
 import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { useAccountName } from '@hooks/use-account-name';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -43,6 +44,7 @@ export const Deposit = () => {
   const location = useLocation();
   const [displayaddr, setDisplayaddr] = useState('');
   const { currentAccount } = useCurrentAccount();
+  const { accountNames } = useAccountName();
   useEffect(() => {
     setDisplayaddr(
       currentAccount?.getAddress('g').slice(0, 4) + '...' + currentAccount?.getAddress('g').slice(-4),
@@ -61,7 +63,7 @@ export const Deposit = () => {
       <CopyInputBox>
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
-            {formatNickname(currentAccount.name, 12)}
+            {formatNickname(accountNames[currentAccount.id] || currentAccount.name, 12)}
             <Text type='body2Reg' color={theme.color.neutral[9]}>
               {` (${formatAddress(currentAccount?.getAddress('g'))})`}
             </Text>
