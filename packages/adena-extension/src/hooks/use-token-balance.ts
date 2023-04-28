@@ -8,7 +8,8 @@ import { TokenMetainfo } from '@states/token';
 import { useGnoClient } from './use-gno-client';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
+import BigNumber from 'bignumber.js';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
@@ -39,6 +40,10 @@ export const useTokenBalance = (): {
   const [accountNativeBalances, setAccountNativeBalances] = useRecoilState(
     BalanceState.accountNativeBalances,
   );
+
+  useEffect(() => {
+    balanceService.setTokenMetainfos(tokenMetainfos);
+  }, [tokenMetainfos]);
 
   const getTokenBalancesByAccount = useCallback(
     (account: Account) => {
@@ -145,12 +150,12 @@ export const useTokenBalance = (): {
     account: Account,
     newAccountTokenBalances?: AccountTokenBalance[],
   ) {
-    const tokenBalance =
+    const tokenBalances =
       newAccountTokenBalances?.find(
         (accountTokenBalance) => accountTokenBalance.accountId === account.id,
       )?.tokenBalances || getCurrentTokenBalances();
     const fetchedTokenBalances = await Promise.all(
-      tokenBalance.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
+      tokenBalances.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
     );
 
     const changedAccountTokenBalances = (newAccountTokenBalances ?? accountTokenBalances).map(
@@ -243,9 +248,14 @@ export const useTokenBalance = (): {
       };
     }
 
+    const amount = balances[0].amount;
+
     return {
       ...token,
-      amount: balances[0].amount,
+      amount: {
+        ...amount,
+        value: amount.value === 'NaN' ? '0' : BigNumber(amount.value).toFormat(),
+      },
     };
   }
 

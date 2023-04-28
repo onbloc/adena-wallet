@@ -6,6 +6,7 @@ import { TokenMetainfo } from '@states/token';
 import { useAddressBookInput } from '@hooks/use-adderss-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import BigNumber from 'bignumber.js';
 
 const TransferInputContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const TransferInputContainer: React.FC = () => {
   }, [state, currentAccount]);
 
   const isNext = useCallback(() => {
-    if (balanceInput.amount === '') {
+    if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
       return false;
     }
     if (addressBookInput.resultAddress === '') {
@@ -36,6 +37,9 @@ const TransferInputContainer: React.FC = () => {
   }, []);
 
   const onClickNext = useCallback(() => {
+    if (!isNext()) {
+      return;
+    }
     const validAddress = addressBookInput.validateAddressBookInput();
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -51,7 +55,7 @@ const TransferInputContainer: React.FC = () => {
         }
       });
     }
-  }, [addressBookInput, balanceInput]);
+  }, [addressBookInput, balanceInput, isNext()]);
 
   return (
     <TransferInput
