@@ -26,6 +26,7 @@ export const TransactionDetail = () => {
 
   useEffect(() => {
     setTransactionItem(location.state);
+    console.log(location.state)
   }, [location])
 
   const getLogoImage = useCallback(() => {
@@ -62,7 +63,7 @@ export const TransactionDetail = () => {
         ) : (
           <Text display={'flex'} className='main-text' type='header6'>
             {transactionItem.title}
-            {transactionItem.extraInfo && <Text type='body2Bold'>{transactionItem.extraInfo}</Text>}
+            {transactionItem.extraInfo && <Text type='body2Bold' className='extra-info'>{transactionItem.extraInfo}</Text>}
           </Text>
         )}
       </TokenBox>
@@ -75,7 +76,7 @@ export const TransactionDetail = () => {
           <dt>Type</dt>
           <dd>
             {transactionItem.typeName || ''}
-            {transactionItem.extraInfo && <Text type='body3Bold'>{transactionItem.extraInfo}</Text>}
+            {transactionItem.extraInfo && <Text className='extra-info' type='body3Bold'>{transactionItem.extraInfo}</Text>}
           </dd>
         </DLWrap>
         <DLWrap color={getStatusStyle(transactionItem.status).color}>
@@ -90,18 +91,16 @@ export const TransactionDetail = () => {
             </dd>
           </StatusInfo>
         </DLWrap>
-        {transactionItem.type === 'TRANSFER' && (
+        {transactionItem.to && (
           <DLWrap>
-            <dt>{
-              transactionItem.title === 'Send' ?
-                'To' :
-                'From'
-            }</dt>
-            <dd>{
-              transactionItem.title === 'Send' ?
-                transactionItem.to :
-                transactionItem.from
-            }</dd>
+            <dt>To</dt>
+            <dd>{transactionItem.to}</dd>
+          </DLWrap>
+        )}
+        {transactionItem.from && (
+          <DLWrap>
+            <dt>From</dt>
+            <dd>{transactionItem.from}</dd>
           </DLWrap>
         )}
         {
@@ -142,6 +141,11 @@ const Wrapper = styled.main`
   .status-icon {
     width: 60px;
     height: 60px;
+  }
+  .extra-info {
+    display: inline-flex;
+    align-self: center;
+    margin-left: 5px;
   }
 `;
 

@@ -50,6 +50,8 @@ export const TransactionHistoryListItemWrapper = styled.div`
     margin: 0 12px;
 
     .title {
+      display: inline-flex;
+      align-items: center;
       ${({ theme }) => theme.fonts.body3Bold};
       line-height: 18px;
 
