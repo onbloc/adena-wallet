@@ -11,8 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import CloseShadowButton from '@components/buttons/close-shadow-button';
 import disconnected from '../../../assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
 
 export const ConnectedApps = () => {
   const { establishService } = useAdenaContext();
@@ -20,7 +20,7 @@ export const ConnectedApps = () => {
   const navigate = useNavigate();
   const [state] = useRecoilState(WalletState.state);
   const [datas, setDatas] = useState<any>([]);
-  const [gnoClient] = useGnoClient();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     updateDatas();
@@ -30,8 +30,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    const networkId = gnoClient?.chainId ?? '';
-    await establishService.unestablishBy(currentAccount.id, networkId, item.hostname);
+    await establishService.unestablishBy(currentAccount.id, currentNetwork.networkId, item.hostname);
     await updateDatas();
   };
 
@@ -39,8 +38,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    const networkId = gnoClient?.chainId ?? '';
-    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id, networkId);
+    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id, currentNetwork.networkId);
     setDatas(establishedSites);
   };
 

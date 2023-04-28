@@ -16,6 +16,7 @@ import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useGnoClient } from '@hooks/use-gno-client';
+import { useNetwork } from '@hooks/use-network';
 
 export const ApproveEstablish = () => {
   const { establishService } = useAdenaContext();
@@ -26,7 +27,7 @@ export const ApproveEstablish = () => {
   const [url, setUrl] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
   const location = useLocation();
-  const [gnoClient] = useGnoClient();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     initRequestSite();
@@ -36,7 +37,7 @@ export const ApproveEstablish = () => {
     if (key !== '' && hostname !== '') {
       checkEstablised();
     }
-  }, [key, hostname]);
+  }, [key, hostname, currentAccount, currentNetwork]);
 
   const initRequestSite = async () => {
     try {
@@ -55,9 +56,12 @@ export const ApproveEstablish = () => {
   };
 
   const checkEstablised = async () => {
+    if (!currentAccount) {
+      return;
+    }
     const siteName = getSiteName(hostname);
-    const accountId = currentAccount?.id ?? '';
-    const networkId = gnoClient?.chainId ?? '';
+    const accountId = currentAccount.id ?? '';
+    const networkId = currentNetwork.networkId;
     const isEstablised = await establishService.isEstablishedBy(
       accountId,
       networkId,
@@ -81,7 +85,7 @@ export const ApproveEstablish = () => {
   const onClickConfirmButton = async () => {
     const siteName = getSiteName(hostname);
     const accountId = currentAccount?.id ?? '';
-    const networkId = gnoClient?.chainId ?? '';
+    const networkId = currentNetwork.networkId ?? '';
     await establishService.establishBy(
       accountId,
       networkId,

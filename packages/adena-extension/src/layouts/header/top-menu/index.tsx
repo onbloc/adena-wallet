@@ -10,8 +10,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useAccountName } from '@hooks/use-account-name';
+import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -34,43 +34,57 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
-  const [url, setUrl] = useState('');
-  const { currentAccount } = useCurrentAccount();
+  const [, setUrl] = useState('');
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
-  const [currentAccountAddress, setCurrentAccountAddress] = useState('');
   const [currentAccountName, setCurrentAccountName] = useState('');
-  const [gnoClient] = useGnoClient();
   const { accountNames } = useAccountName();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     initAccountInfo();
+    console.log(hostname)
   }, [currentAccount, hostname, accountNames]);
 
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
       const href = new URL(currentUrl as string).href;
-      if (hostname !== "") {
+      if (hostname !== '') {
         setHostname(hostname);
         setUrl(href);
+        console.log(hostname)
+        console.log(href)
       }
     });
-  }, [location]);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    updateEstablished();
+  }, [location.pathname, hostname, currentAccount, currentNetwork]);
 
   const initAccountInfo = async () => {
     if (!currentAccount) {
       return;
     }
     const name = accountNames[currentAccount.id] || currentAccount.name;
-    const address = currentAccount.getAddress('g');
-    setCurrentAccountAddress(address ?? "");
     setCurrentAccountName(name ?? '');
 
-    const siteName = getSiteName(hostname);
-    const isEstablished = await establishService.isEstablishedBy(currentAccount.id, gnoClient?.chainId ?? '', siteName);
-    setIsEstablish(isEstablished);
+    if (hostname !== '') {
+      const siteName = getSiteName(hostname);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.networkId, siteName);
+      setIsEstablish(isEstablished);
+    }
+  };
+
+  const updateEstablished = async () => {
+    if (currentAccount && hostname !== '') {
+      const siteName = getSiteName(hostname);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.networkId, siteName);
+      setIsEstablish(isEstablished);
+    }
   };
 
   const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
@@ -96,11 +110,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     <Wrapper>
       <Header>
         <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-        <CopyTooltip copyText={currentAccountAddress}>
+        <CopyTooltip copyText={currentAddress || ''}>
           <Text type='body1Bold' display='inline-flex'>
             {formatNickname(currentAccountName, 12)}
             <Text type='body1Reg' color={theme.color.neutral[9]}>
-              {` (${formatAddress(currentAccountAddress)})`}
+              {` (${formatAddress(currentAddress || '')})`}
             </Text>
           </Text>
         </CopyTooltip>
