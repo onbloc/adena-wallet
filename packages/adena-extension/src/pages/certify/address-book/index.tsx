@@ -40,7 +40,7 @@ const AddressBook = () => {
       const addressList = await addressBookService.getAddressBookByAccountId(currentAccount?.id ?? '');
       setDatas(addressList);
     })();
-  }, []);
+  }, [currentAccount]);
 
   return (
     <Wrapper>

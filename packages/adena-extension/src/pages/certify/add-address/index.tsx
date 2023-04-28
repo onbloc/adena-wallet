@@ -14,17 +14,18 @@ import {
   validateAlreadyAddress,
   validateAlreadyName,
   validateInvalidAddress,
-  WalletService,
 } from '@services/index';
 import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AddAddress = () => {
   const { addressBookService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const navigate = useNavigate();
   const location = useLocation();
   const backButtonClick = () => navigate(-1);
@@ -103,12 +104,12 @@ const AddAddress = () => {
 
   const addHandler = async () =>
     await addressBookService
-      .addAddressBookItemByAccountId(name, address)
+      .addAddressBookItemByAccountId(currentAccount?.id ?? '', { name, address })
       .then(() => backButtonClick());
 
   const editHandler = async () =>
     await addressBookService
-      .updateAddressBookItemById(address, {
+      .updateAddressBookItemById(currentAccount?.id ?? '', {
         id: location.state.curr.id,
         name,
         address,
@@ -117,7 +118,7 @@ const AddAddress = () => {
 
   const removeHandler = async () =>
     await addressBookService
-      .removeAddressBookItemByAccountId(address, location.state.curr.id)
+      .removeAddressBookItemByAccountId(currentAccount?.id ?? '', location.state.curr.id)
       .then(() => backButtonClick());
 
   useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
