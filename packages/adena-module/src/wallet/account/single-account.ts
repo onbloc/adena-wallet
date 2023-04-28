@@ -66,7 +66,7 @@ export class SingleAccount implements Account {
     const { id: keyringId, type: type, publicKey } = keyring;
     return new SingleAccount({
       keyringId,
-      index: 0,
+      index: 1,
       type,
       publicKey: Array.from(publicKey),
       name,

@@ -71,7 +71,7 @@ export class SeedAccount implements Account {
     const { id: keyringId, type: type } = keyring;
     return new SeedAccount({
       keyringId,
-      index: 0,
+      index: 1,
       type,
       publicKey: Array.from(publicKey),
       name,
