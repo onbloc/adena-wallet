@@ -10,8 +10,7 @@ import { SingleAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
 import { useImportAccount } from '@hooks/use-import-account';
-import { useWalletAccounts } from '@hooks/use-wallet-accounts';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useWalletContext } from '@hooks/use-context';
 import { PrivateKeyKeyring } from 'adena-module';
 
 const content = {
@@ -68,10 +67,12 @@ export const ImportPrivateKey = () => {
       }
       const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKey);
       const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
-
-      if (wallet.hasPrivateKey(keyring.privateKey)) {
+      const publicKey = account.publicKey;
+      const storedAccount = wallet.accounts.find(account => JSON.stringify(account.publicKey) === JSON.stringify(publicKey));
+      if (storedAccount) {
         throw new Error("Private key already registered");
       }
+
       await importAccount(account);
       navigate(RoutePath.Wallet);
     } catch (e) {
