@@ -6,54 +6,62 @@ import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
 import { Account } from 'adena-module';
 import { TokenMetainfo } from '@states/token';
 import { useGnoClient } from './use-gno-client';
-import { useAdenaContext } from './use-context';
+import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
   tokenBalances: TokenBalance[];
   displayTokenBalances: TokenBalance[];
   accountTokenBalances: AccountTokenBalance[];
+  accountNativeBalances: { [key in string]: TokenBalance };
+  getTokenBalancesByAccount: (account: Account) => TokenBalance[];
   fetchBalanceBy: (account: Account, token: TokenMetainfo) => Promise<TokenBalance>;
   toggleDisplayOption: (account: Account, token: TokenMetainfo, activated: boolean) => void;
   updateBalanceAmountByAccount: (
     account: Account,
     accountTokenBalance?: AccountTokenBalance[],
   ) => Promise<boolean>;
+  updateAccountNativeBalances: () => Promise<boolean>;
   updateMainBalanceByAccount: (account: Account) => Promise<boolean>;
   updateTokenBalanceInfos: (tokenMetainfos: TokenMetainfo[]) => Promise<boolean>;
 } => {
   const [gnoClient] = useGnoClient();
   const { tokenMetainfos } = useTokenMetainfo();
+  const { wallet } = useWalletContext();
   const { balanceService, tokenService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const [mainTokenBalance, setMainTokenBalance] = useRecoilState(BalanceState.mainTokenBalance);
-  const [currentTokenBalances, setCurrentTokenBalances] = useRecoilState(
-    BalanceState.currentTokenBalances,
-  );
-  const [displayTokenBalances, setDisplayTokenBalances] = useRecoilState(
-    BalanceState.displayTokenBalances,
-  );
   const [accountTokenBalances, setAccountTokenBalances] = useRecoilState(
     BalanceState.accountTokenBalances,
   );
+  const [accountNativeBalances, setAccountNativeBalances] = useRecoilState(
+    BalanceState.accountNativeBalances,
+  );
 
-  useEffect(() => {
-    const currentAccountTokenBalances = accountTokenBalances.find((accountTokenBalance) =>
-      matchCurrentAccount(currentAccount, accountTokenBalance),
-    );
-    const currentTokenBalances: TokenBalance[] = currentAccountTokenBalances?.tokenBalances ?? [];
-    const displayTokenBalances = currentTokenBalances.filter(
-      (tokenBalance) => tokenBalance.display,
-    );
-    const mainTokenBalance = currentTokenBalances.find((tokenBalance) => tokenBalance.main)?.amount;
+  const getTokenBalancesByAccount = useCallback(
+    (account: Account) => {
+      return (
+        accountTokenBalances.find((accountTokenBalance) =>
+          matchCurrentAccount(account, accountTokenBalance),
+        )?.tokenBalances ?? []
+      );
+    },
+    [accountTokenBalances],
+  );
 
-    setMainTokenBalance(mainTokenBalance);
-    setCurrentTokenBalances(currentTokenBalances);
-    setDisplayTokenBalances(displayTokenBalances);
-  }, [accountTokenBalances, currentAccount]);
+  const getCurrentTokenBalances = useCallback(() => {
+    return currentAccount ? getTokenBalancesByAccount(currentAccount) : [];
+  }, [getTokenBalancesByAccount, currentAccount]);
+
+  const getMainTokenBalance = useCallback(() => {
+    return getCurrentTokenBalances().find((token) => token.main)?.amount;
+  }, [getTokenBalancesByAccount, currentAccount]);
+
+  const getDisplayTokenBalances = useCallback(() => {
+    return getCurrentTokenBalances().filter((token) => token.display);
+  }, [getTokenBalancesByAccount, currentAccount]);
 
   function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
     return accountTokenBalance.networkId === currentNetwork?.networkId;
@@ -93,7 +101,7 @@ export const useTokenBalance = (): {
     const newTokenBalances = tokenMetainfos
       .filter(
         (tokenMetainfo) =>
-          currentTokenBalances.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
+          getCurrentTokenBalances().find((current) => current.tokenId === tokenMetainfo.tokenId) ===
           undefined,
       )
       .map((tokenMetainfo) => {
@@ -110,10 +118,10 @@ export const useTokenBalance = (): {
       accountId: currentAccount.id,
       chainId: currentNetwork.chainId,
       networkId: currentNetwork.networkId,
-      tokenBalances: [...currentTokenBalances, ...newTokenBalances],
+      tokenBalances: [...getCurrentTokenBalances(), ...newTokenBalances],
     };
 
-    let changedAccountTokenBalances: AccountTokenBalance[] = [];
+    let changedAccountTokenBalances: AccountTokenBalance[] = [...accountTokenBalances];
 
     if (
       accountTokenBalances.find((accountTokenBalance) =>
@@ -126,9 +134,9 @@ export const useTokenBalance = (): {
         }
         return accountTokenBalance;
       });
+    } else {
+      changedAccountTokenBalances.push(changedAccountTokenBalance);
     }
-    changedAccountTokenBalances.push(changedAccountTokenBalance);
-    setAccountTokenBalances(changedAccountTokenBalances);
     await updateBalanceAmountByAccount(currentAccount, changedAccountTokenBalances);
     return true;
   }
@@ -140,7 +148,7 @@ export const useTokenBalance = (): {
     const tokenBalance =
       newAccountTokenBalances?.find(
         (accountTokenBalance) => accountTokenBalance.accountId === account.id,
-      )?.tokenBalances || currentTokenBalances;
+      )?.tokenBalances || getCurrentTokenBalances();
     const fetchedTokenBalances = await Promise.all(
       tokenBalance.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
     );
@@ -157,6 +165,25 @@ export const useTokenBalance = (): {
       },
     );
     setAccountTokenBalances(changedAccountTokenBalances);
+    updateAccountNativeBalances();
+    return true;
+  }
+
+  async function updateAccountNativeBalances() {
+    const nativeTokenInfo = tokenMetainfos.find((info) => info.main);
+    if (!nativeTokenInfo || !wallet) {
+      return false;
+    }
+
+    let accountNativeBalances = {};
+    for (const account of wallet.accounts) {
+      const balance = await fetchBalanceBy(account, nativeTokenInfo);
+      accountNativeBalances = {
+        ...accountNativeBalances,
+        [account.id]: balance,
+      };
+    }
+    setAccountNativeBalances(accountNativeBalances);
     return true;
   }
 
@@ -223,14 +250,17 @@ export const useTokenBalance = (): {
   }
 
   return {
-    mainTokenBalance,
-    tokenBalances: currentTokenBalances,
-    displayTokenBalances,
+    mainTokenBalance: getMainTokenBalance(),
+    tokenBalances: getCurrentTokenBalances(),
+    displayTokenBalances: getDisplayTokenBalances(),
     accountTokenBalances: accountTokenBalances.filter(matchNetworkId),
+    accountNativeBalances,
+    getTokenBalancesByAccount,
     fetchBalanceBy,
     toggleDisplayOption,
     updateBalanceAmountByAccount,
     updateMainBalanceByAccount,
     updateTokenBalanceInfos,
+    updateAccountNativeBalances,
   };
 };

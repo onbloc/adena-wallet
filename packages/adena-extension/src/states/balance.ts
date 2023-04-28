@@ -41,3 +41,8 @@ export const displayTokenBalances = atom<TokenBalance[]>({
   key: `balance/display-token-balances`,
   default: [],
 });
+
+export const accountNativeBalances = atom<{ [key in string]: TokenBalance }>({
+  key: `balance/account-native-balances`,
+  default: {},
+});
