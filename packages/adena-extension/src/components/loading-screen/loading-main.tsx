@@ -41,9 +41,10 @@ const LoadingMain = () => {
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
   const { mainTokenBalance } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
+  const isPopupMatch = useMatch('/popup/*');
 
   const isLoading = useCallback(() => {
-    if (isApproveHardwarePath || isNotMatch) {
+    if (isApproveHardwarePath || isNotMatch || isPopupMatch) {
       return false;
     }
     if (state === 'NONE' || state === 'LOADING') {
