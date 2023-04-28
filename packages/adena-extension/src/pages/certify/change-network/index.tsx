@@ -63,7 +63,6 @@ export const ChangeNetwork = () => {
     if (!health) {
       const chainId = gnoClient?.chainId;
       setFailedNetworkChainId(chainId ?? "");
-      setState('FAIL');
     }
   };
 
