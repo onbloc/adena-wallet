@@ -10,6 +10,7 @@ export interface TokenInfo {
   name: string;
   symbol: string;
   path: string;
+  pathInfo: string;
   decimals: number;
   chainId: string;
 }
@@ -66,7 +67,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
       <div className='info-wrapper'>
         <AdditionalTokenInfo
           symbol={selectedTokenInfo?.symbol || ''}
-          path={selectedTokenInfo?.path || ''}
+          path={selectedTokenInfo?.pathInfo || ''}
           decimals={selectedTokenInfo ? `${selectedTokenInfo.decimals}` : ''}
         />
       </div>
