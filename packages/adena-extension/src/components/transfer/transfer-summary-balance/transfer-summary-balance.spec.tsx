@@ -10,7 +10,8 @@ describe('TransferSummaryBalance Component', () => {
   it('TransferSummaryBalance render', () => {
     const args: TransferSummaryBalanceProps = {
       tokenImage: '',
-      transferBalance: '',
+      value: '',
+      denom: '',
     };
 
     render(

@@ -4,10 +4,15 @@ import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-summary-network-fee';
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
+import SubHeader from '@components/common/sub-header/sub-header';
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import { TokenMetainfo } from '@states/token';
+import { Amount } from '@states/balance';
 
 export interface TransferSummaryProps {
+  tokenMetainfo: TokenMetainfo;
   tokenImage: string;
-  transferBalance: string;
+  transferBalance: Amount;
   toAddress: string;
   networkFee: {
     value: string;
@@ -18,6 +23,7 @@ export interface TransferSummaryProps {
 }
 
 const TransferSummary: React.FC<TransferSummaryProps> = ({
+  tokenMetainfo,
   tokenImage,
   transferBalance,
   toAddress,
@@ -27,10 +33,20 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 }) => {
   return (
     <TransferSummaryWrapper>
+      <div className='sub-header-wrapper'>
+        <SubHeader
+          leftElement={{
+            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            onClick: onClickCancel
+          }}
+          title={`Sending ${tokenMetainfo.symbol}`}
+        />
+      </div>
       <div className='info-wrapper'>
         <TransferSummaryBalance
           tokenImage={tokenImage}
-          transferBalance={transferBalance}
+          value={transferBalance.value}
+          denom={transferBalance.denom}
         />
 
         <div className='direction-icon-wrapper'>
