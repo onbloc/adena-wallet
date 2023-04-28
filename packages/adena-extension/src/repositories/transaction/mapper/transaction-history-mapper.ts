@@ -33,7 +33,10 @@ interface TransactionInfo {
 function isHistoryItemGRC20Transfer(
   historyItem: HistoryItem,
 ): historyItem is HistoryItemBankMsgSend {
-  return historyItem.type === '/vm.m_call' && historyItem.func === 'Send';
+  return (
+    historyItem.type === '/vm.m_call' &&
+    (historyItem.func === 'Send' || historyItem.func === 'Receive')
+  );
 }
 
 function isHistoryItemBankMsgSend(historyItem: HistoryItem): historyItem is HistoryItemBankMsgSend {
@@ -129,8 +132,8 @@ export class TransactionHistoryMapper {
         value: '',
         denom: '',
       },
-      to: to ? `${formatAddress(to, 4)}` : undefined,
-      from: from ? `${formatAddress(from, 4)}` : undefined,
+      to: to && func === 'Send' ? `${formatAddress(to, 4)}` : undefined,
+      from: from && func === 'Receive' ? `${formatAddress(from, 4)}` : undefined,
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
@@ -157,8 +160,8 @@ export class TransactionHistoryMapper {
         value: `${transfer.amount}`,
         denom: transfer.denom || 'GNOT',
       },
-      to: `${formatAddress(to, 4)}`,
-      from: `${formatAddress(from, 4)}`,
+      to: func === 'Send' ? `${formatAddress(to, 4)}` : undefined,
+      from: func === 'Receive' ? `${formatAddress(from, 4)}` : undefined,
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
