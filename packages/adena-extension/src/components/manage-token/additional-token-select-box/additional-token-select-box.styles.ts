@@ -31,6 +31,8 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     width: 100%;
     height: 48px;
     padding: 14px;
+    cursor: pointer;
+    user-select: none;
 
     .title {
       width: 100%;
@@ -43,7 +45,6 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
       display: inline-flex;
       width: 20px;
       height: 20px;
-      cursor: pointer;
     }
 
     &.selected {

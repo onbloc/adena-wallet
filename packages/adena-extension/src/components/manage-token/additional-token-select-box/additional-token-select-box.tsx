@@ -30,9 +30,9 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   return (
     <AdditionalTokenSelectBoxWrapper>
       <div className={opened ? 'fixed-wrapper opened' : 'fixed-wrapper'}>
-        <div className={selected ? 'select-box selected' : 'select-box'}>
+        <div className={selected ? 'select-box selected' : 'select-box'} onClick={() => onClickOpenButton(!opened)}>
           <span className='title'>{selected ? selectedTitle : 'Select a GRC20 Token'}</span>
-          <span className='icon-wrapper' onClick={() => onClickOpenButton(!opened)}>
+          <span className='icon-wrapper'>
             {
               opened ?
                 <img src={`${ArrowUpIcon}`} alt='select box opened icon' /> :
