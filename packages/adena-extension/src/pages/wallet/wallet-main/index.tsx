@@ -10,6 +10,8 @@ import MainManageTokenButton from '@components/main/main-manage-token-button/mai
 import BigNumber from 'bignumber.js';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -31,11 +33,18 @@ const Wrapper = styled.main`
 
 export const WalletMain = () => {
   const navigate = useNavigate();
+  const [state] = useRecoilState(WalletState.state);
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } = useTokenBalance();
 
   const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
   const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
+
+  useEffect(() => {
+    if (state === 'CREATE') {
+      navigate(RoutePath.Create);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (currentAccount) {

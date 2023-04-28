@@ -25,13 +25,12 @@ export const useImportAccount = (): {
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
     }
-    setState('FINISH');
     await updateWallet(clone);
+    setState('FINISH');
     return true;
   };
 
   const importAccountByWallet = async (wallet: Wallet, account: Account) => {
-    setState('LOADING');
     account.index = wallet.lastAccountIndex + 1;
     account.name = `Account ${account.index}`;
     const clone = wallet.clone();
@@ -40,7 +39,6 @@ export const useImportAccount = (): {
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
     }
-    setState('FINISH');
     await updateWallet(clone);
     return true;
   };
