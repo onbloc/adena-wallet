@@ -7,7 +7,7 @@ import { useWalletContext } from "@hooks/use-context";
 import { useAccountName } from "@hooks/use-account-name";
 import { useLocation } from "react-router-dom";
 import { useRecoilState } from "recoil";
-import { CommonState, WalletState } from "@states/index";
+import { CommonState } from "@states/index";
 import { useGnoClient } from "@hooks/use-gno-client";
 
 type BackgroundProps = React.PropsWithChildren<unknown>;

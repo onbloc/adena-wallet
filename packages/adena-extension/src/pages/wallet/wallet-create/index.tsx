@@ -14,7 +14,7 @@ import { existsPopups } from '@inject/message/methods';
 export const WalletCreate = () => {
   const navigate = useNavigate();
 
-  const { state, loadAccounts } = useLoadAccounts();
+  const { state } = useLoadAccounts();
 
   useEffect(() => {
     switch (state) {
