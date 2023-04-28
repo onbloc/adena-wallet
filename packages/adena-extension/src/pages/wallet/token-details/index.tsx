@@ -10,8 +10,6 @@ import { StaticTooltip } from '@components/tooltips';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
-import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { TokenBalance } from '@states/balance';

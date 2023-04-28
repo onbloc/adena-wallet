@@ -21,6 +21,16 @@ const TransferInputContainer: React.FC = () => {
     balanceInput.updateCurrentBalance();
   }, [state, currentAccount]);
 
+  const isNext = useCallback(() => {
+    if (balanceInput.amount === '') {
+      return false;
+    }
+    if (addressBookInput.resultAddress === '') {
+      return false;
+    }
+    return true;
+  }, [addressBookInput, balanceInput]);
+
   const onClickCancel = useCallback(() => {
     navigate(-1);
   }, []);
@@ -48,7 +58,7 @@ const TransferInputContainer: React.FC = () => {
       tokenMetainfo={tokenMetainfo}
       addressInput={addressBookInput}
       balanceInput={balanceInput}
-      isNext={true}
+      isNext={isNext()}
       onClickCancel={onClickCancel}
       onClickNext={onClickNext}
     />

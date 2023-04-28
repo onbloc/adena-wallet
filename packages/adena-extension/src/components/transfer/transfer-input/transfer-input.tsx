@@ -67,7 +67,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
       </div>
       <div className='button-group'>
         <button onClick={onClickCancel}>Cancel</button>
-        <button className={isNext ? 'next' : ''} onClick={onClickNext}>Next</button>
+        <button className={isNext ? 'next' : 'next disabled'} onClick={onClickNext}>Next</button>
       </div>
     </TransferInputWrapper>
   );
