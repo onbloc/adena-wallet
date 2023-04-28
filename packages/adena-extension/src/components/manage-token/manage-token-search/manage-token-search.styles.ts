@@ -27,9 +27,14 @@ export const ManageTokenSearchWrapper = styled.div`
     .close {
       width: 100%;
       height: 100%;
-      background-color: ${({ theme }) => theme.color.neutral[5]};
+      background-color: ${({ theme }) => theme.color.neutral[4]};
       border-radius: 30px;
-      ${({ theme }) => theme.fonts.body1Reg};
+      ${({ theme }) => theme.fonts.body1Bold};
+      transition: 0.2s;
+
+      :hover {
+        background-color: ${({ theme }) => theme.color.neutral[5]};
+      }
     }
   }
 `;

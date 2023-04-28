@@ -8,6 +8,7 @@ export const ManageTokenSearchInputWrapper = styled.div`
   padding: 12px 16px;
   align-items: center;
   justify-content: flex-start;
+  background-color: ${({ theme }) => theme.color.neutral[8]};
   border-radius: 30px;
   border: 1px solid ${({ theme }) => theme.color.neutral[6]};
 
