@@ -38,7 +38,7 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({ t
               tokenId={tokenInfo.tokenId}
               symbol={tokenInfo.symbol}
               name={tokenInfo.name}
-              path={tokenInfo.path}
+              path={tokenInfo.pathInfo}
               onClickListItem={onClickListItem}
             />
           )

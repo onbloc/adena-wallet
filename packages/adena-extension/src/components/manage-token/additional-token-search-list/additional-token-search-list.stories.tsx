@@ -13,6 +13,7 @@ const tokenInfos = [
     symbol: 'GNOS',
     chainId: 'test3',
     path: 'gno.land/gnoswap',
+    pathInfo: 'gnoswap',
     decimals: 6,
   },
   {
@@ -21,6 +22,7 @@ const tokenInfos = [
     symbol: 'SWIM',
     chainId: 'test3',
     path: 'gno.land/gnoswim',
+    pathInfo: 'gnoswim',
     decimals: 6,
   },
   {
@@ -29,6 +31,7 @@ const tokenInfos = [
     symbol: 'OSMO',
     chainId: 'test3',
     path: 'gno.land/gnosmo.',
+    pathInfo: 'gnosmo.',
     decimals: 6,
   },
   {
@@ -37,6 +40,7 @@ const tokenInfos = [
     symbol: 'GNOSTU',
     chainId: 'test3',
     path: 'o.land/gnostuck',
+    pathInfo: 'gnostuck',
     decimals: 6,
   },
 ];

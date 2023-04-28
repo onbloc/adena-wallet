@@ -24,6 +24,12 @@ const ManageTokenAddedContainer: React.FC = () => {
     queryKey: ['search-grc20-tokens', keyword],
     queryFn: () => tokenService.fetchGRC20Tokens(keyword).then(tokens => {
       return tokens.filter(token1 => tokenMetainfos.findIndex(token2 => token1.path === token2.pkgPath) < 0)
+        .map(token => {
+          return {
+            ...token,
+            pathInfo: token.path.replace('gno.land/', '')
+          }
+        })
     }),
   });
 
