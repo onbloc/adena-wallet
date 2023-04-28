@@ -16,10 +16,6 @@ export const ManageTokenListItemWrapper = styled.div`
     margin-top: 12px;
   }
 
-  &:hover {
-    background: ${({ theme }) => theme.color.neutral[6]};
-  }
-
   .logo-wrapper {
     display: inline-flex;
     flex-shrink: 0;
