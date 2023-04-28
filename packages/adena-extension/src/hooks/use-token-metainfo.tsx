@@ -87,7 +87,7 @@ export const useTokenMetainfo = () => {
       decimals,
       denom: symbol,
       minimalDenom: symbol,
-      display: false
+      display: true
     }
     return addTokenMetainfo(tokenMetainfo);
   };
