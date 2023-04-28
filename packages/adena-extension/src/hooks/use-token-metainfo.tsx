@@ -16,16 +16,13 @@ interface GRC20Token {
 export const useTokenMetainfo = () => {
   const { balanceService, tokenService } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
-  const [accountTokenMetainfos, setAccountTokenMetainfos] = useRecoilState(TokenState.accountTokenMetainfos);
   const { currentAccount } = useCurrentAccount();
 
   const initTokenMetainfos = async () => {
     if (currentAccount) {
       await tokenService.initAccountTokenMetainfos(currentAccount.id);
       const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-      const accountTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
       setTokenMetainfo(tokenMetainfos);
-      setAccountTokenMetainfos(accountTokenMetainfos);
     }
   }
 
@@ -65,7 +62,8 @@ export const useTokenMetainfo = () => {
     }
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, tokenMetainfo]);
-    await updateTokenMetainfos();
+    const changedTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    setTokenMetainfo(changedTokenMetainfos);
     return true;
   };
 
@@ -94,18 +92,8 @@ export const useTokenMetainfo = () => {
     return addTokenMetainfo(tokenMetainfo);
   };
 
-  const updateTokenMetainfos = async () => {
-    if (!currentAccount) {
-      return false;
-    }
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    setTokenMetainfo(tokenMetainfos);
-    return true;
-  };
-
   return {
     tokenMetainfos,
-    accountTokenMetainfos,
     initTokenMetainfos,
     addTokenMetainfo,
     addGRC20TokenMetainfo,
