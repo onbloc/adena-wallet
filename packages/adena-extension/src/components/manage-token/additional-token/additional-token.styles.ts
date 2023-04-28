@@ -39,6 +39,7 @@ export const AdditionalTokenWrapper = styled.div`
       align-items: center;
       justify-content: center;
       ${({ theme }) => theme.fonts.body1Bold}
+      transition: 0.2s;
 
       &:last-child {
         margin-left: 12px;
@@ -46,14 +47,23 @@ export const AdditionalTokenWrapper = styled.div`
 
       &.cancel-button {
         background-color: ${({ theme }) => theme.color.neutral[4]};
+
+        :hover {
+          background-color: ${({ theme }) => theme.color.neutral[5]};
+        }
       }
 
       &.add-button {
         background-color: ${({ theme }) => theme.color.primary[3]};
 
+        &:hover {
+          background-color: ${({ theme }) => theme.color.primary[4]};
+        }
+
         &.disabled {
           color: ${({ theme }) => theme.color.neutral[4]};
           background-color: ${({ theme }) => theme.color.primary[6]};
+          cursor: default;
         }
       }
     }
