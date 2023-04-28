@@ -26,3 +26,18 @@ export const accountTokenBalances = atom<AccountTokenBalance[]>({
   key: `balance/account-token-balances`,
   default: [],
 });
+
+export const mainTokenBalance = atom<Amount | undefined>({
+  key: `balance/main-token-balance`,
+  default: undefined,
+});
+
+export const currentTokenBalances = atom<TokenBalance[]>({
+  key: `balance/current-token-balances`,
+  default: [],
+});
+
+export const displayTokenBalances = atom<TokenBalance[]>({
+  key: `balance/display-token-balances`,
+  default: [],
+});

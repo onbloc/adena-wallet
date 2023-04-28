@@ -87,6 +87,7 @@ export const TokenDetails = () => {
   const [balance, setBalance] = useState(tokenBalance.amount.value);
   const { currentAddress } = useCurrentAccount();
   const { convertDenom, getTokenImage } = useTokenMetainfo();
+  const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -107,6 +108,12 @@ export const TokenDetails = () => {
       },
     },
   );
+
+  useEffect(() => {
+    if (currentAccount) {
+      updateBalanceAmountByAccount(currentAccount);
+    }
+  }, [currentAccount]);
 
   useEffect(() => {
     if (currentAddress) {

@@ -17,22 +17,43 @@ export const useTokenBalance = (): {
   accountTokenBalances: AccountTokenBalance[];
   fetchBalanceBy: (account: Account, token: TokenMetainfo) => Promise<TokenBalance>;
   toggleDisplayOption: (account: Account, token: TokenMetainfo, activated: boolean) => void;
-  updateBalanceAmountByAccount: (account: Account) => Promise<boolean>;
+  updateBalanceAmountByAccount: (
+    account: Account,
+    accountTokenBalance?: AccountTokenBalance[],
+  ) => Promise<boolean>;
   updateMainBalanceByAccount: (account: Account) => Promise<boolean>;
-  updateTokenBalanceInfos: (tokenMetainfos: TokenBalance[]) => Promise<boolean>;
+  updateTokenBalanceInfos: (tokenMetainfos: TokenMetainfo[]) => Promise<boolean>;
 } => {
   const [gnoClient] = useGnoClient();
   const { tokenMetainfos } = useTokenMetainfo();
   const { balanceService, tokenService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
+  const [mainTokenBalance, setMainTokenBalance] = useRecoilState(BalanceState.mainTokenBalance);
+  const [currentTokenBalances, setCurrentTokenBalances] = useRecoilState(
+    BalanceState.currentTokenBalances,
+  );
+  const [displayTokenBalances, setDisplayTokenBalances] = useRecoilState(
+    BalanceState.displayTokenBalances,
+  );
   const [accountTokenBalances, setAccountTokenBalances] = useRecoilState(
     BalanceState.accountTokenBalances,
   );
 
   useEffect(() => {
-    updateTokenBalanceInfos(tokenMetainfos);
-  }, [tokenMetainfos]);
+    const currentAccountTokenBalances = accountTokenBalances.find((accountTokenBalance) =>
+      matchCurrentAccount(currentAccount, accountTokenBalance),
+    );
+    const currentTokenBalances: TokenBalance[] = currentAccountTokenBalances?.tokenBalances ?? [];
+    const displayTokenBalances = currentTokenBalances.filter(
+      (tokenBalance) => tokenBalance.display,
+    );
+    const mainTokenBalance = currentTokenBalances.find((tokenBalance) => tokenBalance.main)?.amount;
+
+    setMainTokenBalance(mainTokenBalance);
+    setCurrentTokenBalances(currentTokenBalances);
+    setDisplayTokenBalances(displayTokenBalances);
+  }, [accountTokenBalances, currentAccount]);
 
   function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
     return accountTokenBalance.networkId === currentNetwork?.networkId;
@@ -43,21 +64,32 @@ export const useTokenBalance = (): {
     return accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance);
   }
 
-  function getTokenBalances() {
-    const currentAccountToken = accountTokenBalances.find((accountTokenBalance) =>
-      matchCurrentAccount(currentAccount, accountTokenBalance),
-    );
-    if (!currentAccountToken) {
-      return [];
-    }
-    return currentAccountToken.tokenBalances;
+  async function toggleDisplayOption(account: Account, token: TokenMetainfo, activated: boolean) {
+    const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
+      if (matchCurrentAccount(account, accountTokenBalance)) {
+        return {
+          ...accountTokenBalance,
+          tokenBalances: accountTokenBalance.tokenBalances.map((tokenBalance) => {
+            if (tokenBalance.tokenId === token.tokenId) {
+              return {
+                ...tokenBalance,
+                display: activated,
+              };
+            }
+            return tokenBalance;
+          }),
+        };
+      }
+      return accountTokenBalance;
+    });
+    setAccountTokenBalances(changedAccountTokenBalances);
+    await tokenService.updateAccountTokenMetainfos(changedAccountTokenBalances);
   }
 
   async function updateTokenBalanceInfos(tokenMetainfos: TokenMetainfo[]) {
     if (!currentAccount || !currentNetwork) {
       return false;
     }
-    const currentTokenBalances = getTokenBalances();
     const newTokenBalances = tokenMetainfos
       .filter(
         (tokenMetainfo) =>
@@ -97,50 +129,33 @@ export const useTokenBalance = (): {
     }
     changedAccountTokenBalances.push(changedAccountTokenBalance);
     setAccountTokenBalances(changedAccountTokenBalances);
-    updateBalanceAmountByAccount(currentAccount);
+    await updateBalanceAmountByAccount(currentAccount, changedAccountTokenBalances);
     return true;
   }
 
-  function getDisplayTokenBalances() {
-    return getTokenBalances().filter((tokenBalance) => tokenBalance.display === true);
-  }
-
-  async function toggleDisplayOption(account: Account, token: TokenMetainfo, activated: boolean) {
-    const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
-      if (matchCurrentAccount(account, accountTokenBalance)) {
-        return {
-          ...accountTokenBalance,
-          tokenBalances: accountTokenBalance.tokenBalances.map((tokenBalance) => {
-            if (tokenBalance.tokenId === token.tokenId) {
-              return {
-                ...tokenBalance,
-                display: activated,
-              };
-            }
-            return tokenBalance;
-          }),
-        };
-      }
-      return accountTokenBalance;
-    });
-    setAccountTokenBalances(changedAccountTokenBalances);
-    await tokenService.updateAccountTokenMetainfos(changedAccountTokenBalances);
-  }
-
-  async function updateBalanceAmountByAccount(account: Account) {
-    const tokenBalances = await Promise.all(
-      getTokenBalances().map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
+  async function updateBalanceAmountByAccount(
+    account: Account,
+    newAccountTokenBalances?: AccountTokenBalance[],
+  ) {
+    const tokenBalance =
+      newAccountTokenBalances?.find(
+        (accountTokenBalance) => accountTokenBalance.accountId === account.id,
+      )?.tokenBalances || currentTokenBalances;
+    const fetchedTokenBalances = await Promise.all(
+      tokenBalance.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
     );
 
-    const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
-      if (matchCurrentAccount(account, accountTokenBalance)) {
-        return {
-          ...accountTokenBalance,
-          tokenBalances,
-        };
-      }
-      return accountTokenBalance;
-    });
+    const changedAccountTokenBalances = (newAccountTokenBalances ?? accountTokenBalances).map(
+      (accountTokenBalance) => {
+        if (matchCurrentAccount(account, accountTokenBalance)) {
+          return {
+            ...accountTokenBalance,
+            tokenBalances: fetchedTokenBalances,
+          };
+        }
+        return accountTokenBalance;
+      },
+    );
     setAccountTokenBalances(changedAccountTokenBalances);
     return true;
   }
@@ -208,9 +223,9 @@ export const useTokenBalance = (): {
   }
 
   return {
-    mainTokenBalance: getTokenBalances().find((tokenBalance) => tokenBalance.main)?.amount,
-    tokenBalances: getTokenBalances(),
-    displayTokenBalances: getDisplayTokenBalances(),
+    mainTokenBalance,
+    tokenBalances: currentTokenBalances,
+    displayTokenBalances,
     accountTokenBalances: accountTokenBalances.filter(matchNetworkId),
     fetchBalanceBy,
     toggleDisplayOption,

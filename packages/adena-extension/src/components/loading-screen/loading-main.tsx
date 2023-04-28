@@ -14,7 +14,7 @@ const Wrapper = styled.main`
   height: 100%;
   padding: 78px 24px;
   top: 0px;
-  z-index: 10;
+  z-index: 99;
   background-color: ${({ theme }) => theme.color.neutral[7]};
 `;
 
@@ -39,21 +39,21 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 const LoadingMain = () => {
   const { state } = useLoadAccounts();
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
-  const { displayTokenBalances } = useTokenBalance();
+  const { mainTokenBalance } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
 
   const isLoading = useCallback(() => {
     if (isApproveHardwarePath || isNotMatch) {
       return false;
     }
-    if (state === 'LOADING') {
+    if (state === 'NONE' || state === 'LOADING') {
       return true;
     }
-    if (state === 'FINISH' && displayTokenBalances.length === 0) {
+    if (state === 'FINISH' && (!mainTokenBalance || mainTokenBalance.denom === '')) {
       return true;
     }
     return false;
-  }, [state, isApproveHardwarePath, isNotMatch, displayTokenBalances]);
+  }, [state, isApproveHardwarePath, isNotMatch, mainTokenBalance]);
 
   return isLoading() ? (
     <Wrapper>

@@ -72,8 +72,8 @@ export const CustomRouter = () => {
   const { wallet } = useWalletContext();
 
   return (
-    <Router>
-      <Background>
+    <Background>
+      <Router>
         <Header />
         <Routes>
           <Route path={RoutePath.Home} element={<WalletCreate />} />
@@ -186,7 +186,7 @@ export const CustomRouter = () => {
         </Routes>
         <Navigation />
         <LoadingMain />
-      </Background>
-    </Router>
+      </Router>
+    </Background>
   );
 };

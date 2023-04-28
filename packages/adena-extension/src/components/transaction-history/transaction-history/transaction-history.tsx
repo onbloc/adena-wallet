@@ -1,6 +1,9 @@
 import React from 'react';
-import { TransactionHistoryWrapper } from './transaction-history.styles';
+import { TransactionHistoryDescriptionWrapper, TransactionHistoryWrapper } from './transaction-history.styles';
 import TransactionHistoryList from '@components/transaction-history/transaction-history-list/transaction-history-list';
+import LoadingHistory from '@components/loading-screen/loading-history';
+import Text from '@components/text';
+import theme from '@styles/theme';
 
 export interface TransactionInfo {
   hash: string;
@@ -35,9 +38,23 @@ export interface TransactionHistoryProps {
 }
 
 const TransactionHistory: React.FC<TransactionHistoryProps> = ({
+  status,
   transactionInfoLists,
   onClickItem,
 }) => {
+  if (transactionInfoLists.length === 0) {
+    if (status === 'loading') {
+      return <LoadingHistory />;
+    }
+    return (
+      <TransactionHistoryDescriptionWrapper>
+        <Text className='desc' type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+          No transaction to display
+        </Text>
+      </TransactionHistoryDescriptionWrapper>
+    );
+  }
+
   return (
     <TransactionHistoryWrapper>
       {transactionInfoLists.map((transactionInfoList, index) => (
