@@ -70,7 +70,7 @@ export class LedgerAccount implements Account {
     const { id: keyringId, type } = keyring;
     return new LedgerAccount({
       keyringId,
-      index: 0,
+      index: 1,
       type,
       publicKey: Array.from(publicKey),
       name,
