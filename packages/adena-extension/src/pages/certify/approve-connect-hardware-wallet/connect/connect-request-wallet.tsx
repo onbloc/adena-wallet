@@ -4,8 +4,6 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import IconConnectRequestHardwareWallet from '@assets/connect-request-hardware-wallet.svg';
-import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Open Cosmos App\nin Your Ledger',
@@ -31,14 +29,10 @@ const Wrapper = styled.main`
 `;
 
 interface Props {
-  requestHardwareWallet: () => Promise<void>;
+  onClickClose: () => void;
 }
 
-export const ConnectRequestWallet = () => {
-
-  const onClickClose = () => {
-    window.close();
-  };
+export const ConnectRequestWallet: React.FC<Props> = ({ onClickClose }) => {
 
   return (
     <Wrapper>
