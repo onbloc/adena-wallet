@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { LedgerConnector, AdenaWallet } from 'adena-module';
 import { Wallet, Account } from 'adena-module';
 import { RoutePath } from '@router/path';
@@ -105,6 +105,11 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
   };
 
+  const onClickClose = useCallback(() => {
+    setConnectState('INIT');
+    navigate(0);
+  }, []);
+
   const renderByState = () => {
 
     if (connectState === 'INIT') {
@@ -120,7 +125,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {
-      return <ConnectRequestWallet />
+      return <ConnectRequestWallet onClickClose={onClickClose} />
     }
 
     if (connectState === 'REQUEST_WALLET_LOAD') {
