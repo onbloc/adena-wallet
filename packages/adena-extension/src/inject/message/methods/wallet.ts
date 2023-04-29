@@ -11,9 +11,15 @@ export const getAccount = async (
   try {
     const core = new InjectCore();
 
+    const isLocked = await core.walletService.isLocked();
+    if (isLocked) {
+      sendReponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
+      return;
+    }
+
     const currentAccountAddress = await core.getCurrentAddress();
     if (!currentAccountAddress) {
-      sendReponse(InjectionMessageInstance.success('NO_ACCOUNT', {}, requestData.key));
+      sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
       return;
     }
     const gnoClient = await core.chainService.getCurrentClient();
@@ -26,7 +32,7 @@ export const getAccount = async (
       ),
     );
   } catch (error) {
-    sendReponse(InjectionMessageInstance.success('NO_ACCOUNT', { error }, requestData.key));
+    sendReponse(InjectionMessageInstance.success('NO_ACCOUNT', {}, requestData.key));
   }
 };
 
