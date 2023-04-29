@@ -195,7 +195,7 @@ export const TokenDetails = () => {
 
   const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
   const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
-  const SendButtonClick = () => navigate(RoutePath.TransferInput, { state: tokenBalance });
+  const SendButtonClick = () => navigate(RoutePath.TransferInput, { state: { tokenBalance } });
   const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
 
   const getTransactionInfoLists = useCallback(() => {

@@ -33,6 +33,7 @@ describe('TransferSummary Component', () => {
         value: '0.0048',
         denom: 'GNOT'
       },
+      onClickBack: () => { return; },
       onClickCancel: () => { return; },
       onClickSend: () => { return; },
     };

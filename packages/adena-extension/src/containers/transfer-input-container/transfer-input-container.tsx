@@ -11,13 +11,15 @@ import BigNumber from 'bignumber.js';
 const TransferInputContainer: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenMetainfo>(state);
+  const [isTokenSearch, setIsTokenSearch] = useState(state.isTokenSearch === true);
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenMetainfo>(state.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
 
   useEffect(() => {
-    setTokenMetainfo(tokenMetainfo);
+    setIsTokenSearch(state.isTokenSearch === true);
+    setTokenMetainfo(state.tokenBalance);
     addressBookInput.updateAddressBook();
     balanceInput.updateCurrentBalance();
   }, [state, currentAccount]);
@@ -33,7 +35,7 @@ const TransferInputContainer: React.FC = () => {
   }, [addressBookInput, balanceInput]);
 
   const onClickCancel = useCallback(() => {
-    navigate(-1);
+    navigate(RoutePath.Wallet);
   }, []);
 
   const onClickNext = useCallback(() => {
@@ -45,6 +47,7 @@ const TransferInputContainer: React.FC = () => {
     if (validAddress && validBalance) {
       navigate(RoutePath.TransferSummary, {
         state: {
+          isTokenSearch,
           tokenMetainfo,
           toAddress: addressBookInput.resultAddress,
           transferAmount: {

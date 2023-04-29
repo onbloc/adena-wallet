@@ -18,6 +18,7 @@ export interface TransferSummaryProps {
     value: string;
     denom: string;
   };
+  onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
 }
@@ -28,6 +29,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   transferBalance,
   toAddress,
   networkFee,
+  onClickBack,
   onClickCancel,
   onClickSend,
 }) => {
@@ -37,7 +39,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickCancel
+            onClick: onClickBack
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
         />

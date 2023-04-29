@@ -84,8 +84,16 @@ const TransferSummaryContainer: React.FC = () => {
     return transactionService.sendTransaction(gnoClient, transaction);
   }, [summaryInfo, currentAccount, currentAccount])
 
-  const onClickCancel = useCallback(() => {
+  const onClickBack = useCallback(() => {
     navigate(-1);
+  }, [navigate]);
+
+  const onClickCancel = useCallback(() => {
+    if (state.isTokenSearch === true) {
+      navigate(RoutePath.WalletSearch);
+      return;
+    }
+    navigate(RoutePath.Wallet);
   }, [navigate]);
 
   const onClickSend = useCallback(() => {
@@ -105,6 +113,7 @@ const TransferSummaryContainer: React.FC = () => {
       toAddress={summaryInfo.toAddress}
       transferBalance={getTransferBalance()}
       networkFee={summaryInfo.networkFee}
+      onClickBack={onClickBack}
       onClickCancel={onClickCancel}
       onClickSend={onClickSend}
     />
