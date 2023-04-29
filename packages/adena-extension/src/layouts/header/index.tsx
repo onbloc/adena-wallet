@@ -84,9 +84,6 @@ export const Header = () => {
     if (launchAdena) {
       return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
-    if (resetWallet) {
-      return <ArrowTitleMenu title={'Reset Wallet'} />;
-    }
     if (importPrivateKey) {
       return <ArrowTitleMenu />;
     }
@@ -114,7 +111,8 @@ export const Header = () => {
       settings ||
       connectedApps ||
       changeNetwork ||
-      loadingComplete
+      loadingComplete ||
+      resetWallet
     ) {
       return <TopMenu />;
     }
