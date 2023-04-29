@@ -15,7 +15,6 @@ import { InjectionMessageInstance } from '@inject/message';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useNetwork } from '@hooks/use-network';
 
 export const ApproveEstablish = () => {
@@ -28,6 +27,7 @@ export const ApproveEstablish = () => {
   const [favicon, setFavicon] = useState<string | null>(null);
   const location = useLocation();
   const { currentNetwork } = useNetwork();
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     initRequestSite();
@@ -38,6 +38,17 @@ export const ApproveEstablish = () => {
       checkEstablised();
     }
   }, [key, hostname, currentAccount, currentNetwork]);
+
+  useEffect(() => {
+    if (
+      confirmed === true &&
+      hostname !== '' &&
+      currentAccount &&
+      currentNetwork
+    ) {
+      establish();
+    }
+  }, [confirmed, hostname, currentAccount, currentNetwork]);
 
   const initRequestSite = async () => {
     try {
@@ -78,11 +89,7 @@ export const ApproveEstablish = () => {
     setFavicon(faviconData);
   };
 
-  const onClickCancleButton = () => {
-    window.close();
-  };
-
-  const onClickConfirmButton = async () => {
+  const establish = async () => {
     const siteName = getSiteName(hostname);
     const accountId = currentAccount?.id ?? '';
     const networkId = currentNetwork.networkId ?? '';
@@ -96,6 +103,14 @@ export const ApproveEstablish = () => {
         favicon
       });
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
+  }
+
+  const onClickCancleButton = () => {
+    window.close();
+  };
+
+  const onClickConfirmButton = async () => {
+    setConfirmed(true);
   };
 
   return (
