@@ -54,7 +54,7 @@ export const ConnectedApps = () => {
         }
         center={
           <Text type='body2Bold' className='connected-hostname'>
-            {item.hostname}
+            {`${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}`}
           </Text>
         }
         right={
@@ -107,10 +107,17 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
   }
+
+  .connected-hostname {
+    max-width: 234px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 `;
 
 const DisconnectedBtn = styled.button`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  flex-shrink: 0;
   width: 25px;
   height: 25px;
   border-radius: 35px;
