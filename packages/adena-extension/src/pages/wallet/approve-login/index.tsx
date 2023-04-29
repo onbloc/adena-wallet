@@ -13,7 +13,7 @@ import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
 import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
@@ -30,6 +30,7 @@ export const ApproveLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { walletService } = useAdenaContext();
+  const { initWallet } = useWalletContext();
   const [, setState] = useRecoilState(WalletState.state);
   const { state, loadAccounts } = useLoadAccounts();
   const [password, setPassword] = useState('');
@@ -76,6 +77,7 @@ export const ApproveLogin = () => {
       const equalPassword = await walletService.equalsPassowrd(password);
       if (equalPassword) {
         await walletService.updatePassowrd(password);
+        await initWallet();
         setState('FINISH');
       }
     } catch (error) {
