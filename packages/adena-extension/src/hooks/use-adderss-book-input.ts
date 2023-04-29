@@ -5,6 +5,7 @@ import { AddressBookItem } from '@repositories/wallet';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useNetwork } from './use-network';
 import { addressValidationCheck } from '@common/utils/client-utils';
+import { useAccountName } from './use-account-name';
 
 export const useAddressBookInput = () => {
   const { addressBookService } = useAdenaContext();
@@ -18,6 +19,7 @@ export const useAddressBookInput = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [address, setAddress] = useState('');
   const [addressBooks, setAddressBooks] = useState<AddressBookItem[]>([]);
+  const { accountNames } = useAccountName();
 
   const updateAddressBook = async () => {
     if (!currentAccount) {
@@ -37,7 +39,7 @@ export const useAddressBookInput = () => {
       wallet?.accounts.map((account) => {
         return {
           addressBookId: account.id,
-          name: formatNickname(account.name, 12),
+          name: formatNickname(accountNames[account.id], 12),
           description: `(${formatAddress(
             account.getAddress(currentNetwork?.addressPrefix || 'g'),
           )})`,
