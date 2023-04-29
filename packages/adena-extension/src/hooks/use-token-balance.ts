@@ -248,14 +248,15 @@ export const useTokenBalance = (): {
       };
     }
 
-    const amount = balances[0].amount;
+    const amount = {
+      denom: balances[0].amount.denom,
+      value:
+        balances[0].amount.value === 'NaN' ? '0' : `${balances[0].amount.value}`.replace(',', ''),
+    };
 
     return {
       ...token,
-      amount: {
-        ...amount,
-        value: amount.value === 'NaN' ? '0' : BigNumber(amount.value).toFormat(),
-      },
+      amount,
     };
   }
 
