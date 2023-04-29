@@ -13,6 +13,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import TokenBalanceComponent from '@components/common/token-balance/token-balance';
 import { TokenBalance } from '@states/balance';
+import BigNumber from 'bignumber.js';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -67,7 +68,7 @@ export const WalletSearch = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { tokenBalances } = useTokenBalance();
+  const { displayTokenBalances } = useTokenBalance();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');
@@ -112,7 +113,7 @@ export const WalletSearch = () => {
         {Boolean(searchText) && <InputResetBtn onClick={inputResetClick} type='button' />}
       </SearchBox>
       <DataListWrap>
-        {tokenBalances
+        {displayTokenBalances
           .filter(
             (balance) =>
               searchTextFilter(balance.name ?? '', searchText) ||
@@ -128,7 +129,7 @@ export const WalletSearch = () => {
               }
               right={
                 <TokenBalanceComponent
-                  value={balance.amount.value}
+                  value={BigNumber(balance.amount.value).toFormat()}
                   denom={balance.amount.denom}
                   fontStyleKey='body2Reg'
                   minimumFontSize='11px'
