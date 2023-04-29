@@ -10,6 +10,7 @@ import { TransactionHistoryMapper } from '@repositories/transaction/mapper/trans
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useNetwork } from '@hooks/use-network';
 import useScrollHistory from '@hooks/use-scroll-history';
+import BigNumber from 'bignumber.js';
 
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -85,10 +86,14 @@ const HistoryContainer: React.FC = () => {
     const size = 20;
     const histories = await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size);
     const txs = histories.txs.map(transaction => {
+      const amount = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
         logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
-        amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON')
+        amount: {
+          ...amount,
+          value: BigNumber(amount.value).toFormat()
+        }
       }
     });
     return {
