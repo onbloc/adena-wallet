@@ -21,6 +21,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
+import BigNumber from 'bignumber.js';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -164,10 +165,14 @@ export const TokenDetails = () => {
       await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size) :
       await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size);
     const txs = histories.txs.map(transaction => {
+      const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
         logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
-        amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON')
+        amount: {
+          value: BigNumber(value).toFormat(),
+          denom
+        }
       }
     });
     return {
@@ -221,7 +226,7 @@ export const TokenDetails = () => {
 
       <div className='balance-wrapper'>
         <HighlightNumber
-          value={balance}
+          value={BigNumber(balance).toFormat()}
           fontColor={theme.color.neutral[0]}
           fontStyleKey={'header2'}
           minimumFontSize={'24px'}

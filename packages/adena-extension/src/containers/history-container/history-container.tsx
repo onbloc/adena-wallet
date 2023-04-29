@@ -86,13 +86,13 @@ const HistoryContainer: React.FC = () => {
     const size = 20;
     const histories = await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size);
     const txs = histories.txs.map(transaction => {
-      const amount = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
+      const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
         logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: {
-          ...amount,
-          value: BigNumber(amount.value).toFormat()
+          value: BigNumber(value).toFormat(),
+          denom
         }
       }
     });
