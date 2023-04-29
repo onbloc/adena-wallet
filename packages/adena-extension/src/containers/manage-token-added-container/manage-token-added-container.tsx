@@ -2,8 +2,9 @@ import AdditionalToken, { TokenInfo } from '@components/manage-token/additional-
 import { useAdenaContext } from '@hooks/use-context';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { RoutePath } from '@router/path';
 import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ManageTokenAddedContainer: React.FC = () => {
@@ -16,9 +17,12 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [selectedTokenInfo, setSelectedTokenInfo] = useState<TokenInfo>();
 
+  useEffect(() => {
+    document.body.addEventListener('click', closeSelectBox);
+    return () => document.body.removeEventListener('click', closeSelectBox);
+  }, [document.body]);
+
   const {
-    isFetched,
-    error,
     data: tokenInfos,
   } = useQuery<TokenInfo[], Error>({
     queryKey: ['search-grc20-tokens', keyword],
@@ -33,6 +37,10 @@ const ManageTokenAddedContainer: React.FC = () => {
     }),
   });
 
+  const closeSelectBox = () => {
+    setOpened(false);
+  };
+
   const onChangeKeyword = useCallback((keyword: string) => {
     setKeyword(keyword);
   }, []);
@@ -44,8 +52,12 @@ const ManageTokenAddedContainer: React.FC = () => {
     setOpened(false);
   }, [tokenInfos]);
 
-  const onClickCancel = useCallback(() => {
+  const onClickBack = useCallback(() => {
     navigate(-1);
+  }, []);
+
+  const onClickCancel = useCallback(() => {
+    navigate(RoutePath.Wallet);
   }, []);
 
   const onClickAdd = useCallback(async () => {
@@ -67,6 +79,7 @@ const ManageTokenAddedContainer: React.FC = () => {
       onChangeKeyword={onChangeKeyword}
       onClickOpenButton={setOpened}
       onClickListItem={onClickListItem}
+      onClickBack={onClickBack}
       onClickCancel={onClickCancel}
       onClickAdd={onClickAdd}
     />
