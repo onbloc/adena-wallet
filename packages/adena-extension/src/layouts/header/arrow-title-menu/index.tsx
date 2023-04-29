@@ -28,12 +28,10 @@ export const ArrowTitleMenu = ({ title }: ArrowTitleMenuProps) => {
   const { state } = useLocation();
   const handlePrevButtonClick = () => navigate(-1);
 
-  return state?.isForgotPassword === true ? (
+  return (
     <Wrapper>
       <Button onClick={handlePrevButtonClick} tabIndex={0} />
       {title && <Text type='body1Bold'>{title}</Text>}
     </Wrapper>
-  ) : (
-    <TopMenu />
-  );
+  )
 };
