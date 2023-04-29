@@ -42,6 +42,10 @@ const ManageTokenAddedContainer: React.FC = () => {
   };
 
   const onChangeKeyword = useCallback((keyword: string) => {
+    const regex = /^[a-zA-Z0-9!@#$%^&*()_+`/\\\\[\]'";.,?<>]*$/;
+    if (!regex.test(keyword)) {
+      return;
+    }
     setKeyword(keyword);
   }, []);
 

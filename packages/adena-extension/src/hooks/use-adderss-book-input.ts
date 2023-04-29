@@ -91,6 +91,10 @@ export const useAddressBookInput = () => {
   );
 
   const onChangeAddress = useCallback((address: string) => {
+    const regex = /^[a-zA-Z0-9]*$/;
+    if (!regex.test(address)) {
+      return;
+    }
     setAddress(address);
     if (hasError) {
       clearError();

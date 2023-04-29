@@ -73,6 +73,10 @@ export const WalletSearch = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const regex = /^[a-zA-Z0-9]*$/;
+    if (!regex.test(e.target.value)) {
+      return;
+    }
     setSearchText(e.target.value);
   };
 
