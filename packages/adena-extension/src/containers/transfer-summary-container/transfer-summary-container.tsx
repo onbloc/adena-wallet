@@ -90,10 +90,10 @@ const TransferSummaryContainer: React.FC = () => {
 
   const onClickCancel = useCallback(() => {
     if (state.isTokenSearch === true) {
-      navigate(RoutePath.WalletSearch);
+      navigate(RoutePath.Wallet);
       return;
     }
-    navigate(RoutePath.Wallet);
+    navigate(-2);
   }, [navigate]);
 
   const onClickSend = useCallback(() => {
