@@ -65,6 +65,7 @@ export const Default: StoryObj<AdditionalTokenProps> = {
     onChangeKeyword: action('change keyword'),
     onClickOpenButton: action('click open button'),
     onClickListItem: action('click list item'),
+    onClickBack: action('click back'),
     onClickCancel: action('click cancel'),
     onClickAdd: action('click add'),
   },

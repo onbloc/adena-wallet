@@ -16,6 +16,7 @@ describe('AdditionalToken Component', () => {
       onChangeKeyword: () => { return; },
       onClickOpenButton: () => { return; },
       onClickListItem: () => { return; },
+      onClickBack: () => { return; },
       onClickCancel: () => { return; },
       onClickAdd: () => { return; },
     };

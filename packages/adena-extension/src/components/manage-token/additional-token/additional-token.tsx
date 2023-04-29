@@ -24,6 +24,7 @@ export interface AdditionalTokenProps {
   onChangeKeyword: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
   onClickListItem: (tokenId: string) => void;
+  onClickBack: () => void;
   onClickCancel: () => void;
   onClickAdd: () => void;
 }
@@ -37,6 +38,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   onChangeKeyword,
   onClickOpenButton,
   onClickListItem,
+  onClickBack,
   onClickCancel,
   onClickAdd,
 }) => {
@@ -47,7 +49,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
           title='Add Custom Token'
           leftElement={{
             element: <img src={LeftArrowIcon} alt={'back icon'} />,
-            onClick: onClickCancel
+            onClick: onClickBack
           }}
         />
       </div>
