@@ -9,12 +9,10 @@ import {
 type Params = { [key in string]: any };
 
 export interface RequestDocontractMessage {
-  messages: Array<
-    {
-      type: string;
-      value: { [key in string]: any };
-    }
-  >;
+  messages: Array<{
+    type: string;
+    value: { [key in string]: any };
+  }>;
   gasFee: number;
   gasWanted: number;
   memo?: string;
@@ -94,14 +92,14 @@ export class AdenaExecutor {
           return InjectionMessageInstance.failure('UNSUPPORTED_TYPE');
       }
     }
-  }
+  };
 
   private sendEventMessage = (eventMessage: InjectionMessage) => {
     this.listen();
     this.eventMessage = {
       ...eventMessage,
+      protocol: window.location.protocol,
       hostname: window.location.hostname,
-      url: window.location.href,
       key: this.eventKey,
     };
     window.postMessage(this.eventMessage, '*');

@@ -44,7 +44,7 @@ export const addEstablish = async (
   const accountId = await core.getCurrentAccountId();
   const networkId = await core.getCurrentNetworkId();
   const isLocked = await core.walletService.isLocked();
-  const siteName = getSiteName(message.hostname);
+  const siteName = getSiteName(message.protocol, message.hostname);
   const isEstablised = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
 
   if (isLocked) {

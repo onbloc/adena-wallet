@@ -10,9 +10,11 @@ export const createPopup = async (
 ) => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
-      `popup.html#${popupPath}?key=${message.key}&url=${message.url}&hostname=${
-        message.hostname
-      }&data=${encodeParameter(message)}`,
+      `popup.html#${popupPath}` +
+        `?key=${message.key}` +
+        `&hostname=${message.hostname}` +
+        `&protocol=${message.protocol}` +
+        `&data=${encodeParameter(message)}`,
     ),
     type: 'popup',
     height: 590,
@@ -66,7 +68,7 @@ export const checkEstablished = async (
   const accountId = await core.getCurrentAccountId();
   const networkId = await core.getCurrentNetworkId();
 
-  const siteName = getSiteName(requestData.hostname);
+  const siteName = getSiteName(requestData.protocol, requestData.hostname);
   const isEstablished = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));

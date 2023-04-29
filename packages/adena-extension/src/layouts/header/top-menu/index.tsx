@@ -34,6 +34,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
+  const [protocol, setProtocol] = useState('');
   const [, setUrl] = useState('');
   const { currentAccount, currentAddress } = useCurrentAccount();
   const toggleMenuHandler = () => setOpen(!open);
@@ -51,9 +52,11 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     getCurrentUrl().then(async (currentUrl) => {
       const hostname = new URL(currentUrl as string).hostname;
       const href = new URL(currentUrl as string).href;
+      const protocol = new URL(currentUrl as string).protocol;
       if (hostname !== '') {
         setHostname(hostname);
         setUrl(href);
+        setProtocol(protocol);
       }
     });
   }, [location.pathname]);
@@ -70,7 +73,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     setCurrentAccountName(name ?? '');
 
     if (hostname !== '') {
-      const siteName = getSiteName(hostname);
+      const siteName = getSiteName(protocol, hostname);
       const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.networkId, siteName);
       setIsEstablish(isEstablished);
     }
@@ -78,7 +81,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
 
   const updateEstablished = async () => {
     if (currentAccount && hostname !== '') {
-      const siteName = getSiteName(hostname);
+      const siteName = getSiteName(protocol, hostname);
       const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.networkId, siteName);
       setIsEstablish(isEstablished);
     }

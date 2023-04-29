@@ -23,6 +23,7 @@ export const ApproveEstablish = () => {
   const [key, setKey] = useState<string>('');
   const [appName, setAppName] = useState<string>('');
   const [hostname, setHostname] = useState<string>('');
+  const [protocol, setProtocol] = useState<string>('');
   const [url, setUrl] = useState<string>('');
   const [favicon, setFavicon] = useState<string | null>(null);
   const location = useLocation();
@@ -31,7 +32,7 @@ export const ApproveEstablish = () => {
 
   useEffect(() => {
     initRequestSite();
-  }, [window.location]);
+  }, [location]);
 
   useEffect(() => {
     if (key !== '' && hostname !== '') {
@@ -52,9 +53,12 @@ export const ApproveEstablish = () => {
 
   const initRequestSite = async () => {
     try {
+      console.log(location)
       const data = parseParmeters(location.search);
+      console.log(data)
       setKey(data['key']);
       setHostname(data['hostname']);
+      setProtocol(data['protocol']);
       setUrl(data['url']);
       updateFavicon(data['hostname']);
       if (data?.data) {
@@ -70,7 +74,7 @@ export const ApproveEstablish = () => {
     if (!currentAccount) {
       return;
     }
-    const siteName = getSiteName(hostname);
+    const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount.id ?? '';
     const networkId = currentNetwork.networkId;
     const isEstablised = await establishService.isEstablishedBy(
@@ -90,7 +94,7 @@ export const ApproveEstablish = () => {
   };
 
   const establish = async () => {
-    const siteName = getSiteName(hostname);
+    const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount?.id ?? '';
     const networkId = currentNetwork.networkId ?? '';
     await establishService.establishBy(
@@ -120,7 +124,7 @@ export const ApproveEstablish = () => {
       </Text>
       <img className='logo' src={favicon !== null ? favicon : DefaultFavicon} alt='gnoland-logo' />
       <UrlBox>
-        <Text type='body2Reg'>{getSiteName(hostname)}</Text>
+        <Text type='body2Reg'>{getSiteName(protocol, hostname)}</Text>
       </UrlBox>
       <AllowSiteWrap>
         <Text className='allow-title' type='body2Bold' color={theme.color.neutral[9]}>
