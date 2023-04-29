@@ -96,8 +96,8 @@ export type MessageKeyType = keyof typeof MESSAGE_TYPES;
 export interface InjectionMessage {
   code: number;
   key?: string;
-  url?: string;
   hostname?: string;
+  protocol?: string;
   type: MessageKeyType;
   status: StatusType;
   message: string;

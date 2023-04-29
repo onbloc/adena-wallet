@@ -63,7 +63,7 @@ const ApproveMenu = () => {
   const updateEstablishState = async () => {
     if (requestData?.hostname) {
       const id = currentAccount?.id ?? "";
-      const siteName = getSiteName(requestData.hostname);
+      const siteName = getSiteName(requestData.protocol, requestData.hostname);
       const currentIsEstablished = await establishService.isEstablishedBy(id, currentNetwork.networkId, siteName);
       setIsEstablished(currentIsEstablished);
     }

@@ -242,7 +242,7 @@ export const parseParmeters = (url: string) => {
 
 export const encodeParameter = (data: { [key in string]: any }) => {
   try {
-    const encodedVaoue = encodeURIComponent(JSON.stringify(data));
+    const encodedVaoue = encodeURI(JSON.stringify(data));
     return encodedVaoue;
   } catch (error) {
     console.log(error);
@@ -252,7 +252,7 @@ export const encodeParameter = (data: { [key in string]: any }) => {
 
 export const decodeParameter = (data: string) => {
   try {
-    const decodedValue = JSON.parse(decodeURIComponent(data));
+    const decodedValue = JSON.parse(decodeURI(data));
     return decodedValue;
   } catch (error) {
     console.log(error);
@@ -317,11 +317,8 @@ const isFailedReceive = (cur: any) => {
 };
 
 // TODO: CHECK SSL
-export const getSiteName = (hostname: string | undefined) => {
-  if (!hostname) {
-    return '-';
-  }
-  return hostname.replace('www.', '');
+export const getSiteName = (protocol: string | undefined, hostname: string | undefined) => {
+  return `${protocol}//${hostname}`;
 };
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
