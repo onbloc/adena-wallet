@@ -58,7 +58,9 @@ export const useBalanceInput = (tokenMetainfo: TokenMetainfo) => {
     if (hasError) {
       return errorMessage;
     }
-    return `Balance: ${currentBalance?.amount.value || 0} ${tokenMetainfo.denom}`;
+    return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
+      tokenMetainfo.denom
+    }`;
   }, [currentBalance, hasError, errorMessage]);
 
   const onChangeAmount = useCallback((amount: string) => {
