@@ -27,3 +27,8 @@ export const failedNetworkChainId = atom<string>({
   key: `common/failed-network-chainId`,
   default: '',
 });
+
+export const scrollPositions = atom<{ [key in string]: number }>({
+  key: `common/scroll-positions`,
+  default: {},
+});

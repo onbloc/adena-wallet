@@ -9,6 +9,7 @@ import { RoutePath } from '@router/path';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useNetwork } from '@hooks/use-network';
+import useScrollHistory from '@hooks/use-scroll-history';
 
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const HistoryContainer: React.FC = () => {
   const { convertDenom, getTokenImage } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
+  const { saveScrollPosition } = useScrollHistory();
 
   const {
     status,
@@ -100,11 +102,12 @@ const HistoryContainer: React.FC = () => {
     const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
     const transactionInfo = transactions.find(transaction => transaction.hash === hash);
     if (transactionInfo) {
+      saveScrollPosition(bodyElement?.scrollTop);
       navigate(RoutePath.TransactionDetail, {
         state: transactionInfo
       })
     }
-  }, [data]);
+  }, [data, bodyElement]);
 
   return (
     <TransactionHistory

@@ -19,6 +19,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
+import useScrollHistory from '@hooks/use-scroll-history';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -89,6 +90,7 @@ export const TokenDetails = () => {
   const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
+  const { saveScrollPosition } = useScrollHistory();
   const {
     status,
     isLoading,
@@ -178,11 +180,12 @@ export const TokenDetails = () => {
     const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
     const transactionInfo = transactions.find(transaction => transaction.hash === hash);
     if (transactionInfo) {
+      saveScrollPosition(bodyElement?.scrollTop);
       navigate(RoutePath.TransactionDetail, {
         state: transactionInfo
       })
     }
-  }, [data]);
+  }, [data, bodyElement]);
 
   const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
   const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
