@@ -38,6 +38,16 @@ export const Login = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [validateState, setValidateState] = useState(true);
   const { loadAccounts } = useLoadAccounts();
+  const [existWallet, setExistWallet] = useState(false);
+
+  useEffect(() => {
+    walletService.existsWallet().then(existWallet => {
+      if (!existWallet) {
+        navigate(RoutePath.Home);
+      }
+      setExistWallet(existWallet);
+    }).catch(() => navigate(RoutePath.Home));
+  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -83,7 +93,7 @@ export const Login = () => {
 
   const onClickForgotButton = () => navigate(RoutePath.ForgotPassword);
 
-  return (
+  return existWallet ? (
     <Wrapper>
       <Title>{text}</Title>
       <DefaultInput
@@ -108,5 +118,5 @@ export const Login = () => {
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>
-  );
+  ) : <div></div>;
 };
