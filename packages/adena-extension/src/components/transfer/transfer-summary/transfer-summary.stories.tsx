@@ -34,6 +34,7 @@ export const Default: StoryObj<TransferSummaryProps> = {
       value: '0.0048',
       denom: 'GNOT'
     },
+    onClickBack: action('click back'),
     onClickCancel: action('click cancel'),
     onClickSend: action('click send'),
   },

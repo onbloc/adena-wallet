@@ -77,7 +77,12 @@ export const WalletSearch = () => {
 
   const onClickItem = (tokenBalance: TokenBalance) => {
     location.state === 'send'
-      ? navigate(RoutePath.TransferInput, { state: tokenBalance })
+      ? navigate(RoutePath.TransferInput, {
+        state: {
+          isTokenSearch: true,
+          tokenBalance,
+        }
+      })
       : navigate(RoutePath.Deposit, {
         state: {
           type: 'wallet',
@@ -138,7 +143,7 @@ export const WalletSearch = () => {
           ))}
       </DataListWrap>
       <ButtonWrap>
-        <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={() => navigate(-1)}>
+        <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={() => navigate(RoutePath.Wallet)}>
           <Text type='body1Bold'>Close</Text>
         </Button>
       </ButtonWrap>
