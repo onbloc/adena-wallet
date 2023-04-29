@@ -17,6 +17,7 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     border-radius: 30px;
     border: 1px solid ${({ theme }) => theme.color.neutral[6]};
     background-color: ${({ theme }) => theme.color.neutral[8]};
+    overflow: hidden;
     z-index: 2;
 
     &.opened {
