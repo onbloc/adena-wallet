@@ -54,7 +54,7 @@ export const ConnectedApps = () => {
         }
         center={
           <Text type='body2Bold' className='connected-hostname'>
-            {`${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}${item.hostname}`}
+            {`${item.hostname}`}
           </Text>
         }
         right={
@@ -100,6 +100,13 @@ const Wrapper = styled.main`
   padding-top: 24px;
   padding-bottom: 120px;
   background-color: ${({ theme }) => theme.color.neutral[7]};
+
+  .logo {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+  }
+
   .desc {
     position: absolute;
     top: 210px;
@@ -112,6 +119,7 @@ const Wrapper = styled.main`
     max-width: 234px;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;
 
