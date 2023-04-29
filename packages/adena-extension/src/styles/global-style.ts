@@ -13,7 +13,7 @@ export const GlobalStyle = createGlobalStyle`
     position: relative;
     background-color: #212128;
     overflow-y: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   };
 
   #popup {
