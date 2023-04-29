@@ -202,6 +202,13 @@ export const TokenDetails = () => {
     return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
   }, [data]);
 
+  const moveScanner = () => {
+    const scannerURI = tokenBalance.type === 'NATIVE' ?
+      `https://gnoscan.io/accounts/${currentAddress}` :
+      `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`
+    window.open(scannerURI, '_blank');
+  };
+
   return (
     <Wrapper>
       <HeaderWrap>
@@ -213,13 +220,7 @@ export const TokenDetails = () => {
             tooltipText='View on Gnoscan'
             bgColor={theme.color.neutral[6]}
             posTop='28px'
-            onClick={() => {
-              window.open(
-                `https://gnoscan.io/accounts/${currentAccount?.getAddress('g')
-                }`,
-                '_blank',
-              );
-            }}
+            onClick={moveScanner}
           />
         </EtcIcon>
       </HeaderWrap>
