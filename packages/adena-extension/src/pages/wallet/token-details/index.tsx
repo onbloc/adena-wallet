@@ -16,7 +16,7 @@ import { TokenBalance } from '@states/balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
-import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
+import TransactionHistory, { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
@@ -85,8 +85,8 @@ export const TokenDetails = () => {
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const [tokenBalance, setTokenBalance] = useState<TokenBalance>(state);
-  const [balance, setBalance] = useState(tokenBalance.amount.value);
+  const [tokenBalance] = useState<TokenBalance>(state);
+  const [balance] = useState(tokenBalance.amount.value);
   const { convertDenom, getTokenImage } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
@@ -152,6 +152,18 @@ export const TokenDetails = () => {
     }
   };
 
+  const filterNativeTokenHistory = (data: {
+    hits: number;
+    next: boolean;
+    txs: TransactionInfo[]
+  }) => {
+    const filteredTxs = data.txs.filter(tx => (tx.type === 'TRANSFER' && tx.title === 'Receive' && tx.amount.denom !== 'ugnot') === false)
+    return {
+      ...data,
+      txs: filteredTxs
+    }
+  }
+
   const fetchTokenHistories = async (pageParam: number) => {
     if (!currentAddress || currentNetwork.networkId !== 'test3') {
       return {
@@ -162,7 +174,7 @@ export const TokenDetails = () => {
     }
     const size = 20;
     const histories = tokenBalance.type === 'NATIVE' ?
-      await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size) :
+      filterNativeTokenHistory(await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size)) :
       await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size);
     const txs = histories.txs.map(transaction => {
       const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
