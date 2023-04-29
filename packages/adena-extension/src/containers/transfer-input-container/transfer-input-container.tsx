@@ -35,8 +35,12 @@ const TransferInputContainer: React.FC = () => {
   }, [addressBookInput, balanceInput]);
 
   const onClickCancel = useCallback(() => {
-    navigate(RoutePath.Wallet);
-  }, []);
+    if (isTokenSearch) {
+      navigate(RoutePath.Wallet);
+      return;
+    }
+    navigate(-1);
+  }, [isTokenSearch]);
 
   const onClickNext = useCallback(() => {
     if (!isNext()) {
