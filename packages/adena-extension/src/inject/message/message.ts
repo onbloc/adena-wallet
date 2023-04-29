@@ -33,10 +33,6 @@ const MESSAGE_TYPES = {
     code: 2000,
     description: 'Adena is Locked.',
   },
-  UNUSED_ACCOUNT: {
-    code: 3000,
-    description: 'The account has never been used.',
-  },
   ACCOUNT_MISMATCH: {
     code: 3001,
     description: 'The account does not match the caller.',
