@@ -20,6 +20,7 @@ import TransactionHistory from '@components/transaction-history/transaction-hist
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
+import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -36,7 +37,7 @@ const Wrapper = styled.main`
   }
   .desc {
     position: absolute;
-    bottom: 153px;
+    bottom: 175px;
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
@@ -81,10 +82,10 @@ export const TokenDetails = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const [etcClicked, setEtcClicked] = useState(false);
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const [tokenBalance, setTokenBalance] = useState<TokenBalance>(state);
   const [balance, setBalance] = useState(tokenBalance.amount.value);
-  const { currentAddress } = useCurrentAccount();
   const { convertDenom, getTokenImage } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
@@ -151,7 +152,7 @@ export const TokenDetails = () => {
   };
 
   const fetchTokenHistories = async (pageParam: number) => {
-    if (!currentAddress) {
+    if (!currentAddress || currentNetwork.networkId !== 'test3') {
       return {
         hits: 0,
         next: false,
