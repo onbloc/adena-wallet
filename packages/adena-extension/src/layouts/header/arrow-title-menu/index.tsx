@@ -1,8 +1,9 @@
 import React from 'react';
 import styled from 'styled-components';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Text from '@components/text';
+import { TopMenu } from './../top-menu';
 
 interface ArrowTitleMenuProps {
   title?: string;
@@ -24,12 +25,15 @@ const Button = styled(LeftArrowBtn)`
 
 export const ArrowTitleMenu = ({ title }: ArrowTitleMenuProps) => {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const handlePrevButtonClick = () => navigate(-1);
 
-  return (
+  return state?.isForgotPassword === true ? (
     <Wrapper>
       <Button onClick={handlePrevButtonClick} tabIndex={0} />
       {title && <Text type='body1Bold'>{title}</Text>}
     </Wrapper>
+  ) : (
+    <TopMenu />
   );
 };
