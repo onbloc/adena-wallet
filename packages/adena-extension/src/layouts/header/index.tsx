@@ -102,6 +102,11 @@ export const Header = () => {
     ) {
       return <TabMenu />;
     }
+    if (resetWallet) {
+      return location?.state?.from === 'forgot-password' ?
+        <ArrowTitleMenu title='Reset Wallet' /> :
+        <TopMenu />
+    }
 
     if (
       wallet ||
@@ -111,8 +116,7 @@ export const Header = () => {
       settings ||
       connectedApps ||
       changeNetwork ||
-      loadingComplete ||
-      resetWallet
+      loadingComplete
     ) {
       return <TopMenu />;
     }
