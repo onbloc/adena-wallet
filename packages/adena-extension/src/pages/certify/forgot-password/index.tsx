@@ -27,7 +27,7 @@ export const ForgotPassword = () => {
   };
 
   const onClickHaveNotSeedPhrase = () => {
-    navigate(RoutePath.ResetWallet, { state: { backStep: -2, isForgotPassword: true } });
+    navigate(RoutePath.ResetWallet, { state: { backStep: -2, from: 'forgot-password' } });
   };
 
   const onClickForgotButton = () => {
