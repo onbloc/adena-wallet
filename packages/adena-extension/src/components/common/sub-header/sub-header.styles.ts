@@ -34,6 +34,6 @@ export const SubHeaderWrapper = styled.div`
   .title-wrapper {
     ${({ theme }) => theme.fonts.header4}
     height: 24px;
-    line-height: 1.2em;
+    line-height: 26px;
   }
 `;
