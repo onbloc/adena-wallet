@@ -16,6 +16,7 @@ import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 
 export const ApproveEstablish = () => {
   const { establishService } = useAdenaContext();
@@ -117,7 +118,7 @@ export const ApproveEstablish = () => {
     setConfirmed(true);
   };
 
-  return (
+  return currentAccount ? (
     <Wrapper>
       <Text className='main-title' type='header4'>
         {`Connect to ${appName && appName !== '' ? appName : 'Unknown'}`}
@@ -151,6 +152,8 @@ export const ApproveEstablish = () => {
         }}
       />
     </Wrapper>
+  ) : (
+    <LoadingApproveTransaction rightButtonText='Connect' />
   );
 };
 
