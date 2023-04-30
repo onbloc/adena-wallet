@@ -45,6 +45,8 @@ export const Default: StoryObj<TransferInputProps> = {
       onClickAddressBook: action('click address book')
     },
     isNext: true,
+    hasBackButton: true,
+    onClickBack: action('click back'),
     onClickCancel: action('click cancel'),
     onClickNext: action('click next')
   },

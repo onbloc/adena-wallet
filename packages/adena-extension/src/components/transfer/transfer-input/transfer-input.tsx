@@ -5,6 +5,7 @@ import SubHeader from '@components/common/sub-header/sub-header';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
 
 export interface TransferInputProps {
   tokenMetainfo: TokenMetainfo;
@@ -34,6 +35,8 @@ export interface TransferInputProps {
     onClickMax: () => void;
   };
   isNext: boolean;
+  hasBackButton: boolean;
+  onClickBack: () => void;
   onClickCancel: () => void;
   onClickNext: () => void;
 }
@@ -42,15 +45,29 @@ const TransferInput: React.FC<TransferInputProps> = ({
   tokenMetainfo,
   addressInput,
   balanceInput,
+  hasBackButton,
   isNext,
+  onClickBack,
   onClickCancel,
   onClickNext
 }) => {
   return (
     <TransferInputWrapper>
-      <SubHeader
-        title={`Send ${tokenMetainfo.symbol}`}
-      />
+      {
+        hasBackButton ? (
+          <SubHeader
+            title={`Send ${tokenMetainfo.symbol}`}
+            leftElement={{
+              element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+              onClick: onClickBack
+            }}
+          />
+        ) : (
+          <SubHeader
+            title={`Send ${tokenMetainfo.symbol}`}
+          />
+        )
+      }
       <div className='logo-wrapper'>
         <img className='logo' src={tokenMetainfo.image ?? UnknownTokenIcon} alt='token image' />
       </div>

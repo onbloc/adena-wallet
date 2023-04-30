@@ -45,6 +45,8 @@ describe('TransferInput Component', () => {
         onClickAddressBook: () => { return; },
       },
       isNext: true,
+      hasBackButton: true,
+      onClickBack: () => { return; },
       onClickCancel: () => { return; },
       onClickNext: () => { return; },
     };
