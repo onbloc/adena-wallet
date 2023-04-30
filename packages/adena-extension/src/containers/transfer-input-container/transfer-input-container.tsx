@@ -34,6 +34,10 @@ const TransferInputContainer: React.FC = () => {
     return true;
   }, [addressBookInput, balanceInput]);
 
+  const onClickBack = useCallback(() => {
+    navigate(-1);
+  }, [isTokenSearch]);
+
   const onClickCancel = useCallback(() => {
     if (isTokenSearch) {
       navigate(RoutePath.Wallet);
@@ -66,10 +70,12 @@ const TransferInputContainer: React.FC = () => {
 
   return (
     <TransferInput
+      hasBackButton={isTokenSearch}
       tokenMetainfo={tokenMetainfo}
       addressInput={addressBookInput}
       balanceInput={balanceInput}
       isNext={isNext()}
+      onClickBack={onClickBack}
       onClickCancel={onClickCancel}
       onClickNext={onClickNext}
     />
