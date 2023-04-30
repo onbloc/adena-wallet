@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { css } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { useWalletContext } from '@hooks/use-context';
 
 const text = {
   title: 'You’re All Set!',
@@ -39,17 +39,22 @@ interface LaunchAdenaState {
 export const LaunchAdena = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [, setState] = useRecoilState(WalletState.state);
-  const { loadAccounts } = useLoadAccounts();
+  const { initWallet } = useWalletContext();
+  const [clicked, setClicked] = useState(false);
 
   const handleNextButtonClick = () => {
+    if (clicked) {
+      return;
+    }
+    setClicked(true);
     const locationState: LaunchAdenaState = location.state;
     if (locationState.type === 'GOOGLE' || locationState.type === 'LEDGER') {
       window.close();
     }
-    setState("NONE");
-    loadAccounts();
-    navigate(RoutePath.Wallet);
+    initWallet().then(() => {
+      navigate(RoutePath.Wallet);
+      setClicked(false);
+    })
   };
 
   return (
