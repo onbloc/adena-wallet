@@ -125,6 +125,12 @@ export class AdenaWallet implements Wallet {
     const lastHdPath = seedAccounts.reduce((account1, account2) =>
       account1.hdPath > account2.hdPath ? account1 : account2,
     ).hdPath;
+
+    for (let index = 0; index < lastHdPath; index += 1) {
+      if (!seedAccounts.find((account) => account.hdPath === index)) {
+        return index;
+      }
+    }
     return lastHdPath + 1;
   }
 
