@@ -73,7 +73,7 @@ const UserListMaker = ({
           <Text type='body3Reg' color={theme.color.neutral[9]}>
             {balanceString}
           </Text>
-          {currentAccount.index === account.index && (
+          {currentAccount.id === account.id && (
             <img src={statusCheck} alt='status icon' className='status-icon' />
           )}
         </ListItem>
