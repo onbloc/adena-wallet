@@ -62,6 +62,7 @@ const AddressBook = () => {
               cursor='pointer'
               hoverAction={true}
               key={i}
+              padding={'0 17px'}
               onClick={() => addAddressHandler('edit', v)}
             />
           ))
