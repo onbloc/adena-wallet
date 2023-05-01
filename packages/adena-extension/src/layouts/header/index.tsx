@@ -63,7 +63,7 @@ export const Header = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;
     }
-    if (yourSeedPhrase && location?.state?.type === 'ADD_ACCOUNT') {
+    if (yourSeedPhrase) {
       if (location?.state?.type === 'ADD_ACCOUNT') {
         return <ArrowTitleMenu />;
       }
