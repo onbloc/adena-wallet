@@ -56,7 +56,7 @@ export const YourSeedPhrase = () => {
   }
 
   const isAddAccount = () => {
-    return location?.state?.type === "ADD_ACCOUNT";
+    return location?.state?.type === 'ADD_ACCOUNT';
   };
 
   const addAccount = async () => {
@@ -80,6 +80,16 @@ export const YourSeedPhrase = () => {
     setShowBlurScreen(false);
     setTerms(false);
   };
+
+  const getButtonText = useCallback(() => {
+    if (!viewSeedAgree) {
+      return 'Reveal Seed Phrase';
+    }
+    if (isAddAccount()) {
+      return 'Create Account';
+    }
+    return 'Next';
+  }, [viewSeedAgree, isAddAccount()]);
 
   return (
     <Wrapper>
@@ -116,7 +126,7 @@ export const YourSeedPhrase = () => {
           onClick={viewSeedAgree ? handleNextButtonClick : viewSeedAgreeButton}
           tabIndex={2}
         >
-          <Text type='body1Bold'>{viewSeedAgree ? 'Next' : 'Reveal Seed Phrase'}</Text>
+          <Text type='body1Bold'>{getButtonText()}</Text>
         </Button>
       </TermsWrap>
     </Wrapper>

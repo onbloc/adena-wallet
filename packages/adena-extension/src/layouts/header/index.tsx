@@ -63,14 +63,14 @@ export const Header = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;
     }
+    if (yourSeedPhrase && location?.state?.type === 'ADD_ACCOUNT') {
+      if (location?.state?.type === 'ADD_ACCOUNT') {
+        return <ArrowTitleMenu />;
+      }
+      return <ProgressMenu progressLevel={'first'} />;
+    }
     if (approveEstablish || approveTransaction || approveSign) {
       return <ApproveMenu />;
-    }
-    if (yourSeedPhrase && location?.state?.type === 'ADD_ACCOUNT') {
-      return <ArrowTitleMenu />;
-    }
-    if (yourSeedPhrase || enterSeedPhrase) {
-      return <ProgressMenu progressLevel={'first'} />;
     }
     if (location?.state?.type === 'GOOGLE' && createPassword) {
       return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
