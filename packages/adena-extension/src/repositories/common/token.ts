@@ -35,7 +35,7 @@ interface AppInfoResponse {
 }
 
 export class TokenRepository {
-  private static ADENA_API_URI = 'https://dev-api.adena.app';
+  private static ADENA_API_URI = 'https://api.adena.app';
 
   private static TOKEN_CONFIG_URI =
     'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json';
