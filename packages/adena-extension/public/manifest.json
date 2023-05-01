@@ -2,7 +2,7 @@
   "name": "Adena",
   "description": "Adena Wallet",
   "manifest_version": 3,
-  "version": "1.5.2",
+  "version": "1.6.0",
   "action": {
     "default_popup": "popup.html"
   },
