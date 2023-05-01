@@ -12,6 +12,9 @@ import { useClear } from '@hooks/use-clear';
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
 
+const forgotPasswordContent =
+  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
+
 export const ResetWallet = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -32,7 +35,7 @@ export const ResetWallet = () => {
         Reset Wallet
       </Text>
       <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
-        {content}
+        {state?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton
         cancelButtonProps={{ onClick: cancelButtonClick }}
