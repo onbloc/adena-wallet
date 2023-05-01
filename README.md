@@ -35,9 +35,9 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Multi-Network <br>
 ✅ Ledger Support <br>
 ✅ Web3 Login Support <br>
+✅ Manage Custom Tokens <br>
 ⬜ Airgap Support <br>
 ⬜ Multi-Chain <br>
-⬜ Manage Custom Tokens <br>
 ⬜ View & Transfer NFTs <br>
 ⬜ In-app Swap
 ​
