@@ -3,7 +3,7 @@ import { TransactionHistoryResponse } from './response/transaction-history-respo
 import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
 
 export class TransactionHistoryRepository {
-  private static ADENA_API_URI = 'https://dev-api.adena.app';
+  private static ADENA_API_URI = 'https://api.adena.app';
 
   private axiosInstance: AxiosInstance;
 
