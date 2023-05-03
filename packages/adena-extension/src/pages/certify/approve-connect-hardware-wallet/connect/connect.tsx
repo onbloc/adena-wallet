@@ -49,7 +49,10 @@ export const ApproveConnectHardwareWalletConnect = () => {
   const requestPermission = async () => {
     setConnectState('REQUEST');
     try {
-      const transport = await LedgerConnector.request();
+      const connected = await checkHardwareConnect();
+      const transport = connected ?
+        await LedgerConnector.openConnected() :
+        await LedgerConnector.request();
       await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
