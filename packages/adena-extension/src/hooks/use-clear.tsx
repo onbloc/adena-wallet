@@ -1,4 +1,4 @@
-import { BalanceState, CommonState, GnoClientState, WalletState } from '@states/index';
+import { BalanceState, CommonState, GnoClientState, NetworkState, WalletState } from '@states/index';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 
@@ -18,6 +18,8 @@ export const useClear = () => {
   const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
   const clearGnoClient = useResetRecoilState(GnoClientState.current);
   const clearNetworks = useResetRecoilState(GnoClientState.networks);
+  const clearCurrentNetwork = useResetRecoilState(NetworkState.currentNetwork);
+  const clearNetworkMetainfos = useResetRecoilState(NetworkState.networkMetainfos);
   const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
   const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
 
@@ -30,6 +32,8 @@ export const useClear = () => {
     clearCurrentAccount();
     clearIsLoading();
     clearAccountTokenBalances();
+    clearCurrentNetwork();
+    clearNetworkMetainfos();
     await walletService.clear();
     await accountService.clear();
     await addressBookService.clear();
