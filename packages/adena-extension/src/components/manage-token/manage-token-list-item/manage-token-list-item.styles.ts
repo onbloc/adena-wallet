@@ -35,6 +35,7 @@ export const ManageTokenListItemWrapper = styled.div`
     flex-direction: column;
     margin-top: 4px;
     height: 35px;
+    white-space: pre;
     justify-content: space-between;
 
     .name {
