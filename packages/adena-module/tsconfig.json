@@ -3,6 +3,7 @@
     "jsx": "preserve",
     "module": "ES6",
     "moduleResolution": "node",
+    "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
     "allowUmdGlobalAccess": true,
     "sourceMap": true,

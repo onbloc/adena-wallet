@@ -5,7 +5,7 @@ export const TransferInputWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 450px;
+  min-height: 444px;
   padding-top: 5px;
 
   .logo-wrapper {

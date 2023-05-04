@@ -10,6 +10,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
+import { isLedgerAccount } from 'adena-module';
 
 interface TransferSummaryInfo {
   tokenMetainfo: TokenMetainfo;
@@ -19,13 +20,13 @@ interface TransferSummaryInfo {
 }
 
 const TransferSummaryContainer: React.FC = () => {
+  const navigate = useNavigate();
   const { state } = useLocation();
   const { transactionService } = useAdenaContext();
   const [gnoClient] = useGnoClient();
   const { currentAccount, currentAddress } = useCurrentAccount();
-  const navigate = useNavigate();
   const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state)
-  const [sendable, setSendable] = useState(true);
+  const [isSent, setIsSent] = useState(false);
 
   useEffect(() => {
     setSummaryInfo(state);
@@ -63,7 +64,7 @@ const TransferSummaryContainer: React.FC = () => {
     });
   }, [summaryInfo, currentAddress]);
 
-  const createTransaction = useCallback(async () => {
+  const createDocument = useCallback(async () => {
     if (!gnoClient || !currentAccount) {
       return null;
     }
@@ -73,16 +74,61 @@ const TransferSummaryContainer: React.FC = () => {
       getNativeTransferMessage() :
       getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
-    const { document, signature } = await transactionService.createSignDocument(
+    const document = await transactionService.createDocument(
       gnoClient,
       currentAccount,
       [message],
       GAS_WANTED,
       networkFeeAmount
     );
+    return document;
+  }, [summaryInfo, currentAccount]);
+
+  const createTransaction = useCallback(async () => {
+    const document = await createDocument();
+    if (!gnoClient || !currentAccount || !document) {
+      return null;
+    }
+    const signature = await transactionService.createSignature(currentAccount, document);
+
     const transaction = await transactionService.createTransaction(document, signature);
     return transactionService.sendTransaction(gnoClient, transaction);
-  }, [summaryInfo, currentAccount, currentAccount])
+  }, [summaryInfo, currentAccount, currentAccount]);
+
+  const transfer = useCallback(async () => {
+    if (isSent || !currentAccount) {
+      return false;
+    }
+    setIsSent(true);
+    if (isLedgerAccount(currentAccount)) {
+      return transferByLedger();
+    }
+    return transferByCommon();
+  }, [summaryInfo, currentAccount, currentAccount, isSent]);
+
+  const transferByCommon = useCallback(async () => {
+    try {
+      await createTransaction();
+      navigate(RoutePath.History);
+    } catch (e) {
+      if (!(e instanceof Error)) {
+        return false;
+      }
+    }
+    setIsSent(false);
+    return false;
+  }, [summaryInfo, currentAccount, currentAccount, isSent]);
+
+  const transferByLedger = useCallback(async () => {
+    const document = await createDocument();
+    if (document) {
+      const state = {
+        document
+      };
+      navigate(RoutePath.TransferLedgerLoading, { state });
+    }
+    return true;
+  }, [summaryInfo, currentAccount, currentAccount, isSent]);
 
   const onClickBack = useCallback(() => {
     navigate(-1);
@@ -97,14 +143,8 @@ const TransferSummaryContainer: React.FC = () => {
   }, [navigate]);
 
   const onClickSend = useCallback(() => {
-    if (!sendable) {
-      return;
-    }
-    setSendable(false);
-    createTransaction()
-      .then(() => navigate(RoutePath.History))
-      .finally(() => setSendable(true))
-  }, [summaryInfo, currentAccount, currentAccount]);
+    transfer();
+  }, [transfer]);
 
   return (
     <TransferSummary
