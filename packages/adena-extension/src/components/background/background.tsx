@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 import { useRecoilState } from "recoil";
 import { CommonState } from "@states/index";
 import { useGnoClient } from "@hooks/use-gno-client";
+import useScrollHistory from "@hooks/use-scroll-history";
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
 
@@ -20,12 +21,17 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
   const { currentNetwork } = useNetwork();
   const { tokenMetainfos, initTokenMetainfos } = useTokenMetainfo();
   const { updateTokenBalanceInfos } = useTokenBalance();
-  const { pathname } = useLocation();
+  const { pathname, key } = useLocation();
   const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const { scrollMove } = useScrollHistory();
 
   useEffect(() => {
     checkHealth();
   }, [pathname, currentNetwork, walletStatus]);
+
+  useEffect(() => {
+    scrollMove();
+  }, [key]);
 
   useEffect(() => {
     if (currentAccount && currentNetwork && failedNetwork[currentNetwork.networkId] === false) {
