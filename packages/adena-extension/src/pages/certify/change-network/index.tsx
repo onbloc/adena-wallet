@@ -42,29 +42,7 @@ export const ChangeNetwork = () => {
   const [loadinsgState] = useState('INIT');
   const [gnoClient, gnoClients] = useGnoClient();
   const { changeNetwork } = useNetwork();
-  const [, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const [, setFailedNetworkChainId] = useRecoilState(CommonState.failedNetworkChainId);
   const [, setState] = useRecoilState(WalletState.state);
-
-  useEffect(() => {
-    if (loadinsgState === 'FINISH') {
-      checkHealth();
-    }
-  }, [loadinsgState]);
-
-  const checkHealth = async () => {
-    let health = false;
-    try {
-      health = (await gnoClient?.isHealth()) ?? false;
-    } catch (e) {
-      console.log(e);
-    }
-    setFailedNetwork(!health);
-    if (!health) {
-      const chainId = gnoClient?.chainId;
-      setFailedNetworkChainId(chainId ?? "");
-    }
-  };
 
   const onClickNetwork = async (network: GnoClient) => {
     if (network.chainId === gnoClient?.chainId) {
@@ -72,6 +50,7 @@ export const ChangeNetwork = () => {
     }
     setState('LOADING');
     await changeNetwork(network.chainId);
+    setState('FINISH');
     navigate(RoutePath.Wallet);
   };
 

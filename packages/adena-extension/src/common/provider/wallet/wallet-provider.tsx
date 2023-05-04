@@ -14,6 +14,7 @@ interface WalletContextProps {
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
   initWallet: () => Promise<boolean>;
+  initNetworkMetainfos: () => Promise<boolean>;
 }
 
 export const WalletContext = createContext<WalletContextProps | null>(null);
@@ -157,7 +158,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         tokenMetainfos,
         networkMetainfos,
         initWallet,
-        updateWallet
+        updateWallet,
+        initNetworkMetainfos
       }}>
       {children}
     </WalletContext.Provider>
