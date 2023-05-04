@@ -1,4 +1,11 @@
-import { StdSignature, TransactionBuilder, uint8ArrayToArray } from 'adena-module';
+import {
+  LedgerAccount,
+  LedgerConnector,
+  LedgerKeyring,
+  StdSignature,
+  TransactionBuilder,
+  uint8ArrayToArray,
+} from 'adena-module';
 import { Account } from 'adena-module';
 import { GnoClient } from 'gno-client';
 import { WalletService } from '..';
@@ -45,6 +52,19 @@ export class TransactionService {
   public createSignature = async (account: Account, document: StdSignDoc) => {
     const wallet = await this.walletService.loadWallet();
     const { signature } = await wallet.signByAccountId(account.id, document);
+    return signature;
+  };
+
+  public createSignatureWithLedger = async (account: LedgerAccount, document: StdSignDoc) => {
+    const connected = await LedgerConnector.openConnected();
+    if (!connected) {
+      throw new Error('Ledger not found');
+    }
+    const ledger = new LedgerConnector(connected);
+    const ledgerKeyring = await LedgerKeyring.fromLedger(ledger);
+    const { signature } = await ledgerKeyring
+      .sign(document, account.hdPath)
+      .finally(async () => await connected.close());
     return signature;
   };
 

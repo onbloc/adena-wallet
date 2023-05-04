@@ -27,8 +27,6 @@ import { ViewPrivateKey } from '@pages/certify/view-private-key';
 import { SeedPhrase } from '@pages/certify/seed-phrase';
 import { ViewSeedPhrase } from '@pages/certify/view-seed-phrase';
 import { WalletSearch } from '@pages/wallet/search';
-import { GeneralSend } from '@pages/wallet/general-send';
-import { SendConfirm } from '@pages/wallet/send-confirm';
 import { Deposit } from '@pages/wallet/deposit';
 import { TokenDetails } from '@pages/wallet/token-details';
 import { ConnectedApps } from '@pages/certify/connected-apps';
@@ -46,7 +44,6 @@ import {
   ApproveHardwareWalletLedgerAllSet,
 } from '@pages/certify/approve-connect-hardware-wallet';
 import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/connect';
-import { SendConfirmReject } from '@pages/wallet/send-confirm-reject';
 import { ApproveSign } from '@pages/wallet/approve-sign';
 import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
@@ -66,6 +63,8 @@ import ManageToken from '@pages/wallet/manage-token';
 import TransferInput from '@pages/wallet/transfer/transfer-input';
 import TransferSummary from '@pages/wallet/transfer/transfer-summary';
 import ManageTokenAdded from '@pages/wallet/manage-token/added';
+import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loading';
+import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
 
 export const CustomRouter = () => {
 
@@ -107,11 +106,10 @@ export const CustomRouter = () => {
           <Route path={RoutePath.SettingSeedPhrase} element={<SeedPhrase />} />
           <Route path={RoutePath.ViewSeedPhrase} element={<ViewSeedPhrase />} />
           <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
-          <Route path={RoutePath.GeneralSend} element={<GeneralSend />} />
-          <Route path={RoutePath.SendConfirm} element={<SendConfirm />} />
           <Route path={RoutePath.TransferInput} element={<TransferInput />} />
           <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />
-          <Route path={RoutePath.SendLedgerReject} element={<SendConfirmReject />} />
+          <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
+          <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />
           <Route path={RoutePath.Deposit} element={<Deposit />} />
           <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
           <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />

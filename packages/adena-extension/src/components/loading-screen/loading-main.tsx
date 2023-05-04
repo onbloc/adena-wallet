@@ -7,6 +7,7 @@ import { RoutePath } from '@router/path';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
+import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -39,9 +40,10 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 
 const LoadingMain = () => {
   const [state] = useRecoilState(WalletState.state);
+  const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
-  const { mainTokenBalance } = useTokenBalance();
+  const { displayTokenBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');
 
@@ -52,14 +54,14 @@ const LoadingMain = () => {
     if (state === 'NONE' || state === 'LOADING') {
       return true;
     }
-    if (failedNetwork) {
+    if (failedNetwork[currentNetwork.networkId] === true) {
       return false;
     }
-    if (state === 'FINISH' && (!mainTokenBalance || mainTokenBalance.denom === '')) {
+    if (state === 'FINISH' && (displayTokenBalances.length === 0)) {
       return true;
     }
     return false;
-  }, [state, isApproveHardwarePath, isNotMatch, mainTokenBalance]);
+  }, [state, isApproveHardwarePath, isNotMatch, displayTokenBalances, failedNetwork, currentNetwork]);
 
   return isLoading() ? (
     <Wrapper>

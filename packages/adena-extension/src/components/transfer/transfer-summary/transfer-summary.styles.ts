@@ -7,7 +7,7 @@ export const TransferSummaryWrapper = styled.div`
   width: 100%;
   height: 100%;
   padding-top: 5px;
-  min-height: 450px;
+  min-height: 444px;
   align-items: center;
   justify-content: flex-start;
 

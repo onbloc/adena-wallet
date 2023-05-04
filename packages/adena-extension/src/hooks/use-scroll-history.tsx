@@ -20,13 +20,14 @@ const useScrollHistory = () => {
         bodyElement?.scrollTo(0, scrollPositions[location.key] || 0);
       }
     };
-
     restoreScrollPosition();
   }, [location, bodyElement]);
 
   const scrollMove = useCallback(() => {
     if (scrollPositions[location.key] !== undefined && scrollPositions[location.key] > 0) {
-      bodyElement?.scrollTo(0, scrollPositions[location.key] || 0);
+      bodyElement?.scrollTo(0, scrollPositions[location.key]);
+    } else {
+      bodyElement?.scrollTo(0, 0);
     }
   }, [location, bodyElement])
 
