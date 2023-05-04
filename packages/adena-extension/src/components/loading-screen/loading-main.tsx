@@ -43,7 +43,7 @@ const LoadingMain = () => {
   const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
-  const { mainTokenBalance } = useTokenBalance();
+  const { displayTokenBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');
 
@@ -57,11 +57,11 @@ const LoadingMain = () => {
     if (failedNetwork[currentNetwork.networkId] === true) {
       return false;
     }
-    if (state === 'FINISH' && (!mainTokenBalance || mainTokenBalance.denom === '')) {
+    if (state === 'FINISH' && (displayTokenBalances.length === 0)) {
       return true;
     }
     return false;
-  }, [state, isApproveHardwarePath, isNotMatch, mainTokenBalance, failedNetwork, currentNetwork]);
+  }, [state, isApproveHardwarePath, isNotMatch, displayTokenBalances, failedNetwork, currentNetwork]);
 
   return isLoading() ? (
     <Wrapper>

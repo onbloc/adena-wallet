@@ -10,6 +10,7 @@ import { useRecoilState } from 'recoil';
 import { CommonState, WalletState } from '@states/index';
 import { ArrowTitleMenu } from './arrow-title-menu';
 import { TabMenu } from './tab-menu';
+import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -57,8 +58,9 @@ export const Header = () => {
 
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const { currentNetwork } = useNetwork();
 
-  const loadingComplete = walletState === 'FINISH' || failedNetwork;
+  const loadingComplete = walletState === 'FINISH' || failedNetwork[currentNetwork.networkId];
   const renderHeader = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;

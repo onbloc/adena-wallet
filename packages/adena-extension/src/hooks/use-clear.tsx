@@ -11,7 +11,6 @@ export const useClear = () => {
     establishService,
     tokenService,
   } = useAdenaContext();
-
   const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
   const setWalletState = useSetRecoilState(WalletState.state);
   const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
@@ -19,7 +18,7 @@ export const useClear = () => {
   const clearGnoClient = useResetRecoilState(GnoClientState.current);
   const clearNetworks = useResetRecoilState(GnoClientState.networks);
   const clearCurrentNetwork = useResetRecoilState(NetworkState.currentNetwork);
-  const clearNetworkMetainfos = useResetRecoilState(NetworkState.networkMetainfos);
+  const clearFailedNetwork = useResetRecoilState(CommonState.failedNetwork);
   const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
   const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
 
@@ -33,7 +32,7 @@ export const useClear = () => {
     clearIsLoading();
     clearAccountTokenBalances();
     clearCurrentNetwork();
-    clearNetworkMetainfos();
+    clearFailedNetwork();
     await walletService.clear();
     await accountService.clear();
     await addressBookService.clear();
