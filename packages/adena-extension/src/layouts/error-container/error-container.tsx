@@ -1,6 +1,6 @@
 import React from 'react';
 import { useRecoilState } from 'recoil';
-import { CommonState } from '@states/index';
+import { CommonState, NetworkState } from '@states/index';
 import { ErrorNetwork } from '@components/errors';
 
 interface Props {
@@ -9,9 +9,13 @@ interface Props {
 
 export const ErrorContainer = ({ children }: Props) => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [currentNetwork] = useRecoilState(NetworkState.currentNetwork);
 
   const isError = () => {
-    return failedNetwork === true;
+    if (!currentNetwork) {
+      return false;
+    }
+    return failedNetwork[currentNetwork.networkId];
   }
 
   return isError() ?

@@ -57,5 +57,6 @@ export class ChainService {
   public clear = async () => {
     await this.chainRepository.deleteCurrentChainId();
     await this.chainRepository.deleteNetworks();
+    await this.chainRepository.deleteCurrentNetworkId();
   };
 }

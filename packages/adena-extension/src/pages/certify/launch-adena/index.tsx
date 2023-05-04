@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled, { css } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import { useWalletContext } from '@hooks/use-context';
 
 const text = {
@@ -39,7 +37,7 @@ interface LaunchAdenaState {
 export const LaunchAdena = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { initWallet } = useWalletContext();
+  const { initWallet, initNetworkMetainfos } = useWalletContext();
   const [clicked, setClicked] = useState(false);
 
   const handleNextButtonClick = () => {
@@ -51,10 +49,13 @@ export const LaunchAdena = () => {
     if (locationState.type === 'GOOGLE' || locationState.type === 'LEDGER') {
       window.close();
     }
-    initWallet().then(() => {
+    Promise.all([
+      initWallet(),
+      initNetworkMetainfos(),
+    ]).then(() => {
       navigate(RoutePath.Wallet);
       setClicked(false);
-    })
+    });
   };
 
   return (

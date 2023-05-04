@@ -13,7 +13,7 @@ import { useGnoClient } from "@hooks/use-gno-client";
 type BackgroundProps = React.PropsWithChildren<unknown>;
 
 export const Background: React.FC<BackgroundProps> = ({ children }) => {
-  const { wallet } = useWalletContext();
+  const { wallet, walletStatus } = useWalletContext();
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
   const [gnoClient] = useGnoClient()
@@ -25,10 +25,10 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
 
   useEffect(() => {
     checkHealth();
-  }, [pathname, currentNetwork]);
+  }, [pathname, currentNetwork, walletStatus]);
 
   useEffect(() => {
-    if (currentAccount && currentNetwork && !failedNetwork) {
+    if (currentAccount && currentNetwork && failedNetwork[currentNetwork.networkId] === false) {
       initTokenMetainfos();
     }
   }, [currentAccount, currentNetwork, failedNetwork]);
@@ -48,10 +48,19 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     if (!gnoClient) {
       return;
     }
+    if (['NONE', 'CREATE', 'LOGIN'].includes(walletStatus)) {
+      return;
+    }
     gnoClient.isHealth().then(isHelath => {
-      setFailedNetwork(!isHelath);
+      setFailedNetwork({
+        ...failedNetwork,
+        [gnoClient.networkId]: !isHelath
+      });
     }).catch(() => {
-      setFailedNetwork(true);
+      setFailedNetwork({
+        ...failedNetwork,
+        [gnoClient.networkId]: true
+      });
     });
   }
 

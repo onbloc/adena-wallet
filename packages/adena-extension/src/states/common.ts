@@ -18,14 +18,9 @@ export const tokenDetailPosition = atom<HistoryPosition>({
   },
 });
 
-export const failedNetwork = atom<boolean>({
+export const failedNetwork = atom<{ [key in string]: boolean }>({
   key: `common/failed-network`,
-  default: false,
-});
-
-export const failedNetworkChainId = atom<string>({
-  key: `common/failed-network-chainId`,
-  default: '',
+  default: {},
 });
 
 export const scrollPositions = atom<{ [key in string]: number }>({
