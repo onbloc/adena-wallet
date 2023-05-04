@@ -26,9 +26,6 @@ export enum RoutePath {
   TransactionDetail = '/wallet/transaction-detail',
   Deposit = '/wallet/deposit',
   Send = '/wallet/send',
-  GeneralSend = '/wallet/general-send',
-  SendConfirm = '/wallet/send-confirm',
-  SendLedgerReject = '/wallet/send-confirm/reject',
   TokenDetails = '/wallet/token-details',
   ApproveLogin = '/approve/wallet/login',
   ApproveTransaction = '/approve/wallet/transaction',
@@ -40,6 +37,8 @@ export enum RoutePath {
   ManageTokenAdded = '/wallet/manage-token/added',
   TransferInput = '/wallet/transfer-input',
   TransferSummary = '/wallet/transfer-summary',
+  TransferLedgerLoading = '/wallet/transfer-ledger/loading',
+  TransferLedgerReject = '/wallet/transfer-ledger/reject',
 
   // settings
   Setting = '/settings',
