@@ -34,10 +34,10 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
   }, [key]);
 
   useEffect(() => {
-    if (currentAccount && currentNetwork && failedNetwork[currentNetwork.networkId] === false) {
+    if (currentAccount && currentNetwork) {
       initTokenMetainfos();
     }
-  }, [currentAccount, currentNetwork, failedNetwork]);
+  }, [currentAccount, currentNetwork]);
 
   useEffect(() => {
     if (tokenMetainfos.length === 0) {
