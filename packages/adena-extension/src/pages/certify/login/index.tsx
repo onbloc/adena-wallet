@@ -50,12 +50,18 @@ export const Login = () => {
   }, []);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [inputRef]);
+    focusInput();
+  }, [existWallet]);
 
   useEffect(() => {
     setValidateState(true);
   }, [password]);
+
+  const focusInput = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
 
   const login = async () => {
     try {

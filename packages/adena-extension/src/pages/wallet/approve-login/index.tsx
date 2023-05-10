@@ -62,12 +62,18 @@ export const ApproveLogin = () => {
   }, [state]);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [inputRef]);
+    focusInput();
+  }, [state]);
 
   useEffect(() => {
     setError(null);
   }, [password]);
+
+  const focusInput = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
 
   const tryLoginApprove = async (password: string) => {
     let currentError = null;
