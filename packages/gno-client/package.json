@@ -1,7 +1,7 @@
 {
   "name": "gno-client",
   "private": true,
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Gno API interface",
   "main": "./dist/index.umd.js",
   "module": "./dist/index.esm.js",
