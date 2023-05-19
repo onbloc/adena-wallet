@@ -227,7 +227,7 @@ export class AdenaWallet implements Wallet {
     if (!account) {
       throw new Error('Account not found');
     }
-    const keyring = this._keyrings.find((keyring) => (keyring.id = account.keyringId));
+    const keyring = this._keyrings.find((keyring) => keyring.id === account.keyringId);
     if (!keyring) {
       throw new Error('Keyring not found');
     }
