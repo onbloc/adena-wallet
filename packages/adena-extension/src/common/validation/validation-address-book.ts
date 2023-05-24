@@ -1,6 +1,7 @@
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { BookListProps } from '@pages/certify/address-book';
+import { Account } from 'adena-module';
 
 export const validateInvalidAddress = (address: string) => {
   const invalidCheck = addressValidationCheck(address);
@@ -22,6 +23,24 @@ export const validateAlreadyAddress = (
     const filterDatas = allDatas.filter(
       (v: BookListProps) => v.id !== currData.id && v.address === currData.address,
     );
+    check = Boolean(filterDatas.length);
+  }
+  if (check) {
+    throw new AddressBookValidationError('ALREADY_ADDRESS');
+  }
+  return true;
+};
+
+export const validateAlreadyAddressByAccounts = (
+  currData: BookListProps,
+  accounts: Account[],
+  isAdd: boolean,
+) => {
+  let check: boolean;
+  if (isAdd) {
+    check = accounts.some((account) => account.getAddress('g') === currData.address);
+  } else {
+    const filterDatas = accounts.filter((account) => account.getAddress('g') === currData.address);
     check = Boolean(filterDatas.length);
   }
   if (check) {
