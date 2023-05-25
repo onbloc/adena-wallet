@@ -10,7 +10,7 @@ import { useAccountName } from './use-account-name';
 export const useAddressBookInput = () => {
   const { addressBookService } = useAdenaContext();
   const { wallet } = useWalletContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
@@ -36,22 +36,28 @@ export const useAddressBookInput = () => {
 
   const getAddressBookInfos = useCallback(() => {
     const currenAccountInfos =
-      wallet?.accounts.map((account) => {
+      wallet?.accounts
+        .filter(
+          (account) => account.getAddress(currentNetwork?.addressPrefix || 'g') !== currentAddress,
+        )
+        .map((account) => {
+          return {
+            addressBookId: account.id,
+            name: formatNickname(accountNames[account.id], 12),
+            description: `(${formatAddress(
+              account.getAddress(currentNetwork?.addressPrefix || 'g'),
+            )})`,
+          };
+        }) ?? [];
+    const addressBookInfos = addressBooks
+      .filter((addressBook) => addressBook.address !== currentAddress)
+      .map((addressBook) => {
         return {
-          addressBookId: account.id,
-          name: formatNickname(accountNames[account.id], 12),
-          description: `(${formatAddress(
-            account.getAddress(currentNetwork?.addressPrefix || 'g'),
-          )})`,
+          addressBookId: addressBook.id,
+          name: formatNickname(addressBook.name, 12),
+          description: `(${formatAddress(addressBook.address)})`,
         };
-      }) ?? [];
-    const addressBookInfos = addressBooks.map((addressBook) => {
-      return {
-        addressBookId: addressBook.id,
-        name: formatNickname(addressBook.name, 12),
-        description: `(${formatAddress(addressBook.address)})`,
-      };
-    });
+      });
 
     return [...currenAccountInfos, ...addressBookInfos];
   }, [addressBooks, wallet?.accounts]);

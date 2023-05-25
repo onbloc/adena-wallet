@@ -17,3 +17,10 @@ export const Default: StoryObj<AddressBookListProps> = {
     onClickItem: action('click item')
   },
 };
+
+export const NoAddress: StoryObj<AddressBookListProps> = {
+  args: {
+    addressBookInfos: [],
+    onClickItem: action('click item')
+  },
+};
