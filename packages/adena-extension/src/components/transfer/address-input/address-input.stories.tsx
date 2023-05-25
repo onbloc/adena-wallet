@@ -45,3 +45,19 @@ export const Default: StoryObj<AddressInputProps> = {
     onClickAddressBook: action('click address book')
   },
 };
+
+export const NoAddress: StoryObj<AddressInputProps> = {
+  args: {
+    opened: true,
+    hasError: false,
+    errorMessage: 'Invalid address',
+    selected: false,
+    selectedName: undefined,
+    selectedDescription: undefined,
+    address: '',
+    addressBookInfos: [],
+    onClickInputIcon: action('click input icon'),
+    onChangeAddress: action('change address'),
+    onClickAddressBook: action('click address book')
+  },
+};

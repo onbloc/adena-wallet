@@ -6,6 +6,13 @@ export const AddressBookListWrapper = styled.div`
   width: 100%;
   height: auto;
   background-color: ${({ theme }) => theme.color.neutral[8]};
+
+  .no-address-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 13px 16px;
+  }
 `;
 
 export const AddressBookListItemWrapper = styled.div`
