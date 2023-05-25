@@ -1,5 +1,7 @@
 import React from 'react';
 import { AddressBookListWrapper, AddressBookListItemWrapper } from './address-book-list.styles';
+import Text from '@components/text';
+import theme from '@styles/theme';
 
 export interface AddressBookListProps {
   addressBookInfos: {
@@ -37,6 +39,15 @@ const AddressBookList: React.FC<AddressBookListProps> = ({
 }) => {
   return (
     <AddressBookListWrapper>
+      {
+        addressBookInfos.length === 0 && (
+          <div className='no-address-wrapper'>
+            <Text className='no-address' type='body2Reg' color={theme.color.neutral[9]}>
+              No address registered
+            </Text>
+          </div>
+        )
+      }
       {addressBookInfos.map((info, index) =>
         <AddressBookListItem
           key={index}
