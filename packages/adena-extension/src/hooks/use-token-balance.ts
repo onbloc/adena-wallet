@@ -3,12 +3,13 @@ import { useRecoilState } from 'recoil';
 import { useNetwork } from './use-network';
 import { useCurrentAccount } from './use-current-account';
 import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
-import { Account } from 'adena-module';
+import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
 import { useGnoClient } from './use-gno-client';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useCallback, useEffect } from 'react';
 import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { GnoWallet } from '@gnolang/gno-js-client';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
@@ -216,6 +217,8 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
+    if (wallet === null) throw new Error("wallet doesn't exist");
+
     const defaultAmount = {
       value: '0',
       denom: token.symbol,
@@ -228,13 +231,36 @@ export const useTokenBalance = (): {
     }
     const prefix = currentNetwork?.addressPrefix ?? 'g';
 
+    let address = account.getAddress(prefix);
+
+    if (isSeedAccount(account)) {
+      const keyring = wallet.keyrings.find((keyring) => keyring.id === account.keyringId);
+      const mnemonic = keyring?.toData().mnemonic;
+      if (mnemonic !== undefined) {
+        const gnoWallet = await GnoWallet.fromMnemonic(mnemonic, {
+          accountIndex: account.hdPath,
+          addressPrefix: prefix,
+        });
+        address = await gnoWallet.getAddress();
+      }
+    } else if (isSingleAccount(account)) {
+      const keyring = wallet.keyrings.find((keyring) => keyring.id === account.keyringId);
+      const privateKey = keyring?.toData().privateKey;
+      if (privateKey !== undefined) {
+        const tm2Wallet = await GnoWallet.fromPrivateKey(new Uint8Array(privateKey), {
+          addressPrefix: prefix,
+        });
+        address = await tm2Wallet.getAddress();
+      }
+    }
+
     let balances: TokenBalance[] = [];
     if (isNativeTokenModel(token)) {
-      balances = await balanceService.getTokenBalances(gnoClient, account.getAddress(prefix));
+      balances = await balanceService.getTokenBalances(gnoClient, address);
     } else if (isGRC20TokenModel(token)) {
       balances = await balanceService.getGRC20TokenBalance(
         gnoClient,
-        account.getAddress(prefix),
+        address,
         token.pkgPath,
         token.symbol,
       );

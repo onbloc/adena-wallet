@@ -28,7 +28,7 @@ export const useAddAccount = (): {
     account.name = `Account ${wallet.lastAccountIndex + 1}`;
     const clone = wallet.clone();
     clone.addAccount(account);
-    const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
+    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);
     }
