@@ -1,7 +1,7 @@
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { AdenaExecutor, RequestDocontractMessage } from './inject/executor/executor';
 
-function callbackCustomEvent(event: CustomEvent, callback: (message: any) => void) {
+function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void) {
   event.stopImmediatePropagation();
   callback(event.detail);
 }
@@ -28,16 +28,16 @@ const init = () => {
       const response = await executor.SignAmino(mesasage);
       return response;
     },
-    On(eventName: string, callback: (message: CustomEvent) => void) {
+    On(eventName: string, callback: (message: string) => void) {
       switch (eventName) {
         case 'changedAccount':
-        case 'changedNetwork':
-          window.addEventListener<any>(
+          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
-            (event: CustomEvent) => callbackCustomEvent(event, callback),
+            (event) => callbackCustomEvent<string>(event, callback),
             true,
           );
           return true;
+        case 'changedNetwork':
         default:
           break;
       }
