@@ -28,9 +28,8 @@
       "@states/*": ["src/states/*"],
       "@common/*": ["src/common/*"],
       "@inject/*": ["src/inject/*"],
-      "@assets/*": ["src/assets/*"],
-      "@containers/*": ["src/containers/*"]
+      "@assets/*": ["src/assets/*"]
     }
   },
-  "include": ["./src/**/*", "custom.d.ts"]
+  "include": ["./src/**/*"]
 }
