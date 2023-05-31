@@ -1,4 +1,10 @@
+import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { AdenaExecutor, RequestDocontractMessage } from './inject/executor/executor';
+
+function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void) {
+  event.stopImmediatePropagation();
+  callback(event.detail);
+}
 
 const init = () => {
   const adena = {
@@ -21,6 +27,21 @@ const init = () => {
       const executor = new AdenaExecutor();
       const response = await executor.SignAmino(mesasage);
       return response;
+    },
+    On(eventName: string, callback: (message: string) => void) {
+      switch (eventName) {
+        case 'changedAccount':
+          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
+            EVENT_KEYS[eventName],
+            (event) => callbackCustomEvent<string>(event, callback),
+            true,
+          );
+          return true;
+        case 'changedNetwork':
+        default:
+          break;
+      }
+      return false;
     },
   };
 

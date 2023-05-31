@@ -1,3 +1,6 @@
+import { EVENT_KEYS } from '@common/constants/event-key.constant';
+import { EventMessageData } from '@inject/message';
+
 const sendMessage = (event: MessageEvent) => {
   const message = event.data;
   chrome.runtime.sendMessage(message, (response) => {
@@ -35,5 +38,17 @@ const initListener = () => {
   );
 };
 
+const initExtensionListener = () => {
+  chrome.runtime.onMessage.addListener((message: EventMessageData) => {
+    if (message.status === 'event') {
+      const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {
+        detail: message.data,
+      });
+      window.dispatchEvent(changedAccountEvent);
+    }
+  });
+};
+
 loadScript();
 initListener();
+initExtensionListener();

@@ -3,6 +3,9 @@ import { Account } from 'adena-module';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useNetwork } from './use-network';
+import { useCallback } from 'react';
+import { useEvent } from './use-event';
+import { EventMessage } from '@inject/message/event-message';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null,
@@ -13,6 +16,7 @@ export const useCurrentAccount = (): {
   const { accountService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
+  const { dispatchEvent } = useEvent();
 
   const changeCurrentAccount = async (
     changedAccount: Account,
@@ -24,12 +28,19 @@ export const useCurrentAccount = (): {
     const clone = wallet.clone();
     clone.currentAccountId = changedAccount.id;
     setCurrentAccount(changedAccount);
+    dispatchChangedEvent(changedAccount);
     return true;
   };
 
+  const dispatchChangedEvent = useCallback((account: Account) => {
+    const address = account.getAddress(currentNetwork.addressPrefix);
+    const message = EventMessage.event('changedAccount', address);
+    dispatchEvent(message);
+  }, [currentNetwork]);
+
   return {
     currentAccount,
-    currentAddress: currentAccount?.getAddress(currentNetwork?.addressPrefix ?? 'g') ?? null,
+    currentAddress: currentAccount?.getAddress(currentNetwork?.addressPrefix ?? 'g') || null,
     changeCurrentAccount
   };
 };
