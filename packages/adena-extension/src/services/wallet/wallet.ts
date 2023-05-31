@@ -107,8 +107,8 @@ export class WalletService {
    */
   public saveWallet = async (wallet: Wallet, password: string) => {
     const serializedWallet = await wallet.serialize(password);
-    await this.walletRepository.updateSerializedWallet(serializedWallet);
     await this.walletRepository.updateWalletPassword(password);
+    await this.walletRepository.updateSerializedWallet(serializedWallet);
   };
 
   /**
@@ -119,6 +119,7 @@ export class WalletService {
    */
   public deserializeWallet = async (password: string) => {
     try {
+      await this.walletRepository.updateWalletPassword(password);
       const serializedWallet = await this.walletRepository.getSerializedWallet();
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
       return walletInstance;
