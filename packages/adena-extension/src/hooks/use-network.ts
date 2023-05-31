@@ -2,6 +2,9 @@ import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { NetworkMetainfo } from '@states/network';
 import { NetworkState } from '@states/index';
+import { EventMessage } from '@inject/message';
+import { useCallback } from 'react';
+import { useEvent } from './use-event';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -32,6 +35,7 @@ export const useNetwork = (): NetworkResponse => {
   const { networkMetainfos: networks } = useWalletContext();
   const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
+  const { dispatchEvent } = useEvent();
 
   async function changeNetwork(networkId: string) {
     if (networks.length === 0) {
@@ -41,9 +45,18 @@ export const useNetwork = (): NetworkResponse => {
     const currentNetwork =
       networks.find((network) => network.networkId === networkId) ?? networks[0];
     setCurrentNetwork(currentNetwork);
+    dispatchChangedEvent(currentNetwork);
     await chainService.updateCurrentNetworkId(currentNetwork.networkId);
     return true;
   }
+
+  const dispatchChangedEvent = useCallback(
+    (network: NetworkMetainfo) => {
+      const message = EventMessage.event('changedNetwork', network.networkId);
+      dispatchEvent(message);
+    },
+    [currentNetwork],
+  );
 
   return {
     currentNetwork: currentNetwork || DEFAULT_NETWORK,
