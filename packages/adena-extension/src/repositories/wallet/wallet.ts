@@ -34,6 +34,7 @@ export class WalletRepository {
 
   public deleteSerializedWallet = async () => {
     await this.localStorage.remove('SERIALIZED');
+    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     return true;
   };
 
@@ -59,7 +60,9 @@ export class WalletRepository {
     }
 
     try {
-      return decryptPassword(encryptedKey, encryptedPassword);
+      const password = decryptPassword(encryptedKey, encryptedPassword);
+      this.updateStoragePassword(password);
+      return password;
     } catch (e) {
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
@@ -68,6 +71,7 @@ export class WalletRepository {
   public updateWalletPassword = async (password: string) => {
     const { encryptedKey, encryptedPassword } = encryptPassword(password);
     const storedPassword = encryptSha256Password(password);
+    this.updateStoragePassword(password);
     await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', storedPassword);
     await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
     await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
@@ -83,5 +87,9 @@ export class WalletRepository {
   public getEncryptedPassword = async () => {
     const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
     return encryptedPassword;
+  };
+
+  public updateStoragePassword = (password: string) => {
+    this.localStorage.updatePassword(password);
   };
 }

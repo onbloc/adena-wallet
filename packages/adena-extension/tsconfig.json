@@ -28,7 +28,8 @@
       "@states/*": ["src/states/*"],
       "@common/*": ["src/common/*"],
       "@inject/*": ["src/inject/*"],
-      "@assets/*": ["src/assets/*"]
+      "@assets/*": ["src/assets/*"],
+      "@migrates/*": ["src/migrates/*"]
     }
   },
   "include": ["./src/**/*"]
