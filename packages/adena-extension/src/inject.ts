@@ -31,13 +31,13 @@ const init = () => {
     On(eventName: string, callback: (message: string) => void) {
       switch (eventName) {
         case 'changedAccount':
-          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
+        case 'changedNetwork':
+          window.addEventListener<typeof EVENT_KEYS[typeof eventName]>(
             EVENT_KEYS[eventName],
             (event) => callbackCustomEvent<string>(event, callback),
             true,
           );
           return true;
-        case 'changedNetwork':
         default:
           break;
       }

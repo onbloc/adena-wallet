@@ -5,6 +5,6 @@ declare global {
 
   interface WindowEventMap {
     [EVENT_KEYS.changedAccount]: CustomEvent<string>;
-    [EVENT_KEYS.changedNetwork]: CustomEvent;
+    [EVENT_KEYS.changedNetwork]: CustomEvent<string>;
   }
 }
