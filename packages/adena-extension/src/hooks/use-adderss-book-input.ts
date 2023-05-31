@@ -10,7 +10,7 @@ import { useAccountName } from './use-account-name';
 export const useAddressBookInput = () => {
   const { addressBookService } = useAdenaContext();
   const { wallet } = useWalletContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
@@ -22,10 +22,7 @@ export const useAddressBookInput = () => {
   const { accountNames } = useAccountName();
 
   const updateAddressBook = async () => {
-    if (!currentAccount) {
-      return;
-    }
-    const addressBooks = await addressBookService.getAddressBookByAccountId(currentAccount.id);
+    const addressBooks = await addressBookService.getAddressBook();
     setAddressBooks(addressBooks);
   };
 

@@ -10,7 +10,7 @@ type StorageKeyTypes =
   | 'CURRENT_ACCOUNT_ID'
   | 'ACCOUNT_NAMES'
   | 'ESTABLISH_SITES'
-  | 'ADDRSS_BOOK'
+  | 'ADDRESS_BOOK'
   | 'ACCOUNT_TOKEN_METAINFOS';
 
 const StorageKeys: StorageKeyTypes[] = [
@@ -22,7 +22,7 @@ const StorageKeys: StorageKeyTypes[] = [
   'CURRENT_ACCOUNT_ID',
   'ACCOUNT_NAMES',
   'ESTABLISH_SITES',
-  'ADDRSS_BOOK',
+  'ADDRESS_BOOK',
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 

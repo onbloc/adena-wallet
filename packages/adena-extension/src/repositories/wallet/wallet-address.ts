@@ -18,10 +18,13 @@ export class WalletAddressRepository {
 
   public getAddressBook = async () => {
     const addressBook = await this.localStorage.getToObject('ADDRESS_BOOK');
-    return addressBook;
+    if (!Array.isArray(addressBook)) {
+      return [];
+    }
+    return addressBook as AddressBookItem[];
   };
 
-  public updateAddressBooke = async (addressBook: { [key in string]: any }) => {
+  public updateAddressBooke = async (addressBook: AddressBookItem[]) => {
     await this.localStorage.setByObject('ADDRESS_BOOK', addressBook);
   };
 
