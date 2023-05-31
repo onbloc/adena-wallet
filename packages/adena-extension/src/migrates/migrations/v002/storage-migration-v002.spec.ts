@@ -1,0 +1,84 @@
+import { decryptAES } from 'adena-module';
+import { StorageMigration002 } from './storage-migration-v002';
+
+const mockStorageData = {
+  NETWORKS: [],
+  CURRENT_CHAIN_ID: '',
+  CURRENT_NETWORK_ID: '',
+  SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
+  ENCRYPTED_STORED_PASSWORD: '',
+  CURRENT_ACCOUNT_ID: '',
+  ACCOUNT_NAMES: {},
+  ESTABLISH_SITES: {},
+  ADDRSS_BOOK: {},
+  ACCOUNT_TOKEN_METAINFOS: {},
+};
+
+describe('serialized wallet migration V002', () => {
+  it('version', () => {
+    const migration = new StorageMigration002();
+    expect(migration.version).toBe(2);
+  });
+
+  it('up success', async () => {
+    const mockData = {
+      version: 1,
+      data: mockStorageData,
+    };
+    const migration = new StorageMigration002();
+    const result = await migration.up(mockData);
+
+    expect(result.version).toBe(2);
+    expect(result.data).not.toBeNull();
+    expect(result.data.NETWORKS).toEqual([]);
+    expect(result.data.CURRENT_CHAIN_ID).toBe('');
+    expect(result.data.CURRENT_NETWORK_ID).toBe('');
+    expect(result.data.SERIALIZED).toBe('');
+    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe('');
+    expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
+    expect(result.data.ACCOUNT_NAMES).toEqual({});
+    expect(result.data.ESTABLISH_SITES).toEqual({});
+    expect(result.data.ADDRSS_BOOK).toEqual([]);
+  });
+
+  it('up password success', async () => {
+    const mockData = {
+      version: 1,
+      data: mockStorageData,
+    };
+    const password = '123';
+    const migration = new StorageMigration002();
+    const result = await migration.up(mockData, password);
+
+    expect(result.version).toBe(2);
+    expect(result.data).not.toBeNull();
+    expect(result.data.NETWORKS).toEqual([]);
+    expect(result.data.CURRENT_CHAIN_ID).toBe('');
+    expect(result.data.CURRENT_NETWORK_ID).toBe('');
+    expect(result.data.SERIALIZED).not.toBe('');
+    expect(result.data.ENCRYPTED_STORED_PASSWORD).toBe('');
+    expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
+    expect(result.data.ACCOUNT_NAMES).toEqual({});
+    expect(result.data.ESTABLISH_SITES).toEqual({});
+    expect(result.data.ADDRSS_BOOK).toEqual([]);
+
+    const serialized = result.data.SERIALIZED;
+    const decrypted = await decryptAES(serialized, password);
+    const wallet = JSON.parse(decrypted);
+
+    expect(wallet.accounts).toHaveLength(0);
+    expect(wallet.keyrings).toHaveLength(0);
+  });
+
+  it('up failed throw error', async () => {
+    const mockData: any = {
+      version: 1,
+      data: { ...mockStorageData, SERIALIZED: null },
+    };
+    const migration = new StorageMigration002();
+
+    await expect(migration.up(mockData)).rejects.toThrow(
+      'Stroage Data doesn not match version V001',
+    );
+  });
+});

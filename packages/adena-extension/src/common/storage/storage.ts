@@ -1,16 +1,20 @@
-import { ChromeLocalStorage } from "./chrome-local-storage";
-import { ChromeSessionStorage } from "./chrome-session-storage";
-import { StorageManager } from "./storage-manager";
+import { ChromeLocalStorage } from './chrome-local-storage';
+import { ChromeSessionStorage } from './chrome-session-storage';
+import { StorageManager } from './storage-manager';
+
+export interface StorageModel<T = any> {
+  version: number;
+  data: T;
+}
 
 export interface Storage {
   get: (key: string) => Promise<any>;
-  set: (key: string, value: string) => Promise<void>;
+  set: (key: string, value: any) => Promise<void>;
   remove: (key: string) => Promise<void>;
   clear: () => Promise<void>;
 }
 
 export class AdenaStorage {
-
   private static localStorage: StorageManager<any> | null = null;
 
   private static sessionStorage: StorageManager<any> | null = null;
@@ -28,5 +32,4 @@ export class AdenaStorage {
     }
     return this.sessionStorage as StorageManager<T>;
   };
-
 }
