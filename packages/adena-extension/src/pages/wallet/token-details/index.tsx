@@ -22,7 +22,7 @@ import HighlightNumber from '@components/common/highlight-number/highlight-numbe
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
 import BigNumber from 'bignumber.js';
-import { isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isGRC20TokenModel } from '@models/token-model';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -88,7 +88,7 @@ export const TokenDetails = () => {
   const { currentNetwork } = useNetwork();
   const [tokenBalance] = useState<TokenBalance>(state);
   const [balance] = useState(tokenBalance.amount.value);
-  const { convertDenom, getTokenImage } = useTokenMetainfo();
+  const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
@@ -181,7 +181,7 @@ export const TokenDetails = () => {
       const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
-        logo: getTokenImage(tokenBalance) || `${UnknownTokenIcon}`,
+        logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: {
           value: BigNumber(value).toFormat(),
           denom
