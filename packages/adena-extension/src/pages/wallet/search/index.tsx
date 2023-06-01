@@ -49,6 +49,11 @@ const InputResetBtn = styled.button`
 
 const DataListWrap = styled.div`
   margin-top: 30px;
+
+  .logo {
+    width: 34px;
+    height: 34px;
+  }
 `;
 
 const ButtonWrap = styled.div`

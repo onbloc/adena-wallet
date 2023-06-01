@@ -12,6 +12,10 @@ export class TokenService {
     this.tokenMetaInfos = [];
   }
 
+  public getTokenMetainfos() {
+    return this.tokenMetaInfos;
+  }
+
   public async fetchTokenMetainfos() {
     if (this.tokenMetaInfos.length > 0) {
       return this.tokenMetaInfos;

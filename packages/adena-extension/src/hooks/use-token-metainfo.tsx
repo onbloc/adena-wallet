@@ -22,7 +22,7 @@ export const useTokenMetainfo = () => {
     if (currentAccount) {
       await tokenService.initAccountTokenMetainfos(currentAccount.id);
       const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-      setTokenMetainfo(tokenMetainfos);
+      setTokenMetainfo([...tokenMetainfos]);
     }
   }
 
@@ -46,18 +46,24 @@ export const useTokenMetainfo = () => {
 
   const getTokenImage = (token: TokenModel) => {
     if (isNativeTokenModel(token)) {
-      return tokenMetainfos.find(info => info.symbol === token.symbol)?.image;
+      return getTokenImageByDenom(token.symbol);
     }
     if (isGRC20TokenModel(token)) {
-      return tokenMetainfos
-        .filter(isGRC20TokenModel)
-        .find(info => info.pkgPath === token.pkgPath)?.image;
+      return getTokenImageByPkgPath(token.pkgPath);
     }
     return null;
   }
 
   const getTokenImageByDenom = (denom: string) => {
-    return tokenMetainfos.find(info => info.symbol === denom)?.image;
+    const image = tokenService.getTokenMetainfos().find(info => info.symbol.toUpperCase() === denom.toUpperCase())?.image;
+    if (image) {
+      return image;
+    }
+    return tokenService.getTokenMetainfos().find(info => isNativeTokenModel(info) && info.denom.toUpperCase() === denom.toUpperCase())?.image;
+  }
+
+  const getTokenImageByPkgPath = (pkgPath: string) => {
+    return tokenService.getTokenMetainfos().find(info => isGRC20TokenModel(info) && info.pkgPath === pkgPath)?.image;
   }
 
   const addTokenMetainfo = async (tokenMetainfo: GRC20TokenModel) => {
@@ -108,6 +114,7 @@ export const useTokenMetainfo = () => {
     addGRC20TokenMetainfo,
     convertDenom,
     getTokenImage,
-    getTokenImageByDenom
+    getTokenImageByDenom,
+    getTokenImageByPkgPath
   };
 }
