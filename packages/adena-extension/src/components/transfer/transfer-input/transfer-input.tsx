@@ -69,7 +69,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
         )
       }
       <div className='logo-wrapper'>
-        <img className='logo' src={tokenMetainfo.image ?? UnknownTokenIcon} alt='token image' />
+        <img className='logo' src={tokenMetainfo.image || UnknownTokenIcon} alt='token image' />
       </div>
       <div className='address-input-wrapper'>
         <AddressInput {...addressInput} />
