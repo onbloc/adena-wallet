@@ -4,12 +4,11 @@ import { useNetwork } from './use-network';
 import { useCurrentAccount } from './use-current-account';
 import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
 import { Account } from 'adena-module';
-import { TokenMetainfo } from '@states/token';
 import { useGnoClient } from './use-gno-client';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useCallback, useEffect } from 'react';
-import BigNumber from 'bignumber.js';
+import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
@@ -18,15 +17,15 @@ export const useTokenBalance = (): {
   accountTokenBalances: AccountTokenBalance[];
   accountNativeBalances: { [key in string]: TokenBalance };
   getTokenBalancesByAccount: (account: Account) => TokenBalance[];
-  fetchBalanceBy: (account: Account, token: TokenMetainfo) => Promise<TokenBalance>;
-  toggleDisplayOption: (account: Account, token: TokenMetainfo, activated: boolean) => void;
+  fetchBalanceBy: (account: Account, token: TokenModel) => Promise<TokenBalance>;
+  toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
   updateBalanceAmountByAccount: (
     account: Account,
     accountTokenBalance?: AccountTokenBalance[],
   ) => Promise<boolean>;
   updateAccountNativeBalances: () => Promise<boolean>;
   updateMainBalanceByAccount: (account: Account) => Promise<boolean>;
-  updateTokenBalanceInfos: (tokenMetainfos: TokenMetainfo[]) => Promise<boolean>;
+  updateTokenBalanceInfos: (tokenMetainfos: TokenModel[]) => Promise<boolean>;
 } => {
   const [gnoClient] = useGnoClient();
   const { tokenMetainfos } = useTokenMetainfo();
@@ -77,7 +76,7 @@ export const useTokenBalance = (): {
     return accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance);
   }
 
-  async function toggleDisplayOption(account: Account, token: TokenMetainfo, activated: boolean) {
+  async function toggleDisplayOption(account: Account, token: TokenModel, activated: boolean) {
     const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
       if (matchCurrentAccount(account, accountTokenBalance)) {
         return {
@@ -99,7 +98,7 @@ export const useTokenBalance = (): {
     await tokenService.updateAccountTokenMetainfos(changedAccountTokenBalances);
   }
 
-  async function updateTokenBalanceInfos(tokenMetainfos: TokenMetainfo[]) {
+  async function updateTokenBalanceInfos(tokenMetainfos: TokenModel[]) {
     if (!currentAccount || !currentNetwork) {
       return false;
     }
@@ -216,10 +215,10 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function fetchBalanceBy(account: Account, token: TokenMetainfo): Promise<TokenBalance> {
+  async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
     const defaultAmount = {
       value: '0',
-      denom: token.denom,
+      denom: token.symbol,
     };
     if (!gnoClient) {
       return {
@@ -230,9 +229,9 @@ export const useTokenBalance = (): {
     const prefix = currentNetwork?.addressPrefix ?? 'g';
 
     let balances: TokenBalance[] = [];
-    if (token.type === 'NATIVE') {
+    if (isNativeTokenModel(token)) {
       balances = await balanceService.getTokenBalances(gnoClient, account.getAddress(prefix));
-    } else if (token.type === 'GRC20') {
+    } else if (isGRC20TokenModel(token)) {
       balances = await balanceService.getGRC20TokenBalance(
         gnoClient,
         account.getAddress(prefix),

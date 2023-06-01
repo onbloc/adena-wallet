@@ -11,7 +11,7 @@ import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
-import { TokenMetainfo } from '@states/token';
+import { TokenModel } from '@models/token-model';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
@@ -42,7 +42,7 @@ const CopyInputBox = styled.div`
 
 interface DepositState {
   type: 'token' | 'wallet';
-  tokenMetainfo: TokenMetainfo;
+  tokenMetainfo: TokenModel;
 }
 
 export const Deposit = () => {
@@ -52,7 +52,7 @@ export const Deposit = () => {
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
   const [type, setType] = useState('');
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenMetainfo>();
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>();
 
   useEffect(() => {
     if (currentAddress) {

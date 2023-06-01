@@ -3,14 +3,14 @@ import { ExploreState, GnoClientState, NetworkState, TokenState, WalletState } f
 import { useRecoilState, useSetRecoilState } from "recoil";
 import { Wallet } from "adena-module";
 import { NetworkMetainfo } from "@states/network";
-import { TokenMetainfo } from "@states/token";
 import { useAdenaContext } from "@hooks/use-context";
 import { GnoClient } from "gno-client";
+import { TokenModel } from "@models/token-model";
 
 interface WalletContextProps {
   wallet: Wallet | null;
   walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
-  tokenMetainfos: TokenMetainfo[];
+  tokenMetainfos: TokenModel[];
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
   initWallet: () => Promise<boolean>;

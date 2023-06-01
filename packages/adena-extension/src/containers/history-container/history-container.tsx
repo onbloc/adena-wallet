@@ -17,7 +17,7 @@ const HistoryContainer: React.FC = () => {
   const { currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
-  const { convertDenom, getTokenImage } = useTokenMetainfo();
+  const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { saveScrollPosition } = useScrollHistory();
@@ -89,7 +89,7 @@ const HistoryContainer: React.FC = () => {
       const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
-        logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
+        logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: {
           value: BigNumber(value).toFormat(),
           denom

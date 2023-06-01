@@ -2,6 +2,7 @@ import AdditionalToken, { TokenInfo } from '@components/manage-token/additional-
 import { useAdenaContext } from '@hooks/use-context';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { isGRC20TokenModel } from '@models/token-model';
 import { RoutePath } from '@router/path';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -26,15 +27,24 @@ const ManageTokenAddedContainer: React.FC = () => {
     data: tokenInfos,
   } = useQuery<TokenInfo[], Error>({
     queryKey: ['search-grc20-tokens', keyword],
-    queryFn: () => tokenService.fetchGRC20Tokens(keyword).then(tokens => {
-      return tokens.filter(token1 => tokenMetainfos.findIndex(token2 => token1.path === token2.pkgPath) < 0)
-        .map(token => {
-          return {
-            ...token,
-            pathInfo: token.path.replace('gno.land/', '')
-          }
-        })
-    }),
+    queryFn: () => {
+      const grc20TokenInfos = tokenMetainfos.filter(isGRC20TokenModel);
+      return tokenService.fetchGRC20Tokens(keyword, tokenMetainfos).then(tokens => {
+        return tokens.filter(token1 =>
+          grc20TokenInfos.findIndex(token2 => token1.pkgPath === token2.pkgPath) < 0)
+          .map(token => {
+            return {
+              tokenId: token.tokenId,
+              name: token.name,
+              symbol: token.symbol,
+              path: token.pkgPath,
+              decimals: token.decimals,
+              chainId: 'test3',
+              pathInfo: token.pkgPath.replace('gno.land/', '')
+            }
+          })
+      })
+    },
   });
 
   const closeSelectBox = () => {

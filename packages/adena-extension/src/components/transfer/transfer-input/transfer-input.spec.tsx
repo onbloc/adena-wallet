@@ -11,17 +11,13 @@ describe('TransferInput Component', () => {
     const args: TransferInputProps = {
       tokenMetainfo: {
         main: true,
+        display: false,
         tokenId: 'Gnoland',
         name: 'Gnoland',
-        chainId: 'GNOLAND',
-        networkId: 'test3',
         image: '',
-        pkgPath: '',
         symbol: 'GNOT',
-        type: 'NATIVE',
+        type: 'gno-native',
         decimals: 6,
-        denom: 'GNOT',
-        minimalDenom: 'ugnot',
       },
       balanceInput: {
         hasError: false,

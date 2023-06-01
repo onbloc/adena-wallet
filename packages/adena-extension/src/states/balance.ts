@@ -1,7 +1,7 @@
 import { atom } from 'recoil';
-import { TokenMetainfo } from './token';
+import { TokenModel } from '@models/token-model';
 
-export interface TokenBalance extends TokenMetainfo {
+export interface TokenBalance extends TokenModel {
   amount: Amount;
 }
 
