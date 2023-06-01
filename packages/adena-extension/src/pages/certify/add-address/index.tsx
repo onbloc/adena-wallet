@@ -12,18 +12,20 @@ import { ErrorText } from '@components/error-text';
 import theme from '@styles/theme';
 import {
   validateAlreadyAddress,
+  validateAlreadyAddressByAccounts,
   validateAlreadyName,
   validateInvalidAddress,
 } from '@services/index';
 import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AddAddress = () => {
+  const { wallet } = useWalletContext();
   const { addressBookService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const navigate = useNavigate();
@@ -74,6 +76,18 @@ const AddAddress = () => {
 
     try {
       validateAlreadyAddress(currData, datas, isAdd);
+    } catch (error) {
+      isValid = false;
+      if (error instanceof AddressBookValidationError) {
+        setAddressError(true);
+        if (errorMessage === '') {
+          errorMessage = error.message;
+        }
+      }
+    }
+
+    try {
+      validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
