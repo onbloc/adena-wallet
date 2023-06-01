@@ -13,7 +13,7 @@ const TokenDetailsContainer: React.FC = () => {
   const navigate = useNavigate();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
-  const { convertDenom, getTokenImage } = useTokenMetainfo();
+  const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
 
@@ -83,7 +83,7 @@ const TokenDetailsContainer: React.FC = () => {
     const txs = histories.txs.map(transaction => {
       return {
         ...transaction,
-        logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
+        logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON')
       }
     });

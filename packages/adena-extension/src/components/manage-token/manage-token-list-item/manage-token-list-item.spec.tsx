@@ -8,7 +8,7 @@ import ManageTokenListItem, { ManageTokenListItemProps } from './manage-token-li
 
 const token = {
   tokenId: 'token1',
-  logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+  logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
   name: 'Gnoland',
   symbol: 'GNOT',
   balanceAmount: {

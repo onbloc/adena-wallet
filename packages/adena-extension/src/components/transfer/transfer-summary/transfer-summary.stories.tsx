@@ -12,19 +12,15 @@ export const Default: StoryObj<TransferSummaryProps> = {
   args: {
     tokenMetainfo: {
       main: true,
+      display: false,
       tokenId: 'Gnoland',
       name: 'Gnoland',
-      chainId: 'GNOLAND',
-      networkId: 'test3',
       image: '',
-      pkgPath: '',
       symbol: 'GNOT',
-      type: 'NATIVE',
+      type: 'gno-native',
       decimals: 6,
-      denom: 'GNOT',
-      minimalDenom: 'ugnot',
     },
-    tokenImage: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    tokenImage: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     transferBalance: {
       value: '4,000.123',
       denom: 'GNOT',

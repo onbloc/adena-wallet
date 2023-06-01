@@ -6,11 +6,11 @@ import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import SubHeader from '@components/common/sub-header/sub-header';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { TokenMetainfo } from '@states/token';
 import { Amount } from '@states/balance';
+import { TokenModel } from '@models/token-model';
 
 export interface TransferSummaryProps {
-  tokenMetainfo: TokenMetainfo;
+  tokenMetainfo: TokenModel;
   tokenImage: string;
   transferBalance: Amount;
   toAddress: string;

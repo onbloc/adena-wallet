@@ -1,25 +1,34 @@
 import { StorageManager } from '@common/storage/storage-manager';
-import { TokenMetainfo } from '@states/token';
 import { AxiosInstance } from 'axios';
 import { SearchGRC20TokenResponse } from './response/search-grc20-token-response';
-import { GRC20TokenMapper } from './mapper/grc20-token-mapper';
+import {
+  GRC20TokenModel,
+  IBCNativeTokenModel,
+  IBCTokenModel,
+  NativeTokenModel,
+  TokenModel,
+} from '@models/token-model';
+import {
+  GRC20TokenResponse,
+  IBCNativeTokenResponse,
+  IBCTokenResponse,
+  NativeTokenResponse,
+} from './response/token-asset-response';
+import { TokenMapper } from './mapper/token-mapper';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
 
-const TOKEN_METAINFOS: TokenMetainfo[] = [
+const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
     main: true,
     tokenId: 'Gnoland',
     name: 'Gnoland',
-    chainId: 'GNOLAND',
-    networkId: 'test3',
-    image: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
-    pkgPath: '',
+    image:
+      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     symbol: 'GNOT',
-    type: 'NATIVE',
+    denom: 'ugnot',
+    type: 'gno-native',
     decimals: 6,
-    denom: 'GNOT',
-    minimalDenom: 'ugnot',
     display: true,
   },
 ];
@@ -37,8 +46,8 @@ interface AppInfoResponse {
 export class TokenRepository {
   private static ADENA_API_URI = 'https://api.adena.app';
 
-  private static TOKEN_CONFIG_URI =
-    'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/tokens.json';
+  private static GNO_TOKEN_RESOURCE_URI =
+    'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   private static APP_INFO_URI =
     'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/apps.json';
@@ -52,8 +61,13 @@ export class TokenRepository {
     this.networkInstance = networkInstance;
   }
 
-  public fetchTokenMetainfos = async (): Promise<TokenMetainfo[]> => {
-    return TOKEN_METAINFOS;
+  public fetchTokenMetainfos = async (): Promise<TokenModel[]> => {
+    return Promise.all([
+      this.fetchNativeTokenAssets(),
+      this.fetchGRC20TokenAssets(),
+      this.fetchIBCNativeTokenAssets(),
+      this.fetchIBCTokenAssets(),
+    ]).then((datas) => datas.flat());
   };
 
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
@@ -63,7 +77,7 @@ export class TokenRepository {
     return response.data;
   };
 
-  public fetchGRC20TokensBy = async (keyword: string) => {
+  public fetchGRC20TokensBy = async (keyword: string, tokenInfos?: TokenModel[]) => {
     const body = {
       keyword,
     };
@@ -71,20 +85,20 @@ export class TokenRepository {
       `${TokenRepository.ADENA_API_URI}/test3/search-grc20-tokens`,
       body,
     );
-    return GRC20TokenMapper.fromSearchTokensResponse(response.data);
+    return TokenMapper.fromSearchTokensResponse(response.data, tokenInfos);
   };
 
-  public getAllTokenMetainfos = async (): Promise<{ [key in string]: TokenMetainfo[] }> => {
+  public getAllTokenMetainfos = async (): Promise<{ [key in string]: TokenModel[] }> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenMetainfo[] }
+      { [key in string]: TokenModel[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
     return accountTokenMetainfos;
   };
 
-  public getAccountTokenMetainfos = async (accountId: string): Promise<TokenMetainfo[]> => {
+  public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenMetainfo[] }
+      { [key in string]: TokenModel[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
     return accountTokenMetainfos[accountId] ?? [];
@@ -92,10 +106,10 @@ export class TokenRepository {
 
   public updateTokenMetainfos = async (
     accountId: string,
-    tokenMetainfos: TokenMetainfo[],
+    tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenMetainfo[] }
+      { [key in string]: TokenModel[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
     const filteredTokenMetainfos = tokenMetainfos.filter((info1, index) => {
@@ -113,7 +127,7 @@ export class TokenRepository {
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenMetainfo[] }
+      { [key in string]: TokenModel[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
     const changedAccountTokenMetainfos = {
@@ -128,5 +142,37 @@ export class TokenRepository {
   public deleteAllTokenMetainfo = async (): Promise<boolean> => {
     await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', {});
     return true;
+  };
+
+  private fetchNativeTokenAssets = async (): Promise<NativeTokenModel[]> => {
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/gno-native/assets.json';
+    return this.networkInstance
+      .get<NativeTokenResponse>(requestUri)
+      .then((response) => TokenMapper.fromNativeTokenMetainfos(response.data))
+      .catch(() => DEFAULT_TOKEN_METAINFOS);
+  };
+
+  private fetchGRC20TokenAssets = async (): Promise<GRC20TokenModel[]> => {
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/grc20/assets.json';
+    return this.networkInstance
+      .get<GRC20TokenResponse>(requestUri)
+      .then((response) => TokenMapper.fromGRC20TokenMetainfos(response.data))
+      .catch(() => []);
+  };
+
+  private fetchIBCNativeTokenAssets = async (): Promise<IBCNativeTokenModel[]> => {
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-native/assets.json';
+    return this.networkInstance
+      .get<IBCNativeTokenResponse>(requestUri)
+      .then((response) => TokenMapper.fromIBCNativeMetainfos(response.data))
+      .catch(() => []);
+  };
+
+  private fetchIBCTokenAssets = async (): Promise<IBCTokenModel[]> => {
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-tokens/assets.json';
+    return this.networkInstance
+      .get<IBCTokenResponse>(requestUri)
+      .then((response) => TokenMapper.fromIBCTokenMetainfos(response.data))
+      .catch(() => []);
   };
 }

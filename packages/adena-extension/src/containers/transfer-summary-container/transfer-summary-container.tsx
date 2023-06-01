@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import TransferSummary from '@components/transfer/transfer-summary/transfer-summary';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { TokenMetainfo } from '@states/token';
 import { Amount } from '@states/balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import BigNumber from 'bignumber.js';
@@ -11,9 +10,10 @@ import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
 import { isLedgerAccount } from 'adena-module';
+import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
 
 interface TransferSummaryInfo {
-  tokenMetainfo: TokenMetainfo;
+  tokenMetainfo: TokenModel;
   toAddress: string;
   transferAmount: Amount;
   networkFee: Amount;
@@ -42,7 +42,10 @@ const TransferSummaryContainer: React.FC = () => {
 
   const getNativeTransferMessage = useCallback(() => {
     const { tokenMetainfo, toAddress, transferAmount } = summaryInfo;
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.minimalDenom}`;
+    if (!isNativeTokenModel(tokenMetainfo)) {
+      return;
+    }
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom}`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
@@ -52,6 +55,9 @@ const TransferSummaryContainer: React.FC = () => {
 
   const getGRC20TransferMessage = useCallback(() => {
     const { tokenMetainfo, toAddress, transferAmount } = summaryInfo;
+    if (!isGRC20TokenModel(tokenMetainfo)) {
+      return;
+    }
     return TransactionMessage.createMessageOfVmCall({
       caller: currentAddress || '',
       send: "",
@@ -70,7 +76,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
     const { tokenMetainfo, networkFee } = summaryInfo;
     const GAS_WANTED = 1000000;
-    const message = tokenMetainfo.type === 'NATIVE' ?
+    const message = tokenMetainfo.type === 'gno-native' ?
       getNativeTransferMessage() :
       getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();

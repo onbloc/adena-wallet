@@ -22,6 +22,7 @@ import HighlightNumber from '@components/common/highlight-number/highlight-numbe
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
 import BigNumber from 'bignumber.js';
+import { isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -101,7 +102,7 @@ export const TokenDetails = () => {
     refetch,
     fetchNextPage,
   } = useInfiniteQuery(
-    ['history/grc20-token-history', currentAddress, tokenBalance.pkgPath],
+    ['history/grc20-token-history', currentAddress, isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : ''],
     ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
     {
       getNextPageParam: (lastPage, allPosts) => {
@@ -173,14 +174,14 @@ export const TokenDetails = () => {
       };
     }
     const size = 20;
-    const histories = tokenBalance.type === 'NATIVE' ?
-      filterNativeTokenHistory(await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size)) :
-      await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size);
+    const histories = isGRC20TokenModel(tokenBalance) ?
+      await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size) :
+      filterNativeTokenHistory(await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size));
     const txs = histories.txs.map(transaction => {
       const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
         ...transaction,
-        logo: getTokenImage(transaction.amount.denom) || `${UnknownTokenIcon}`,
+        logo: getTokenImage(tokenBalance) || `${UnknownTokenIcon}`,
         amount: {
           value: BigNumber(value).toFormat(),
           denom
@@ -214,11 +215,16 @@ export const TokenDetails = () => {
     return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
   }, [data]);
 
+  const getScannerUri = () => {
+    if (isGRC20TokenModel(tokenBalance)) {
+      return `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`;
+    }
+    return `https://gnoscan.io/accounts/${currentAddress}`;
+  };
+
   const moveScanner = () => {
-    const scannerURI = tokenBalance.type === 'NATIVE' ?
-      `https://gnoscan.io/accounts/${currentAddress}` :
-      `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`
-    window.open(scannerURI, '_blank');
+    const scannerUri = getScannerUri();
+    window.open(scannerUri, '_blank');
   };
 
   return (
