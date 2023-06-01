@@ -31,20 +31,13 @@ export class TokenService {
   }
 
   public async initAccountTokenMetainfos(accountId: string) {
-    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
+    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    function equalsToken(token1: TokenModel, token2: TokenModel) {
-      if (isNativeTokenModel(token1)) {
-        return token1.symbol === token2.symbol;
-      }
-      if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-        return token1.pkgPath === token2.pkgPath;
-      }
-      return false;
-    }
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
-        const previousInfo = storedTokenMetainfos.find((token2) => equalsToken(token1, token2));
+        const previousInfo = storedTokenMetainfos.find((token2) =>
+          this.equalsToken(token1, token2),
+        );
         if (previousInfo) {
           return {
             ...token1,
@@ -55,7 +48,7 @@ export class TokenService {
         return token1;
       }),
       ...storedTokenMetainfos.filter((token1) =>
-        fetchedTokenMetainfos.every((token2) => !equalsToken(token1, token2)),
+        fetchedTokenMetainfos.every((token2) => !this.equalsToken(token1, token2)),
       ),
     ]);
     return true;
@@ -67,7 +60,22 @@ export class TokenService {
   }
 
   public async updateTokenMetainfosByAccountId(accountId: string, tokenMetainfos: TokenModel[]) {
-    await this.tokenRepository.updateTokenMetainfos(accountId, tokenMetainfos);
+    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
+    const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
+      const tokenMetaInfo = fetchedTokenMetainfos.find((token2) =>
+        this.equalsToken(token1, token2),
+      );
+      if (tokenMetaInfo) {
+        const { image, description } = tokenMetaInfo;
+        return {
+          ...token1,
+          image,
+          description,
+        };
+      }
+      return token1;
+    });
+    await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos);
     return true;
   }
 
@@ -110,4 +118,14 @@ export class TokenService {
     await this.tokenRepository.deleteAllTokenMetainfo();
     return true;
   };
+
+  private equalsToken(token1: TokenModel, token2: TokenModel) {
+    if (isNativeTokenModel(token1)) {
+      return token1.symbol === token2.symbol;
+    }
+    if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
+      return token1.pkgPath === token2.pkgPath;
+    }
+    return false;
+  }
 }
