@@ -32,7 +32,7 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
   .title {
     display: inline-block;
     flex-shrink: 0;
-    max-width: 50%;
+    max-width: 140px;
     color: ${({ theme }) => theme.color.neutral[0]};
     ${({ theme }) => theme.fonts.body2Reg};
 
