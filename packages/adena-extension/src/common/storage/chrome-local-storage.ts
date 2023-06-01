@@ -72,7 +72,6 @@ export class ChromeLocalStorage implements Storage {
     if (this.current === null) {
       const current = await this.migrator.getCurrent();
       const data = await this.migrator.migrate(current);
-      this.current = data;
       return data;
     }
     return this.current;
