@@ -132,7 +132,7 @@ export const WalletSearch = () => {
             <ListBox
               left={<img src={balance.image || `${UnknownTokenIcon}`} alt='logo image' className='logo' />}
               center={
-                <Text type='body1Bold' margin='0px auto 0px 0px'>
+                <Text type='body2Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
               }
