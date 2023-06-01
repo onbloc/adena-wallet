@@ -12,7 +12,7 @@ const mockStorageV001: StorageModelV001 = {
     CURRENT_ACCOUNT_ID: '',
     ACCOUNT_NAMES: {},
     ESTABLISH_SITES: {},
-    ADDRSS_BOOK: {
+    ADDRESS_BOOK: {
       'account 1': [
         {
           id: 'address_1',
@@ -58,7 +58,7 @@ describe('StorageMigrator', () => {
     expect(current.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(current.data.ACCOUNT_NAMES).toEqual({});
     expect(current.data.ESTABLISH_SITES).toEqual({});
-    expect(current.data.ADDRSS_BOOK).toHaveProperty('account 1');
+    expect(current.data.ADDRESS_BOOK).toHaveProperty('account 1');
   });
 
   it('migrate success', async () => {
@@ -77,7 +77,7 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(migrated?.data.ACCOUNT_NAMES).toEqual({});
     expect(migrated?.data.ESTABLISH_SITES).toEqual({});
-    expect(migrated?.data.ADDRSS_BOOK).toHaveLength(1);
+    expect(migrated?.data.ADDRESS_BOOK).toHaveLength(1);
   });
 
   it('migrate with password success', async () => {
@@ -90,6 +90,6 @@ describe('StorageMigrator', () => {
     expect(migrated?.version).toBe(2);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
-    expect(migrated?.data.ADDRSS_BOOK).toHaveLength(1);
+    expect(migrated?.data.ADDRESS_BOOK).toHaveLength(1);
   });
 });

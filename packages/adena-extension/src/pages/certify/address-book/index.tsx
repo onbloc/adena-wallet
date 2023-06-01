@@ -37,7 +37,7 @@ const AddressBook = () => {
 
   useEffect(() => {
     (async () => {
-      const addressList = await addressBookService.getAddressBookByAccountId(currentAccount?.id ?? '');
+      const addressList = await addressBookService.getAddressBook();
       setDatas(addressList);
     })();
   }, [currentAccount]);
