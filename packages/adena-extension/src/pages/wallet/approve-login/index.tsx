@@ -151,7 +151,7 @@ export const ApproveLogin = () => {
           </Button>
         </Wrapper>
       ) : (
-        <LoadingApproveTransaction rightButtonText='Login' />
+        <LoadingApproveTransaction rightButtonText='Approve' />
       )}
     </>
   );
