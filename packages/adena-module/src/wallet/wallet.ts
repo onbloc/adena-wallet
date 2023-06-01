@@ -24,6 +24,7 @@ import { Bip39, Random } from '../crypto';
 import { arrayToHex, hexToArray } from '../utils/data';
 export interface Wallet {
   accounts: Account[];
+  keyrings: Keyring[];
   currentAccount: Account;
   currentKeyring: Keyring;
   hdWalletKeyring: HDWalletKeyring | undefined;
@@ -40,9 +41,7 @@ export interface Wallet {
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
   hasPrivateKey: (privateKey: Uint8Array) => boolean;
-  sign: (
-    document: StdSignDoc,
-  ) => Promise<{
+  sign: (document: StdSignDoc) => Promise<{
     signed: StdSignDoc;
     signature: StdSignature;
   }>;
@@ -83,6 +82,10 @@ export class AdenaWallet implements Wallet {
 
   get accounts() {
     return this._accounts;
+  }
+
+  get keyrings() {
+    return this._keyrings;
   }
 
   get currentAccount() {

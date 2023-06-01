@@ -25,7 +25,7 @@ export const YourSeedPhrase = () => {
   const location = useLocation();
   const { wallet, updateWallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
-  const [seeds,] = useState(() => AdenaWallet.generateMnemonic());
+  const [seeds] = useState(() => AdenaWallet.generateMnemonic());
   const [viewSeedAgree, setViewSeedAgree] = useState(false);
   const [showBlurScreen, setShowBlurScreen] = useState(true);
   const [clicked, setClicked] = useState(false);
@@ -53,7 +53,7 @@ export const YourSeedPhrase = () => {
         seeds,
       },
     });
-  }
+  };
 
   const isAddAccount = () => {
     return location?.state?.type === 'ADD_ACCOUNT';
@@ -64,7 +64,11 @@ export const YourSeedPhrase = () => {
       return;
     }
     const keyring = await HDWalletKeyring.fromMnemonic(seeds);
-    const account = await SeedAccount.createBy(keyring, `Account ${wallet.lastAccountIndex + 1}`, 0);
+    const account = await SeedAccount.createBy(
+      keyring,
+      `Account ${wallet.lastAccountIndex + 1}`,
+      0,
+    );
     account.index = wallet.lastAccountIndex + 1;
 
     const clone = wallet.clone();
@@ -73,7 +77,7 @@ export const YourSeedPhrase = () => {
     await updateWallet(clone);
     await changeCurrentAccount(account);
     navigate(RoutePath.Wallet);
-  }
+  };
 
   const viewSeedAgreeButton = () => {
     if (terms) setViewSeedAgree(true);

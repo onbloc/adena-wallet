@@ -31,7 +31,7 @@ import { Deposit } from '@pages/wallet/deposit';
 import { TokenDetails } from '@pages/wallet/token-details';
 import { ConnectedApps } from '@pages/certify/connected-apps';
 import { ChangeNetwork } from '@pages/certify/change-network';
-import { AddAccount } from '@pages/certify/add-account';
+import AddAccountPage from '@pages/certify/add-account-page/AddAccountPage';
 import { ImportAccount } from '@pages/certify/import-account';
 import { ApproveEstablish } from '@pages/wallet/approve-establish';
 import AddressBook from '@pages/certify/address-book';
@@ -67,7 +67,6 @@ import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loadin
 import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
 
 export const CustomRouter = () => {
-
   const { wallet } = useWalletContext();
 
   return (
@@ -118,7 +117,7 @@ export const CustomRouter = () => {
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
-          <Route path={RoutePath.AddAccount} element={<AddAccount />} />
+          <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
           <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />

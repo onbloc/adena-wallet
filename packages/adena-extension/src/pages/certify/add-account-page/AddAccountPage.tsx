@@ -1,5 +1,4 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { useCallback, useMemo } from 'react';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
@@ -7,71 +6,71 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useWalletContext } from '@hooks/use-context';
+import { Wrapper } from './AddAccountPage.styles';
 
-export const AddAccount = () => {
+const AddAccountPage: React.FC = () => {
   const navigate = useNavigate();
   const { wallet } = useWalletContext();
   const { addAccount } = useAddAccount();
 
-  const onClickCreateAccount = async () => {
+  const onClickCreateAccount = useCallback(async () => {
     if (wallet && wallet.hasHDWallet()) {
       await addAccount();
       navigate(RoutePath.Home);
       return;
     }
     navigate(RoutePath.GenerateSeedPhrase);
-  };
+  }, [navigate, wallet, addAccount]);
 
-  const existsPopups = async () => {
+  const onClickConnectHardwareWallet = useCallback(async () => {
     const windows = await chrome.windows.getAll();
-    return windows.findIndex((window) => window.type === 'popup') > -1;
-  };
-
-  const onClickConnectHardwareWallet = async () => {
-    const isPopup = await existsPopups();
+    const isPopup = windows.findIndex((window) => window.type === 'popup') > -1;
     if (isPopup) {
       return;
     }
 
     const popupOption: chrome.tabs.CreateProperties = {
       url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletConnect}`),
-      active: true
+      active: true,
     };
 
     window.close();
     chrome.tabs.create(popupOption);
-  };
+  }, []);
 
-  const onClickImportPrivateKey = () => {
+  const onClickImportPrivateKey = useCallback(() => {
     navigate(RoutePath.ImportPrivateKey);
-  };
+  }, [navigate]);
 
-  const getAddAccountContent = () => [
-    {
-      title: 'Create New Account',
-      subTitle: 'Generate a new account',
-      onClick: onClickCreateAccount,
-    },
-    {
-      title: 'Import Private Key',
-      subTitle: 'Import an existing account',
-      onClick: onClickImportPrivateKey,
-      disabled: false,
-    },
-    {
-      title: 'Connect Ledger',
-      subTitle: 'Add a ledger account',
-      onClick: onClickConnectHardwareWallet,
-      disabled: false,
-    },
-  ];
+  const addAccountContent = useMemo(
+    () => [
+      {
+        title: 'Create New Account',
+        subTitle: 'Generate a new account',
+        onClick: onClickCreateAccount,
+      },
+      {
+        title: 'Import Private Key',
+        subTitle: 'Import an existing account',
+        onClick: onClickImportPrivateKey,
+        disabled: false,
+      },
+      {
+        title: 'Connect Ledger',
+        subTitle: 'Add a ledger account',
+        onClick: onClickConnectHardwareWallet,
+        disabled: false,
+      },
+    ],
+    [onClickCreateAccount, onClickImportPrivateKey, onClickConnectHardwareWallet],
+  );
 
   return (
     <Wrapper>
       <Text className='main-title' type='header4'>
         Add Account
       </Text>
-      {getAddAccountContent().map((v, i) => (
+      {addAccountContent.map((v, i) => (
         <MultilineTextWithArrowButton
           key={i}
           title={v.title}
@@ -92,12 +91,4 @@ export const AddAccount = () => {
   );
 };
 
-const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
-  width: 100%;
-  height: 100%;
-  padding-top: 24px;
-  .main-title {
-    margin-bottom: 12px;
-  }
-`;
+export default AddAccountPage;
