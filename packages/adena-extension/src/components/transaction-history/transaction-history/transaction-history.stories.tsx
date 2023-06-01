@@ -9,7 +9,7 @@ export default {
 
 const transferRSendSuccessInfo: TransactionInfo = {
   hash: 'transferRSendSuccessInfoHash',
-  logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+  logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
   type: 'TRANSFER',
   status: 'SUCCESS',
   title: 'Send',
@@ -25,7 +25,7 @@ const transferRSendSuccessInfo: TransactionInfo = {
 
 const transferReceiveSuccessInfo: TransactionInfo = {
   hash: 'transferReceiveSuccessInfoHash',
-  logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+  logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
   type: 'TRANSFER',
   status: 'SUCCESS',
   title: 'Receive',
@@ -41,7 +41,7 @@ const transferReceiveSuccessInfo: TransactionInfo = {
 
 const transferRSendFailedInfo: TransactionInfo = {
   hash: 'transferRSendFailedInfoHash',
-  logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+  logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
   type: 'TRANSFER',
   status: 'FAIL',
   title: 'Failed',

@@ -11,17 +11,13 @@ export const Default: StoryObj<TransferInputProps> = {
   args: {
     tokenMetainfo: {
       main: true,
+      display: false,
       tokenId: 'Gnoland',
       name: 'Gnoland',
-      chainId: 'GNOLAND',
-      networkId: 'test3',
-      image: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
-      pkgPath: '',
+      image: '',
       symbol: 'GNOT',
-      type: 'NATIVE',
+      type: 'gno-native',
       decimals: 6,
-      denom: 'GNOT',
-      minimalDenom: 'ugnot',
     },
     balanceInput: {
       hasError: false,

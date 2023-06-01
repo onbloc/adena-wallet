@@ -10,7 +10,7 @@ describe('TransactionHistoryListItem Component', () => {
   it('TransactionHistoryListItem render', () => {
     const args: TransactionHistoryListItemProps = {
       hash: 'hash1',
-      logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+      logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
       type: 'TRANSFER',
       status: 'SUCCESS',
       title: 'Send',

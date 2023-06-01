@@ -10,7 +10,7 @@ export default {
 export const Default: StoryObj<TransactionHistoryListItemProps> = {
   args: {
     hash: 'hash1',
-    logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     type: 'TRANSFER',
     status: 'SUCCESS',
     title: 'Send',
@@ -29,7 +29,7 @@ export const Default: StoryObj<TransactionHistoryListItemProps> = {
 export const TransferSendSuccess: StoryObj<TransactionHistoryListItemProps> = {
   args: {
     hash: 'transferSendSuccessInfoHash',
-    logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     type: 'TRANSFER',
     status: 'SUCCESS',
     title: 'Send',
@@ -47,7 +47,7 @@ export const TransferSendSuccess: StoryObj<TransactionHistoryListItemProps> = {
 export const TransferReceiveSuccess: StoryObj<TransactionHistoryListItemProps> = {
   args: {
     hash: 'transferReceiveSuccessInfoHash',
-    logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     type: 'TRANSFER',
     status: 'SUCCESS',
     title: 'Receive',
@@ -65,7 +65,7 @@ export const TransferReceiveSuccess: StoryObj<TransactionHistoryListItemProps> =
 export const TransferSendFailed: StoryObj<TransactionHistoryListItemProps> = {
   args: {
     hash: 'transferSendFailedInfoHash',
-    logo: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     type: 'TRANSFER',
     status: 'FAIL',
     title: 'Failed',

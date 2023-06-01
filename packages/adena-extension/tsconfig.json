@@ -29,7 +29,8 @@
       "@common/*": ["src/common/*"],
       "@inject/*": ["src/inject/*"],
       "@assets/*": ["src/assets/*"],
-      "@migrates/*": ["src/migrates/*"]
+      "@migrates/*": ["src/migrates/*"],
+      "@models/*": ["src/models/*"]
     }
   },
   "include": ["./src/**/*"]

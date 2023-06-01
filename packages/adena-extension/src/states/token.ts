@@ -1,27 +1,12 @@
+import { TokenModel } from '@models/token-model';
 import { atom } from 'recoil';
 
-export interface TokenMetainfo {
-  main: boolean;
-  tokenId: string;
-  chainId: string;
-  networkId: string;
-  image?: string;
-  pkgPath: string;
-  symbol: string;
-  type: 'NATIVE' | 'GRC20';
-  name: string;
-  decimals: number;
-  denom: string;
-  minimalDenom: string;
-  display?: boolean;
-}
-
-export const tokenMetainfos = atom<TokenMetainfo[]>({
+export const tokenMetainfos = atom<TokenModel[]>({
   key: `token/tokenMetainfos`,
   default: [],
 });
 
-export const accountTokenMetainfos = atom<TokenMetainfo[]>({
+export const accountTokenMetainfos = atom<TokenModel[]>({
   key: `token/accountTokenMetainfos`,
   default: [],
 });

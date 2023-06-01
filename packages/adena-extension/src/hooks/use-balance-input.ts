@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
-import { TokenMetainfo } from '@states/token';
 import BigNumber from 'bignumber.js';
 import { TokenBalance } from '@states/balance';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
+import { TokenModel } from '@models/token-model';
 
 const NETWORK_FEE = 0.000001;
 
-export const useBalanceInput = (tokenMetainfo: TokenMetainfo) => {
+export const useBalanceInput = (tokenMetainfo: TokenModel) => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
@@ -31,7 +31,7 @@ export const useBalanceInput = (tokenMetainfo: TokenMetainfo) => {
     }
     const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
     setCurrentBalance(currentBalance);
-    if (currentBalance.type === 'NATIVE') {
+    if (currentBalance.type === 'gno-native') {
       const convnetedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
@@ -59,7 +59,7 @@ export const useBalanceInput = (tokenMetainfo: TokenMetainfo) => {
       return errorMessage;
     }
     return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
-      tokenMetainfo.denom
+      tokenMetainfo.symbol
     }`;
   }, [currentBalance, hasError, errorMessage]);
 
@@ -102,7 +102,7 @@ export const useBalanceInput = (tokenMetainfo: TokenMetainfo) => {
   return {
     hasError,
     amount,
-    denom: tokenMetainfo.denom,
+    denom: tokenMetainfo.symbol,
     description: getDescription(),
     networkFee,
     updateCurrentBalance,

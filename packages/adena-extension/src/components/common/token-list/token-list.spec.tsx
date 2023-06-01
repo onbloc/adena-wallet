@@ -9,7 +9,7 @@ import TokenList, { TokenListProps } from './token-list';
 const tokens = [
   {
     tokenId: "token1",
-    logo: "https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg",
+    logo: "https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg",
     name: "Gnoland",
     balanceAmount: {
       value: "240,255.241155",

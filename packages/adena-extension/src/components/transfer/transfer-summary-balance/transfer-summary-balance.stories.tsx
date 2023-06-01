@@ -8,7 +8,7 @@ export default {
 
 export const Default: StoryObj<TransferSummaryBalanceProps> = {
   args: {
-    tokenImage: 'https://raw.githubusercontent.com/onbloc/adena-resource/main/images/tokens/gnot.svg',
+    tokenImage: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     value: '4,000.123',
     denom: 'GNOT',
   },
