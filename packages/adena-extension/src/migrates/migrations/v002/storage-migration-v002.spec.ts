@@ -10,7 +10,7 @@ const mockStorageData = {
   CURRENT_ACCOUNT_ID: '',
   ACCOUNT_NAMES: {},
   ESTABLISH_SITES: {},
-  ADDRSS_BOOK: {},
+  ADDRESS_BOOK: {},
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
@@ -38,7 +38,7 @@ describe('serialized wallet migration V002', () => {
     expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(result.data.ACCOUNT_NAMES).toEqual({});
     expect(result.data.ESTABLISH_SITES).toEqual({});
-    expect(result.data.ADDRSS_BOOK).toEqual([]);
+    expect(result.data.ADDRESS_BOOK).toEqual([]);
   });
 
   it('up password success', async () => {
@@ -60,7 +60,7 @@ describe('serialized wallet migration V002', () => {
     expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(result.data.ACCOUNT_NAMES).toEqual({});
     expect(result.data.ESTABLISH_SITES).toEqual({});
-    expect(result.data.ADDRSS_BOOK).toEqual([]);
+    expect(result.data.ADDRESS_BOOK).toEqual([]);
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);

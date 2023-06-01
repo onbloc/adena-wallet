@@ -104,12 +104,12 @@ const AddAddress = () => {
 
   const addHandler = async () =>
     await addressBookService
-      .addAddressBookItemByAccountId(currentAccount?.id ?? '', { name, address })
+      .addAddressBookItem({ name, address })
       .then(() => backButtonClick());
 
   const editHandler = async () =>
     await addressBookService
-      .updateAddressBookItemById(currentAccount?.id ?? '', {
+      .updateAddressBookItemById({
         id: location.state.curr.id,
         name,
         address,

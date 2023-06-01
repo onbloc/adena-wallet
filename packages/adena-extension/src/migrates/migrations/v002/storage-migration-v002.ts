@@ -23,7 +23,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
       version: this.version,
       data: {
         ...previous,
-        ADDRSS_BOOK: this.migrateAddressBook(previous.ADDRSS_BOOK),
+        ADDRESS_BOOK: this.migrateAddressBook(previous.ADDRESS_BOOK),
         SERIALIZED: await this.migrateWallet(previous.SERIALIZED, password),
       },
     };
@@ -39,7 +39,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
       'CURRENT_ACCOUNT_ID',
       'ACCOUNT_NAMES',
       'ESTABLISH_SITES',
-      'ADDRSS_BOOK',
+      'ADDRESS_BOOK',
       'ACCOUNT_TOKEN_METAINFOS',
     ];
     const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
@@ -70,7 +70,7 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
     if (typeof currentData.ESTABLISH_SITES !== 'object') {
       return false;
     }
-    if (typeof currentData.ADDRSS_BOOK !== 'object') {
+    if (typeof currentData.ADDRESS_BOOK !== 'object') {
       return false;
     }
     return true;

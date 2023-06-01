@@ -13,7 +13,7 @@ const LegacyStorageKeys = [
   'CURRENT_ACCOUNT_ID',
   'ACCOUNT_NAMES',
   'ESTABLISH_SITES',
-  'ADDRSS_BOOK',
+  'ADDRESS_BOOK',
   'SERIALIZED',
   'ACCOUNT_TOKEN_METAINFOS',
 ];
@@ -22,7 +22,7 @@ export type StorageModelLatest = StorageModelV002;
 
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
-  ADDRSS_BOOK: {},
+  ADDRESS_BOOK: {},
   CURRENT_ACCOUNT_ID: '',
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',

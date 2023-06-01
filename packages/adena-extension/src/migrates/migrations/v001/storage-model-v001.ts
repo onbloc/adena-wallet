@@ -12,7 +12,7 @@ export type StorageModelDataV001 = {
   CURRENT_ACCOUNT_ID: CurrentAccountIdModelV001;
   ACCOUNT_NAMES: AccountNamesModelV001;
   ESTABLISH_SITES: EstablishSitesModelV001;
-  ADDRSS_BOOK: AddressBookModelV001;
+  ADDRESS_BOOK: AddressBookModelV001;
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV001;
 };
 
