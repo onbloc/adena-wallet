@@ -3,6 +3,7 @@ import { Account, AccountInfo } from './account';
 import { isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType } from '../keyring';
 import { toBech32 } from '../../encoding';
 import { rawSecp256k1PubkeyToRawAddress } from '../../amino';
+import { GnoWallet } from '@gnolang/gno-js-client';
 
 export class SingleAccount implements Account {
   public readonly id;
@@ -12,6 +13,8 @@ export class SingleAccount implements Account {
   public readonly keyringId: string;
 
   public readonly publicKey: Uint8Array;
+
+  private _gnoWallet: GnoWallet | null = null; /* Temporarily added */
 
   private _index: number;
 

@@ -46,15 +46,17 @@ export const ApproveConnectHardwareWalletFinish = () => {
     }
     const deserializeAccounts: LedgerAccount[] = accounts.map(deserializeAccount);
     const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
-    const accountInfos = deserializeAccounts.map(account => account.toData())
+    const accountInfos = deserializeAccounts.map((account) => account.toData());
     const clone = wallet.clone();
     for (const accountInfo of accountInfos) {
       clone.addKeyring(keyring);
-      clone.addAccount(LedgerAccount.fromData({
-        ...accountInfo,
-        name: `Ledger ${accountInfo.hdPath + 1}`,
-        keyringId: keyring.id
-      }));
+      clone.addAccount(
+        LedgerAccount.fromData({
+          ...accountInfo,
+          name: `Ledger ${accountInfo.hdPath + 1}`,
+          keyringId: keyring.id,
+        }),
+      );
     }
     await updateWallet(clone);
     await transport.close();

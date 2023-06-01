@@ -4,6 +4,7 @@ import { Wallet } from '../wallet';
 import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
 import { rawSecp256k1PubkeyToRawAddress } from '../../amino';
 import { toBech32 } from '../../encoding';
+import { GnoWallet } from '@gnolang/gno-js-client';
 
 export class SeedAccount implements Account {
   public readonly id;
@@ -15,6 +16,8 @@ export class SeedAccount implements Account {
   public readonly hdPath: number;
 
   public readonly publicKey: Uint8Array;
+
+  private _gnoWallet: GnoWallet | null = null; /* Temporarily added */
 
   private _index: number;
 
