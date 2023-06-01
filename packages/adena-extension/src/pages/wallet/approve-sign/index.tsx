@@ -241,7 +241,7 @@ export const ApproveSign = () => {
               cancelButtonProps={{ onClick: cancelEvent }}
               confirmButtonProps={{
                 onClick: approveEvent,
-                text: 'Sign',
+                text: 'Approve',
               }}
             />
           </>
@@ -253,7 +253,7 @@ export const ApproveSign = () => {
   return transactionData ? (
     renderApproveTransaction()
   ) : (
-    <LoadingApproveTransaction rightButtonText='Signin' />
+    <LoadingApproveTransaction rightButtonText='Approve' />
   );
 };
 
