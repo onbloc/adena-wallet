@@ -14,7 +14,6 @@ const LegacyStorageKeys = [
   'ACCOUNT_NAMES',
   'ESTABLISH_SITES',
   'ADDRESS_BOOK',
-  'SERIALIZED',
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 
@@ -53,8 +52,11 @@ export class StorageMigrator implements Migrator {
   async saveable() {
     const current = await this.getCurrent();
     const latestVersion = Math.max(...this.migrations.map((m) => m.version));
-    if (current.version === latestVersion) {
-      return true;
+    if (current.data.SERIALIZED === '') {
+      return false;
+    }
+    if (current.version !== latestVersion) {
+      return false;
     }
     return this.password && this.password.length > 0;
   }
@@ -63,13 +65,16 @@ export class StorageMigrator implements Migrator {
     return JSON.stringify(data);
   }
 
-  async deserialize(data: string) {
-    try {
-      return this.mappedJson(JSON.parse(data));
-    } catch (e) {
-      console.error('Migrate', e);
+  async deserialize(data: string | undefined) {
+    let jsonData = null;
+    if (data) {
+      try {
+        jsonData = JSON.parse(data);
+      } catch (e) {
+        console.error('Migrate', e);
+      }
     }
-    return null;
+    return this.mappedJson(jsonData);
   }
 
   async getCurrent() {
@@ -140,9 +145,12 @@ export class StorageMigrator implements Migrator {
   }
 
   private async getLegacyData() {
-    const legacyData: { [key in string]: unknown } = {};
+    const legacyData: { [key in string]: unknown } = defaultData;
     for (const key of LegacyStorageKeys) {
-      legacyData[key] = (await this.storage.get(key))[key];
+      const data = (await this.storage.get(key))[key];
+      if (data) {
+        legacyData[key] = typeof legacyData[key] === 'object' ? JSON.parse(data) : data;
+      }
     }
     return legacyData as StorageModelDataV001;
   }

@@ -72,7 +72,9 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.NETWORKS).toHaveLength(0);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
     expect(migrated?.data.CURRENT_NETWORK_ID).toBe('');
-    expect(migrated?.data.SERIALIZED).toBe('');
+    expect(migrated?.data.SERIALIZED).toBe(
+      'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
+    );
     expect(migrated?.data.ENCRYPTED_STORED_PASSWORD).toBe('');
     expect(migrated?.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(migrated?.data.ACCOUNT_NAMES).toEqual({});

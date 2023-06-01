@@ -7,7 +7,9 @@ const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 
 export const useEnterSeed = () => {
   const navigate = useNavigate();
-  const [seed, setSeed] = useState('');
+  const [seed, setSeed] = useState(
+    'annual assist portion motion suit spoil talk urban mesh report churn album',
+  );
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
 

@@ -1,11 +1,17 @@
 import { Migration } from '@migrates/migrator';
 import { StorageModel } from '@common/storage';
 import {
+  AccountTokenMetainfoModelV001,
   AddressBookModelV001,
   StorageModelDataV001,
   WalletModelV001,
 } from '../v001/storage-model-v001';
-import { AddressBookModelV002, StorageModelDataV002, WalletModelV002 } from './storage-model-v002';
+import {
+  AccountTokenMetainfoModelV002,
+  AddressBookModelV002,
+  StorageModelDataV002,
+  WalletModelV002,
+} from './storage-model-v002';
 import { decryptAES, encryptAES } from 'adena-module';
 
 export class StorageMigration002 implements Migration<StorageModelDataV002> {
@@ -25,6 +31,9 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
         ...previous,
         ADDRESS_BOOK: this.migrateAddressBook(previous.ADDRESS_BOOK),
         SERIALIZED: await this.migrateWallet(previous.SERIALIZED, password),
+        ACCOUNT_TOKEN_METAINFOS: this.migrateAccountTokenMetainfos(
+          previous.ACCOUNT_TOKEN_METAINFOS,
+        ),
       },
     };
   }
@@ -98,6 +107,43 @@ export class StorageMigration002 implements Migration<StorageModelDataV002> {
       const encrypted = await encryptAES(json, password);
       return encrypted;
     }
-    return '';
+    return serialized;
+  }
+
+  private migrateAccountTokenMetainfos(
+    accountTokenMetainfo: AccountTokenMetainfoModelV001,
+  ): AccountTokenMetainfoModelV002 {
+    const changed: AccountTokenMetainfoModelV002 = {};
+    for (const accountId of Object.keys(accountTokenMetainfo)) {
+      changed[accountId] = accountTokenMetainfo[accountId].map((tokenMetaInfo) => {
+        const {
+          main,
+          tokenId,
+          image,
+          pkgPath,
+          type,
+          name,
+          decimals,
+          denom,
+          minimalDenom,
+          display,
+        } = tokenMetaInfo;
+        return {
+          main,
+          tokenId,
+          display: display === true,
+          type: type === 'NATIVE' ? 'gno-native' : 'grc20',
+          name,
+          symbol: denom,
+          decimals,
+          description: '',
+          websiteUrl: '',
+          image: image ?? '',
+          denom: minimalDenom,
+          pkgPath: pkgPath,
+        };
+      });
+    }
+    return changed;
   }
 }
