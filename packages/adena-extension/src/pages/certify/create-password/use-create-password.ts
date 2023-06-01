@@ -156,10 +156,11 @@ export const useCreatePassword = () => {
 
   const createWalletAccountsBySeed = async (seedState: SeedState) => {
     try {
-      await walletService.createWallet({
+      const wallet = await walletService.createWallet({
         mnemonic: seedState.seeds,
         password: pwd,
       });
+      await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.changePassowrd(pwd);
     } catch (error) {
       console.error(error);
@@ -171,6 +172,7 @@ export const useCreatePassword = () => {
   const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
     try {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
+      await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.saveWallet(wallet, pwd);
     } catch (error) {
       console.error(error);
