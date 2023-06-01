@@ -107,5 +107,5 @@ export type AccountTokenMetainfoModelV001 = {
     denom: string;
     minimalDenom: string;
     display?: boolean;
-  };
+  }[];
 };
