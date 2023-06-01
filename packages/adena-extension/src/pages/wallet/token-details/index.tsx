@@ -6,7 +6,6 @@ import etc from '../../../assets/etc.svg';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DubbleButton from '@components/buttons/double-button';
-import { StaticTooltip } from '@components/tooltips';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
@@ -23,6 +22,7 @@ import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
 import BigNumber from 'bignumber.js';
 import { isGRC20TokenModel } from '@models/token-model';
+import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -215,16 +215,37 @@ export const TokenDetails = () => {
     return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
   }, [data]);
 
-  const getScannerUri = () => {
-    if (isGRC20TokenModel(tokenBalance)) {
-      return `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`;
-    }
+  const getAccountDetailUri = () => {
     return `https://gnoscan.io/accounts/${currentAddress}`;
   };
 
-  const moveScanner = () => {
-    const scannerUri = getScannerUri();
-    window.open(scannerUri, '_blank');
+  const getRealmDetailUri = () => {
+    if (isGRC20TokenModel(tokenBalance)) {
+      return `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`;
+    }
+    return '';
+  };
+
+  const moveScanner = (uri: string) => {
+    window.open(uri, '_blank');
+  };
+
+  const getTooltipItems = () => {
+    const accountDetailItem = {
+      tooltipText: 'View on Gnoscan',
+      onClick: () => moveScanner(getAccountDetailUri())
+    }
+    if (!isGRC20TokenModel(tokenBalance)) {
+      return [accountDetailItem];
+    }
+    const realmDetailItem = {
+      tooltipText: 'Token Details',
+      onClick: () => moveScanner(getRealmDetailUri())
+    }
+    return [
+      accountDetailItem,
+      realmDetailItem
+    ]
   };
 
   return (
@@ -234,11 +255,10 @@ export const TokenDetails = () => {
         <Text type='header4'>{tokenBalance.name}</Text>
         <EtcIcon className={etcClicked ? 'show-tooltip' : ''} onClick={etcButtonClick}>
           <img src={etc} alt='View on Gnoscan' />
-          <StaticTooltip
-            tooltipText='View on Gnoscan'
+          <StaticMultiTooltip
             bgColor={theme.color.neutral[6]}
             posTop='28px'
-            onClick={moveScanner}
+            items={getTooltipItems()}
           />
         </EtcIcon>
       </HeaderWrap>
