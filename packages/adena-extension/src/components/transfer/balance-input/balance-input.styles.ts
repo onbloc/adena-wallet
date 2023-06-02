@@ -44,6 +44,7 @@ export const BalanceInputWrapper = styled.div`
   }
 
   .description {
+    position: relative;
     padding: 0 16px;
     ${({ theme }) => theme.fonts.captionReg};
     color: ${({ theme }) => theme.color.neutral[9]};
