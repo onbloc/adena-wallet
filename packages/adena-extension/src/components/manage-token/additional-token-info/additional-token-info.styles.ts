@@ -31,7 +31,7 @@ export const AdditionalTokenInfoItemWrapper = styled.div`
 
   .value {
     display: inline-block;
-    max-width: 150px;
+    max-width: 155px;
     color: ${({ theme }) => theme.color.neutral[0]};
     ${({ theme }) => theme.fonts.body2Reg};
     overflow: hidden;
