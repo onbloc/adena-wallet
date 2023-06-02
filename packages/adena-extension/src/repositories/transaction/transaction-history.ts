@@ -22,6 +22,17 @@ export class TransactionHistoryRepository {
     return TransactionHistoryMapper.fromResposne(response.data);
   }
 
+  public async fetchNativeTransactionHistoryBy(address: string, from: number, size?: number) {
+    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/native-token-history/${address}`;
+    const response = await this.axiosInstance.get<TransactionHistoryResponse>(requestUri, {
+      params: {
+        from,
+        size: size || 20,
+      },
+    });
+    return TransactionHistoryMapper.fromResposne(response.data);
+  }
+
   public async fetchGRC20TransactionHistoryBy(
     address: string,
     packagePath: string,
