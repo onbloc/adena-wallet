@@ -177,7 +177,7 @@ export const ApproveTransactionMain = () => {
     if (!currentAccount) {
       return;
     }
-    if (!isLedgerAccount(currentAccount)) {
+    if (isLedgerAccount(currentAccount)) {
       setLoadingLedger(true);
       return;
     }

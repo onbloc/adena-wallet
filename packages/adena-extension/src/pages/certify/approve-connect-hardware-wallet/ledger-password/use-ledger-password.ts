@@ -140,6 +140,7 @@ export const useLedgerPassword = () => {
         keyrings: [keyring.toData()],
         currentAccountId: mappedAccounts[0]?.id,
       });
+      await accountService.changeCurrentAccount(ledgerWallet.currentAccount);
       await walletService.saveWallet(ledgerWallet, pwd);
       await transport.close();
       navigate(RoutePath.ApproveHardwareWalletLedgerAllSet);
