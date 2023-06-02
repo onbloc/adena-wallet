@@ -344,15 +344,13 @@ export const dateToLocal = (utcDateStr: string) => {
 
 export const getDateText = (date: string) => {
   const currentDate = new Date(date);
-  const dateDiff = getDateDiff(currentDate);
-  let formatDate = '';
+  const today = dateTimeFormatEn(new Date());
+  const result = dateTimeFormatEn(currentDate);
 
-  if (dateDiff === 0) {
+  let formatDate = '';
+  if (today.year === result.year && today.month === result.month && today.day === result.day) {
     formatDate = 'Today';
-  } else if (dateDiff === 1) {
-    formatDate = 'Yesterday';
   } else {
-    const result = dateTimeFormatEn(currentDate);
     formatDate = `${result.month} ${result.day}, ${result.year}`;
   }
   return formatDate;
