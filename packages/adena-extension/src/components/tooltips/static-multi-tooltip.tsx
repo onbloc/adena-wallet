@@ -16,7 +16,7 @@ interface StaticTooltipProps extends TooltipProps {
 
 const Tooltip = styled.div<TooltipProps>`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  width: max-content;
+  width: 171px;
   height: auto;
   visibility: hidden;
   z-index: 1;
@@ -30,6 +30,8 @@ const Tooltip = styled.div<TooltipProps>`
   flex-direction: column;
 
   & > * {
+    width: 100%;
+    height: 26px;
     padding: 2px 25px;
     border-bottom: 1px solid ${({ theme }) => theme.color.neutral[9]};
 
@@ -47,6 +49,7 @@ export const StaticMultiTooltip = ({ bgColor, posTop, items }: StaticTooltipProp
           <Text
             key={index}
             type='body3Reg'
+            textAlign='center'
             onClick={item.onClick}
           >
             {item.tooltipText}
