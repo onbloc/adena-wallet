@@ -100,6 +100,7 @@ export const AddressInputWrapper = styled.div`
   }
 
   .error-message {
+    position: relative;
     padding: 0 16px;
     ${({ theme }) => theme.fonts.captionReg};
     color: ${({ theme }) => theme.color.red[2]};

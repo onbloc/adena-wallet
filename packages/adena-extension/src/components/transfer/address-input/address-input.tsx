@@ -60,6 +60,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
             onChange={event => onChangeAddress(event.target.value)}
             placeholder='Recipient’s Gnoland Address'
             autoComplete='off'
+            maxLength={40}
             rows={1}
           />
         )}
