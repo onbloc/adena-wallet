@@ -45,19 +45,11 @@ export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
     }
   }, [failed]);
 
-  const init = () => {
-    setFailed(false);
-  };
-
-  const fail = () => {
-    setFailed(true);
-  };
-
   const createTransactionData = async () => {
-    init();
+    setFailed(false);
     const isCreated = await createTransaction();
     if (!isCreated) {
-      setTimeout(fail, 1000);
+      setTimeout(() => setFailed(true), 1000);
     }
   };
 
