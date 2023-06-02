@@ -15,7 +15,7 @@ import { TokenBalance } from '@states/balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
-import TransactionHistory, { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
+import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
@@ -153,18 +153,6 @@ export const TokenDetails = () => {
     }
   };
 
-  const filterNativeTokenHistory = (data: {
-    hits: number;
-    next: boolean;
-    txs: TransactionInfo[]
-  }) => {
-    const filteredTxs = data.txs.filter(tx => (tx.type === 'TRANSFER' && tx.title === 'Receive' && tx.amount.denom !== 'ugnot') === false)
-    return {
-      ...data,
-      txs: filteredTxs
-    }
-  }
-
   const fetchTokenHistories = async (pageParam: number) => {
     if (!currentAddress || currentNetwork.networkId !== 'test3') {
       return {
@@ -176,7 +164,7 @@ export const TokenDetails = () => {
     const size = 20;
     const histories = isGRC20TokenModel(tokenBalance) ?
       await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size) :
-      filterNativeTokenHistory(await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size));
+      await transactionHistoryService.fetchNativeTransactionHistory(currentAddress, pageParam, size);
     const txs = histories.txs.map(transaction => {
       const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
       return {
