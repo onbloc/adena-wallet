@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -57,11 +57,12 @@ export const ApproveTransactionMain = () => {
   }, [location]);
 
   useEffect(() => {
-    if (gnoClient && currentAccount && requestData) {
+    if (currentAccount && requestData) {
       initFavicon();
       initTransactionData();
     }
-  }, [gnoClient, currentAccount, requestData]);
+  }, [currentAccount, requestData]);
+
   const initFavicon = async () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
     setFavicon(faviconData);
@@ -100,6 +101,35 @@ export const ApproveTransactionMain = () => {
     }
     return false;
   };
+
+  const createLedgerTransaction = useCallback(async () => {
+    if (!currentAccount || !gnoClient || !document) {
+      return false;
+    }
+    if (!isLedgerAccount(currentAccount)) {
+      return false;
+    }
+
+    await transactionService.createSignature(currentAccount, document).then(async (signature) => {
+      const transaction = await transactionService.createTransaction(document, signature);
+      const result = await transactionService.sendTransaction(gnoClient, transaction);
+      if (result.height && result.height !== '0') {
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),
+        );
+        return true;
+      }
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key),
+      );
+    }).catch((error: Error) => {
+      if (error.message === 'Transaction signing request was rejected by the user') {
+        cancelEvent();
+      }
+      return false;
+    });
+    return false;
+  }, [currentAccount, gnoClient, document]);
 
   const sendTransaction = async () => {
     if (document && gnoClient && currentAccount) {
@@ -147,7 +177,7 @@ export const ApproveTransactionMain = () => {
     if (!currentAccount) {
       return;
     }
-    if (isLedgerAccount(currentAccount)) {
+    if (!isLedgerAccount(currentAccount)) {
       setLoadingLedger(true);
       return;
     }
@@ -232,7 +262,7 @@ export const ApproveTransactionMain = () => {
     return (
       <Wrapper>
         {loadingLedger ? (
-          <ApproveLdegerLoading createTransaction={sendTransaction} cancel={cancelLedger} />
+          <ApproveLdegerLoading createTransaction={createLedgerTransaction} cancel={cancelLedger} />
         ) : (
           <>
             <Text type='header4'>Approve Transaction</Text>

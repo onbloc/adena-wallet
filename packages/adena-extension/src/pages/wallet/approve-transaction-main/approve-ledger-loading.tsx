@@ -13,11 +13,11 @@ const text = {
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
-  min-height: 514px;
-  padding: 50px 20px 24px;
+  min-height: 490px;
+  padding: 30px 0 24px;
 
   .icon {
-    margin: 20px auto;
+    margin: 0 auto 20px auto;
   }
 
   div {
@@ -43,19 +43,11 @@ export const ApproveLdegerLoading = ({ createTransaction, cancel }: Props) => {
     }
   }, [failed]);
 
-  const init = () => {
-    setFailed(false);
-  };
-
-  const fail = () => {
-    setFailed(true);
-  };
-
   const createTransactionData = async () => {
-    init();
+    setFailed(false);
     const isCreated = await createTransaction();
     if (!isCreated) {
-      setTimeout(fail, 1000);
+      setTimeout(() => setFailed(true), 1000);
     }
   };
 
