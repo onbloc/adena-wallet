@@ -60,7 +60,11 @@ export class TokenService {
 
   public async getTokenMetainfosByAccountId(accountId: string) {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    return storedTokenMetainfos;
+    return storedTokenMetainfos.map((token1) => ({
+      ...token1,
+      image:
+        this.getTokenMetainfos().find((token2) => this.equalsToken(token1, token2))?.image || '',
+    }));
   }
 
   public async updateTokenMetainfosByAccountId(accountId: string, tokenMetainfos: TokenModel[]) {
