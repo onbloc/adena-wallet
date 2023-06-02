@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -59,11 +59,11 @@ export const ApproveSign = () => {
   }, [location]);
 
   useEffect(() => {
-    if (gnoClient && currentAccount && requestData) {
+    if (currentAccount && requestData) {
       initFavicon();
       initTransactionData();
     }
-  }, [gnoClient, currentAccount, requestData]);
+  }, [currentAccount, requestData]);
 
   const initFavicon = async () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
@@ -99,6 +99,28 @@ export const ApproveSign = () => {
     }
     return false;
   };
+
+  const createLedgerTransaction = useCallback(async () => {
+    if (!currentAccount || !gnoClient || !document) {
+      return false;
+    }
+    if (!isLedgerAccount(currentAccount)) {
+      return false;
+    }
+
+    await transactionService.createSignature(currentAccount, document).then(async (signature) => {
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.success('SIGN_AMINO', { document, signature }, requestData?.key),
+      );
+      return true;
+    }).catch((error: Error) => {
+      if (error.message === 'Transaction signing request was rejected by the user') {
+        cancelEvent();
+      }
+      return false;
+    });
+    return false;
+  }, [currentAccount, gnoClient, document]);
 
   const signTransaction = async () => {
     if (transactionData && gnoClient && currentAccount) {
@@ -219,7 +241,7 @@ export const ApproveSign = () => {
     return (
       <Wrapper>
         {loadingLedger ? (
-          <ApproveLdegerLoading createTransaction={signTransaction} cancel={cancelLedger} />
+          <ApproveLdegerLoading createTransaction={createLedgerTransaction} cancel={cancelLedger} />
         ) : (
           <>
             <Text type='header4'>Sign Transaction</Text>
