@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -100,7 +100,7 @@ export const ApproveSign = () => {
     return false;
   };
 
-  const createLedgerTransaction = useCallback(async () => {
+  const createLedgerTransaction = async () => {
     if (!currentAccount || !gnoClient || !document) {
       return false;
     }
@@ -108,19 +108,25 @@ export const ApproveSign = () => {
       return false;
     }
 
-    await transactionService.createSignature(currentAccount, document).then(async (signature) => {
+    const result = await transactionService.createSignatureWithLedger(currentAccount, document).then(async (signature) => {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.success('SIGN_AMINO', { document, signature }, requestData?.key),
       );
       return true;
     }).catch((error: Error) => {
       if (error.message === 'Transaction signing request was rejected by the user') {
-        cancelEvent();
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure('SIGN_FAILED', requestData?.data, requestData?.key),
+        );
+        return true;
+      }
+      if (error.message.includes('Ledger')) {
+        return false;
       }
       return false;
     });
-    return false;
-  }, [currentAccount, gnoClient, document]);
+    return result;
+  };
 
   const signTransaction = async () => {
     if (transactionData && gnoClient && currentAccount) {
