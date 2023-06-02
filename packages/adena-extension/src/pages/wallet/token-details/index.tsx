@@ -207,9 +207,9 @@ export const TokenDetails = () => {
     return `https://gnoscan.io/accounts/${currentAddress}`;
   };
 
-  const getRealmDetailUri = () => {
+  const getTokenUri = () => {
     if (isGRC20TokenModel(tokenBalance)) {
-      return `https://gnoscan.io/realms/details?path=${tokenBalance.pkgPath}`;
+      return `https://gnoscan.io/tokens/${tokenBalance.pkgPath}`;
     }
     return '';
   };
@@ -228,7 +228,7 @@ export const TokenDetails = () => {
     }
     const realmDetailItem = {
       tooltipText: 'Token Details',
-      onClick: () => moveScanner(getRealmDetailUri())
+      onClick: () => moveScanner(getTokenUri())
     }
     return [
       accountDetailItem,
