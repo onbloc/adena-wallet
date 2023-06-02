@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import styled from 'styled-components';
 import Text from '@components/text';
@@ -14,9 +14,7 @@ import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import { useAdenaContext } from '@hooks/use-context';
-import { LedgerConnector } from 'adena-module';
-import { isLedgerAccount } from 'adena-module';
-import { StdSignDoc } from 'adena-module/src';
+import { LedgerConnector, isLedgerAccount, StdSignDoc } from 'adena-module';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -102,7 +100,7 @@ export const ApproveTransactionMain = () => {
     return false;
   };
 
-  const createLedgerTransaction = useCallback(async () => {
+  const createLedgerTransaction = async () => {
     if (!currentAccount || !gnoClient || !document) {
       return false;
     }
@@ -110,26 +108,29 @@ export const ApproveTransactionMain = () => {
       return false;
     }
 
-    await transactionService.createSignature(currentAccount, document).then(async (signature) => {
+    const result = await transactionService.createSignatureWithLedger(currentAccount, document).then(async (signature) => {
       const transaction = await transactionService.createTransaction(document, signature);
       const result = await transactionService.sendTransaction(gnoClient, transaction);
       if (result.height && result.height !== '0') {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),
         );
-        return true;
       }
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key),
       );
+      return true;
     }).catch((error: Error) => {
+      if (error.message.includes('Ledger')) {
+        return false;
+      }
       if (error.message === 'Transaction signing request was rejected by the user') {
         cancelEvent();
       }
       return false;
     });
-    return false;
-  }, [currentAccount, gnoClient, document]);
+    return result;
+  };
 
   const sendTransaction = async () => {
     if (document && gnoClient && currentAccount) {
