@@ -6,7 +6,7 @@ import { useAddressBookInput } from '@hooks/use-adderss-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import BigNumber from 'bignumber.js';
-import { TokenModel } from '@models/token-model';
+import { TokenModel, isNativeTokenModel } from '@models/token-model';
 
 const TransferInputContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +50,8 @@ const TransferInputContainer: React.FC = () => {
     if (!isNext()) {
       return;
     }
-    const validAddress = addressBookInput.validateAddressBookInput();
+    const validAddress = addressBookInput.validateAddressBookInput() &&
+      (isNativeTokenModel(tokenMetainfo) || addressBookInput.validateEqualAddress());
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
       navigate(RoutePath.TransferSummary, {
