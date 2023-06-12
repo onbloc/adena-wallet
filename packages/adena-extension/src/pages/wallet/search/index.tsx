@@ -14,6 +14,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import TokenBalanceComponent from '@components/common/token-balance/token-balance';
 import { TokenBalance } from '@states/balance';
 import BigNumber from 'bignumber.js';
+import useHistoryData from '@hooks/use-history-data';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -74,6 +75,7 @@ export const WalletSearch = () => {
   const location = useLocation();
 
   const { displayTokenBalances } = useTokenBalance();
+  const { clearHistoryData } = useHistoryData();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');
@@ -87,19 +89,28 @@ export const WalletSearch = () => {
 
   const onClickItem = (tokenBalance: TokenBalance) => {
     location.state === 'send'
-      ? navigate(RoutePath.TransferInput, {
-        state: {
-          isTokenSearch: true,
-          tokenBalance,
-        }
-      })
-      : navigate(RoutePath.Deposit, {
-        state: {
-          type: 'wallet',
-          tokenMetainfo: tokenBalance
-        }
-      });
+      ? moveTransferInput(tokenBalance)
+      : moveDeposit(tokenBalance);
   };
+
+  const moveTransferInput = (tokenBalance: TokenBalance) => {
+    clearHistoryData(RoutePath.TransferInput);
+    navigate(RoutePath.TransferInput, {
+      state: {
+        isTokenSearch: true,
+        tokenBalance,
+      }
+    });
+  }
+
+  const moveDeposit = (tokenBalance: TokenBalance) => {
+    navigate(RoutePath.Deposit, {
+      state: {
+        type: 'wallet',
+        tokenMetainfo: tokenBalance
+      }
+    });
+  }
 
   const inputResetClick = () => {
     if (inputRef.current) {
