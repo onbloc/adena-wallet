@@ -11,6 +11,7 @@ import TokenBalance from '@components/common/token-balance/token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
+import { CopyTooltip } from '@components/tooltips';
 
 interface DLProps {
   color?: string;
@@ -94,13 +95,17 @@ export const TransactionDetail = () => {
         {transactionItem.to && (
           <DLWrap>
             <dt>To</dt>
-            <dd>{transactionItem.to}</dd>
+            <CopyTooltip position='top' copyText={transactionItem.originTo || ''} >
+              <dd>{transactionItem.to}</dd>
+            </CopyTooltip>
           </DLWrap>
         )}
         {transactionItem.from && (
           <DLWrap>
             <dt>From</dt>
-            <dd>{transactionItem.from}</dd>
+            <CopyTooltip position='top' copyText={transactionItem.originFrom || ''} >
+              <dd>{transactionItem.from}</dd>
+            </CopyTooltip>
           </DLWrap>
         )}
         {

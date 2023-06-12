@@ -24,6 +24,8 @@ interface TransactionInfo {
   date: string;
   from?: string;
   to?: string;
+  originFrom?: string;
+  originTo?: string;
   networkFee?: {
     value: string;
     denom: string;
@@ -134,6 +136,8 @@ export class TransactionHistoryMapper {
       },
       to: to && func === 'Send' ? `${formatAddress(to, 4)}` : undefined,
       from: from && func === 'Receive' ? `${formatAddress(from, 4)}` : undefined,
+      originTo: to || '',
+      originFrom: from || '',
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
@@ -162,6 +166,8 @@ export class TransactionHistoryMapper {
       },
       to: func === 'Send' ? `${formatAddress(to, 4)}` : undefined,
       from: func === 'Receive' ? `${formatAddress(from, 4)}` : undefined,
+      originTo: to || '',
+      originFrom: from || '',
       valueType,
       date: dateToLocal(date).value,
       networkFee: {

@@ -21,7 +21,9 @@ export interface TransactionInfo {
   valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
   date: string;
   from?: string;
+  originFrom?: string;
   to?: string;
+  originTo?: string;
   networkFee?: {
     value: string;
     denom: string;
