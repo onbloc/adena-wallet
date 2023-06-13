@@ -144,6 +144,17 @@ export const useAddressBookInput = () => {
     return true;
   }, [selected, selectedAddressBook, address]);
 
+  const validateEqualAddress = useCallback(() => {
+    const address = getResultAddress();
+    if (address === currentAddress) {
+      setHasError(true);
+      setErrorMessage("GRC20 tokens doesn't support sending to your own address");
+      return false;
+    }
+    clearError();
+    return true;
+  }, [selected, selectedAddressBook, address]);
+
   return {
     opened,
     hasError,
@@ -159,5 +170,6 @@ export const useAddressBookInput = () => {
     onChangeAddress,
     onClickAddressBook,
     validateAddressBookInput,
+    validateEqualAddress,
   };
 };
