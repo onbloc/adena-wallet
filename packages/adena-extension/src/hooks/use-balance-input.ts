@@ -105,6 +105,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel) => {
     denom: tokenMetainfo.symbol,
     description: getDescription(),
     networkFee,
+    setAmount,
     updateCurrentBalance,
     onChangeAmount,
     onClickMax,
