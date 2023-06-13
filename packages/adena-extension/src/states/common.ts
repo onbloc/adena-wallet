@@ -27,3 +27,8 @@ export const scrollPositions = atom<{ [key in string]: number }>({
   key: `common/scroll-positions`,
   default: {},
 });
+
+export const historyState = atom<{ [key in string]: any }>({
+  key: `common/history-state`,
+  default: {},
+});
