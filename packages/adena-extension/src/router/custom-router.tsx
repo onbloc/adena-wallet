@@ -65,6 +65,8 @@ import TransferSummary from '@pages/wallet/transfer/transfer-summary';
 import ManageTokenAdded from '@pages/wallet/manage-token/added';
 import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loading';
 import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
+import { ApproveTransactionLedgerLoading } from '@pages/wallet/approve-transaction-ledger-loading';
+import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-loading';
 
 export const CustomRouter = () => {
   const { wallet } = useWalletContext();
@@ -112,7 +114,9 @@ export const CustomRouter = () => {
           <Route path={RoutePath.Deposit} element={<Deposit />} />
           <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
           <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
+          <Route path={RoutePath.ApproveTransactionLoading} element={<ApproveTransactionLedgerLoading />} />
           <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
+          <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
