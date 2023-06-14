@@ -8,18 +8,18 @@ export const signAmino = async (
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
-  const address = await core.getCurrentAddress();
-  if (!address) {
-    return;
+  const locked = await core.walletService.isLocked();
+  if (!locked) {
+    const address = await core.getCurrentAddress();
+    const validationMessage = validateInjectionData(address, requestData);
+    if (validationMessage) {
+      sendResponse(validationMessage);
+      return;
+    }
   }
-  if (!validateTransaction(address, requestData, sendResponse)) {
-    return;
-  }
-  if (!validateTransactionMessage(address, requestData, sendResponse)) {
-    return;
-  }
+
   HandlerMethod.createPopup(
-    RoutePath.ApproveLogin,
+    RoutePath.ApproveSign,
     requestData,
     InjectionMessageInstance.failure('SIGN_REJECTED', requestData, requestData.key),
     sendResponse,
@@ -31,86 +31,88 @@ export const doContract = async (
   sendResponse: (message: any) => void,
 ) => {
   const core = new InjectCore();
-  const address = await core.getCurrentAddress();
-  if (!address) {
-    return;
+  const locked = await core.walletService.isLocked();
+  if (!locked) {
+    const address = await core.getCurrentAddress();
+    const validationMessage = validateInjectionData(address, requestData);
+    if (validationMessage) {
+      sendResponse(validationMessage);
+      return;
+    }
   }
-  if (!validateTransaction(address, requestData, sendResponse)) {
-    return;
-  }
-  if (!validateTransactionMessage(address, requestData, sendResponse)) {
-    return;
-  }
+
   HandlerMethod.createPopup(
-    RoutePath.ApproveLogin,
+    RoutePath.ApproveTransaction,
     requestData,
     InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData, requestData.key),
     sendResponse,
   );
 };
 
-const validateTransaction = (
-  currentAccountAddress: string,
+export const validateInjectionData = (
+  address: string | null,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void,
-) => {
+): InjectionMessage | null => {
+  if (!address) {
+    return InjectionMessageInstance.failure('NO_ACCOUNT', requestData, requestData.key);
+  }
+  if (!validateInjectionAddress(address)) {
+    return InjectionMessageInstance.failure('NO_ACCOUNT', requestData, requestData.key);
+  }
+  if (!validateInjectionTransactionType(requestData)) {
+    return InjectionMessageInstance.failure(
+      'UNSUPPORTED_TYPE',
+      requestData?.data,
+      requestData?.key,
+    );
+  }
+  if (!validateInjectionTransactionMessage(address, requestData)) {
+    return InjectionMessageInstance.failure(
+      'ACCOUNT_MISMATCH',
+      requestData?.data,
+      requestData?.key,
+    );
+  }
+  return null;
+};
+
+export const validateInjectionAddress = (currentAccountAddress: string) => {
   if (!currentAccountAddress || currentAccountAddress === '') {
-    sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', requestData, requestData.key));
     return false;
   }
 
   return true;
 };
 
-const validateTransactionMessage = (
+export const validateInjectionTransactionType = (requestData: InjectionMessage) => {
+  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg'];
+  return requestData.data?.messages.every((message: any) => messageTypes.includes(message?.type));
+};
+
+export const validateInjectionTransactionMessage = (
   currentAccountAddress: string,
   requestData: InjectionMessage,
-  sendResponse: (message: any) => void,
 ) => {
   const messages = requestData.data?.messages;
   for (const message of messages) {
     switch (message?.type) {
       case '/bank.MsgSend':
         if (currentAccountAddress !== message.value.from_address) {
-          sendResponse(
-            InjectionMessageInstance.failure(
-              'ACCOUNT_MISMATCH',
-              requestData?.data,
-              requestData?.key,
-            ),
-          );
           return false;
         }
         break;
       case '/vm.m_call':
         if (currentAccountAddress !== message.value.caller) {
-          sendResponse(
-            InjectionMessageInstance.failure(
-              'ACCOUNT_MISMATCH',
-              requestData?.data,
-              requestData?.key,
-            ),
-          );
           return false;
         }
         break;
       case '/vm.m_addpkg':
         if (currentAccountAddress !== message.value.creator) {
-          sendResponse(
-            InjectionMessageInstance.failure(
-              'ACCOUNT_MISMATCH',
-              requestData?.data,
-              requestData?.key,
-            ),
-          );
           return false;
         }
         break;
       default:
-        sendResponse(
-          InjectionMessageInstance.failure('UNSUPPORTED_TYPE', requestData?.data, requestData?.key),
-        );
-        return false;
+        break;
     }
   }
   return true;
