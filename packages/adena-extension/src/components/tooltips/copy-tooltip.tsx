@@ -5,6 +5,7 @@ import Text from '@components/text';
 interface CopyTooltipProps {
   children: React.ReactNode;
   copyText: string;
+  position?: 'top' | 'bottom';
   className?: string;
 }
 
@@ -12,7 +13,6 @@ const ToolTipInner = styled.div`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
   ${({ theme }) => theme.fonts.body2Reg};
   position: absolute;
-  bottom: -27px;
   width: max-content;
   height: 25px;
   visibility: hidden;
@@ -22,6 +22,14 @@ const ToolTipInner = styled.div`
   border-radius: 13px;
   transform: scale(0.6);
   cursor: default;
+
+  &.top {
+    top: -27px;
+  }
+
+  &.bottom {
+    bottom: -27px;
+  }
 `;
 
 const ToolTipWrap = styled.div`
@@ -36,7 +44,7 @@ const ToolTipWrap = styled.div`
   }
 `;
 
-export const CopyTooltip = ({ children, copyText, className }: CopyTooltipProps) => {
+export const CopyTooltip = ({ children, copyText, className, position = 'bottom' }: CopyTooltipProps) => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
   const handleButtonClick = useCallback(
@@ -57,7 +65,7 @@ export const CopyTooltip = ({ children, copyText, className }: CopyTooltipProps)
   return (
     <ToolTipWrap className={isClicked ? `${className} isClicked` : className}>
       <div onClick={handleButtonClick}>{children}</div>
-      <ToolTipInner className='tooltip'>
+      <ToolTipInner className={`tooltip ${position}`}>
         <Text type='body3Reg'>{isClicked ? 'Copied!' : 'Copy to clipboard'}</Text>
       </ToolTipInner>
     </ToolTipWrap>
