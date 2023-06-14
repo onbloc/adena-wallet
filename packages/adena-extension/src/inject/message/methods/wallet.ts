@@ -45,21 +45,17 @@ export const addEstablish = async (
   const networkId = await core.getCurrentNetworkId();
   const isLocked = await core.walletService.isLocked();
   const siteName = getSiteName(message.protocol, message.hostname);
-  const isEstablised = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
 
-  if (isLocked) {
-    HandlerMethod.createPopup(
-      RoutePath.ApproveLogin,
-      message,
-      InjectionMessageInstance.failure('WALLET_LOCKED', message, message.key),
-      sendResponse,
+  if (!isLocked) {
+    const isEstablised = await core.establishService.isEstablishedBy(
+      accountId,
+      networkId,
+      siteName,
     );
-    return true;
-  }
-
-  if (isEstablised) {
-    sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', message, message.key));
-    return true;
+    if (isEstablised) {
+      sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', message, message.key));
+      return true;
+    }
   }
 
   HandlerMethod.createPopup(

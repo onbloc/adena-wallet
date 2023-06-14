@@ -30,6 +30,7 @@ export const parameters: Parameters = {
       }
     ]
   },
+  layout: 'fullscreen',
   actions: { argTypesRegex: '^on[A-Z].*' },
   controls: {
     matchers: {

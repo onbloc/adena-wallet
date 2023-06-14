@@ -11,7 +11,6 @@ interface ApproveProps {
 const LoadingApproveTransaction = ({
   leftButtonText,
   rightButtonText,
-  className,
 }: ApproveProps) => {
   return (
     <Wrapper>
@@ -67,7 +66,7 @@ const RoundedBox = styled.div`
   padding: 0px 18px;
 `;
 
-const AllRadiusBox = styled(RoundedBox)<{ align?: string }>`
+const AllRadiusBox = styled(RoundedBox) <{ align?: string }>`
   border-radius: 24px;
   justify-content: ${({ align }) => align && align};
 `;
@@ -82,22 +81,6 @@ const BottomRadiusBox = styled(RoundedBox)`
   border-bottom-left-radius: 24px;
   border-bottom-right-radius: 24px;
   margin-bottom: 10px;
-`;
-
-const BundleBox = styled.div`
-  margin: 8px 0px 10px;
-  gap: 2px;
-  dt {
-    color: ${({ theme }) => theme.color.neutral[8]};
-  }
-  & dl:first-child {
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-  }
-  & dl:last-child {
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 18px;
-  }
 `;
 
 export default LoadingApproveTransaction;
