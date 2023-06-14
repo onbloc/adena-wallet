@@ -2,6 +2,7 @@ import { InjectionMessage, InjectionMessageInstance, MessageKeyType } from '../m
 import { v4 as uuidv4 } from 'uuid';
 import {
   validateDoContractRequest,
+  validateTrasactionMessageOfAddPkg,
   validateTrasactionMessageOfBankSend,
   validateTrasactionMessageOfVmCall,
 } from '@common/validation/validation-message';
@@ -56,7 +57,10 @@ export class AdenaExecutor {
   };
 
   public DoContract = (params: RequestDocontractMessage) => {
-    this.valdiateContractMessage(params);
+    const result = this.valdiateContractMessage(params);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
     const eventMessage = AdenaExecutor.createEventMessage('DO_CONTRACT', params);
     return this.sendEventMessage(eventMessage);
   };
@@ -67,7 +71,10 @@ export class AdenaExecutor {
   };
 
   public SignAmino = (params: RequestDocontractMessage) => {
-    this.valdiateContractMessage(params);
+    const result = this.valdiateContractMessage(params);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
     const eventMessage = AdenaExecutor.createEventMessage('SIGN_AMINO', params);
     return this.sendEventMessage(eventMessage);
   };
@@ -85,6 +92,11 @@ export class AdenaExecutor {
           break;
         case '/vm.m_call':
           if (!validateTrasactionMessageOfVmCall(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_addpkg':
+          if (!validateTrasactionMessageOfAddPkg(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
