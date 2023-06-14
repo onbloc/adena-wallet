@@ -1,14 +1,15 @@
-export const validateDoContractRequest = (requestData: { [key in string]: any }) => {
-  if (!requestData.gasFee || !requestData.gasWanted || !requestData.message) {
-    return false;
+export const validateDoContractRequest = (requestData: any) => {
+  if (typeof requestData?.gasFee !== 'number') {
+    if (Number.isNaN(parseInt(`${requestData?.gasFee}`))) {
+      return false;
+    }
   }
-  if (typeof requestData.gasFee !== 'number') {
-    return false;
+  if (typeof requestData?.gasWanted !== 'number') {
+    if (Number.isNaN(parseInt(`${requestData?.gasWanted}`))) {
+      return false;
+    }
   }
-  if (typeof requestData.gasWanted !== 'number') {
-    return false;
-  }
-  if (!requestData.message.type) {
+  if (!Array.isArray(requestData?.messages)) {
     return false;
   }
   return true;
@@ -63,5 +64,38 @@ export const validateTrasactionMessageOfVmCall = (message: { [key in string]: an
     return false;
   }
 
+  return true;
+};
+
+export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: any }) => {
+  if (!message.type || !message.value) {
+    return false;
+  }
+  if (message.type !== '/vm.m_addpkg') {
+    return false;
+  }
+  if (typeof message.value !== 'object') {
+    return false;
+  }
+  if (typeof message.value.creator !== 'string') {
+    return false;
+  }
+  if (typeof message.value.deposit !== 'string') {
+    return false;
+  }
+  if (typeof message.value.package !== 'object') {
+    return false;
+  }
+
+  const packageValue = message.value.package;
+  if (typeof packageValue?.Name !== 'string') {
+    return false;
+  }
+  if (typeof packageValue?.Path !== 'string') {
+    return false;
+  }
+  if (!Array.isArray(packageValue?.Files)) {
+    return false;
+  }
   return true;
 };
