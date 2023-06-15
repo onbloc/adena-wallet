@@ -66,13 +66,18 @@ export const AddressInputWrapper = styled.div`
     }
   }
 
+  .list-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+  }
+
   .list-wrapper {
     position: absolute;
     width: 100%;
     height: auto;
     max-height: 142px;
     left: 0;
-    top: 48px;
     border: 1px solid ${({ theme }) => theme.color.neutral[6]};
     border-bottom-right-radius: 25px;
     border-bottom-left-radius: 25px;
