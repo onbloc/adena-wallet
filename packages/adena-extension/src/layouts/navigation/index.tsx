@@ -17,6 +17,7 @@ const Wrapper = styled.nav`
   gap: 40px;
   position: fixed;
   bottom: 0px;
+  z-index: 5;
   svg {
     * {
       transition: fill 0.3s ease;
