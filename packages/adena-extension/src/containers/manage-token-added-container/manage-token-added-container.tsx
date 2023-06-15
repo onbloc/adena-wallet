@@ -17,11 +17,18 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [selectedTokenInfo, setSelectedTokenInfo] = useState<TokenInfo>();
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     document.body.addEventListener('click', closeSelectBox);
     return () => document.body.removeEventListener('click', closeSelectBox);
   }, [document.body]);
+
+  useEffect(() => {
+    if (finished) {
+      navigate(-1);
+    }
+  }, [finished]);
 
   const {
     data: tokenInfos,
@@ -75,12 +82,12 @@ const ManageTokenAddedContainer: React.FC = () => {
   }, []);
 
   const onClickAdd = useCallback(async () => {
-    if (!selected || !selectedTokenInfo) {
+    if (!selected || !selectedTokenInfo || finished) {
       return;
     }
     await addGRC20TokenMetainfo(selectedTokenInfo);
     await updateTokenBalanceInfos(tokenMetainfos);
-    navigate(-1);
+    setFinished(true);
   }, [selected, selectedTokenInfo]);
 
   return (

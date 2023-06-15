@@ -24,15 +24,23 @@ export interface ManageTokenInfo {
 const ManageTokenSearchContainer: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [isClose, setIsClose] = useState(false);
   const { tokenMetainfos } = useTokenMetainfo();
   const { currentAccount } = useCurrentAccount();
   const { tokenBalances, toggleDisplayOption, updateTokenBalanceInfos } = useTokenBalance();
 
   useEffect(() => {
     if (currentAccount) {
-      updateTokenBalanceInfos(tokenMetainfos);
+      updateTokenBalanceInfos(tokenMetainfos).then(() => setLoaded(true));
     }
   }, [tokenMetainfos, currentAccount]);
+
+  useEffect(() => {
+    if (loaded && isClose) {
+      navigate(-1);
+    }
+  }, [loaded, isClose]);
 
   const filterTokens = useCallback((keyword: string) => {
     const comparedKeyword = keyword.toLowerCase();
@@ -73,7 +81,7 @@ const ManageTokenSearchContainer: React.FC = () => {
   }, [tokenBalances])
 
   const onClickClose = useCallback(() => {
-    navigate(-1);
+    setIsClose(true);
   }, []);
 
   return (
