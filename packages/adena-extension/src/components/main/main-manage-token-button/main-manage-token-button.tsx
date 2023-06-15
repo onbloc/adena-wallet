@@ -10,7 +10,7 @@ const MainManageTokenButton: React.FC<MainManageTokenButtonProps> = ({ onClick }
   return (
     <MainManageTokenButtonWrapper onClick={onClick}>
       <img className='icon' src={MainManageTokensFilterIcon} alt={'mange token filter icon'} />
-      <span className='title'>{'Manage Token'}</span>
+      <span className='title'>{'Manage Tokens'}</span>
     </MainManageTokenButtonWrapper>
   );
 };
