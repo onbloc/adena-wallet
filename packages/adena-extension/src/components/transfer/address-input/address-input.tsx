@@ -76,14 +76,16 @@ const AddressInput: React.FC<AddressInputProps> = ({
 
       {hasError && <span className='error-message'>{errorMessage}</span>}
 
-      {opened && (
-        <div className='list-wrapper'>
-          <AddressBookList
-            addressBookInfos={addressBookInfos}
-            onClickItem={onClickAddressBook}
-          />
-        </div>
-      )}
+      <div className='list-container'>
+        {opened && (
+          <div className='list-wrapper'>
+            <AddressBookList
+              addressBookInfos={addressBookInfos}
+              onClickItem={onClickAddressBook}
+            />
+          </div>
+        )}
+      </div>
     </AddressInputWrapper>
   );
 };
