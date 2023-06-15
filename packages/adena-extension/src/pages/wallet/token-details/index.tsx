@@ -23,6 +23,7 @@ import { useNetwork } from '@hooks/use-network';
 import BigNumber from 'bignumber.js';
 import { isGRC20TokenModel } from '@models/token-model';
 import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
+import useHistoryData from '@hooks/use-history-data';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -94,6 +95,7 @@ export const TokenDetails = () => {
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { saveScrollPosition } = useScrollHistory();
+  const { clearHistoryData } = useHistoryData();
   const {
     status,
     isLoading,
@@ -196,7 +198,15 @@ export const TokenDetails = () => {
 
   const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
   const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
-  const SendButtonClick = () => navigate(RoutePath.TransferInput, { state: { tokenBalance } });
+  const SendButtonClick = () => {
+    clearHistoryData(RoutePath.TransferInput);
+    navigate(RoutePath.TransferInput, {
+      state: {
+        tokenBalance,
+      }
+    });
+    navigate(RoutePath.TransferInput, { state: { tokenBalance } })
+  };
   const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
 
   const getTransactionInfoLists = useCallback(() => {
