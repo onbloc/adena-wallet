@@ -7,6 +7,7 @@ const Wrapper = styled.div`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
+  z-index: 1;
 `;
 
 const RoundsBox = styled.div`
