@@ -8,7 +8,6 @@ import { useAccountName } from "@hooks/use-account-name";
 import { useLocation } from "react-router-dom";
 import { useRecoilState } from "recoil";
 import { CommonState } from "@states/index";
-import { useGnoClient } from "@hooks/use-gno-client";
 import useScrollHistory from "@hooks/use-scroll-history";
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
@@ -17,7 +16,6 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
   const { wallet, walletStatus } = useWalletContext();
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
-  const [gnoClient] = useGnoClient()
   const { currentNetwork } = useNetwork();
   const { tokenMetainfos, initTokenMetainfos } = useTokenMetainfo();
   const { updateTokenBalanceInfos } = useTokenBalance();
@@ -51,23 +49,27 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
   }, [wallet?.accounts]);
 
   function checkHealth() {
-    if (!gnoClient) {
+    if (!currentNetwork) {
       return;
     }
     if (['NONE', 'CREATE', 'LOGIN'].includes(walletStatus)) {
       return;
     }
-    gnoClient.isHealth().then(isHelath => {
+    isHealth(currentNetwork.rpcUrl).then(isHelath => {
       setFailedNetwork({
         ...failedNetwork,
-        [gnoClient.networkId]: !isHelath
+        [currentNetwork.networkId]: !isHelath
       });
     }).catch(() => {
       setFailedNetwork({
         ...failedNetwork,
-        [gnoClient.networkId]: true
+        [currentNetwork.networkId]: true
       });
     });
+  }
+
+  function isHealth(rpcUrl: string) {
+    return fetch(rpcUrl + '/health');
   }
 
   return (
