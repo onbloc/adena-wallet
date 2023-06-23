@@ -2177,15 +2177,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/gno-js-client@npm:1.0.0":
-  version: 1.0.0
-  resolution: "@gnolang/gno-js-client@npm:1.0.0"
+"@gnolang/gno-js-client@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@gnolang/gno-js-client@npm:1.0.1"
   dependencies:
     "@cosmjs/ledger-amino": ^0.30.1
     "@gnolang/tm2-js-client": ^1.0.0
     long: ^5.2.3
     protobufjs: ^7.2.3
-  checksum: 1f738ca776ab8d039c349840be745180d661f6d0d60766ec2e13ae3dbe834b3cce62a8dc1e3120179dda15a1adbb11bfbcc1b3f7176c97f7029bdacd30e35dcb
+  checksum: 4f9d8f6838a72bc7e58ff1047c9d9b3b6f88556185cfa993a795128639f30b2cc2adcbadf6ca06292fee73d6b53dbc9207a878789d593c966cca3d2270370f34
   languageName: node
   linkType: hard
 
@@ -5928,7 +5928,7 @@ __metadata:
     "@babel/preset-env": ^7.21.4
     "@babel/preset-react": ^7.18.6
     "@babel/preset-typescript": ^7.21.4
-    "@gnolang/gno-js-client": 1.0.0
+    "@gnolang/gno-js-client": 1.0.1
     "@jest/globals": ^29.5.0
     "@storybook/addon-essentials": ^7.0.4
     "@storybook/addon-interactions": ^7.0.4
