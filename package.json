@@ -7,7 +7,7 @@
   "scripts": {
     "develop": "yarn workspace adena-extension build:dev",
     "build": "yarn build:module && yarn build:service && yarn",
-    "build:module": "yarn workspaces foreach -ptR --from '{gno-client,adena-module,adena-torus-signin}' run build",
+    "build:module": "yarn workspaces foreach -ptR --from '{adena-module,adena-torus-signin}' run build",
     "build:service": "yarn workspace adena-extension build",
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",

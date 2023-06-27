@@ -34,6 +34,7 @@ const DEFAULT_NETWORK: NetworkMetainfo = {
 export const useNetwork = (): NetworkResponse => {
   const { dispatchEvent } = useEvent();
   const { networkMetainfos: networks, changeNetwork: changeNetworkProvider } = useWalletContext();
+  const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
 
   async function changeNetwork(networkId: string) {
@@ -42,6 +43,7 @@ export const useNetwork = (): NetworkResponse => {
       return false;
     }
     const network = networks.find((network) => network.networkId === networkId) ?? networks[0];
+    await chainService.updateCurrentNetworkId(networkId);
     const changedNetwork = await changeNetworkProvider(network);
     dispatchChangedEvent(changedNetwork);
     return true;

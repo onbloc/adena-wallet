@@ -1,18 +1,17 @@
 import theme from '@styles/theme';
 import Text from '@components/text';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import ListBox from '@components/list-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
 import LoadingChangeNetwork from '@components/loading-screen/loading-change-network';
-import { useGnoClient } from '@hooks/use-gno-client';
-import { GnoClient } from 'gno-client';
 import { RoutePath } from '@router/path';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
 import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { WalletState } from '@states/index';
 import { useNetwork } from '@hooks/use-network';
+import { Network } from '@repositories/common';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -40,16 +39,16 @@ const LeftWrap = styled.div`
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState] = useState('INIT');
-  const [gnoClient, gnoClients] = useGnoClient();
+  const { currentNetwork, networks } = useNetwork();
   const { changeNetwork } = useNetwork();
   const [, setState] = useRecoilState(WalletState.state);
 
-  const onClickNetwork = async (network: GnoClient) => {
-    if (network.chainId === gnoClient?.chainId) {
+  const onClickNetwork = async (network: Network) => {
+    if (network.networkId === currentNetwork?.networkId) {
       return;
     }
     setState('LOADING');
-    await changeNetwork(network.chainId);
+    await changeNetwork(network.networkId);
     setState('FINISH');
     navigate(RoutePath.Wallet);
   };
@@ -57,21 +56,21 @@ export const ChangeNetwork = () => {
   return loadinsgState === 'INIT' ? (
     <Wrapper>
       <Text type='header4'>Change Network</Text>
-      {gnoClients.length > 0 ? (
+      {networks.length > 0 ? (
         <>
-          {gnoClients.map((network: GnoClient, index: number) => (
+          {networks.map((network: Network, index: number) => (
             <ListBox
               left={
                 <LeftWrap>
-                  <Text type='body3Bold'>{network.chainName}</Text>
+                  <Text type='body3Bold'>{network.networkName}</Text>
                   <Text type='body3Reg' color={theme.color.neutral[9]}>
-                    {network.url}
+                    {network.rpcUrl}
                   </Text>
                 </LeftWrap>
               }
               center={null}
               right={
-                network.chainId === gnoClient?.chainId ? (
+                network.networkId === currentNetwork?.networkId ? (
                   <Button width='100px' height='25px' bgColor={theme.color.green[2]}>
                     <Text type='body3Reg'>Connected</Text>
                   </Button>

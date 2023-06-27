@@ -8,11 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useUpdateWalletAccountName } from '@hooks/use-update-wallet-account-name';
-import { useGnoClient } from '@hooks/use-gno-client';
 import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
-import { isLedgerAccount } from 'adena-module';
 import { useAccountName } from '@hooks/use-account-name';
+import { useNetwork } from '@hooks/use-network';
 
 const menuMakerInfo = [
   {
@@ -44,7 +42,7 @@ export const Settings = () => {
   const navigate = useNavigate();
   const [text, setText] = useState<string>('');
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [gnoClient] = useGnoClient();
+  const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
 
   useEffect(() => {
@@ -54,7 +52,7 @@ export const Settings = () => {
 
   const shareButtonClick = async () => {
     window.open(
-      `${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')}`,
+      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/accounts/${currentAccount?.getAddress('g')}`,
       '_blank',
     );
   };

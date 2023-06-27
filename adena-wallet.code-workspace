@@ -4,10 +4,6 @@
       "path": "."
     },
     {
-      "name": "gno-client",
-      "path": "packages/gno-client"
-    },
-    {
       "name": "adena-module",
       "path": "packages/adena-module"
     },

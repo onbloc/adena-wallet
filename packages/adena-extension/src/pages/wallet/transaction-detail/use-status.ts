@@ -2,7 +2,7 @@ import { fullDateFormat, getStatusStyle } from '@common/utils/client-utils';
 import gnot from '../../../assets/gnot-logo.svg';
 import addpkg from '../../../assets/addpkg.svg';
 import contract from '../../../assets/contract.svg';
-import { useGnoClient } from '@hooks/use-gno-client';
+import { useNetwork } from '@hooks/use-network';
 
 interface TxPrototype {
   date: string;
@@ -51,7 +51,7 @@ const statusSymbol = {
 };
 
 const useStatus = () => {
-  const [gnoClient] = useGnoClient();
+  const { currentNetwork } = useNetwork();
 
   const initTxState = (state: TxProps) => {
     let result: ResultTxStateType = {
@@ -95,7 +95,10 @@ const useStatus = () => {
   };
 
   const handleLinkClick = (hash: string) => {
-    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
+    window.open(
+      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`,
+      '_blank',
+    );
   };
 
   return {
