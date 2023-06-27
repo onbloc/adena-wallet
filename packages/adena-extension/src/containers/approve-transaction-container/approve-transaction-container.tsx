@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
@@ -10,6 +9,7 @@ import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
+import { useNetwork } from '@hooks/use-network';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -34,13 +34,13 @@ const ApproveTransactionContainer: React.FC = () => {
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
-  const [gnoClient] = useGnoClient();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     checkLockWallet();
@@ -86,13 +86,13 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const initTransactionData = async () => {
-    if (!gnoClient || !currentAccount || !requestData) {
+    if (!currentNetwork || !currentAccount || !requestData) {
       return false;
     }
     try {
       const document = await transactionService.createDocument(
-        gnoClient,
         currentAccount,
+        currentNetwork.networkId,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
@@ -124,7 +124,7 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [document]);
 
   const sendTransaction = async () => {
-    if (!document || !gnoClient || !currentAccount) {
+    if (!document || !currentNetwork || !currentAccount) {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key),
       );
@@ -137,15 +137,15 @@ const ApproveTransactionContainer: React.FC = () => {
         document
       );
       const transaction = await transactionService.createTransaction(document, signature);
-      const result = await transactionService.sendTransaction(gnoClient, transaction);
-      if (result.height && result.height !== '0') {
+      const hash = await transactionService.sendTransaction(transaction);
+      if (hash.length > 0) {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),
+          InjectionMessageInstance.success('TRANSACTION_SENT', { hash }, requestData?.key),
         );
         return true;
       } else {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key),
         );
       }
     } catch (e) {
