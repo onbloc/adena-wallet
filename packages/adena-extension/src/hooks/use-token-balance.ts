@@ -4,7 +4,6 @@ import { useNetwork } from './use-network';
 import { useCurrentAccount } from './use-current-account';
 import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
 import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
-import { useGnoClient } from './use-gno-client';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useCallback, useEffect } from 'react';
@@ -28,7 +27,6 @@ export const useTokenBalance = (): {
   updateMainBalanceByAccount: (account: Account) => Promise<boolean>;
   updateTokenBalanceInfos: (tokenMetainfos: TokenModel[]) => Promise<boolean>;
 } => {
-  const [gnoClient] = useGnoClient();
   const { tokenMetainfos } = useTokenMetainfo();
   const { wallet } = useWalletContext();
   const { balanceService, tokenService } = useAdenaContext();
@@ -223,12 +221,6 @@ export const useTokenBalance = (): {
       value: '0',
       denom: token.symbol,
     };
-    if (!gnoClient) {
-      return {
-        ...token,
-        amount: defaultAmount,
-      };
-    }
     const prefix = currentNetwork?.addressPrefix ?? 'g';
 
     let address = account.getAddress(prefix);
@@ -256,14 +248,9 @@ export const useTokenBalance = (): {
 
     let balances: TokenBalance[] = [];
     if (isNativeTokenModel(token)) {
-      balances = await balanceService.getTokenBalances(gnoClient, address);
+      balances = await balanceService.getTokenBalances(address);
     } else if (isGRC20TokenModel(token)) {
-      balances = await balanceService.getGRC20TokenBalance(
-        gnoClient,
-        address,
-        token.pkgPath,
-        token.symbol,
-      );
+      balances = await balanceService.getGRC20TokenBalance(address, token.pkgPath, token.symbol);
     }
 
     if (balances.length === 0 || !balances[0].amount) {

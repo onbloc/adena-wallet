@@ -4,19 +4,34 @@ import {
   LedgerKeyring,
   StdSignature,
   TransactionBuilder,
+  sha256,
   uint8ArrayToArray,
 } from 'adena-module';
 import { Account } from 'adena-module';
-import { GnoClient } from 'gno-client';
 import { WalletService } from '..';
 import { StdSignDoc } from 'adena-module/src';
 import { Document } from 'adena-module/src/amino/document';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
 
 export class TransactionService {
   private walletService: WalletService;
 
+  private gnoProvider: GnoProvider | null;
+
   constructor(walletService: WalletService) {
     this.walletService = walletService;
+    this.gnoProvider = null;
+  }
+
+  public getGnoProvider() {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+    return this.gnoProvider;
+  }
+
+  public setGnoProvider(gnoProvider: GnoProvider) {
+    this.gnoProvider = gnoProvider;
   }
 
   private getGasAmount = async (gasFee?: number) => {
@@ -28,19 +43,23 @@ export class TransactionService {
   };
 
   public createDocument = async (
-    gnoClient: GnoClient,
     account: Account,
+    chainId: string,
     messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    const accountInfo = await gnoClient.getAccount(account.getAddress('g'));
-    const chainId = gnoClient.chainId;
+    const provider = this.getGnoProvider();
+    const address = account.getAddress('g');
+    const [accountSequence, accountNumber] = await Promise.all([
+      provider.getAccountSequence(address),
+      provider.getAccountNumber(address),
+    ]);
     const gasAmount = await this.getGasAmount(gasFee);
     return Document.createDocument(
-      accountInfo.accountNumber,
-      accountInfo.sequence,
+      `${accountNumber}`,
+      `${accountSequence}`,
       chainId,
       messages,
       `${gasWanted}`,
@@ -69,21 +88,14 @@ export class TransactionService {
   };
 
   public createSignDocument = async (
-    gnoClient: GnoClient,
     account: Account,
+    chainId: string,
     messages: Array<any>,
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
   ) => {
-    const document = await this.createDocument(
-      gnoClient,
-      account,
-      messages,
-      gasWanted,
-      gasFee,
-      memo,
-    );
+    const document = await this.createDocument(account, chainId, messages, gasWanted, gasFee, memo);
     const signature = await this.createSignature(account, document);
     return { document, signature };
   };
@@ -112,8 +124,15 @@ export class TransactionService {
    * @param gnoClient gno api client
    * @param transaction created transaction
    */
-  public sendTransaction = async (gnoClient: GnoClient, transaction: Array<number>) => {
-    const result = await gnoClient.broadcastTxCommit(`${transaction}`);
-    return result;
+  public sendTransaction = async (transaction: Array<number>) => {
+    const provider = this.getGnoProvider();
+    const hash = await provider.sendTransaction(Buffer.from(transaction).toString('base64'));
+    provider.waitResultForTransaction(hash).then(console.log);
+    return hash;
   };
+
+  public createHash(transaction: Array<number>) {
+    const hash = sha256(new Uint8Array(transaction));
+    return Buffer.from(hash).toString('base64');
+  }
 }
