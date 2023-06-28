@@ -6,11 +6,11 @@ import { Amount } from '@states/balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import BigNumber from 'bignumber.js';
 import { useAdenaContext } from '@hooks/use-context';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
 import { isLedgerAccount } from 'adena-module';
 import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { useNetwork } from '@hooks/use-network';
 
 interface TransferSummaryInfo {
   tokenMetainfo: TokenModel;
@@ -23,8 +23,8 @@ const TransferSummaryContainer: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { transactionService } = useAdenaContext();
-  const [gnoClient] = useGnoClient();
   const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state)
   const [isSent, setIsSent] = useState(false);
 
@@ -71,7 +71,7 @@ const TransferSummaryContainer: React.FC = () => {
   }, [summaryInfo, currentAddress]);
 
   const createDocument = useCallback(async () => {
-    if (!gnoClient || !currentAccount) {
+    if (!currentNetwork || !currentAccount) {
       return null;
     }
     const { tokenMetainfo, networkFee } = summaryInfo;
@@ -81,8 +81,8 @@ const TransferSummaryContainer: React.FC = () => {
       getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
     const document = await transactionService.createDocument(
-      gnoClient,
       currentAccount,
+      currentNetwork.networkId,
       [message],
       GAS_WANTED,
       networkFeeAmount
@@ -92,13 +92,13 @@ const TransferSummaryContainer: React.FC = () => {
 
   const createTransaction = useCallback(async () => {
     const document = await createDocument();
-    if (!gnoClient || !currentAccount || !document) {
+    if (!currentNetwork || !currentAccount || !document) {
       return null;
     }
     const signature = await transactionService.createSignature(currentAccount, document);
 
     const transaction = await transactionService.createTransaction(document, signature);
-    return transactionService.sendTransaction(gnoClient, transaction);
+    return transactionService.sendTransaction(transaction);
   }, [summaryInfo, currentAccount, currentAccount]);
 
   const transfer = useCallback(async () => {

@@ -4,7 +4,6 @@ import { StdSignDoc, isLedgerAccount } from 'adena-module';
 import ApproveLedgerLoading from '@components/approve/approve-ledger-loading/approve-ledger-loading';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useAdenaContext } from '@hooks/use-context';
 
 interface ApproveSignLedgerLoadingState {
@@ -17,7 +16,6 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { document, requestData } = location.state as ApproveSignLedgerLoadingState;
   const { currentAccount } = useCurrentAccount();
-  const [gnoClient] = useGnoClient();
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
@@ -36,7 +34,7 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async () => {
-    if (!currentAccount || !gnoClient || !document) {
+    if (!currentAccount || !document) {
       return false;
     }
 

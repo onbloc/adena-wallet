@@ -1,27 +1,31 @@
-import React, { createContext, useEffect } from 'react';
-import { ExploreState, GnoClientState, NetworkState, TokenState, WalletState } from '@states/index';
+import React, { createContext, useEffect, useState } from 'react';
+import { ExploreState, NetworkState, TokenState, WalletState } from '@states/index';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { Wallet } from 'adena-module';
 import { NetworkMetainfo } from '@states/network';
 import { useAdenaContext } from '@hooks/use-context';
-import { GnoClient } from 'gno-client';
 import { TokenModel } from '@models/token-model';
+import { GnoProvider } from '../gno/gno-provider';
 
 interface WalletContextProps {
   wallet: Wallet | null;
+  gnoProvider: GnoProvider | undefined;
   walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
   tokenMetainfos: TokenModel[];
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
   initWallet: () => Promise<boolean>;
   initNetworkMetainfos: () => Promise<boolean>;
+  changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>;
 }
 
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, balanceService, accountService, chainService, tokenService } =
+  const { walletService, transactionService, balanceService, accountService, chainService, tokenService } =
     useAdenaContext();
+
+  const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
   const [wallet, setWallet] = useRecoilState(WalletState.wallet);
 
@@ -32,8 +36,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
 
   const setCurrentNetwrok = useSetRecoilState(NetworkState.currentNetwork);
-
-  const setGnoClient = useSetRecoilState(GnoClientState.current);
 
   const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
@@ -114,16 +116,10 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   async function initCurrentNetworkMetainfos(networkMetainfos: NetworkMetainfo[]) {
     const currentNetworkId = await chainService.getCurrentNetworkId();
     const currentNetwork =
-      networkMetainfos.find((info) => info.networkId === currentNetworkId) ?? networkMetainfos[0];
+      networkMetainfos.find((info) => info.networkId === currentNetworkId) ??
+      networkMetainfos[0];
     await chainService.updateCurrentNetworkId(currentNetwork.networkId);
-    setCurrentNetwrok(currentNetwork);
-
-    const gnoClient = GnoClient.createNetwork({
-      ...currentNetwork,
-      chainId: currentNetwork.networkId,
-      chainName: currentNetwork.networkName,
-    });
-    setGnoClient(gnoClient);
+    await changeNetwork(currentNetwork);
     return true;
   }
 
@@ -144,6 +140,22 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     }
   }
 
+  async function changeNetwork(networkMetainfo: NetworkMetainfo) {
+    const rpcUrl = networkMetainfo.rpcUrl;
+    const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
+    const currentNetwork = await gnoProvider.getStatus().then(status => ({
+      ...networkMetainfo,
+      networkId: status.node_info.network
+    })).catch(() => networkMetainfo);
+    setCurrentNetwrok(currentNetwork);
+    setGnoProvider(gnoProvider);
+
+    accountService.setGnoProvider(gnoProvider);
+    balanceService.setGnoProvider(gnoProvider);
+    transactionService.setGnoProvider(gnoProvider);
+    return currentNetwork;
+  }
+
   return (
     <WalletContext.Provider
       value={{
@@ -151,9 +163,11 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         walletStatus,
         tokenMetainfos,
         networkMetainfos,
+        gnoProvider,
         initWallet,
         updateWallet,
         initNetworkMetainfos,
+        changeNetwork
       }}
     >
       {children}

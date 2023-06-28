@@ -1,55 +1,69 @@
+import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
-import { BalanceState, TokenState } from '@states/index';
+import { BalanceState } from '@states/index';
 import BigNumber from 'bignumber.js';
-import { GnoClient } from 'gno-client';
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
 
+  private gnoProvider: GnoProvider | null = null;
+
   constructor() {
     this.tokenMetainfos = [];
+  }
+
+  public getGnoProvider() {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+    return this.gnoProvider;
+  }
+
+  public setGnoProvider(gnoProvider: GnoProvider) {
+    this.gnoProvider = gnoProvider;
   }
 
   public setTokenMetainfos(tokenMetainfos: Array<TokenModel>) {
     this.tokenMetainfos = tokenMetainfos;
   }
 
-  public getTokenBalances = async (gnoClient: GnoClient, address: string) => {
-    const response = await gnoClient.getBalances(address);
-    const balances = response.balances.map((balance) => {
-      return {
-        value: balance.amount,
-        denom: balance.unit,
-      };
-    });
+  public getTokenBalances = async (address: string) => {
+    const gnoProvider = this.getGnoProvider();
+    const denom = 'ugnot';
+    const balance = await gnoProvider
+      .getBalance(address, denom)
+      .then((value) => ({
+        value: value.toFixed(),
+        denom,
+      }))
+      .catch(() => ({
+        value: '0',
+        denom,
+      }));
     const tokenBalances: Array<BalanceState.TokenBalance> = [];
 
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
-      const tokenBalance = balances.find(
-        (balance) =>
-          balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
-          (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase()),
-      );
-      if (tokenBalance) {
-        tokenBalances.push(this.createTokenBalance(tokenBalance, tokenMetainfo));
+      if (
+        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
+        (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
+      ) {
+        tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo));
       }
     }
     return tokenBalances;
   };
 
-  public getGRC20TokenBalance = async (
-    gnoClient: GnoClient,
-    address: string,
-    packagePath: string,
-    symbol: string,
-  ) => {
-    const response = await gnoClient.queryEval(packagePath, 'BalanceOf', [address]);
-    const rawData = response?.ResponseBase.Data ?? '';
-    const parseDatas = rawData.replace('(', '').replace(')', '').split(' ');
-    const value = parseDatas[0] ?? '0';
+  public getGRC20TokenBalance = async (address: string, packagePath: string, symbol: string) => {
+    const gnoProvider = this.getGnoProvider();
+    const balance = await gnoProvider.getValueByEvaluteExpression(packagePath, 'BalanceOf', [
+      address,
+    ]);
+    if (!balance) {
+      return [];
+    }
     const balanceAmount = {
-      value,
+      value: balance,
       denom: symbol.toUpperCase(),
     };
     const tokenBalance = this.tokenMetainfos.find(
