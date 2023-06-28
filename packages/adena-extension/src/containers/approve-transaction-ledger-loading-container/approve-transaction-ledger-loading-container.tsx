@@ -4,8 +4,8 @@ import { StdSignDoc, isLedgerAccount } from 'adena-module';
 import ApproveLedgerLoading from '@components/approve/approve-ledger-loading/approve-ledger-loading';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useAdenaContext } from '@hooks/use-context';
+import { useNetwork } from '@hooks/use-network';
 
 interface ApproveSignLedgerLoadingState {
   requestData?: InjectionMessage;
@@ -17,8 +17,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { document, requestData } = location.state as ApproveSignLedgerLoadingState;
   const { currentAccount } = useCurrentAccount();
-  const [gnoClient] = useGnoClient();
   const [completed, setCompleted] = useState(false);
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     if (currentAccount) {
@@ -36,7 +36,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async () => {
-    if (!currentAccount || !gnoClient || !document) {
+    if (!currentAccount || !document || !currentNetwork) {
       return false;
     }
     if (!isLedgerAccount(currentAccount)) {
@@ -45,14 +45,14 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
 
     const result = await transactionService.createSignatureWithLedger(currentAccount, document).then(async (signature) => {
       const transaction = await transactionService.createTransaction(document, signature);
-      const result = await transactionService.sendTransaction(gnoClient, transaction);
-      if (result.height && result.height !== '0') {
+      const hash = await transactionService.sendTransaction(transaction);
+      if (hash.length > 0) {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SENT', result, requestData?.key),
+          InjectionMessageInstance.success('TRANSACTION_SENT', { hash }, requestData?.key),
         );
       }
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('TRANSACTION_FAILED', result, requestData?.key),
+        InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
       );
       return true;
     }).catch((error: Error) => {

@@ -1,3 +1,4 @@
+import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { AdenaStorage } from '@common/storage';
 import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
@@ -14,13 +15,13 @@ import {
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
+import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import axios from 'axios';
-import { GnoClient } from 'gno-client';
 
 export class InjectCore {
-  public gnoClient: GnoClient | null = null;
+  private gnoProvider: GnoProvider | null = null;
 
-  private axiosInstance = axios.create();
+  private axiosInstance = axios.create({ adapter: fetchAdapter });
 
   private localStorage = AdenaStorage.local();
 
@@ -52,16 +53,25 @@ export class InjectCore {
 
   public transactionService = new TransactionService(this.walletService);
 
+  public async initGnoProvider() {
+    try {
+      const network = await this.chainService.getCurrentNetwork();
+      this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId);
+      this.accountService.setGnoProvider(this.gnoProvider);
+      this.transactionService.setGnoProvider(this.gnoProvider);
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+    return true;
+  }
+
   public getCurrentAccountId() {
     return this.accountRepository.getCurrentAccountId().catch(() => '');
   }
 
   public getCurrentNetworkId() {
     return this.chainRepository.getCurrentNetworkId().catch(() => '');
-  }
-
-  public getGnoClient() {
-    return this.chainService.getCurrentClient();
   }
 
   public async getCurrentAccount() {

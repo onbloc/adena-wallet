@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
@@ -10,6 +9,7 @@ import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
+import { useNetwork } from '@hooks/use-network';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -34,7 +34,7 @@ const ApproveSignContainer: React.FC = () => {
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
-  const [gnoClient] = useGnoClient();
+  const { currentNetwork } = useNetwork();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setReqeustData] = useState<InjectionMessage>();
@@ -86,13 +86,13 @@ const ApproveSignContainer: React.FC = () => {
   };
 
   const initTransactionData = async () => {
-    if (!gnoClient || !currentAccount || !requestData) {
+    if (!currentAccount || !requestData || !currentNetwork) {
       return false;
     }
     try {
       const document = await transactionService.createDocument(
-        gnoClient,
         currentAccount,
+        currentNetwork.networkId,
         requestData?.data?.messages,
         requestData?.data?.gasWanted,
         requestData?.data?.gasFee,
@@ -124,7 +124,7 @@ const ApproveSignContainer: React.FC = () => {
   }, [document]);
 
   const sendTransaction = async () => {
-    if (!document || !gnoClient || !currentAccount) {
+    if (!document || !currentAccount) {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key),
       );

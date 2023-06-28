@@ -5,21 +5,21 @@ import Text from '@components/text';
 import link from '../../../assets/share.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useGnoClient } from '@hooks/use-gno-client';
 import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 import TokenBalance from '@components/common/token-balance/token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { CopyTooltip } from '@components/tooltips';
+import { useNetwork } from '@hooks/use-network';
 
 interface DLProps {
   color?: string;
 }
 
 export const TransactionDetail = () => {
-  const [gnoClient] = useGnoClient();
   const { convertDenom } = useTokenMetainfo();
+  const { currentNetwork } = useNetwork();
   const location = useLocation();
   const [transactionItem, setTransactionItem] = useState<TransactionInfo>();
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export const TransactionDetail = () => {
 
 
   const handleLinkClick = (hash: string) => {
-    window.open(`${gnoClient?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
+    window.open(`${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
   };
 
   return transactionItem ? (
