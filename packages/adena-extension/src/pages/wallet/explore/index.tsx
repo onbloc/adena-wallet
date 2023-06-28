@@ -1,21 +1,60 @@
 import Text from '@components/text';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import link from '../../../assets/share.svg';
 import theme from '@styles/theme';
 import { useRecoilState } from 'recoil';
 import { ExploreState } from '@states/index';
+import { SiteInfo } from '@states/explore';
+import { createImageByURI } from '@common/utils/client-utils';
+import LoadingExplore from '@components/loading-screen/loading-explore';
+import { useAdenaContext } from '@hooks/use-context';
 
 export const Explore = () => {
+  const { tokenService } = useAdenaContext();
+  const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
+  const [loading, setLoading] = useState(true);
 
-  const [exploreSites] = useRecoilState(ExploreState.sites);
+  useEffect(() => {
+    if (exploreSites.length === 0) {
+      initExploreSties().finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [exploreSites]);
+
+  async function initExploreSties() {
+    try {
+      const response = await tokenService.getAppInfos();
+      const exploreSites = response
+        .filter((site) => site.display)
+        .sort((site) => site.order)
+        .map(fetchExploreSite);
+      Promise.all([...exploreSites])
+        .then(setExploreSites);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const fetchExploreSite = async (exploreSite: SiteInfo) => {
+    if (exploreSite.logo.startsWith('data:image')) {
+      return exploreSite;
+    }
+    const logo = await createImageByURI(exploreSite.logo);
+    return {
+      ...exploreSite,
+      logo: logo || ''
+    }
+  }
 
   return (
     <Wrapper>
       <Text type='header4' className='explore-title'>
         Explore
       </Text>
-      {exploreSites.length &&
+      {loading || exploreSites.length === 0 ?
+        <LoadingExplore /> :
         exploreSites.map((exploreSite, index) => (
           <BoxContainer key={index}>
             <img src={exploreSite.logo} alt='logo-image' />
@@ -27,7 +66,8 @@ export const Explore = () => {
             </Contents>
             <MoveToLink src={link} alt='move to link' onClick={() => window.open(exploreSite.link)} />
           </BoxContainer>
-        ))}
+        ))
+      }
     </Wrapper>
   );
 };
