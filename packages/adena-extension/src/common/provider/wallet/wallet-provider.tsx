@@ -39,12 +39,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
-  const setExploreSites = useSetRecoilState(ExploreState.sites);
-
   useEffect(() => {
     initWallet();
     initNetworkMetainfos();
-    initAppInfos();
   }, []);
 
   useEffect(() => {
@@ -128,16 +125,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(accountId);
     setTokenMetainfos(tokenMetainfos);
     balanceService.setTokenMetainfos(tokenMetainfos);
-  }
-
-  async function initAppInfos() {
-    try {
-      const response = await tokenService.getAppInfos();
-      const exploreSites = response.filter((site) => site.display).sort((site) => site.order);
-      setExploreSites([...exploreSites]);
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo) {
