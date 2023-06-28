@@ -1,6 +1,6 @@
 import { atom } from 'recoil';
 
-interface SiteInfo {
+export interface SiteInfo {
   symbol: string;
   name: string;
   description: string;

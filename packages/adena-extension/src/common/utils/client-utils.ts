@@ -260,6 +260,18 @@ export const decodeParameter = (data: string) => {
   return {};
 };
 
+export const createImageByURI = async (uri: string) => {
+  try {
+    const imageData = await fetchArrayData(uri);
+    const encodeImageData =
+      'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
+    return encodeImageData;
+  } catch (e) {
+    console.log(e);
+  }
+  return null;
+};
+
 export const createFaviconByHostname = async (hostname: string) => {
   try {
     const faviconData = await fetchFavicon(hostname);
