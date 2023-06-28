@@ -148,7 +148,7 @@ export const useAddressBookInput = () => {
     const address = getResultAddress();
     if (address === currentAddress) {
       setHasError(true);
-      setErrorMessage('You cannot send GRC20 tokens to your own address.');
+      setErrorMessage('You can’t send GRC20 tokens to your own address.');
       return false;
     }
     clearError();
