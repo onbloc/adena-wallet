@@ -74,8 +74,6 @@ const AddressInput: React.FC<AddressInputProps> = ({
         </div>
       </div>
 
-      {hasError && <span className='error-message'>{errorMessage}</span>}
-
       <div className='list-container'>
         {opened && (
           <div className='list-wrapper'>
@@ -86,6 +84,8 @@ const AddressInput: React.FC<AddressInputProps> = ({
           </div>
         )}
       </div>
+
+      {hasError && <span className='error-message'>{errorMessage}</span>}
     </AddressInputWrapper>
   );
 };
