@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
@@ -29,6 +29,7 @@ function mappedTransactionData(document: StdSignDoc) {
 
 const ApproveSignContainer: React.FC = () => {
   const navigate = useNavigate();
+  const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
@@ -63,13 +64,13 @@ const ApproveSignContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentAccount && requestData) {
+    if (currentAccount && requestData && gnoProvider) {
       if (validate(currentAccount, requestData)) {
         initFavicon();
         initTransactionData();
       }
     }
-  }, [currentAccount, requestData]);
+  }, [currentAccount, requestData, gnoProvider]);
 
   const validate = (currentAccount: Account, requestData: InjectionMessage) => {
     const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
