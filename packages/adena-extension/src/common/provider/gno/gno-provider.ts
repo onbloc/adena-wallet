@@ -7,6 +7,9 @@ import {
   ABCIResponse,
   RPCResponse,
   parseABCI,
+  RestService,
+  BroadcastTxResult,
+  TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { sha256 } from 'adena-module';
@@ -122,6 +125,16 @@ export class GnoProvider extends GnoJSONRPCProvider {
         return parseDatas[0];
       })
       .catch(() => null);
+  }
+
+  public async sendTransaction(tx: string): Promise<string> {
+    const response: BroadcastTxResult = await RestService.post<BroadcastTxResult>(this.baseURL, {
+      request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
+    });
+    if (response.error) {
+      throw new Error(`${response.error['@type']}`);
+    }
+    return response.hash;
   }
 
   public waitResultForTransaction(hash: string, timeout?: number) {
