@@ -76,11 +76,13 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
         return {
           ...network,
           id: network.networkId,
+          default: network.main,
         };
       }
       return {
         ...network,
         id: network.networkId || Date.now(),
+        default: network.main,
       };
     });
     return networks;

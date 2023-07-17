@@ -11,7 +11,7 @@ import { useWalletContext } from "@hooks/use-context";
 import { useAccountName } from "@hooks/use-account-name";
 import { CommonState } from "@states/index";
 import useScrollHistory from "@hooks/use-scroll-history";
-import { Network } from "@repositories/common";
+import { NetworkMetainfo } from "@states/network";
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
 
@@ -51,7 +51,7 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     initAccountNames(wallet?.accounts ?? [])
   }, [wallet?.accounts]);
 
-  function checkHealth(currentNetwork: Network) {
+  function checkHealth(currentNetwork: NetworkMetainfo) {
     if (!currentNetwork) {
       return;
     }
@@ -61,7 +61,7 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     fetchHealth(currentNetwork);
   }
 
-  function fetchHealth(currentNetwork: Network) {
+  function fetchHealth(currentNetwork: NetworkMetainfo) {
     return axios.get(currentNetwork.rpcUrl + '/health', { adapter: fetchAdapter }).then(healthy => {
       updateFailedNetwork(currentNetwork.networkId, !healthy);
     }).catch(() => {

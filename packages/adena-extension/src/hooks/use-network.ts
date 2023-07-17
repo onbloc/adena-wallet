@@ -15,7 +15,7 @@ interface NetworkResponse {
 
 const DEFAULT_NETWORK: NetworkMetainfo = {
   id: 'test3',
-  main: true,
+  default: true,
   chainId: 'GNOLAND',
   chainName: 'GNO.LAND',
   networkId: 'test3',

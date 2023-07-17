@@ -2,7 +2,7 @@ import { atom } from 'recoil';
 
 export interface NetworkMetainfo {
   id: string;
-  main: boolean;
+  default: boolean;
   chainId: string;
   chainName: string;
   networkId: string;

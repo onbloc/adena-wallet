@@ -1,0 +1,59 @@
+[
+  {
+    "id": "test3",
+    "default": true,
+    "chainId": "test3",
+    "chainName": "GNO.LAND",
+    "networkId": "test3",
+    "networkName": "Testnet 3",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.test3.gno.land",
+    "gnoUrl": "https://test3.gno.land",
+    "apiUrl": "https://api.adena.app",
+    "linkUrl": "https://gnoscan.io",
+    "token": {
+      "denom": "gnot",
+      "unit": 1,
+      "minimalDenom": "ugnot",
+      "minimalUnit": 0.000001
+    }
+  },
+  {
+    "id": "test2",
+    "default": false,
+    "chainId": "test2",
+    "chainName": "GNO.LAND",
+    "networkId": "test2",
+    "networkName": "Testnet 2",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.test2.gno.land",
+    "gnoUrl": "https://test2.gno.land",
+    "apiUrl": "https://api.adena.app",
+    "linkUrl": "https://test2.gnoscan.io",
+    "token": {
+      "denom": "gnot",
+      "unit": 1,
+      "minimalDenom": "ugnot",
+      "minimalUnit": 0.000001
+    }
+  },
+  {
+    "id": "dev",
+    "default": false,
+    "chainId": "dev",
+    "chainName": "GNO.LAND",
+    "networkId": "dev",
+    "networkName": "Local",
+    "addressPrefix": "g",
+    "rpcUrl": "http://127.0.0.1:26657",
+    "gnoUrl": "http://127.0.0.1:8888",
+    "apiUrl": "http://127.0.0.1:8080",
+    "linkUrl": "http://127.0.0.1:80",
+    "token": {
+      "denom": "gnot",
+      "unit": 1,
+      "minimalDenom": "ugnot",
+      "minimalUnit": 0.000001
+    }
+  }
+]

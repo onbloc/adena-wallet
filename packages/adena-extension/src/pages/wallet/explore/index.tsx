@@ -5,8 +5,6 @@ import link from '../../../assets/share.svg';
 import theme from '@styles/theme';
 import { useRecoilState } from 'recoil';
 import { ExploreState } from '@states/index';
-import { SiteInfo } from '@states/explore';
-import { createImageByURI } from '@common/utils/client-utils';
 import LoadingExplore from '@components/loading-screen/loading-explore';
 import { useAdenaContext } from '@hooks/use-context';
 
@@ -28,23 +26,11 @@ export const Explore = () => {
       const response = await tokenService.getAppInfos();
       const exploreSites = response
         .filter((site) => site.display)
-        .sort((site) => site.order)
-        .map(fetchExploreSite);
+        .sort((site) => site.order);
       Promise.all([...exploreSites])
         .then(setExploreSites);
     } catch (error) {
       console.error(error);
-    }
-  }
-
-  const fetchExploreSite = async (exploreSite: SiteInfo) => {
-    if (exploreSite.logo.startsWith('data:image')) {
-      return exploreSite;
-    }
-    const logo = await createImageByURI(exploreSite.logo);
-    return {
-      ...exploreSite,
-      logo: logo || ''
     }
   }
 

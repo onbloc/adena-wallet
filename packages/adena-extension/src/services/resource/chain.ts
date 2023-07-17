@@ -30,7 +30,7 @@ export class ChainService {
   public addGnoNetwork = async (name: string, rpcUrl: string, chainId: string) => {
     const addedNetwork = {
       id: `${Date.now()}`,
-      main: false,
+      default: false,
       chainId: chainId,
       chainName: 'GNO.LAND',
       networkId: chainId,

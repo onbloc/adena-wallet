@@ -9,28 +9,21 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["storage", "tabs"],
   "content_scripts": [
     {
-      "matches": [
-        "*://*/*"
-      ],
-      "js": [
-        "content.js"
-      ]
+      "matches": ["*://*/*"],
+      "js": ["content.js"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "inject.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "resources": ["inject.js"],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["resources/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
