@@ -69,16 +69,13 @@ const LeftWrap = styled.div`
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState] = useState('INIT');
-  const { currentNetwork, networks, changeNetwork, addNetwork } = useNetwork();
-  const [, setState] = useRecoilState(WalletState.state);
+  const { currentNetwork, networks, changeNetwork } = useNetwork();
 
   const onClickNetwork = async (network: NetworkMetainfo) => {
     if (network.id === currentNetwork?.id) {
       return;
     }
-    setState('LOADING');
     await changeNetwork(network.id);
-    setState('FINISH');
     navigate(RoutePath.Wallet);
   };
 
