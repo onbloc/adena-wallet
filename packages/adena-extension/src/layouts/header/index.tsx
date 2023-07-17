@@ -60,7 +60,7 @@ export const Header = () => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const { currentNetwork } = useNetwork();
 
-  const loadingComplete = walletState === 'FINISH' || failedNetwork[currentNetwork.networkId];
+  const loadingComplete = walletState === 'FINISH' || failedNetwork[currentNetwork.id];
   const renderHeader = () => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;

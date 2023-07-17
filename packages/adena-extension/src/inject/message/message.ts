@@ -65,6 +65,10 @@ const MESSAGE_TYPES = {
     code: 4001,
     description: 'The account is already connected to this website.',
   },
+  REQUEST_TIMEOUT: {
+    code: 4001,
+    description: 'The request timed out.',
+  },
   UNSUPPORTED_TYPE: {
     code: 4005,
     description: 'Adena does not support the requested transaction type.',

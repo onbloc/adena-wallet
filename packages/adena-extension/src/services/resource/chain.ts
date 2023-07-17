@@ -62,7 +62,7 @@ export class ChainService {
   public getCurrentNetwork = async () => {
     const networks = await this.getNetworks();
     const networkId = await this.chainRepository.getCurrentNetworkId();
-    return networks.find((network) => network.networkId === networkId) ?? networks[0];
+    return networks.find((network) => network.id === networkId) ?? networks[0];
   };
 
   public updateCurrentNetworkId = async (chainId: string) => {

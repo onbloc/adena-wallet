@@ -23,6 +23,7 @@ export const getAccount = async (
       sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
       return;
     }
+
     const accountInfo = await core.accountService.getAccountInfoByNetwork(
       currentAccountAddress,
       network.rpcUrl,

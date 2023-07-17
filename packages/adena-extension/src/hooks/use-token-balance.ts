@@ -67,7 +67,7 @@ export const useTokenBalance = (): {
   }, [getTokenBalancesByAccount, currentAccount]);
 
   function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
-    return accountTokenBalance.networkId === currentNetwork?.networkId;
+    return accountTokenBalance.networkId === currentNetwork?.id;
   }
 
   function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
@@ -120,7 +120,7 @@ export const useTokenBalance = (): {
     const changedAccountTokenBalance: AccountTokenBalance = {
       accountId: currentAccount.id,
       chainId: currentNetwork.chainId,
-      networkId: currentNetwork.networkId,
+      networkId: currentNetwork.id,
       tokenBalances: [...getCurrentTokenBalances(), ...newTokenBalances],
     };
 

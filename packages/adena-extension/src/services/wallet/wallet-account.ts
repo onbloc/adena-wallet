@@ -2,6 +2,19 @@ import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletAccountRepository } from '@repositories/wallet';
 import { Account } from 'adena-module';
 
+const defaultAccountInfo = {
+  address: '',
+  coins: '0ugnot',
+  chainId: '',
+  status: 'IN_ACTIVE',
+  publicKey: {
+    '@type': '',
+    value: '',
+  },
+  accountNumber: '',
+  sequence: '',
+};
+
 export class WalletAccountService {
   private walletAccountRepository: WalletAccountRepository;
 
@@ -25,20 +38,27 @@ export class WalletAccountService {
 
   public getAccountInfo = async (address: string) => {
     const gnoProvider = this.getGnoProvider();
-    const account = await gnoProvider.getAccount(address);
-    if (!account) {
-      return null;
-    }
-    return account;
+    return this.getAccountInfoByProvider(address, gnoProvider);
   };
 
   public getAccountInfoByNetwork = async (address: string, rpcUrl: string, chainId: string) => {
     const gnoProvider = new GnoProvider(rpcUrl, chainId);
-    const account = await gnoProvider.getAccount(address);
-    if (!account) {
-      return null;
+    return this.getAccountInfoByProvider(address, gnoProvider);
+  };
+
+  public getAccountInfoByProvider = async (address: string, gnoProvider: GnoProvider) => {
+    try {
+      const account = await gnoProvider.getAccount(address);
+      if (!account) {
+        return account;
+      }
+    } catch (e) {
+      console.log(e);
     }
-    return account;
+    return {
+      ...defaultAccountInfo,
+      address,
+    };
   };
 
   public getCurrentAccountId = async () => {
