@@ -28,7 +28,7 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
 
   useEffect(() => {
     checkHealth(currentNetwork);
-  }, [pathname, currentNetwork, walletStatus]);
+  }, [pathname, currentNetwork]);
 
   useEffect(() => {
     scrollMove();
@@ -61,12 +61,11 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     fetchHealth(currentNetwork);
   }
 
-  function fetchHealth(currentNetwork: NetworkMetainfo) {
-    return axios.get(currentNetwork.rpcUrl + '/health', { adapter: fetchAdapter }).then(healthy => {
-      updateFailedNetwork(currentNetwork.networkId, !healthy);
-    }).catch(() => {
-      updateFailedNetwork(currentNetwork.networkId, true);
-    });
+  async function fetchHealth(currentNetwork: NetworkMetainfo) {
+    const healthy = await axios.get(currentNetwork.rpcUrl + '/health', { adapter: fetchAdapter })
+      .then(response => response.status === 200)
+      .catch(() => false);
+    updateFailedNetwork(currentNetwork.id, !healthy);
   }
 
   function updateFailedNetwork(networkId: string, failed: boolean) {

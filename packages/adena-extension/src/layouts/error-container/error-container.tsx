@@ -15,7 +15,7 @@ export const ErrorContainer = ({ children }: Props) => {
     if (!currentNetwork) {
       return false;
     }
-    return failedNetwork[currentNetwork.networkId];
+    return failedNetwork[currentNetwork.id];
   }
 
   return isError() ?
