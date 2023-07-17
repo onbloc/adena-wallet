@@ -128,6 +128,10 @@ const config = {
           from: './src/install/css/*',
           to: './css/[name].[ext]',
         },
+        {
+          from: './src/resources',
+          to: './resources',
+        },
       ],
     }),
     new HtmlWebPackPlugin({

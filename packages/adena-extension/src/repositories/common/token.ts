@@ -49,8 +49,7 @@ export class TokenRepository {
   private static GNO_TOKEN_RESOURCE_URI =
     'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
-  private static APP_INFO_URI =
-    'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/apps.json';
+  private static APP_INFO_URI = '/resources/apps/apps.json';
 
   private localStorage: StorageManager<LocalValueType>;
 
@@ -71,10 +70,8 @@ export class TokenRepository {
   };
 
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
-    const response = await this.networkInstance.get<Array<AppInfoResponse>>(
-      TokenRepository.APP_INFO_URI,
-    );
-    return response.data;
+    const apps = await fetch(TokenRepository.APP_INFO_URI);
+    return apps.json();
   };
 
   public fetchGRC20TokensBy = async (keyword: string, tokenInfos?: TokenModel[]) => {

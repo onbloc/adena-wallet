@@ -1,0 +1,47 @@
+[
+  {
+    "symbol": "GNOLAND",
+    "name": "GNO.LAND",
+    "description": "The official website of Gnoland",
+    "logo": "/resources/apps/images/gnoland.svg",
+    "link": "https://gno.land",
+    "display": true,
+    "order": 1
+  },
+  {
+    "symbol": "GNOSCAN",
+    "name": "Gnoscan",
+    "description": "The first Gnoland blockchain explorer",
+    "logo": "/resources/apps/images/gnoscan.svg",
+    "link": "https://gnoscan.io",
+    "display": true,
+    "order": 2
+  },
+  {
+    "symbol": "GNOTOOLS",
+    "name": "Gnotools",
+    "description": "A frontend for Gnoland Boards",
+    "logo": "/resources/apps/images/gnotools.svg",
+    "link": "https://app.gno.tools",
+    "display": true,
+    "order": 3
+  },
+  {
+    "symbol": "TERITORI",
+    "name": "Teritori",
+    "description": "A hub for web3 communities",
+    "logo": "/resources/apps/images/teritori.svg",
+    "link": "https://teritori.com",
+    "display": true,
+    "order": 4
+  },
+  {
+    "symbol": "GNOSPACE",
+    "name": "Gnoland Space",
+    "description": "A community-driven Gnoland wiki",
+    "logo": "/resources/apps/images/gnospace.svg",
+    "link": "https://gnoland.space",
+    "display": true,
+    "order": 5
+  }
+]

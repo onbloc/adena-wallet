@@ -18,7 +18,7 @@ export type StorageModelDataV003 = {
 
 export type NetworksModelV003 = {
   id: string;
-  main: boolean;
+  default: boolean;
   chainId: string;
   chainName: string;
   networkId: string;

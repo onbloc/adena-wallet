@@ -1,15 +1,12 @@
 import { NetworkMetainfo } from '@states/network';
 
-export interface ChainMetainfoResponse {
-  main: boolean;
+export type ChainMetainfoResponse = ChainMetainfoItem[];
+
+export interface ChainMetainfoItem {
+  id: string;
+  default: boolean;
   chainId: string;
   chainName: string;
-  order: number;
-  networks: Array<NetworkMetainfoResponse>;
-}
-
-interface NetworkMetainfoResponse {
-  main: boolean;
   networkId: string;
   networkName: string;
   addressPrefix: string;
@@ -27,21 +24,12 @@ interface NetworkMetainfoResponse {
 
 export class NetworkMetainfoMapper {
   public static fromChainMetainfoResponse(chainMetainfoResponse: ChainMetainfoResponse) {
-    return chainMetainfoResponse.networks.map((networkMetainfoResponse) =>
-      this.mappedNetworkMetainfo(chainMetainfoResponse, networkMetainfoResponse),
-    );
+    return chainMetainfoResponse.map(this.mappedNetworkMetainfo);
   }
 
-  private static mappedNetworkMetainfo(
-    chainMetainfoResponse: ChainMetainfoResponse,
-    networkMetainfoResponse: NetworkMetainfoResponse,
-  ): NetworkMetainfo {
+  private static mappedNetworkMetainfo(chainMetainfoItem: ChainMetainfoItem): NetworkMetainfo {
     return {
-      ...networkMetainfoResponse,
-      id: chainMetainfoResponse.chainId,
-      chainId: chainMetainfoResponse.chainId,
-      chainName: chainMetainfoResponse.chainName,
-      addressPrefix: 'g',
+      ...chainMetainfoItem,
     };
   }
 }
