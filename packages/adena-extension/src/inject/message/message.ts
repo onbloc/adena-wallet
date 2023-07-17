@@ -65,9 +65,9 @@ const MESSAGE_TYPES = {
     code: 4001,
     description: 'The account is already connected to this website.',
   },
-  REQUEST_TIMEOUT: {
+  NETWORK_TIMEOUT: {
     code: 4001,
-    description: 'The request timed out.',
+    description: 'The network response has timed out.',
   },
   UNSUPPORTED_TYPE: {
     code: 4005,
