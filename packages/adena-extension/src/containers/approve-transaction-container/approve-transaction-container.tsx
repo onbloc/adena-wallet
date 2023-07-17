@@ -10,6 +10,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
+import axios from 'axios';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -26,6 +27,18 @@ function mappedTransactionData(document: StdSignDoc) {
     document,
   }
 }
+
+const checkHealth = (rpcUrl: string, requestKey?: string) => setTimeout(async () => {
+  const healthy = await axios.get(rpcUrl + '/health')
+    .then(response => response.status === 200)
+    .catch(() => false)
+  if (healthy === false) {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
+    );
+    return;
+  }
+}, 5000);
 
 const ApproveTransactionContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -104,8 +117,11 @@ const ApproveTransactionContainer: React.FC = () => {
       setHostname(requestData?.hostname ?? '');
       return true;
     } catch (e) {
-      console.error(e);
+      console.log(e);
       const error: any = e;
+      if (error?.message === 'Connection Error') {
+        checkHealth(currentNetwork.rpcUrl, requestData.key);
+      }
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
@@ -138,7 +154,13 @@ const ApproveTransactionContainer: React.FC = () => {
         document
       );
       const transaction = await transactionService.createTransaction(document, signature);
-      const hash = await transactionService.sendTransaction(transaction);
+      const hash = await new Promise<string>((resolve, reject) => {
+        transactionService.sendTransaction(transaction)
+          .then(resolve)
+          .catch(reject);
+
+        checkHealth(currentNetwork.rpcUrl, requestData?.key);
+      })
       if (hash.length > 0) {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success('TRANSACTION_SENT', { hash }, requestData?.key),

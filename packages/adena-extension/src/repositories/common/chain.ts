@@ -5,28 +5,8 @@ import { NetworkMetainfo } from '@states/network';
 
 type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
 
-export interface Network {
-  main: boolean;
-  chainId: string;
-  chainName: string;
-  networkId: string;
-  networkName: string;
-  addressPrefix: string;
-  rpcUrl: string;
-  gnoUrl: string;
-  apiUrl: string;
-  linkUrl: string;
-  token: {
-    denom: string;
-    unit: number;
-    minimalDenom: string;
-    minimalUnit: number;
-  };
-}
-
 export class ChainRepository {
-  private static CHAIN_URI =
-    'https://raw.githubusercontent.com/onbloc/adena-resource/main/configs/chains.json';
+  private static CHAIN_URI = '/resources/chains/chains.json';
 
   private localStorage: StorageManager<LocalValueType>;
 
@@ -38,19 +18,28 @@ export class ChainRepository {
   }
 
   public fetchNetworkMetainfos = async () => {
-    const response = await this.networkInstance.get<Array<ChainMetainfoResponse>>(
+    const response = await this.networkInstance.get<ChainMetainfoResponse>(
       ChainRepository.CHAIN_URI,
     );
-    const chain = response.data.find((chain) => chain.main);
-    if (!chain) {
-      return [];
-    }
-    return NetworkMetainfoMapper.fromChainMetainfoResponse(chain);
+    return NetworkMetainfoMapper.fromChainMetainfoResponse(response.data);
   };
 
   public getNetworks = async () => {
-    const networks = await this.localStorage.getToObject<Array<Network>>('NETWORKS');
+    const networks = await this.localStorage
+      .getToObject<Array<NetworkMetainfo>>('NETWORKS')
+      .catch(() => []);
+    if (networks.length === 0) {
+      const defaultNetworks = await this.fetchNetworkMetainfos();
+      await this.updateNetworks(defaultNetworks);
+      return defaultNetworks;
+    }
     return networks;
+  };
+
+  public addNetwork = async (network: NetworkMetainfo) => {
+    const networks = await this.getNetworks();
+    await this.updateNetworks([...networks, network]);
+    return true;
   };
 
   public updateNetworks = async (networks: Array<NetworkMetainfo>) => {

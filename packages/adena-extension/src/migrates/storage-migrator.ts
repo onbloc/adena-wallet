@@ -3,6 +3,8 @@ import { Migration, Migrator } from './migrator';
 import { StorageModelV002 } from './migrations/v002/storage-model-v002';
 import { StorageModelDataV001, StorageModelV001 } from './migrations/v001/storage-model-v001';
 import { StorageMigration002 } from './migrations/v002/storage-migration-v002';
+import { StorageModelV003 } from './migrations/v003/storage-model-v003';
+import { StorageMigration003 } from './migrations/v003/storage-migration-v003';
 
 const LegacyStorageKeys = [
   'NETWORKS',
@@ -17,7 +19,7 @@ const LegacyStorageKeys = [
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 
-export type StorageModelLatest = StorageModelV002;
+export type StorageModelLatest = StorageModelV003;
 
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
@@ -125,6 +127,9 @@ export class StorageMigrator implements Migrator {
   }
 
   private async mappedJson(json: any) {
+    if (json?.version === 3) {
+      return json as StorageModelV003;
+    }
     if (json?.version === 2) {
       return json as StorageModelV002;
     }
@@ -156,6 +161,6 @@ export class StorageMigrator implements Migrator {
   }
 
   static migrations(): Migration[] {
-    return [new StorageMigration002()];
+    return [new StorageMigration002(), new StorageMigration003()];
   }
 }

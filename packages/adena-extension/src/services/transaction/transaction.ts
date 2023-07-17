@@ -55,7 +55,10 @@ export class TransactionService {
     const [accountSequence, accountNumber] = await Promise.all([
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),
-    ]);
+    ]).catch(() => [null, null]);
+    if (accountSequence === null || accountNumber === null) {
+      throw new Error('Connection Error');
+    }
     const gasAmount = await this.getGasAmount(gasFee);
     return Document.createDocument(
       `${accountNumber}`,

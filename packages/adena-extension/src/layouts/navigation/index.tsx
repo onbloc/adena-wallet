@@ -80,7 +80,7 @@ export const Navigation = () => {
 
   const isRender = () => {
     if (wallet || tokenDetails || nft || explore || history || settings) {
-      return loadingComplete || failedNetwork[currentNetwork.networkId] === false;
+      return loadingComplete || failedNetwork[currentNetwork.id] === false;
     }
     return false;
   }

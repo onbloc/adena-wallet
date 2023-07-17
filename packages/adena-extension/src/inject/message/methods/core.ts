@@ -70,6 +70,16 @@ export class InjectCore {
     return this.accountRepository.getCurrentAccountId().catch(() => '');
   }
 
+  public async getCurrentNetwork() {
+    const networks = await this.chainRepository.getNetworks();
+    if (networks.length === 0) {
+      return null;
+    }
+    const networkId = await this.chainRepository.getCurrentNetworkId().catch(() => '');
+    const network = networks.find((network) => network.id === networkId) || networks[0];
+    return network;
+  }
+
   public getCurrentNetworkId() {
     return this.chainRepository.getCurrentNetworkId().catch(() => '');
   }

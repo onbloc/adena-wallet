@@ -54,7 +54,7 @@ const LoadingMain = () => {
     if (state === 'NONE' || state === 'LOADING') {
       return true;
     }
-    if (failedNetwork[currentNetwork.networkId] === true) {
+    if (failedNetwork[currentNetwork.id] === true) {
       return false;
     }
     if (state === 'FINISH' && (displayTokenBalances.length === 0)) {
