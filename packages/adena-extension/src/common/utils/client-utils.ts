@@ -243,7 +243,7 @@ export const parseParmeters = (url: string) => {
 export const encodeParameter = (data: { [key in string]: any }) => {
   try {
     const encodedVaoue = encodeURI(JSON.stringify(data));
-    return encodedVaoue;
+    return toBase64(encodedVaoue);
   } catch (error) {
     console.log(error);
   }
@@ -252,12 +252,30 @@ export const encodeParameter = (data: { [key in string]: any }) => {
 
 export const decodeParameter = (data: string) => {
   try {
-    const decodedValue = JSON.parse(decodeURI(data));
+    const decodedValue = JSON.parse(decodeURI(fromBase64(data)));
     return decodedValue;
   } catch (error) {
     console.log(error);
   }
   return {};
+};
+
+export const toBase64 = (data: string) => {
+  try {
+    return btoa(data);
+  } catch (error) {
+    console.log(error);
+  }
+  return '';
+};
+
+export const fromBase64 = (data: string) => {
+  try {
+    return atob(data);
+  } catch (error) {
+    console.log(error);
+  }
+  return '';
 };
 
 export const createImageByURI = async (uri: string) => {
