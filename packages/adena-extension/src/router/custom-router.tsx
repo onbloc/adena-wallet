@@ -67,6 +67,7 @@ import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loadin
 import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
 import { ApproveTransactionLedgerLoading } from '@pages/wallet/approve-transaction-ledger-loading';
 import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-loading';
+import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
 
 export const CustomRouter = () => {
   const { wallet } = useWalletContext();
@@ -120,11 +121,11 @@ export const CustomRouter = () => {
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
+          <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
           <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
           <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
-          <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route
             path={RoutePath.ApproveHardwareWalletConnect}

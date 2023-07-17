@@ -99,7 +99,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   }
 
   async function initNetworkMetainfos() {
-    const networkMetainfos = await chainService.fetchNetworkMetainfos();
+    const networkMetainfos = await chainService.getNetworks();
     if (networkMetainfos.length === 0) {
       return false;
     }
@@ -113,9 +113,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   async function initCurrentNetworkMetainfos(networkMetainfos: NetworkMetainfo[]) {
     const currentNetworkId = await chainService.getCurrentNetworkId();
     const currentNetwork =
-      networkMetainfos.find((info) => info.networkId === currentNetworkId) ??
+      networkMetainfos.find((networkMetainfo) => networkMetainfo.id === currentNetworkId) ??
       networkMetainfos[0];
-    await chainService.updateCurrentNetworkId(currentNetwork.networkId);
+    await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);
     return true;
   }

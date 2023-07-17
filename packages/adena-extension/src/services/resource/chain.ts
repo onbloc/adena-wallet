@@ -1,5 +1,6 @@
 import { CommonError } from '@common/errors/common';
-import { ChainRepository, Network } from '@repositories/common';
+import { ChainRepository } from '@repositories/common';
+import { NetworkMetainfo } from '@states/network';
 
 export class ChainService {
   private chainRepository: ChainRepository;
@@ -26,7 +27,30 @@ export class ChainService {
     return fetchedNetworks;
   };
 
-  public updateNetworks = async (networks: Array<Network>) => {
+  public addGnoNetwork = async (name: string, rpcUrl: string, chainId: string) => {
+    const addedNetwork = {
+      id: `${Date.now()}`,
+      main: false,
+      chainId: chainId,
+      chainName: 'GNO.LAND',
+      networkId: chainId,
+      networkName: name,
+      addressPrefix: 'g',
+      rpcUrl: rpcUrl,
+      gnoUrl: rpcUrl,
+      apiUrl: '',
+      linkUrl: '',
+      token: {
+        denom: 'gnot',
+        unit: 1,
+        minimalDenom: 'ugnot',
+        minimalUnit: 0.000001,
+      },
+    };
+    return this.chainRepository.addNetwork(addedNetwork);
+  };
+
+  public updateNetworks = async (networks: Array<NetworkMetainfo>) => {
     await this.chainRepository.updateNetworks(networks);
     return true;
   };

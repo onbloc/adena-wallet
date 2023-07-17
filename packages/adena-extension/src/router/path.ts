@@ -51,6 +51,7 @@ export enum RoutePath {
   ViewSeedPhrase = '/settings/view-seed-phrase',
   ConnectedApps = '/settings/connected-apps',
   ChangeNetwork = '/settings/change-network',
+  AddCustomNetwork = '/settings/change-network/add',
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',

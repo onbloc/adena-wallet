@@ -3,7 +3,7 @@ import styled, { CSSProperties } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 
-type WarningKeyType = 'revealPassword' | 'revealPrivate' | 'approachPassword' | 'approachPrivate';
+type WarningKeyType = 'revealPassword' | 'revealPrivate' | 'approachPassword' | 'approachPrivate' | 'approachNetwork';
 
 interface TextProperty {
   title?: string;
@@ -37,6 +37,11 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
   approachPrivate: {
     subTitle:
       'Do not share your private key! Anyone with your private key will have full control of your wallet.',
+  },
+  approachNetwork: {
+    title: 'Approach with caution!',
+    subTitle:
+      'A malicious network provider can lie about the state of the blockchain.\nOnly add custom networks you trust.',
   },
 };
 
