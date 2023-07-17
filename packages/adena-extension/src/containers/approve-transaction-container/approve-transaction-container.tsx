@@ -34,7 +34,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string) => setTimeout(async ()
     .catch(() => false)
   if (healthy === false) {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('REQUEST_TIMEOUT', {}, requestKey),
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
     );
     return;
   }
