@@ -67,7 +67,7 @@ const ApproveEstablishContainer: React.FC = () => {
     }
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount.id ?? '';
-    const networkId = currentNetwork.networkId;
+    const networkId = currentNetwork.id;
     const isEstablised = await establishService.isEstablishedBy(
       accountId,
       networkId,
@@ -88,7 +88,7 @@ const ApproveEstablishContainer: React.FC = () => {
   const establish = async () => {
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount?.id ?? '';
-    const networkId = currentNetwork.networkId ?? '';
+    const networkId = currentNetwork.id ?? '';
     await establishService.establishBy(
       accountId,
       networkId,

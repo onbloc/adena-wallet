@@ -32,6 +32,15 @@ export class WalletAccountService {
     return account;
   };
 
+  public getAccountInfoByNetwork = async (address: string, rpcUrl: string, chainId: string) => {
+    const gnoProvider = new GnoProvider(rpcUrl, chainId);
+    const account = await gnoProvider.getAccount(address);
+    if (!account) {
+      return null;
+    }
+    return account;
+  };
+
   public getCurrentAccountId = async () => {
     return this.walletAccountRepository.getCurrentAccountId();
   };

@@ -10,7 +10,6 @@ export const getAccount = async (
 ) => {
   try {
     const core = new InjectCore();
-    await core.initGnoProvider();
 
     const isLocked = await core.walletService.isLocked();
     if (isLocked) {
@@ -19,11 +18,16 @@ export const getAccount = async (
     }
 
     const currentAccountAddress = await core.getCurrentAddress();
-    if (!currentAccountAddress) {
+    const network = await core.getCurrentNetwork();
+    if (!currentAccountAddress || !network) {
       sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
       return;
     }
-    const accountInfo = await core.accountService.getAccountInfo(currentAccountAddress);
+    const accountInfo = await core.accountService.getAccountInfoByNetwork(
+      currentAccountAddress,
+      network.rpcUrl,
+      network.chainId,
+    );
     sendReponse(
       InjectionMessageInstance.success('GET_ACCOUNT', { ...accountInfo }, requestData.key),
     );

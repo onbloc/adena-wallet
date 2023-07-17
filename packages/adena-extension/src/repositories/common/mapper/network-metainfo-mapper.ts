@@ -38,6 +38,7 @@ export class NetworkMetainfoMapper {
   ): NetworkMetainfo {
     return {
       ...networkMetainfoResponse,
+      id: chainMetainfoResponse.chainId,
       chainId: chainMetainfoResponse.chainId,
       chainName: chainMetainfoResponse.chainName,
       addressPrefix: 'g',

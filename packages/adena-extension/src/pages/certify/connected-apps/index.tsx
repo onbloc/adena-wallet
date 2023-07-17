@@ -30,7 +30,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    await establishService.unestablishBy(currentAccount.id, currentNetwork.networkId, item.hostname);
+    await establishService.unestablishBy(currentAccount.id, currentNetwork.id, item.hostname);
     await updateDatas();
   };
 
@@ -38,7 +38,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id, currentNetwork.networkId);
+    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id, currentNetwork.id);
     setDatas(establishedSites);
   };
 
