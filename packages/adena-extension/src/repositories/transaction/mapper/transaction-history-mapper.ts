@@ -53,6 +53,10 @@ function isHistoryItemVmMAddPkg(historyItem: HistoryItem): historyItem is Histor
   return historyItem.type === '/vm.m_addpkg';
 }
 
+function isVmAddPkgType(func?: string): boolean {
+  return func === 'AddPkg';
+}
+
 export class TransactionHistoryMapper {
   public static queryToDisplay(
     datas: {
@@ -122,13 +126,14 @@ export class TransactionHistoryMapper {
   private static mappedHistoryItemMutiCall(historyItem: HistoryItem): TransactionInfo {
     const { hash, result, func, msg_num, date, fee, to, from } = historyItem;
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
+
     return {
       hash,
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
-      typeName: func ?? '',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
-      title: func ?? '',
+      typeName: isVmAddPkgType(func) ? 'Add Package' : func ?? '',
+      title: isVmAddPkgType(func) ? 'AddPkg' : func ?? '',
       extraInfo: `+${msg_num - 1}`,
       amount: {
         value: '',
@@ -141,7 +146,7 @@ export class TransactionHistoryMapper {
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${fee.amount}`,
+        value: `${fee.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
@@ -161,7 +166,7 @@ export class TransactionHistoryMapper {
       title: func || '',
       description,
       amount: {
-        value: `${transfer.amount}`,
+        value: `${transfer.amount || '0'}`,
         denom: transfer.denom || 'GNOT',
       },
       to: func === 'Send' ? `${formatAddress(to, 4)}` : undefined,
@@ -171,7 +176,7 @@ export class TransactionHistoryMapper {
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${fee.amount}`,
+        value: `${transfer.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
@@ -188,13 +193,13 @@ export class TransactionHistoryMapper {
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
       title: func ?? '',
       amount: {
-        value: `${transfer.amount}`,
+        value: `${transfer.amount || '0'}`,
         denom: transfer.denom || 'GNOT',
       },
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${fee.amount}`,
+        value: `${fee.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
@@ -207,17 +212,17 @@ export class TransactionHistoryMapper {
       hash,
       logo: '',
       type: 'ADD_PACKAGE',
-      typeName: 'Add Package',
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
-      title: 'AddPkg',
+      typeName: isVmAddPkgType(func) ? 'Add Package' : func ?? '',
+      title: isVmAddPkgType(func) ? 'AddPkg' : func ?? '',
       amount: {
-        value: `${transfer.amount}`,
+        value: `${transfer.amount || '0'}`,
         denom: transfer.denom || 'GNOT',
       },
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${fee.amount}`,
+        value: `${fee.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
@@ -234,13 +239,13 @@ export class TransactionHistoryMapper {
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
       title: func ?? '',
       amount: {
-        value: `${transfer.amount}`,
+        value: `${transfer.amount || '0'}`,
         denom: transfer.denom || 'GNOT',
       },
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${fee.amount}`,
+        value: `${fee.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
