@@ -103,7 +103,10 @@ export class GnoProvider extends GnoJSONRPCProvider {
     } catch (e) {
       console.error(e);
     }
-    return defaultAccount;
+    return {
+      ...defaultAccount,
+      address,
+    };
   }
 
   public getValueByEvaluteExpression(
