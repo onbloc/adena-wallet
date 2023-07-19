@@ -3,19 +3,19 @@ export type StatusType = 'request' | 'response' | 'common' | 'success' | 'failur
 const MESSAGE_TYPES = {
   ADD_ESTABLISH: {
     code: 0,
-    description: 'Add Establish Site.',
+    description: 'Establish Connection.',
   },
   DO_CONTRACT: {
     code: 0,
-    description: 'Show contract popup.',
+    description: 'Do Contract.',
   },
   GET_ACCOUNT: {
     code: 0,
-    description: 'Get account.',
+    description: 'Get Account Information.',
   },
   SIGN_AMINO: {
     code: 0,
-    description: 'Sign amino.',
+    description: 'Sign Amino',
   },
   NOT_CONNECTED: {
     code: 1000,
@@ -43,11 +43,11 @@ const MESSAGE_TYPES = {
   },
   TRANSACTION_REJECTED: {
     code: 4000,
-    description: 'The signature request has been rejected by the user.',
+    description: 'The transaction has been rejected by the user.',
   },
   SIGN_REJECTED: {
     code: 4000,
-    description: 'SIGN_REJECTED',
+    description: 'The signature has been rejected by the user.',
   },
   CONNECTION_REJECTED: {
     code: 4000,
@@ -55,11 +55,11 @@ const MESSAGE_TYPES = {
   },
   TRANSACTION_FAILED: {
     code: 4001,
-    description: 'The transaction has failed.',
+    description: 'Adena could not execute the transaction.',
   },
   SIGN_FAILED: {
     code: 4001,
-    description: 'The sign has failed.',
+    description: 'Adena could not generate the signature hash.',
   },
   ALREADY_CONNECTED: {
     code: 4001,
@@ -87,11 +87,11 @@ const MESSAGE_TYPES = {
   },
   SIGN_SUCCESS: {
     code: 0,
-    description: 'Sign information has been successfully returned.',
+    description: 'Signature hash has been successfully generated.',
   },
-  TRANSACTION_SENT: {
+  TRANSACTION_SUCCESS: {
     code: 0,
-    description: 'Signed data has been successfully returned.',
+    description: 'Transaction has been successfully executed.',
   },
 };
 
