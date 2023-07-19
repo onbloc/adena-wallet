@@ -4,6 +4,7 @@ import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,
   decodeParameter,
+  fetchHealth,
   getSiteName,
   parseParmeters,
 } from '@common/utils/client-utils';
@@ -87,8 +88,8 @@ const ApproveEstablishContainer: React.FC = () => {
   };
 
   const establish = async () => {
-    const healthy = await checkHealth(currentNetwork.rpcUrl);
-    if (!healthy) {
+    const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
+    if (!healthy || url !== currentNetwork.rpcUrl) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
       return;
     }
@@ -109,9 +110,7 @@ const ApproveEstablishContainer: React.FC = () => {
   }
 
   const checkHealth = async (rpcUrl: string) => {
-    const healthy = await axios.get(rpcUrl + '/health')
-      .then(response => response.status === 200)
-      .catch(() => false);
+    const healthy = await fetchHealth(rpcUrl);
     return healthy;
   };
 

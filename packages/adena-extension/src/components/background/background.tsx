@@ -1,8 +1,6 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useRecoilState } from "recoil";
-import axios from "axios";
-import fetchAdapter from "@vespaiach/axios-fetch-adapter";
 import { useCurrentAccount } from "@hooks/use-current-account";
 import { useNetwork } from "@hooks/use-network";
 import { useTokenMetainfo } from "@hooks/use-token-metainfo";
@@ -12,6 +10,7 @@ import { useAccountName } from "@hooks/use-account-name";
 import { CommonState } from "@states/index";
 import useScrollHistory from "@hooks/use-scroll-history";
 import { NetworkMetainfo } from "@states/network";
+import { fetchHealth } from "@common/utils/client-utils";
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
 
@@ -58,20 +57,18 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     if (['NONE', 'CREATE', 'LOGIN'].includes(walletStatus)) {
       return;
     }
-    fetchHealth(currentNetwork);
+    fetchHealth(currentNetwork.rpcUrl).then(({ url, healthy }) => {
+      updateFailedNetwork(url, healthy);
+    });
   }
 
-  async function fetchHealth(currentNetwork: NetworkMetainfo) {
-    const healthy = await axios.get(currentNetwork.rpcUrl + '/health', { adapter: fetchAdapter })
-      .then(response => response.status === 200)
-      .catch(() => false);
-    updateFailedNetwork(currentNetwork.id, !healthy);
-  }
-
-  function updateFailedNetwork(networkId: string, failed: boolean) {
+  function updateFailedNetwork(url: string, healthy: boolean) {
+    if (currentNetwork.rpcUrl !== url) {
+      return;
+    }
     setFailedNetwork({
       ...failedNetwork,
-      [networkId]: failed
+      [currentNetwork.id]: !healthy
     });
   }
 

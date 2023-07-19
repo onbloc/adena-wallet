@@ -3,14 +3,13 @@ import ApproveTransaction from '@components/approve/approve-transaction/approve-
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { createFaviconByHostname, decodeParameter, parseParmeters } from '@common/utils/client-utils';
+import { createFaviconByHostname, decodeParameter, fetchHealth, parseParmeters } from '@common/utils/client-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
-import axios from 'axios';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -29,9 +28,7 @@ function mappedTransactionData(document: StdSignDoc) {
 }
 
 const checkHealth = (rpcUrl: string, requestKey?: string) => setTimeout(async () => {
-  const healthy = await axios.get(rpcUrl + '/health')
-    .then(response => response.status === 200)
-    .catch(() => false)
+  const { healthy } = await fetchHealth(rpcUrl);
   if (healthy === false) {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
