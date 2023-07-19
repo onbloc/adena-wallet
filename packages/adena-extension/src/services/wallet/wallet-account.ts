@@ -49,7 +49,7 @@ export class WalletAccountService {
   public getAccountInfoByProvider = async (address: string, gnoProvider: GnoProvider) => {
     try {
       const account = await gnoProvider.getAccount(address);
-      if (!account) {
+      if (account) {
         return account;
       }
     } catch (e) {
