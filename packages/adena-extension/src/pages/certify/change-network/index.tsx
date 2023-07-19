@@ -1,6 +1,6 @@
 import theme from '@styles/theme';
 import Text from '@components/text';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import ListBox from '@components/list-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import LoadingChangeNetwork from '@components/loading-screen/loading-change-network';
 import { RoutePath } from '@router/path';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
+import { useRecoilState } from 'recoil';
+import { WalletState } from '@states/index';
 import { useNetwork } from '@hooks/use-network';
 import { NetworkMetainfo } from '@states/network';
 import AddCustomNetworkButton from '@components/change-network/add-custom-network-button/add-custom-network-button';
@@ -66,22 +68,15 @@ const LeftWrap = styled.div`
 
 export const ChangeNetwork = () => {
   const navigate = useNavigate();
-  const [loadinsgState, setLoadingState] = useState('INIT');
+  const [loadinsgState] = useState('INIT');
   const { currentNetwork, networks, changeNetwork } = useNetwork();
-
-  useEffect(() => {
-    if (loadinsgState === 'FINISHED') {
-      navigate(RoutePath.Wallet);
-    }
-  }, [loadinsgState])
 
   const onClickNetwork = async (network: NetworkMetainfo) => {
     if (network.id === currentNetwork?.id) {
       return;
     }
-    setLoadingState('LOADING');
     await changeNetwork(network.id);
-    setLoadingState('FINISHED');
+    navigate(RoutePath.Wallet);
   };
 
   const onClickAddCustomNetwork = () => {
