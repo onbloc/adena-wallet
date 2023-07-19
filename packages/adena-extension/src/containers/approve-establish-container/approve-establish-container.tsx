@@ -4,6 +4,7 @@ import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,
   decodeParameter,
+  fetchHealth,
   getSiteName,
   parseParmeters,
 } from '@common/utils/client-utils';
@@ -13,6 +14,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { RoutePath } from '@router/path';
+import axios from 'axios';
 
 const ApproveEstablishContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -86,6 +88,12 @@ const ApproveEstablishContainer: React.FC = () => {
   };
 
   const establish = async () => {
+    const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
+    if (!healthy || url !== currentNetwork.rpcUrl) {
+      chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
+      return;
+    }
+
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount?.id ?? '';
     const networkId = currentNetwork.id ?? '';
@@ -100,6 +108,11 @@ const ApproveEstablishContainer: React.FC = () => {
       });
     chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
   }
+
+  const checkHealth = async (rpcUrl: string) => {
+    const healthy = await fetchHealth(rpcUrl);
+    return healthy;
+  };
 
   const onClickCancle = () => {
     window.close();

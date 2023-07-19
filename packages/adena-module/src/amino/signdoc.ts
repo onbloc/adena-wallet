@@ -51,7 +51,17 @@ function sortedObject(obj: any): any {
 /** Returns a JSON string with objects sorted by key */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function sortedJsonStringify(obj: any): string {
-  return JSON.stringify(sortedObject(obj));
+  const sortedJson = JSON.stringify(sortedObject(obj));
+  return encodeCharacterSet(sortedJson);
+}
+
+/**
+ * Escapes <,>,& in string.
+ * Golang's json marshaller escapes <,>,& by default.
+ * https://cs.opensource.google/go/go/+/refs/tags/go1.20.6:src/encoding/json/encode.go;l=46-53
+ */
+function encodeCharacterSet(data: string) {
+  return data.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 }
 
 export function makeSignDoc(

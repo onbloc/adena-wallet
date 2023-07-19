@@ -2,7 +2,7 @@
   "name": "Adena",
   "description": "Adena Wallet",
   "manifest_version": 3,
-  "version": "1.7.3",
+  "version": "1.7.4",
   "action": {
     "default_popup": "popup.html"
   },
@@ -27,6 +27,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; default-src 'self'; img-src 'self' https: data:; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; connect-src 'self' data: https://* http://localhost:* http://127.0.0.1:*; prefetch-src https://*.openlogin.com; frame-src https://*;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; default-src 'self'; img-src 'self' https: data:; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline'; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; connect-src 'self' data: *; prefetch-src https://*.openlogin.com; frame-src *;"
   }
 }

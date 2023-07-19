@@ -7,6 +7,7 @@ import theme from '@styles/theme';
 import axios from 'axios';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
+import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 
 export function formatAddress(v: string, num?: number): string {
   const length = num ?? 4;
@@ -392,3 +393,14 @@ export const getDateTimeText = (date: string) => {
   const formatDate = `${result.month} ${result.day}, ${result.year} ${result.time}`;
   return formatDate;
 };
+
+export async function fetchHealth(url: string) {
+  const healthy = await axios
+    .get(url + '/health', { adapter: fetchAdapter, timeout: 5000 })
+    .then((response) => response.status === 200)
+    .catch(() => false);
+  return {
+    url,
+    healthy,
+  };
+}
