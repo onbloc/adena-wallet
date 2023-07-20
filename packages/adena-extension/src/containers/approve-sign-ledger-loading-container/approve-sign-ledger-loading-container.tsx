@@ -50,7 +50,7 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
     }).catch((error: Error) => {
       if (error.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key),
+          InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData?.key),
         );
         return true;
       }

@@ -10,6 +10,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
+import { Tm2Error } from '@common/errors/common/tm2-error';
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -123,7 +124,7 @@ const ApproveTransactionContainer: React.FC = () => {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
             'TRANSACTION_FAILED',
-            requestData?.data,
+            { error: { message: error?.message } },
             requestData?.key,
           ),
         );
@@ -140,7 +141,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const sendTransaction = async () => {
     if (!document || !currentNetwork || !currentAccount) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key),
+        InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key),
       );
       return false;
     }
@@ -169,6 +170,15 @@ const ApproveTransactionContainer: React.FC = () => {
         );
       }
     } catch (e) {
+      if (e instanceof Tm2Error) {
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure(
+            'TRANSACTION_FAILED',
+            e.response,
+            requestData?.key,
+          ),
+        );
+      }
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -178,7 +188,7 @@ const ApproveTransactionContainer: React.FC = () => {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
           'TRANSACTION_FAILED',
-          requestData?.data,
+          {},
           requestData?.key,
         ),
       );
@@ -208,7 +218,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onClickCancel = () => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData?.data, requestData?.key),
+      InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
     );
   };
 
