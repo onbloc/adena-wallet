@@ -48,7 +48,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       const hash = await transactionService.sendTransaction(transaction);
       if (hash.length > 0) {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SENT', { hash }, requestData?.key),
+          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
         );
       }
       chrome.runtime.sendMessage(
