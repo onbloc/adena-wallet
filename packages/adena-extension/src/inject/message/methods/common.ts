@@ -71,7 +71,7 @@ export const checkEstablished = async (
   const siteName = getSiteName(requestData.protocol, requestData.hostname);
   const isEstablished = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
   if (!isEstablished) {
-    sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', requestData, requestData.key));
+    sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', {}, requestData.key));
     return false;
   }
   return true;

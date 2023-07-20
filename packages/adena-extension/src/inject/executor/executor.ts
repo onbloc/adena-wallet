@@ -166,7 +166,7 @@ export class AdenaExecutor {
             this.resolver &&
               this.resolver({
                 status,
-                data: null,
+                data: Object.keys(data).length > 0 ? data : null,
                 code,
                 message,
                 type,

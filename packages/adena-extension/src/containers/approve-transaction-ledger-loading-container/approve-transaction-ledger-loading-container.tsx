@@ -61,7 +61,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       }
       if (error.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData?.data, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
         );
       }
       return false;
@@ -75,7 +75,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       return;
     }
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData.data, requestData.key),
+      InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData.key),
     );
   }
 

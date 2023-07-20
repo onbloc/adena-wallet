@@ -1,3 +1,4 @@
+import { Tm2Error } from '@common/errors/common/tm2-error';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   BlockInfo,
@@ -135,7 +136,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
       request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
     });
     if (response.error) {
-      throw new Error(`${response.error['@type']}`);
+      throw Tm2Error.createTm2Error(response.hash, response.error['@type']);
     }
     return response.hash;
   }
