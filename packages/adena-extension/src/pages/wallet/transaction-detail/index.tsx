@@ -137,15 +137,17 @@ export const TransactionDetail = () => {
           )
         }
       </DataBox>
-      <Button
-        className='close-button'
-        margin='auto 0px 0px'
-        fullWidth
-        hierarchy={ButtonHierarchy.Dark}
-        onClick={closeButtonClick}
-      >
-        <Text type='body1Bold'>Close</Text>
-      </Button>
+      <div className='button-wrapper'>
+        <Button
+          className='close-button'
+          margin='auto 0px 0px'
+          fullWidth
+          hierarchy={ButtonHierarchy.Dark}
+          onClick={closeButtonClick}
+        >
+          <Text type='body1Bold'>Close</Text>
+        </Button>
+      </div>
     </Wrapper>
   ) : <></>;
 };
@@ -163,10 +165,13 @@ const Wrapper = styled.main`
     align-self: center;
     margin-left: 5px;
   }
-  .close-button {
+  .button-wrapper {
     position: fixed;
-    width: calc(100% - 40px);
-    bottom: 24px;
+    width: 100%;
+    padding: 24px 20px;
+    bottom: 0;
+    background: ${({ theme }) => theme.color.neutral[7]};
+    box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.40);
   }
 `;
 
@@ -193,7 +198,7 @@ const DataBox = styled.div`
   width: 100%;
   border-radius: 18px;
   background-color: ${({ theme }) => theme.color.neutral[8]};
-  margin-bottom: 72px;
+  margin-bottom: 96px;
 `;
 
 const DLWrap = styled.dl<DLProps>`

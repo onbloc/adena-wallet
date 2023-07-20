@@ -176,7 +176,7 @@ export class TransactionHistoryMapper {
       valueType,
       date: dateToLocal(date).value,
       networkFee: {
-        value: `${transfer.amount || '0'}`,
+        value: `${fee.amount || '0'}`,
         denom: `${fee.denom}`,
       },
     };
