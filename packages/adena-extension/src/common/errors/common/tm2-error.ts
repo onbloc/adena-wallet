@@ -117,7 +117,6 @@ export class Tm2Error extends BaseError {
 
   get response() {
     return {
-      hash: this.hash,
       error: {
         type: this.getType(),
         message: this.message,
