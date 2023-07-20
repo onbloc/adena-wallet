@@ -106,12 +106,11 @@ export class TokenMapper {
   }
 
   private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token) {
-    const { name, symbol, decimals, pkg_path: pkgPath, chain_id: chainId } = searchToken;
+    const { name, symbol, decimals, pkg_path: pkgPath } = searchToken;
     return {
       name,
       symbol,
       decimals,
-      chainId,
       tokenId: pkgPath,
       path: pkgPath,
     };
@@ -122,7 +121,7 @@ export class TokenMapper {
     tokenInfos?: TokenModel[],
   ): GRC20TokenModel {
     const token = tokenInfos && tokenInfos.find((t) => t.tokenId === pkgPath);
-    const { chain_id: chainId, decimals, name, pkg_path: pkgPath, symbol } = searchToken;
+    const { decimals, name, pkg_path: pkgPath, symbol } = searchToken;
     return {
       main: false,
       display: false,
