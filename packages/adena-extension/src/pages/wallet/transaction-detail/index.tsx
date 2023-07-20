@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
+import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled from 'styled-components';
 import Text from '@components/text';
-import link from '../../../assets/share.svg';
+import IconShare from '@assets/icon-share';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
@@ -12,6 +12,7 @@ import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { CopyTooltip } from '@components/tooltips';
 import { useNetwork } from '@hooks/use-network';
+import CopyButton from '@components/common/copy-button/copy-button';
 
 interface DLProps {
   color?: string;
@@ -88,26 +89,35 @@ export const TransactionDetail = () => {
               className='link-icon'
               onClick={() => transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')}
             >
-              <img src={link} alt='link' />
+              <IconShare />
             </dd>
           </StatusInfo>
         </DLWrap>
         {transactionItem.to && (
           <DLWrap>
             <dt>To</dt>
-            <CopyTooltip position='top' copyText={transactionItem.originTo || ''} >
-              <dd>{transactionItem.to}</dd>
-            </CopyTooltip>
+            <dd>
+              {transactionItem.to}
+              <CopyButton className='copy-button' copyText={transactionItem.originTo || ''} />
+            </dd>
           </DLWrap>
         )}
         {transactionItem.from && (
           <DLWrap>
             <dt>From</dt>
-            <CopyTooltip position='top' copyText={transactionItem.originFrom || ''} >
-              <dd>{transactionItem.from}</dd>
-            </CopyTooltip>
+            <dd>
+              {transactionItem.from}
+              <CopyButton className='copy-button' copyText={transactionItem.originFrom || ''} />
+            </dd>
           </DLWrap>
         )}
+        <DLWrap>
+          <dt>TxID</dt>
+          <dd>
+            {formatHash(transactionItem.hash)}
+            <CopyButton className='copy-button' copyText={transactionItem.hash} />
+          </dd>
+        </DLWrap>
         {
           transactionItem.networkFee && (
             <DLWrap>
@@ -128,6 +138,7 @@ export const TransactionDetail = () => {
         }
       </DataBox>
       <Button
+        className='close-button'
         margin='auto 0px 0px'
         fullWidth
         hierarchy={ButtonHierarchy.Dark}
@@ -151,6 +162,11 @@ const Wrapper = styled.main`
     display: inline-flex;
     align-self: center;
     margin-left: 5px;
+  }
+  .close-button {
+    position: fixed;
+    width: calc(100% - 40px);
+    bottom: 24px;
   }
 `;
 
@@ -177,7 +193,7 @@ const DataBox = styled.div`
   width: 100%;
   border-radius: 18px;
   background-color: ${({ theme }) => theme.color.neutral[8]};
-  margin-bottom: 24px;
+  margin-bottom: 72px;
 `;
 
 const DLWrap = styled.dl<DLProps>`
@@ -201,6 +217,10 @@ const DLWrap = styled.dl<DLProps>`
     color: ${(props) => (props.color ? props.color : props.theme.color.neutral[0])};
     align-items: center;
   }
+
+  .copy-button {
+    margin-left: 5px;
+  }
 `;
 
 const StatusInfo = styled.div`
@@ -209,5 +229,20 @@ const StatusInfo = styled.div`
     display: flex;
     cursor: pointer;
     padding-left: 5px;
+
+    svg {
+      path {
+        fill: ${({ theme }) => theme.color.neutral[9]};
+        transition: 0.2s;
+      }
+    }
+
+    :hover {
+      svg {
+        path {
+          fill: ${({ theme }) => theme.color.neutral[0]};
+        }
+      }
+    }
   }
 `;
