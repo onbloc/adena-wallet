@@ -127,7 +127,7 @@ const ApproveSignContainer: React.FC = () => {
   const sendTransaction = async () => {
     if (!document || !currentAccount) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData?.data, requestData?.key),
+        InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key),
       );
       return false;
     }
@@ -146,11 +146,18 @@ const ApproveSignContainer: React.FC = () => {
         if (message.includes('Ledger')) {
           return false;
         }
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure(
+            'SIGN_FAILED',
+            { error: { message } },
+            requestData?.key,
+          ),
+        );
       }
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
           'SIGN_FAILED',
-          requestData?.data,
+          {},
           requestData?.key,
         ),
       );
@@ -180,7 +187,7 @@ const ApproveSignContainer: React.FC = () => {
 
   const onClickCancel = () => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key),
+      InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData?.key),
     );
   };
 

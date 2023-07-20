@@ -21,7 +21,7 @@ export const signAmino = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveSign,
     requestData,
-    InjectionMessageInstance.failure('SIGN_REJECTED', requestData, requestData.key),
+    InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
     sendResponse,
   );
 };
@@ -44,7 +44,7 @@ export const doContract = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveTransaction,
     requestData,
-    InjectionMessageInstance.failure('TRANSACTION_REJECTED', requestData, requestData.key),
+    InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData.key),
     sendResponse,
   );
 };
@@ -54,24 +54,16 @@ export const validateInjectionData = (
   requestData: InjectionMessage,
 ): InjectionMessage | null => {
   if (!address) {
-    return InjectionMessageInstance.failure('NO_ACCOUNT', requestData, requestData.key);
+    return InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key);
   }
   if (!validateInjectionAddress(address)) {
-    return InjectionMessageInstance.failure('NO_ACCOUNT', requestData, requestData.key);
+    return InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key);
   }
   if (!validateInjectionTransactionType(requestData)) {
-    return InjectionMessageInstance.failure(
-      'UNSUPPORTED_TYPE',
-      requestData?.data,
-      requestData?.key,
-    );
+    return InjectionMessageInstance.failure('UNSUPPORTED_TYPE', {}, requestData?.key);
   }
   if (!validateInjectionTransactionMessage(address, requestData)) {
-    return InjectionMessageInstance.failure(
-      'ACCOUNT_MISMATCH',
-      requestData?.data,
-      requestData?.key,
-    );
+    return InjectionMessageInstance.failure('ACCOUNT_MISMATCH', {}, requestData?.key);
   }
   return null;
 };

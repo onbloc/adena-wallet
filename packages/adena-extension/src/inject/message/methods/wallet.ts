@@ -54,7 +54,7 @@ export const addEstablish = async (
       siteName,
     );
     if (isEstablised) {
-      sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', message, message.key));
+      sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, message.key));
       return true;
     }
   }
@@ -62,7 +62,7 @@ export const addEstablish = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveEstablish,
     message,
-    InjectionMessageInstance.failure('CONNECTION_REJECTED', message, message.key),
+    InjectionMessageInstance.failure('CONNECTION_REJECTED', {}, message.key),
     sendResponse,
   );
   return true;

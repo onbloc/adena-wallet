@@ -47,13 +47,13 @@ export class MessageHandler {
       existsWallet = false;
     }
     if (!existsWallet) {
-      sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', message, message.key));
+      sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, message.key));
       return;
     }
     const isPopup = await existsPopups();
     if (isPopup) {
       sendResponse(
-        InjectionMessageInstance.failure('UNRESOLVED_TRANSACTION_EXISTS', message, message.key),
+        InjectionMessageInstance.failure('UNRESOLVED_TRANSACTION_EXISTS', {}, message.key),
       );
       return true;
     }
