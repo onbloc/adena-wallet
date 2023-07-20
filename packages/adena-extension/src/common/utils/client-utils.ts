@@ -9,6 +9,11 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 
+export function formatHash(hash: string, num?: number): string {
+  const length = num ?? 4;
+  return hash.length < 8 ? hash : `${hash.slice(0, length)}...${hash.slice(-length)}`;
+}
+
 export function formatAddress(v: string, num?: number): string {
   const length = num ?? 4;
   return v.length < 40 ? v : `${v.slice(0, length)}...${v.slice(-length)}`;
