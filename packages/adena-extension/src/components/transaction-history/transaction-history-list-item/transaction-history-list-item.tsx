@@ -75,7 +75,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
 
       <div className='title-wrapper'>
         <span className={description ? 'title' : 'title extend'}>
-          {title}
+          <span className='info'>{title}</span>
           {extraInfo && <span className='extra-info'>{extraInfo}</span>}
         </span>
         {description && <span className='description'>{description}</span>}
