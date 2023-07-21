@@ -59,6 +59,13 @@ export const TransactionHistoryListItemWrapper = styled.div`
         ${({ theme }) => theme.fonts.body2Bold};
       }
 
+      .info {
+        max-width: 110px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
       .extra-info {
         ${({ theme }) => theme.fonts.body4Bold};
         margin-left: 5px;
