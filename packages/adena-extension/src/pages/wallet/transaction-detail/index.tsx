@@ -46,7 +46,7 @@ export const TransactionDetail = () => {
 
 
   const handleLinkClick = (hash: string) => {
-    window.open(`${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`, '_blank');
+    window.open(`${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`, '_blank');
   };
 
   return transactionItem ? (
