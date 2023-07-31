@@ -96,7 +96,7 @@ const useStatus = () => {
 
   const handleLinkClick = (hash: string) => {
     window.open(
-      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/${hash}`,
+      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
       '_blank',
     );
   };
