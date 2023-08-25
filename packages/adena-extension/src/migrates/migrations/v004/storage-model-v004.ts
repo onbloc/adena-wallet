@@ -1,24 +1,25 @@
-export type StorageModelV003 = {
-  version: 3;
-  data: StorageModelDataV003;
+export type StorageModelV004 = {
+  version: 4;
+  data: StorageModelDataV004;
 };
 
-export type StorageModelDataV003 = {
-  NETWORKS: NetworksModelV003;
-  CURRENT_CHAIN_ID: CurrentChainIdModelV003;
-  CURRENT_NETWORK_ID: CurrentNetworkIdModelV003;
-  SERIALIZED: SerializedModelV003;
-  ENCRYPTED_STORED_PASSWORD: EncryptedStoredPasswordModelV003;
-  CURRENT_ACCOUNT_ID: CurrentAccountIdModelV003;
-  ACCOUNT_NAMES: AccountNamesModelV003;
-  ESTABLISH_SITES: EstablishSitesModelV003;
-  ADDRESS_BOOK: AddressBookModelV003;
-  ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV003;
+export type StorageModelDataV004 = {
+  NETWORKS: NetworksModelV004;
+  CURRENT_CHAIN_ID: CurrentChainIdModelV004;
+  CURRENT_NETWORK_ID: CurrentNetworkIdModelV004;
+  SERIALIZED: SerializedModelV004;
+  ENCRYPTED_STORED_PASSWORD: EncryptedStoredPasswordModelV004;
+  CURRENT_ACCOUNT_ID: CurrentAccountIdModelV004;
+  ACCOUNT_NAMES: AccountNamesModelV004;
+  ESTABLISH_SITES: EstablishSitesModelV004;
+  ADDRESS_BOOK: AddressBookModelV004;
+  ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV004;
 };
 
-export type NetworksModelV003 = {
+export type NetworksModelV004 = {
   id: string;
   default: boolean;
+  main: boolean;
   chainId: string;
   chainName: string;
   networkId: string;
@@ -36,19 +37,19 @@ export type NetworksModelV003 = {
   };
 }[];
 
-export type CurrentChainIdModelV003 = string;
+export type CurrentChainIdModelV004 = string;
 
-export type CurrentNetworkIdModelV003 = string;
+export type CurrentNetworkIdModelV004 = string;
 
-export type SerializedModelV003 = string;
+export type SerializedModelV004 = string;
 
-export type WalletModelV003 = {
-  accounts: AccountDataModelV003[];
-  keyrings: KeyringDataModelV003[];
+export type WalletModelV004 = {
+  accounts: AccountDataModelV004[];
+  keyrings: KeyringDataModelV004[];
   currentAccountId?: string;
 };
 
-type AccountDataModelV003 = {
+type AccountDataModelV004 = {
   id?: string;
   index: number;
   type: 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH';
@@ -58,7 +59,7 @@ type AccountDataModelV003 = {
   publicKey: number[];
 };
 
-type KeyringDataModelV003 = {
+type KeyringDataModelV004 = {
   id?: string;
   type: 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH';
   publicKey?: number[];
@@ -67,13 +68,13 @@ type KeyringDataModelV003 = {
   mnemonic?: string;
 };
 
-export type EncryptedStoredPasswordModelV003 = string;
+export type EncryptedStoredPasswordModelV004 = string;
 
-export type CurrentAccountIdModelV003 = string;
+export type CurrentAccountIdModelV004 = string;
 
-export type AccountNamesModelV003 = { [key in string]: string };
+export type AccountNamesModelV004 = { [key in string]: string };
 
-export type EstablishSitesModelV003 = {
+export type EstablishSitesModelV004 = {
   [key in string]: {
     hostname: string;
     chainId: string;
@@ -84,17 +85,18 @@ export type EstablishSitesModelV003 = {
   }[];
 };
 
-export type AddressBookModelV003 = {
+export type AddressBookModelV004 = {
   id: string;
   name: string;
   address: string;
   createdAt: string;
 }[];
 
-export type AccountTokenMetainfoModelV003 = {
+export type AccountTokenMetainfoModelV004 = {
   [key in string]: {
     main: boolean;
     tokenId: string;
+    networkId: string;
     display: boolean;
     type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
     name: string;

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
 const TokenDetailsContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -38,8 +39,8 @@ const TokenDetailsContainer: React.FC = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (page, index) => index === 0 })
-      }, 10 * 1000);
+        refetch({ refetchPage: (_, index) => index === 0 })
+      }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
   }, [currentAddress, refetch]);

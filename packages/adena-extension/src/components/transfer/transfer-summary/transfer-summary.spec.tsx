@@ -12,6 +12,7 @@ describe('TransferSummary Component', () => {
       tokenMetainfo: {
         main: true,
         tokenId: 'Gnoland',
+        networkId: 'DEFAULT',
         name: 'Gnoland',
         image: '',
         symbol: 'GNOT',

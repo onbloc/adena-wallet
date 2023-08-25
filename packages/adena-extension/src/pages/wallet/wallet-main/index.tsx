@@ -52,7 +52,7 @@ export const WalletMain = () => {
     }
   }, [currentAccount]);
 
-  const tokens = displayTokenBalances.map(tokenBalance => {
+  const tokens = displayTokenBalances.filter(tokenBalance => tokenBalance.display).map(tokenBalance => {
     return {
       tokenId: tokenBalance.tokenId,
       logo: tokenBalance.image || `${UnknownTokenIcon}`,

@@ -15,14 +15,18 @@ import {
   NativeTokenResponse,
 } from './response/token-asset-response';
 import { TokenMapper } from './mapper/token-mapper';
+import { NetworkMetainfo } from '@states/network';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
+
+const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
 
 const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
     main: true,
     tokenId: 'Gnoland',
     name: 'Gnoland',
+    networkId: DEFAULT_TOKEN_NETWORK_ID,
     image:
       'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     symbol: 'GNOT',
@@ -44,8 +48,6 @@ interface AppInfoResponse {
 }
 
 export class TokenRepository {
-  private static ADENA_API_URI = 'https://api.adena.app';
-
   private static GNO_TOKEN_RESOURCE_URI =
     'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
@@ -55,9 +57,23 @@ export class TokenRepository {
 
   private networkInstance: AxiosInstance;
 
+  private networkMetainfo: NetworkMetainfo | null;
+
   constructor(localStorage: StorageManager, networkInstance: AxiosInstance) {
     this.localStorage = localStorage;
     this.networkInstance = networkInstance;
+    this.networkMetainfo = null;
+  }
+
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo) {
+    this.networkMetainfo = networkMetainfo;
+  }
+
+  private getAPIUrl() {
+    if (this.networkMetainfo === null || this.networkMetainfo.apiUrl === '') {
+      return null;
+    }
+    return `${this.networkMetainfo.apiUrl}/${this.networkMetainfo.networkId}`;
   }
 
   public fetchTokenMetainfos = async (): Promise<TokenModel[]> => {
@@ -75,22 +91,22 @@ export class TokenRepository {
   };
 
   public fetchGRC20TokensBy = async (keyword: string, tokenInfos?: TokenModel[]) => {
+    const apiUrl = this.getAPIUrl();
+    if (apiUrl === null) {
+      return [];
+    }
     const body = {
       keyword,
     };
     const response = await this.networkInstance.post<SearchGRC20TokenResponse>(
-      `${TokenRepository.ADENA_API_URI}/test3/search-grc20-tokens`,
+      `${apiUrl}/search-grc20-tokens`,
       body,
     );
-    return TokenMapper.fromSearchTokensResponse(response.data, tokenInfos);
-  };
-
-  public getAllTokenMetainfos = async (): Promise<{ [key in string]: TokenModel[] }> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenModel[] }
-    >('ACCOUNT_TOKEN_METAINFOS');
-
-    return accountTokenMetainfos;
+    return TokenMapper.fromSearchTokensResponse(
+      this.networkMetainfo?.networkId || '',
+      response.data,
+      tokenInfos,
+    );
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
@@ -109,8 +125,12 @@ export class TokenRepository {
       { [key in string]: TokenModel[] }
     >('ACCOUNT_TOKEN_METAINFOS');
 
+    const isUnique = function (token0: TokenModel, token1: TokenModel) {
+      return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
+    };
+
     const filteredTokenMetainfos = tokenMetainfos.filter((info1, index) => {
-      return tokenMetainfos.findIndex((info2) => info1.tokenId === info2.tokenId) === index;
+      return tokenMetainfos.findIndex((info2) => isUnique(info1, info2)) === index;
     });
 
     const changedAccountTokenMetainfos = {
@@ -145,7 +165,9 @@ export class TokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/gno-native/assets.json';
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromNativeTokenMetainfos(response.data))
+      .then((response) =>
+        TokenMapper.fromNativeTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
+      )
       .catch(() => DEFAULT_TOKEN_METAINFOS);
   };
 
@@ -153,7 +175,9 @@ export class TokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/grc20/assets.json';
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromGRC20TokenMetainfos(response.data))
+      .then((response) =>
+        TokenMapper.fromGRC20TokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
+      )
       .catch(() => []);
   };
 
@@ -161,7 +185,9 @@ export class TokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-native/assets.json';
     return this.networkInstance
       .get<IBCNativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCNativeMetainfos(response.data))
+      .then((response) =>
+        TokenMapper.fromIBCNativeMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
+      )
       .catch(() => []);
   };
 
@@ -169,7 +195,9 @@ export class TokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-tokens/assets.json';
     return this.networkInstance
       .get<IBCTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCTokenMetainfos(response.data))
+      .then((response) =>
+        TokenMapper.fromIBCTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
+      )
       .catch(() => []);
   };
 }

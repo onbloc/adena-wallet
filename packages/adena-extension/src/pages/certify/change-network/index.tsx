@@ -8,11 +8,10 @@ import { useNavigate } from 'react-router-dom';
 import LoadingChangeNetwork from '@components/loading-screen/loading-change-network';
 import { RoutePath } from '@router/path';
 import LoadingWallet from '@components/loading-screen/loading-wallet';
-import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
 import { useNetwork } from '@hooks/use-network';
 import { NetworkMetainfo } from '@states/network';
 import AddCustomNetworkButton from '@components/change-network/add-custom-network-button/add-custom-network-button';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -70,12 +69,14 @@ export const ChangeNetwork = () => {
   const navigate = useNavigate();
   const [loadinsgState] = useState('INIT');
   const { currentNetwork, networks, changeNetwork } = useNetwork();
+  const { initTokenMetainfos } = useTokenMetainfo();
 
   const onClickNetwork = async (network: NetworkMetainfo) => {
     if (network.id === currentNetwork?.id) {
       return;
     }
     await changeNetwork(network.id);
+    await initTokenMetainfos();
     navigate(RoutePath.Wallet);
   };
 

@@ -31,6 +31,7 @@ export class ChainService {
     const addedNetwork = {
       id: `${Date.now()}`,
       default: false,
+      main: false,
       chainId: chainId,
       chainName: 'GNO.LAND',
       networkId: chainId,

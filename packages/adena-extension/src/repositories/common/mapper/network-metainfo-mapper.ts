@@ -5,6 +5,7 @@ export type ChainMetainfoResponse = ChainMetainfoItem[];
 export interface ChainMetainfoItem {
   id: string;
   default: boolean;
+  main: boolean;
   chainId: string;
   chainName: string;
   networkId: string;
@@ -14,12 +15,6 @@ export interface ChainMetainfoItem {
   gnoUrl: string;
   apiUrl: string;
   linkUrl: string;
-  token: {
-    denom: string;
-    unit: number;
-    minimalDenom: string;
-    minimalUnit: number;
-  };
 }
 
 export class NetworkMetainfoMapper {

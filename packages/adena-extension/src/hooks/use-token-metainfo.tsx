@@ -3,6 +3,7 @@ import { useRecoilState } from "recoil";
 import { useAdenaContext } from "./use-context";
 import { useCurrentAccount } from "./use-current-account";
 import { GRC20TokenModel, TokenModel, isGRC20TokenModel, isNativeTokenModel } from "@models/token-model";
+import { useNetwork } from "./use-network";
 
 interface GRC20Token {
   tokenId: string;
@@ -17,6 +18,7 @@ export const useTokenMetainfo = () => {
   const { balanceService, tokenService } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
   const { currentAccount } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
 
   const initTokenMetainfos = async () => {
     if (currentAccount) {
@@ -96,6 +98,7 @@ export const useTokenMetainfo = () => {
     const tokenMetainfo: GRC20TokenModel = {
       main: false,
       tokenId,
+      networkId: currentNetwork.networkId,
       pkgPath: path,
       symbol,
       type: 'grc20',

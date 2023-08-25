@@ -1,6 +1,7 @@
 export interface TokenModel {
   main: boolean;
   tokenId: string;
+  networkId: string;
   display: boolean;
   type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
   name: string;
