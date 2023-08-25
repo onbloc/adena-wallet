@@ -66,10 +66,9 @@ export const checkEstablished = async (
 ) => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
-  const networkId = await core.getCurrentNetworkId();
 
   const siteName = getSiteName(requestData.protocol, requestData.hostname);
-  const isEstablished = await core.establishService.isEstablishedBy(accountId, networkId, siteName);
+  const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
   if (!isEstablished) {
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', {}, requestData.key));
     return false;

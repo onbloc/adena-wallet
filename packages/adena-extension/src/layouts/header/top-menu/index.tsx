@@ -74,7 +74,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
 
     if (hostname !== '') {
       const siteName = getSiteName(protocol, hostname);
-      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.id, siteName);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName);
       setIsEstablish(isEstablished);
     }
   };
@@ -82,7 +82,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
   const updateEstablished = async () => {
     if (currentAccount && hostname !== '') {
       const siteName = getSiteName(protocol, hostname);
-      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, currentNetwork.id, siteName);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName);
       setIsEstablish(isEstablished);
     }
   };

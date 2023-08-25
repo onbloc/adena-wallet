@@ -2,11 +2,13 @@ import { Migration } from '@migrates/migrator';
 import { StorageModel } from '@common/storage';
 import {
   AccountTokenMetainfoModelV003,
+  EstablishSitesModelV003,
   NetworksModelV003,
   StorageModelDataV003,
 } from '../v003/storage-model-v003';
 import {
   AccountTokenMetainfoModelV004,
+  EstablishSitesModelV004,
   NetworksModelV004,
   StorageModelDataV004,
 } from './storage-model-v004';
@@ -28,6 +30,7 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
         ...previous,
         NETWORKS: this.migrateNetworks(previous.NETWORKS),
         ACCOUNT_TOKEN_METAINFOS: this.migrateAccountTokenMetainfo(previous.ACCOUNT_TOKEN_METAINFOS),
+        ESTABLISH_SITES: this.migrateEstablishSites(previous.ESTABLISH_SITES),
       },
     };
   }
@@ -114,5 +117,18 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
       changedAccountTokenMetainfo[accountId] = tokenMetainfos;
     }
     return changedAccountTokenMetainfo;
+  }
+
+  private migrateEstablishSites(establishSites: EstablishSitesModelV003): EstablishSitesModelV004 {
+    const changedEstablishSites: EstablishSitesModelV004 = {};
+    for (const accountId of Object.keys(establishSites)) {
+      const establishSitesOfAccount = establishSites[accountId].filter((establishSite, index) =>
+        establishSites[accountId].findIndex(
+          (current) => current.hostname === establishSite.hostname,
+        ),
+      );
+      changedEstablishSites[accountId] = establishSitesOfAccount;
+    }
+    return changedEstablishSites;
   }
 }
