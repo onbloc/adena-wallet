@@ -14,7 +14,6 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { RoutePath } from '@router/path';
-import axios from 'axios';
 
 const ApproveEstablishContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -69,10 +68,8 @@ const ApproveEstablishContainer: React.FC = () => {
     }
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount.id ?? '';
-    const networkId = currentNetwork.id;
     const isEstablised = await establishService.isEstablishedBy(
       accountId,
-      networkId,
       siteName
     );
     setLoading(false);
