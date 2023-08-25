@@ -1,0 +1,1 @@
+export const HISTORY_FETCH_INTERVAL_TIME = 3 * 1000;

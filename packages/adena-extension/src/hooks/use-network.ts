@@ -5,6 +5,7 @@ import { NetworkState } from '@states/index';
 import { EventMessage } from '@inject/message';
 import { useCallback } from 'react';
 import { useEvent } from './use-event';
+import { useTokenMetainfo } from './use-token-metainfo';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -16,6 +17,7 @@ interface NetworkResponse {
 const DEFAULT_NETWORK: NetworkMetainfo = {
   id: 'test3',
   default: true,
+  main: true,
   chainId: 'GNOLAND',
   chainName: 'GNO.LAND',
   networkId: 'test3',
@@ -25,12 +27,6 @@ const DEFAULT_NETWORK: NetworkMetainfo = {
   gnoUrl: 'https://test3.gno.land',
   apiUrl: 'https://api.adena.app',
   linkUrl: 'https://gnoscan.io',
-  token: {
-    denom: 'gnot',
-    unit: 1,
-    minimalDenom: 'ugnot',
-    minimalUnit: 0.000001,
-  },
 };
 
 export const useNetwork = (): NetworkResponse => {

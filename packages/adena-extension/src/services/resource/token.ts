@@ -1,6 +1,7 @@
 import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
 import { TokenRepository } from '@repositories/common';
 import { AccountTokenBalance } from '@states/balance';
+import { NetworkMetainfo } from '@states/network';
 
 export class TokenService {
   private tokenRepository: TokenRepository;
@@ -10,6 +11,10 @@ export class TokenService {
   constructor(tokenRepository: TokenRepository) {
     this.tokenRepository = tokenRepository;
     this.tokenMetaInfos = [];
+  }
+
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo) {
+    this.tokenRepository.setNetworkMetainfo(networkMetainfo);
   }
 
   public getTokenMetainfos() {

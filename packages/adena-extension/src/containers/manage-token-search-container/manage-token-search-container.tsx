@@ -28,7 +28,7 @@ const ManageTokenSearchContainer: React.FC = () => {
   const [isClose, setIsClose] = useState(false);
   const { tokenMetainfos } = useTokenMetainfo();
   const { currentAccount } = useCurrentAccount();
-  const { tokenBalances, toggleDisplayOption, updateTokenBalanceInfos } = useTokenBalance();
+  const { displayTokenBalances: tokenBalances, toggleDisplayOption, updateTokenBalanceInfos } = useTokenBalance();
 
   useEffect(() => {
     if (currentAccount) {

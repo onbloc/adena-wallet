@@ -1,18 +1,40 @@
 import { AxiosInstance } from 'axios';
 import { TransactionHistoryResponse } from './response/transaction-history-response';
 import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
+import { NetworkMetainfo } from '@states/network';
 
 export class TransactionHistoryRepository {
-  private static ADENA_API_URI = 'https://api.adena.app';
-
   private axiosInstance: AxiosInstance;
+
+  private networkMetainfo: NetworkMetainfo | null;
 
   constructor(axiosInstance: AxiosInstance) {
     this.axiosInstance = axiosInstance;
+    this.networkMetainfo = null;
+  }
+
+  private getAPIUrl() {
+    if (this.networkMetainfo === null || this.networkMetainfo.apiUrl === '') {
+      return null;
+    }
+    return `${this.networkMetainfo.apiUrl}/${this.networkMetainfo.networkId}`;
+  }
+
+  public setNetworkMetainfo(networkMetaion: NetworkMetainfo) {
+    this.networkMetainfo = networkMetaion;
   }
 
   public async fetchAllTransactionHistoryBy(address: string, from: number, size?: number) {
-    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/multi_history/${address}`;
+    const apiUri = this.getAPIUrl();
+    if (!apiUri) {
+      return {
+        hits: 0,
+        next: false,
+        txs: [],
+      };
+    }
+
+    const requestUri = `${apiUri}/multi_history/${address}`;
     const response = await this.axiosInstance.get<TransactionHistoryResponse>(requestUri, {
       params: {
         from,
@@ -23,7 +45,15 @@ export class TransactionHistoryRepository {
   }
 
   public async fetchNativeTransactionHistoryBy(address: string, from: number, size?: number) {
-    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/native-token-history/${address}`;
+    const apiUri = this.getAPIUrl();
+    if (!apiUri) {
+      return {
+        hits: 0,
+        next: false,
+        txs: [],
+      };
+    }
+    const requestUri = `${apiUri}/native-token-history/${address}`;
     const response = await this.axiosInstance.get<TransactionHistoryResponse>(requestUri, {
       params: {
         from,
@@ -39,7 +69,15 @@ export class TransactionHistoryRepository {
     from: number,
     size?: number,
   ) {
-    const requestUri = `${TransactionHistoryRepository.ADENA_API_URI}/test3/grc20-token-history/${address}/${packagePath}`;
+    const apiUri = this.getAPIUrl();
+    if (!apiUri) {
+      return {
+        hits: 0,
+        next: false,
+        txs: [],
+      };
+    }
+    const requestUri = `${apiUri}/grc20-token-history/${address}/${packagePath}`;
     const response = await this.axiosInstance.get<TransactionHistoryResponse>(requestUri, {
       params: {
         from,

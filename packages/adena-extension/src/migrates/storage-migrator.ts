@@ -5,6 +5,8 @@ import { StorageModelDataV001, StorageModelV001 } from './migrations/v001/storag
 import { StorageMigration002 } from './migrations/v002/storage-migration-v002';
 import { StorageModelV003 } from './migrations/v003/storage-model-v003';
 import { StorageMigration003 } from './migrations/v003/storage-migration-v003';
+import { StorageMigration004 } from './migrations/v004/storage-migration-v004';
+import { StorageModelV004 } from './migrations/v004/storage-model-v004';
 
 const LegacyStorageKeys = [
   'NETWORKS',
@@ -127,6 +129,9 @@ export class StorageMigrator implements Migrator {
   }
 
   private async mappedJson(json: any) {
+    if (json?.version === 4) {
+      return json as StorageModelV004;
+    }
     if (json?.version === 3) {
       return json as StorageModelV003;
     }
@@ -161,6 +166,6 @@ export class StorageMigrator implements Migrator {
   }
 
   static migrations(): Migration[] {
-    return [new StorageMigration002(), new StorageMigration003()];
+    return [new StorageMigration002(), new StorageMigration003(), new StorageMigration004()];
   }
 }

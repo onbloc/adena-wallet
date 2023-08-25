@@ -25,15 +25,17 @@ export class ChainRepository {
   };
 
   public getNetworks = async () => {
+    const defaultNetworks = await this.fetchNetworkMetainfos();
     const networks = await this.localStorage
       .getToObject<Array<NetworkMetainfo>>('NETWORKS')
+      .then((networks) => (Array.isArray(networks) ? networks : []))
       .catch(() => []);
+    const customNetworks = networks.filter((network) => network.default === false);
     if (networks.length === 0) {
-      const defaultNetworks = await this.fetchNetworkMetainfos();
       await this.updateNetworks(defaultNetworks);
       return defaultNetworks;
     }
-    return networks;
+    return [...defaultNetworks, ...customNetworks];
   };
 
   public addNetwork = async (network: NetworkMetainfo) => {

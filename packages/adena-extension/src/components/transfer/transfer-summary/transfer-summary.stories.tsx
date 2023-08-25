@@ -14,6 +14,7 @@ export const Default: StoryObj<TransferSummaryProps> = {
       main: true,
       display: false,
       tokenId: 'Gnoland',
+      networkId: 'DEFAULT',
       name: 'Gnoland',
       image: '',
       symbol: 'GNOT',

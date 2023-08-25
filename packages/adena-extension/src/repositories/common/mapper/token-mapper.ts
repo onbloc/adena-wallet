@@ -20,7 +20,10 @@ export class TokenMapper {
   private static IMAGE_BASE_URI =
     'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
-  public static fromNativeTokenMetainfos(response: NativeTokenResponse): NativeTokenModel[] {
+  public static fromNativeTokenMetainfos(
+    networkId: string,
+    response: NativeTokenResponse,
+  ): NativeTokenModel[] {
     return response.map((token) => {
       const { decimals, denom, image, name, symbol, description, website_url } = token;
       const isGNOT = symbol === 'GNOT';
@@ -28,6 +31,7 @@ export class TokenMapper {
         main: isGNOT,
         display: isGNOT,
         tokenId: symbol,
+        networkId,
         type: 'gno-native',
         name,
         denom,
@@ -40,13 +44,17 @@ export class TokenMapper {
     });
   }
 
-  public static fromGRC20TokenMetainfos(response: GRC20TokenResponse): GRC20TokenModel[] {
+  public static fromGRC20TokenMetainfos(
+    networkId: string,
+    response: GRC20TokenResponse,
+  ): GRC20TokenModel[] {
     return response.map((token) => {
       const { decimals, pkg_path, image, name, symbol, description, website_url } = token;
       return {
         main: false,
         display: false,
         tokenId: pkg_path,
+        networkId,
         type: 'grc20',
         name,
         pkgPath: pkg_path,
@@ -59,13 +67,17 @@ export class TokenMapper {
     });
   }
 
-  public static fromIBCNativeMetainfos(response: IBCNativeTokenResponse): IBCNativeTokenModel[] {
+  public static fromIBCNativeMetainfos(
+    networkId: string,
+    response: IBCNativeTokenResponse,
+  ): IBCNativeTokenModel[] {
     return response.map((token) => {
       const { decimals, denom, image, name, symbol, description, website_url } = token;
       return {
         main: false,
         display: false,
         tokenId: symbol,
+        networkId,
         type: 'ibc-native',
         name,
         denom,
@@ -78,13 +90,17 @@ export class TokenMapper {
     });
   }
 
-  public static fromIBCTokenMetainfos(response: IBCTokenResponse): IBCTokenModel[] {
+  public static fromIBCTokenMetainfos(
+    networkId: string,
+    response: IBCTokenResponse,
+  ): IBCTokenModel[] {
     return response.map((token) => {
       const { website_url, origin_chain, origin_denom, origin_type, symbol } = token;
       return {
         main: false,
         display: false,
         tokenId: symbol,
+        networkId,
         websiteUrl: website_url,
         type: 'ibc-tokens',
         originChain: origin_chain,
@@ -96,13 +112,14 @@ export class TokenMapper {
   }
 
   public static fromSearchTokensResponse(
+    networkId: string,
     response: SearchGRC20TokenResponse | null,
     tokenInfos?: TokenModel[],
   ) {
     if (response === null) {
       return [];
     }
-    return response.map((token) => this.mappedMetainfoBySearchToken(token, tokenInfos));
+    return response.map((token) => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
   }
 
   private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token) {
@@ -117,6 +134,7 @@ export class TokenMapper {
   }
 
   private static mappedMetainfoBySearchToken(
+    networkId: string,
     searchToken: SearchGRC20Token,
     tokenInfos?: TokenModel[],
   ): GRC20TokenModel {
@@ -126,6 +144,7 @@ export class TokenMapper {
       main: false,
       display: false,
       tokenId: pkgPath,
+      networkId,
       pkgPath,
       symbol,
       type: 'grc20',

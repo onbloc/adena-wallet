@@ -56,6 +56,7 @@ export class InjectCore {
   public async initGnoProvider() {
     try {
       const network = await this.chainService.getCurrentNetwork();
+      this.tokenService.setNetworkMetainfo(network);
       this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId);
       this.accountService.setGnoProvider(this.gnoProvider);
       this.transactionService.setGnoProvider(this.gnoProvider);
