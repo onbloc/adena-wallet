@@ -40,5 +40,19 @@
     "gnoUrl": "http://127.0.0.1:8888",
     "apiUrl": "http://127.0.0.1:3333",
     "linkUrl": "http://127.0.0.1:3000"
+  },
+  {
+    "id": "teritori",
+    "default": true,
+    "main": false,
+    "chainId": "teritori-1",
+    "chainName": "Gno Teritori",
+    "networkId": "teritori-1",
+    "networkName": "Gno Teritori",
+    "addressPrefix": "g",
+    "rpcUrl": "https://testnet.gno.teritori.com:26658",
+    "gnoUrl": "https://testnet.gno.teritori.com",
+    "apiUrl": "",
+    "linkUrl": ""
   }
 ]
