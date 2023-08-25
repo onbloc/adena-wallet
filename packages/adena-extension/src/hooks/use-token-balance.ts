@@ -63,8 +63,10 @@ export const useTokenBalance = (): {
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getDisplayTokenBalances = useCallback(() => {
-    return getCurrentTokenBalances().filter((token) => token.display);
-  }, [getTokenBalancesByAccount, currentAccount]);
+    return getCurrentTokenBalances().filter(
+      (token) => token.networkId === currentNetwork.networkId || token.networkId === 'DEFAULT',
+    );
+  }, [getTokenBalancesByAccount, currentAccount?.id, currentNetwork.networkId]);
 
   function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
     return accountTokenBalance.networkId === currentNetwork?.id;
@@ -72,7 +74,11 @@ export const useTokenBalance = (): {
 
   function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
     if (!account) return false;
-    return accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance);
+    return (
+      (accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance)) ||
+      accountTokenBalance.networkId === 'DEFAULT' ||
+      accountTokenBalance.networkId === currentNetwork.networkId
+    );
   }
 
   async function toggleDisplayOption(account: Account, token: TokenModel, activated: boolean) {

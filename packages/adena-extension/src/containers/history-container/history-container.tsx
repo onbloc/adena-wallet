@@ -11,6 +11,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useNetwork } from '@hooks/use-network';
 import useScrollHistory from '@hooks/use-scroll-history';
 import BigNumber from 'bignumber.js';
+import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
@@ -43,8 +44,8 @@ const HistoryContainer: React.FC = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (page, index) => index === 0 })
-      }, 10 * 1000);
+        refetch({ refetchPage: (_, index) => index === 0 })
+      }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
   }, [currentAddress, refetch]);
@@ -76,7 +77,7 @@ const HistoryContainer: React.FC = () => {
   };
 
   const fetchTokenHistories = async (pageParam: number) => {
-    if (!currentAddress || currentNetwork.networkId !== 'test3') {
+    if (!currentAddress) {
       return {
         hits: 0,
         next: false,

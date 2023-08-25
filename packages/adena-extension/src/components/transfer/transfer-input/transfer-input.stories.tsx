@@ -13,6 +13,7 @@ export const Default: StoryObj<TransferInputProps> = {
       main: true,
       display: false,
       tokenId: 'Gnoland',
+      networkId: 'DEFAULT',
       name: 'Gnoland',
       image: '',
       symbol: 'GNOT',

@@ -24,6 +24,7 @@ import BigNumber from 'bignumber.js';
 import { isGRC20TokenModel } from '@models/token-model';
 import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 import useHistoryData from '@hooks/use-history-data';
+import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
 const Wrapper = styled.main`
   ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -123,8 +124,8 @@ export const TokenDetails = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (page, index) => index === 0 })
-      }, 10 * 1000);
+        refetch({ refetchPage: (_, index) => index === 0 })
+      }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
   }, [currentAddress, refetch]);
@@ -156,7 +157,7 @@ export const TokenDetails = () => {
   };
 
   const fetchTokenHistories = async (pageParam: number) => {
-    if (!currentAddress || currentNetwork.networkId !== 'test3') {
+    if (!currentAddress) {
       return {
         hits: 0,
         next: false,

@@ -13,6 +13,7 @@ describe('TransferInput Component', () => {
         main: true,
         display: false,
         tokenId: 'Gnoland',
+        networkId: 'DEFAULT',
         name: 'Gnoland',
         image: '',
         symbol: 'GNOT',
