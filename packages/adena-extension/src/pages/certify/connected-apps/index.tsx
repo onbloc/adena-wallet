@@ -12,7 +12,6 @@ import CloseShadowButton from '@components/buttons/close-shadow-button';
 import disconnected from '../../../assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
 
 export const ConnectedApps = () => {
   const { establishService } = useAdenaContext();
@@ -20,7 +19,6 @@ export const ConnectedApps = () => {
   const navigate = useNavigate();
   const [state] = useRecoilState(WalletState.state);
   const [datas, setDatas] = useState<any>([]);
-  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     updateDatas();
@@ -30,7 +28,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    await establishService.unestablishBy(currentAccount.id, currentNetwork.id, item.hostname);
+    await establishService.unestablishBy(currentAccount.id, item.hostname);
     await updateDatas();
   };
 
@@ -38,7 +36,7 @@ export const ConnectedApps = () => {
     if (!currentAccount) {
       return;
     }
-    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id, currentNetwork.id);
+    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id);
     setDatas(establishedSites);
   };
 

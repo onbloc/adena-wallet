@@ -43,16 +43,11 @@ export const addEstablish = async (
 ) => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
-  const networkId = await core.getCurrentNetworkId();
   const isLocked = await core.walletService.isLocked();
   const siteName = getSiteName(message.protocol, message.hostname);
 
   if (!isLocked) {
-    const isEstablised = await core.establishService.isEstablishedBy(
-      accountId,
-      networkId,
-      siteName,
-    );
+    const isEstablised = await core.establishService.isEstablishedBy(accountId, siteName);
     if (isEstablised) {
       sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, message.key));
       return true;
