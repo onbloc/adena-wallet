@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-export const AddCustomNetworkFormWrapper = styled.div`
+export const CustomNetworkInputWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -48,44 +48,5 @@ export const AddCustomNetworkFormWrapper = styled.div`
     padding: 0 16px;
     ${({ theme }) => theme.fonts.captionReg};
     color: ${({ theme }) => theme.color.red[2]};
-  }
-
-  .submit-wrapper {
-    position: absolute;
-    display: flex;
-    width: 100%;
-    bottom: 0;
-    justify-content: space-between;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${({ theme }) => theme.fonts.body1Bold};
-      background-color: ${({ theme }) => theme.color.neutral[4]};
-      transition: 0.2s;
-
-      :hover {
-        background-color: ${({ theme }) => theme.color.neutral[5]};
-      }
-
-      &:last-child {
-        margin-left: 10px;
-      }
-
-      &.save {
-        background-color: ${({ theme }) => theme.color.primary[3]};
-
-        :hover {
-          background-color: ${({ theme }) => theme.color.primary[4]};
-        }
-
-        &.disabled {
-          color: ${({ theme }) => theme.color.neutral[4]};
-          background-color: ${({ theme }) => theme.color.primary[6]};
-          cursor: default;
-        }
-      }
-    }
   }
 `;

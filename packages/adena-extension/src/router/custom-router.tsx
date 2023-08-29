@@ -30,7 +30,6 @@ import { WalletSearch } from '@pages/wallet/search';
 import { Deposit } from '@pages/wallet/deposit';
 import { TokenDetails } from '@pages/wallet/token-details';
 import { ConnectedApps } from '@pages/certify/connected-apps';
-import { ChangeNetwork } from '@pages/certify/change-network';
 import AddAccountPage from '@pages/certify/add-account-page/AddAccountPage';
 import { ImportAccount } from '@pages/certify/import-account';
 import { ApproveEstablish } from '@pages/wallet/approve-establish';
@@ -68,6 +67,8 @@ import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject'
 import { ApproveTransactionLedgerLoading } from '@pages/wallet/approve-transaction-ledger-loading';
 import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-loading';
 import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
+import ChangeNetwork from '@pages/certify/change-network';
+import EditCustomNetworkPage from '@pages/wallet/edit-custom-network';
 
 export const CustomRouter = () => {
   const { wallet } = useWalletContext();
@@ -122,6 +123,7 @@ export const CustomRouter = () => {
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
           <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
+          <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
           <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
           <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />

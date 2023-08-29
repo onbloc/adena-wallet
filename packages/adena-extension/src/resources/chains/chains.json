@@ -14,20 +14,6 @@
     "linkUrl": "https://gnoscan.io"
   },
   {
-    "id": "test2",
-    "default": true,
-    "main": false,
-    "chainId": "test2",
-    "chainName": "GNO.LAND",
-    "networkId": "test2",
-    "networkName": "Testnet 2",
-    "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test2.gno.land",
-    "gnoUrl": "https://test2.gno.land",
-    "apiUrl": "",
-    "linkUrl": ""
-  },
-  {
     "id": "dev",
     "default": true,
     "main": false,
@@ -43,7 +29,7 @@
   },
   {
     "id": "teritori",
-    "default": true,
+    "default": false,
     "main": false,
     "chainId": "teritori-1",
     "chainName": "Gno Teritori",

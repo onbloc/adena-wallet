@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { useNetwork } from '@hooks/use-network';
 import useScrollHistory from '@hooks/use-scroll-history';
 import BigNumber from 'bignumber.js';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
@@ -16,7 +15,6 @@ import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
   const { currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();

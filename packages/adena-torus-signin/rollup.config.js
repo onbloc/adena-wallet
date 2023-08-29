@@ -17,16 +17,19 @@ const jobs = [
     file: pkg.main,
     format: 'umd',
     name: pkg.name,
+    sourcemap: true,
   },
   {
     file: pkg.module,
     format: 'esm',
+    sourcemap: true,
   },
 ];
 
 module.exports = merge({
   input: resolve('./src/index.ts'),
   output: jobs,
+  inlineDynamicImports: true,
   plugins: [
     nodeResolve({
       extensions,

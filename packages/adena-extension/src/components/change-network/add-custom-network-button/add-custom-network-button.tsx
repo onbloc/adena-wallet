@@ -1,16 +1,19 @@
-import React from 'react';
-import { AddCustomNetworkButtonWrapper } from './add-custom-network-button.styles';
+import React, { useCallback } from 'react';
+import UnderlineTextButton from '@components/common/underline-text-button/underline-text-button';
 
 export interface AddCustomNetworkButtonProps {
   onClick: () => void;
 }
 
 const AddCustomNetworkButton: React.FC<AddCustomNetworkButtonProps> = ({ onClick }) => {
-  return (
-    <AddCustomNetworkButtonWrapper onClick={onClick}>
-      <span className='title'>{'Add Custom Network'}</span>
-    </AddCustomNetworkButtonWrapper>
-  );
+  const onClickButton = useCallback(() => {
+    onClick();
+  }, [onClick]);
+
+  return <UnderlineTextButton
+    text='Add Custom Network'
+    onClick={onClickButton}
+  />
 };
 
 export default AddCustomNetworkButton;

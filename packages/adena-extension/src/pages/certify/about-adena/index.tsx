@@ -1,10 +1,11 @@
 import BottomFixedButton from '@components/buttons/bottom-fixed-button';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import logo from '@assets/logo-default-v2.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import FullButtonRightIcon, { ButtonMode } from '@components/buttons/full-button-right-icon';
+import { useNavigate } from 'react-router-dom';
 
 const menuMakerInfo = [
   {
@@ -36,10 +37,15 @@ const menuMakerInfo = [
 
 export const AboutAdena = () => {
   const [version, setVersion] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     initVersion();
   }, []);
+
+  const moveBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   const initVersion = () => {
     const manifest = chrome.runtime.getManifest();
@@ -65,7 +71,7 @@ export const AboutAdena = () => {
           icon='WEBLINK'
         />
       ))}
-      <BottomFixedButton />
+      <BottomFixedButton onClick={moveBack} />
     </Wrapper>
   );
 };

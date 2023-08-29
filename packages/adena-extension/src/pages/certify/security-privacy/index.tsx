@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
@@ -55,6 +55,10 @@ export const SecurityPrivacy = () => {
     availRemoveAccount().then(setAvailRemove);
   }, []);
 
+  const moveBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
   return (
     <Wrapper>
       <Text type='header4' margin='0px 0px 12px 0px'>
@@ -69,7 +73,7 @@ export const SecurityPrivacy = () => {
           disabled={v.disabled as boolean}
         />
       ))}
-      <BottomFixedButton />
+      <BottomFixedButton onClick={moveBack} />
     </Wrapper>
   );
 };

@@ -1,18 +1,19 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { AddCustomNetworkWrapper } from './add-custom-network.styles';
 import SubHeader from '@components/common/sub-header/sub-header';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
 import WarningBox from '@components/warning/warning-box';
-import AddCustomNetworkForm from '@components/add-custom-network/add-custom-network-form/add-custom-network-form';
+import CustomNetworkInput from '@components/common/custom-network-form/custom-network-input';
+import BottomFixedButtonGroup from '@components/buttons/bottom-fixed-button-group';
 
 export interface AddCustomNetworkProps {
   name: string;
-  onChangeName: (name: string) => void;
   rpcUrl: string
-  hasRPCUrlError: boolean;
-  onChangeRPCUrl: (rpcUrl: string) => void;
+  rpcUrlError?: string;
   chainId: string;
-  onChangeChainId: (chainId: string) => void;
+  changeName: (name: string) => void;
+  changeRPCUrl: (rpcUrl: string) => void;
+  changeChainId: (chainId: string) => void;
   save: () => void;
   cancel: () => void;
   moveBack: () => void;
@@ -20,16 +21,42 @@ export interface AddCustomNetworkProps {
 
 const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
   name,
-  onChangeName,
   rpcUrl,
-  hasRPCUrlError,
-  onChangeRPCUrl,
+  rpcUrlError,
   chainId,
-  onChangeChainId,
+  changeName,
+  changeRPCUrl,
+  changeChainId,
   save,
   cancel,
   moveBack,
 }) => {
+
+  const isSavable = useMemo(() => {
+    if (rpcUrlError) {
+      return false;
+    }
+    return (
+      name.length > 0 &&
+      rpcUrl.length > 0 &&
+      chainId.length > 0
+    );
+  }, [name, rpcUrl, chainId, rpcUrlError]);
+
+  const onClickBack = useCallback(() => {
+    moveBack();
+  }, [moveBack]);
+
+  const onClickCancel = useCallback(() => {
+    cancel();
+  }, [cancel]);
+
+  const onClickSave = useCallback(() => {
+    if (!isSavable) {
+      return;
+    }
+    save();
+  }, [isSavable, save]);
 
   return (
     <AddCustomNetworkWrapper>
@@ -42,19 +69,29 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       />
       <WarningBox
         type='approachNetwork'
-        padding='10px'
+        padding='10px 18px'
         margin='12px 0px 20px'
       />
-      <AddCustomNetworkForm
+      <CustomNetworkInput
         name={name}
         rpcUrl={rpcUrl}
         chainId={chainId}
-        onChangeName={onChangeName}
-        onChangeRPCUrl={onChangeRPCUrl}
-        onChangeChainId={onChangeChainId}
-        hasRPCUrlError={hasRPCUrlError}
-        save={save}
-        cancel={cancel}
+        changeName={changeName}
+        changeRPCUrl={changeRPCUrl}
+        changeChainId={changeChainId}
+        rpcUrlError={rpcUrlError}
+      />
+      <BottomFixedButtonGroup
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel
+        }}
+        rightButton={{
+          primary: true,
+          disabled: !isSavable,
+          text: 'Save',
+          onClick: onClickSave
+        }}
       />
     </AddCustomNetworkWrapper>
   );
