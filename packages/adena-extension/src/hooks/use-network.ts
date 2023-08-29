@@ -5,13 +5,14 @@ import { NetworkState } from '@states/index';
 import { EventMessage } from '@inject/message';
 import { useCallback } from 'react';
 import { useEvent } from './use-event';
-import { useTokenMetainfo } from './use-token-metainfo';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
   currentNetwork: NetworkMetainfo;
-  changeNetwork: (networkId: string) => Promise<boolean>;
   addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
+  changeNetwork: (networkId: string) => Promise<boolean>;
+  updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
+  deleteNetwork: (networkId: string) => Promise<boolean>;
 }
 
 const DEFAULT_NETWORK: NetworkMetainfo = {
@@ -36,24 +37,52 @@ export const useNetwork = (): NetworkResponse => {
   const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
 
-  async function changeNetwork(id: string) {
-    if (networkMetainfos.length === 0) {
-      setCurrentNetwork(null);
-      return false;
-    }
-    const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
-    await chainService.updateCurrentNetworkId(id);
-    const changedNetwork = await changeNetworkProvider(network);
-    dispatchChangedEvent(changedNetwork);
-    return true;
-  }
+  const addNetwork = useCallback(
+    async (name: string, rpcUrl: string, chainId: string) => {
+      const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
+      await chainService.addGnoNetwork(name, changedRpcUrl, chainId);
+      const networkMetainfos = await chainService.getNetworks();
+      setNetworkMetainfos(networkMetainfos);
+    },
+    [networkMetainfos, chainService],
+  );
 
-  const addNetwork = useCallback(async (name: string, rpcUrl: string, chainId: string) => {
-    const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-    await chainService.addGnoNetwork(name, changedRpcUrl, chainId);
-    const networkMetainfos = await chainService.getNetworks();
-    setNetworkMetainfos(networkMetainfos);
-  }, []);
+  const changeNetwork = useCallback(
+    async (id: string) => {
+      if (networkMetainfos.length === 0) {
+        setCurrentNetwork(null);
+        return false;
+      }
+      const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
+      await chainService.updateCurrentNetworkId(id);
+      const changedNetwork = await changeNetworkProvider(network);
+      dispatchChangedEvent(changedNetwork);
+      return true;
+    },
+    [networkMetainfos, chainService],
+  );
+
+  const updateNetwork = useCallback(
+    async (network: NetworkMetainfo) => {
+      const changedNetworks = networkMetainfos.map((current) =>
+        network.id === current.id ? network : current,
+      );
+      await chainService.updateNetworks(changedNetworks);
+      setNetworkMetainfos(changedNetworks);
+      return true;
+    },
+    [networkMetainfos, chainService],
+  );
+
+  const deleteNetwork = useCallback(
+    async (networkId: string) => {
+      const changedNetworks = networkMetainfos.filter((current) => current.id !== networkId);
+      await chainService.updateNetworks(changedNetworks);
+      setNetworkMetainfos(changedNetworks);
+      return true;
+    },
+    [networkMetainfos, chainService],
+  );
 
   const dispatchChangedEvent = useCallback(
     (network: NetworkMetainfo) => {
@@ -67,6 +96,8 @@ export const useNetwork = (): NetworkResponse => {
     currentNetwork: currentNetwork || DEFAULT_NETWORK,
     networks: networkMetainfos,
     changeNetwork,
+    updateNetwork,
     addNetwork,
+    deleteNetwork,
   };
 };

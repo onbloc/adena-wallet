@@ -23,9 +23,9 @@ const SubHeader: React.FC<SubHeaderProps> = ({ title, leftElement, rightElement 
         </div>
       )}
 
-      <div className='title-wrapper'>
+      <h4 className='title-wrapper'>
         {title}
-      </div>
+      </h4>
 
       {rightElement && (
         <div className='icon-wrapper right' onClick={rightElement.onClick}>

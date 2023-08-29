@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-export const AddCustomNetworkButtonWrapper = styled.div`
+export const UnderlineTextButtonWrapper = styled.div`
   display: flex;
   flex-direction: row;
   flex-shrink: 0;

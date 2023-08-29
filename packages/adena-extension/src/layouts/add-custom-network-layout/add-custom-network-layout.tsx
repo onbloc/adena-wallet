@@ -10,9 +10,7 @@ const AddCustomNetworkLayout: React.FC<AddCustomNetworkLayoutProps> = ({
 }) => {
   return (
     <AddCustomNetworkLayoutWrapper>
-      <div className='add-custon-network-container'>
-        {addCustomNetwork}
-      </div>
+      {addCustomNetwork}
     </AddCustomNetworkLayoutWrapper>
   );
 };
