@@ -13,6 +13,16 @@ export const AdditionalTokenSearchListWrapper = styled.div`
     width: 100%;
     overflow-y: auto;
   }
+
+  .no-content {
+    display: flex;
+    width: 100%;
+    margin: 40px auto 180px auto;
+    color: ${({ theme }) => theme.color.neutral[9]};
+    ${({ theme }) => theme.fonts.body1Reg};
+    justify-content: center;
+    align-items: center;
+  }
 `;
 
 export const AdditionalTokenSearchListItemWrapper = styled.div`

@@ -1,12 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import Button, { ButtonHierarchy } from './button';
 import Text from '@components/text';
 
 interface BottomFixedButtonProps {
   hierarchy?: ButtonHierarchy;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown;
+  onClick: () => unknown;
   text?: string;
 }
 
@@ -15,12 +14,13 @@ const BottomFixedButton = ({
   onClick,
   text = 'Close',
 }: BottomFixedButtonProps) => {
-  const navigate = useNavigate();
-  const goBack = () => navigate(-1);
+  const onClickButton = useCallback(() => {
+    onClick();
+  }, [onClick]);
 
   return (
     <ButtonWrap>
-      <Button fullWidth hierarchy={hierarchy} onClick={onClick ? onClick : goBack}>
+      <Button fullWidth hierarchy={hierarchy} onClick={onClickButton}>
         <Text type='body1Bold'>{text}</Text>
       </Button>
     </ButtonWrap>

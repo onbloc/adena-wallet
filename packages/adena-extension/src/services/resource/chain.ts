@@ -41,12 +41,6 @@ export class ChainService {
       gnoUrl: rpcUrl,
       apiUrl: '',
       linkUrl: '',
-      token: {
-        denom: 'gnot',
-        unit: 1,
-        minimalDenom: 'ugnot',
-        minimalUnit: 0.000001,
-      },
     };
     return this.chainRepository.addNetwork(addedNetwork);
   };

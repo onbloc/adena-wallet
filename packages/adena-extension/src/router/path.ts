@@ -52,6 +52,7 @@ export enum RoutePath {
   ConnectedApps = '/settings/connected-apps',
   ChangeNetwork = '/settings/change-network',
   AddCustomNetwork = '/settings/change-network/add',
+  EditCustomNetwork = '/settings/change-network/edit',
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',

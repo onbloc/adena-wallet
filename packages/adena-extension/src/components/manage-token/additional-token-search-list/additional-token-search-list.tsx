@@ -32,7 +32,9 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({ t
     <AdditionalTokenSearchListWrapper>
       <div className='scroll-wrapper'>
         {
-          tokenInfos.map((tokenInfo, index) =>
+          tokenInfos.length === 0 ? (
+            <span className='no-content'>No Tokens to Search</span>
+          ) : tokenInfos.map((tokenInfo, index) =>
             <AdditionalTokenSearchListItem
               key={index}
               tokenId={tokenInfo.tokenId}

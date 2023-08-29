@@ -1,4 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
+import theme from './theme';
 
 export const GlobalStyle = createGlobalStyle`
   html, body {
@@ -89,5 +90,33 @@ export const GlobalStyle = createGlobalStyle`
     outline: none;
     list-style: none;
   };
+
+  h1 {
+    ${theme.fonts.header1}
+  }
+
+  h2 {
+    ${theme.fonts.header2}
+  }
+
+  h3 {
+    ${theme.fonts.header3}
+  }
+
+  h4 {
+    ${theme.fonts.header4}
+  }
+
+  h5 {
+    ${theme.fonts.header5}
+  }
+
+  h6 {
+    ${theme.fonts.header6}
+  }
+
+  h7 {
+    ${theme.fonts.header7}
+  }
 
 `;
