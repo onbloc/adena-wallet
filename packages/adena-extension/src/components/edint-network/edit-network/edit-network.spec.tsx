@@ -13,6 +13,7 @@ describe('EditNetwork Component', () => {
       rpcUrl: '',
       chainId: '',
       rpcUrlError: '',
+      savable: true,
       changeName: () => { return; },
       changeRPCUrl: () => { return; },
       changeChainId: () => { return; },

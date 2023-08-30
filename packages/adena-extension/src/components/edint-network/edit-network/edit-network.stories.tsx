@@ -13,6 +13,7 @@ export const Default: StoryObj<EditNetworkProps> = {
     rpcUrl: '',
     chainId: '',
     rpcUrlError: '',
+    savable: false,
     changeName: action('onChangeName'),
     changeRPCUrl: action('onChangeRPCUrl'),
     changeChainId: action('onChangeChainId'),
