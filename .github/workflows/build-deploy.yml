@@ -1,10 +1,8 @@
 name: Build And Deploy
+
 on:
-  workflow_run:
-    workflows: ['Pull Request Test']
+  push:
     branches: [release/*]
-    types:
-      - completed
 
 jobs:
   aws-deployment:
