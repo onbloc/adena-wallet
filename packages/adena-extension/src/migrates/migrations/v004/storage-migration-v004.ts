@@ -122,10 +122,11 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
   private migrateEstablishSites(establishSites: EstablishSitesModelV003): EstablishSitesModelV004 {
     const changedEstablishSites: EstablishSitesModelV004 = {};
     for (const accountId of Object.keys(establishSites)) {
-      const establishSitesOfAccount = establishSites[accountId].filter((establishSite, index) =>
-        establishSites[accountId].findIndex(
-          (current) => current.hostname === establishSite.hostname,
-        ),
+      const establishSitesOfAccount = establishSites[accountId].filter(
+        (establishSite, index) =>
+          establishSites[accountId].findIndex(
+            (current) => current.hostname === establishSite.hostname,
+          ) === index,
       );
       changedEstablishSites[accountId] = establishSitesOfAccount;
     }
