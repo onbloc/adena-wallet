@@ -10,6 +10,10 @@ const ChangeNetworkContainer: React.FC = () => {
   const { currentNetwork, networks, changeNetwork } = useNetwork();
   const { initTokenMetainfos } = useTokenMetainfo();
 
+  const displayNetworks = useMemo(() => {
+    return networks.filter(network => network.deleted !== true);
+  }, [networks])
+
   const loading = useMemo(() => {
     return networks.length === 0;
   }, [networks]);
@@ -41,7 +45,7 @@ const ChangeNetworkContainer: React.FC = () => {
     <ChangeNetwork
       loading={loading}
       currentNetworkId={currentNetwork.id}
-      networkMetainfos={networks}
+      networkMetainfos={displayNetworks}
       changeNetwork={changeNetworkAndRoutePage}
       moveAddPage={moveAddPage}
       moveEditPage={moveEditPage}

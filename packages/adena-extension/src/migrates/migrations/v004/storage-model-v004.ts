@@ -29,12 +29,7 @@ export type NetworksModelV004 = {
   gnoUrl: string;
   apiUrl: string;
   linkUrl: string;
-  token: {
-    denom: string;
-    unit: number;
-    minimalDenom: string;
-    minimalUnit: number;
-  };
+  deleted?: boolean;
 }[];
 
 export type CurrentChainIdModelV004 = string;

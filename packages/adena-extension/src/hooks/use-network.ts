@@ -79,7 +79,17 @@ export const useNetwork = (): NetworkResponse => {
 
   const deleteNetwork = useCallback(
     async (networkId: string) => {
-      const changedNetworks = networkMetainfos.filter((current) => current.id !== networkId);
+      const network = networkMetainfos.find((current) => current.id === networkId);
+      if (!network) {
+        return false;
+      }
+
+      const changedNetworks =
+        network.default || network.id === 'teritori'
+          ? networkMetainfos.map((current) =>
+              current.id === network.id ? { ...current, deleted: true } : current,
+            )
+          : networkMetainfos.filter((current) => current.id !== networkId);
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
       if (networkId === currentNetwork?.id) {
