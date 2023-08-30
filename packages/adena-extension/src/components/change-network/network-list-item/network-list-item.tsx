@@ -40,8 +40,7 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
         <div className='name-wrapper'>
           <span className='name'>{networkMetainfo.networkName}</span>
           <div className='icon-wrapper' onClick={onClickEditButton}>
-            {locked && <IconLock />}
-            {(locked === false && selected === false) && <IconEdit className='icon-edit' />}
+            {locked ? <IconLock /> : <IconEdit className='icon-edit' />}
           </div>
         </div>
         <div className='description-wrapper'>

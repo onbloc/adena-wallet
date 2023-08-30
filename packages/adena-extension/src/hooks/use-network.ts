@@ -59,7 +59,7 @@ export const useNetwork = (): NetworkResponse => {
       dispatchChangedEvent(changedNetwork);
       return true;
     },
-    [networkMetainfos, chainService],
+    [chainService, networkMetainfos, chainService],
   );
 
   const updateNetwork = useCallback(
@@ -69,9 +69,12 @@ export const useNetwork = (): NetworkResponse => {
       );
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+      if (network.id === currentNetwork?.id) {
+        await changeNetwork(network.id);
+      }
       return true;
     },
-    [networkMetainfos, chainService],
+    [networkMetainfos, chainService, changeNetwork],
   );
 
   const deleteNetwork = useCallback(
@@ -79,9 +82,12 @@ export const useNetwork = (): NetworkResponse => {
       const changedNetworks = networkMetainfos.filter((current) => current.id !== networkId);
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+      if (networkId === currentNetwork?.id) {
+        await changeNetwork(DEFAULT_NETWORK.id);
+      }
       return true;
     },
-    [networkMetainfos, chainService],
+    [networkMetainfos, chainService, currentNetwork],
   );
 
   const dispatchChangedEvent = useCallback(

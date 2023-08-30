@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { EditNetworkWrapper } from './edit-network.styles';
 import SubHeader from '@components/common/sub-header/sub-header';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
@@ -11,6 +11,7 @@ export interface EditNetworkProps {
   rpcUrl: string
   rpcUrlError?: string;
   chainId: string;
+  savable: boolean;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
   changeChainId: (chainId: string) => void;
@@ -24,6 +25,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   rpcUrl,
   chainId,
   rpcUrlError,
+  savable,
   changeName,
   changeRPCUrl,
   changeChainId,
@@ -32,27 +34,16 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   removeNetwork
 }) => {
 
-  const isSavable = useMemo(() => {
-    if (rpcUrlError) {
-      return false;
-    }
-    return (
-      name.length > 0 &&
-      rpcUrl.length > 0 &&
-      chainId.length > 0
-    );
-  }, [name, rpcUrl, chainId, rpcUrlError]);
-
   const onClickBack = useCallback(() => {
     moveBack();
-  }, [isSavable, moveBack])
+  }, [moveBack])
 
   const onClickSave = useCallback(() => {
-    if (!isSavable) {
+    if (!savable) {
       return;
     }
     saveNetwork();
-  }, [isSavable, saveNetwork])
+  }, [savable, saveNetwork])
 
   const onClickRemoveButton = useCallback(() => {
     removeNetwork();
@@ -88,7 +79,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
         }}
         rightButton={{
           primary: true,
-          disabled: !isSavable,
+          disabled: !savable,
           text: 'Save',
           onClick: onClickSave
         }}
