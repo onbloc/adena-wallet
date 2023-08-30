@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import EditNetwork from '@components/edint-network/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
@@ -35,6 +35,29 @@ const EditCustomNetworkConatiner: React.FC = () => {
     initInput(currentNetworkId);
   }, [currentNetworkId])
 
+  const originNetwork = useMemo(() => {
+    const currentNetwork = networks.find(network => network.id === currentNetworkId);
+    return currentNetwork;
+  }, [networks, currentNetworkId]);
+
+  const savable = useMemo(() => {
+    if (!originNetwork) {
+      return false;
+    }
+    if (
+      name === '' ||
+      rpcUrl === '' ||
+      chainId === ''
+    ) {
+      return false;
+    }
+    return (
+      originNetwork.networkName !== name ||
+      originNetwork.rpcUrl !== rpcUrl ||
+      originNetwork.networkId !== chainId
+    )
+  }, [originNetwork, name, rpcUrl, chainId]);
+
   function initInput(networkId: string) {
     const network = networks.find(current => current.id === networkId);
     if (network) {
@@ -50,8 +73,10 @@ const EditCustomNetworkConatiner: React.FC = () => {
       return;
     }
     if (existsRPCUrl(networks, rpcUrl)) {
-      setRPCUrlError('RPC URL already in use');
-      return;
+      if (originNetwork?.rpcUrl !== rpcUrl) {
+        setRPCUrlError('RPC URL already in use');
+        return;
+      }
     }
     const network = networks.find(current => current.id === currentNetworkId);
     if (network) {
@@ -66,7 +91,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
     }
     setRPCUrlError('');
     navigate(-1);
-  }, [networks, name, rpcUrl, chainId, currentNetworkId]);
+  }, [networks, name, rpcUrl, chainId, currentNetworkId, originNetwork]);
 
   const removeNetwork = useCallback(async () => {
     await deleteNetwork(currentNetworkId);
@@ -83,6 +108,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
       rpcUrl={rpcUrl}
       chainId={chainId}
       rpcUrlError={rpcUrlError}
+      savable={savable}
       changeName={changeName}
       changeRPCUrl={changeRPCUrl}
       changeChainId={changeChainId}
