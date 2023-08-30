@@ -6,9 +6,10 @@ import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
 import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
 import { GnoWallet } from '@gnolang/gno-js-client';
+import { NetworkMetainfo } from '@states/network';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
@@ -43,6 +44,12 @@ export const useTokenBalance = (): {
     balanceService.setTokenMetainfos(tokenMetainfos);
   }, [tokenMetainfos]);
 
+  const filteredAccountBalances = useMemo(() => {
+    return accountTokenBalances.filter((accountTokenBalance) =>
+      matchNetworkId(accountTokenBalance, currentNetwork),
+    );
+  }, [accountTokenBalances, currentNetwork]);
+
   const getTokenBalancesByAccount = useCallback(
     (account: Account) => {
       return (
@@ -54,30 +61,30 @@ export const useTokenBalance = (): {
     [accountTokenBalances],
   );
 
-  const getCurrentTokenBalances = useCallback(() => {
+  const currentTokenBalacnes = useMemo(() => {
     return currentAccount ? getTokenBalancesByAccount(currentAccount) : [];
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getMainTokenBalance = useCallback(() => {
-    return getCurrentTokenBalances().find((token) => token.main)?.amount;
+    return currentTokenBalacnes.find((token) => token.main)?.amount;
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getDisplayTokenBalances = useCallback(() => {
-    return getCurrentTokenBalances().filter(
-      (token) => token.networkId === currentNetwork.networkId || token.networkId === 'DEFAULT',
-    );
-  }, [getTokenBalancesByAccount, currentAccount?.id, currentNetwork.networkId]);
+    return currentTokenBalacnes.filter((token) => token.display);
+  }, [getTokenBalancesByAccount, currentAccount]);
 
-  function matchNetworkId(accountTokenBalance: AccountTokenBalance) {
+  function matchNetworkId(
+    accountTokenBalance: AccountTokenBalance,
+    currentNetwork: NetworkMetainfo,
+  ) {
     return accountTokenBalance.networkId === currentNetwork?.id;
   }
 
   function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
-    if (!account) return false;
+    if (!account || !matchNetworkId) return false;
     return (
-      (accountTokenBalance.accountId === account.id && matchNetworkId(accountTokenBalance)) ||
-      accountTokenBalance.networkId === 'DEFAULT' ||
-      accountTokenBalance.networkId === currentNetwork.networkId
+      accountTokenBalance.accountId === account.id &&
+      matchNetworkId(accountTokenBalance, currentNetwork)
     );
   }
 
@@ -110,7 +117,7 @@ export const useTokenBalance = (): {
     const newTokenBalances = tokenMetainfos
       .filter(
         (tokenMetainfo) =>
-          getCurrentTokenBalances().find((current) => current.tokenId === tokenMetainfo.tokenId) ===
+          currentTokenBalacnes.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
           undefined,
       )
       .map((tokenMetainfo) => {
@@ -127,7 +134,7 @@ export const useTokenBalance = (): {
       accountId: currentAccount.id,
       chainId: currentNetwork.chainId,
       networkId: currentNetwork.id,
-      tokenBalances: [...getCurrentTokenBalances(), ...newTokenBalances],
+      tokenBalances: [...currentTokenBalacnes, ...newTokenBalances],
     };
 
     let changedAccountTokenBalances: AccountTokenBalance[] = [...accountTokenBalances];
@@ -156,10 +163,16 @@ export const useTokenBalance = (): {
   ) {
     const tokenBalances =
       newAccountTokenBalances?.find(
-        (accountTokenBalance) => accountTokenBalance.accountId === account.id,
-      )?.tokenBalances || getCurrentTokenBalances();
+        (accountTokenBalance) =>
+          accountTokenBalance.accountId === account.id &&
+          accountTokenBalance.networkId === currentNetwork?.id,
+      )?.tokenBalances || currentTokenBalacnes;
+    const tokenBalancesOfNetwork = tokenBalances.filter(
+      (tokenBalance) =>
+        tokenBalance.networkId === 'DEFAULT' || tokenBalance.networkId === currentNetwork?.id,
+    );
     const fetchedTokenBalances = await Promise.all(
-      tokenBalances.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
+      tokenBalancesOfNetwork.map((tokenMetainfo) => fetchBalanceBy(account, tokenMetainfo)),
     );
 
     const changedAccountTokenBalances = (newAccountTokenBalances ?? accountTokenBalances).map(
@@ -280,9 +293,9 @@ export const useTokenBalance = (): {
 
   return {
     mainTokenBalance: getMainTokenBalance(),
-    tokenBalances: getCurrentTokenBalances(),
+    tokenBalances: currentTokenBalacnes,
     displayTokenBalances: getDisplayTokenBalances(),
-    accountTokenBalances: accountTokenBalances.filter(matchNetworkId),
+    accountTokenBalances: filteredAccountBalances,
     accountNativeBalances,
     getTokenBalancesByAccount,
     fetchBalanceBy,
