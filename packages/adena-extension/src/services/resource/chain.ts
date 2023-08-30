@@ -9,10 +9,6 @@ export class ChainService {
     this.chainRepository = chainRepository;
   }
 
-  public fetchNetworkMetainfos = () => {
-    return this.chainRepository.fetchNetworkMetainfos();
-  };
-
   public getNetworks = async () => {
     const networks = await this.chainRepository.getNetworks();
     if (networks.length > 0) {

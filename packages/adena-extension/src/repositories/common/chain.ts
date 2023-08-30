@@ -35,11 +35,11 @@ export class ChainRepository {
       return fetchedNetworks;
     }
 
-    function isDefaultNetwork(network: NetworkMetainfo) {
-      return network.default;
-    }
-    const defaultNetworks = fetchedNetworks.filter(isDefaultNetwork);
-    const customNetworks = networks.filter((network) => !isDefaultNetwork(network));
+    const defaultNetworks = fetchedNetworks.filter(
+      (network) =>
+        network.default || networks?.find((current) => current.id === network.id) === undefined,
+    );
+    const customNetworks = networks.filter((network) => network.default === false);
     return [...defaultNetworks, ...customNetworks];
   };
 
