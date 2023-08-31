@@ -13,6 +13,7 @@ export interface NetworkMetainfo {
   gnoUrl: string;
   apiUrl: string;
   linkUrl: string;
+  deleted?: boolean;
 }
 
 export const networkMetainfos = atom<NetworkMetainfo[]>({

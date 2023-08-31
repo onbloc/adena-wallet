@@ -25,6 +25,7 @@ export class NetworkMetainfoMapper {
   private static mappedNetworkMetainfo(chainMetainfoItem: ChainMetainfoItem): NetworkMetainfo {
     return {
       ...chainMetainfoItem,
+      deleted: false,
     };
   }
 }
