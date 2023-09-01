@@ -17,6 +17,14 @@ const MESSAGE_TYPES = {
     code: 0,
     description: 'Sign Amino',
   },
+  ADD_NETWORK: {
+    code: 0,
+    description: 'Add Network',
+  },
+  SWITCH_NETWORK: {
+    code: 0,
+    description: 'Switch Network',
+  },
   NOT_CONNECTED: {
     code: 1000,
     description: 'A connection has not been established.',
@@ -53,6 +61,14 @@ const MESSAGE_TYPES = {
     code: 4000,
     description: 'The connection request has been rejected by the user.',
   },
+  SWITCH_NETWORK_REJECTED: {
+    code: 4000,
+    description: 'Switching the network has been rejected by the user.',
+  },
+  ADD_NETWORK_REJECTED: {
+    code: 4000,
+    description: 'Adding a network has been rejected by the user.',
+  },
   TRANSACTION_FAILED: {
     code: 4001,
     description: 'Adena could not execute the transaction.',
@@ -68,6 +84,18 @@ const MESSAGE_TYPES = {
   NETWORK_TIMEOUT: {
     code: 4001,
     description: 'The network response has timed out.',
+  },
+  REDUNDANT_CHANGE_REQUEST: {
+    code: 4001,
+    description: 'Unable to change to the current network.',
+  },
+  NETWORK_ALREADY_EXISTS: {
+    code: 4001,
+    description: 'The network already exists.',
+  },
+  UNADDED_NETWORK: {
+    code: 4001,
+    description: 'The network has not been added on Adena.',
   },
   UNSUPPORTED_TYPE: {
     code: 4005,
@@ -88,6 +116,14 @@ const MESSAGE_TYPES = {
   SIGN_SUCCESS: {
     code: 0,
     description: 'Signature hash has been successfully generated.',
+  },
+  ADD_NETWORK_SUCCESS: {
+    code: 0,
+    description: 'The network has been successfully added.',
+  },
+  SWITCH_NETWORK_SUCCESS: {
+    code: 0,
+    description: 'The network has been successfully changed.',
   },
   TRANSACTION_SUCCESS: {
     code: 0,
