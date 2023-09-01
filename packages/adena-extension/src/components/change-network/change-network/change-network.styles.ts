@@ -8,7 +8,7 @@ export const ChangeNetworkWrapper = styled.div`
 
   .content-wrapper {
     padding: 12px 20px;
-    margin-bottom: 96px;
+    margin-bottom: 84px;
 
     .title {
       margin: 12px 0;
