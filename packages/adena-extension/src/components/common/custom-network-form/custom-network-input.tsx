@@ -6,6 +6,7 @@ export interface CustomNetworkInputProps {
   rpcUrl: string
   rpcUrlError?: string;
   chainId: string;
+  chainIdError?: string;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
   changeChainId: (chainId: string) => void;
@@ -16,6 +17,7 @@ const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
   rpcUrl,
   chainId,
   rpcUrlError,
+  chainIdError,
   changeName,
   changeRPCUrl,
   changeChainId,
@@ -26,11 +28,11 @@ const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
   }, [])
 
   const onChangeRPCUrl = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeRPCUrl(event.target.value);
+    changeRPCUrl(event.target.value.replace(/ /g, ''));
   }, [])
 
   const onChangeChainId = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeChainId(event.target.value);
+    changeChainId(event.target.value.replace(/ /g, ''));
   }, [])
 
   return (
@@ -67,6 +69,10 @@ const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
             placeholder='Chain ID'
           />
         </div>
+        {
+          chainIdError &&
+          <span className='error-message'>{chainIdError}</span>
+        }
       </div>
     </CustomNetworkInputWrapper>
   );

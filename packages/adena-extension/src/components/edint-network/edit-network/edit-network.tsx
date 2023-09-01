@@ -10,6 +10,7 @@ export interface EditNetworkProps {
   name: string;
   rpcUrl: string
   rpcUrlError?: string;
+  chainIdError?: string;
   chainId: string;
   savable: boolean;
   changeName: (name: string) => void;
@@ -25,6 +26,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   rpcUrl,
   chainId,
   rpcUrlError,
+  chainIdError,
   savable,
   changeName,
   changeRPCUrl,
@@ -65,6 +67,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
             rpcUrl={rpcUrl}
             chainId={chainId}
             rpcUrlError={rpcUrlError}
+            chainIdError={chainIdError}
             changeName={changeName}
             changeRPCUrl={changeRPCUrl}
             changeChainId={changeChainId}
