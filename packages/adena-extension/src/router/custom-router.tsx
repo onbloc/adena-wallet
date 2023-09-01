@@ -69,6 +69,8 @@ import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-load
 import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
 import ChangeNetwork from '@pages/certify/change-network';
 import EditCustomNetworkPage from '@pages/wallet/edit-custom-network';
+import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network/approve-changing-network';
+import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network/approve-adding-network';
 
 export const CustomRouter = () => {
   const { wallet } = useWalletContext();
@@ -121,6 +123,8 @@ export const CustomRouter = () => {
           <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
+          <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
+          <Route path={RoutePath.ApproveAddingNetwork} element={<ApproveAddingNetworkPage />} />
           <Route path={RoutePath.ConnectedApps} element={<ConnectedApps />} />
           <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
           <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
