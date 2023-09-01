@@ -3,7 +3,7 @@ import styled, { CSSProperties } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 
-type WarningKeyType = 'revealPassword' | 'revealPrivate' | 'approachPassword' | 'approachPrivate' | 'approachNetwork';
+type WarningKeyType = 'revealPassword' | 'revealPrivate' | 'approachPassword' | 'approachPrivate' | 'approachNetwork' | 'addingNetwork';
 
 interface TextProperty {
   title?: string;
@@ -42,6 +42,10 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
     title: 'Approach with caution!',
     subTitle:
       'A malicious network provider can lie about the state of the blockchain.\nOnly add custom networks you trust.',
+  },
+  addingNetwork: {
+    subTitle:
+      'You’re adding an unverified network.\nAdena doesn’t verify custom networks.\nOnly add networks that you trust.',
   },
 };
 

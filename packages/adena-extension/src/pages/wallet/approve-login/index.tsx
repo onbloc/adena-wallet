@@ -108,6 +108,12 @@ export const ApproveLogin = () => {
       case 'SIGN_AMINO':
         navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
         break;
+      case 'ADD_NETWORK':
+        navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
+        break;
+      case 'SWITCH_NETWORK':
+        navigate(RoutePath.ApproveChangingNetwork + location.search, { state: { requestData } });
+        break;
       default:
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData),

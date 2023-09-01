@@ -74,7 +74,7 @@ export class MessageHandler {
           })
           .catch((e) => {
             sendResponse(
-              InjectionMessageInstance.success(
+              InjectionMessageInstance.failure(
                 'UNRESOLVED_TRANSACTION_EXISTS',
                 message,
                 message.key,
@@ -84,6 +84,26 @@ export class MessageHandler {
         break;
       case 'ADD_ESTABLISH':
         HandlerMethod.addEstablish(message, sendResponse);
+        break;
+      case 'ADD_NETWORK':
+        HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.addNetwork(message, sendResponse);
+          }
+        });
+        break;
+      case 'SWITCH_NETWORK':
+        HandlerMethod.checkEstablished(message, sendResponse)
+          .then((isEstablished) => {
+            if (isEstablished) {
+              HandlerMethod.switchNetwork(message, sendResponse);
+            }
+          })
+          .catch((e) => {
+            sendResponse(
+              InjectionMessageInstance.failure('UNEXPECTED_ERROR', message, message.key),
+            );
+          });
         break;
       case 'SIGN_AMINO':
         HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {

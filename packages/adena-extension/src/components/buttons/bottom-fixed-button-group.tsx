@@ -13,6 +13,7 @@ interface ButtonProps {
 interface BottomFixedButtonGroupProps {
   leftButton: ButtonProps,
   rightButton: ButtonProps,
+  fill?: boolean;
 }
 
 function mapClassName(buttonProps: ButtonProps) {
@@ -22,6 +23,7 @@ function mapClassName(buttonProps: ButtonProps) {
 const BottomFixedButtonGroup = ({
   leftButton,
   rightButton,
+  fill
 }: BottomFixedButtonGroupProps) => {
 
   const leftClassName = useMemo(() => {
@@ -41,7 +43,7 @@ const BottomFixedButtonGroup = ({
   }, [rightButton]);
 
   return (
-    <ButtonWrap>
+    <ButtonWrap fill={fill}>
       <Button
         className={leftClassName}
         fullWidth
@@ -60,15 +62,19 @@ const BottomFixedButtonGroup = ({
   );
 };
 
-const ButtonWrap = styled.div`
+const ButtonWrap = styled.div<{ fill?: boolean }>`
   ${({ theme }) => theme.mixins.flexbox('row', 'flex-start', 'center')};
   position: fixed;
-  bottom: 24px;
   left: 0px;
   width: 100%;
-  height: 48px;
-  padding: 0px 20px;
+  padding: 0 20px;
+  height: ${({ fill }) => fill ? '96px' : '48px'};
+  bottom: ${({ fill }) => fill ? '0' : '24px'};
+  ${({ fill }) => fill && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
+  ${({ fill }) => fill && 'align-items: center;'}
+  background-color: ${({ fill, theme }) => fill ? theme.color.neutral[7] : 'transparent'};
   z-index: 1;
+  
 
   & > button {
     margin-right: 10px;

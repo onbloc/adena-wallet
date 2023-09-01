@@ -9,6 +9,12 @@ import {
 
 type Params = { [key in string]: any };
 
+export interface RequestAddedNetworkMessage {
+  chainId: string;
+  chainName: string;
+  rpcUrl: string;
+}
+
 export interface RequestDocontractMessage {
   messages: Array<{
     type: string;
@@ -49,14 +55,14 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public AddEstablish = (name?: string) => {
+  public addEstablish = (name?: string) => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_ESTABLISH', {
       name: name ?? 'Unknown',
     });
     return this.sendEventMessage(eventMessage);
   };
 
-  public DoContract = (params: RequestDocontractMessage) => {
+  public doContract = (params: RequestDocontractMessage) => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -65,17 +71,27 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public GetAccount = () => {
+  public getAccount = () => {
     const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
     return this.sendEventMessage(eventMessage);
   };
 
-  public SignAmino = (params: RequestDocontractMessage) => {
+  public signAmino = (params: RequestDocontractMessage) => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
     const eventMessage = AdenaExecutor.createEventMessage('SIGN_AMINO', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public addNetwork = (chain: RequestAddedNetworkMessage) => {
+    const eventMessage = AdenaExecutor.createEventMessage('ADD_NETWORK', { ...chain });
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public switchNetwork = (chainId: string) => {
+    const eventMessage = AdenaExecutor.createEventMessage('SWITCH_NETWORK', { chainId });
     return this.sendEventMessage(eventMessage);
   };
 
