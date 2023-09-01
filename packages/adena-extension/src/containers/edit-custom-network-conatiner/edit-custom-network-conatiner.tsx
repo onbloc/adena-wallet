@@ -11,8 +11,13 @@ function isValidURL(rpcURL: string) {
   return regExp.test(rpcURL);
 }
 
-function existsRPCUrl(networks: NetworkMetainfo[], rpcURL: string) {
-  return networks.some(network => network.rpcUrl === rpcURL);
+function existsChainId(chainId: string, networks: NetworkMetainfo[]) {
+  return networks.findIndex(netowrk => netowrk.networkId === chainId && netowrk.deleted !== true) > -1;
+}
+
+function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]) {
+  const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
+  return networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true) > -1;
 }
 
 const EditCustomNetworkConatiner: React.FC = () => {
@@ -25,10 +30,12 @@ const EditCustomNetworkConatiner: React.FC = () => {
     rpcUrl,
     chainId,
     rpcUrlError,
-    setRPCUrlError,
+    chainIdError,
     changeName,
     changeRPCUrl,
     changeChainId,
+    setRPCUrlError,
+    setChainIdError,
   } = useCustomNetworkInput();
 
   useEffect(() => {
@@ -72,7 +79,13 @@ const EditCustomNetworkConatiner: React.FC = () => {
       setRPCUrlError('Invalid URL');
       return;
     }
-    if (existsRPCUrl(networks, rpcUrl)) {
+    if (existsChainId(chainId, networks)) {
+      if (originNetwork?.chainId !== chainId) {
+        setChainIdError('Chain ID already in use');
+        return;
+      }
+    }
+    if (existsRPCUrl(rpcUrl, networks)) {
       if (originNetwork?.rpcUrl !== rpcUrl) {
         setRPCUrlError('RPC URL already in use');
         return;
@@ -90,6 +103,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
       });
     }
     setRPCUrlError('');
+    setChainIdError('');
     navigate(-1);
   }, [networks, name, rpcUrl, chainId, currentNetworkId, originNetwork]);
 
@@ -108,6 +122,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
       rpcUrl={rpcUrl}
       chainId={chainId}
       rpcUrlError={rpcUrlError}
+      chainIdError={chainIdError}
       savable={savable}
       changeName={changeName}
       changeRPCUrl={changeRPCUrl}

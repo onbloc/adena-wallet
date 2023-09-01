@@ -30,7 +30,7 @@ export const NetworkListItemWrapper = styled.div`
 
       .name {
         display: block;
-        max-width: 100%;
+        max-width: 236px;
         color: ${({ theme }) => theme.color.neutral[0]};
 
         overflow: hidden;
@@ -39,7 +39,7 @@ export const NetworkListItemWrapper = styled.div`
 
       .icon-wrapper {
         display: flex;
-        margin: 0 5px;
+        margin-left: 7px;
 
         & svg {
           width: 12px;
@@ -47,9 +47,6 @@ export const NetworkListItemWrapper = styled.div`
         }
 
         & .icon-edit {
-          width: 10px;
-          height: 10px;
-
           path {
             transition: 0.2s;
             fill: ${({ theme }) => theme.color.neutral[9]};
@@ -71,7 +68,7 @@ export const NetworkListItemWrapper = styled.div`
 
       .description {
         display: block;
-        max-width: 100%;
+        max-width: 244px;
         color: ${({ theme }) => theme.color.neutral[9]};
         font-weight: 400;
         overflow: hidden;

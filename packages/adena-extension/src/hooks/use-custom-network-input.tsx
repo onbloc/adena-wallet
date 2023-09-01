@@ -5,6 +5,7 @@ export const useCustomNetworkInput = () => {
   const [rpcUrl, setRPCUrl] = useState('');
   const [chainId, setChainId] = useState('');
   const [rpcUrlError, setRPCUrlError] = useState('');
+  const [chainIdError, setChainIdError] = useState('');
 
   const changeName = useCallback((name: string) => {
     setName(name.trim());
@@ -17,6 +18,7 @@ export const useCustomNetworkInput = () => {
 
   const changeChainId = useCallback((chainId: string) => {
     setChainId(chainId.trim());
+    setChainIdError('');
   }, [setChainId]);
 
   return {
@@ -24,9 +26,11 @@ export const useCustomNetworkInput = () => {
     rpcUrl,
     chainId,
     rpcUrlError,
+    chainIdError,
     changeName,
     changeRPCUrl,
     changeChainId,
     setRPCUrlError,
+    setChainIdError,
   };
 };

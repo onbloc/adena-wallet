@@ -11,6 +11,7 @@ export interface AddCustomNetworkProps {
   rpcUrl: string
   rpcUrlError?: string;
   chainId: string;
+  chainIdError?: string;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
   changeChainId: (chainId: string) => void;
@@ -24,6 +25,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
   rpcUrl,
   rpcUrlError,
   chainId,
+  chainIdError,
   changeName,
   changeRPCUrl,
   changeChainId,
@@ -64,7 +66,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
         title='Add Custom Network'
         leftElement={{
           element: <img src={LeftArrowIcon} alt={'back icon'} />,
-          onClick: moveBack
+          onClick: onClickBack
         }}
       />
       <WarningBox
@@ -80,6 +82,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
         changeRPCUrl={changeRPCUrl}
         changeChainId={changeChainId}
         rpcUrlError={rpcUrlError}
+        chainIdError={chainIdError}
       />
       <BottomFixedButtonGroup
         leftButton={{

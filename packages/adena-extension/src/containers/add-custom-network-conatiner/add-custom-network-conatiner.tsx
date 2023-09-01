@@ -10,9 +10,13 @@ function isValidURL(rpcUrl: string) {
   return regExp.test(rpcUrl);
 }
 
-function existsRPCUrl(networks: NetworkMetainfo[], rpcUrl: string) {
-  const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-  return networks.some(network => network.rpcUrl === changedRpcUrl);
+function existsChainId(chainId: string, networks: NetworkMetainfo[]) {
+  return networks.findIndex(netowrk => netowrk.networkId === chainId && netowrk.deleted !== true) > -1;
+}
+
+function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]) {
+  const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
+  return networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true) > -1;
 }
 
 const AddCustomNetworkConatiner: React.FC = () => {
@@ -23,10 +27,12 @@ const AddCustomNetworkConatiner: React.FC = () => {
     rpcUrl,
     chainId,
     rpcUrlError,
-    setRPCUrlError,
+    chainIdError,
     changeName,
     changeRPCUrl,
     changeChainId,
+    setRPCUrlError,
+    setChainIdError,
   } = useCustomNetworkInput();
 
   const save = useCallback(async () => {
@@ -34,7 +40,11 @@ const AddCustomNetworkConatiner: React.FC = () => {
       setRPCUrlError('Invalid URL');
       return;
     }
-    if (existsRPCUrl(networks, rpcUrl)) {
+    if (existsChainId(chainId, networks)) {
+      setChainIdError('Chain ID already in use');
+      return;
+    }
+    if (existsRPCUrl(rpcUrl, networks)) {
       setRPCUrlError('RPC URL already in use');
       return;
     }
@@ -56,6 +66,7 @@ const AddCustomNetworkConatiner: React.FC = () => {
       rpcUrl={rpcUrl}
       chainId={chainId}
       rpcUrlError={rpcUrlError}
+      chainIdError={chainIdError}
       changeName={changeName}
       changeRPCUrl={changeRPCUrl}
       changeChainId={changeChainId}
