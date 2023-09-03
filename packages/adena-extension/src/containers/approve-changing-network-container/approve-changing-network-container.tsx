@@ -31,7 +31,18 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   };
 
   const onClickChangeNetwork = useCallback(async () => {
-    await changeNetwork(chainId);
+    const network = networks.find(network => network.chainId === chainId);
+    if (!network) {
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.failure(
+          'UNADDED_NETWORK',
+          requestData?.data,
+          requestData?.key,
+        ),
+      );
+      return;
+    }
+    await changeNetwork(network.id);
     chrome.runtime.sendMessage(
       InjectionMessageInstance.success(
         'SWITCH_NETWORK_SUCCESS',
@@ -39,7 +50,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
         requestData?.key,
       ),
     );
-  }, [changeNetwork, requestData, chainId]);
+  }, [changeNetwork, requestData, chainId, networks]);
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(

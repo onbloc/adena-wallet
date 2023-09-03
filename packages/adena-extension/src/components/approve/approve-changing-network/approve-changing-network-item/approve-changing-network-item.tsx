@@ -14,7 +14,9 @@ const ApproveChangingNetworkItem: React.FC<ApproveChangingNetworkItemProps> = ({
   return (
     <ApproveChangingNetworkItemWrapper>
       <img src={logo || UnknownLogo} alt='logo' />
-      <span className='chain-name'>{name}</span>
+      <div className='chain-name-wrapper'>
+        <span className='chain-name'>{name}</span>
+      </div>
     </ApproveChangingNetworkItemWrapper>
   );
 };
