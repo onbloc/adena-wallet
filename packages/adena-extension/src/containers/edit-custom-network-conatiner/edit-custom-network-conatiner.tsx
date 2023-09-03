@@ -75,21 +75,25 @@ const EditCustomNetworkConatiner: React.FC = () => {
   }
 
   const saveNetwork = useCallback(async () => {
+    let isValid = true;
     if (!isValidURL(rpcUrl)) {
+      isValid = false;
       setRPCUrlError('Invalid URL');
-      return;
     }
     if (existsChainId(chainId, networks)) {
       if (originNetwork?.chainId !== chainId) {
+        isValid = false;
         setChainIdError('Chain ID already in use');
-        return;
       }
     }
     if (existsRPCUrl(rpcUrl, networks)) {
       if (originNetwork?.rpcUrl !== rpcUrl) {
+        isValid = false;
         setRPCUrlError('RPC URL already in use');
-        return;
       }
+    }
+    if (!isValid) {
+      return;
     }
     const network = networks.find(current => current.id === currentNetworkId);
     if (network) {
