@@ -30,8 +30,7 @@ export const addNetwork = async (
     const existNetwork =
       networks.findIndex(
         (current) =>
-          !existsChainId(current, chainId) &&
-          !existsRPCUrl(current, chainId) &&
+          (existsChainId(current, chainId) || existsRPCUrl(current, chainId)) &&
           current.deleted !== true,
       ) > -1;
     if (existNetwork) {
