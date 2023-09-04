@@ -47,6 +47,7 @@ export const decorators: Decorator[] = [
         <GlobalStyle />
         <RecoilRoot>
           <ThemeProvider theme={theme}>
+            <div id='portal-popup'></div>
             <Story />
           </ThemeProvider>
         </RecoilRoot>
