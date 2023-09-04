@@ -8,7 +8,8 @@ function existsChainId(network: NetworkMetainfo, chainId: string) {
   return network.chainId === chainId;
 }
 function existsRPCUrl(network: NetworkMetainfo, rpcUrl: string) {
-  return network.rpcUrl === rpcUrl;
+  const parsedRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
+  return network.rpcUrl === parsedRPCUrl;
 }
 
 export const addNetwork = async (
@@ -30,7 +31,7 @@ export const addNetwork = async (
     const existNetwork =
       networks.findIndex(
         (current) =>
-          (existsChainId(current, chainId) || existsRPCUrl(current, chainId)) &&
+          (existsChainId(current, chainId) || existsRPCUrl(current, rpcUrl)) &&
           current.deleted !== true,
       ) > -1;
     if (existNetwork) {
