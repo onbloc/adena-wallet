@@ -40,7 +40,8 @@ export const useNetwork = (): NetworkResponse => {
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
       const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-      await chainService.addGnoNetwork(name, changedRpcUrl, chainId);
+      const parsedName = name.trim();
+      await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId);
       const networkMetainfos = await chainService.getNetworks();
       setNetworkMetainfos(networkMetainfos);
     },
