@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -27,6 +27,8 @@ function mappedTransactionData(document: StdSignDoc) {
   }
 }
 
+const DEFAULT_DENOM = 'GNOT';
+
 const ApproveSignContainer: React.FC = () => {
   const navigate = useNavigate();
   const { gnoProvider } = useWalletContext();
@@ -42,6 +44,24 @@ const ApproveSignContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
+
+  const networkFee = useMemo(() => {
+    if (!document || document.fee.amount.length === 0) {
+      return {
+        amount: '1',
+        denom: DEFAULT_DENOM
+      };
+    }
+    const networkFeeAmount = document.fee.amount[0].amount;
+    const networkFeeAmountOfGnot =
+      BigNumber(networkFeeAmount)
+        .shiftedBy(-6)
+        .toString();
+    return {
+      amount: networkFeeAmountOfGnot,
+      denom: DEFAULT_DENOM
+    };
+  }, [document]);
 
   useEffect(() => {
     checkLockWallet();
@@ -119,11 +139,6 @@ const ApproveSignContainer: React.FC = () => {
     return false;
   };
 
-  const getNetworkFee = useCallback(() => {
-    const networkFeeAmount = BigNumber(document?.fee.amount[0]?.amount ?? 1).shiftedBy(-6);
-    return `${networkFeeAmount} GNOT`;
-  }, [document]);
-
   const sendTransaction = async () => {
     if (!document || !currentAccount) {
       chrome.runtime.sendMessage(
@@ -198,7 +213,7 @@ const ApproveSignContainer: React.FC = () => {
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
       logo={favicon}
-      networkFee={getNetworkFee()}
+      networkFee={networkFee}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
       onToggleTransactionData={onToggleTransactionData}

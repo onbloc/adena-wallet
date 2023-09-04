@@ -56,10 +56,18 @@ export class TransactionService {
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),
     ]).catch(() => [null, null]);
-    if (accountSequence === null || accountNumber === null) {
-      throw new Error('Connection Error');
-    }
     const gasAmount = await this.getGasAmount(gasFee);
+    if (accountSequence === null || accountNumber === null) {
+      return Document.createDocument(
+        `-1`,
+        `-1`,
+        chainId,
+        messages,
+        `${gasWanted}`,
+        gasAmount,
+        memo || '',
+      );
+    }
     return Document.createDocument(
       `${accountNumber}`,
       `${accountSequence}`,

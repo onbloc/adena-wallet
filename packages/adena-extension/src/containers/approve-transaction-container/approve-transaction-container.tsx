@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -38,11 +38,13 @@ const checkHealth = (rpcUrl: string, requestKey?: string) => setTimeout(async ()
   }
 }, 5000);
 
+const DEFAULT_DENOM = 'GNOT';
+
 const ApproveTransactionContainer: React.FC = () => {
   const navigate = useNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
@@ -53,6 +55,31 @@ const ApproveTransactionContainer: React.FC = () => {
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
   const { currentNetwork } = useNetwork();
+  const [currentBalance, setCurrentBalance] = useState(0);
+
+  const networkFee = useMemo(() => {
+    if (!document || document.fee.amount.length === 0) {
+      return {
+        amount: '1',
+        denom: DEFAULT_DENOM
+      };
+    }
+    const networkFeeAmount = document.fee.amount[0].amount;
+    const networkFeeAmountOfGnot =
+      BigNumber(networkFeeAmount)
+        .shiftedBy(-6)
+        .toString();
+    return {
+      amount: networkFeeAmountOfGnot,
+      denom: DEFAULT_DENOM
+    };
+  }, [document]);
+
+  const isErrorNetworkFee = useMemo(() => {
+    return BigNumber(currentBalance)
+      .shiftedBy(-6)
+      .isLessThan(networkFee.amount);
+  }, [currentBalance, networkFee]);
 
   useEffect(() => {
     checkLockWallet();
@@ -79,6 +106,7 @@ const ApproveTransactionContainer: React.FC = () => {
       if (validate(currentAccount, requestData)) {
         initFavicon();
         initTransactionData();
+        initBalance();
       }
     }
   }, [currentAccount, requestData, gnoProvider]);
@@ -96,6 +124,13 @@ const ApproveTransactionContainer: React.FC = () => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
     setFavicon(faviconData);
   };
+
+  const initBalance = useCallback(() => {
+    if (!currentAddress || !gnoProvider) {
+      return;
+    }
+    gnoProvider.getBalance(currentAddress, 'ugnot').then(setCurrentBalance);
+  }, [currentAddress, gnoProvider]);
 
   const initTransactionData = async () => {
     if (!currentNetwork || !currentAccount || !requestData) {
@@ -115,7 +150,6 @@ const ApproveTransactionContainer: React.FC = () => {
       setHostname(requestData?.hostname ?? '');
       return true;
     } catch (e) {
-      console.log(e);
       const error: any = e;
       if (error?.message === 'Connection Error') {
         checkHealth(currentNetwork.rpcUrl, requestData.key);
@@ -133,12 +167,10 @@ const ApproveTransactionContainer: React.FC = () => {
     return false;
   };
 
-  const getNetworkFee = useCallback(() => {
-    const networkFeeAmount = BigNumber(document?.fee.amount[0]?.amount ?? 1).shiftedBy(-6);
-    return `${networkFeeAmount} GNOT`;
-  }, [document]);
-
   const sendTransaction = async () => {
+    if (isErrorNetworkFee) {
+      return false;
+    }
     if (!document || !currentNetwork || !currentAccount) {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key),
@@ -204,6 +236,7 @@ const ApproveTransactionContainer: React.FC = () => {
     if (!currentAccount) {
       return;
     }
+
     if (isLedgerAccount(currentAccount)) {
       navigate(RoutePath.ApproveTransactionLoading, {
         state: {
@@ -229,7 +262,8 @@ const ApproveTransactionContainer: React.FC = () => {
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
       logo={favicon}
-      networkFee={getNetworkFee()}
+      isErrorNetworkFee={isErrorNetworkFee}
+      networkFee={networkFee}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
       onToggleTransactionData={onToggleTransactionData}
