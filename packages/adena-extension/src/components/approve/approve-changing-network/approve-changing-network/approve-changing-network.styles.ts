@@ -12,6 +12,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
   h4 {
     display: -webkit-box;
     max-width: 100%;
+    text-align: center;
     text-overflow: ellipsis;
     overflow: hidden;
     word-break: break-all;
