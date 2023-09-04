@@ -31,7 +31,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   };
 
   const onClickChangeNetwork = useCallback(async () => {
-    const network = networks.find(network => network.chainId === chainId);
+    const network = networks.find(network => network.chainId === chainId && network.deleted !== true);
     if (!network) {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
