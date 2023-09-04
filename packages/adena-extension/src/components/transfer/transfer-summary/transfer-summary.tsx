@@ -18,6 +18,7 @@ export interface TransferSummaryProps {
     value: string;
     denom: string;
   };
+  isErrorNetworkFee?: boolean;
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
@@ -29,6 +30,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   transferBalance,
   toAddress,
   networkFee,
+  isErrorNetworkFee,
   onClickBack,
   onClickCancel,
   onClickSend,
@@ -60,9 +62,15 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
       <div className='network-fee-wrapper'>
         <TransferSummaryNetworkFee
+          isError={isErrorNetworkFee}
           value={networkFee.value}
           denom={networkFee.denom}
         />
+        {
+          isErrorNetworkFee && (
+            <span className='error-message'>Insufficient network fee</span>
+          )
+        }
       </div>
 
       <div className='button-group'>

@@ -5,7 +5,7 @@ import { RoutePath } from '@router/path';
 import { Amount } from '@states/balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import BigNumber from 'bignumber.js';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
 import { isLedgerAccount } from 'adena-module';
@@ -21,12 +21,14 @@ interface TransferSummaryInfo {
 
 const TransferSummaryContainer: React.FC = () => {
   const navigate = useNavigate();
+  const { gnoProvider } = useWalletContext();
   const { state } = useLocation();
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state)
   const [isSent, setIsSent] = useState(false);
+  const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
 
   useEffect(() => {
     setSummaryInfo(state);
@@ -71,7 +73,7 @@ const TransferSummaryContainer: React.FC = () => {
   }, [summaryInfo, currentAddress]);
 
   const createDocument = useCallback(async () => {
-    if (!currentNetwork || !currentAccount) {
+    if (!currentNetwork || !currentAccount || !currentAddress) {
       return null;
     }
     const { tokenMetainfo, networkFee } = summaryInfo;
@@ -101,10 +103,27 @@ const TransferSummaryContainer: React.FC = () => {
     return transactionService.sendTransaction(transaction);
   }, [summaryInfo, currentAccount, currentAccount]);
 
+  const hasNetworkFee = useCallback(async () => {
+    if (!gnoProvider || !currentAddress) {
+      return false;
+    }
+
+    const currentBalance = await gnoProvider.getBalance(currentAddress, 'ugnot');
+    const networkFee = summaryInfo.networkFee.value;
+    return BigNumber(currentBalance).shiftedBy(-6).isGreaterThanOrEqualTo(networkFee);
+  }, [gnoProvider, currentAddress, summaryInfo])
+
   const transfer = useCallback(async () => {
     if (isSent || !currentAccount) {
       return false;
     }
+
+    const isNetworkFee = await hasNetworkFee();
+    if (!isNetworkFee) {
+      setIsErrorNetworkFee(true);
+      return false;
+    }
+
     setIsSent(true);
     if (isLedgerAccount(currentAccount)) {
       return transferByLedger();
@@ -158,6 +177,7 @@ const TransferSummaryContainer: React.FC = () => {
       tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
       toAddress={summaryInfo.toAddress}
       transferBalance={getTransferBalance()}
+      isErrorNetworkFee={isErrorNetworkFee}
       networkFee={summaryInfo.networkFee}
       onClickBack={onClickBack}
       onClickCancel={onClickCancel}
