@@ -24,6 +24,11 @@ const menuMakerInfo = [
     mode: 'DEFAULT',
   },
   {
+    title: 'Help & Support',
+    navigatePath: 'https://docs.adena.app/resources/faq',
+    mode: 'DEFAULT',
+  },
+  {
     title: 'Terms of Use',
     navigatePath: 'https://adena.app/terms',
     mode: 'DEFAULT',

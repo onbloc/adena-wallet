@@ -41,7 +41,6 @@ export const Navigation = () => {
   const explore = useMatch(RoutePath.Explore);
   const nft = useMatch(RoutePath.Nft);
   const history = useMatch(RoutePath.History);
-  const settings = useMatch(RoutePath.Setting);
   const tokenDetails = useMatch(RoutePath.TokenDetails);
   const [state] = useRecoilState(WalletState.state);
   const [walletState] = useRecoilState(WalletState.state);
@@ -69,17 +68,12 @@ export const Navigation = () => {
       currAddress: history,
       routingAddress: RoutePath.History,
     },
-    {
-      iconName: 'iconSetting',
-      currAddress: settings,
-      routingAddress: RoutePath.Setting,
-    },
   ];
 
   const loadingComplete = walletState === 'FINISH';
 
   const isRender = () => {
-    if (wallet || tokenDetails || nft || explore || history || settings) {
+    if (wallet || tokenDetails || nft || explore || history) {
       return loadingComplete || failedNetwork[currentNetwork.id] === false;
     }
     return false;

@@ -5,13 +5,13 @@ import styled from 'styled-components';
 import { CopyTooltip } from '@components/tooltips';
 import { StatusDot } from '@components/status-dot';
 import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
-import SubMenu from '@layouts/sub-menu';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
+import SideMenuLayout from '@layouts/side-menu-layout/side-menu-layout';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -120,7 +120,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
         </CopyTooltip>
         <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
       </Header>
-      <SubMenu open={open} setOpen={setOpen} onClick={toggleMenuHandler} />
+      <SideMenuLayout open={open} setOpen={setOpen} />
     </Wrapper>
   ) : <></>;
 };
