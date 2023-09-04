@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import logo from '../../../assets/logo-withIcon.svg';
 import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
-import SubMenu from '@layouts/sub-menu';
 import { RoutePath } from '@router/path';
+import SideMenuLayout from '@layouts/side-menu-layout/side-menu-layout';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -38,7 +38,7 @@ export const HomeMenu = ({ entry }: { entry: string }) => {
         <img src={logo} alt='adena logo' />
       </Header>
       {entry !== RoutePath.ApproveTransaction && (
-        <SubMenu open={open} setOpen={setOpen} onClick={toggleMenuHandler} />
+        <SideMenuLayout open={open} setOpen={setOpen} />
       )}
     </Wrapper>
   );
