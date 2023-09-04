@@ -47,6 +47,7 @@ export const CustomNetworkInputWrapper = styled.div`
     position: relative;
     padding: 0 16px;
     ${({ theme }) => theme.fonts.captionReg};
+    height: 14px;
     color: ${({ theme }) => theme.color.red[2]};
   }
 `;

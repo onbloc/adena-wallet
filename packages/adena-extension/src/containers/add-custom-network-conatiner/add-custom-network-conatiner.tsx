@@ -36,16 +36,20 @@ const AddCustomNetworkConatiner: React.FC = () => {
   } = useCustomNetworkInput();
 
   const save = useCallback(async () => {
+    let isValid = true;
     if (!isValidURL(rpcUrl)) {
+      isValid = false;
       setRPCUrlError('Invalid URL');
-      return;
     }
     if (existsChainId(chainId, networks)) {
+      isValid = false;
       setChainIdError('Chain ID already in use');
-      return;
     }
     if (existsRPCUrl(rpcUrl, networks)) {
+      isValid = false;
       setRPCUrlError('RPC URL already in use');
+    }
+    if (!isValid) {
       return;
     }
     await addNetwork(name, rpcUrl, chainId);
