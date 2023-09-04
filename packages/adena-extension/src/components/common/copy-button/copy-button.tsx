@@ -21,7 +21,9 @@ const CopyButton: React.FC<CopyButtonProps> = ({
     };
   }, [checked]);
 
-  const onClickCopyButton = useCallback(() => {
+  const onClickCopyButton = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     setChecked(true);
     navigator.clipboard.writeText(copyText);
   }, [copyText, checked])

@@ -71,6 +71,7 @@ import ChangeNetwork from '@pages/certify/change-network';
 import EditCustomNetworkPage from '@pages/wallet/edit-custom-network';
 import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network/approve-changing-network';
 import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network/approve-adding-network';
+import AccountDetailsPage from '@pages/wallet/account-details';
 
 export const CustomRouter = () => {
   const { wallet } = useWalletContext();
@@ -130,6 +131,7 @@ export const CustomRouter = () => {
           <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
           <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
+          <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
           <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
