@@ -37,6 +37,7 @@ export enum RoutePath {
   ApproveAddingNetwork = '/approve/wallet/network/add',
   ImportAccount = '/wallet/import-account',
   AddAccount = '/wallet/add-account',
+  AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageTokenAdded = '/wallet/manage-token/added',
   TransferInput = '/wallet/transfer-input',

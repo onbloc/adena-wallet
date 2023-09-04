@@ -6,11 +6,12 @@ import SeedBox from '@components/seed-box';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useWalletContext } from '@hooks/use-context';
 
 export const ApproachPrivatePhrase = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
@@ -18,14 +19,18 @@ export const ApproachPrivatePhrase = () => {
 
   useEffect(() => {
     initPrivateKey();
-  }, [currentAccount]);
+  }, [currentAccount, state]);
 
   const initPrivateKey = async () => {
     if (!wallet || !currentAccount) {
       return;
     }
     const clone = wallet.clone();
-    clone.currentAccountId = currentAccount.id
+    if (state.accountId) {
+      clone.currentAccountId = state.accountId
+    } else {
+      clone.currentAccountId = currentAccount.id
+    }
     const privateKey = clone.privateKeyStr;
     setPrivateKey('0x' + privateKey);
   }

@@ -39,22 +39,32 @@ const FullButtonRightIcon = ({
         {title}
       </Text>
       {icon === 'ARROW' && <Icon name='iconArrowV2' className='icon-arrow-v2' />}
-      {icon === 'WEBLINK' && <Icon name='iconWebLink' />}
+      {icon === 'WEBLINK' && <Icon name='iconWebLink' className='icon-weblink' />}
     </ButtonWrapper>
   );
 };
 
 const defaultIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
+    transition: 0.2s;
     stroke: ${({ theme, mode }) =>
-      mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[4]};
+    mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
+  }
+  .icon-weblink * {
+    transition: 0.2s;
+    fill: ${({ theme, mode }) =>
+    mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
   }
 `;
 
 const hoverIconStyle = css<ButtonStyleProps>`
-  .icon-arrow-v2 * {
+  .icon-arrow-v2 *{
     stroke: ${({ theme, mode }) =>
-      mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
+    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
+  }
+  .icon-weblink *{
+    fill: ${({ theme, mode }) =>
+    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   }
 `;
 
