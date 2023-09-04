@@ -11,6 +11,7 @@ import { CommonState, WalletState } from '@states/index';
 import { ArrowTitleMenu } from './arrow-title-menu';
 import { TabMenu } from './tab-menu';
 import { useNetwork } from '@hooks/use-network';
+import { CloseTitleMenu } from './close-title-menu';
 
 const Wrapper = styled.header`
   width: 100%;
@@ -37,6 +38,7 @@ export const Header = () => {
   const connectedApps = useMatch(RoutePath.ConnectedApps);
   const changeNetwork = useMatch(RoutePath.ChangeNetwork);
 
+  const accountDetails = useMatch(RoutePath.AccountDetails);
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
   const importPrivateKey = useMatch(RoutePath.ImportPrivateKey);
   const yourSeedPhrase = useMatch(RoutePath.YourSeedPhrase);
@@ -108,6 +110,10 @@ export const Header = () => {
       return location?.state?.from === 'forgot-password' ?
         <ArrowTitleMenu title='Reset Wallet' /> :
         <TopMenu />
+    }
+
+    if (accountDetails) {
+      return <CloseTitleMenu title='Account Details' />
     }
 
     if (

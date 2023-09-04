@@ -2,16 +2,14 @@ import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-butto
 import DefaultInput from '@components/default-input';
 import WarningBox from '@components/warning/warning-box';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import {
-  validateEmptyPassword,
   validateInvalidPassword,
-  validateWrongPasswordLength,
 } from '@common/validation';
 import { BaseError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
@@ -20,6 +18,7 @@ const TermsAText = 'Anyone with my private key will have full control over my fu
 const TermsBText = 'I will never share my private key with anyone.';
 
 export const ApproachPasswordPhrase = () => {
+  const { state } = useLocation();
   const navigate = useNavigate();
   const backButtonClick = () => navigate(-1);
   const { walletService } = useAdenaContext();
@@ -53,7 +52,7 @@ export const ApproachPasswordPhrase = () => {
     try {
       const storedPassword = await walletService.loadWalletPassword();
       validateInvalidPassword(pwd, storedPassword);
-      navigate(RoutePath.ApproachPrivatePhrase);
+      navigate(RoutePath.ApproachPrivatePhrase, { state });
     } catch (e) {
       if (e instanceof BaseError) {
         setError(true);
