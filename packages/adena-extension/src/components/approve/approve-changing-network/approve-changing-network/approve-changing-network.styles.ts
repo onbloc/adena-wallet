@@ -10,12 +10,13 @@ export const ApproveChangingNetworkWrapper = styled.div`
   padding: 24px 20px;
 
   h4 {
-    display: block;
+    display: -webkit-box;
     max-width: 100%;
-    overflow: hidden;
     text-overflow: ellipsis;
     overflow: hidden;
-    white-space: nowrap;
+    word-break: break-all;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   .description-wrapper {

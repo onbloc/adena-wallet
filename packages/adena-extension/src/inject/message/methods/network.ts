@@ -2,6 +2,14 @@ import { RoutePath } from '@router/path';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
+import { NetworkMetainfo } from '@states/network';
+
+function existsChainId(network: NetworkMetainfo, chainId: string) {
+  return network.chainId === chainId;
+}
+function existsRPCUrl(network: NetworkMetainfo, rpcUrl: string) {
+  return network.rpcUrl === rpcUrl;
+}
 
 export const addNetwork = async (
   requestData: InjectionMessage,
@@ -20,7 +28,12 @@ export const addNetwork = async (
     }
     const networks = await core.chainService.getNetworks();
     const existNetwork =
-      networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
+      networks.findIndex(
+        (current) =>
+          !existsChainId(current, chainId) &&
+          !existsRPCUrl(current, chainId) &&
+          current.deleted !== true,
+      ) > -1;
     if (existNetwork) {
       sendResponse(InjectionMessageInstance.failure('NETWORK_ALREADY_EXISTS', {}, requestData.key));
       return;

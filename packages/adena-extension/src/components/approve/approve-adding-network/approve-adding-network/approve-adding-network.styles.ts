@@ -8,6 +8,14 @@ export const ApproveAddingNetworkWrapper = styled.div`
   padding: 24px 20px 120px 20px;
   overflow: auto;
 
+  h4 {
+    display: block;
+    text-align: right;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
   .logo-wrapper {
     display: flex;
     width: 100%;
