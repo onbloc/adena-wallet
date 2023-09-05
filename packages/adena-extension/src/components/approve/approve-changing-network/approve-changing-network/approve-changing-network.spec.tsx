@@ -5,7 +5,6 @@ import { render } from '@testing-library/react';
 import theme from '@styles/theme';
 import { GlobalStyle } from '@styles/global-style';
 import ApproveChangingNetwork, { ApproveChangingNetworkProps } from './approve-changing-network';
-import { action } from '@storybook/addon-actions';
 
 describe('ApproveChangingNetwork Component', () => {
   it('ApproveChangingNetwork render', () => {
@@ -17,8 +16,12 @@ describe('ApproveChangingNetwork Component', () => {
         name: 'Onbloc Testnet'
       },
       changable: true,
-      changeNetwork: action('changeNetwork'),
-      cancel: action('cancel'),
+      processing: false,
+      done: false,
+      changeNetwork: () => { return; },
+      cancel: () => { return; },
+      onResponse: () => { return; },
+      onTimeout: () => { return; },
     };
 
     render(

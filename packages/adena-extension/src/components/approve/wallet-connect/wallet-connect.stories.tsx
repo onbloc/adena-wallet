@@ -13,7 +13,11 @@ export const Default: StoryObj<WalletConnectProps> = {
     loading: true,
     logo: '',
     app: '',
+    processing: true,
+    done: false,
     onClickConnect: action('cancel'),
     onClickCancel: action('connect'),
+    onResponse: action('response'),
+    onTimeout: action('timeout'),
   },
 };

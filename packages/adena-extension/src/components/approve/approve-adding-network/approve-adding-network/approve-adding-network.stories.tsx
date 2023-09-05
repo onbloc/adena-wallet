@@ -18,5 +18,7 @@ export const Default: StoryObj<ApproveAddingNetworkProps> = {
     approvable: true,
     approve: action('approve'),
     cancel: action('cancel'),
+    onResponse: action('onResponse'),
+    onTimeout: action('onTimeout'),
   },
 };

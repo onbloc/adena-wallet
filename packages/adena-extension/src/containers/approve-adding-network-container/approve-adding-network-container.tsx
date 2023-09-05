@@ -12,6 +12,9 @@ const ApproveAddingNetworkContainer: React.FC = () => {
   const [chainId, setChainId] = useState('');
   const [chainName, setChainName] = useState('');
   const [rpcUrl, setRPCUrl] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [response, setResponse] = useState<InjectionMessage>();
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (search) {
@@ -30,16 +33,27 @@ const ApproveAddingNetworkContainer: React.FC = () => {
   };
 
   const onClickApprove = useCallback(async () => {
+    setProcessing(true);
     await addNetwork(chainName, rpcUrl, chainId);
-    chrome.runtime.sendMessage(
+    setResponse(
       InjectionMessageInstance.success(
         'ADD_NETWORK_SUCCESS',
         requestData?.data,
         requestData?.key,
       ),
     );
-
+    setDone(true);
   }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
+
+  const onResponse = useCallback(() => {
+    if (done && response) {
+      chrome.runtime.sendMessage(response);
+    }
+  }, [done, response]);
+
+  const onTimeout = () => {
+    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key));
+  }
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
@@ -60,8 +74,12 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       }}
       logo={''}
       approvable={requestData !== undefined}
+      processing={processing}
+      done={done}
       approve={onClickApprove}
       cancel={onClickCancel}
+      onResponse={onResponse}
+      onTimeout={onTimeout}
     />
   );
 };

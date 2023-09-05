@@ -25,7 +25,7 @@ export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
 
-  const axiosInstance = axios.create();
+  const axiosInstance = axios.create({ timeout: 5000 });
 
   const localStorage = AdenaStorage.local();
 
