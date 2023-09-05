@@ -18,7 +18,10 @@ describe('ApproveTransaction Component', () => {
         function: 'GetBoardIDFromName',
         value: ''
       }],
-      networkFee: '0.0048 GNOT',
+      networkFee: {
+        amount: '0.0048',
+        denom: 'GNOT'
+      },
       transactionData: '',
       opened: false,
       onToggleTransactionData: () => { return; },

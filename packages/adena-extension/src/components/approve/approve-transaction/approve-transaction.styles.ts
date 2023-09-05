@@ -1,8 +1,9 @@
 import styled from 'styled-components';
 
-export const ApproveTransactionWrapper = styled.div`
+export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
   ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
   padding: 0 20px;
+  margin-bottom: 96px;
   align-self: center;
 
   .row {
@@ -79,6 +80,18 @@ export const ApproveTransactionWrapper = styled.div`
     background-color: ${({ theme }) => theme.color.neutral[8]};
     border: 1px solid ${({ theme }) => theme.color.neutral[7]};
     ${({ theme }) => theme.fonts.body2Reg};
+    ${({ isErrorNetworkFee, theme }) => isErrorNetworkFee && `border-color: ${theme.color.red[2]};`}
+  }
+
+  .error-message {
+    position: relative;
+    width: 100%;
+    padding: 0 16px;
+    ${({ theme }) => theme.fonts.captionReg};
+    height: 14px;
+    margin-top: -5px;
+    margin-bottom: 10px;
+    color: ${({ theme }) => theme.color.red[2]};
   }
 
   .transaction-data-wrapper {
@@ -102,7 +115,6 @@ export const ApproveTransactionWrapper = styled.div`
       background-color: ${({ theme }) => theme.color.neutral[8]};
       border: 1px solid ${({ theme }) => theme.color.neutral[6]};
       padding: 12px 16px;
-      margin-bottom: 40px;
     }
     .raw-info-textarea {
       width: 100%;
@@ -125,28 +137,6 @@ export const ApproveTransactionWrapper = styled.div`
       display: none !important;
     }
 
-    margin-bottom: 10px;
-  }
-
-  .button-wrapper {
-    ${({ theme }) => theme.mixins.flexbox('row', 'flex-start', 'center')};
-    width: 100%;
-    margin-bottom: 24px;
-    gap: 10px;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${({ theme }) => theme.fonts.body1Bold};
-    }
-
-    button.cancel {
-      background-color: ${({ theme }) => theme.color.neutral[4]};
-    }
-
-    button.connect {
-      background-color: ${({ theme }) => theme.color.primary[3]};
-    }
+    margin-bottom: 20px;
   }
 `;

@@ -30,7 +30,11 @@ export const getAccount = async (
       network.chainId,
     );
     sendReponse(
-      InjectionMessageInstance.success('GET_ACCOUNT', { ...accountInfo }, requestData.key),
+      InjectionMessageInstance.success(
+        'GET_ACCOUNT',
+        { ...accountInfo, chainId: network.chainId },
+        requestData.key,
+      ),
     );
   } catch (error) {
     sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
