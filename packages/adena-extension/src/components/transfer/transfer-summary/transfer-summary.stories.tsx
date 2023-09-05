@@ -10,6 +10,7 @@ export default {
 
 export const Default: StoryObj<TransferSummaryProps> = {
   args: {
+    isErrorNetworkFee: false,
     tokenMetainfo: {
       main: true,
       display: false,

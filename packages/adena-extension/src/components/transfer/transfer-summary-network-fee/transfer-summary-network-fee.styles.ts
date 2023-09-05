@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-export const TransferSummaryNetworkFeeWrapper = styled.div`
+export const TransferSummaryNetworkFeeWrapper = styled.div<{ isError?: boolean }>`
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -10,6 +10,7 @@ export const TransferSummaryNetworkFeeWrapper = styled.div`
   border-radius: 30px;
   justify-content: space-between;
   align-items: center;
+  ${({ isError, theme }) => isError && `border-color: ${theme.color.red[2]};`}
 
   .key {
     color: ${({ theme }) => theme.color.neutral[9]};
