@@ -9,6 +9,7 @@ import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 
 const text = 'Enter\nYour Password';
 
@@ -31,6 +32,7 @@ export const ForgetPwd = styled.button`
 `;
 
 export const Login = () => {
+  usePreventHistoryBack();
   const navigate = useNavigate();
   const { walletService } = useAdenaContext();
   const location = useLocation();
