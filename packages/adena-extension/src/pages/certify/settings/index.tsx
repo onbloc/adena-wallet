@@ -53,7 +53,7 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 24px;
-  padding-bottom: 80px;
+  margin-bottom: 20px;
   overflow-y: auto;
 
   .title-wrapper {

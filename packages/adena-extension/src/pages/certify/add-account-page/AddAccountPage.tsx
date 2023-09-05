@@ -2,11 +2,11 @@ import React, { useCallback, useMemo } from 'react';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useWalletContext } from '@hooks/use-context';
 import { Wrapper } from './AddAccountPage.styles';
+import BottomFixedButton from '@components/buttons/bottom-fixed-button';
 
 const AddAccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +40,10 @@ const AddAccountPage: React.FC = () => {
 
   const onClickImportPrivateKey = useCallback(() => {
     navigate(RoutePath.ImportPrivateKey);
+  }, [navigate]);
+
+  const onClickCancel = useCallback(() => {
+    navigate(-1);
   }, [navigate]);
 
   const addAccountContent = useMemo(
@@ -79,14 +83,10 @@ const AddAccountPage: React.FC = () => {
           disabled={v.disabled}
         />
       ))}
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Dark}
-        onClick={() => navigate(-1)}
-        margin='auto 0px 0px'
-      >
-        <Text type='body1Bold'>Close</Text>
-      </Button>
+      <BottomFixedButton
+        text='Close'
+        onClick={onClickCancel}
+      />
     </Wrapper>
   );
 };
