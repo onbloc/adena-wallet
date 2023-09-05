@@ -5,7 +5,7 @@ export const usePreventHistoryBack = () => {
     const preventGoBack = () => {
       history.pushState(null, '', location.href);
     };
-    history.pushState(null, '', location.href);
+    preventGoBack();
     window.addEventListener('popstate', preventGoBack);
     return () => window.removeEventListener('popstate', preventGoBack);
   }, []);
