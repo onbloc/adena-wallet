@@ -52,6 +52,14 @@ export const useNetwork = (): NetworkResponse => {
     [networkMetainfos, chainService],
   );
 
+  const changeNetworkOfProvider = useCallback(
+    async (network: NetworkMetainfo) => {
+      const changedNetwork = await changeNetworkProvider(network);
+      dispatchChangedEvent(changedNetwork);
+    },
+    [changeNetworkProvider],
+  );
+
   const changeNetwork = useCallback(
     async (id: string) => {
       if (networkMetainfos.length === 0) {
@@ -60,11 +68,10 @@ export const useNetwork = (): NetworkResponse => {
       }
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
       await chainService.updateCurrentNetworkId(id);
-      const changedNetwork = await changeNetworkProvider(network);
-      dispatchChangedEvent(changedNetwork);
+      changeNetworkOfProvider(network);
       return true;
     },
-    [chainService, networkMetainfos, chainService],
+    [networkMetainfos, changeNetworkOfProvider],
   );
 
   const updateNetwork = useCallback(
@@ -75,12 +82,13 @@ export const useNetwork = (): NetworkResponse => {
       );
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+
       if (network.id === currentNetwork?.id) {
-        await changeNetwork(network.id);
+        changeNetworkOfProvider(network);
       }
       return true;
     },
-    [networkMetainfos, chainService, changeNetwork],
+    [currentNetwork, networkMetainfos, chainService],
   );
 
   const deleteNetwork = useCallback(
@@ -98,12 +106,13 @@ export const useNetwork = (): NetworkResponse => {
           : networkMetainfos.filter((current) => current.id !== networkId);
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+
       if (networkId === currentNetwork?.id) {
-        await changeNetwork(DEFAULT_NETWORK.id);
+        changeNetworkOfProvider(DEFAULT_NETWORK);
       }
       return true;
     },
-    [networkMetainfos, chainService, currentNetwork],
+    [currentNetwork, networkMetainfos, chainService, currentNetwork],
   );
 
   const dispatchChangedEvent = useCallback(
