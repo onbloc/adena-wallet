@@ -75,7 +75,7 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         </div>
       ))}
 
-      <div className={`fee-amount-wrapper row`}>
+      <div className='fee-amount-wrapper row'>
         <span className='key'>Network Fee:</span>
         <span className='value'>{`${networkFee.amount} ${networkFee.denom}`}</span>
       </div>

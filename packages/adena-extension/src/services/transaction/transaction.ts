@@ -59,8 +59,8 @@ export class TransactionService {
     const gasAmount = await this.getGasAmount(gasFee);
     if (accountSequence === null || accountNumber === null) {
       return Document.createDocument(
-        `-1`,
-        `-1`,
+        '-1',
+        '-1',
         chainId,
         messages,
         `${gasWanted}`,
