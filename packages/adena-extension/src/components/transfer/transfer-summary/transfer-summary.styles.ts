@@ -30,6 +30,14 @@ export const TransferSummaryWrapper = styled.div`
     width: 100%;
     height: 100%;
     margin-top: 20px;
+
+    .error-message {
+      position: relative;
+      width: 100%;
+      padding: 0 16px;
+      ${({ theme }) => theme.fonts.captionReg};
+      color: ${({ theme }) => theme.color.red[2]};
+    }
   }
 
   .button-group {
