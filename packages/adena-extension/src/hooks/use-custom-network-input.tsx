@@ -8,7 +8,7 @@ export const useCustomNetworkInput = () => {
   const [chainIdError, setChainIdError] = useState('');
 
   const changeName = useCallback((name: string) => {
-    setName(name.trim());
+    setName(name);
   }, [setName]);
 
   const changeRPCUrl = useCallback((rpcUrl: string) => {

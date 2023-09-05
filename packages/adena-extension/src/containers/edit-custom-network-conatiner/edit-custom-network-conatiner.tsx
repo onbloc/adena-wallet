@@ -97,12 +97,13 @@ const EditCustomNetworkConatiner: React.FC = () => {
     }
     const network = networks.find(current => current.id === currentNetworkId);
     if (network) {
+      const parsedName = name.trim();
       await updateNetwork({
         ...network,
         chainId: chainId,
         networkId: chainId,
-        chainName: name,
-        networkName: name,
+        chainName: parsedName,
+        networkName: parsedName,
         rpcUrl
       });
     }
