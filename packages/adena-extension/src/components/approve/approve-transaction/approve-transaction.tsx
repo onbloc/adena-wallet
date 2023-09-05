@@ -6,6 +6,7 @@ import ApproveLoading from '../approve-loading/approve-loading';
 import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
+import BottomFixedButtonGroup from '@components/buttons/bottom-fixed-button-group';
 
 export interface ApproveTransactionProps {
   loading: boolean;
@@ -17,7 +18,11 @@ export interface ApproveTransactionProps {
     function: string;
     value: string;
   }[];
-  networkFee: string;
+  isErrorNetworkFee?: boolean;
+  networkFee: {
+    amount: string;
+    denom: string;
+  };
   transactionData: string;
   opened: boolean;
   onToggleTransactionData: (opened: boolean) => void;
@@ -31,6 +36,7 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   logo,
   domain,
   contracts,
+  isErrorNetworkFee,
   networkFee,
   transactionData,
   opened,
@@ -42,9 +48,8 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
   }
-
   return (
-    <ApproveTransactionWrapper>
+    <ApproveTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>
@@ -72,8 +77,13 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
       <div className='fee-amount-wrapper row'>
         <span className='key'>Network Fee:</span>
-        <span className='value'>{networkFee}</span>
+        <span className='value'>{`${networkFee.amount} ${networkFee.denom}`}</span>
       </div>
+      {
+        isErrorNetworkFee && (
+          <span className='error-message'>Insufficient network fee</span>
+        )
+      }
 
       <div className='transaction-data-wrapper'>
         <Button
@@ -105,10 +115,19 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <div className='button-wrapper'>
-        <button className='cancel' onClick={onClickCancel}>Cancel</button>
-        <button className='connect' onClick={onClickConfirm}>Approve</button>
-      </div>
+      <BottomFixedButtonGroup
+        fill
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel
+        }}
+        rightButton={{
+          primary: true,
+          disabled: isErrorNetworkFee,
+          text: 'Approve',
+          onClick: onClickConfirm
+        }}
+      />
     </ApproveTransactionWrapper>
   );
 };
