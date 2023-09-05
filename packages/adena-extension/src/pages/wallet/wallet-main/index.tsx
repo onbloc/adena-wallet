@@ -12,6 +12,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRecoilState } from 'recoil';
 import { WalletState } from '@states/index';
+import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -32,6 +33,7 @@ const Wrapper = styled.main`
 `;
 
 export const WalletMain = () => {
+  usePreventHistoryBack();
   const navigate = useNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentAccount } = useCurrentAccount();
