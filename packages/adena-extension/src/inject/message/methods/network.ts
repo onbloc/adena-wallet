@@ -4,12 +4,11 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 import { NetworkMetainfo } from '@states/network';
 
-function existsChainId(network: NetworkMetainfo, chainId: string) {
+function matchChainId(network: NetworkMetainfo, chainId: string) {
   return network.chainId === chainId;
 }
-function existsRPCUrl(network: NetworkMetainfo, rpcUrl: string) {
-  const parsedRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-  return network.rpcUrl === parsedRPCUrl;
+function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string) {
+  return network.rpcUrl === rpcUrl.replace(/\/$/, '');
 }
 
 export const addNetwork = async (
@@ -31,7 +30,7 @@ export const addNetwork = async (
     const existNetwork =
       networks.findIndex(
         (current) =>
-          (existsChainId(current, chainId) || existsRPCUrl(current, rpcUrl)) &&
+          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl)) &&
           current.deleted !== true,
       ) > -1;
     if (existNetwork) {
