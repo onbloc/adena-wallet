@@ -10,7 +10,7 @@ export const AdditionalTokenWrapper = styled.div`
 
   .sub-header-container {
     margin-top: 5px;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
   }
 
   .select-box-wrapper {

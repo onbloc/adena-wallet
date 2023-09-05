@@ -8,10 +8,10 @@ export const ManageTokenSearchWrapper = styled.div`
 
   .list-wrapper {
     display: flex;
-    margin-top: 30px;
+    margin-top: 24px;
     max-height: 284px;
     overflow-y: auto;
-    padding-bottom: 30px;
+    padding-bottom: 24px;
   }
 
   .close-wrapper {
