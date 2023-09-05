@@ -14,7 +14,7 @@ const Wrapper = styled.main`
 `;
 
 const FormBox = styled.div`
-  margin-top: 24px;
+  margin-top: 12px;
   margin-bottom: auto;
   input + input {
     margin-top: 12px;

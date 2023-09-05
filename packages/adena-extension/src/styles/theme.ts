@@ -35,7 +35,7 @@ export enum Red {
   '#BB160B', // 5
   '#E7323B', // 6
   '#B62E29', // 7
-  '#BB150B' // 8
+  '#BB150B', // 8
 }
 
 export enum Green {
@@ -65,7 +65,7 @@ export const fonts: FontsKeyType = {
   header4: css`
     font-weight: 700;
     font-size: 24px;
-    line-height: 34px;
+    line-height: 33.6px;
   `,
   header5: css`
     font-weight: 700;
@@ -78,7 +78,7 @@ export const fonts: FontsKeyType = {
     line-height: 27px;
   `,
   header7: css`
-   font-weight: 700;
+    font-weight: 700;
     font-size: 14px;
     line-height: 21px;
   `,
@@ -151,7 +151,7 @@ export const fonts: FontsKeyType = {
     font-weight: 300;
     font-size: 11px;
     line-height: 16px;
-  `
+  `,
 } as const;
 
 export type FontsType =
