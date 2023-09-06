@@ -5,6 +5,7 @@ import UnknownLogo from '@assets/common-unknown-logo.svg';
 import BottomFixedButtonGroup from '@components/buttons/bottom-fixed-button-group';
 import WarningBox from '@components/warning/warning-box';
 import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table';
+import ApproveInjectionLoading from '@components/approve/approve-injection-loading/approve-injection-loading';
 
 export interface AddingNetworkInfo {
   chainId: string;
@@ -16,18 +17,36 @@ export interface ApproveAddingNetworkProps {
   networkInfo: AddingNetworkInfo;
   logo?: string;
   approvable: boolean;
+  processing: boolean;
+  done: boolean;
   cancel: () => void;
   approve: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   networkInfo,
   logo,
   approvable,
+  processing,
+  done,
   cancel,
   approve,
+  onResponse,
+  onTimeout,
 }) => {
-  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name])
+  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
+
+  if (processing) {
+    return (
+      <ApproveInjectionLoading
+        done={done}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    );
+  }
 
   return (
     <ApproveAddingNetworkWrapper>

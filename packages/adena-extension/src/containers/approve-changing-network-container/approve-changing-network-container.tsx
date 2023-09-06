@@ -10,6 +10,9 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   const { currentNetwork, networks, changeNetwork } = useNetwork();
   const [requestData, setReqeustData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [response, setResponse] = useState<InjectionMessage>();
+  const [done, setDone] = useState(false);
 
   const changable = useMemo(() => chainId.length > 0, [chainId]);
 
@@ -31,26 +34,34 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   };
 
   const onClickChangeNetwork = useCallback(async () => {
+    setProcessing(true);
     const network = networks.find(network => network.chainId === chainId && network.deleted !== true);
     if (!network) {
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(
-          'UNADDED_NETWORK',
-          requestData?.data,
-          requestData?.key,
-        ),
-      );
+      setResponse(InjectionMessageInstance.failure(
+        'UNADDED_NETWORK',
+        requestData?.data,
+        requestData?.key,
+      ));
       return;
     }
     await changeNetwork(network.id);
-    chrome.runtime.sendMessage(
-      InjectionMessageInstance.success(
-        'SWITCH_NETWORK_SUCCESS',
-        requestData?.data,
-        requestData?.key,
-      ),
-    );
+    setResponse(InjectionMessageInstance.success(
+      'SWITCH_NETWORK_SUCCESS',
+      requestData?.data,
+      requestData?.key,
+    ));
+    setDone(true);
   }, [changeNetwork, requestData, chainId, networks]);
+
+  const onResponse = useCallback(() => {
+    if (done && response) {
+      chrome.runtime.sendMessage(response);
+    }
+  }, [done, response]);
+
+  const onTimeout = () => {
+    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key));
+  }
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
@@ -71,8 +82,12 @@ const ApproveChangingNetworkContainer: React.FC = () => {
         name: toNetwork?.networkName || ''
       }}
       changable={changable}
+      processing={processing}
+      done={done}
       changeNetwork={onClickChangeNetwork}
       cancel={onClickCancel}
+      onResponse={onResponse}
+      onTimeout={onTimeout}
     />
   );
 };

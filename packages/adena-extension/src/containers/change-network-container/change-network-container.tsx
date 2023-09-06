@@ -2,21 +2,27 @@ import ChangeNetwork from '@components/change-network/change-network/change-netw
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath } from '@router/path';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ChangeNetworkContainer: React.FC = () => {
   const navigate = useNavigate();
-  const { currentNetwork, networks, changeNetwork } = useNetwork();
+  const { modified, currentNetwork, networks, setModified, changeNetwork } = useNetwork();
   const { initTokenMetainfos } = useTokenMetainfo();
+
+  useEffect(() => {
+    if (modified) {
+      setTimeout(() => setModified(false), 1000);
+    }
+  }, [modified]);
 
   const displayNetworks = useMemo(() => {
     return networks.filter(network => network.deleted !== true);
   }, [networks])
 
   const loading = useMemo(() => {
-    return networks.length === 0;
-  }, [networks]);
+    return networks.length === 0 || modified;
+  }, [networks, modified]);
 
   const moveAddPage = useCallback(() => {
     navigate(RoutePath.AddCustomNetwork);

@@ -9,10 +9,12 @@ import { useEvent } from './use-event';
 interface NetworkResponse {
   networks: NetworkMetainfo[];
   currentNetwork: NetworkMetainfo;
+  modified: boolean;
   addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
   changeNetwork: (networkId: string) => Promise<boolean>;
   updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
   deleteNetwork: (networkId: string) => Promise<boolean>;
+  setModified: (modified: boolean) => void;
 }
 
 const DEFAULT_NETWORK: NetworkMetainfo = {
@@ -36,9 +38,11 @@ export const useNetwork = (): NetworkResponse => {
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
   const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
+  const [modified, setModified] = useRecoilState(NetworkState.modified);
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
+      setModified(true);
       const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
       const parsedName = name.trim();
       await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId);
@@ -65,6 +69,7 @@ export const useNetwork = (): NetworkResponse => {
 
   const updateNetwork = useCallback(
     async (network: NetworkMetainfo) => {
+      setModified(true);
       const changedNetworks = networkMetainfos.map((current) =>
         network.id === current.id ? network : current,
       );
@@ -84,7 +89,7 @@ export const useNetwork = (): NetworkResponse => {
       if (!network) {
         return false;
       }
-
+      setModified(true);
       const changedNetworks =
         network.default || network.id === 'teritori'
           ? networkMetainfos.map((current) =>
@@ -112,9 +117,11 @@ export const useNetwork = (): NetworkResponse => {
   return {
     currentNetwork: currentNetwork || DEFAULT_NETWORK,
     networks: networkMetainfos,
+    modified,
     changeNetwork,
     updateNetwork,
     addNetwork,
     deleteNetwork,
+    setModified,
   };
 };

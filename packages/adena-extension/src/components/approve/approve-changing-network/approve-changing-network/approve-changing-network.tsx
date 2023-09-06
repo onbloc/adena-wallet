@@ -6,6 +6,7 @@ import Text from '@components/text';
 import theme from '@styles/theme';
 import IconArrowRight from '@assets/arrowL-right-bold.svg';
 import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item';
+import ApproveInjectionLoading from '@components/approve/approve-injection-loading/approve-injection-loading';
 
 export interface ChangingNetworkInfo {
   logo?: string;
@@ -16,29 +17,47 @@ export interface ApproveChangingNetworkProps {
   fromChain: ChangingNetworkInfo;
   toChain: ChangingNetworkInfo;
   changable: boolean;
+  processing: boolean;
+  done: boolean;
   changeNetwork: () => void;
   cancel: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   fromChain,
   toChain,
   changable,
+  processing,
+  done,
   changeNetwork,
   cancel,
+  onResponse,
+  onTimeout,
 }) => {
   const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name])
 
   const onClickCancel = useCallback(() => {
     cancel();
-  }, [cancel])
+  }, [cancel]);
 
   const onClickSwitch = useCallback(() => {
     if (!changable) {
       return;
     }
     changeNetwork();
-  }, [changable, changeNetwork])
+  }, [changable, changeNetwork]);
+
+  if (processing) {
+    return (
+      <ApproveInjectionLoading
+        done={done}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    )
+  }
 
   return (
     <ApproveChangingNetworkWrapper>

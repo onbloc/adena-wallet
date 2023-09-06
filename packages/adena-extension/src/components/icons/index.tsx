@@ -14,6 +14,7 @@ import {
   IconConnectLoading,
   IconConnectFailed,
   IconTokenAdded,
+  IconSpinnerLoading,
 } from './icon-assets';
 
 export type IconName = keyof typeof ICONS;
@@ -38,6 +39,7 @@ const ICONS = {
   iconConnectLoading: IconConnectLoading,
   iconConnectFailed: IconConnectFailed,
   iconTokenAdded: IconTokenAdded,
+  iconSpinnerLoading: IconSpinnerLoading,
 } as const;
 
 const Icon = ({ name, className = '', ...rest }: IconProps) => {
