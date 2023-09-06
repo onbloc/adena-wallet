@@ -37,7 +37,7 @@ export const AccountDetailsWrapper = styled.div`
       height: 42px;
       background-color: ${({ theme }) => theme.color.neutral[8]};
       margin-top: 12px;
-      padding: 12px 16px;
+      padding: 12px 18px 12px 16px;
       border-radius: 18px;
       justify-content: space-between;
       align-items: center;
