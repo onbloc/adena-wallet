@@ -26,6 +26,10 @@ export const addNetwork = async (
       sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
       return;
     }
+    if (rpcUrl.match(/\s/g)) {
+      sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
+      return;
+    }
     const networks = await core.chainService.getNetworks();
     const existNetwork =
       networks.findIndex(
