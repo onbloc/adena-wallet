@@ -26,7 +26,7 @@ export const ApproachPrivatePhrase = () => {
       return;
     }
     const clone = wallet.clone();
-    if (state.accountId) {
+    if (state?.accountId) {
       clone.currentAccountId = state.accountId
     } else {
       clone.currentAccountId = currentAccount.id
