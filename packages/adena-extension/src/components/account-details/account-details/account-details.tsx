@@ -6,6 +6,7 @@ import CopyButton from '@components/common/copy-button/copy-button';
 import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
 
 export interface AccountDetailsProps {
+  hasPrivateKey: boolean;
   originName: string;
   name: string;
   address: string;
@@ -16,6 +17,7 @@ export interface AccountDetailsProps {
 }
 
 const AccountDetails: React.FC<AccountDetailsProps> = ({
+  hasPrivateKey,
   originName,
   name,
   address,
@@ -30,8 +32,11 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   }, [moveGnoscan]);
 
   const onClickExportPrivateKey = useCallback(() => {
+    if (!hasPrivateKey) {
+      return;
+    }
     moveExportPrivateKey();
-  }, [moveExportPrivateKey]);
+  }, [hasPrivateKey, moveExportPrivateKey]);
 
   return (
     <AccountDetailsWrapper>
@@ -61,6 +66,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
           onClick={onClickViewOnGnoscan}
         />
         <FullButtonRightIcon
+          disabled={!hasPrivateKey}
           title={'Export Private Key'}
           onClick={onClickExportPrivateKey}
         />
