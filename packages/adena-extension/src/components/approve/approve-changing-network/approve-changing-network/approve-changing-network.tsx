@@ -61,16 +61,18 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
 
   return (
     <ApproveChangingNetworkWrapper>
-      <SubHeader title={title} />
+      <div className='title-container'>
+        <SubHeader title={title} />
 
-      <div className='description-wrapper'>
-        <Text
-          type='body1Reg'
-          color={theme.color.neutral[9]}
-          textAlign='center'
-        >
-          {'This will switch the current network on\nAdena to the one that matches the\nconnected dapp.'}
-        </Text>
+        <div className='description-wrapper'>
+          <Text
+            type='body1Reg'
+            color={theme.color.neutral[9]}
+            textAlign='center'
+          >
+            {'This will switch the current network on\nAdena to the one that matches the\nconnected dapp.'}
+          </Text>
+        </div>
       </div>
 
       <div className='info-wrapper'>
