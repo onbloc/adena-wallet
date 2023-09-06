@@ -9,6 +9,7 @@ export default {
 
 export const Default: StoryObj<SideMenuAccountItemProps> = {
   args: {
+    selected: false,
     account: {
       accountId: '1',
       name: 'Account 1',

@@ -8,6 +8,7 @@ import IconLink from '@assets/icon-link';
 import Portal from '@layouts/portal';
 
 export interface SideMenuAccountItemProps {
+  selected: boolean;
   account: SideMenuAccountInfo;
   changeAccount: (accountId: string) => void;
   moveGnoscan: (address: string) => void;
@@ -15,6 +16,7 @@ export interface SideMenuAccountItemProps {
 }
 
 const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
+  selected,
   account,
   changeAccount,
   moveGnoscan,
@@ -63,7 +65,11 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   }, [openedMoreInfo]);
 
   return (
-    <SideMenuAccountItemWrapper onClick={onClickItem} onMouseLeave={onMouseOut}>
+    <SideMenuAccountItemWrapper
+      className={selected ? 'selected' : ''}
+      onClick={onClickItem}
+      onMouseLeave={onMouseOut}
+    >
       <div className='info-wrapper'>
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>

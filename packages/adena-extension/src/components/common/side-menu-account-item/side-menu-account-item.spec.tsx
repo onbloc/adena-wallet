@@ -9,6 +9,7 @@ import SideMenuAccountItem, { SideMenuAccountItemProps } from './side-menu-accou
 describe('SideMenuAccountItem Component', () => {
   it('SideMenuAccountItem render', () => {
     const args: SideMenuAccountItemProps = {
+      selected: false,
       account: {
         accountId: '',
         name: '',
