@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import WalletConnect from '@components/approve/wallet-connect/wallet-connect';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import {
@@ -8,7 +8,7 @@ import {
   getSiteName,
   parseParmeters,
 } from '@common/utils/client-utils';
-import { InjectionMessageInstance } from '@inject/message';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -28,6 +28,9 @@ const ApproveEstablishContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [response, setResponse] = useState<InjectionMessage>();
+  const [processing, setProcessing] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     checkLockWallet();
@@ -85,8 +88,10 @@ const ApproveEstablishContainer: React.FC = () => {
   };
 
   const establish = async () => {
+    setProcessing(true);
     const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
     if (!healthy || url !== currentNetwork.rpcUrl) {
+      setResponse(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
       return;
     }
@@ -103,7 +108,18 @@ const ApproveEstablishContainer: React.FC = () => {
         appName,
         favicon
       });
-    chrome.runtime.sendMessage(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
+    setResponse(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
+    setDone(true);
+  }
+
+  const onResponse = useCallback(() => {
+    if (done && response) {
+      chrome.runtime.sendMessage(response);
+    }
+  }, [done, response]);
+
+  const onTimeout = () => {
+    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
   }
 
   const checkHealth = async (rpcUrl: string) => {
@@ -128,8 +144,12 @@ const ApproveEstablishContainer: React.FC = () => {
       loading={loading}
       logo={favicon || DefaultFavicon}
       app={appName}
+      processing={processing}
+      done={done}
       onClickCancel={onClickCancle}
       onClickConnect={onClickConnect}
+      onResponse={onResponse}
+      onTimeout={onTimeout}
     />
   );
 };

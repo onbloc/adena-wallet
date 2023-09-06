@@ -16,8 +16,12 @@ describe('ApproveAddingNetwork Component', () => {
       },
       logo: '',
       approvable: true,
+      processing: false,
+      done: false,
       approve: () => { return; },
       cancel: () => { return; },
+      onResponse: () => { return; },
+      onTimeout: () => { return; },
     };
 
     render(

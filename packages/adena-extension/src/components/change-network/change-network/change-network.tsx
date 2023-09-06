@@ -34,15 +34,17 @@ const ChangeNetwork: React.FC<ChangeNetworkProps> = ({
           loading ? (
             <LoadingChangeNetwork />
           ) : (
-            <NetworkList
-              currentNetworkId={currentNetworkId}
-              networkMetainfos={networkMetainfos}
-              changeNetwork={changeNetwork}
-              moveEditPage={moveEditPage}
-            />
+            <>
+              <NetworkList
+                currentNetworkId={currentNetworkId}
+                networkMetainfos={networkMetainfos}
+                changeNetwork={changeNetwork}
+                moveEditPage={moveEditPage}
+              />
+              <AddCustomNetworkButton onClick={moveAddPage} />
+            </>
           )
         }
-        <AddCustomNetworkButton onClick={moveAddPage} />
       </div>
       <BottomFixedButton onClick={moveBack} />
     </ChangeNetworkWrapper>

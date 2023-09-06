@@ -16,7 +16,11 @@ export const Default: StoryObj<ApproveChangingNetworkProps> = {
       name: 'Onbloc Testnet'
     },
     changable: true,
+    processing: false,
+    done: false,
     changeNetwork: action('changeNetwork'),
     cancel: action('cancel'),
+    onResponse: action('onResponse'),
+    onTimeout: action('onTimeout'),
   },
 };

@@ -3,14 +3,19 @@ import { WalletConnectWrapper } from './wallet-connect.styles';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import Text from '@components/text';
 import ApproveLoading from '../approve-loading/approve-loading';
+import ApproveInjectionLoading from '../approve-injection-loading/approve-injection-loading';
 
 export interface WalletConnectProps {
   loading: boolean;
   app: string;
   logo: string;
   domain: string;
+  processing: boolean;
+  done: boolean;
   onClickConnect: () => void;
   onClickCancel: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({
@@ -18,12 +23,26 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
   app,
   logo,
   domain,
+  processing,
+  done,
   onClickConnect,
   onClickCancel,
+  onResponse,
+  onTimeout,
 }) => {
 
   if (loading) {
     return <ApproveLoading rightButtonText='Connect' />;
+  }
+
+  if (processing) {
+    return (
+      <ApproveInjectionLoading
+        done={done}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    );
   }
 
   return (

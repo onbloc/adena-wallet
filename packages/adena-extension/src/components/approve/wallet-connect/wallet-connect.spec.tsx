@@ -13,8 +13,12 @@ describe('WalletConnect Component', () => {
       loading: true,
       logo: '',
       app: '',
+      processing: false,
+      done: false,
       onClickConnect: () => { return },
       onClickCancel: () => { return },
+      onResponse: () => { return; },
+      onTimeout: () => { return; },
     };
 
     render(
