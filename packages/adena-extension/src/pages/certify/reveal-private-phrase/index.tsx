@@ -15,7 +15,7 @@ export const RevealPrivatePhrase = () => {
 
   const seeds = useMemo(() => {
     const mnemonic = wallet?.mnemonic || '';
-    return `${mnemonic}`.split(' ');
+    return mnemonic.split(' ');
   }, [wallet?.mnemonic])
 
   const doneButtonClick = () => {
