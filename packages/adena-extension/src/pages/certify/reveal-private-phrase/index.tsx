@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import Text from '@components/text';
 import WarningBox from '@components/warning/warning-box';
@@ -12,17 +12,11 @@ export const RevealPrivatePhrase = () => {
   const navigate = useNavigate();
   const { wallet } = useWalletContext();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
-  const [seeds, setSeeds] = useState<Array<string>>([]);
 
-  useEffect(() => {
-    init();
-  }, []);
-
-  const init = async () => {
+  const seeds = useMemo(() => {
     const mnemonic = wallet?.mnemonic || '';
-    const seeds = `${mnemonic}`.split(' ');
-    setSeeds(seeds);
-  };
+    return `${mnemonic}`.split(' ');
+  }, [wallet?.mnemonic])
 
   const doneButtonClick = () => {
     navigate(-2);
