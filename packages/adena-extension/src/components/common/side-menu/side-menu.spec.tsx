@@ -9,6 +9,8 @@ import SideMenu, { SideMenuProps } from './side-menu';
 describe('SideMenu Component', () => {
   it('SideMenu render', () => {
     const args: SideMenuProps = {
+      locked: false,
+      currentAccountId: null,
       accounts: [],
       changeAccount: () => { return; },
       openLink: () => { return; },

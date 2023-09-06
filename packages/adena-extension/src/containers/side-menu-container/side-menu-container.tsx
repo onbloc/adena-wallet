@@ -29,6 +29,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
   const { accounts } = useLoadAccounts();
   const { accountNativeBalances } = useTokenBalance();
   const [locked, setLocked] = useState(true);
+  const { currentAccount } = useCurrentAccount();
 
   useEffect(() => {
     if (!open) {
@@ -36,6 +37,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
     }
     walletService.isLocked().then(setLocked);
   }, [walletService, open]);
+
+  const currentAccountId = useMemo(() => {
+    return currentAccount?.id || null;
+  }, [currentAccount]);
 
   const sideMenuAccounts: SideMenuAccountInfo[] = useMemo(() => {
     if (locked) {
@@ -94,6 +99,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
 
   return (
     <SideMenu
+      locked={locked}
+      currentAccountId={currentAccountId}
       accounts={sideMenuAccounts}
       changeAccount={changeAccount}
       movePage={movePage}

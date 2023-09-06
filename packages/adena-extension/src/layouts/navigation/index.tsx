@@ -13,7 +13,7 @@ const Wrapper = styled.nav`
   ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
   background-color: ${({ theme }) => theme.color.neutral[7]};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
-  padding: 0px 30px;
+  padding: 0px 40px;
   gap: 40px;
   position: fixed;
   bottom: 0px;
