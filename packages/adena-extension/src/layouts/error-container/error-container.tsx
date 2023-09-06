@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
-import { CommonState, NetworkState } from '@states/index';
+import { CommonState, NetworkState, WalletState } from '@states/index';
 import { ErrorNetwork } from '@components/errors';
 
 interface Props {
@@ -10,15 +10,16 @@ interface Props {
 export const ErrorContainer = ({ children }: Props) => {
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [currentNetwork] = useRecoilState(NetworkState.currentNetwork);
+  const [currentAccount] = useRecoilState(WalletState.currentAccount);
 
-  const isError = () => {
+  const isError = useMemo(() => {
     if (!currentNetwork) {
       return false;
     }
-    return failedNetwork[currentNetwork.id];
-  }
+    return failedNetwork[currentNetwork.id] === true;
+  }, [failedNetwork, currentNetwork, currentAccount]);
 
-  return isError() ?
+  return isError ?
     <ErrorNetwork /> :
     <div>{children}</div>
     ;

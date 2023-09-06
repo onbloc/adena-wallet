@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
@@ -43,27 +43,30 @@ const LoadingMain = () => {
   const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
-  const { displayTokenBalances } = useTokenBalance();
+  const { tokenBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');
 
-  const isLoading = useCallback(() => {
+  const loading = useMemo(() => {
     if (isApproveHardwarePath || isNotMatch || isPopupMatch) {
       return false;
     }
-    if (state === 'NONE' || state === 'LOADING') {
-      return true;
-    }
-    if (failedNetwork[currentNetwork.id] === true) {
+    if (state === 'CREATE' || state === 'LOGIN') {
       return false;
     }
-    if (state === 'FINISH' && (displayTokenBalances.length === 0)) {
-      return true;
+    if (state === 'FINISH') {
+      if (failedNetwork[currentNetwork.id] === true) {
+        return false;
+      } else if (failedNetwork[currentNetwork.id] === false) {
+        if (tokenBalances.length > 0) {
+          return false;
+        }
+      }
     }
-    return false;
-  }, [state, isApproveHardwarePath, isNotMatch, displayTokenBalances, failedNetwork, currentNetwork]);
+    return true;
+  }, [state, tokenBalances, failedNetwork, currentNetwork.rpcUrl, useMatch]);
 
-  return isLoading() ? (
+  return loading ? (
     <Wrapper>
       <Round width='163px' height='14px' radius='24px' />
       <Round width='91px' height='14px' radius='24px' margin='36px 0px 31px' />

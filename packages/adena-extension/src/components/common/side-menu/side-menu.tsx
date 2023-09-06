@@ -4,10 +4,11 @@ import LogoAdena from '@assets/logo-withIcon.svg';
 import Icon from '@components/icons';
 import SideMenuAccountList from '@components/common/side-menu-account-list/side-menu-account-list';
 import SideMenuLink from '@components/common/side-menu-link/side-menu-link';
-import IconSetting from '@assets/icon-side-menu-setting.svg';
 import { RoutePath } from '@router/path';
 import IconAdd from '@assets/icon-add';
 import { KeyringType } from 'adena-module';
+import IconSetting from '@assets/icon-side-menu-setting.svg';
+import IconLock from '@assets/icon-side-menu-lock.svg';
 
 
 export interface SideMenuAccountInfo {
@@ -90,7 +91,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
 
       <div className='bottom-wrapper'>
         <SideMenuLink icon={IconSetting} text='Settings' onClick={onClickSetting} />
-        <SideMenuLink icon={IconSetting} text='Lock Wallet' onClick={onClickLockWallet} />
+        <SideMenuLink icon={IconLock} text='Lock Wallet' onClick={onClickLockWallet} />
       </div>
     </SideMenuWrapper>
   );
