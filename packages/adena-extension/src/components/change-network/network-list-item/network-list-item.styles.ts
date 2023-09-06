@@ -72,6 +72,7 @@ export const NetworkListItemWrapper = styled.div`
         max-width: 244px;
         color: ${({ theme }) => theme.color.neutral[9]};
         font-weight: 400;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
