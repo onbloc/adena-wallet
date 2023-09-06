@@ -77,7 +77,7 @@ export const SideMenuWrapper = styled.div`
 
       .text {
         margin-left: 8px;
-        ${({ theme }) => theme.fonts.body2Reg}
+        ${({ theme }) => theme.fonts.body2Bold}
       }
 
       &:hover {
