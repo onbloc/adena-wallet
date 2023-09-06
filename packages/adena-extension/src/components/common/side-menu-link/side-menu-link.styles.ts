@@ -24,5 +24,6 @@ export const SideMenuLinkWrapper = styled.div`
   .title {
     width: 100%;
     margin-left: 12px;
+    ${({ theme }) => theme.fonts.body2Reg}
   }
 `;

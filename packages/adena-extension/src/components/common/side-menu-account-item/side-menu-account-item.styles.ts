@@ -11,6 +11,10 @@ export const SideMenuAccountItemWrapper = styled.div`
   transition: 0.2s;
   cursor: pointer;
 
+  &.selected {
+    background-color: ${({ theme }) => theme.color.neutral[6]};
+  }
+
   &:hover {
     background-color: ${({ theme }) => theme.color.neutral[6]};
   }

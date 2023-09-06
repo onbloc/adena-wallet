@@ -9,6 +9,7 @@ import SideMenuAccountList, { SideMenuAccountListProps } from './side-menu-accou
 describe('SideMenuAccountList Component', () => {
   it('SideMenuAccountList render', () => {
     const args: SideMenuAccountListProps = {
+      currentAccountId: '',
       accounts: [],
       changeAccount: () => { return; },
       moveGnoscan: () => { return; },
