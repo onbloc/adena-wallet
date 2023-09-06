@@ -18,7 +18,7 @@ export const tokenDetailPosition = atom<HistoryPosition>({
   },
 });
 
-export const failedNetwork = atom<{ [key in string]: boolean }>({
+export const failedNetwork = atom<{ [key in string]: boolean | undefined }>({
   key: `common/failed-network`,
   default: {},
 });
