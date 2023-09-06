@@ -5,6 +5,8 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountName } from '@hooks/use-account-name';
 import { RoutePath } from '@router/path';
+import { isLedgerAccount } from 'adena-module';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -14,6 +16,7 @@ const AccountDetailsContainer: React.FC = () => {
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
+  const { changeCurrentAccount } = useCurrentAccount();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
 
@@ -27,6 +30,13 @@ const AccountDetailsContainer: React.FC = () => {
     }
     return account.getAddress(currentNetwork.addressPrefix);
   }, [account, currentNetwork]);
+
+  const hasPrivateKey = useMemo(() => {
+    if (!account) {
+      return false;
+    }
+    return !isLedgerAccount(account);
+  }, []);
 
   useEffect(() => {
     if (account?.id) {
@@ -46,7 +56,10 @@ const AccountDetailsContainer: React.FC = () => {
     window.open(`https://gnoscan.io/accounts/${address}`, '_blank');
   }, [address]);
 
-  const moveExportPrivateKey = useCallback(() => {
+  const moveExportPrivateKey = useCallback(async () => {
+    if (account) {
+      await changeCurrentAccount(account);
+    }
     naviage(RoutePath.ApproachPasswordPhrase, { state: { accountId } });
   }, [account]);
 
@@ -65,6 +78,7 @@ const AccountDetailsContainer: React.FC = () => {
       originName={originName}
       name={name}
       address={address}
+      hasPrivateKey={hasPrivateKey}
       moveGnoscan={moveGnoscan}
       moveExportPrivateKey={moveExportPrivateKey}
       setName={changeName}

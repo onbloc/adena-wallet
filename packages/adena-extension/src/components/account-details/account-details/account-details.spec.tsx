@@ -9,6 +9,7 @@ import AccountDetails, { AccountDetailsProps } from './account-details';
 describe('AccountDetails Component', () => {
   it('AccountDetails render', () => {
     const args: AccountDetailsProps = {
+      hasPrivateKey: true,
       originName: '',
       name: '',
       address: '',

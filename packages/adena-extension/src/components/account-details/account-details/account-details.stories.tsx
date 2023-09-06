@@ -9,6 +9,7 @@ export default {
 
 export const Default: StoryObj<AccountDetailsProps> = {
   args: {
+    hasPrivateKey: true,
     originName: '',
     name: '',
     address: '',
