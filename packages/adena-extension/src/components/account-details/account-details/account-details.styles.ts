@@ -46,6 +46,7 @@ export const AccountDetailsWrapper = styled.div`
         display: block;
         width: 100%;
         margin-right: 8px;
+        ${({ theme }) => theme.fonts.light1Reg}
         overflow: hidden;
         text-overflow: ellipsis;
       }
