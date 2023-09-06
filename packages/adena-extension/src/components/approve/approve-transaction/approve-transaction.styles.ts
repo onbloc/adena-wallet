@@ -26,8 +26,11 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     }
 
     .value {
-      display: inline-flex;
+      display: block;
+      max-width: 204px;
       text-align: right;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 
