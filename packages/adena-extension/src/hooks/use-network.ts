@@ -1,10 +1,11 @@
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { NetworkMetainfo } from '@states/network';
-import { NetworkState } from '@states/index';
+import { BalanceState, CommonState, NetworkState, WalletState } from '@states/index';
 import { EventMessage } from '@inject/message';
 import { useCallback } from 'react';
 import { useEvent } from './use-event';
+import { fetchHealth } from '@common/utils/client-utils';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -15,6 +16,7 @@ interface NetworkResponse {
   updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
   deleteNetwork: (networkId: string) => Promise<boolean>;
   setModified: (modified: boolean) => void;
+  resetNetworkConnection: () => void;
 }
 
 const DEFAULT_NETWORK: NetworkMetainfo = {
@@ -39,6 +41,9 @@ export const useNetwork = (): NetworkResponse => {
   const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [modified, setModified] = useRecoilState(NetworkState.modified);
+  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const [, setState] = useRecoilState(WalletState.state);
+  const resetNetworkConnection = useResetRecoilState(CommonState.failedNetwork);
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
@@ -52,19 +57,33 @@ export const useNetwork = (): NetworkResponse => {
     [networkMetainfos, chainService],
   );
 
+  const changeNetworkOfProvider = useCallback(
+    async (network: NetworkMetainfo) => {
+      let currentHealthy = false;
+      await fetchHealth(network.rpcUrl).then(({ healthy }) => {
+        currentHealthy = healthy;
+      });
+      setFailedNetwork({ ...failedNetwork, [network.id]: !currentHealthy });
+      const changedNetwork = await changeNetworkProvider(network);
+      dispatchChangedEvent(changedNetwork);
+    },
+    [changeNetworkProvider],
+  );
+
   const changeNetwork = useCallback(
     async (id: string) => {
       if (networkMetainfos.length === 0) {
         setCurrentNetwork(null);
         return false;
       }
+      setState('LOADING');
+      resetNetworkConnection();
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
       await chainService.updateCurrentNetworkId(id);
-      const changedNetwork = await changeNetworkProvider(network);
-      dispatchChangedEvent(changedNetwork);
+      await changeNetworkOfProvider(network);
       return true;
     },
-    [chainService, networkMetainfos, chainService],
+    [networkMetainfos, changeNetworkOfProvider],
   );
 
   const updateNetwork = useCallback(
@@ -75,12 +94,13 @@ export const useNetwork = (): NetworkResponse => {
       );
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+
       if (network.id === currentNetwork?.id) {
-        await changeNetwork(network.id);
+        changeNetworkOfProvider(network);
       }
       return true;
     },
-    [networkMetainfos, chainService, changeNetwork],
+    [currentNetwork, networkMetainfos, chainService],
   );
 
   const deleteNetwork = useCallback(
@@ -98,12 +118,13 @@ export const useNetwork = (): NetworkResponse => {
           : networkMetainfos.filter((current) => current.id !== networkId);
       await chainService.updateNetworks(changedNetworks);
       setNetworkMetainfos(changedNetworks);
+
       if (networkId === currentNetwork?.id) {
-        await changeNetwork(DEFAULT_NETWORK.id);
+        changeNetworkOfProvider(DEFAULT_NETWORK);
       }
       return true;
     },
-    [networkMetainfos, chainService, currentNetwork],
+    [currentNetwork, networkMetainfos, chainService, currentNetwork],
   );
 
   const dispatchChangedEvent = useCallback(
@@ -123,5 +144,6 @@ export const useNetwork = (): NetworkResponse => {
     addNetwork,
     deleteNetwork,
     setModified,
+    resetNetworkConnection,
   };
 };
