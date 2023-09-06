@@ -189,7 +189,11 @@ const TokenBox = styled.div<{ color: string }>`
     height: 30px;
   }
   .main-text {
+    display: block;
+    max-width: 250px;
     align-items: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 `;
 
