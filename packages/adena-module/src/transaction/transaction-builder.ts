@@ -8,6 +8,7 @@ import {
   encodeVmRun,
   VmAddPackage,
   VmCall,
+  VmRun,
 } from './message-info';
 import {
   MessageTypeUrl,
@@ -114,7 +115,7 @@ export class TransactionBuilder {
         encodeVmAddPackage(writer, messageInfo);
         break;
       case '/vm.m_run':
-        messageInfo = message.value as VmAddPackage;
+        messageInfo = message.value as VmRun;
         encodeVmRun(writer, messageInfo);
         break;
       default:
