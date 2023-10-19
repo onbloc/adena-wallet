@@ -87,7 +87,7 @@ export const encodeVmAddPackage = (writer: protobuf.Writer, messageInfo: VmAddPa
   return writer;
 };
 
-export const encodeVmRun = (writer: protobuf.Writer, messageInfo: VmAddPackage) => {
+export const encodeVmRun = (writer: protobuf.Writer, messageInfo: VmRun) => {
   if (messageInfo.caller !== '') {
     writer.uint32(10).string(messageInfo.caller);
   }
