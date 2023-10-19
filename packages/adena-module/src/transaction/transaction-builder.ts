@@ -5,6 +5,7 @@ import {
   encodeBankSend,
   encodeVmAddPackage,
   encodeVmCall,
+  encodeVmRun,
   VmAddPackage,
   VmCall,
 } from './message-info';
@@ -111,6 +112,10 @@ export class TransactionBuilder {
       case '/vm.m_addpkg':
         messageInfo = message.value as VmAddPackage;
         encodeVmAddPackage(writer, messageInfo);
+        break;
+      case '/vm.m_run':
+        messageInfo = message.value as VmAddPackage;
+        encodeVmRun(writer, messageInfo);
         break;
       default:
         throw new Error('Not Found Transaction Message Type');
