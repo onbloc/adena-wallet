@@ -152,8 +152,13 @@ const ApproveSignContainer: React.FC = () => {
         currentAccount,
         document
       );
+      const transactionBytes = transactionService.createTransaction(
+        document,
+        signature,
+      );
+      const encodedTransaction = Buffer.from(transactionBytes).toString('base64');
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.success('SIGN_AMINO', { document, signature }, requestData?.key),
+        InjectionMessageInstance.success('SIGN_AMINO', { document, signature, encodedTransaction }, requestData?.key),
       );
     } catch (e) {
       if (e instanceof Error) {
