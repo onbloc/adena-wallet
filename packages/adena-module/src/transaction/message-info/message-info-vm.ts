@@ -95,7 +95,7 @@ export const encodeVmRun = (writer: protobuf.Writer, messageInfo: VmRun) => {
     writer.uint32(18).string(messageInfo.send);
   }
   if (messageInfo.package !== undefined) {
-    encodePackage(writer.uint32(18).fork(), messageInfo.package).ldelim();
+    encodePackage(writer.uint32(26).fork(), messageInfo.package).ldelim();
   }
   return writer;
 };
