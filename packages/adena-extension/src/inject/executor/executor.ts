@@ -4,6 +4,7 @@ import {
   validateDoContractRequest,
   validateTrasactionMessageOfAddPkg,
   validateTrasactionMessageOfBankSend,
+  validateTrasactionMessageOfRun,
   validateTrasactionMessageOfVmCall,
 } from '@common/validation/validation-message';
 
@@ -122,6 +123,11 @@ export class AdenaExecutor {
           break;
         case '/vm.m_addpkg':
           if (!validateTrasactionMessageOfAddPkg(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_run':
+          if (!validateTrasactionMessageOfRun(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;

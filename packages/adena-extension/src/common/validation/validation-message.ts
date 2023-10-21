@@ -99,3 +99,36 @@ export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: an
   }
   return true;
 };
+
+export const validateTrasactionMessageOfRun = (message: { [key in string]: any }) => {
+  if (!message.type || !message.value) {
+    return false;
+  }
+  if (message.type !== '/vm.m_run') {
+    return false;
+  }
+  if (typeof message.value !== 'object') {
+    return false;
+  }
+  if (typeof message.value.caller !== 'string') {
+    return false;
+  }
+  if (typeof message.value.send !== 'string') {
+    return false;
+  }
+  if (typeof message.value.package !== 'object') {
+    return false;
+  }
+
+  const packageValue = message.value.package;
+  if (typeof packageValue?.Name !== 'string') {
+    return false;
+  }
+  if (typeof packageValue?.Path !== 'string') {
+    return false;
+  }
+  if (!Array.isArray(packageValue?.Files)) {
+    return false;
+  }
+  return true;
+};

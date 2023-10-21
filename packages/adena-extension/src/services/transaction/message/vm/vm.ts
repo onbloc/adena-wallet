@@ -37,3 +37,19 @@ export const createMessageOfVmCall = (info: {
     },
   };
 };
+
+export const createMessageOfVmRun = (info: {
+  caller: string;
+  send: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  packageInfo: any;
+}) => {
+  return {
+    type: '/vm.m_run',
+    value: {
+      caller: info.caller,
+      send: info.send,
+      package: info.packageInfo
+    },
+  };
+};
