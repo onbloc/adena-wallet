@@ -112,6 +112,13 @@ export class MessageHandler {
           }
         });
         break;
+      case 'MAKE_TX':
+        HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.makeTx(message, sendResponse);
+          }
+        });
+        break;
       default:
         break;
     }

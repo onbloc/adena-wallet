@@ -85,6 +85,15 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public makeTx = (params: RequestDocontractMessage) => {
+    const result = this.valdiateContractMessage(params);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
+    const eventMessage = AdenaExecutor.createEventMessage('MAKE_TX', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
   public addNetwork = (chain: RequestAddedNetworkMessage) => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_NETWORK', { ...chain });
     return this.sendEventMessage(eventMessage);

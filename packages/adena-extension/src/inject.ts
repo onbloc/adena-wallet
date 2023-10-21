@@ -32,6 +32,11 @@ const init = () => {
       const response = await executor.signAmino(mesasage);
       return response;
     },
+    async MakeTx(mesasage: RequestDocontractMessage) {
+      const executor = new AdenaExecutor();
+      const response = await executor.makeTx(mesasage);
+      return response;
+    },
     async AddNetwork(chain: RequestAddedNetworkMessage) {
       const executor = new AdenaExecutor();
       const response = await executor.addNetwork(chain);
