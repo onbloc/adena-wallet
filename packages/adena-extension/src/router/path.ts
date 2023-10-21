@@ -32,6 +32,8 @@ export enum RoutePath {
   ApproveTransactionLoading = '/approve/wallet/transaction/loading',
   ApproveSign = '/approve/wallet/sign',
   ApproveSignLoading = '/approve/wallet/sign/loading',
+  MakeTransaction = '/approve/wallet/make-tx',
+  MakeTransactionLoading = '/approve/wallet/make-tx/loading',
   ApproveEstablish = '/approve/wallet/establish',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',

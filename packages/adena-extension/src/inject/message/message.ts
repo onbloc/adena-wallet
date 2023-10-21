@@ -17,6 +17,10 @@ const MESSAGE_TYPES = {
     code: 0,
     description: 'Sign Amino',
   },
+  MAKE_TX: {
+    code: 0,
+    description: 'Make Transaction',
+  },
   ADD_NETWORK: {
     code: 0,
     description: 'Add Network',

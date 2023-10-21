@@ -26,6 +26,29 @@ export const signAmino = async (
   );
 };
 
+export const makeTx = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  const core = new InjectCore();
+  const locked = await core.walletService.isLocked();
+  if (!locked) {
+    const address = await core.getCurrentAddress();
+    const validationMessage = validateInjectionData(address, requestData);
+    if (validationMessage) {
+      sendResponse(validationMessage);
+      return;
+    }
+  }
+
+  HandlerMethod.createPopup(
+    RoutePath.MakeTransaction,
+    requestData,
+    InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
+    sendResponse,
+  );
+};
+
 export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
