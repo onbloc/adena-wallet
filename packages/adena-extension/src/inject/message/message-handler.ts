@@ -112,10 +112,10 @@ export class MessageHandler {
           }
         });
         break;
-      case 'MAKE_TX':
+      case 'SIGN_TX':
         HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.makeTx(message, sendResponse);
+            HandlerMethod.signTransaction(message, sendResponse);
           }
         });
         break;

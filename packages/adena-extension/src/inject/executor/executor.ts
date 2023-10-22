@@ -86,12 +86,12 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public makeTx = (params: RequestDocontractMessage) => {
+  public signTx = (params: RequestDocontractMessage) => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
-    const eventMessage = AdenaExecutor.createEventMessage('MAKE_TX', params);
+    const eventMessage = AdenaExecutor.createEventMessage('SIGN_TX', params);
     return this.sendEventMessage(eventMessage);
   };
 

@@ -26,7 +26,7 @@ export const signAmino = async (
   );
 };
 
-export const makeTx = async (
+export const signTransaction = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
@@ -42,7 +42,7 @@ export const makeTx = async (
   }
 
   HandlerMethod.createPopup(
-    RoutePath.MakeTransaction,
+    RoutePath.ApproveSignTransaction,
     requestData,
     InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
     sendResponse,

@@ -30,7 +30,7 @@ function mappedTransactionData(document: StdSignDoc) {
 
 const DEFAULT_DENOM = 'GNOT';
 
-const MakeTransactionContainer: React.FC = () => {
+const ApproveSignTransactionContainer: React.FC = () => {
   const navigate = useNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
@@ -156,7 +156,7 @@ const MakeTransactionContainer: React.FC = () => {
       const transactionBytes = await transactionService.createTransaction(document, signature);
       const encodedTransaction = bytesToBase64(transactionBytes);
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.success('MAKE_TX', { encodedTransaction }, requestData?.key),
+        InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -211,7 +211,7 @@ const MakeTransactionContainer: React.FC = () => {
 
   return (
     <ApproveTransaction
-      title='Make Transaction'
+      title='Sign Transaction'
       domain={hostname}
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
@@ -226,4 +226,4 @@ const MakeTransactionContainer: React.FC = () => {
   );
 };
 
-export default MakeTransactionContainer;
+export default ApproveSignTransactionContainer;
