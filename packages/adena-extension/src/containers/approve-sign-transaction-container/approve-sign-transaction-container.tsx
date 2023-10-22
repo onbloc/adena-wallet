@@ -211,7 +211,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   return (
     <ApproveTransaction
-      title='Make Transaction'
+      title='Sign Transaction'
       domain={hostname}
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
