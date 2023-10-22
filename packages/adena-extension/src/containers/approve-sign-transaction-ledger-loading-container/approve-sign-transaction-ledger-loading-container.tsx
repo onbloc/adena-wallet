@@ -7,15 +7,15 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { bytesToBase64 } from '@common/utils/encoding-util';
 
-interface MakeTransactionLedgerLoadingState {
+interface ApproveSignTransactionLedgerLoadingState {
   requestData?: InjectionMessage;
   document?: StdSignDoc;
 }
 
-const MakeTransactionLedgerLoadingContainer: React.FC = () => {
+const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
   const location = useLocation();
   const { transactionService } = useAdenaContext();
-  const { document, requestData } = location.state as MakeTransactionLedgerLoadingState;
+  const { document, requestData } = location.state as ApproveSignTransactionLedgerLoadingState;
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
 
@@ -47,7 +47,7 @@ const MakeTransactionLedgerLoadingContainer: React.FC = () => {
       const transactionBytes = await transactionService.createTransaction(document, signature);
       const encodedTransaction = bytesToBase64(transactionBytes);
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.success('MAKE_TX', { encodedTransaction }, requestData?.key),
+        InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
       );
       return true;
     }).catch((error: Error) => {
@@ -82,4 +82,4 @@ const MakeTransactionLedgerLoadingContainer: React.FC = () => {
   );
 };
 
-export default MakeTransactionLedgerLoadingContainer;
+export default ApproveSignTransactionLedgerLoadingContainer;
