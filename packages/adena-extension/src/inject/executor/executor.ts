@@ -4,6 +4,7 @@ import {
   validateDoContractRequest,
   validateTrasactionMessageOfAddPkg,
   validateTrasactionMessageOfBankSend,
+  validateTrasactionMessageOfRun,
   validateTrasactionMessageOfVmCall,
 } from '@common/validation/validation-message';
 
@@ -85,6 +86,15 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public signTx = (params: RequestDocontractMessage) => {
+    const result = this.valdiateContractMessage(params);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
+    const eventMessage = AdenaExecutor.createEventMessage('SIGN_TX', params);
+    return this.sendEventMessage(eventMessage);
+  };
+
   public addNetwork = (chain: RequestAddedNetworkMessage) => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_NETWORK', { ...chain });
     return this.sendEventMessage(eventMessage);
@@ -113,6 +123,11 @@ export class AdenaExecutor {
           break;
         case '/vm.m_addpkg':
           if (!validateTrasactionMessageOfAddPkg(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_run':
+          if (!validateTrasactionMessageOfRun(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;

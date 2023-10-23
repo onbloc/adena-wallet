@@ -29,7 +29,7 @@ export interface TxProps {
   txType: string;
 }
 
-type TxTypeValue = '/bank.MsgSend' | '/vm.m_call' | '/vm.m_addpkg';
+type TxTypeValue = '/bank.MsgSend' | '/vm.m_call' | '/vm.m_addpkg' | '/vm.m_run';
 
 export interface ResultTxStateType {
   txStatusStyle: { [key in string]: any };
@@ -48,6 +48,7 @@ const statusSymbol = {
   '/bank.MsgSend': gnot,
   '/vm.m_call': contract,
   '/vm.m_addpkg': addpkg,
+  '/vm.m_run': gnot,
 };
 
 const useStatus = () => {
@@ -89,6 +90,13 @@ const useStatus = () => {
         ...result,
         txTypeDesc: 'Add Package',
         txSend: 'AddPkg',
+      };
+    }
+    if ((state.txType as TxTypeValue) === '/vm.m_run') {
+      result = {
+        ...result,
+        txTypeDesc: 'Run',
+        txSend: 'Run',
       };
     }
     return result;

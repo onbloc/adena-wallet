@@ -112,6 +112,13 @@ export class MessageHandler {
           }
         });
         break;
+      case 'SIGN_TX':
+        HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.signTransaction(message, sendResponse);
+          }
+        });
+        break;
       default:
         break;
     }

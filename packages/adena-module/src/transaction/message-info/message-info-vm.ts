@@ -26,6 +26,12 @@ export interface VmAddPackage extends InfoType {
   deposit: string;
 }
 
+export interface VmRun extends InfoType {
+  caller: string;
+  send: string;
+  package?: Package;
+}
+
 export const encodeVmCall = (writer: protobuf.Writer, messageInfo: VmCall) => {
   if (messageInfo.caller !== '') {
     writer.uint32(10).string(messageInfo.caller);
@@ -77,6 +83,19 @@ export const encodeVmAddPackage = (writer: protobuf.Writer, messageInfo: VmAddPa
   }
   if (messageInfo.deposit !== '') {
     writer.uint32(26).string(messageInfo.deposit);
+  }
+  return writer;
+};
+
+export const encodeVmRun = (writer: protobuf.Writer, messageInfo: VmRun) => {
+  if (messageInfo.caller !== '') {
+    writer.uint32(10).string(messageInfo.caller);
+  }
+  if (messageInfo.send !== '') {
+    writer.uint32(18).string(messageInfo.send);
+  }
+  if (messageInfo.package !== undefined) {
+    encodePackage(writer.uint32(26).fork(), messageInfo.package).ldelim();
   }
   return writer;
 };

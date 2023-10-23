@@ -26,6 +26,29 @@ export const signAmino = async (
   );
 };
 
+export const signTransaction = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  const core = new InjectCore();
+  const locked = await core.walletService.isLocked();
+  if (!locked) {
+    const address = await core.getCurrentAddress();
+    const validationMessage = validateInjectionData(address, requestData);
+    if (validationMessage) {
+      sendResponse(validationMessage);
+      return;
+    }
+  }
+
+  HandlerMethod.createPopup(
+    RoutePath.ApproveSignTransaction,
+    requestData,
+    InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
+    sendResponse,
+  );
+};
+
 export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
@@ -77,7 +100,7 @@ export const validateInjectionAddress = (currentAccountAddress: string) => {
 };
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage) => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg'];
+  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
   return requestData.data?.messages.every((message: any) => messageTypes.includes(message?.type));
 };
 
@@ -100,6 +123,11 @@ export const validateInjectionTransactionMessage = (
         break;
       case '/vm.m_addpkg':
         if (currentAccountAddress !== message.value.creator) {
+          return false;
+        }
+        break;
+      case '/vm.m_run':
+        if (currentAccountAddress !== message.value.caller) {
           return false;
         }
         break;

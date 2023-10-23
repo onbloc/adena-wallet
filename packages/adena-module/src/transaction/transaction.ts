@@ -4,7 +4,7 @@ import protobuf from 'protobufjs/minimal';
 import { StdSignDoc } from '..';
 import { TransactionEncode } from './transaction-encode';
 
-export type MessageTypeUrl = '/vm.m_call' | '/vm.m_addpkg' | '/bank.MsgSend';
+export type MessageTypeUrl = '/vm.m_call' | '/vm.m_addpkg' | '/vm.m_run' | '/bank.MsgSend';
 
 export interface TransactionMessage {
   type: MessageTypeUrl;
