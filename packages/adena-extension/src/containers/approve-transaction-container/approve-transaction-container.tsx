@@ -10,7 +10,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
-import { Tm2Error } from '@common/errors/common/tm2-error';
+import { TM2Error } from "@gnolang/tm2-js-client"
 
 function mappedTransactionData(document: StdSignDoc) {
   return {
@@ -184,33 +184,37 @@ const ApproveTransactionContainer: React.FC = () => {
         document
       );
       const transaction = await transactionService.createTransaction(document, signature);
-      const hash = await new Promise<string>((resolve, reject) => {
+      const hash = transactionService.createHash(transaction);
+      const responseHash = await new Promise<string>((resolve) => {
         transactionService.sendTransaction(transaction)
           .then(resolve)
-          .catch(reject);
+          .catch((error: TM2Error) => {
+            const message = {
+              hash,
+              error: {
+                name: error.name,
+                message: error.message,
+                log: error.log,
+              },
+            };
+            chrome.runtime.sendMessage(
+              InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
+            )
+          });
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       })
-      if (hash.length > 0) {
+      if (hash === responseHash) {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
         );
         return true;
       } else {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
         );
       }
     } catch (e) {
-      if (e instanceof Tm2Error) {
-        chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure(
-            'TRANSACTION_FAILED',
-            e.response,
-            requestData?.key,
-          ),
-        );
-      }
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
