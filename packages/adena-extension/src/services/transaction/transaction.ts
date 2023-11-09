@@ -137,9 +137,9 @@ export class TransactionService {
    */
   public sendTransaction = async (transaction: Array<number>) => {
     const provider = this.getGnoProvider();
-    const hash = await provider.sendTransaction(Buffer.from(transaction).toString('base64'));
-    provider.waitResultForTransaction(hash).then(console.log);
-    return hash;
+    const encodedTransaction = Buffer.from(transaction).toString('base64');
+    const response = await provider.sendTransactionCommit(encodedTransaction);
+    return response.hash;
   };
 
   public createHash(transaction: Array<number>) {

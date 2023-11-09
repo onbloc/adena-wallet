@@ -9,7 +9,8 @@ import {
   RPCResponse,
   parseABCI,
   RestService,
-  BroadcastTxResult,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
   TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
@@ -131,14 +132,14 @@ export class GnoProvider extends GnoJSONRPCProvider {
       .catch(() => null);
   }
 
-  public async sendTransaction(tx: string): Promise<string> {
-    const response: BroadcastTxResult = await RestService.post<BroadcastTxResult>(this.baseURL, {
-      request: newRequest(TransactionEndpoint.BROADCAST_TX_SYNC, [tx]),
-    });
-    if (response.error) {
-      throw Tm2Error.createTm2Error(response.hash, response.error['@type']);
-    }
-    return response.hash;
+  public async sendTransactionSync(tx: string): Promise<BroadcastTxSyncResult> {
+    const response = this.sendTransaction(tx, TransactionEndpoint.BROADCAST_TX_SYNC);
+    return response;
+  }
+
+  public async sendTransactionCommit(tx: string): Promise<BroadcastTxCommitResult> {
+    const response = this.sendTransaction(tx, TransactionEndpoint.BROADCAST_TX_COMMIT);
+    return response;
   }
 
   public waitResultForTransaction(hash: string, timeout?: number) {

@@ -6,6 +6,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
+import { TM2Error } from "@gnolang/tm2-js-client"
 
 interface ApproveSignLedgerLoadingState {
   requestData?: InjectionMessage;
@@ -45,8 +46,23 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
 
     const result = await transactionService.createSignatureWithLedger(currentAccount, document).then(async (signature) => {
       const transaction = await transactionService.createTransaction(document, signature);
-      const hash = await transactionService.sendTransaction(transaction);
-      if (hash.length > 0) {
+      const hash = transactionService.createHash(transaction);
+      const responseHash = await transactionService.sendTransaction(transaction)
+        .catch((error: TM2Error) => {
+          const message = {
+            hash,
+            error: {
+              name: error.name,
+              message: error.message,
+              log: error.log,
+            },
+          };
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
+          )
+        });
+
+      if (hash === responseHash) {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
         );
