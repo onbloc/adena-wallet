@@ -40,5 +40,19 @@
     "gnoUrl": "https://testnet.gno.teritori.com",
     "apiUrl": "",
     "linkUrl": ""
+  },
+  {
+    "id": "gnoswap",
+    "default": false,
+    "main": false,
+    "chainId": "dev.gnoswap",
+    "chainName": "Gnoswap-Testnet",
+    "networkId": "dev.gnoswap",
+    "networkName": "Gnoswap-Testnet",
+    "addressPrefix": "g",
+    "rpcUrl": "https://dev.rpc.gnoswap.io",
+    "gnoUrl": "https://dev.rpc.gnoswap.io",
+    "apiUrl": "",
+    "linkUrl": ""
   }
 ]
