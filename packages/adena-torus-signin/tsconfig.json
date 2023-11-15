@@ -3,9 +3,11 @@
     "jsx": "preserve",
     "module": "ES6",
     "moduleResolution": "node",
+    "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
     "allowUmdGlobalAccess": true,
-    "sourceMap": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
     "strict": true,
     "allowJs": true,
     "noEmit": false,
@@ -16,7 +18,8 @@
     "outDir": "./dist",
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "declaration": true
+    "declaration": true,
+    "isolatedModules": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.*"]
