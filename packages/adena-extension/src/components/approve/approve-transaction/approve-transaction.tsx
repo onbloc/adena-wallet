@@ -7,6 +7,7 @@ import Button from '@components/buttons/button';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import BottomFixedButtonGroup from '@components/buttons/bottom-fixed-button-group';
+import ApproveInjectionLoading from '../approve-injection-loading/approve-injection-loading';
 
 export interface ApproveTransactionProps {
   loading: boolean;
@@ -25,7 +26,11 @@ export interface ApproveTransactionProps {
   };
   transactionData: string;
   opened: boolean;
+  processing: boolean;
+  done: boolean;
   onToggleTransactionData: (opened: boolean) => void;
+  onResponse: () => void;
+  onTimeout: () => void;
   onClickConfirm: () => void;
   onClickCancel: () => void;
 }
@@ -40,7 +45,11 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   networkFee,
   transactionData,
   opened,
+  processing,
+  done,
   onToggleTransactionData,
+  onResponse,
+  onTimeout,
   onClickConfirm,
   onClickCancel,
 }) => {
@@ -48,6 +57,17 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
   }
+
+  if (processing) {
+    return (
+      <ApproveInjectionLoading
+        done={done}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    )
+  }
+
   return (
     <ApproveTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
