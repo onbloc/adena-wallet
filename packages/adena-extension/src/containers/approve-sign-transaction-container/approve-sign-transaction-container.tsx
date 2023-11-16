@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -45,6 +45,12 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
+  const [processType, setProcessType] = useState<"INIT" | "PROCESSING" | "DONE">("INIT")
+  const [response, setResponse] = useState<InjectionMessage | null>(null);
+
+  const processing = useMemo(() => processType !== "INIT", [processType]);
+
+  const done = useMemo(() => processType === "DONE", [processType]);
 
   const networkFee = useMemo(() => {
     if (!document || document.fee.amount.length === 0) {
@@ -140,11 +146,9 @@ const ApproveSignTransactionContainer: React.FC = () => {
     return false;
   };
 
-  const sendTransaction = async () => {
+  const signTransaction = async () => {
     if (!document || !currentAccount) {
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key),
-      );
+      setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
       return false;
     }
 
@@ -153,31 +157,20 @@ const ApproveSignTransactionContainer: React.FC = () => {
         currentAccount,
         document
       );
+      setProcessType("PROCESSING");
       const transactionBytes = await transactionService.createTransaction(document, signature);
       const encodedTransaction = bytesToBase64(transactionBytes);
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
-      );
+      setResponse(InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key));
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
           return false;
         }
-        chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure(
-            'SIGN_FAILED',
-            { error: { message } },
-            requestData?.key,
-          ),
+        setResponse(InjectionMessageInstance.failure('SIGN_FAILED', { error: { message } }, requestData?.key),
         );
       }
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(
-          'SIGN_FAILED',
-          {},
-          requestData?.key,
-        ),
+      setResponse(InjectionMessageInstance.failure('SIGN_FAILED', {}, requestData?.key),
       );
     }
     return false;
@@ -200,7 +193,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       });
       return;
     }
-    sendTransaction();
+    signTransaction().finally(() => setProcessType("DONE"));
   };
 
   const onClickCancel = () => {
@@ -209,16 +202,32 @@ const ApproveSignTransactionContainer: React.FC = () => {
     );
   };
 
+  const onResponseSignTransaction = useCallback(() => {
+    if (response) {
+      chrome.runtime.sendMessage(response);
+    }
+  }, [response]);
+
+  const onTimeoutSignTransaction = useCallback(() => {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+    );
+  }, []);
+
   return (
     <ApproveTransaction
       title='Sign Transaction'
       domain={hostname}
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
+      processing={processing}
+      done={done}
       logo={favicon}
       networkFee={networkFee}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
+      onResponse={onResponseSignTransaction}
+      onTimeout={onTimeoutSignTransaction}
       onToggleTransactionData={onToggleTransactionData}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}

@@ -56,6 +56,12 @@ const ApproveTransactionContainer: React.FC = () => {
   const [document, setDocument] = useState<StdSignDoc>();
   const { currentNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [processType, setProcessType] = useState<"INIT" | "PROCESSING" | "DONE">("INIT")
+  const [response, setResponse] = useState<InjectionMessage | null>(null);
+
+  const processing = useMemo(() => processType !== "INIT", [processType]);
+
+  const done = useMemo(() => processType === "DONE", [processType]);
 
   const networkFee = useMemo(() => {
     if (!document || document.fee.amount.length === 0) {
@@ -81,35 +87,15 @@ const ApproveTransactionContainer: React.FC = () => {
       .isLessThan(networkFee.amount);
   }, [currentBalance, networkFee]);
 
-  useEffect(() => {
-    checkLockWallet();
-  }, [walletService]);
-
   const checkLockWallet = () => {
     walletService.isLocked().then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
   }
-
-  useEffect(() => {
-    if (location.search) {
-      initRequestData();
-    }
-  }, [location]);
 
   const initRequestData = () => {
     const data = parseParmeters(location.search);
     const parsedData = decodeParameter(data['data']);
     setReqeustData({ ...parsedData, hostname: data['hostname'] });
   };
-
-  useEffect(() => {
-    if (currentAccount && requestData && gnoProvider) {
-      if (validate(currentAccount, requestData)) {
-        initFavicon();
-        initTransactionData();
-        initBalance();
-      }
-    }
-  }, [currentAccount, requestData, gnoProvider]);
 
   const validate = (currentAccount: Account, requestData: InjectionMessage) => {
     const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
@@ -172,9 +158,7 @@ const ApproveTransactionContainer: React.FC = () => {
       return false;
     }
     if (!document || !currentNetwork || !currentAccount) {
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key),
-      );
+      setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
       return false;
     }
 
@@ -183,6 +167,7 @@ const ApproveTransactionContainer: React.FC = () => {
         currentAccount,
         document
       );
+      setProcessType("PROCESSING");
       const transaction = await transactionService.createTransaction(document, signature);
       const hash = transactionService.createHash(transaction);
       const responseHash = await new Promise<string>((resolve) => {
@@ -197,7 +182,7 @@ const ApproveTransactionContainer: React.FC = () => {
                 log: error.log,
               },
             };
-            chrome.runtime.sendMessage(
+            setResponse(
               InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
             )
           });
@@ -205,14 +190,10 @@ const ApproveTransactionContainer: React.FC = () => {
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       })
       if (hash === responseHash) {
-        chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
-        );
+        setResponse(InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key));
         return true;
       } else {
-        chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
-        );
+        setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key));
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -221,12 +202,7 @@ const ApproveTransactionContainer: React.FC = () => {
           return false;
         }
       }
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(
-          'TRANSACTION_FAILED',
-          {},
-          requestData?.key,
-        ),
+      setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key),
       );
     }
     return false;
@@ -250,14 +226,46 @@ const ApproveTransactionContainer: React.FC = () => {
       });
       return;
     }
-    sendTransaction();
+    sendTransaction().finally(() => setProcessType("DONE")
+    );
   };
 
+  useEffect(() => {
+    checkLockWallet();
+  }, [walletService]);
+
+  useEffect(() => {
+    if (location.search) {
+      initRequestData();
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (currentAccount && requestData && gnoProvider) {
+      if (validate(currentAccount, requestData)) {
+        initFavicon();
+        initTransactionData();
+        initBalance();
+      }
+    }
+  }, [currentAccount, requestData, gnoProvider]);
   const onClickCancel = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
     );
   };
+
+  const onResponseSendTransaction = useCallback(() => {
+    if (response) {
+      chrome.runtime.sendMessage(response);
+    }
+  }, [response]);
+
+  const onTimeoutSendTransaction = useCallback(() => {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+    );
+  }, []);
 
   return (
     <ApproveTransaction
@@ -265,11 +273,15 @@ const ApproveTransactionContainer: React.FC = () => {
       domain={hostname}
       contracts={transactionData?.contracts}
       loading={transactionData === undefined}
+      processing={processing}
+      done={done}
       logo={favicon}
       isErrorNetworkFee={isErrorNetworkFee}
       networkFee={networkFee}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
+      onResponse={onResponseSendTransaction}
+      onTimeout={onTimeoutSendTransaction}
       onToggleTransactionData={onToggleTransactionData}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
