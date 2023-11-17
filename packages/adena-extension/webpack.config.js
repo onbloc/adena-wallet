@@ -80,6 +80,7 @@ const config = {
       '@containers': path.resolve(__dirname, 'src/containers'),
       '@migrates': path.resolve(__dirname, 'src/migrates'),
       '@models': path.resolve(__dirname, 'src/models'),
+      '@pulbic': path.resolve(__dirname, 'public/'),
     },
   },
   plugins: [
