@@ -6,6 +6,8 @@
     "module": "esnext",
     "target": "es5",
     "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
     "skipLibCheck": true,
@@ -30,7 +32,8 @@
       "@inject/*": ["src/inject/*"],
       "@assets/*": ["src/assets/*"],
       "@migrates/*": ["src/migrates/*"],
-      "@models/*": ["src/models/*"]
+      "@models/*": ["src/models/*"],
+      "@pulbic/*": ["public/*"]
     }
   },
   "include": ["./src/**/*"]

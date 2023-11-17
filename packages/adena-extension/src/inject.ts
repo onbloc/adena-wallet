@@ -4,6 +4,7 @@ import {
   RequestAddedNetworkMessage,
   RequestDocontractMessage,
 } from './inject/executor/executor';
+import manifest from '@pulbic/manifest.json';
 
 function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void) {
   event.stopImmediatePropagation();
@@ -12,6 +13,7 @@ function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) =>
 
 const init = () => {
   const adena = {
+    version: manifest.version,
     async AddEstablish(name: string) {
       const executor = new AdenaExecutor();
       const response = await executor.addEstablish(name);
