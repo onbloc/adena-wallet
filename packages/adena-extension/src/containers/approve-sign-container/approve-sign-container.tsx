@@ -210,7 +210,7 @@ const ApproveSignContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
     );
-  }, []);
+  }, [requestData]);
 
   return (
     <ApproveTransaction
