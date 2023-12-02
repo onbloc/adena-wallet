@@ -4,7 +4,7 @@ import {
   RequestAddedNetworkMessage,
   RequestDocontractMessage,
 } from './inject/executor/executor';
-import manifest from '@pulbic/manifest.json';
+import manifest from '@public/manifest.json';
 
 function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void) {
   event.stopImmediatePropagation();
