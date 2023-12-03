@@ -1,21 +1,21 @@
 import theme from '@styles/theme';
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '../text';
 import Button from './button';
 
 const CopyButton = styled(Button)<{ isClicked: boolean }>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[11]};
+    background-color: ${({ theme }): string => theme.color.neutral[11]};
   }
 `;
 
-const Copy = ({ copyStr, tabIndex }: { copyStr: string; tabIndex?: number }) => {
+const Copy = ({ copyStr, tabIndex }: { copyStr: string; tabIndex?: number }): JSX.Element => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
   const handleButtonClick = useCallback(() => {

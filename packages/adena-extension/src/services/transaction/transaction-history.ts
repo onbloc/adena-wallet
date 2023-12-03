@@ -8,15 +8,31 @@ export class TransactionHistoryService {
     this.transactionHisotyrRepository = transactionHisotyrRepository;
   }
 
-  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo) {
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
     return this.transactionHisotyrRepository.setNetworkMetainfo(networkMetainfo);
   }
 
-  public fetchAllTransactionHistory(address: string, from: number, size?: number) {
+  public fetchAllTransactionHistory(
+    address: string,
+    from: number,
+    size?: number,
+  ): Promise<{
+    hits: number;
+    next: boolean;
+    txs: import('/Users/limsanghyun/Documents/sourcecode/adena-wallet/packages/adena-extension/src/components/transaction-history/transaction-history/transaction-history').TransactionInfo[];
+  }> {
     return this.transactionHisotyrRepository.fetchAllTransactionHistoryBy(address, from, size);
   }
 
-  public fetchNativeTransactionHistory(address: string, from: number, size?: number) {
+  public fetchNativeTransactionHistory(
+    address: string,
+    from: number,
+    size?: number,
+  ): Promise<{
+    hits: number;
+    next: boolean;
+    txs: import('/Users/limsanghyun/Documents/sourcecode/adena-wallet/packages/adena-extension/src/components/transaction-history/transaction-history/transaction-history').TransactionInfo[];
+  }> {
     return this.transactionHisotyrRepository.fetchNativeTransactionHistoryBy(address, from, size);
   }
 
@@ -25,7 +41,11 @@ export class TransactionHistoryService {
     packagePath: string,
     from: number,
     size?: number,
-  ) {
+  ): Promise<{
+    hits: number;
+    next: boolean;
+    txs: import('/Users/limsanghyun/Documents/sourcecode/adena-wallet/packages/adena-extension/src/components/transaction-history/transaction-history/transaction-history').TransactionInfo[];
+  }> {
     return this.transactionHisotyrRepository.fetchGRC20TransactionHistoryBy(
       address,
       packagePath,

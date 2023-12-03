@@ -1,6 +1,6 @@
 import React from 'react';
-import styled from 'styled-components';
-import Button, { ButtonHierarchy, modeVariants } from '../buttons/button';
+import styled, { CSSProp } from 'styled-components';
+import Button, { ButtonHierarchy } from '../buttons/button';
 
 interface GhostButtonsProps {
   left: string;
@@ -9,21 +9,21 @@ interface GhostButtonsProps {
 }
 
 const GhostBtnWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
 `;
 
 const GhostBtn = styled(Button)`
-  ${({ theme }) => theme.fonts.body1Bold};
+  ${({ theme }): CSSProp => theme.fonts.body1Bold};
   transition: all 0.4s ease;
   :disabled {
-    color: ${({ theme }) => theme.color.neutral[3]};
+    color: ${({ theme }): string => theme.color.neutral[3]};
     border: none;
   }
 `;
 
-export const GhostButtons = ({ left, right, className }: GhostButtonsProps) => {
+export const GhostButtons = ({ left, right, className }: GhostButtonsProps): JSX.Element => {
   return (
     <GhostBtnWrap className={className}>
       <GhostBtn fullWidth height='48px' hierarchy={ButtonHierarchy.Ghost} disabled>

@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { FlattenSimpleInterpolation } from 'styled-components';
 
 export const ManageTokenListItemWrapper = styled.div`
   display: flex;
@@ -6,7 +7,7 @@ export const ManageTokenListItemWrapper = styled.div`
   padding: 10px 14px;
   width: 100%;
   height: auto;
-  background: ${({ theme }) => theme.color.neutral[8]};
+  background: ${({ theme }): string => theme.color.neutral[8]};
   border-radius: 18px;
   align-items: center;
   justify-items: flex-start;
@@ -39,7 +40,7 @@ export const ManageTokenListItemWrapper = styled.div`
     justify-content: space-between;
 
     .name {
-      ${({ theme }) => theme.fonts.body2Bold};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold};
       line-height: 15px;
     }
   }

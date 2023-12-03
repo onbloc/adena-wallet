@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import Icon, { IconName } from '@components/icons';
@@ -10,8 +10,8 @@ import { useNetwork } from '@hooks/use-network';
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
   padding: 0px 40px;
   gap: 40px;
@@ -25,16 +25,16 @@ const Wrapper = styled.nav`
     &:hover,
     &.active {
       .icon-default {
-        fill: ${({ theme }) => theme.color.neutral[0]};
+        fill: ${({ theme }): string => theme.color.neutral[0]};
       }
       .icon-primary {
-        fill: ${({ theme }) => theme.color.primary[3]};
+        fill: ${({ theme }): string => theme.color.primary[3]};
       }
     }
   }
 `;
 
-export const Navigation = () => {
+export const Navigation = (): JSX.Element => {
   const navigate = useNavigate();
   const [loading] = useState(false);
   const wallet = useMatch(RoutePath.Wallet);
@@ -72,13 +72,12 @@ export const Navigation = () => {
 
   const loadingComplete = walletState === 'FINISH';
 
-  const isRender = () => {
+  const isRender = (): boolean => {
     if (wallet || tokenDetails || nft || explore || history) {
       return loadingComplete || failedNetwork[currentNetwork.id] === false;
     }
     return false;
-  }
-
+  };
 
   return (
     <>
@@ -87,7 +86,7 @@ export const Navigation = () => {
           {navItems.map((item, idx) => (
             <div key={idx}>
               <button
-                onClick={() =>
+                onClick={(): void | null =>
                   state === 'FINISH' ? navigate(item.routingAddress, { replace: true }) : null
                 }
                 disabled={state !== 'FINISH'}

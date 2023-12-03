@@ -15,15 +15,15 @@ export class StorageManager<T extends string = string> {
     return `${value}`;
   };
 
-  set = async (valueType: T, value: string | number) => {
+  set = async (valueType: T, value: string | number): Promise<void> => {
     await this.storage.set(valueType, `${value}`);
   };
 
-  remove = async (valueType: T) => {
+  remove = async (valueType: T): Promise<void> => {
     await this.storage.remove(valueType);
   };
 
-  claer = async () => {
+  claer = async (): Promise<void> => {
     await this.storage.clear();
   };
 
@@ -31,7 +31,7 @@ export class StorageManager<T extends string = string> {
     return this.storage.get(valueType);
   };
 
-  setByNumbers = async (valueType: T, values: Array<number>) => {
+  setByNumbers = async (valueType: T, values: Array<number>): Promise<void> => {
     await this.storage.set(valueType, values);
   };
 
@@ -39,11 +39,11 @@ export class StorageManager<T extends string = string> {
     return this.storage.get(valueType);
   };
 
-  setByObject = async (valueType: T, value: objectType) => {
+  setByObject = async (valueType: T, value: objectType): Promise<void> => {
     await this.storage.set(valueType, value);
   };
 
-  updatePassword = (password: string) => {
+  updatePassword = (password: string): void => {
     if (this.storage instanceof ChromeLocalStorage) {
       this.storage.updatePassword(password);
     }

@@ -9,15 +9,10 @@ export interface TokenListItemProps {
 }
 
 const TokenListItem: React.FC<TokenListItemProps> = ({ token, onClickTokenItem }) => {
-  const {
-    tokenId,
-    logo,
-    name,
-    balanceAmount,
-  } = token;
+  const { tokenId, logo, name, balanceAmount } = token;
 
   return (
-    <TokenListItemWrapper onClick={() => onClickTokenItem(tokenId)}>
+    <TokenListItemWrapper onClick={(): void => onClickTokenItem(tokenId)}>
       <div className='logo-wrapper'>
         <img className='logo' src={logo} alt='token img' />
       </div>

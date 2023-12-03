@@ -1,3 +1,10 @@
+import {
+  AccountNamesModelV003,
+  AccountTokenMetainfoModelV003,
+  AddressBookModelV003,
+  EstablishSitesModelV003,
+  NetworksModelV003,
+} from '@migrates/migrations/v003/storage-model-v003';
 import { Storage } from '.';
 import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
 
@@ -44,7 +51,17 @@ export class ChromeLocalStorage implements Storage {
     this.migrator = new StorageMigrator(StorageMigrator.migrations(), this.storage);
   }
 
-  public get = async (key: string) => {
+  public get = async (
+    key: string,
+  ): Promise<
+    | string
+    | NetworksModelV003
+    | AccountNamesModelV003
+    | EstablishSitesModelV003
+    | AddressBookModelV003
+    | AccountTokenMetainfoModelV003
+    | undefined
+  > => {
     if (!isStorageKey(key)) {
       throw new Error('Unsupported key (' + key + ')');
     }
@@ -52,19 +69,19 @@ export class ChromeLocalStorage implements Storage {
     return data?.data[key];
   };
 
-  public set = async (key: string, value: any) => {
+  public set = async (key: string, value: any): Promise<void> => {
     await this.setStorageData(key, value);
   };
 
-  public remove = async (key: string) => {
+  public remove = async (key: string): Promise<void> => {
     return this.set(key, '');
   };
 
-  public clear = async () => {
+  public clear = async (): Promise<void> => {
     await this.storage.clear();
   };
 
-  public updatePassword = (password: string) => {
+  public updatePassword = (password: string): void => {
     this.migrator.setPassword(password);
   };
 
@@ -77,7 +94,7 @@ export class ChromeLocalStorage implements Storage {
     return this.current;
   };
 
-  private setStorageData = async (key: string, value: any) => {
+  private setStorageData = async (key: string, value: any): Promise<void> => {
     const current = await this.getStorageData();
     if (current === null) {
       return;

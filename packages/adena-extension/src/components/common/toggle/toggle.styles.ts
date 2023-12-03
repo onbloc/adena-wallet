@@ -8,7 +8,7 @@ export const ToggleWrapper = styled.div`
   height: 26px;
   padding: 3px;
   border-radius: 100px;
-  background-color: ${({ theme }) => theme.color.neutral[4]};
+  background-color: ${({ theme }): string => theme.color.neutral[4]};
   transition: 0.2s;
   cursor: pointer;
 
@@ -16,13 +16,13 @@ export const ToggleWrapper = styled.div`
     display: block;
     width: 20px;
     height: 20px;
-    background-color: ${({ theme }) => theme.color.neutral[0]};
+    background-color: ${({ theme }): string => theme.color.neutral[0]};
     border-radius: 20px;
     transition: 0.2s;
   }
 
   &.activated {
-    background-color: ${({ theme }) => theme.color.primary[4]};
+    background-color: ${({ theme }): string => theme.color.primary[4]};
 
     .circle {
       margin-left: 20px;

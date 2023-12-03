@@ -1,6 +1,12 @@
 import { createMessageOfVmCall } from './vm';
 
-export const createMessageOfVmCreateBoard = (info: { address: string; boardName: string }) => {
+export const createMessageOfVmCreateBoard = (info: {
+  address: string;
+  boardName: string;
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
@@ -17,7 +23,10 @@ export const createMessageOfVmCreateRepost = (info: {
   destinationBoardId: number;
   title: string;
   body: string;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
@@ -38,7 +47,10 @@ export const createMessageOfVmCreateThread = (info: {
   boardId: number;
   title: string;
   body: string;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
@@ -55,7 +67,10 @@ export const createMessageOfVmEditPost = (info: {
   postId: number;
   title: string;
   body: string;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
@@ -70,7 +85,10 @@ export const createMessageOfVmDeletePost = (info: {
   boardId: number;
   postId: number;
   reason: string;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
@@ -86,7 +104,10 @@ export const createMessageOfVmCreateReply = (info: {
   threadId: number;
   postId: number;
   body: string;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',

@@ -1,4 +1,4 @@
-import styled, { css } from 'styled-components';
+import styled, { CSSProp, css } from 'styled-components';
 import React, { CSSProperties, PropsWithChildren } from 'react';
 import { FontsType } from '@styles/theme';
 
@@ -20,7 +20,7 @@ const Text = ({
   margin,
   className = '',
   ...restProps
-}: PropsWithChildren<TextProps>) => {
+}: PropsWithChildren<TextProps>): JSX.Element => {
   return (
     <Wrapper
       type={type}
@@ -37,7 +37,7 @@ const Text = ({
 };
 
 const Wrapper = styled.div<TextProps>`
-  ${(props) => {
+  ${(props): CSSProp => {
     return css`
       ${props.theme.fonts[props.type]};
       text-align: ${props.textAlign};

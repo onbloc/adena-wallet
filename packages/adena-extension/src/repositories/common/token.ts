@@ -37,7 +37,7 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   },
 ];
 
-interface AppInfoResponse {
+export interface AppInfoResponse {
   symbol: string;
   name: string;
   description: string;
@@ -65,11 +65,11 @@ export class TokenRepository {
     this.networkMetainfo = null;
   }
 
-  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo) {
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
     this.networkMetainfo = networkMetainfo;
   }
 
-  private getAPIUrl() {
+  private getAPIUrl(): string | null {
     if (this.networkMetainfo === null || this.networkMetainfo.apiUrl === '') {
       return null;
     }
@@ -90,7 +90,10 @@ export class TokenRepository {
     return apps.json();
   };
 
-  public fetchGRC20TokensBy = async (keyword: string, tokenInfos?: TokenModel[]) => {
+  public fetchGRC20TokensBy = async (
+    keyword: string,
+    tokenInfos?: TokenModel[],
+  ): Promise<GRC20TokenModel[]> => {
     const apiUrl = this.getAPIUrl();
     if (apiUrl === null) {
       return [];
@@ -110,9 +113,9 @@ export class TokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenModel[] }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
     return accountTokenMetainfos[accountId] ?? [];
   };
@@ -121,11 +124,11 @@ export class TokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenModel[] }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
-    const isUnique = function (token0: TokenModel, token1: TokenModel) {
+    const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
     };
 
@@ -143,9 +146,9 @@ export class TokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      { [key in string]: TokenModel[] }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,

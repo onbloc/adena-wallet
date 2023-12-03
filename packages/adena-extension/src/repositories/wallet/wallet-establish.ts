@@ -18,16 +18,18 @@ export class WalletEstablishRepository {
     this.localStorage = localStorage;
   }
 
-  public getEstablishedSites = async () => {
+  public getEstablishedSites = async (): Promise<{ [x: string]: any }> => {
     const establishedSites = await this.localStorage.getToObject('ESTABLISH_SITES');
     return establishedSites;
   };
 
-  public updateEstablishedSites = async (addressBook: { [key in string]: EstablishSite[] }) => {
+  public updateEstablishedSites = async (addressBook: {
+    [key in string]: EstablishSite[];
+  }): Promise<void> => {
     await this.localStorage.setByObject('ESTABLISH_SITES', addressBook);
   };
 
-  public deleteEstablishedSites = async () => {
+  public deleteEstablishedSites = async (): Promise<void> => {
     await this.localStorage.remove('ESTABLISH_SITES');
   };
 }

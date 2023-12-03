@@ -1,4 +1,3 @@
-import { RoutePath } from '@router/path';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
@@ -10,7 +9,35 @@ import {
   validateWrongPasswordLength,
 } from '@common/validation';
 
-export const useChangePassword = () => {
+export type UseChangePasswordReturn = {
+  currPwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+    ref: React.RefObject<HTMLInputElement>;
+  };
+  newPwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
+  confirmPwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
+  errorMessage: string;
+  buttonState: {
+    onClick: {
+      cancel: () => void;
+      save: () => void;
+    };
+    disabled: boolean;
+  };
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+};
+
+export const useChangePassword = (): UseChangePasswordReturn => {
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -44,12 +71,12 @@ export const useChangePassword = () => {
     }
   }, [inputRef]);
 
-  const initSavedPassword = async () => {
+  const initSavedPassword = async (): Promise<void> => {
     const currentPassword = await walletService.loadWalletPassword();
     setSavedPassword(currentPassword);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && currPwd && newPwd && confirmPwd) {
       saveButtonClick();
     }
@@ -63,7 +90,7 @@ export const useChangePassword = () => {
     [currPwd, newPwd, confirmPwd],
   );
 
-  const validationCheck = async () => {
+  const validationCheck = async (): Promise<'FINISH' | 'FAIL'> => {
     const storedPassword = savedPassword;
     const currentPassword = currPwd;
     const newPassword = newPwd;
@@ -109,7 +136,7 @@ export const useChangePassword = () => {
     setErrorMessage(errorMessage);
     if (isValid) {
       try {
-        await walletService.changePassowrd(newPassword);
+        await walletService.changePassword(newPassword);
         return 'FINISH';
       } catch (e) {
         console.error(e);
@@ -117,9 +144,9 @@ export const useChangePassword = () => {
     }
     return 'FAIL';
   };
-  const cancelButtonClick = () => navigate(-1);
+  const cancelButtonClick = (): void => navigate(-1);
 
-  const saveButtonClick = async () => {
+  const saveButtonClick = async (): Promise<void> => {
     const state = await validationCheck();
     if (state === 'FINISH') {
       return navigate(-1);

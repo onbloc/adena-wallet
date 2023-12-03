@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
 import DefaultInput from '@components/default-input';
@@ -7,7 +7,7 @@ import { useChangePassword } from './use-change-password';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -21,7 +21,7 @@ const FormBox = styled.div`
   }
 `;
 
-export const ChangePassword = () => {
+export const ChangePassword = (): JSX.Element => {
   const { currPwdState, newPwdState, confirmPwdState, errorMessage, buttonState, onKeyDown } =
     useChangePassword();
 

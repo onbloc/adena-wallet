@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import removeIcon from '@assets/icon-remove-blur.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -15,21 +15,21 @@ import { WalletState } from '@states/index';
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
-export const RemoveAccount = () => {
+export const RemoveAccount = (): JSX.Element => {
   const navigate = useNavigate();
   const { currentAccount } = useCurrentAccount();
   const { removeAccount } = useRemoveAccount();
   const [, setState] = useRecoilState(WalletState.state);
 
-  const cancelButtonClick = () => {
+  const cancelButtonClick = (): void => {
     navigate(-1);
   };
 
-  const removeButtonClick = async () => {
+  const removeButtonClick = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
-    setState("LOADING");
+    setState('LOADING');
     await removeAccount(currentAccount);
     navigate(RoutePath.Home);
   };
@@ -56,7 +56,7 @@ export const RemoveAccount = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;

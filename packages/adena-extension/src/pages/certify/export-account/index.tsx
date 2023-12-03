@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import { ErrorText } from '@components/error-text';
 import { useNavigate } from 'react-router-dom';
@@ -13,13 +13,13 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
-export const ExportAccount = () => {
+export const ExportAccount = (): JSX.Element => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [password, setPassword] = useState('');
@@ -28,9 +28,9 @@ export const ExportAccount = () => {
     message: 'Invalid password',
   });
 
-  const cancelButtonClick = () => navigate(-1);
+  const cancelButtonClick = (): void => navigate(-1);
 
-  const nextButtonClick = async () => {
+  const nextButtonClick = async (): Promise<void> => {
     try {
       navigate(RoutePath.ViewPrivateKey, { replace: true });
     } catch (error) {
@@ -38,9 +38,9 @@ export const ExportAccount = () => {
     }
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value);
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && password) nextButtonClick();
   };
 

@@ -10,7 +10,7 @@ interface GoogleSigninButtonProps {
   margin?: CSSProperties['margin'];
 }
 
-const GoogleSigninButton = ({ onClick, margin }: GoogleSigninButtonProps) => {
+const GoogleSigninButton = ({ onClick, margin }: GoogleSigninButtonProps): JSX.Element => {
   return (
     <Button fullWidth hierarchy={ButtonHierarchy.Normal} onClick={onClick} margin={margin}>
       <img src={googleLogo} alt='google logo' />

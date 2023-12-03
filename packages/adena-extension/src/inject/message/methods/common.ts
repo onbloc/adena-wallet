@@ -7,7 +7,7 @@ export const createPopup = async (
   message: InjectionMessage,
   closeMessage: InjectionMessage,
   sendResponse: (response: any) => void,
-) => {
+): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
       `popup.html#${popupPath}` +
@@ -55,7 +55,7 @@ export const createPopup = async (
   });
 };
 
-export const existsPopups = async () => {
+export const existsPopups = async (): Promise<boolean> => {
   const windows = await chrome.windows.getAll();
   return windows.findIndex((window) => window.type === 'popup') > -1;
 };
@@ -63,7 +63,7 @@ export const existsPopups = async () => {
 export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
-) => {
+): Promise<boolean> => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
 
@@ -81,7 +81,7 @@ const popupMessageListener = (
   requestData: InjectionMessage,
   popupMessage: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): boolean => {
   new Promise((resolve) => {
     if (requestData.key === popupMessage.key) {
       resolve(popupMessage);

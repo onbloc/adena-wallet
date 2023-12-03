@@ -56,14 +56,14 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public addEstablish = (name?: string) => {
+  public addEstablish = (name?: string): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_ESTABLISH', {
       name: name ?? 'Unknown',
     });
     return this.sendEventMessage(eventMessage);
   };
 
-  public doContract = (params: RequestDocontractMessage) => {
+  public doContract = (params: RequestDocontractMessage): Promise<unknown> => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -72,12 +72,12 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public getAccount = () => {
+  public getAccount = (): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
     return this.sendEventMessage(eventMessage);
   };
 
-  public signAmino = (params: RequestDocontractMessage) => {
+  public signAmino = (params: RequestDocontractMessage): Promise<unknown> => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -86,7 +86,7 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signTx = (params: RequestDocontractMessage) => {
+  public signTx = (params: RequestDocontractMessage): Promise<unknown> => {
     const result = this.valdiateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -95,17 +95,19 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public addNetwork = (chain: RequestAddedNetworkMessage) => {
+  public addNetwork = (chain: RequestAddedNetworkMessage): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_NETWORK', { ...chain });
     return this.sendEventMessage(eventMessage);
   };
 
-  public switchNetwork = (chainId: string) => {
+  public switchNetwork = (chainId: string): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('SWITCH_NETWORK', { chainId });
     return this.sendEventMessage(eventMessage);
   };
 
-  private valdiateContractMessage = (params: RequestDocontractMessage) => {
+  private valdiateContractMessage = (
+    params: RequestDocontractMessage,
+  ): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {
       return InjectionMessageInstance.failure('INVALID_FORMAT');
     }
@@ -137,7 +139,7 @@ export class AdenaExecutor {
     }
   };
 
-  private sendEventMessage = (eventMessage: InjectionMessage) => {
+  private sendEventMessage = (eventMessage: InjectionMessage): Promise<unknown> => {
     this.listen();
     this.eventMessage = {
       ...eventMessage,
@@ -156,7 +158,7 @@ export class AdenaExecutor {
     }).finally(() => this.unlisten());
   };
 
-  private listen = () => {
+  private listen = (): void => {
     if (this.isListen) {
       return;
     }
@@ -164,16 +166,16 @@ export class AdenaExecutor {
     window.addEventListener('message', this.messageHandler, true);
   };
 
-  public unlisten = () => {
+  public unlisten = (): void => {
     this.isListen = false;
     window.removeEventListener('message', this.messageHandler, true);
   };
 
-  private static createEventMessage = (type: MessageKeyType, params?: Params) => {
+  private static createEventMessage = (type: MessageKeyType, params?: Params): InjectionMessage => {
     return InjectionMessageInstance.request(type, params);
   };
 
-  private messageHandler = (event: MessageEvent<InjectionMessage | any>) => {
+  private messageHandler = (event: MessageEvent<InjectionMessage | any>): void => {
     const eventData = event.data;
     if (eventData.status) {
       const { key, status, data, code, message, type } = eventData;

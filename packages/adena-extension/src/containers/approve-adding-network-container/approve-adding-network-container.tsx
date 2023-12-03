@@ -22,7 +22,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     }
   }, [search]);
 
-  const initRequestData = () => {
+  const initRequestData = (): void => {
     const data = parseParmeters(search);
     const parsedData = decodeParameter(data['data']);
     setReqeustData({ ...parsedData, hostname: data['hostname'] });
@@ -36,11 +36,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     setProcessing(true);
     await addNetwork(chainName, rpcUrl, chainId);
     setResponse(
-      InjectionMessageInstance.success(
-        'ADD_NETWORK_SUCCESS',
-        requestData?.data,
-        requestData?.key,
-      ),
+      InjectionMessageInstance.success('ADD_NETWORK_SUCCESS', requestData?.data, requestData?.key),
     );
     setDone(true);
   }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
@@ -51,17 +47,15 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     }
   }, [done, response]);
 
-  const onTimeout = () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key));
-  }
+  const onTimeout = (): void => {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+    );
+  };
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure(
-        'ADD_NETWORK_REJECTED',
-        requestData?.data,
-        requestData?.key,
-      ),
+      InjectionMessageInstance.failure('ADD_NETWORK_REJECTED', requestData?.data, requestData?.key),
     );
   }, [requestData]);
 
@@ -70,7 +64,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       networkInfo={{
         name: chainName,
         rpcUrl: rpcUrl,
-        chainId: chainId
+        chainId: chainId,
       }}
       logo={''}
       approvable={requestData !== undefined}

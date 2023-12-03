@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const AccountDetailsWrapper = styled.div`
   display: flex;
@@ -35,7 +35,7 @@ export const AccountDetailsWrapper = styled.div`
       flex-direction: row;
       width: 100%;
       height: 42px;
-      background-color: ${({ theme }) => theme.color.neutral[8]};
+      background-color: ${({ theme }): string => theme.color.neutral[8]};
       margin-top: 12px;
       padding: 12px 18px 12px 16px;
       border-radius: 18px;
@@ -46,7 +46,7 @@ export const AccountDetailsWrapper = styled.div`
         display: block;
         width: 100%;
         margin-right: 8px;
-        ${({ theme }) => theme.fonts.light1Reg}
+        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.light1Reg}
         overflow: hidden;
         text-overflow: ellipsis;
       }

@@ -17,10 +17,7 @@ interface SideMenuContainerProps {
   setOpen: (opened: boolean) => void;
 }
 
-const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
-  open,
-  setOpen
-}) => {
+const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) => {
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
@@ -50,7 +47,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
       return [];
     }
 
-    function mapBalance(accountNativeBalances: { [key in string]: TokenBalance }, account: Account) {
+    function mapBalance(
+      accountNativeBalances: { [key in string]: TokenBalance },
+      account: Account,
+    ): string {
       const amount = accountNativeBalances[account.id]?.amount;
       if (!amount) {
         return '-';
@@ -58,34 +58,43 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
       return `${maxFractionDigits(amount.value, 6)} ${amount.denom}`;
     }
 
-    return accounts.map(account => ({
+    return accounts.map((account) => ({
       accountId: account.id,
       name: formatNickname(accountNames[account.id] || account.name, 10),
       address: account.getAddress(currentNetwork.addressPrefix),
       type: account.type,
       balance: mapBalance(accountNativeBalances, account),
-    }))
+    }));
   }, [locked, accountNames, accounts, accountNativeBalances, currentNetwork]);
 
-  const movePage = useCallback(async (link: string) => {
-    setOpen(false);
-    navigate(link);
-  }, [navigate, setOpen]);
+  const movePage = useCallback(
+    async (link: string) => {
+      setOpen(false);
+      navigate(link);
+    },
+    [navigate, setOpen],
+  );
 
-  const openLink = useCallback(async (link: string) => {
-    setOpen(false);
-    window.open(link, '_blank');
-  }, [setOpen]);
+  const openLink = useCallback(
+    async (link: string) => {
+      setOpen(false);
+      window.open(link, '_blank');
+    },
+    [setOpen],
+  );
 
-  const changeAccount = useCallback(async (accountId: string) => {
-    setOpen(false);
-    const account = accounts.find(current => current.id === accountId);
-    if (!account) {
-      return;
-    }
-    await changeCurrentAccount(account);
-    navigate(RoutePath.Wallet, { replace: true });
-  }, [accounts, changeCurrentAccount, setOpen]);
+  const changeAccount = useCallback(
+    async (accountId: string) => {
+      setOpen(false);
+      const account = accounts.find((current) => current.id === accountId);
+      if (!account) {
+        return;
+      }
+      await changeCurrentAccount(account);
+      navigate(RoutePath.Wallet, { replace: true });
+    },
+    [accounts, changeCurrentAccount, setOpen],
+  );
 
   const lock = useCallback(async () => {
     setOpen(false);

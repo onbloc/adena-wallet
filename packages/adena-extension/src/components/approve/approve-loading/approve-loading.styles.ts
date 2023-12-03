@@ -1,8 +1,8 @@
 import { SkeletonBoxStyle } from '@components/loadings';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 
 export const ApproveLoadingWrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   padding: 35px 20px 0;
   .l-approve {
     margin-top: 51px;
@@ -11,7 +11,7 @@ export const ApproveLoadingWrapper = styled.div`
 `;
 
 export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;
   margin: 35px 0px 24px;
@@ -19,16 +19,16 @@ export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 export const ApproveLoadingRoundedBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   padding: 0px 18px;
 `;
 
 export const ApproveLoadingAllRadiusBox = styled(ApproveLoadingRoundedBox)<{ align?: string }>`
   border-radius: 24px;
-  justify-content: ${({ align }) => align && align};
+  justify-content: ${({ align }): string | undefined => align && align};
 `;
 
 export const ApproveLoadingTopRadiusBox = styled(ApproveLoadingRoundedBox)`

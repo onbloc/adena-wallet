@@ -32,15 +32,16 @@ const Wrapper = styled.main`
   }
 `;
 
-export const WalletMain = () => {
+export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
   const navigate = useNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } = useTokenBalance();
+  const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
+    useTokenBalance();
 
-  const DepositButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'deposit' });
-  const SendButtonClick = () => navigate(RoutePath.WalletSearch, { state: 'send' });
+  const DepositButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: 'deposit' });
+  const SendButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: 'send' });
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -54,23 +55,28 @@ export const WalletMain = () => {
     }
   }, [currentAccount]);
 
-  const tokens = displayTokenBalances.filter(tokenBalance => tokenBalance.display).map(tokenBalance => {
-    return {
-      tokenId: tokenBalance.tokenId,
-      logo: tokenBalance.image || `${UnknownTokenIcon}`,
-      name: tokenBalance.name,
-      balanceAmount: {
-        value: BigNumber(tokenBalance.amount.value).toFormat(),
-        denom: tokenBalance.amount.denom
-      }
-    }
-  });
-
-  const onClickTokenListItem = useCallback((tokenId: string) => {
-    navigate(RoutePath.TokenDetails, {
-      state: displayTokenBalances.find(tokenBalance => tokenBalance.tokenId === tokenId)
+  const tokens = displayTokenBalances
+    .filter((tokenBalance) => tokenBalance.display)
+    .map((tokenBalance) => {
+      return {
+        tokenId: tokenBalance.tokenId,
+        logo: tokenBalance.image || `${UnknownTokenIcon}`,
+        name: tokenBalance.name,
+        balanceAmount: {
+          value: BigNumber(tokenBalance.amount.value).toFormat(),
+          denom: tokenBalance.amount.denom,
+        },
+      };
     });
-  }, [tokens]);
+
+  const onClickTokenListItem = useCallback(
+    (tokenId: string) => {
+      navigate(RoutePath.TokenDetails, {
+        state: displayTokenBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId),
+      });
+    },
+    [tokens],
+  );
 
   const onClickManageButton = useCallback(() => {
     navigate(RoutePath.ManageToken);
@@ -82,7 +88,7 @@ export const WalletMain = () => {
         <MainTokenBalance
           amount={{
             value: BigNumber(mainTokenBalance?.value ?? '0').toFormat(),
-            denom: mainTokenBalance?.denom ?? 'GNOT'
+            denom: mainTokenBalance?.denom ?? 'GNOT',
           }}
         />
       </div>
@@ -97,10 +103,7 @@ export const WalletMain = () => {
       />
 
       <div className='token-list-wrapper'>
-        <TokenList
-          tokens={tokens}
-          onClickTokenItem={onClickTokenListItem}
-        />
+        <TokenList tokens={tokens} onClickTokenItem={onClickTokenListItem} />
       </div>
 
       <div className='manage-token-button-wrapper'>

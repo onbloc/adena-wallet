@@ -75,7 +75,7 @@ import AccountDetailsPage from '@pages/wallet/account-details';
 import ApproveSignTransactionContainer from '@containers/approve-sign-transaction-container/approve-sign-transaction-container';
 import ApproveSignTransactionLedgerLoadingContainer from '@containers/approve-sign-transaction-ledger-loading-container/approve-sign-transaction-ledger-loading-container';
 
-export const CustomRouter = () => {
+export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();
 
   return (
@@ -121,11 +121,20 @@ export const CustomRouter = () => {
           <Route path={RoutePath.Deposit} element={<Deposit />} />
           <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
           <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
-          <Route path={RoutePath.ApproveTransactionLoading} element={<ApproveTransactionLedgerLoading />} />
+          <Route
+            path={RoutePath.ApproveTransactionLoading}
+            element={<ApproveTransactionLedgerLoading />}
+          />
           <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
           <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
-          <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransactionContainer />} />
-          <Route path={RoutePath.ApproveSignTransactionLoading} element={<ApproveSignTransactionLedgerLoadingContainer />} />
+          <Route
+            path={RoutePath.ApproveSignTransaction}
+            element={<ApproveSignTransactionContainer />}
+          />
+          <Route
+            path={RoutePath.ApproveSignTransactionLoading}
+            element={<ApproveSignTransactionLedgerLoadingContainer />}
+          />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />

@@ -179,6 +179,8 @@ export type FontsType =
 
 type FontsKeyType = { [key in FontsType]: FlattenSimpleInterpolation };
 
+type ThemeType = typeof theme;
+
 const theme = {
   color: {
     neutral: Neutral,
@@ -191,3 +193,7 @@ const theme = {
 };
 
 export default theme;
+
+declare module 'styled-components' {
+  export interface DefaultTheme extends ThemeType {}
+}

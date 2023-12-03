@@ -3,9 +3,8 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { RoutePath } from '@router/path';
-import { useLocation, useNavigate } from 'react-router-dom';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 
@@ -16,7 +15,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -27,16 +26,16 @@ const Wrapper = styled.main`
 `;
 
 const CopyKeyBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   width: 100%;
   margin-top: 24px;
   margin-bottom: auto;
 `;
 
 const KeyBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'stretch', 'center')};
-  background-color: ${({ theme }) => theme.color.neutral[8]};
-  border: 1px solid ${({ theme }) => theme.color.neutral[3]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'stretch', 'center')};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border: 1px solid ${({ theme }): string => theme.color.neutral[3]};
   border-radius: 18px;
   width: 100%;
   height: 140px;
@@ -44,24 +43,24 @@ const KeyBox = styled.div`
   margin-bottom: 12px;
   word-wrap: break-word;
   & > p {
-    ${({ theme }) => theme.fonts.body2Reg};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
     text-align: center;
-    color: ${({ theme }) => theme.color.neutral[2]};
+    color: ${({ theme }): string => theme.color.neutral[2]};
   }
 `;
 
-export const ViewPrivateKey = () => {
+export const ViewPrivateKey = (): JSX.Element => {
   const { currentAccount } = useCurrentAccount();
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
-  const doneButtonClick = () => navigate(-1);
+  const doneButtonClick = (): void => navigate(-1);
   const [privateKey, setPrivateKey] = useState('');
 
   useEffect(() => {
     initPrivateKey();
   }, [currentAccount]);
 
-  const initPrivateKey = async () => {
+  const initPrivateKey = async (): Promise<void> => {
     const wallet = await walletService.loadWallet();
     const privateKey = wallet.privateKeyStr;
     if (privateKey) {

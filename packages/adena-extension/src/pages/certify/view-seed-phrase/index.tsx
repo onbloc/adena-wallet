@@ -4,7 +4,7 @@ import SeedBox from '@components/seed-box';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const text = {
@@ -13,7 +13,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -24,16 +24,16 @@ const Wrapper = styled.main`
 `;
 
 const SeedBoxWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   width: 100%;
   margin-bottom: auto;
   margin-top: 24px;
   gap: 12px;
 `;
 
-export const ViewSeedPhrase = () => {
+export const ViewSeedPhrase = (): JSX.Element => {
   const navigate = useNavigate();
-  const doneButtonClick = () => navigate(-1);
+  const doneButtonClick = (): void => navigate(-1);
   const location = useLocation();
   const [mnemonic, setMnemonic] = useState('');
   useEffect(() => {

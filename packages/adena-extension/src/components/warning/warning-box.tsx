@@ -1,9 +1,15 @@
 import React from 'react';
-import styled, { CSSProperties } from 'styled-components';
+import styled, { CSSProp, CSSProperties } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 
-type WarningKeyType = 'revealPassword' | 'revealPrivate' | 'approachPassword' | 'approachPrivate' | 'approachNetwork' | 'addingNetwork';
+type WarningKeyType =
+  | 'revealPassword'
+  | 'revealPrivate'
+  | 'approachPassword'
+  | 'approachPrivate'
+  | 'approachNetwork'
+  | 'addingNetwork';
 
 interface TextProperty {
   title?: string;
@@ -49,7 +55,7 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
   },
 };
 
-const WarningBox = ({ type, margin, padding }: WarningBoxProps) => {
+const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Element => {
   return (
     <Wrapper margin={margin} padding={padding}>
       {warningType[type].title && (
@@ -67,14 +73,14 @@ const WarningBox = ({ type, margin, padding }: WarningBoxProps) => {
 };
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
   width: 100%;
-  padding: ${(props) => props.padding ?? '14px 16px'};
+  padding: ${(props): CSSProperties['padding'] => props.padding ?? '14px 16px'};
   gap: 11px;
   border-radius: 18px;
   background-color: rgba(231, 50, 59, 0.1);
   border: 1px solid rgba(231, 50, 59, 0.1);
-  margin: ${(props) => props.margin};
+  margin: ${(props): CSSProperties['margin'] => props.margin};
 `;
 
 export default WarningBox;

@@ -5,22 +5,24 @@ import { SeedAccount } from 'adena-module';
 import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 
-export const useAddAccount = (): {
+export type UseAddAccountReturn = {
   availAddAccount: () => Promise<boolean>;
   addAccount: () => Promise<boolean>;
-} => {
+};
+
+export const useAddAccount = (): UseAddAccountReturn => {
   const { wallet, updateWallet } = useWalletContext();
   const { walletService } = useAdenaContext();
   const [, setState] = useRecoilState(WalletState.state);
   const { changeCurrentAccount } = useCurrentAccount();
   const { resetNetworkConnection } = useNetwork();
 
-  const availAddAccount = async () => {
+  const availAddAccount = async (): Promise<boolean> => {
     const isExists = await walletService.existsWallet();
     return isExists;
   };
 
-  const addAccount = async () => {
+  const addAccount = async (): Promise<boolean> => {
     if (!wallet) {
       return false;
     }

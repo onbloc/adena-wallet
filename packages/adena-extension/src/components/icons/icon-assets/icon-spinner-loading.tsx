@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const rotate = keyframes`
@@ -21,7 +21,7 @@ const SVG = styled.svg`
   animation: ${rotate} 1.5s infinite;
 `;
 
-const IconSpinnerLoading = ({ className }: { className: string }) => {
+const IconSpinnerLoading = ({ className }: { className: string }): ReactElement => {
   return (
     <SVG
       width='100'

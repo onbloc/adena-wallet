@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-const IconCancel = ({ className }: { className: string }) => {
+const IconCancel = ({ className }: { className: string }): ReactElement => {
   return (
     <svg
       className={className}

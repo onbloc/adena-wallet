@@ -8,8 +8,7 @@ export interface TransactionHistoryState {
   init: boolean;
   isFinish: boolean;
   items: Array<HistoryItem>;
-};
-
+}
 
 /**
  * CREATE: When there is no stored serialized wallet value
@@ -18,7 +17,7 @@ export interface TransactionHistoryState {
  * FINISH: When deserialization is complete
  * FAIL: When deserialization has failed
  */
-type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+export type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
 
 export const wallet = atom<Wallet | null>({
   key: `wallet/wallet`,
@@ -47,6 +46,6 @@ export const transactionHistory = atom<TransactionHistoryState>({
     address: null,
     currentPage: -1,
     isFinish: false,
-    items: []
+    items: [],
   },
 });

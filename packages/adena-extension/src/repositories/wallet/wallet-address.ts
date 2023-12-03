@@ -16,7 +16,7 @@ export class WalletAddressRepository {
     this.localStorage = localStorage;
   }
 
-  public getAddressBook = async () => {
+  public getAddressBook = async (): Promise<AddressBookItem[]> => {
     const addressBook = await this.localStorage.getToObject('ADDRESS_BOOK');
     if (!Array.isArray(addressBook)) {
       return [];
@@ -24,11 +24,11 @@ export class WalletAddressRepository {
     return addressBook as AddressBookItem[];
   };
 
-  public updateAddressBooke = async (addressBook: AddressBookItem[]) => {
+  public updateAddressBooke = async (addressBook: AddressBookItem[]): Promise<void> => {
     await this.localStorage.setByObject('ADDRESS_BOOK', addressBook);
   };
 
-  public deleteAddress = async () => {
+  public deleteAddress = async (): Promise<void> => {
     await this.localStorage.remove('ADDRESS_BOOK');
   };
 }

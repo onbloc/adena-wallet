@@ -3,7 +3,7 @@ import DefaultInput from '@components/default-input';
 import Text from '@components/text';
 import { Title } from '@pages/certify/login';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { InjectionMessageInstance } from '@inject/message';
@@ -20,13 +20,13 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;
 `;
 
-export const ApproveLogin = () => {
+export const ApproveLogin = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const { walletService } = useAdenaContext();
@@ -75,14 +75,14 @@ export const ApproveLogin = () => {
     }
   }, [inputRef]);
 
-  const tryLoginApprove = async (password: string) => {
+  const tryLoginApprove = async (password: string): Promise<void> => {
     let currentError = null;
     try {
       validateEmptyPassword(password);
       validateWrongPasswordLength(password);
-      const equalPassword = await walletService.equalsPassowrd(password);
+      const equalPassword = await walletService.equalsPassword(password);
       if (equalPassword) {
-        await walletService.updatePassowrd(password);
+        await walletService.updatePassword(password);
         await initWallet();
         setState('FINISH');
       }
@@ -97,7 +97,7 @@ export const ApproveLogin = () => {
     setError(currentError);
   };
 
-  const redirect = () => {
+  const redirect = (): void => {
     switch (requestData?.type as MessageKeyType | undefined) {
       case 'DO_CONTRACT':
         navigate(RoutePath.ApproveTransaction + location.search, { state: { requestData } });
@@ -122,7 +122,7 @@ export const ApproveLogin = () => {
     }
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter') tryLoginApprove(password);
   };
 
@@ -131,7 +131,7 @@ export const ApproveLogin = () => {
     [password],
   );
 
-  const approveButtonClick = () => tryLoginApprove(password);
+  const approveButtonClick = (): Promise<void> => tryLoginApprove(password);
 
   return (
     <>

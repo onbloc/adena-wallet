@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
+import React, { useMemo, useState } from 'react';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import WarningBox from '@components/warning/warning-box';
 import SeedBox from '@components/seed-box';
@@ -8,7 +8,7 @@ import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useNavigate } from 'react-router-dom';
 import { useWalletContext } from '@hooks/use-context';
 
-export const RevealPrivatePhrase = () => {
+export const RevealPrivatePhrase = (): JSX.Element => {
   const navigate = useNavigate();
   const { wallet } = useWalletContext();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
@@ -16,9 +16,9 @@ export const RevealPrivatePhrase = () => {
   const seeds = useMemo(() => {
     const mnemonic = wallet?.mnemonic || '';
     return mnemonic.split(' ');
-  }, [wallet?.mnemonic])
+  }, [wallet?.mnemonic]);
 
-  const doneButtonClick = () => {
+  const doneButtonClick = (): void => {
     navigate(-2);
   };
 
@@ -41,7 +41,7 @@ export const RevealPrivatePhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

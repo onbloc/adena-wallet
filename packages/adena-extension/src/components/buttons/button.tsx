@@ -18,56 +18,56 @@ export enum ButtonHierarchy {
 
 export const modeVariants = {
   normal: css`
-    background: ${({ theme }) => theme.color.neutral[6]};
+    background: ${({ theme }): string => theme.color.neutral[6]};
     &:hover {
-      background: ${({ theme }) => theme.color.neutral[11]};
+      background: ${({ theme }): string => theme.color.neutral[11]};
     }
     /* &:disabled {
-      background: ${({ theme }) => theme.color.primary[6]};
-      color: ${({ theme }) => theme.color.neutral[4]};
+      background: ${({ theme }): string => theme.color.primary[6]};
+      color: ${({ theme }): string => theme.color.neutral[4]};
     } */
   `,
   primary: css`
-    background: ${({ theme }) => theme.color.primary[3]};
+    background: ${({ theme }): string => theme.color.primary[3]};
     &:hover {
-      background: ${({ theme }) => theme.color.primary[4]};
+      background: ${({ theme }): string => theme.color.primary[4]};
     }
     &:disabled {
-      background: ${({ theme }) => theme.color.primary[6]};
-      color: ${({ theme }) => theme.color.neutral[4]};
+      background: ${({ theme }): string => theme.color.primary[6]};
+      color: ${({ theme }): string => theme.color.neutral[4]};
     }
   `,
   ghost: css`
-    background: ${({ theme }) => theme.color.neutral[8]};
-    border: 1px solid ${({ theme }) => theme.color.neutral[2]};
+    background: ${({ theme }): string => theme.color.neutral[8]};
+    border: 1px solid ${({ theme }): string => theme.color.neutral[2]};
     &:hover {
-      background: ${({ theme }) => theme.color.neutral[5]};
-      border: 1px solid ${({ theme }) => theme.color.neutral[2]};
+      background: ${({ theme }): string => theme.color.neutral[5]};
+      border: 1px solid ${({ theme }): string => theme.color.neutral[2]};
     }
     &:disabled {
-      background: ${({ theme }) => theme.color.neutral[6]};
-      border: 1px solid ${({ theme }) => theme.color.neutral[3]};
-      color: ${({ theme }) => theme.color.neutral[4]};
+      background: ${({ theme }): string => theme.color.neutral[6]};
+      border: 1px solid ${({ theme }): string => theme.color.neutral[3]};
+      color: ${({ theme }): string => theme.color.neutral[4]};
     }
   `,
   dark: css`
-    background: ${({ theme }) => theme.color.neutral[4]};
+    background: ${({ theme }): string => theme.color.neutral[4]};
     &:hover {
-      background: ${({ theme }) => theme.color.neutral[5]};
+      background: ${({ theme }): string => theme.color.neutral[5]};
     }
     &:disabled {
-      background: ${({ theme }) => theme.color.neutral[5]};
-      color: ${({ theme }) => theme.color.neutral[4]};
+      background: ${({ theme }): string => theme.color.neutral[5]};
+      color: ${({ theme }): string => theme.color.neutral[4]};
     }
   `,
   danger: css`
-    background: ${({ theme }) => theme.color.red[2]};
+    background: ${({ theme }): string => theme.color.red[2]};
     &:hover {
-      background: ${({ theme }) => theme.color.red[8]};
+      background: ${({ theme }): string => theme.color.red[8]};
     }
     /* &:disabled {
-      background: ${({ theme }) => theme.color.neutral[5]};
-      color: ${({ theme }) => theme.color.neutral[4]};
+      background: ${({ theme }): string => theme.color.neutral[5]};
+      color: ${({ theme }): string => theme.color.neutral[4]};
     } */
   `,
 };
@@ -101,23 +101,23 @@ type ButtonProps = XOR<
   }
 >;
 
-const Button = (props: ButtonProps) => {
+const Button = (props: ButtonProps): JSX.Element => {
   return <ButtonWrapper {...props}>{props.children}</ButtonWrapper>;
 };
 
 const ButtonWrapper = styled.button<ButtonProps>`
   ${mixins.flexbox('row', 'center', 'center')};
-  width: ${({ width, fullWidth }) => {
+  width: ${({ width, fullWidth }): string => {
     if (width) return typeof width === 'number' ? `${width}px` : width;
     if (fullWidth) return '100%';
     return 'auto';
   }};
-  height: ${({ height }) => {
+  height: ${({ height }): string => {
     if (height) return typeof height === 'number' ? height + 'px' : height;
     return 'auto';
   }};
-  margin: ${(props) => props.margin};
-  ${({ hierarchy, bgColor }) => {
+  margin: ${(props): any => props.margin};
+  ${({ hierarchy, bgColor }): any => {
     if (hierarchy === ButtonHierarchy.Primary) return modeVariants.primary;
     if (hierarchy === ButtonHierarchy.Normal) return modeVariants.normal;
     if (hierarchy === ButtonHierarchy.Ghost) return modeVariants.ghost;
@@ -128,10 +128,10 @@ const ButtonWrapper = styled.button<ButtonProps>`
         background-color: ${bgColor};
       `;
   }};
-  border-radius: ${({ radius }) => (radius ? radius : '30px')};
+  border-radius: ${({ radius }): string => (radius ? radius : '30px')};
   transition: all 0.4s ease;
-  color: ${({ theme }) => theme.color.neutral[0]};
-  background-color: ${({ bgColor }) => bgColor};
+  color: ${({ theme }): string => theme.color.neutral[0]};
+  background-color: ${({ bgColor }): string | undefined => bgColor};
 `;
 
 Button.defaultProps = {

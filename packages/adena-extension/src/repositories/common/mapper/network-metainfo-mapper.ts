@@ -18,7 +18,9 @@ export interface ChainMetainfoItem {
 }
 
 export class NetworkMetainfoMapper {
-  public static fromChainMetainfoResponse(chainMetainfoResponse: ChainMetainfoResponse) {
+  public static fromChainMetainfoResponse(
+    chainMetainfoResponse: ChainMetainfoResponse,
+  ): NetworkMetainfo[] {
     return chainMetainfoResponse.map(this.mappedNetworkMetainfo);
   }
 

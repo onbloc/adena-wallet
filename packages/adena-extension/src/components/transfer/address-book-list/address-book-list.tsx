@@ -23,32 +23,27 @@ const AddressBookListItem: React.FC<AddressBookListItemProps> = ({
   addressBookId,
   name,
   address,
-  onClickItem
+  onClickItem,
 }) => {
   return (
-    <AddressBookListItemWrapper onClick={() => onClickItem(addressBookId)}>
+    <AddressBookListItemWrapper onClick={(): void => onClickItem(addressBookId)}>
       <div className='name'>{name}</div>
       <div className='address'>{address}</div>
     </AddressBookListItemWrapper>
   );
 };
 
-const AddressBookList: React.FC<AddressBookListProps> = ({
-  addressBookInfos,
-  onClickItem,
-}) => {
+const AddressBookList: React.FC<AddressBookListProps> = ({ addressBookInfos, onClickItem }) => {
   return (
     <AddressBookListWrapper>
-      {
-        addressBookInfos.length === 0 && (
-          <div className='no-address-wrapper'>
-            <Text className='no-address' type='body2Reg' color={theme.color.neutral[9]}>
-              No address registered
-            </Text>
-          </div>
-        )
-      }
-      {addressBookInfos.map((info, index) =>
+      {addressBookInfos.length === 0 && (
+        <div className='no-address-wrapper'>
+          <Text className='no-address' type='body2Reg' color={theme.color.neutral[9]}>
+            No address registered
+          </Text>
+        </div>
+      )}
+      {addressBookInfos.map((info, index) => (
         <AddressBookListItem
           key={index}
           addressBookId={info.addressBookId}
@@ -56,7 +51,7 @@ const AddressBookList: React.FC<AddressBookListProps> = ({
           name={info.name}
           onClickItem={onClickItem}
         />
-      )}
+      ))}
     </AddressBookListWrapper>
   );
 };

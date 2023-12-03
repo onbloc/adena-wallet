@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApproveTransactionWrapper } from './approve-transaction.styles';
+import { ApproveTransactionWrapper } from './ApproveTransactionWrapper';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import Text from '@components/text';
 import ApproveLoading from '../approve-loading/approve-loading';
@@ -53,19 +53,12 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onClickConfirm,
   onClickCancel,
 }) => {
-
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
   }
 
   if (processing) {
-    return (
-      <ApproveInjectionLoading
-        done={done}
-        onResponse={onResponse}
-        onTimeout={onTimeout}
-      />
-    )
+    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
   }
 
   return (
@@ -99,17 +92,10 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         <span className='key'>Network Fee:</span>
         <span className='value'>{`${networkFee.amount} ${networkFee.denom}`}</span>
       </div>
-      {
-        isErrorNetworkFee && (
-          <span className='error-message'>Insufficient network fee</span>
-        )
-      }
+      {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
 
       <div className='transaction-data-wrapper'>
-        <Button
-          className='visible-button'
-          onClick={() => onToggleTransactionData(!opened)}
-        >
+        <Button className='visible-button' onClick={(): void => onToggleTransactionData(!opened)}>
           {opened ? (
             <>
               <>Hide Transaction Data</>
@@ -139,13 +125,13 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         fill
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: isErrorNetworkFee,
           text: 'Approve',
-          onClick: onClickConfirm
+          onClick: onClickConfirm,
         }}
       />
     </ApproveTransactionWrapper>

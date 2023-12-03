@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { ReactElement, Suspense } from 'react';
 import { ThemeProvider } from 'styled-components';
 import theme from '@styles/theme';
 import { CustomRouter } from '@router/custom-router';
@@ -9,7 +9,7 @@ import { AdenaProvider, WalletProvider } from '@common/provider';
 
 const queryClient = new QueryClient();
 
-const App = () => {
+const App = (): ReactElement => {
   return (
     <>
       <GlobalStyle />

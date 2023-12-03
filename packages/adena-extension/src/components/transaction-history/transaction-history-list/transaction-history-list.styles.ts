@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const TransactionHistoryListWrapper = styled.div`
   display: flex;
@@ -7,8 +7,8 @@ export const TransactionHistoryListWrapper = styled.div`
   height: auto;
 
   & > .title {
-    ${({ theme }) => theme.fonts.body1Reg};
-    color: ${({ theme }) => theme.color.neutral[9]};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
+    color: ${({ theme }): string => theme.color.neutral[9]};
   }
 
   & > .list-wrapper {

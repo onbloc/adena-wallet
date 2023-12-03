@@ -21,15 +21,15 @@ export class BaseError extends Error {
     Object.setPrototypeOf(this, BaseError.prototype);
   }
 
-  public getStatus = () => {
+  public getStatus = (): number => {
     return this.status;
   };
 
-  public getType = () => {
+  public getType = (): string => {
     return this.type;
   };
 
-  public getOccuredAt = () => {
+  public getOccuredAt = (): number => {
     return this.occuredAt;
   };
 }

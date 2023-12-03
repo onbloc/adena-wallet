@@ -1,10 +1,11 @@
-import { EventMessageData } from "@inject/message"
+import { EventMessageData } from '@inject/message';
 
-export const useEvent = (): {
+export type UseEventReturn = {
   dispatchEvent: (message: EventMessageData) => void;
-} => {
+};
 
-  function dispatchEvent(message: EventMessageData) {
+export const useEvent = (): UseEventReturn => {
+  function dispatchEvent(message: EventMessageData): void {
     chrome.tabs.query({ active: true, currentWindow: true }, (currentTabs) => {
       const currentTab = currentTabs.length > 0 ? currentTabs[0] : null;
       if (!currentTab || !currentTab.id) {
@@ -16,4 +17,4 @@ export const useEvent = (): {
   }
 
   return { dispatchEvent };
-}
+};

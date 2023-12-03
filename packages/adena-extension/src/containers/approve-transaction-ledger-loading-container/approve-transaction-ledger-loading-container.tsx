@@ -6,7 +6,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
-import { TM2Error } from "@gnolang/tm2-js-client"
+import { TM2Error } from '@gnolang/tm2-js-client';
 
 interface ApproveSignLedgerLoadingState {
   requestData?: InjectionMessage;
@@ -27,7 +27,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     }
   }, [currentAccount]);
 
-  const requestTransaction = async () => {
+  const requestTransaction = async (): Promise<void> => {
     if (completed) {
       return;
     }
@@ -36,7 +36,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     setTimeout(() => !result && requestTransaction(), 1000);
   };
 
-  const createLedgerTransaction = async () => {
+  const createLedgerTransaction = async (): Promise<boolean> => {
     if (!currentAccount || !document || !currentNetwork) {
       return false;
     }
@@ -44,48 +44,52 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       return false;
     }
 
-    const result = await transactionService.createSignatureWithLedger(currentAccount, document).then(async (signature) => {
-      const transaction = await transactionService.createTransaction(document, signature);
-      const hash = transactionService.createHash(transaction);
-      const responseHash = await transactionService.sendTransaction(transaction)
-        .catch((error: TM2Error) => {
-          const message = {
-            hash,
-            error: {
-              name: error.name,
-              message: error.message,
-              log: error.log,
-            },
-          };
-          chrome.runtime.sendMessage(
-            InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
-          )
-        });
+    const result = await transactionService
+      .createSignatureWithLedger(currentAccount, document)
+      .then(async (signature) => {
+        const transaction = await transactionService.createTransaction(document, signature);
+        const hash = transactionService.createHash(transaction);
+        const responseHash = await transactionService
+          .sendTransaction(transaction)
+          .catch((error: TM2Error) => {
+            const message = {
+              hash,
+              error: {
+                name: error.name,
+                message: error.message,
+                log: error.log,
+              },
+            };
+            chrome.runtime.sendMessage(
+              InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
+            );
+          });
 
-      if (hash === responseHash) {
+        if (hash === responseHash) {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+          );
+        }
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
         );
-      }
-      chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
-      );
-      return true;
-    }).catch((error: Error) => {
-      if (error.message.includes('Ledger')) {
+        return true;
+      })
+      .catch((error: Error) => {
+        if (error.message.includes('Ledger')) {
+          return false;
+        }
+        if (error.message === 'Transaction signing request was rejected by the user') {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
+          );
+        }
         return false;
-      }
-      if (error.message === 'Transaction signing request was rejected by the user') {
-        chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
-        );
-      }
-      return false;
-    });
+      });
     return result;
   };
 
-  const onClickCancel = () => {
+  const onClickCancel = (): void => {
     if (!requestData) {
       window.close();
       return;
@@ -93,13 +97,9 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData.key),
     );
-  }
+  };
 
-  return (
-    <ApproveLedgerLoading
-      onClickCancel={onClickCancel}
-    />
-  );
+  return <ApproveLedgerLoading onClickCancel={onClickCancel} />;
 };
 
 export default ApproveTransactionLedgerLoadingContainer;

@@ -23,7 +23,7 @@ export class StorageMigration003 implements Migration<StorageModelDataV003> {
     };
   }
 
-  private validateModelV002(currentData: StorageModelDataV002) {
+  private validateModelV002(currentData: StorageModelDataV002): boolean {
     const storageDataKeys = [
       'NETWORKS',
       'CURRENT_CHAIN_ID',

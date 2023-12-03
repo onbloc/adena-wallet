@@ -9,7 +9,23 @@ import { TokenModel } from '@models/token-model';
 
 const NETWORK_FEE = 0.000001;
 
-export const useBalanceInput = (tokenMetainfo: TokenModel) => {
+export type UseBalanceInputHookReturn = {
+  hasError: boolean;
+  amount: string;
+  denom: string;
+  description: string;
+  networkFee: {
+    value: string;
+    denom: string;
+  };
+  setAmount: (amount: string) => void;
+  updateCurrentBalance: () => Promise<boolean>;
+  onChangeAmount: (amount: string) => void;
+  onClickMax: () => void;
+  validateBalanceInput: () => boolean;
+};
+
+export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookReturn => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();

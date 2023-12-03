@@ -8,12 +8,15 @@ export class WalletAddressBookService {
     this.walletAddressRepository = walletAddressRepository;
   }
 
-  public getAddressBook = async () => {
+  public getAddressBook = async (): Promise<AddressBookItem[]> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
     return addressBook;
   };
 
-  public addAddressBookItem = async (addressBookItem: { name: string; address: string }) => {
+  public addAddressBookItem = async (addressBookItem: {
+    name: string;
+    address: string;
+  }): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
     await this.walletAddressRepository.updateAddressBooke([
       ...addressBook,
@@ -30,7 +33,7 @@ export class WalletAddressBookService {
     id: string;
     name: string;
     address: string;
-  }) => {
+  }): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
     const changedAddressBook = addressBook.map((item) => {
       if (item.id === addressBookItem.id) {
@@ -45,7 +48,10 @@ export class WalletAddressBookService {
     await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
   };
 
-  public removeAddressBookItemByAccountId = async (accountId: string, addressBookId: string) => {
+  public removeAddressBookItemByAccountId = async (
+    accountId: string,
+    addressBookId: string,
+  ): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
 
     const changedAddressBook = addressBook.filter(
@@ -54,7 +60,7 @@ export class WalletAddressBookService {
     await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
   };
 
-  public clear = async () => {
+  public clear = async (): Promise<boolean> => {
     await this.walletAddressRepository.deleteAddress();
     return true;
   };

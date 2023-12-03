@@ -1,16 +1,16 @@
-import React, { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { useRecoilState } from "recoil";
-import { useCurrentAccount } from "@hooks/use-current-account";
-import { useNetwork } from "@hooks/use-network";
-import { useTokenMetainfo } from "@hooks/use-token-metainfo";
-import { useTokenBalance } from "@hooks/use-token-balance";
-import { useWalletContext } from "@hooks/use-context";
-import { useAccountName } from "@hooks/use-account-name";
-import { CommonState } from "@states/index";
-import useScrollHistory from "@hooks/use-scroll-history";
-import { NetworkMetainfo } from "@states/network";
-import { fetchHealth } from "@common/utils/client-utils";
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import { useWalletContext } from '@hooks/use-context';
+import { useAccountName } from '@hooks/use-account-name';
+import { CommonState } from '@states/index';
+import useScrollHistory from '@hooks/use-scroll-history';
+import { NetworkMetainfo } from '@states/network';
+import { fetchHealth } from '@common/utils/client-utils';
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
 
@@ -47,10 +47,10 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
   }, [tokenMetainfos]);
 
   useEffect(() => {
-    initAccountNames(wallet?.accounts ?? [])
+    initAccountNames(wallet?.accounts ?? []);
   }, [wallet?.accounts]);
 
-  function checkHealth(currentNetwork: NetworkMetainfo) {
+  function checkHealth(currentNetwork: NetworkMetainfo): void {
     if (!currentNetwork) {
       return;
     }
@@ -62,19 +62,15 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
     });
   }
 
-  function updateFailedNetwork(url: string, healthy: boolean) {
+  function updateFailedNetwork(url: string, healthy: boolean): void {
     if (currentNetwork.rpcUrl !== url) {
       return;
     }
     setFailedNetwork({
       ...failedNetwork,
-      [currentNetwork.id]: !healthy
+      [currentNetwork.id]: !healthy,
     });
   }
 
-  return (
-    <div>
-      {children}
-    </div>
-  );
+  return <div>{children}</div>;
 };

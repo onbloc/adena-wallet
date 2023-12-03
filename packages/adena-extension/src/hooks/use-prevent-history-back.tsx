@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-export const usePreventHistoryBack = () => {
+export const usePreventHistoryBack = (): void => {
   useEffect(() => {
-    const preventGoBack = () => {
+    const preventGoBack = (): void => {
       history.pushState(null, '', location.href);
     };
     preventGoBack();

@@ -1,15 +1,15 @@
 import theme from '@styles/theme';
 import Text from '@components/text';
-import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import React, { useState } from 'react';
+import styled, { CSSProp } from 'styled-components';
 import LoadingNft from '@components/loading-screen/loading-nft';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   .desc {
     position: absolute;
     top: 210px;
@@ -19,7 +19,7 @@ const Wrapper = styled.main`
   }
 `;
 
-export const Nft = () => {
+export const Nft = (): JSX.Element => {
   const [state, setState] = useState('FINISH');
   const [datas] = useState([]);
 

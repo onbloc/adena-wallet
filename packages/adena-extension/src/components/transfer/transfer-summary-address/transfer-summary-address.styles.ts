@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const TransferSummaryAddressWrapper = styled.div`
   display: flex;
@@ -6,8 +6,8 @@ export const TransferSummaryAddressWrapper = styled.div`
   width: 100%;
   height: auto;
   padding: 20px;
-  ${({ theme }) => theme.fonts.body2Reg};
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   border-radius: 18px;
   justify-content: space-between;
   align-items: center;

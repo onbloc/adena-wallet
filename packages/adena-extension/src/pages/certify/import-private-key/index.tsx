@@ -3,7 +3,7 @@ import { ErrorText } from '@components/error-text';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
 import React, { useCallback, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import SeedBox from '@components/seed-box';
 import { SingleAccount } from 'adena-module';
@@ -19,7 +19,7 @@ const content = {
   terms: 'This key will only be stored on this device. Adena can’t recover it for you.',
 };
 
-export const ImportPrivateKey = () => {
+export const ImportPrivateKey = (): JSX.Element => {
   const navigate = useNavigate();
   const { wallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
@@ -41,7 +41,7 @@ export const ImportPrivateKey = () => {
     [value],
   );
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (terms && !error && value !== '') {
@@ -50,7 +50,7 @@ export const ImportPrivateKey = () => {
     }
   };
 
-  const nextButtonClick = async () => {
+  const nextButtonClick = async (): Promise<void> => {
     if (!enabled) {
       return;
     }
@@ -59,7 +59,7 @@ export const ImportPrivateKey = () => {
       const privateKey = value.replace('0x', '');
       const regExp = /[0-9A-Fa-f]{64}/g;
       if (privateKey.length !== 64 || !privateKey.match(regExp)) {
-        throw new Error("Invalid private key");
+        throw new Error('Invalid private key');
       }
       if (!wallet) {
         setEnabled(true);
@@ -68,9 +68,11 @@ export const ImportPrivateKey = () => {
       const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(privateKey);
       const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
       const publicKey = account.publicKey;
-      const storedAccount = wallet.accounts.find(account => JSON.stringify(account.publicKey) === JSON.stringify(publicKey));
+      const storedAccount = wallet.accounts.find(
+        (account) => JSON.stringify(account.publicKey) === JSON.stringify(publicKey),
+      );
       if (storedAccount) {
-        throw new Error("Private key already registered");
+        throw new Error('Private key already registered');
       }
 
       await importAccount(account, keyring);
@@ -116,7 +118,7 @@ export const ImportPrivateKey = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

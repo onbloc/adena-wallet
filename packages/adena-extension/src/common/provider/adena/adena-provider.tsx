@@ -1,15 +1,26 @@
-import React, { createContext } from "react";
-import axios from "axios";
-import { AdenaStorage } from "@common/storage";
-import { WalletAccountRepository, WalletAddressRepository, WalletEstablishRepository, WalletRepository } from "@repositories/wallet";
-import { WalletAccountService, WalletAddressBookService, WalletBalanceService, WalletEstablishService, WalletService } from "@services/wallet";
-import { ChainService, TokenService } from "@services/resource";
-import { ChainRepository } from "@repositories/common";
-import { TransactionHistoryService, TransactionService } from "@services/transaction";
-import { TokenRepository } from "@repositories/common/token";
-import { TransactionHistoryRepository } from "@repositories/transaction";
+import React, { createContext } from 'react';
+import axios from 'axios';
+import { AdenaStorage } from '@common/storage';
+import {
+  WalletAccountRepository,
+  WalletAddressRepository,
+  WalletEstablishRepository,
+  WalletRepository,
+} from '@repositories/wallet';
+import {
+  WalletAccountService,
+  WalletAddressBookService,
+  WalletBalanceService,
+  WalletEstablishService,
+  WalletService,
+} from '@services/wallet';
+import { ChainService, TokenService } from '@services/resource';
+import { ChainRepository } from '@repositories/common';
+import { TransactionHistoryService, TransactionService } from '@services/transaction';
+import { TokenRepository } from '@repositories/common/token';
+import { TransactionHistoryRepository } from '@repositories/transaction';
 
-interface AdenaContextProps {
+export interface AdenaContextProps {
   walletService: WalletService;
   balanceService: WalletBalanceService;
   accountService: WalletAccountService;
@@ -24,7 +35,6 @@ interface AdenaContextProps {
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-
   const axiosInstance = axios.create({ timeout: 5000 });
 
   const localStorage = AdenaStorage.local();
@@ -74,9 +84,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         chainService,
         tokenService,
         transactionService,
-        transactionHistoryService
-      }}>
+        transactionHistoryService,
+      }}
+    >
       {children}
     </AdenaContext.Provider>
-  )
+  );
 };

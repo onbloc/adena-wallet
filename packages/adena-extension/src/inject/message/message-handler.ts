@@ -8,7 +8,7 @@ export class MessageHandler {
     message: InjectionMessage | any,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: InjectionMessage | any) => void,
-  ) => {
+  ): boolean => {
     try {
       if (message?.status) {
         const status = message?.status;
@@ -37,7 +37,7 @@ export class MessageHandler {
     message: InjectionMessage,
     sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void,
-  ) => {
+  ): Promise<true | undefined> => {
     let existsWallet = false;
     try {
       const core = new InjectCore();

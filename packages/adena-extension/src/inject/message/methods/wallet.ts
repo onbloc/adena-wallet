@@ -7,7 +7,7 @@ import { InjectCore } from './core';
 export const getAccount = async (
   requestData: InjectionMessage,
   sendReponse: (message: any) => void,
-) => {
+): Promise<void> => {
   try {
     const core = new InjectCore();
 
@@ -44,7 +44,7 @@ export const getAccount = async (
 export const addEstablish = async (
   message: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<boolean> => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
   const isLocked = await core.walletService.isLocked();

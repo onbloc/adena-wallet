@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { css } from 'styled-components';
+import styled, { CSSProp, FlattenSimpleInterpolation, css } from 'styled-components';
 import BlurScreen from './blur-screen';
 import Text from './text';
 interface SeedScrollBoxProps {
@@ -19,10 +19,11 @@ const Wrapper = styled.div<{ error: boolean; scroll: boolean }>`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${({ error, theme }) => (error ? theme.color.red[2] : theme.color.neutral[6])};
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  border: 1px solid
+    ${({ error, theme }): string => (error ? theme.color.red[2] : theme.color.neutral[6])};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   border-radius: 18px;
-  ${({ scroll }) =>
+  ${({ scroll }): CSSProp =>
     scroll
       ? css`
           overflow-y: auto;
@@ -43,12 +44,12 @@ const Inner = styled.div`
   gap: 20px;
   padding: 10px 18px;
   .seed-text {
-    ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')}
+    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
   }
 `;
 
 const Textarea = styled.textarea`
-  ${({ theme }) => theme.fonts.body2Reg};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
   width: 100%;
   word-wrap: break-word;
   background-color: inherit;
@@ -69,7 +70,7 @@ const SeedBox = ({
   hasBlurText = false,
   blurScreenText = '',
   className = '',
-}: SeedScrollBoxProps) => {
+}: SeedScrollBoxProps): JSX.Element => {
   return (
     <Wrapper error={error} scroll={scroll} className={className}>
       {scroll && (

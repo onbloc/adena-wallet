@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-const IconWallet = ({ className }: { className: string }) => {
+const IconWallet = ({ className }: { className: string }): ReactElement => {
   return (
     <svg
       className={className}

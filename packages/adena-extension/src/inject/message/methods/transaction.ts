@@ -6,7 +6,7 @@ import { InjectCore } from './core';
 export const signAmino = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   if (!locked) {
@@ -29,7 +29,7 @@ export const signAmino = async (
 export const signTransaction = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   if (!locked) {
@@ -52,7 +52,7 @@ export const signTransaction = async (
 export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   if (!locked) {
@@ -91,7 +91,7 @@ export const validateInjectionData = (
   return null;
 };
 
-export const validateInjectionAddress = (currentAccountAddress: string) => {
+export const validateInjectionAddress = (currentAccountAddress: string): boolean => {
   if (!currentAccountAddress || currentAccountAddress === '') {
     return false;
   }
@@ -99,7 +99,7 @@ export const validateInjectionAddress = (currentAccountAddress: string) => {
   return true;
 };
 
-export const validateInjectionTransactionType = (requestData: InjectionMessage) => {
+export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
   const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
   return requestData.data?.messages.every((message: any) => messageTypes.includes(message?.type));
 };
@@ -107,7 +107,7 @@ export const validateInjectionTransactionType = (requestData: InjectionMessage) 
 export const validateInjectionTransactionMessage = (
   currentAccountAddress: string,
   requestData: InjectionMessage,
-) => {
+): boolean => {
   const messages = requestData.data?.messages;
   for (const message of messages) {
     switch (message?.type) {

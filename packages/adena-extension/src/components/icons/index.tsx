@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import {
   IconWallet,
   IconGallery,
@@ -42,7 +42,7 @@ const ICONS = {
   iconSpinnerLoading: IconSpinnerLoading,
 } as const;
 
-const Icon = ({ name, className = '', ...rest }: IconProps) => {
+const Icon = ({ name, className = '', ...rest }: IconProps): ReactElement => {
   return React.createElement(ICONS[name], { className, ...rest });
 };
 

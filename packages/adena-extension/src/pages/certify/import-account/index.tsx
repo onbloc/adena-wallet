@@ -1,6 +1,6 @@
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import SeedBox from '@components/seed-box';
@@ -13,7 +13,7 @@ const text = {
   desc: 'Import an existing account\nwith a private key.',
 };
 
-export const ImportAccount = () => {
+export const ImportAccount = (): JSX.Element => {
   const { privateKeyState, buttonState } = useImportAccount();
 
   return (
@@ -48,7 +48,7 @@ export const ImportAccount = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 54px;

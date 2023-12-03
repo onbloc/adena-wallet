@@ -7,7 +7,7 @@ export class WalletEstablishService {
     this.walletEstablishRepository = walletEstablishRepository;
   }
 
-  public getEstablisedSitesBy = async (accountId: string) => {
+  public getEstablisedSitesBy = async (accountId: string): Promise<EstablishSite[]> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
@@ -16,7 +16,7 @@ export class WalletEstablishService {
     return accountEstablishedSites;
   };
 
-  public isEstablishedBy = async (accountId: string, hostname: string) => {
+  public isEstablishedBy = async (accountId: string, hostname: string): Promise<boolean> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
@@ -36,7 +36,7 @@ export class WalletEstablishService {
       appName: string;
       favicon?: string | null;
     },
-  ) => {
+  ): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
@@ -61,7 +61,7 @@ export class WalletEstablishService {
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
-  public unestablishBy = async (accountId: string, hostname: string) => {
+  public unestablishBy = async (accountId: string, hostname: string): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
@@ -80,7 +80,7 @@ export class WalletEstablishService {
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
-  public clear = async () => {
+  public clear = async (): Promise<boolean> => {
     await this.walletEstablishRepository.deleteEstablishedSites();
     return true;
   };
@@ -88,7 +88,7 @@ export class WalletEstablishService {
   private selectEstablishedSitesBy = async (
     accountId: string,
     establishedSites: { [key in string]: Array<EstablishSite> },
-  ) => {
+  ): Promise<EstablishSite[]> => {
     const accountEstablishedSites =
       Object.keys(establishedSites).findIndex((key) => key === accountId) > -1
         ? establishedSites[accountId]

@@ -18,14 +18,7 @@ const TokenDetailsContainer: React.FC = () => {
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
 
-  const {
-    status,
-    isLoading,
-    isFetching,
-    data,
-    refetch,
-    fetchNextPage,
-  } = useInfiniteQuery(
+  const { status, isLoading, isFetching, data, refetch, fetchNextPage } = useInfiniteQuery(
     ['history/all', currentAddress],
     ({ pageParam = 0 }) => fetchHistories(pageParam),
     {
@@ -39,7 +32,7 @@ const TokenDetailsContainer: React.FC = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (_, index) => index === 0 })
+        refetch({ refetchPage: (_, index) => index === 0 });
       }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
@@ -62,7 +55,7 @@ const TokenDetailsContainer: React.FC = () => {
     return () => bodyElement?.removeEventListener('scroll', onScrollListener);
   }, [bodyElement]);
 
-  const onScrollListener = () => {
+  const onScrollListener = (): void => {
     if (bodyElement) {
       const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
       if (remain < 20) {
@@ -71,39 +64,72 @@ const TokenDetailsContainer: React.FC = () => {
     }
   };
 
-  const fetchHistories = async (pageParam: number) => {
+  const fetchHistories = async (
+    pageParam: number,
+  ): Promise<{
+    hits: number;
+    next: boolean;
+    txs: {
+      logo: string;
+      amount: { value: string; denom: string };
+      hash: string;
+      type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
+      typeName?: string | undefined;
+      status: 'SUCCESS' | 'FAIL';
+      title: string;
+      description?: string | undefined;
+      extraInfo?: string | undefined;
+      valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
+      date: string;
+      from?: string | undefined;
+      to?: string | undefined;
+      originFrom?: string | undefined;
+      originTo?: string | undefined;
+      networkFee?: { value: string; denom: string } | undefined;
+    }[];
+  }> => {
     if (!currentAddress) {
       return {
         hits: 0,
         next: false,
-        txs: []
+        txs: [],
       };
     }
     const size = 20;
-    const histories = await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size);
-    const txs = histories.txs.map(transaction => {
+    const histories = await transactionHistoryService.fetchAllTransactionHistory(
+      currentAddress,
+      pageParam,
+      size,
+    );
+    const txs = histories.txs.map((transaction) => {
       return {
         ...transaction,
         logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
-        amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON')
-      }
+        amount: convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON'),
+      };
     });
     return {
       hits: histories.hits,
       next: histories.next,
-      txs: txs
-    }
+      txs: txs,
+    };
   };
 
-  const onClickItem = useCallback((hash: string) => {
-    const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
-    const transactionInfo = transactions.find(transaction => transaction.hash === hash);
-    if (transactionInfo) {
-      navigate(RoutePath.TransactionDetail, {
-        state: transactionInfo
-      })
-    }
-  }, [data]);
+  const onClickItem = useCallback(
+    (hash: string) => {
+      const transactions =
+        TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(
+          (group) => group.transactions,
+        ) ?? [];
+      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      if (transactionInfo) {
+        navigate(RoutePath.TransactionDetail, {
+          state: transactionInfo,
+        });
+      }
+    },
+    [data],
+  );
 
   return (
     <TransactionHistory

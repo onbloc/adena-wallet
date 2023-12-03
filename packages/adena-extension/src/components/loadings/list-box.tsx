@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { CSSProp, css, keyframes } from 'styled-components';
 import { Circle, Round } from '@components/loadings';
 
 type RenderPageType = 'list-type' | 'card-type';
@@ -17,10 +17,10 @@ const pulseKeyframe = keyframes`
 `;
 
 const SkeletonBox = styled.div<ListBoxProps>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'flex-start')};
-  width: ${({ width }) => width && width};
-  height: ${({ height }) => height && height};
-  background-color: ${({ theme }) => theme.color.neutral[6]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
+  width: ${({ width }): CSSProperties['width'] => width && width};
+  height: ${({ height }): CSSProperties['height'] => height && height};
+  background-color: ${({ theme }): string => theme.color.neutral[6]};
   background-image: linear-gradient(
     270deg,
     rgba(82, 82, 107, 0) 0%,
@@ -31,7 +31,7 @@ const SkeletonBox = styled.div<ListBoxProps>`
   background-repeat: no-repeat;
   background-position: left -160px top 0;
   animation: ${pulseKeyframe} 1.2s ease infinite;
-  ${({ type, theme }) =>
+  ${({ type, theme }): CSSProp =>
     type === 'list-type'
       ? css`
           border-radius: 18px;
@@ -53,11 +53,11 @@ const SkeletonBox = styled.div<ListBoxProps>`
 `;
 
 const RoundsBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-end', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'center')};
   margin-left: auto;
 `;
 
-export const ListBox = ({ type }: ListBoxProps) => {
+export const ListBox = ({ type }: ListBoxProps): JSX.Element => {
   return (
     <>
       {type === 'list-type' && (

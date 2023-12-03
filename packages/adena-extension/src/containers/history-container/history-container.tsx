@@ -21,14 +21,7 @@ const HistoryContainer: React.FC = () => {
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { saveScrollPosition } = useScrollHistory();
 
-  const {
-    status,
-    isLoading,
-    isFetching,
-    data,
-    refetch,
-    fetchNextPage,
-  } = useInfiniteQuery(
+  const { status, isLoading, isFetching, data, refetch, fetchNextPage } = useInfiniteQuery(
     ['history/all', currentAddress],
     ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
     {
@@ -42,7 +35,7 @@ const HistoryContainer: React.FC = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (_, index) => index === 0 })
+        refetch({ refetchPage: (_, index) => index === 0 });
       }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
@@ -65,7 +58,7 @@ const HistoryContainer: React.FC = () => {
     return () => bodyElement?.removeEventListener('scroll', onScrollListener);
   }, [bodyElement]);
 
-  const onScrollListener = () => {
+  const onScrollListener = (): void => {
     if (bodyElement) {
       const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
       if (remain < 20) {
@@ -74,44 +67,81 @@ const HistoryContainer: React.FC = () => {
     }
   };
 
-  const fetchTokenHistories = async (pageParam: number) => {
+  const fetchTokenHistories = async (
+    pageParam: number,
+  ): Promise<{
+    hits: number;
+    next: boolean;
+    txs: {
+      logo: string;
+      amount: { value: string; denom: string };
+      hash: string;
+      type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
+      typeName?: string | undefined;
+      status: 'SUCCESS' | 'FAIL';
+      title: string;
+      description?: string | undefined;
+      extraInfo?: string | undefined;
+      valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
+      date: string;
+      from?: string | undefined;
+      to?: string | undefined;
+      originFrom?: string | undefined;
+      originTo?: string | undefined;
+      networkFee?: { value: string; denom: string } | undefined;
+    }[];
+  }> => {
     if (!currentAddress) {
       return {
         hits: 0,
         next: false,
-        txs: []
+        txs: [],
       };
     }
     const size = 20;
-    const histories = await transactionHistoryService.fetchAllTransactionHistory(currentAddress, pageParam, size);
-    const txs = histories.txs.map(transaction => {
-      const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
+    const histories = await transactionHistoryService.fetchAllTransactionHistory(
+      currentAddress,
+      pageParam,
+      size,
+    );
+    const txs = histories.txs.map((transaction) => {
+      const { value, denom } = convertDenom(
+        transaction.amount.value,
+        transaction.amount.denom,
+        'COMMON',
+      );
       return {
         ...transaction,
         logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: {
           value: BigNumber(value).toFormat(),
-          denom
-        }
-      }
+          denom,
+        },
+      };
     });
     return {
       hits: histories.hits,
       next: histories.next,
-      txs: txs
-    }
+      txs: txs,
+    };
   };
 
-  const onClickItem = useCallback((hash: string) => {
-    const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
-    const transactionInfo = transactions.find(transaction => transaction.hash === hash);
-    if (transactionInfo) {
-      saveScrollPosition(bodyElement?.scrollTop);
-      navigate(RoutePath.TransactionDetail, {
-        state: transactionInfo
-      })
-    }
-  }, [data, bodyElement]);
+  const onClickItem = useCallback(
+    (hash: string) => {
+      const transactions =
+        TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(
+          (group) => group.transactions,
+        ) ?? [];
+      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      if (transactionInfo) {
+        saveScrollPosition(bodyElement?.scrollTop);
+        navigate(RoutePath.TransactionDetail, {
+          state: transactionInfo,
+        });
+      }
+    },
+    [data, bodyElement],
+  );
 
   return (
     <TransactionHistory

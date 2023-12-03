@@ -3,16 +3,27 @@ import ApproveTransaction from '@components/approve/approve-transaction/approve-
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { createFaviconByHostname, decodeParameter, fetchHealth, parseParmeters } from '@common/utils/client-utils';
+import {
+  createFaviconByHostname,
+  decodeParameter,
+  fetchHealth,
+  parseParmeters,
+} from '@common/utils/client-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
-import { TM2Error } from "@gnolang/tm2-js-client"
+import { TM2Error } from '@gnolang/tm2-js-client';
 
-function mappedTransactionData(document: StdSignDoc) {
+function mappedTransactionData(document: StdSignDoc): {
+  messages: readonly import('/Users/limsanghyun/Documents/sourcecode/adena-wallet/packages/adena-module/dist/index').AminoMsg[];
+  contracts: { type: string; function: any; value: any }[];
+  gasWanted: string;
+  gasFee: string;
+  document: StdSignDoc;
+} {
   return {
     messages: document.msgs,
     contracts: document.msgs.map((message) => {
@@ -25,18 +36,19 @@ function mappedTransactionData(document: StdSignDoc) {
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
     document,
-  }
+  };
 }
 
-const checkHealth = (rpcUrl: string, requestKey?: string) => setTimeout(async () => {
-  const { healthy } = await fetchHealth(rpcUrl);
-  if (healthy === false) {
-    chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
-    );
-    return;
-  }
-}, 5000);
+const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
+  setTimeout(async () => {
+    const { healthy } = await fetchHealth(rpcUrl);
+    if (healthy === false) {
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
+      );
+      return;
+    }
+  }, 5000);
 
 const DEFAULT_DENOM = 'GNOT';
 
@@ -56,57 +68,54 @@ const ApproveTransactionContainer: React.FC = () => {
   const [document, setDocument] = useState<StdSignDoc>();
   const { currentNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
-  const [processType, setProcessType] = useState<"INIT" | "PROCESSING" | "DONE">("INIT")
+  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
 
-  const processing = useMemo(() => processType !== "INIT", [processType]);
+  const processing = useMemo(() => processType !== 'INIT', [processType]);
 
-  const done = useMemo(() => processType === "DONE", [processType]);
+  const done = useMemo(() => processType === 'DONE', [processType]);
 
   const networkFee = useMemo(() => {
     if (!document || document.fee.amount.length === 0) {
       return {
         amount: '1',
-        denom: DEFAULT_DENOM
+        denom: DEFAULT_DENOM,
       };
     }
     const networkFeeAmount = document.fee.amount[0].amount;
-    const networkFeeAmountOfGnot =
-      BigNumber(networkFeeAmount)
-        .shiftedBy(-6)
-        .toString();
+    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount).shiftedBy(-6).toString();
     return {
       amount: networkFeeAmountOfGnot,
-      denom: DEFAULT_DENOM
+      denom: DEFAULT_DENOM,
     };
   }, [document]);
 
   const isErrorNetworkFee = useMemo(() => {
-    return BigNumber(currentBalance)
-      .shiftedBy(-6)
-      .isLessThan(networkFee.amount);
+    return BigNumber(currentBalance).shiftedBy(-6).isLessThan(networkFee.amount);
   }, [currentBalance, networkFee]);
 
-  const checkLockWallet = () => {
-    walletService.isLocked().then(locked => locked && navigate(RoutePath.ApproveLogin + location.search));
-  }
+  const checkLockWallet = (): void => {
+    walletService
+      .isLocked()
+      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+  };
 
-  const initRequestData = () => {
+  const initRequestData = (): void => {
     const data = parseParmeters(location.search);
     const parsedData = decodeParameter(data['data']);
     setReqeustData({ ...parsedData, hostname: data['hostname'] });
   };
 
-  const validate = (currentAccount: Account, requestData: InjectionMessage) => {
+  const validate = (currentAccount: Account, requestData: InjectionMessage): boolean => {
     const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
     }
     return true;
-  }
+  };
 
-  const initFavicon = async () => {
+  const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
     setFavicon(faviconData);
   };
@@ -118,7 +127,7 @@ const ApproveTransactionContainer: React.FC = () => {
     gnoProvider.getBalance(currentAddress, 'ugnot').then(setCurrentBalance);
   }, [currentAddress, gnoProvider]);
 
-  const initTransactionData = async () => {
+  const initTransactionData = async (): Promise<boolean> => {
     if (!currentNetwork || !currentAccount || !requestData) {
       return false;
     }
@@ -153,7 +162,7 @@ const ApproveTransactionContainer: React.FC = () => {
     return false;
   };
 
-  const sendTransaction = async () => {
+  const sendTransaction = async (): Promise<boolean> => {
     if (isErrorNetworkFee) {
       return false;
     }
@@ -163,15 +172,13 @@ const ApproveTransactionContainer: React.FC = () => {
     }
 
     try {
-      const signature = await transactionService.createSignature(
-        currentAccount,
-        document
-      );
-      setProcessType("PROCESSING");
+      const signature = await transactionService.createSignature(currentAccount, document);
+      setProcessType('PROCESSING');
       const transaction = await transactionService.createTransaction(document, signature);
       const hash = transactionService.createHash(transaction);
       const responseHash = await new Promise<string>((resolve) => {
-        transactionService.sendTransaction(transaction)
+        transactionService
+          .sendTransaction(transaction)
           .then(resolve)
           .catch((error: TM2Error) => {
             const message = {
@@ -184,16 +191,20 @@ const ApproveTransactionContainer: React.FC = () => {
             };
             setResponse(
               InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
-            )
+            );
           });
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
-      })
+      });
       if (hash === responseHash) {
-        setResponse(InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key));
+        setResponse(
+          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+        );
         return true;
       } else {
-        setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key));
+        setResponse(
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
+        );
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -202,17 +213,16 @@ const ApproveTransactionContainer: React.FC = () => {
           return false;
         }
       }
-      setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key),
-      );
+      setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key));
     }
     return false;
   };
 
-  const onToggleTransactionData = (visibleTransactionInfo: boolean) => {
+  const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
     setVisibleTransactionInfo(visibleTransactionInfo);
   };
 
-  const onClickConfirm = () => {
+  const onClickConfirm = (): void => {
     if (!currentAccount) {
       return;
     }
@@ -221,13 +231,12 @@ const ApproveTransactionContainer: React.FC = () => {
       navigate(RoutePath.ApproveTransactionLoading, {
         state: {
           document,
-          requestData
-        }
+          requestData,
+        },
       });
       return;
     }
-    sendTransaction().finally(() => setProcessType("DONE")
-    );
+    sendTransaction().finally(() => setProcessType('DONE'));
   };
 
   useEffect(() => {
@@ -249,7 +258,7 @@ const ApproveTransactionContainer: React.FC = () => {
       }
     }
   }, [currentAccount, requestData, gnoProvider]);
-  const onClickCancel = () => {
+  const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
     );

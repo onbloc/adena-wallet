@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const SubHeaderWrapper = styled.div`
   position: relative;
@@ -32,6 +32,6 @@ export const SubHeaderWrapper = styled.div`
   }
 
   .title-wrapper {
-    ${({ theme }) => theme.fonts.header4}
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4}
   }
 `;

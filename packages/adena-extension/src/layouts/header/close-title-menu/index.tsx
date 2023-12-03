@@ -1,6 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
-import { RightArrowBtn } from '@components/buttons/arrow-buttons';
+import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Text from '@components/text';
 import { IconCancel } from '@components/icons/icon-assets';
@@ -10,10 +9,10 @@ interface CloseTitleMenuProps {
 }
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   width: 100%;
   height: 100%;
-  border-bottom: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
   position: relative;
   padding: 0px 18px 0px 12px;
 `;
@@ -26,21 +25,21 @@ const Button = styled.button`
 
   .icon-close {
     * {
-      stroke: ${({ theme }) => theme.color.neutral[9]};
+      stroke: ${({ theme }): string => theme.color.neutral[9]};
       transition: 0.2s;
     }
   }
 
   &:hover {
     * {
-      stroke: ${({ theme }) => theme.color.neutral[0]};
+      stroke: ${({ theme }): string => theme.color.neutral[0]};
     }
   }
 `;
 
-export const CloseTitleMenu = ({ title }: CloseTitleMenuProps) => {
+export const CloseTitleMenu = ({ title }: CloseTitleMenuProps): JSX.Element => {
   const navigate = useNavigate();
-  const handlePrevButtonClick = () => navigate(-1);
+  const handlePrevButtonClick = (): void => navigate(-1);
 
   return (
     <Wrapper>
@@ -49,5 +48,5 @@ export const CloseTitleMenu = ({ title }: CloseTitleMenuProps) => {
         <IconCancel className='icon-close' />
       </Button>
     </Wrapper>
-  )
+  );
 };

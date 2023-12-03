@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
@@ -28,7 +28,7 @@ const menuMakerInfo = [
   },
 ];
 
-export const Settings = () => {
+export const Settings = (): JSX.Element => {
   const navigate = useNavigate();
 
   const moveBack = useCallback(() => {
@@ -41,7 +41,11 @@ export const Settings = () => {
         <span className='title'>Settings</span>
       </div>
       {menuMakerInfo.map((v, i) => (
-        <FullButtonRightIcon key={i} title={v.title} onClick={() => navigate(v.navigatePath)} />
+        <FullButtonRightIcon
+          key={i}
+          title={v.title}
+          onClick={(): void => navigate(v.navigatePath)}
+        />
       ))}
       <BottomFixedButton text='Close' onClick={moveBack} />
     </Wrapper>
@@ -49,7 +53,7 @@ export const Settings = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -61,7 +65,7 @@ const Wrapper = styled.main`
     margin-bottom: 12px;
 
     .title {
-      ${({ theme }) => theme.fonts.header4};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
     }
   }
 `;
