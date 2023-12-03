@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApproveTransactionWrapper } from './ApproveTransactionWrapper';
+import { ApproveTransactionWrapper } from './approve-transaction.styles';
 import DefaultFavicon from './../../../assets/favicon-default.svg';
 import Text from '@components/text';
 import ApproveLoading from '../approve-loading/approve-loading';
