@@ -122,7 +122,7 @@ const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       </div>
 
       <BottomFixedButtonGroup
-        fill
+        filled
         leftButton={{
           text: 'Cancel',
           onClick: onClickCancel,

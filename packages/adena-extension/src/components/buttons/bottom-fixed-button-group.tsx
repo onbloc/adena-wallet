@@ -13,7 +13,7 @@ interface ButtonProps {
 interface BottomFixedButtonGroupProps {
   leftButton: ButtonProps;
   rightButton: ButtonProps;
-  fill?: boolean;
+  filled?: boolean;
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
@@ -23,7 +23,7 @@ function mapClassName(buttonProps: ButtonProps): string {
 const BottomFixedButtonGroup = ({
   leftButton,
   rightButton,
-  fill,
+  filled,
 }: BottomFixedButtonGroupProps): ReactElement => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
@@ -42,7 +42,7 @@ const BottomFixedButtonGroup = ({
   }, [rightButton]);
 
   return (
-    <ButtonWrap fill={fill}>
+    <ButtonWrap filled={filled}>
       <Button className={leftClassName} fullWidth onClick={onClickLeftButton}>
         <Text type='body1Bold'>{leftButton.text}</Text>
       </Button>
@@ -53,18 +53,19 @@ const BottomFixedButtonGroup = ({
   );
 };
 
-const ButtonWrap = styled.div<{ fill?: boolean }>`
+const ButtonWrap = styled.div<{ filled?: boolean }>`
   ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'flex-start', 'center')};
   position: fixed;
   left: 0px;
   width: 100%;
   padding: 0 20px;
-  height: ${({ fill }): '48px' | '96px' => (fill ? '96px' : '48px')};
-  bottom: ${({ fill }): '0' | '24px' => (fill ? '0' : '24px')};
-  ${({ fill }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
-    fill && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
-  ${({ fill }): false | 'align-items: center;' | undefined => fill && 'align-items: center;'}
-  background-color: ${({ fill, theme }): string => (fill ? theme.color.neutral[7] : 'transparent')};
+  height: ${({ filled }): '48px' | '96px' => (filled ? '96px' : '48px')};
+  bottom: ${({ filled }): '0' | '24px' => (filled ? '0' : '24px')};
+  ${({ filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
+    filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
+  ${({ filled }): false | 'align-items: center;' | undefined => filled && 'align-items: center;'}
+  background-color: ${({ filled, theme }): string =>
+    filled ? theme.color.neutral[7] : 'transparent'};
   z-index: 1;
 
   & > button {
