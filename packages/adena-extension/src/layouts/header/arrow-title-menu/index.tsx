@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Text from '@components/text';
 
 interface ArrowTitleMenuProps {
@@ -24,7 +24,7 @@ const Button = styled(LeftArrowBtn)`
 
 export const ArrowTitleMenu = ({ title }: ArrowTitleMenuProps): JSX.Element => {
   const navigate = useNavigate();
-  const { state } = useLocation();
+
   const handlePrevButtonClick = (): void => navigate(-1);
 
   return (

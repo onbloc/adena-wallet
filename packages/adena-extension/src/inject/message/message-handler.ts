@@ -72,7 +72,7 @@ export class MessageHandler {
               HandlerMethod.getAccount(message, sendResponse);
             }
           })
-          .catch((e) => {
+          .catch(() => {
             sendResponse(
               InjectionMessageInstance.failure(
                 'UNRESOLVED_TRANSACTION_EXISTS',
@@ -99,7 +99,7 @@ export class MessageHandler {
               HandlerMethod.switchNetwork(message, sendResponse);
             }
           })
-          .catch((e) => {
+          .catch(() => {
             sendResponse(
               InjectionMessageInstance.failure('UNEXPECTED_ERROR', message, message.key),
             );

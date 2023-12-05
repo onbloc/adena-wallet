@@ -110,7 +110,7 @@ export const TokenDetails = (): JSX.Element => {
   const { state } = useLocation();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  useNetwork();
   const [tokenBalance] = useState<TokenBalance>(state);
   const [balance] = useState(tokenBalance.amount.value);
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();

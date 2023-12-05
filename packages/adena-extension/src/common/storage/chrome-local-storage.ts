@@ -1,10 +1,3 @@
-import {
-  AccountNamesModelV003,
-  AccountTokenMetainfoModelV003,
-  AddressBookModelV003,
-  EstablishSitesModelV003,
-  NetworksModelV003,
-} from '@migrates/migrations/v003/storage-model-v003';
 import { Storage } from '.';
 import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
 

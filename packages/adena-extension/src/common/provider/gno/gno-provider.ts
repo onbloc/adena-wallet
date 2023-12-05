@@ -1,4 +1,3 @@
-import { Tm2Error } from '@common/errors/common/tm2-error';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   BlockInfo,
@@ -8,7 +7,6 @@ import {
   ABCIResponse,
   RPCResponse,
   parseABCI,
-  RestService,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   TransactionEndpoint,

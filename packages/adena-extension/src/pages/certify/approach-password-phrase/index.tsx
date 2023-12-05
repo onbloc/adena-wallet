@@ -38,11 +38,11 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
     }
   };
 
-  const termsAChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const termsAChange = (): void => {
     setTermsA((prev: boolean) => !prev);
   };
 
-  const termsBChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+  const termsBChange = (): void => {
     setTermsB((prev: boolean) => !prev);
   };
 

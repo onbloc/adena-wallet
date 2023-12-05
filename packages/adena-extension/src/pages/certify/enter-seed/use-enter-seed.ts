@@ -21,10 +21,7 @@ export const useEnterSeed = (): {
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
 
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {

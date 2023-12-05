@@ -18,7 +18,6 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
 
   async up(
     current: StorageModel<StorageModelDataV003>,
-    password?: string,
   ): Promise<StorageModel<StorageModelDataV004>> {
     if (!this.validateModelV003(current.data)) {
       throw new Error('Stroage Data doesn not match version V003');

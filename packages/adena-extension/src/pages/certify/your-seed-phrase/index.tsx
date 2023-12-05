@@ -31,10 +31,7 @@ export const YourSeedPhrase = (): JSX.Element => {
   const [clicked, setClicked] = useState(false);
   const { changeCurrentAccount } = useCurrentAccount();
 
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
   const handleNextButtonClick = async (): Promise<void> => {
     if (clicked) {

@@ -48,7 +48,7 @@ export type UseLedgerPasswordReturn = {
 export const useLedgerPassword = (): UseLedgerPasswordReturn => {
   const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
-  const { updateWallet } = useWalletContext();
+  useWalletContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({

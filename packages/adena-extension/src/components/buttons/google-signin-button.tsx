@@ -2,7 +2,6 @@ import React from 'react';
 import googleLogo from '@assets/google-logo.svg';
 import Text from '@components/text';
 import Button, { ButtonHierarchy } from './button';
-import theme from '@styles/theme';
 import { CSSProperties } from 'styled-components';
 
 interface GoogleSigninButtonProps {

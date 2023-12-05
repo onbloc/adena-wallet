@@ -104,11 +104,6 @@ export const WalletCreate = (): JSX.Element => {
   );
 };
 
-const ButtonWrap = styled.div`
-  width: 100%;
-  margin-top: auto;
-`;
-
 const PoweredByWeb3AuthWihDivider = (): JSX.Element => (
   <>
     <Text type='light11' color={theme.color.neutral[9]}>

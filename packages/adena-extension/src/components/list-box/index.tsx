@@ -1,4 +1,3 @@
-import theme from '@styles/theme';
 import React, { ReactElement } from 'react';
 import styled, { css, CSSProp, CSSProperties } from 'styled-components';
 

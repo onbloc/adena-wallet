@@ -20,7 +20,7 @@ const Wrapper = styled.main`
 `;
 
 export const Nft = (): JSX.Element => {
-  const [state, setState] = useState('FINISH');
+  const [state] = useState('FINISH');
   const [datas] = useState([]);
 
   return (
@@ -28,7 +28,7 @@ export const Nft = (): JSX.Element => {
       <Text type='header4'>NFTs</Text>
       {state === 'FINISH' ? (
         datas.length > 0 ? (
-          datas.map((item, idx) => <></>)
+          datas.map(() => <></>)
         ) : (
           <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
             No NFTs to display
