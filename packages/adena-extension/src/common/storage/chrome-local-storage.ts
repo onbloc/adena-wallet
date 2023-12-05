@@ -44,17 +44,7 @@ export class ChromeLocalStorage implements Storage {
     this.migrator = new StorageMigrator(StorageMigrator.migrations(), this.storage);
   }
 
-  public get = async (
-    key: string,
-  ): Promise<
-    | string
-    | NetworksModelV003
-    | AccountNamesModelV003
-    | EstablishSitesModelV003
-    | AddressBookModelV003
-    | AccountTokenMetainfoModelV003
-    | undefined
-  > => {
+  public get = async (key: string): Promise<any> => {
     if (!isStorageKey(key)) {
       throw new Error('Unsupported key (' + key + ')');
     }
