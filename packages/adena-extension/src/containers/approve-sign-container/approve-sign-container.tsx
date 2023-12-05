@@ -9,14 +9,14 @@ import {
   parseParmeters,
 } from '@common/utils/client-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { StdSignDoc, Account, isLedgerAccount } from 'adena-module';
+import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
 
 function mappedTransactionData(document: StdSignDoc): {
-  messages: readonly import('/Users/limsanghyun/Documents/sourcecode/adena-wallet/packages/adena-module/dist/index').AminoMsg[];
+  messages: readonly AminoMsg[];
   contracts: { type: string; function: any; value: any }[];
   gasWanted: string;
   gasFee: string;
