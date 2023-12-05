@@ -40,6 +40,5 @@
       "prettier --write",
       "git add"
     ]
-  },
-  "packageManager": "yarn@3.4.1"
+  }
 }
