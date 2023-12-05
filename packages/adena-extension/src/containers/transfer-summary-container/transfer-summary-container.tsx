@@ -62,9 +62,9 @@ const TransferSummaryContainer: React.FC = () => {
     }
     return TransactionMessage.createMessageOfVmCall({
       caller: currentAddress || '',
-      send: "",
+      send: '',
       pkgPath: tokenMetainfo.pkgPath,
-      func: "Transfer",
+      func: 'Transfer',
       args: [
         toAddress,
         transferAmount.value

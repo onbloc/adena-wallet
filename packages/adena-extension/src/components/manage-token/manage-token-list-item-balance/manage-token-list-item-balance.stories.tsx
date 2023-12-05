@@ -1,4 +1,6 @@
-import ManageTokenListItemBalance, { type ManageTokenListItemBalanceProps } from './manage-token-list-item-balance';
+import ManageTokenListItemBalance, {
+  type ManageTokenListItemBalanceProps,
+} from './manage-token-list-item-balance';
 import { Meta, StoryObj } from '@storybook/react';
 
 export default {
@@ -9,8 +11,8 @@ export default {
 export const Default: StoryObj<ManageTokenListItemBalanceProps> = {
   args: {
     amount: {
-      value: "240,255.241155",
-      denom: "GNOT"
-    }
+      value: '240,255.241155',
+      denom: 'GNOT',
+    },
   },
 };

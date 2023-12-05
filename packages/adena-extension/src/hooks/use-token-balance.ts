@@ -241,7 +241,7 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
-    if (wallet === null) throw new Error("wallet doesn't exist");
+    if (wallet === null) throw new Error('wallet doesn\'t exist');
 
     const defaultAmount = {
       value: '0',

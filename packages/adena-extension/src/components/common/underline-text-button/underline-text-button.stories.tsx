@@ -1,6 +1,6 @@
 import UnderlineTextButton, { type UnderlineTextButtonProps } from './underline-text-button';
 import { Meta, StoryObj } from '@storybook/react';
-import { action } from "@storybook/addon-actions";
+import { action } from '@storybook/addon-actions';
 
 export default {
   title: 'components/common/UnderlineTextButton',
@@ -10,6 +10,6 @@ export default {
 export const Default: StoryObj<UnderlineTextButtonProps> = {
   args: {
     text: 'Underline Text',
-    onClick: action("add custom token click")
+    onClick: action('add custom token click')
   },
 };

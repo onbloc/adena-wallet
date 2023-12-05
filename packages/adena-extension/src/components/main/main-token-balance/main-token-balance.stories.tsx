@@ -9,8 +9,8 @@ export default {
 export const Default: StoryObj<MainTokenBalanceProps> = {
   args: {
     amount: {
-      value: "240,255.241155",
-      denom: "GNOT"
-    }
+      value: '240,255.241155',
+      denom: 'GNOT',
+    },
   },
 };

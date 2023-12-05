@@ -19,6 +19,7 @@
   },
   "plugins": ["react", "@typescript-eslint"],
   "rules": {
+    "quotes": ["error", "single"],
     "@typescript-eslint/no-namespace": "off",
     "@typescript-eslint/explicit-function-return-type": "error",
     "@typescript-eslint/no-empty-interface": "off",

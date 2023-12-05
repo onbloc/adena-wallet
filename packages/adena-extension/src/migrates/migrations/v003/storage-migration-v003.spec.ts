@@ -50,7 +50,7 @@ describe('serialized wallet migration V003', () => {
     };
     const password = '123';
     const migration = new StorageMigration003();
-    const result = await migration.up(mockData, password);
+    const result = await migration.up(mockData);
 
     expect(result.version).toBe(3);
     expect(result.data).not.toBeNull();

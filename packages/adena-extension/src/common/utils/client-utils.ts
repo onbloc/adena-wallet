@@ -88,7 +88,7 @@ export function parseTxsEachDate(txs: object[]): any {
     } else if (cur.type === '/vm.m_addpkg') {
       txFunc = 'AddPkg';
     } else if (cur.type === '/vm.m_run') {
-      txDesc = `Run`;
+      txDesc = 'Run';
     } else {
       txDesc = '';
     }

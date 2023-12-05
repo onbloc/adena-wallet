@@ -1,13 +1,13 @@
-import { BaseError } from "../base";
+import { BaseError } from '../base';
 
 const ERROR_VALUE = {
 	FAILED_INITIALIZE_PROVIDER: {
 		status: 400,
-		type: "FAILED_TO_INITIALIZE_PROVIDER",
+		type: 'FAILED_TO_INITIALIZE_PROVIDER',
 	},
 	NOT_FOUND_NETWORKS: {
 		status: 400,
-		type: "NOT_FOUND_NETWORKS",
+		type: 'NOT_FOUND_NETWORKS',
 	},
 };
 

@@ -8,9 +8,9 @@ export default {
 
 export const Default: StoryObj<HighlightNumberProps> = {
   args: {
-    value: "123,456,789.0001",
-    fontColor: "white",
-    fontStyleKey: "header6",
-    minimumFontSize: "14px"
+    value: '123,456,789.0001',
+    fontColor: 'white',
+    fontStyleKey: 'header6',
+    minimumFontSize: '14px',
   },
 };
