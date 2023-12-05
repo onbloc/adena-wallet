@@ -15,7 +15,7 @@ const text = {
 };
 
 const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
-  onClickCancel
+  onClickCancel,
 }) => {
   return (
     <TransferLedgerLoadingWrapper>

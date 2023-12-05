@@ -41,7 +41,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
         />

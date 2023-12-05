@@ -18,7 +18,7 @@ export const Default: StoryObj<TransactionHistoryListItemProps> = {
     extraInfo: '',
     amount: {
       value: '-4,000',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'DEFAULT',
     onClickItem: action('click item'),
@@ -37,11 +37,11 @@ export const TransferSendSuccess: StoryObj<TransactionHistoryListItemProps> = {
     extraInfo: '',
     amount: {
       value: '-4,000.23',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'DEFAULT',
     onClickItem: action('click item'),
-  }
+  },
 }
 
 export const TransferReceiveSuccess: StoryObj<TransactionHistoryListItemProps> = {
@@ -55,11 +55,11 @@ export const TransferReceiveSuccess: StoryObj<TransactionHistoryListItemProps> =
     extraInfo: '',
     amount: {
       value: '+4,000',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'ACTIVE',
     onClickItem: action('click item'),
-  }
+  },
 }
 
 export const TransferSendFailed: StoryObj<TransactionHistoryListItemProps> = {
@@ -73,11 +73,11 @@ export const TransferSendFailed: StoryObj<TransactionHistoryListItemProps> = {
     extraInfo: '',
     amount: {
       value: '-4,000.23',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'BLUR',
     onClickItem: action('click item'),
-  }
+  },
 }
 
 export const ContractSuccess: StoryObj<TransactionHistoryListItemProps> = {
@@ -90,11 +90,11 @@ export const ContractSuccess: StoryObj<TransactionHistoryListItemProps> = {
     extraInfo: '',
     amount: {
       value: '-4,000.23',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'DEFAULT',
     onClickItem: action('click item'),
-  }
+  },
 }
 
 export const MultiContractSuccess: StoryObj<TransactionHistoryListItemProps> = {
@@ -107,11 +107,11 @@ export const MultiContractSuccess: StoryObj<TransactionHistoryListItemProps> = {
     extraInfo: '+2',
     amount: {
       value: '-4,000.23',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'DEFAULT',
     onClickItem: action('click item'),
-  }
+  },
 }
 
 export const AddPackageSuccess: StoryObj<TransactionHistoryListItemProps> = {
@@ -123,9 +123,9 @@ export const AddPackageSuccess: StoryObj<TransactionHistoryListItemProps> = {
     title: 'AddPkg',
     amount: {
       value: '-4,000.23',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     valueType: 'DEFAULT',
     onClickItem: action('click item'),
-  }
+  },
 }

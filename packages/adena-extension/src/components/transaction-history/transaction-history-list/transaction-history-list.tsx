@@ -23,7 +23,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
             key={index}
             {...transaction}
             onClickItem={onClickItem}
-          />
+          />,
         )}
       </div>
     </TransactionHistoryListWrapper>

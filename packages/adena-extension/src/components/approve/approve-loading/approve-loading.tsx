@@ -9,7 +9,7 @@ export interface ApproveLoadingProps {
 
 const ApproveLoading: React.FC<ApproveLoadingProps> = ({
   leftButtonText,
-  rightButtonText
+  rightButtonText,
 }) => {
   return (
     <ApproveLoadingWrapper>

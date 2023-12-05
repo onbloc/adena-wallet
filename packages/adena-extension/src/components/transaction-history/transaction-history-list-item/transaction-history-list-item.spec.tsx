@@ -18,7 +18,7 @@ describe('TransactionHistoryListItem Component', () => {
       extraInfo: '',
       amount: {
         value: '-4,000',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       valueType: 'DEFAULT',
       onClickItem: () => { return; },

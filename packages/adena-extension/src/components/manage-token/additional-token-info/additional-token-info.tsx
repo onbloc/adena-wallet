@@ -14,7 +14,7 @@ export interface AdditionalTokenInfoBlockProps {
 
 const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
   title,
-  value
+  value,
 }) => {
   return (
     <AdditionalTokenInfoItemWrapper>
@@ -27,7 +27,7 @@ const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
 const AdditionalTokenInfo: React.FC<AdditionalTokenInfoProps> = ({
   symbol,
   path,
-  decimals
+  decimals,
 }) => {
   return (
     <AdditionalTokenInfoWrapper>

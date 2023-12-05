@@ -16,7 +16,7 @@ describe('AdditionalTokenSelectBox Component', () => {
       tokenInfos: [],
       onChangeKeyword: () => { return; },
       onClickListItem: () => { return; },
-      onClickOpenButton: () => { return; }
+      onClickOpenButton: () => { return; },
     };
 
     render(

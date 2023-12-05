@@ -22,15 +22,15 @@ const tokens = [
     balanceAmount: {
       value: '252.844',
       denom: 'GNOS',
-    }
-  }
+    },
+  },
 ];
 
 describe('TokenList Component', () => {
   it('TokenList render', () => {
     const args: TokenListProps = {
       tokens,
-      onClickTokenItem: () => { return; }
+      onClickTokenItem: () => { return; },
     };
 
     render(

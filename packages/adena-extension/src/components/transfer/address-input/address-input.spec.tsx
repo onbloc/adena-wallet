@@ -19,7 +19,7 @@ describe('AddressInput Component', () => {
       addressBookInfos: [],
       onClickInputIcon: () => { return; },
       onChangeAddress: () => { return; },
-      onClickAddressBook: () => { return; }
+      onClickAddressBook: () => { return; },
     };
 
     render(

@@ -10,6 +10,6 @@ export default {
 export const Default: StoryObj<SideMenuLinkProps> = {
   args: {
     text: '',
-    onClick: action('onClick')
+    onClick: action('onClick'),
   },
 };

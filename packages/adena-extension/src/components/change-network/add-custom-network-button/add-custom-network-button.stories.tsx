@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<AddCustomNetworkButtonProps> = {
   args: {
-    onClick: action('add custom token click')
+    onClick: action('add custom token click'),
   },
 };

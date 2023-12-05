@@ -8,6 +8,6 @@ export default {
 
 export const Default: StoryObj<SpinnerProps> = {
   args: {
-    size: 200
+    size: 200,
   },
 };

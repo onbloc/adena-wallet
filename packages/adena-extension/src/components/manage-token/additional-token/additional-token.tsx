@@ -49,7 +49,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
           title='Add Custom Token'
           leftElement={{
             element: <img src={LeftArrowIcon} alt={'back icon'} />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
         />
       </div>

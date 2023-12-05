@@ -6,7 +6,7 @@ export interface TransferLedgerRejectLayoutProps {
 }
 
 const TransferLedgerRejectLayout: React.FC<TransferLedgerRejectLayoutProps> = ({
-  transferLedgerReject
+  transferLedgerReject,
 }) => {
   return (
     <TransferLedgerRejectLayoutWrapper>

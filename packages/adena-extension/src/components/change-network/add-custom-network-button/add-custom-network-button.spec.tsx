@@ -9,7 +9,7 @@ import AddCustomNetworkButton, { AddCustomNetworkButtonProps } from './add-custo
 describe('AddCustomNetworkButton Component', () => {
   it('AddCustomNetworkButton render', () => {
     const args: AddCustomNetworkButtonProps = {
-      onClick: () => { return; }
+      onClick: () => { return; },
     };
 
     render(

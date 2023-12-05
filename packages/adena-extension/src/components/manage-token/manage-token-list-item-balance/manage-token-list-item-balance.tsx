@@ -12,7 +12,7 @@ export interface ManageTokenListItemBalanceProps {
 const ManageTokenListItemBalance: React.FC<ManageTokenListItemBalanceProps> = ({ amount }) => {
   const {
     value,
-    denom
+    denom,
   } = amount;
 
   return (

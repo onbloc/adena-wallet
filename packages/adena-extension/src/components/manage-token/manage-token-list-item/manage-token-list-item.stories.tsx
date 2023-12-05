@@ -16,23 +16,23 @@ const token = {
     value: '240,255.241155',
     denom: 'GNOT',
   },
-  display: true
+  display: true,
 };
 
 export const Main: StoryObj<ManageTokenListItemProps> = {
   args: {
     token: {
       ...token,
-      main: true
+      main: true,
     },
-    onToggleActiveItem: action('token item click')
+    onToggleActiveItem: action('token item click'),
   },
 };
 
 export const Activated: StoryObj<ManageTokenListItemProps> = {
   args: {
     token,
-    onToggleActiveItem: action('token item click')
+    onToggleActiveItem: action('token item click'),
   },
 };
 
@@ -42,6 +42,6 @@ export const Deactivated: StoryObj<ManageTokenListItemProps> = {
       ...token,
       display: false,
     },
-    onToggleActiveItem: action('token item click')
+    onToggleActiveItem: action('token item click'),
   },
 };

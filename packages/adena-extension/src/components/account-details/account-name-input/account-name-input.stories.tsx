@@ -11,6 +11,6 @@ export const Default: StoryObj<AccountNameInputProps> = {
   args: {
     originName: 'Account 1',
     name: 'aslkdfjaslkdfjaklsdfjalksdf',
-    setName: action('setName')
+    setName: action('setName'),
   },
 };

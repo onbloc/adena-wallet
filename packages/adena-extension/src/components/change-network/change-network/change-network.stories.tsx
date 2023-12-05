@@ -52,7 +52,7 @@ export const Default: StoryObj<ChangeNetworkProps> = {
         rpcUrl: 'https://testnet.gno.teritori.com:26658',
         gnoUrl: 'https://testnet.gno.teritori.com',
         apiUrl: '',
-        linkUrl: ''
+        linkUrl: '',
       },
     ],
     changeNetwork: action('changeNetwork'),

@@ -9,7 +9,7 @@ import CopyButton, { CopyButtonProps } from './copy-button';
 describe('CopyButton Component', () => {
   it('CopyButton render', () => {
     const args: CopyButtonProps = {
-      copyText: 'hello'
+      copyText: 'hello',
     };
 
     render(

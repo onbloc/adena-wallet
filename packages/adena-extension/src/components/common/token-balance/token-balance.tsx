@@ -18,7 +18,7 @@ const TokenBalance: React.FC<TokenBalanceProps> = ({
   orientation = 'VERTICAL',
   fontColor = 'white',
   fontStyleKey = 'header6',
-  minimumFontSize = '14px'
+  minimumFontSize = '14px',
 }) => {
   return (
     <TokenBalanceWrapper

@@ -11,7 +11,7 @@ describe('AdditionalTokenInfo Component', () => {
     const args: AdditionalTokenInfoProps = {
       symbol: 'GNOT',
       path: 'gno.land/gnot',
-      decimals: '6'
+      decimals: '6',
     };
 
     render(

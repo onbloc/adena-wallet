@@ -17,7 +17,7 @@ const tokens = [
       value: '240,255.241155',
       denom: 'GNOT',
     },
-    activated: true
+    activated: true,
   }, {
     tokenId: 'token2',
     symbol: 'GNOS',
@@ -27,13 +27,13 @@ const tokens = [
       value: '252.844',
       denom: 'GNOS',
     },
-    activated: true
-  }
+    activated: true,
+  },
 ];
 
 export const Default: StoryObj<ManageTokenListProps> = {
   args: {
     tokens,
-    onToggleActiveItem: action('token item click')
+    onToggleActiveItem: action('token item click'),
   },
 };

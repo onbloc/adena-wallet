@@ -28,7 +28,7 @@ describe('TransferSummary Component', () => {
       toAddress: '',
       networkFee: {
         value: '0.0048',
-        denom: 'GNOT'
+        denom: 'GNOT',
       },
       onClickBack: () => { return; },
       onClickCancel: () => { return; },

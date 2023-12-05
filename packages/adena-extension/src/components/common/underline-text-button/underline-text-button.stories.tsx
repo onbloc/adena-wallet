@@ -10,6 +10,6 @@ export default {
 export const Default: StoryObj<UnderlineTextButtonProps> = {
   args: {
     text: 'Underline Text',
-    onClick: action('add custom token click')
+    onClick: action('add custom token click'),
   },
 };

@@ -11,7 +11,7 @@ describe('TransactionHistory Component', () => {
     const args: TransactionHistoryProps = {
       status: 'success',
       transactionInfoLists: [],
-      onClickItem: () => { return; }
+      onClickItem: () => { return; },
     };
 
     render(

@@ -10,7 +10,7 @@ export interface CopyButtonProps {
 
 const CopyButton: React.FC<CopyButtonProps> = ({
   className = '',
-  copyText
+  copyText,
 }) => {
   const [checked, setChecked] = useState<boolean>(false);
 

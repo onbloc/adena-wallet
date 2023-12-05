@@ -11,23 +11,23 @@ const addressBookInfos = [
   {
     addressBookId: '1',
     description: '(g1uh...ohno)',
-    name: 'Account 1'
+    name: 'Account 1',
   },
   {
     addressBookId: '2',
     description: '(g1uh...ohno)',
-    name: 'Account 2'
+    name: 'Account 2',
   },
   {
     addressBookId: '3',
     description: '(g1uh...ohno)',
-    name: 'Account 3'
+    name: 'Account 3',
   },
   {
     addressBookId: '4',
     description: '(g1uh...ohno)',
-    name: 'Account 4'
-  }
+    name: 'Account 4',
+  },
 ];
 
 export const Default: StoryObj<AddressInputProps> = {
@@ -42,7 +42,7 @@ export const Default: StoryObj<AddressInputProps> = {
     addressBookInfos,
     onClickInputIcon: action('click input icon'),
     onChangeAddress: action('change address'),
-    onClickAddressBook: action('click address book')
+    onClickAddressBook: action('click address book'),
   },
 };
 
@@ -58,6 +58,6 @@ export const NoAddress: StoryObj<AddressInputProps> = {
     addressBookInfos: [],
     onClickInputIcon: action('click input icon'),
     onChangeAddress: action('change address'),
-    onClickAddressBook: action('click address book')
+    onClickAddressBook: action('click address book'),
   },
 };

@@ -20,7 +20,7 @@ const transferRSendSuccessInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
   date: '2023-04-24 07:05:16',
@@ -36,7 +36,7 @@ const transferReceiveSuccessInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '+4,000',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'ACTIVE',
   date: '2023-04-24 07:05:16',
@@ -52,7 +52,7 @@ const transferRSendFailedInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'BLUR',
   date: '2023-04-24 07:05:16',
@@ -67,7 +67,7 @@ const contractSuccessInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
   date: '2023-04-24 07:05:16',
@@ -82,7 +82,7 @@ const multiContractSuccessInfo: TransactionInfo = {
   extraInfo: '+2',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
   date: '2023-04-24 07:05:16',
@@ -96,7 +96,7 @@ const addPackageSuccessInfo: TransactionInfo = {
   title: 'AddPkg',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
   date: '2023-04-24 07:05:16',
@@ -111,7 +111,7 @@ export const Default: StoryObj<TransactionHistoryListProps> = {
       transferRSendFailedInfo,
       contractSuccessInfo,
       multiContractSuccessInfo,
-      addPackageSuccessInfo
+      addPackageSuccessInfo,
     ],
     onClickItem: action('click item'),
   },

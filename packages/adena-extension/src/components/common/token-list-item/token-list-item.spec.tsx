@@ -13,14 +13,14 @@ const token = {
   balanceAmount: {
     value: '240,255.241155',
     denom: 'GNOT',
-  }
+  },
 };
 
 describe('TokenListItem Component', () => {
   it('TokenListItem render', () => {
     const args: TokenListItemProps = {
       token,
-      onClickTokenItem: () => { return; }
+      onClickTokenItem: () => { return; },
     };
 
     render(
