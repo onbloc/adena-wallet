@@ -54,9 +54,9 @@ const ManageTokenSearchContainer: React.FC = () => {
         ...metainfo,
         balanceAmount: {
           value: BigNumber(metainfo.amount.value).toFormat(),
-          denom: metainfo.amount.denom
+          denom: metainfo.amount.denom,
         },
-        logo: metainfo.image || `${UnknownTokenIcon}`
+        logo: metainfo.image || `${UnknownTokenIcon}`,
       }
     });
     return filterdTokens;

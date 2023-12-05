@@ -12,7 +12,7 @@ export default {
 
 export const Default: StoryObj<SubHeaderProps> = {
   args: {
-    title: 'Send GNOS'
+    title: 'Send GNOS',
   },
 };
 
@@ -21,7 +21,7 @@ export const LeftElement: StoryObj<SubHeaderProps> = {
     title: 'Send GNOS',
     leftElement: {
       element: <img src={`${ArrowBackIcon}`} alt='arrow back' />,
-      onClick: action('left element click')
+      onClick: action('left element click'),
     },
   },
 };
@@ -31,7 +31,7 @@ export const RightElement: StoryObj<SubHeaderProps> = {
     title: 'Send GNOS',
     rightElement: {
       element: <img src={`${ArrowNextIcon}`} alt='arrow next' />,
-      onClick: action('right element click')
+      onClick: action('right element click'),
     },
   },
 };
@@ -41,11 +41,11 @@ export const LeftAndRightElement: StoryObj<SubHeaderProps> = {
     title: 'Send GNOS',
     leftElement: {
       element: <img src={`${ArrowBackIcon}`} alt='arrow back' />,
-      onClick: action('left element click')
+      onClick: action('left element click'),
     },
     rightElement: {
       element: <img src={`${ArrowNextIcon}`} alt='arrow next' />,
-      onClick: action('right element click')
+      onClick: action('right element click'),
     },
   },
 };

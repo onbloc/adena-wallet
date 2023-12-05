@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const SideMenuLinkWrapper = styled.div`
   display: flex;
@@ -8,12 +8,12 @@ export const SideMenuLinkWrapper = styled.div`
   padding: 16px 20px;
   justify-content: flex-start;
   align-items: center;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   transition: 0.2s;
   cursor: pointer;
 
   &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[6]};
+    background-color: ${({ theme }): string => theme.color.neutral[6]};
   }
 
   .icon {
@@ -24,6 +24,6 @@ export const SideMenuLinkWrapper = styled.div`
   .title {
     width: 100%;
     margin-left: 12px;
-    ${({ theme }) => theme.fonts.body2Reg}
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg}
   }
 `;

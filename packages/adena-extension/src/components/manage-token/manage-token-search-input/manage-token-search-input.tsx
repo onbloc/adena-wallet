@@ -17,18 +17,14 @@ const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({
   return (
     <ManageTokenSearchInputWrapper>
       <div className='search-icon-wrapper'>
-        <img
-          className='search'
-          src={ManageTokenSearchIcon}
-          alt='search icon'
-        />
+        <img className='search' src={ManageTokenSearchIcon} alt='search icon' />
       </div>
 
       <div className='input-wrapper'>
         <input
           className='search-input'
           value={keyword}
-          onChange={event => onChangeKeyword(event.target.value)}
+          onChange={(event): void => onChangeKeyword(event.target.value)}
           placeholder='Search'
         />
       </div>

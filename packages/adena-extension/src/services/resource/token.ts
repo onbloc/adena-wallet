@@ -1,5 +1,10 @@
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
-import { TokenRepository } from '@repositories/common';
+import {
+  GRC20TokenModel,
+  TokenModel,
+  isGRC20TokenModel,
+  isNativeTokenModel,
+} from '@models/token-model';
+import { AppInfoResponse, TokenRepository } from '@repositories/common';
 import { AccountTokenBalance } from '@states/balance';
 import { NetworkMetainfo } from '@states/network';
 
@@ -13,15 +18,15 @@ export class TokenService {
     this.tokenMetaInfos = [];
   }
 
-  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo) {
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
     this.tokenRepository.setNetworkMetainfo(networkMetainfo);
   }
 
-  public getTokenMetainfos() {
+  public getTokenMetainfos(): TokenModel[] {
     return this.tokenMetaInfos;
   }
 
-  public async fetchTokenMetainfos() {
+  public async fetchTokenMetainfos(): Promise<TokenModel[]> {
     if (this.tokenMetaInfos.length > 0) {
       return this.tokenMetaInfos;
     }
@@ -30,16 +35,19 @@ export class TokenService {
     return this.tokenMetaInfos;
   }
 
-  public async fetchGRC20Tokens(keyword: string, tokenInfos?: TokenModel[]) {
+  public async fetchGRC20Tokens(
+    keyword: string,
+    tokenInfos?: TokenModel[],
+  ): Promise<GRC20TokenModel[]> {
     return this.tokenRepository.fetchGRC20TokensBy(keyword, tokenInfos);
   }
 
-  public async getAppInfos() {
+  public async getAppInfos(): Promise<AppInfoResponse[]> {
     const response = await this.tokenRepository.fetchAppInfos();
     return response;
   }
 
-  public async initAccountTokenMetainfos(accountId: string) {
+  public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
     const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     await this.tokenRepository.updateTokenMetainfos(accountId, [
@@ -63,7 +71,21 @@ export class TokenService {
     return true;
   }
 
-  public async getTokenMetainfosByAccountId(accountId: string) {
+  public async getTokenMetainfosByAccountId(accountId: string): Promise<
+    {
+      image: string;
+      main: boolean;
+      tokenId: string;
+      networkId: string;
+      display: boolean;
+      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
+      name: string;
+      symbol: string;
+      decimals: number;
+      description?: string | undefined;
+      websiteUrl?: string | undefined;
+    }[]
+  > {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     return storedTokenMetainfos.map((token1) => ({
       ...token1,
@@ -72,7 +94,10 @@ export class TokenService {
     }));
   }
 
-  public async updateTokenMetainfosByAccountId(accountId: string, tokenMetainfos: TokenModel[]) {
+  public async updateTokenMetainfosByAccountId(
+    accountId: string,
+    tokenMetainfos: TokenModel[],
+  ): Promise<boolean> {
     const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
     const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
       const tokenMetaInfo = fetchedTokenMetainfos.find((token2) =>
@@ -92,7 +117,9 @@ export class TokenService {
     return true;
   }
 
-  public async updateAccountTokenMetainfos(accountTokenMetainfos: AccountTokenBalance[]) {
+  public async updateAccountTokenMetainfos(
+    accountTokenMetainfos: AccountTokenBalance[],
+  ): Promise<boolean> {
     for (const accountTokenMetainfo of accountTokenMetainfos) {
       await this.tokenRepository.updateTokenMetainfos(
         accountTokenMetainfo.accountId,
@@ -106,7 +133,7 @@ export class TokenService {
     accountId: string,
     tokenId: string,
     display: boolean,
-  ) {
+  ): Promise<boolean> {
     const storedTokenMetainfos = await this.getTokenMetainfosByAccountId(accountId);
     const changedTokenMetainfos = storedTokenMetainfos.map((metainfo) => {
       if (metainfo.tokenId === tokenId) {
@@ -122,17 +149,17 @@ export class TokenService {
     return true;
   }
 
-  public async deleteAccountTokenMetainfos(accountId: string) {
+  public async deleteAccountTokenMetainfos(accountId: string): Promise<boolean> {
     await this.tokenRepository.deleteTokenMetainfos(accountId);
     return true;
   }
 
-  public clear = async () => {
+  public clear = async (): Promise<boolean> => {
     await this.tokenRepository.deleteAllTokenMetainfo();
     return true;
   };
 
-  private equalsToken(token1: TokenModel, token2: TokenModel) {
+  private equalsToken(token1: TokenModel, token2: TokenModel): boolean {
     if (isNativeTokenModel(token1)) {
       return token1.symbol === token2.symbol;
     }

@@ -4,7 +4,7 @@ import addPkgLogo from '../../assets/addpkg.svg';
 import success from '../../assets/success.svg';
 import failed from '../../assets/failed.svg';
 import theme from '@styles/theme';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
@@ -19,21 +19,26 @@ export function formatAddress(v: string, num?: number): string {
   return v.length < 40 ? v : `${v.slice(0, length)}...${v.slice(-length)}`;
 }
 
-export function formatNickname(v: string, num: number) {
+export function formatNickname(v: string, num: number): string {
   return v.length > num ? `${v.slice(0, num)}..` : v;
 }
 
-export function formatFullNickname(name: string, address: string) {
+export function formatFullNickname(name: string, address: string): string {
   const resultName = formatNickname(name, 10);
   const resultAddr = formatAddress(address);
   return `${resultName} (${resultAddr})`;
 }
 
-export function getDateDiff(d: Date | string) {
+export function getDateDiff(d: Date | string): number {
   return new Date().getDate() - new Date(d).getDate();
 }
 
-export function dateTimeFormatEn(d: Date | string) {
+export function dateTimeFormatEn(d: Date | string): {
+  year: string;
+  month: string;
+  day: string;
+  time: string;
+} {
   const currDate = new Date(d);
   const year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(currDate);
   const month = new Intl.DateTimeFormat('en', { month: 'short' }).format(currDate);
@@ -50,13 +55,13 @@ export function dateTimeFormatEn(d: Date | string) {
   };
 }
 
-export function fullDateFormat(d: Date | string) {
+export function fullDateFormat(d: Date | string): string {
   const currDate = new Date(d);
   const result = dateTimeFormatEn(currDate);
   return `${result.month} ${result.day}, ${result.year} ${result.time}`;
 }
 
-export function parseTxsEachDate(txs: object[]) {
+export function parseTxsEachDate(txs: object[]): any {
   return txs.reduce((o: any, cur: any) => {
     const k = cur.date.slice(0, 10);
     const currDate = new Date(cur.date);
@@ -83,7 +88,7 @@ export function parseTxsEachDate(txs: object[]) {
     } else if (cur.type === '/vm.m_addpkg') {
       txFunc = 'AddPkg';
     } else if (cur.type === '/vm.m_run') {
-      txDesc = `Run`;
+      txDesc = 'Run';
     } else {
       txDesc = '';
     }
@@ -134,7 +139,7 @@ export function parseTxsEachDate(txs: object[]) {
   }, {});
 }
 
-const prettier = (target: any) => {
+const prettier = (target: any): any => {
   if (target === undefined) {
     return '0';
   } else {
@@ -168,11 +173,11 @@ export function addressValidationCheck(v: string): boolean {
   return startStringCheck.test(v) && atozAndNumberCheck.test(v) ? true : false;
 }
 
-export function removeUgly(target: any) {
+export function removeUgly(target: any): any {
   return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
 }
 
-export function getStatusStyle(status: string) {
+export function getStatusStyle(status: string): { color: string; statusIcon: any } {
   switch (status) {
     case 'SUCCESS':
       return {
@@ -192,23 +197,23 @@ export function getStatusStyle(status: string) {
   }
 }
 
-export function minFractionDigits(v: number | string, minDigits: number) {
+export function minFractionDigits(v: number | string, minDigits: number): string {
   return Number(v).toLocaleString('en-US', { minimumFractionDigits: minDigits });
 }
 
-export function maxFractionDigits(v: number | string, maxDigits: number) {
+export function maxFractionDigits(v: number | string, maxDigits: number): string {
   return Number(v).toLocaleString('en-US', { maximumFractionDigits: maxDigits });
 }
 
-export function parseFloatNum(v: number | string, fixed: number) {
+export function parseFloatNum(v: number | string, fixed: number): string {
   return parseFloat(Number(v).toFixed(fixed)).toLocaleString();
 }
 
-export function searchTextFilter(target: string, searchText: string) {
+export function searchTextFilter(target: string, searchText: string): boolean {
   return target.toLocaleLowerCase().includes(searchText.toLocaleLowerCase());
 }
 
-export function amountSetSymbol(v: number | string, full?: boolean) {
+export function amountSetSymbol(v: number | string, full?: boolean): string {
   if (v === '0' || v === 0) {
     return String(v);
   } else if (String(v).includes('-')) {
@@ -218,7 +223,7 @@ export function amountSetSymbol(v: number | string, full?: boolean) {
   }
 }
 
-export function funcTextFilter(v: string) {
+export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
   if (['Sent', 'Failed'].includes(v)) {
     return 'Send';
   }
@@ -227,7 +232,7 @@ export function funcTextFilter(v: string) {
   } else v;
 }
 
-export const parseParmeters = (url: string) => {
+export const parseParmeters = (url: string): { [x: string]: string } => {
   const hash = url.split('?');
   if (hash.length < 2) {
     return {};
@@ -248,7 +253,7 @@ export const parseParmeters = (url: string) => {
   return params;
 };
 
-export const encodeParameter = (data: { [key in string]: any }) => {
+export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
     const encodedVaoue = encodeURI(JSON.stringify(data));
     return toBase64(encodedVaoue);
@@ -258,7 +263,7 @@ export const encodeParameter = (data: { [key in string]: any }) => {
   return '';
 };
 
-export const decodeParameter = (data: string) => {
+export const decodeParameter = (data: string): any => {
   try {
     const decodedValue = JSON.parse(decodeURI(fromBase64(data)));
     return decodedValue;
@@ -268,7 +273,7 @@ export const decodeParameter = (data: string) => {
   return {};
 };
 
-export const toBase64 = (data: string) => {
+export const toBase64 = (data: string): string => {
   try {
     return btoa(data);
   } catch (error) {
@@ -277,7 +282,7 @@ export const toBase64 = (data: string) => {
   return '';
 };
 
-export const fromBase64 = (data: string) => {
+export const fromBase64 = (data: string): string => {
   try {
     return atob(data);
   } catch (error) {
@@ -286,7 +291,7 @@ export const fromBase64 = (data: string) => {
   return '';
 };
 
-export const createImageByURI = async (uri: string) => {
+export const createImageByURI = async (uri: string): Promise<string | null> => {
   try {
     const imageData = await fetchArrayData(uri);
     const encodeImageData =
@@ -298,7 +303,7 @@ export const createImageByURI = async (uri: string) => {
   return null;
 };
 
-export const createFaviconByHostname = async (hostname: string) => {
+export const createFaviconByHostname = async (hostname: string): Promise<string | null> => {
   try {
     const faviconData = await fetchFavicon(hostname);
     const encodeImageData =
@@ -310,7 +315,7 @@ export const createFaviconByHostname = async (hostname: string) => {
   return null;
 };
 
-const fetchFavicon = async (hostname: string) => {
+const fetchFavicon = async (hostname: string): Promise<any> => {
   let response = null;
 
   response = await fetchArrayData(`https://${hostname}/apple-touch-icon.png`);
@@ -331,14 +336,14 @@ const fetchFavicon = async (hostname: string) => {
   return null;
 };
 
-const fetchArrayData = (uri: string) => {
+const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> => {
   return axios
     .get(uri, { responseType: 'arraybuffer' })
     .then((response) => (response.headers['content-type'].startsWith('image') ? response : null))
     .catch(() => null);
 };
 
-export const createImageDataBySvg = async (imageUri: string) => {
+export const createImageDataBySvg = async (imageUri: string): Promise<string | null> => {
   try {
     const response = await axios.get(imageUri, { responseType: 'arraybuffer' });
     const imageData =
@@ -350,16 +355,16 @@ export const createImageDataBySvg = async (imageUri: string) => {
   return null;
 };
 
-const isFailedReceive = (cur: any) => {
+const isFailedReceive = (cur: any): boolean => {
   return cur.func === 'Received' && cur.result.status === 'Failed';
 };
 
 // TODO: CHECK SSL
-export const getSiteName = (protocol: string | undefined, hostname: string | undefined) => {
+export const getSiteName = (protocol: string | undefined, hostname: string | undefined): string => {
   return `${protocol}//${hostname}`;
 };
 
-export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
+export const optimizeNumber = (value: BigNumber, multiply: BigNumber): BigNumber => {
   const decimalPosition = multiply.toString().indexOf('.');
   const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
   const extraValue = Math.pow(10, decimalLength);
@@ -367,7 +372,7 @@ export const optimizeNumber = (value: BigNumber, multiply: BigNumber) => {
   return currentAmount;
 };
 
-export const dateToLocal = (utcDateStr: string) => {
+export const dateToLocal = (utcDateStr: string): { value: string; offsetHours: number } => {
   const hasTimezone = `${utcDateStr}`.includes('Z');
   const timezoneOffset = new Date().getTimezoneOffset();
   let currentDate = dayjs(utcDateStr);
@@ -380,7 +385,7 @@ export const dateToLocal = (utcDateStr: string) => {
   };
 };
 
-export const getDateText = (date: string) => {
+export const getDateText = (date: string): string => {
   const currentDate = new Date(date);
   const today = dateTimeFormatEn(new Date());
   const result = dateTimeFormatEn(currentDate);
@@ -394,14 +399,14 @@ export const getDateText = (date: string) => {
   return formatDate;
 };
 
-export const getDateTimeText = (date: string) => {
+export const getDateTimeText = (date: string): string => {
   const currentDate = new Date(date);
   const result = dateTimeFormatEn(currentDate);
   const formatDate = `${result.month} ${result.day}, ${result.year} ${result.time}`;
   return formatDate;
 };
 
-export async function fetchHealth(url: string) {
+export async function fetchHealth(url: string): Promise<{ url: string; healthy: boolean }> {
   const healthy = await axios
     .get(url + '/health', { adapter: fetchAdapter, timeout: 5000 })
     .then((response) => response.status === 200)

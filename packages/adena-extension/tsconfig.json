@@ -33,7 +33,7 @@
       "@assets/*": ["src/assets/*"],
       "@migrates/*": ["src/migrates/*"],
       "@models/*": ["src/models/*"],
-      "@pulbic/*": ["public/*"]
+      "@public/*": ["public/*"]
     }
   },
   "include": ["./src/**/*"]

@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const TokenListItemWrapper = styled.div`
   display: flex;
@@ -6,7 +6,7 @@ export const TokenListItemWrapper = styled.div`
   padding: 13px;
   width: 100%;
   height: auto;
-  background: ${({ theme }) => theme.color.neutral[8]};
+  background: ${({ theme }): string => theme.color.neutral[8]};
   border-radius: 18px;
   align-items: center;
   justify-items: flex-start;
@@ -17,7 +17,7 @@ export const TokenListItemWrapper = styled.div`
   }
 
   &:hover {
-    background: ${({ theme }) => theme.color.neutral[6]};
+    background: ${({ theme }): string => theme.color.neutral[6]};
     cursor: pointer;
   }
 
@@ -44,7 +44,7 @@ export const TokenListItemWrapper = styled.div`
 
     .name {
       display: contents;
-      ${({ theme }) => theme.fonts.body2Bold};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold};
       line-height: 17px;
     }
   }

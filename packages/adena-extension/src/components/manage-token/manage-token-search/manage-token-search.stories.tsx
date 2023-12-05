@@ -18,7 +18,7 @@ const tokens = [
       denom: 'GNOT',
     },
     main: true,
-    activated: true
+    activated: true,
   }, {
     tokenId: 'token2',
     symbol: 'GNOS',
@@ -28,8 +28,8 @@ const tokens = [
       value: '252.844',
       denom: 'GNOS',
     },
-    activated: true
-  }
+    activated: true,
+  },
 ];
 
 export const Default: StoryObj<ManageTokenSearchProps> = {
@@ -39,6 +39,6 @@ export const Default: StoryObj<ManageTokenSearchProps> = {
     onClickClose: action('click close'),
     onChangeKeyword: action('change keyword'),
     onClickAdded: action('click add button'),
-    onToggleActiveItem: action('toggle item')
+    onToggleActiveItem: action('toggle item'),
   },
 };

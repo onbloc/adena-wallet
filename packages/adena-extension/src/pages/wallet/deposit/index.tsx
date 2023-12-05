@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import { QRCodeSVG } from 'qrcode.react';
 import Copy from '@components/buttons/copy-button';
@@ -14,27 +14,27 @@ import { useAccountName } from '@hooks/use-account-name';
 import { TokenModel } from '@models/token-model';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
 const QRCodeBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  background-color: ${({ theme }) => theme.color.neutral[0]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  background-color: ${({ theme }): string => theme.color.neutral[0]};
   padding: 10px;
   border-radius: 8px;
   margin: 40px 0px;
 `;
 
 const CopyInputBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   ${inputStyle};
-  border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
 
   & .nickname {
-    color: ${({ theme }) => theme.color.neutral[2]};
+    color: ${({ theme }): string => theme.color.neutral[2]};
   }
 
   margin-bottom: 8px;
@@ -45,7 +45,7 @@ interface DepositState {
   tokenMetainfo: TokenModel;
 }
 
-export const Deposit = () => {
+export const Deposit = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const [displayaddr, setDisplayaddr] = useState('');

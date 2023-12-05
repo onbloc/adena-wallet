@@ -17,7 +17,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   const changable = useMemo(() => chainId.length > 0, [chainId]);
 
   const toNetwork = useMemo(() => {
-    return networks.find(network => network.networkId === chainId);
+    return networks.find((network) => network.networkId === chainId);
   }, [networks, chainId]);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     }
   }, [search]);
 
-  const initRequestData = () => {
+  const initRequestData = (): void => {
     const data = parseParmeters(search);
     const parsedData = decodeParameter(data['data']);
     setReqeustData({ ...parsedData, hostname: data['hostname'] });
@@ -35,21 +35,23 @@ const ApproveChangingNetworkContainer: React.FC = () => {
 
   const onClickChangeNetwork = useCallback(async () => {
     setProcessing(true);
-    const network = networks.find(network => network.chainId === chainId && network.deleted !== true);
+    const network = networks.find(
+      (network) => network.chainId === chainId && network.deleted !== true,
+    );
     if (!network) {
-      setResponse(InjectionMessageInstance.failure(
-        'UNADDED_NETWORK',
-        requestData?.data,
-        requestData?.key,
-      ));
+      setResponse(
+        InjectionMessageInstance.failure('UNADDED_NETWORK', requestData?.data, requestData?.key),
+      );
       return;
     }
     await changeNetwork(network.id);
-    setResponse(InjectionMessageInstance.success(
-      'SWITCH_NETWORK_SUCCESS',
-      requestData?.data,
-      requestData?.key,
-    ));
+    setResponse(
+      InjectionMessageInstance.success(
+        'SWITCH_NETWORK_SUCCESS',
+        requestData?.data,
+        requestData?.key,
+      ),
+    );
     setDone(true);
   }, [changeNetwork, requestData, chainId, networks]);
 
@@ -59,9 +61,11 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     }
   }, [done, response]);
 
-  const onTimeout = () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key));
-  }
+  const onTimeout = (): void => {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+    );
+  };
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
@@ -71,15 +75,15 @@ const ApproveChangingNetworkContainer: React.FC = () => {
         requestData?.key,
       ),
     );
-  }, [requestData])
+  }, [requestData]);
 
   return (
     <ApproveChangingNetwork
       fromChain={{
-        name: currentNetwork.networkName
+        name: currentNetwork.networkName,
       }}
       toChain={{
-        name: toNetwork?.networkName || ''
+        name: toNetwork?.networkName || '',
       }}
       changable={changable}
       processing={processing}

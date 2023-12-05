@@ -15,7 +15,7 @@ const pulseKeyframe = keyframes`
 export const SkeletonBoxStyle = styled.div`
   & {
     position: relative;
-    background-color: ${({ theme }) => theme.color.neutral[6]};
+    background-color: ${({ theme }): string => theme.color.neutral[6]};
     border-radius: 18px;
     padding: 0px 17px 0px 14px;
     overflow: hidden;

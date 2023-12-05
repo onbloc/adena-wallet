@@ -10,13 +10,13 @@ export default {
 export const Activated: StoryObj<ToggleProps> = {
   args: {
     activated: true,
-    onToggle: action('on toggle')
+    onToggle: action('on toggle'),
   },
 };
 
 export const Deactivated: StoryObj<ToggleProps> = {
   args: {
     activated: false,
-    onToggle: action('on toggle')
+    onToggle: action('on toggle'),
   },
 };

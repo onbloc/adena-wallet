@@ -10,7 +10,6 @@ import {
 } from '@common/validation';
 import {
   AdenaWallet,
-  LedgerAccount,
   LedgerConnector,
   LedgerKeyring,
   deserializeAccount,
@@ -22,10 +21,34 @@ interface LocationState {
   currentAccount: string | null;
 }
 
-export const useLedgerPassword = () => {
+export type UseLedgerPasswordReturn = {
+  pwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+    ref: React.RefObject<HTMLInputElement>;
+  };
+  confirmPwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
+  termsState: {
+    value: boolean;
+    onChange: () => void;
+  };
+  errorMessage: string;
+  buttonState: {
+    onClick: () => void;
+    disabled: boolean;
+  };
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+};
+
+export const useLedgerPassword = (): UseLedgerPasswordReturn => {
   const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
-  const { updateWallet } = useWalletContext();
+  useWalletContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -50,13 +73,13 @@ export const useLedgerPassword = () => {
     }
   }, [inputRef]);
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && terms && pwd && confirmPwd) {
       nextButtonClick();
     }
   };
 
-  const handleTermsChange = () => setTerms((prev: boolean) => !prev);
+  const handleTermsChange = (): void => setTerms((prev: boolean) => !prev);
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +89,7 @@ export const useLedgerPassword = () => {
     [pwd, confirmPwd],
   );
 
-  const validationConfirmPassword = (isValidPassword?: boolean) => {
+  const validationConfirmPassword = (isValidPassword?: boolean): boolean => {
     const password = pwd;
     const confirmPassword = confirmPwd;
     try {
@@ -88,7 +111,7 @@ export const useLedgerPassword = () => {
     return false;
   };
 
-  const validationPassword = () => {
+  const validationPassword = (): boolean => {
     const password = pwd;
     try {
       validateEmptyPassword(password);
@@ -104,7 +127,7 @@ export const useLedgerPassword = () => {
     return false;
   };
 
-  const validationCheck = async () => {
+  const validationCheck = async (): Promise<'FINISH' | 'FAIL'> => {
     const isValidPassword = validationPassword();
     const isValidConfirmPassword = validationConfirmPassword(isValidPassword);
 
@@ -118,7 +141,7 @@ export const useLedgerPassword = () => {
     return 'FAIL';
   };
 
-  const nextButtonClick = async () => {
+  const nextButtonClick = async (): Promise<void> => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
       const { accounts } = location.state as LocationState;

@@ -1,7 +1,7 @@
-import { useRecoilState, useResetRecoilState, useSetRecoilState } from 'recoil';
+import { useRecoilState, useResetRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { NetworkMetainfo } from '@states/network';
-import { BalanceState, CommonState, NetworkState, WalletState } from '@states/index';
+import { CommonState, NetworkState, WalletState } from '@states/index';
 import { EventMessage } from '@inject/message';
 import { useCallback } from 'react';
 import { useEvent } from './use-event';

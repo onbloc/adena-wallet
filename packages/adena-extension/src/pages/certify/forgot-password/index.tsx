@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import lockLogo from '@assets/icon-lock.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -13,10 +13,10 @@ const text = {
   desc: 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.',
 };
 
-export const ForgotPassword = () => {
+export const ForgotPassword = (): JSX.Element => {
   const navigate = useNavigate();
 
-  const onClickLearnMore = () => {
+  const onClickLearnMore = (): void => {
     try {
       const adenaDocsUrl =
         'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
@@ -26,11 +26,11 @@ export const ForgotPassword = () => {
     }
   };
 
-  const onClickHaveNotSeedPhrase = () => {
+  const onClickHaveNotSeedPhrase = (): void => {
     navigate(RoutePath.ResetWallet, { state: { backStep: -2, from: 'forgot-password' } });
   };
 
-  const onClickForgotButton = () => {
+  const onClickForgotButton = (): void => {
     navigate(RoutePath.EnterSeedPhrase, {
       state: {
         from: 'forgot-password',
@@ -60,7 +60,7 @@ export const ForgotPassword = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -72,20 +72,20 @@ const Wrapper = styled.main`
 const LearnMore = styled.button`
   font-size: 16px;
   font-weight: 700;
-  color: ${({ theme }) => theme.color.primary[3]};
+  color: ${({ theme }): string => theme.color.primary[3]};
   margin-top: 24px;
   &:hover {
     text-decoration-line: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
-    text-decoration-color: ${({ theme }) => theme.color.primary[3]};
+    text-decoration-color: ${({ theme }): string => theme.color.primary[3]};
   }
 `;
 
 const TextStyled = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   width: 100%;
-  color: ${({ theme }) => theme.color.neutral[9]};
+  color: ${({ theme }): string => theme.color.neutral[9]};
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -98,9 +98,9 @@ const TextStyled = styled.div`
     transition: all 0.3s ease;
   }
   &:hover {
-    color: ${({ theme }) => theme.color.primary[3]};
+    color: ${({ theme }): string => theme.color.primary[3]};
     svg * {
-      stroke: ${({ theme }) => theme.color.primary[3]};
+      stroke: ${({ theme }): string => theme.color.primary[3]};
     }
   }
 `;

@@ -9,7 +9,7 @@ import SubHeader, { SubHeaderProps } from './sub-header';
 describe('SubHeader Component', () => {
   it('SubHeader render', () => {
     const args: SubHeaderProps = {
-      title: ''
+      title: '',
     };
 
     render(

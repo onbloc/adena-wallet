@@ -8,6 +8,6 @@ export default {
 
 export const Default: StoryObj<CopyButtonProps> = {
   args: {
-    copyText: 'hello'
+    copyText: 'hello',
   },
 };

@@ -9,7 +9,7 @@ import ApproveChangingNetworkItem, { ApproveChangingNetworkItemProps } from './a
 describe('ApproveChangingNetworkItem Component', () => {
   it('ApproveChangingNetworkItem render', () => {
     const args: ApproveChangingNetworkItemProps = {
-      name: 'Testnet3'
+      name: 'Testnet3',
     };
 
     render(

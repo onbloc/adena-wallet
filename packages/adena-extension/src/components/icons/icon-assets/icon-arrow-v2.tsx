@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 
-const IconArrowV2 = ({ className }: { className?: string }) => {
+const IconArrowV2 = ({ className }: { className?: string }): ReactElement => {
   return (
     <svg
       width='6'

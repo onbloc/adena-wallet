@@ -27,10 +27,10 @@ const mockStorageV001: StorageModelV001 = {
 };
 
 const storage = {
-  async set() {
+  async set(): Promise<void> {
     return;
   },
-  async get() {
+  async get(): Promise<object> {
     return {};
   },
 };

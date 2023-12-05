@@ -10,7 +10,7 @@ describe('TransferSummaryNetworkFee Component', () => {
   it('TransferSummaryNetworkFee render', () => {
     const args: TransferSummaryNetworkFeeProps = {
       value: '0.0048',
-      denom: 'GNOT'
+      denom: 'GNOT',
     };
 
     render(

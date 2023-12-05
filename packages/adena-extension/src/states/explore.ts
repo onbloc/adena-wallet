@@ -11,6 +11,6 @@ export interface SiteInfo {
 }
 
 export const sites = atom<Array<SiteInfo>>({
-  key: `explore/sites`,
+  key: 'explore/sites',
   default: [],
 });

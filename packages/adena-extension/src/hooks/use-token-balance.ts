@@ -76,11 +76,14 @@ export const useTokenBalance = (): {
   function matchNetworkId(
     accountTokenBalance: AccountTokenBalance,
     currentNetwork: NetworkMetainfo,
-  ) {
+  ): boolean {
     return accountTokenBalance.networkId === currentNetwork?.id;
   }
 
-  function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
+  function matchCurrentAccount(
+    account: Account | null,
+    accountTokenBalance: AccountTokenBalance,
+  ): boolean {
     if (!account || !matchNetworkId) return false;
     return (
       accountTokenBalance.accountId === account.id &&
@@ -88,7 +91,11 @@ export const useTokenBalance = (): {
     );
   }
 
-  async function toggleDisplayOption(account: Account, token: TokenModel, activated: boolean) {
+  async function toggleDisplayOption(
+    account: Account,
+    token: TokenModel,
+    activated: boolean,
+  ): Promise<void> {
     const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
       if (matchCurrentAccount(account, accountTokenBalance)) {
         return {
@@ -110,7 +117,7 @@ export const useTokenBalance = (): {
     await tokenService.updateAccountTokenMetainfos(changedAccountTokenBalances);
   }
 
-  async function updateTokenBalanceInfos(tokenMetainfos: TokenModel[]) {
+  async function updateTokenBalanceInfos(tokenMetainfos: TokenModel[]): Promise<boolean> {
     if (!currentAccount || !currentNetwork) {
       return false;
     }
@@ -160,7 +167,7 @@ export const useTokenBalance = (): {
   async function updateBalanceAmountByAccount(
     account: Account,
     newAccountTokenBalances?: AccountTokenBalance[],
-  ) {
+  ): Promise<boolean> {
     const tokenBalances =
       newAccountTokenBalances?.find(
         (accountTokenBalance) =>
@@ -191,7 +198,7 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function updateAccountNativeBalances() {
+  async function updateAccountNativeBalances(): Promise<boolean> {
     const nativeTokenInfo = tokenMetainfos.find((info) => info.main);
     if (!nativeTokenInfo || !wallet) {
       return false;
@@ -209,7 +216,7 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function updateMainBalanceByAccount(account: Account) {
+  async function updateMainBalanceByAccount(account: Account): Promise<boolean> {
     const mainToken = tokenMetainfos.find((metainfo) => metainfo.main);
     if (!mainToken) {
       return false;
@@ -234,7 +241,7 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
-    if (wallet === null) throw new Error("wallet doesn't exist");
+    if (wallet === null) throw new Error('wallet doesn\'t exist');
 
     const defaultAmount = {
       value: '0',

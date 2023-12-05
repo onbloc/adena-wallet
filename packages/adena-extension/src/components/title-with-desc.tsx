@@ -22,7 +22,7 @@ const TitleWithDesc = ({
   desc,
   isWarningDesc = false,
   className = '',
-}: TitleWithDescProps) => {
+}: TitleWithDescProps): JSX.Element => {
   return (
     <Wrapper className={className}>
       <Text type='header4'>{title}</Text>

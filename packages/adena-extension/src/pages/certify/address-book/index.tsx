@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import CloseShadowButton from '@components/buttons/close-shadow-button';
@@ -21,12 +21,12 @@ export interface BookListProps {
   createdAt?: string;
 }
 
-const AddressBook = () => {
+const AddressBook = (): JSX.Element => {
   const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
   const [datas, setDatas] = useState<any>([]);
   const { currentAccount } = useCurrentAccount();
-  const addAddressHandler = (status: navigateStatus, curr?: BookListProps) =>
+  const addAddressHandler = (status: navigateStatus, curr?: BookListProps): void =>
     navigate(RoutePath.AddAddress, {
       state: {
         status,
@@ -36,7 +36,7 @@ const AddressBook = () => {
     });
 
   useEffect(() => {
-    (async () => {
+    (async (): Promise<void> => {
       const addressList = await addressBookService.getAddressBook();
       setDatas(addressList);
     })();
@@ -46,7 +46,7 @@ const AddressBook = () => {
     <Wrapper>
       <TopSection>
         <Text type='header4'>Address Book</Text>
-        <AddButton onClick={() => addAddressHandler('add')} />
+        <AddButton onClick={(): void => addAddressHandler('add')} />
       </TopSection>
       <>
         {datas.length > 0 ? (
@@ -63,7 +63,7 @@ const AddressBook = () => {
               hoverAction={true}
               key={i}
               padding={'0 17px'}
-              onClick={() => addAddressHandler('edit', v)}
+              onClick={(): void => addAddressHandler('edit', v)}
             />
           ))
         ) : (
@@ -72,13 +72,13 @@ const AddressBook = () => {
           </Text>
         )}
       </>
-      <CloseShadowButton onClick={() => navigate(-1)} />
+      <CloseShadowButton onClick={(): void => navigate(-1)} />
     </Wrapper>
   );
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -93,7 +93,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   margin-bottom: 12px;
 `;

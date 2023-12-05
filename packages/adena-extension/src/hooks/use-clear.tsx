@@ -2,7 +2,11 @@ import { BalanceState, CommonState, NetworkState, WalletState } from '@states/in
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 
-export const useClear = () => {
+export type UseClearReturn = {
+  clear: () => Promise<boolean>;
+};
+
+export const useClear = (): UseClearReturn => {
   const {
     walletService,
     accountService,
@@ -20,7 +24,7 @@ export const useClear = () => {
   const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
   const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
 
-  const clear = async () => {
+  const clear = async (): Promise<boolean> => {
     setWalletState('CREATE');
     clearTransactionHistory();
     clearHistoryPosition();

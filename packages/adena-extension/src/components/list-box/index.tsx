@@ -1,6 +1,5 @@
-import theme from '@styles/theme';
-import React from 'react';
-import styled, { css, CSSProperties } from 'styled-components';
+import React, { ReactElement } from 'react';
+import styled, { css, CSSProp, CSSProperties } from 'styled-components';
 
 export enum ListHierarchy {
   Default = 'default',
@@ -24,19 +23,19 @@ interface ListBoxProps extends ListBoxStyleProps {
 
 const modeVariants = {
   default: css`
-    background: ${({ theme }) => theme.color.neutral[6]};
+    background: ${({ theme }): string => theme.color.neutral[6]};
     &:hover {
-      background: ${({ theme }) => theme.color.neutral[11]};
+      background: ${({ theme }): string => theme.color.neutral[11]};
     }
   `,
   normal: css`
-    background: ${({ theme }) => theme.color.neutral[8]};
+    background: ${({ theme }): string => theme.color.neutral[8]};
     &:hover {
-      background: ${({ theme }) => theme.color.neutral[6]};
+      background: ${({ theme }): string => theme.color.neutral[6]};
     }
   `,
   static: css`
-    background: ${({ theme }) => theme.color.neutral[6]};
+    background: ${({ theme }): string => theme.color.neutral[6]};
   `,
 };
 
@@ -50,7 +49,7 @@ const ListBox = ({
   className,
   padding,
   mode,
-}: ListBoxProps) => {
+}: ListBoxProps): ReactElement => {
   return (
     <Wrapper
       cursor={cursor}
@@ -68,8 +67,8 @@ const ListBox = ({
 };
 
 const Wrapper = styled.div<ListBoxStyleProps>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  ${({ mode }) => {
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ mode }): any => {
     if (mode === ListHierarchy.Default) return modeVariants.default;
     if (mode === ListHierarchy.Normal) return modeVariants.normal;
     if (mode === ListHierarchy.Static) return modeVariants.static;
@@ -77,9 +76,9 @@ const Wrapper = styled.div<ListBoxStyleProps>`
   }}
   width: 100%;
   height: 60px;
-  padding: ${({ padding }) => (padding ? padding : '0px 17px 0px 14px')};
+  padding: ${({ padding }): CSSProperties['padding'] => (padding ? padding : '0px 17px 0px 14px')};
   transition: all 0.4s ease;
-  cursor: ${({ cursor }) => cursor ?? 'pointer'};
+  cursor: ${({ cursor }): CSSProperties['cursor'] => cursor ?? 'pointer'};
   border-radius: 18px;
   .logo {
     margin-right: 12px;

@@ -2,22 +2,28 @@ import { CommonState } from '@states/index';
 import { useLocation } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
-const useHistoryData = <T>() => {
+export type UstHistoryDataReturn<T> = {
+  getHistoryData: () => T | undefined;
+  setHistoryData: (value: T | undefined) => void;
+  clearHistoryData: (pathname: string) => void;
+};
+
+const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
   const location = useLocation();
   const [historyState, setHistoryState] = useRecoilState(CommonState.historyState);
 
-  function getLocationPath() {
+  function getLocationPath(): string {
     return location.pathname;
   }
 
-  function getHistoryData() {
+  function getHistoryData(): T | undefined {
     const data = historyState[getLocationPath()];
     if (data) {
       return data as T;
     }
   }
 
-  function setHistoryDataByPathname(pathname: string, value: T | undefined) {
+  function setHistoryDataByPathname(pathname: string, value: T | undefined): void {
     const stateDatas = {
       ...historyState,
       [pathname]: value,
@@ -25,11 +31,11 @@ const useHistoryData = <T>() => {
     setHistoryState(stateDatas);
   }
 
-  function setHistoryData(value: T | undefined) {
+  function setHistoryData(value: T | undefined): void {
     setHistoryDataByPathname(getLocationPath(), value);
   }
 
-  function clearHistoryData(pathname: string) {
+  function clearHistoryData(pathname: string): void {
     setHistoryDataByPathname(pathname, undefined);
   }
 

@@ -16,7 +16,7 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   accounts,
   changeAccount,
   moveGnoscan,
-  moveAccountDetail
+  moveAccountDetail,
 }) => {
   return (
     <SideMenuAccountListWrapper>

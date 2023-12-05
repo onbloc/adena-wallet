@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
-import styled from 'styled-components';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import Text from '@components/text';
 import IconShare from '@assets/icon-share';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -10,7 +10,6 @@ import TokenBalance from '@components/common/token-balance/token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
-import { CopyTooltip } from '@components/tooltips';
 import { useNetwork } from '@hooks/use-network';
 import CopyButton from '@components/common/copy-button/copy-button';
 
@@ -18,18 +17,18 @@ interface DLProps {
   color?: string;
 }
 
-export const TransactionDetail = () => {
+export const TransactionDetail = (): JSX.Element => {
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork } = useNetwork();
   const location = useLocation();
   const [transactionItem, setTransactionItem] = useState<TransactionInfo>();
   const navigate = useNavigate();
-  const closeButtonClick = () => navigate(-1);
+  const closeButtonClick = (): void => navigate(-1);
 
   useEffect(() => {
     setTransactionItem(location.state);
-    console.log(location.state)
-  }, [location])
+    console.log(location.state);
+  }, [location]);
 
   const getLogoImage = useCallback(() => {
     if (transactionItem?.type === 'ADD_PACKAGE') {
@@ -42,16 +41,22 @@ export const TransactionDetail = () => {
       return `${ContractIcon}`;
     }
     return `${transactionItem?.logo}`;
-  }, [transactionItem])
+  }, [transactionItem]);
 
-
-  const handleLinkClick = (hash: string) => {
-    window.open(`${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`, '_blank');
+  const handleLinkClick = (hash: string): void => {
+    window.open(
+      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
+      '_blank',
+    );
   };
 
   return transactionItem ? (
     <Wrapper>
-      <img className='status-icon' src={getStatusStyle(transactionItem.status).statusIcon} alt='status icon' />
+      <img
+        className='status-icon'
+        src={getStatusStyle(transactionItem.status).statusIcon}
+        alt='status icon'
+      />
       <TokenBox color={getStatusStyle(transactionItem.status).color}>
         <img className='tx-symbol' src={getLogoImage()} alt='logo image' />
         {transactionItem.type === 'TRANSFER' ? (
@@ -65,7 +70,11 @@ export const TransactionDetail = () => {
         ) : (
           <Text display={'flex'} className='main-text' type='header6'>
             {transactionItem.title}
-            {transactionItem.extraInfo && <Text type='body2Bold' className='extra-info'>{transactionItem.extraInfo}</Text>}
+            {transactionItem.extraInfo && (
+              <Text type='body2Bold' className='extra-info'>
+                {transactionItem.extraInfo}
+              </Text>
+            )}
           </Text>
         )}
       </TokenBox>
@@ -78,7 +87,11 @@ export const TransactionDetail = () => {
           <dt>Type</dt>
           <dd>
             {transactionItem.typeName || ''}
-            {transactionItem.extraInfo && <Text className='extra-info' type='body3Bold'>{transactionItem.extraInfo}</Text>}
+            {transactionItem.extraInfo && (
+              <Text className='extra-info' type='body3Bold'>
+                {transactionItem.extraInfo}
+              </Text>
+            )}
           </dd>
         </DLWrap>
         <DLWrap color={getStatusStyle(transactionItem.status).color}>
@@ -87,7 +100,9 @@ export const TransactionDetail = () => {
             <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
             <dd
               className='link-icon'
-              onClick={() => transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')}
+              onClick={(): void | '' =>
+                transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')
+              }
             >
               <IconShare />
             </dd>
@@ -118,24 +133,22 @@ export const TransactionDetail = () => {
             <CopyButton className='copy-button' copyText={transactionItem.hash} />
           </dd>
         </DLWrap>
-        {
-          transactionItem.networkFee && (
-            <DLWrap>
-              <dt>Network Fee</dt>
-              <dd>
-                <TokenBalance
-                  {...convertDenom(
-                    transactionItem.networkFee.value,
-                    transactionItem.networkFee.denom)
-                  }
-                  minimumFontSize='12px'
-                  fontStyleKey='body1Reg'
-                  orientation='HORIZONTAL'
-                />
-              </dd>
-            </DLWrap>
-          )
-        }
+        {transactionItem.networkFee && (
+          <DLWrap>
+            <dt>Network Fee</dt>
+            <dd>
+              <TokenBalance
+                {...convertDenom(
+                  transactionItem.networkFee.value,
+                  transactionItem.networkFee.denom,
+                )}
+                minimumFontSize='12px'
+                fontStyleKey='body1Reg'
+                orientation='HORIZONTAL'
+              />
+            </dd>
+          </DLWrap>
+        )}
       </DataBox>
       <div className='button-wrapper'>
         <Button
@@ -149,11 +162,13 @@ export const TransactionDetail = () => {
         </Button>
       </div>
     </Wrapper>
-  ) : <></>;
+  ) : (
+    <></>
+  );
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   padding-top: 30px;
   .status-icon {
@@ -170,17 +185,17 @@ const Wrapper = styled.main`
     width: 100%;
     padding: 24px 20px;
     bottom: 0;
-    background: ${({ theme }) => theme.color.neutral[7]};
-    box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.40);
+    background: ${({ theme }): string => theme.color.neutral[7]};
+    box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.4);
   }
 `;
 
 const TokenBox = styled.div<{ color: string }>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   height: 70px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
-  border: 1px solid ${({ color }) => color};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border: 1px solid ${({ color }): string => color};
   border-radius: 18px;
   padding: 0px 15px;
   margin: 18px 0px 8px;
@@ -198,32 +213,32 @@ const TokenBox = styled.div<{ color: string }>`
 `;
 
 const DataBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
   width: 100%;
   border-radius: 18px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   margin-bottom: 96px;
 `;
 
 const DLWrap = styled.dl<DLProps>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
-  ${({ theme }) => theme.fonts.body1Reg};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
   width: 100%;
   height: 40px;
   padding: 0px 18px;
   :not(:last-child) {
-    border-bottom: 2px solid ${({ theme }) => theme.color.neutral[7]};
+    border-bottom: 2px solid ${({ theme }): string => theme.color.neutral[7]};
   }
   dd,
   dt {
     font: inherit;
   }
   dt {
-    color: ${({ theme }) => theme.color.neutral[9]};
+    color: ${({ theme }): string => theme.color.neutral[9]};
   }
   dd {
     display: flex;
-    color: ${(props) => (props.color ? props.color : props.theme.color.neutral[0])};
+    color: ${(props): string => (props.color ? props.color : props.theme.color.neutral[0])};
     align-items: center;
   }
 
@@ -233,7 +248,7 @@ const DLWrap = styled.dl<DLProps>`
 `;
 
 const StatusInfo = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   .link-icon {
     display: flex;
     cursor: pointer;
@@ -241,7 +256,7 @@ const StatusInfo = styled.div`
 
     svg {
       path {
-        fill: ${({ theme }) => theme.color.neutral[9]};
+        fill: ${({ theme }): string => theme.color.neutral[9]};
         transition: 0.2s;
       }
     }
@@ -249,7 +264,7 @@ const StatusInfo = styled.div`
     :hover {
       svg {
         path {
-          fill: ${({ theme }) => theme.color.neutral[0]};
+          fill: ${({ theme }): string => theme.color.neutral[0]};
         }
       }
     }

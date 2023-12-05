@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { ReactElement } from 'react';
+import styled, { CSSProp } from 'styled-components';
 import { Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   margin-top: 13px;
@@ -12,12 +12,12 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'center')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')}
   width: 100%;
   height: 60px;
 `;
 
-const LoadingChangeNetwork = () => {
+const LoadingChangeNetwork = (): ReactElement => {
   return (
     <Wrapper>
       {Array.from({ length: 4 }, (v, i) => (

@@ -11,6 +11,6 @@ export const Default: StoryObj<ManageTokenSearchInputProps> = {
   args: {
     keyword: '',
     onChangeKeyword: action('change keywords'),
-    onClickAdded: action('added button click')
-  }
+    onClickAdded: action('added button click'),
+  },
 };

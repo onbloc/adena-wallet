@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -14,13 +14,13 @@ import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 const text = 'Enter\nYour Password';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')}
   width: 100%;
   height: 100%;
 `;
 
 export const Title = styled.p`
-  ${({ theme }) => theme.fonts.header4};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
   margin: 54px 0px 56px;
   white-space: pre-wrap;
   width: 100%;
@@ -31,7 +31,7 @@ export const ForgetPwd = styled.button`
   margin-top: 32px;
 `;
 
-export const Login = () => {
+export const Login = (): JSX.Element => {
   usePreventHistoryBack();
   const navigate = useNavigate();
   const { walletService } = useAdenaContext();
@@ -43,12 +43,15 @@ export const Login = () => {
   const [existWallet, setExistWallet] = useState(false);
 
   useEffect(() => {
-    walletService.existsWallet().then(existWallet => {
-      if (!existWallet) {
-        navigate(RoutePath.Home);
-      }
-      setExistWallet(existWallet);
-    }).catch(() => navigate(RoutePath.Home));
+    walletService
+      .existsWallet()
+      .then((existWallet) => {
+        if (!existWallet) {
+          navigate(RoutePath.Home);
+        }
+        setExistWallet(existWallet);
+      })
+      .catch(() => navigate(RoutePath.Home));
   }, []);
 
   useEffect(() => {
@@ -65,15 +68,15 @@ export const Login = () => {
     }
   }, [inputRef]);
 
-  const login = async () => {
+  const login = async (): Promise<void> => {
     try {
       if (validateWrongPasswordLength(password)) {
-        const result = await walletService.equalsPassowrd(password);
+        const result = await walletService.equalsPassword(password);
         if (!result) {
           setValidateState(false);
           return;
         }
-        await walletService.updatePassowrd(password);
+        await walletService.updatePassword(password);
         await loadAccounts();
         navigate(RoutePath.Wallet);
         return;
@@ -91,15 +94,15 @@ export const Login = () => {
     [password],
   );
 
-  const onClickUnLockButton = () => login();
+  const onClickUnLockButton = (): Promise<void> => login();
 
-  const onKeyEventUnLockButton = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyEventUnLockButton = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && location.pathname === '/login') {
       login();
     }
   };
 
-  const onClickForgotButton = () => navigate(RoutePath.ForgotPassword);
+  const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
 
   return existWallet ? (
     <Wrapper>
@@ -126,5 +129,7 @@ export const Login = () => {
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>
-  ) : <div></div>;
+  ) : (
+    <div></div>
+  );
 };

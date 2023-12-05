@@ -9,7 +9,7 @@ import NetworkList, { NetworkListProps } from './network-list';
 describe('NetworkList Component', () => {
   it('NetworkList render', () => {
     const args: NetworkListProps = {
-      currentNetworkId: "test3",
+      currentNetworkId: 'test3',
       networkMetainfos: [],
       changeNetwork: () => { return; },
       moveEditPage: () => { return; },

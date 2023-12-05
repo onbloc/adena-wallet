@@ -12,7 +12,7 @@ describe('ApproveAddingNetwork Component', () => {
       networkInfo: {
         name: '',
         rpcUrl: '',
-        chainId: ''
+        chainId: '',
       },
       logo: '',
       approvable: true,

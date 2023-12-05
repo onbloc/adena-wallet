@@ -10,7 +10,7 @@ describe('UnderlineTextButton Component', () => {
   it('UnderlineTextButton render', () => {
     const args: UnderlineTextButtonProps = {
       text: '',
-      onClick: () => { return; }
+      onClick: () => { return; },
     };
 
     render(

@@ -55,7 +55,7 @@ export const Default: StoryObj<AdditionalTokenSelectBoxProps> = {
     keyword: '',
     onChangeKeyword: action('change keyword'),
     onClickListItem: action('click list item'),
-    onClickOpenButton: action('click open button')
+    onClickOpenButton: action('click open button'),
   },
 };
 
@@ -68,7 +68,7 @@ export const SelectedAndClosed: StoryObj<AdditionalTokenSelectBoxProps> = {
     keyword: '',
     onChangeKeyword: action('change keyword'),
     onClickListItem: action('click list item'),
-    onClickOpenButton: action('click open button')
+    onClickOpenButton: action('click open button'),
   },
 };
 
@@ -81,7 +81,7 @@ export const SelectedAndOpened: StoryObj<AdditionalTokenSelectBoxProps> = {
     keyword: '',
     onChangeKeyword: action('change keyword'),
     onClickListItem: action('click list item'),
-    onClickOpenButton: action('click open button')
+    onClickOpenButton: action('click open button'),
   },
 };
 
@@ -94,7 +94,7 @@ export const Opened: StoryObj<AdditionalTokenSelectBoxProps> = {
     keyword: '',
     onChangeKeyword: action('change keyword'),
     onClickListItem: action('click list item'),
-    onClickOpenButton: action('click open button')
+    onClickOpenButton: action('click open button'),
   },
 };
 
@@ -107,6 +107,6 @@ export const OpenedAndKeyword: StoryObj<AdditionalTokenSelectBoxProps> = {
     keyword: 'Gno',
     onChangeKeyword: action('change keyword'),
     onClickListItem: action('click list item'),
-    onClickOpenButton: action('click open button')
+    onClickOpenButton: action('click open button'),
   },
 };

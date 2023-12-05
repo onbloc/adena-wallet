@@ -11,7 +11,8 @@ const Dot = styled.div<{ status: boolean }>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: ${({ status, theme }) => status ? theme.color.green[2] : theme.color.red[2]};
+  background-color: ${({ status, theme }): string =>
+    status ? theme.color.green[2] : theme.color.red[2]};
   cursor: pointer;
   &:hover > .static-tooltip {
     visibility: visible;
@@ -20,7 +21,7 @@ const Dot = styled.div<{ status: boolean }>`
   }
 `;
 
-export const StatusDot = ({ status, tooltipText }: StatusDotProps) => {
+export const StatusDot = ({ status, tooltipText }: StatusDotProps): JSX.Element => {
   return (
     <Dot status={status}>
       <StaticTooltip tooltipText={tooltipText} />

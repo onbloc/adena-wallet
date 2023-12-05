@@ -1,4 +1,4 @@
-export const createTransactionLoginPopup = (callback?: () => void) => {
+export const createTransactionLoginPopup = (callback?: () => void): void => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL('popup.html#/wallet/approve-transaction-login'),
     type: 'popup',
@@ -14,7 +14,7 @@ export const createTransactionLoginPopup = (callback?: () => void) => {
       }
       if (info.status === 'complete' && windowResposne.tabs) {
         if (callback) {
-          () => callback();
+          (): void => callback();
         }
       }
     });

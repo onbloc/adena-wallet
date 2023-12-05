@@ -1,12 +1,12 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 
 interface Props {
   header: React.ReactNode;
   children: React.ReactNode;
 }
 
-export const TabContainer = ({ header, children }: Props) => {
+export const TabContainer = ({ header, children }: Props): JSX.Element => {
   return (
     <Container>
       <Wrapper>
@@ -14,22 +14,22 @@ export const TabContainer = ({ header, children }: Props) => {
         {children}
       </Wrapper>
     </Container>
-  )
+  );
 };
 
 const Container = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
   width: 100vw;
   height: 100vh;
   margin-top: -48px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
 `;
 
 const Wrapper = styled.div`
   position: relative;
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
   width: 360px;
   height: 540px;
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   z-index: 2;
 `;

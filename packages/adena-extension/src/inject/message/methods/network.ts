@@ -4,17 +4,17 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 import { NetworkMetainfo } from '@states/network';
 
-function matchChainId(network: NetworkMetainfo, chainId: string) {
+function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;
 }
-function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string) {
+function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string): boolean {
   return network.rpcUrl === rpcUrl.replace(/\/$/, '');
 }
 
 export const addNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   const datas = requestData.data;
@@ -56,7 +56,7 @@ export const addNetwork = async (
 export const switchNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   if (locked) {

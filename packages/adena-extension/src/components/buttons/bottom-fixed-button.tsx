@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from './button';
 import Text from '@components/text';
 
@@ -13,7 +13,7 @@ const BottomFixedButton = ({
   hierarchy = ButtonHierarchy.Dark,
   onClick,
   text = 'Close',
-}: BottomFixedButtonProps) => {
+}: BottomFixedButtonProps): JSX.Element => {
   const onClickButton = useCallback(() => {
     onClick();
   }, [onClick]);
@@ -28,7 +28,7 @@ const BottomFixedButton = ({
 };
 
 const ButtonWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   position: fixed;
   bottom: 0px;
   left: 0px;
@@ -36,7 +36,7 @@ const ButtonWrap = styled.div`
   height: 96px;
   padding: 0px 20px;
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   z-index: 1;
 `;
 

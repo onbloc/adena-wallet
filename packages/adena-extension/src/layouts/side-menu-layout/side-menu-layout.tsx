@@ -13,7 +13,7 @@ interface SideMenuLayoutProps {
 const SideMenuLayout: React.FC<SideMenuLayoutProps> = ({
   open,
   setOpen,
-  selector = 'portal-root'
+  selector = 'portal-root',
 }) => {
 
   const onClickBackground = useCallback(() => {

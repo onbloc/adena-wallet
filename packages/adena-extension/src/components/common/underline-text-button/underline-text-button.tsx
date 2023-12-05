@@ -8,7 +8,7 @@ export interface UnderlineTextButtonProps {
 
 const UnderlineTextButton: React.FC<UnderlineTextButtonProps> = ({
   text,
-  onClick
+  onClick,
 }) => {
   const onClickButton = useCallback(() => {
     onClick();

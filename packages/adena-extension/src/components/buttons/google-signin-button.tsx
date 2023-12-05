@@ -2,7 +2,6 @@ import React from 'react';
 import googleLogo from '@assets/google-logo.svg';
 import Text from '@components/text';
 import Button, { ButtonHierarchy } from './button';
-import theme from '@styles/theme';
 import { CSSProperties } from 'styled-components';
 
 interface GoogleSigninButtonProps {
@@ -10,7 +9,7 @@ interface GoogleSigninButtonProps {
   margin?: CSSProperties['margin'];
 }
 
-const GoogleSigninButton = ({ onClick, margin }: GoogleSigninButtonProps) => {
+const GoogleSigninButton = ({ onClick, margin }: GoogleSigninButtonProps): JSX.Element => {
   return (
     <Button fullWidth hierarchy={ButtonHierarchy.Normal} onClick={onClick} margin={margin}>
       <img src={googleLogo} alt='google logo' />

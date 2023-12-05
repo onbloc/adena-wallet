@@ -1,3 +1,3 @@
-export function bytesToBase64(bytes: number[]) {
+export function bytesToBase64(bytes: number[]): string {
   return Buffer.from(bytes).toString('base64');
 }

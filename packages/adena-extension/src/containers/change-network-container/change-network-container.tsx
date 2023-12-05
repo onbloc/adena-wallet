@@ -17,8 +17,8 @@ const ChangeNetworkContainer: React.FC = () => {
   }, [modified]);
 
   const displayNetworks = useMemo(() => {
-    return networks.filter(network => network.deleted !== true);
-  }, [networks])
+    return networks.filter((network) => network.deleted !== true);
+  }, [networks]);
 
   const loading = useMemo(() => {
     return networks.length === 0 || modified;
@@ -28,17 +28,20 @@ const ChangeNetworkContainer: React.FC = () => {
     navigate(RoutePath.AddCustomNetwork);
   }, [navigate]);
 
-  const moveEditPage = useCallback((networkId: string) => {
-    navigate(RoutePath.EditCustomNetwork + '?networkId=' + networkId, {
-      state: { networkId },
-    });
-  }, [navigate]);
+  const moveEditPage = useCallback(
+    (networkId: string) => {
+      navigate(RoutePath.EditCustomNetwork + '?networkId=' + networkId, {
+        state: { networkId },
+      });
+    },
+    [navigate],
+  );
 
   const moveBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
-  const changeNetworkAndRoutePage = async (networkId: string) => {
+  const changeNetworkAndRoutePage = async (networkId: string): Promise<void> => {
     if (networkId === currentNetwork?.id) {
       return;
     }

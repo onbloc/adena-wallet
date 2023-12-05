@@ -187,23 +187,56 @@ export class InjectionMessageInstance {
     };
   }
 
-  public getCode = () => {
+  public getCode = (): number => {
     return this.code;
   };
 
-  public getType = () => {
+  public getType = ():
+    | 'ADD_ESTABLISH'
+    | 'DO_CONTRACT'
+    | 'GET_ACCOUNT'
+    | 'SIGN_AMINO'
+    | 'SIGN_TX'
+    | 'ADD_NETWORK'
+    | 'SWITCH_NETWORK'
+    | 'NOT_CONNECTED'
+    | 'UNRESOLVED_TRANSACTION_EXISTS'
+    | 'INVALID_FORMAT'
+    | 'WALLET_LOCKED'
+    | 'ACCOUNT_MISMATCH'
+    | 'NO_ACCOUNT'
+    | 'TRANSACTION_REJECTED'
+    | 'SIGN_REJECTED'
+    | 'CONNECTION_REJECTED'
+    | 'SWITCH_NETWORK_REJECTED'
+    | 'ADD_NETWORK_REJECTED'
+    | 'TRANSACTION_FAILED'
+    | 'SIGN_FAILED'
+    | 'ALREADY_CONNECTED'
+    | 'NETWORK_TIMEOUT'
+    | 'REDUNDANT_CHANGE_REQUEST'
+    | 'NETWORK_ALREADY_EXISTS'
+    | 'UNADDED_NETWORK'
+    | 'UNSUPPORTED_TYPE'
+    | 'UNEXPECTED_ERROR'
+    | 'CONNECTION_SUCCESS'
+    | 'GET_ACCOUNT_SUCCESS'
+    | 'SIGN_SUCCESS'
+    | 'ADD_NETWORK_SUCCESS'
+    | 'SWITCH_NETWORK_SUCCESS'
+    | 'TRANSACTION_SUCCESS' => {
     return this.type;
   };
 
-  public getStatus = () => {
+  public getStatus = (): StatusType => {
     return this.status;
   };
 
-  public getDescription = () => {
+  public getDescription = (): string => {
     return this.description;
   };
 
-  public getData = () => {
+  public getData = (): { [x: string]: any } | undefined => {
     return this.data;
   };
 
@@ -211,7 +244,7 @@ export class InjectionMessageInstance {
     messageKey: MessageKeyType,
     data?: { [key in string]: any },
     key?: string,
-  ) => {
+  ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'request', data, key).datas;
   };
 
@@ -219,7 +252,7 @@ export class InjectionMessageInstance {
     messageKey: MessageKeyType,
     data?: { [key in string]: any },
     key?: string,
-  ) => {
+  ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'response', data, key).datas;
   };
 
@@ -227,7 +260,7 @@ export class InjectionMessageInstance {
     messageKey: MessageKeyType,
     data?: { [key in string]: any },
     key?: string,
-  ) => {
+  ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'success', data, key).datas;
   };
 
@@ -235,7 +268,7 @@ export class InjectionMessageInstance {
     messageKey: MessageKeyType,
     data?: { [key in string]: any },
     key?: string,
-  ) => {
+  ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'failure', data, key).datas;
   };
 }

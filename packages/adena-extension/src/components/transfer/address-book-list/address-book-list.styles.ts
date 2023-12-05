@@ -1,11 +1,11 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const AddressBookListWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
   height: auto;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
 
   .no-address-wrapper {
     display: flex;
@@ -23,12 +23,12 @@ export const AddressBookListItemWrapper = styled.div`
   padding: 13px 16px;
   justify-content: space-between;
   align-items: center;
-  ${({ theme }) => theme.fonts.body2Reg};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
   transition: 0.2s;
   cursor: pointer;
 
   :hover {
-    background-color: ${({ theme }) => theme.color.neutral[6]};
+    background-color: ${({ theme }): string => theme.color.neutral[6]};
   }
 
   .name {
@@ -36,6 +36,6 @@ export const AddressBookListItemWrapper = styled.div`
   }
 
   .address {
-    color: ${({ theme }) => theme.color.neutral[9]};
+    color: ${({ theme }): string => theme.color.neutral[9]};
   }
 `;

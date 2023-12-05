@@ -1,9 +1,8 @@
-import styled, { css } from 'styled-components';
+import styled, { CSSProp, css } from 'styled-components';
 import React from 'react';
 import Text from '@components/text';
 import Icon from '@components/icons';
 import { FontsType } from '@styles/theme';
-import { modeVariants } from './button';
 
 export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER';
 export type IconMode = 'ARROW' | 'WEBLINK';
@@ -31,7 +30,7 @@ const FullButtonRightIcon = ({
   onClick,
   gap = 12,
   icon = 'ARROW',
-}: ButtonProps) => {
+}: ButtonProps): JSX.Element => {
   if (disabled) return <></>;
   return (
     <ButtonWrapper className={className} onClick={onClick} mode={mode} gap={gap}>
@@ -47,42 +46,43 @@ const FullButtonRightIcon = ({
 const defaultIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
     transition: 0.2s;
-    stroke: ${({ theme, mode }) =>
-    mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
+    stroke: ${({ theme, mode }): string =>
+      mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
   }
   .icon-weblink * {
     transition: 0.2s;
-    fill: ${({ theme, mode }) =>
-    mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
+    fill: ${({ theme, mode }): string =>
+      mode === 'DANGER' ? theme.color.red[7] : theme.color.neutral[9]};
   }
 `;
 
 const hoverIconStyle = css<ButtonStyleProps>`
-  .icon-arrow-v2 *{
-    stroke: ${({ theme, mode }) =>
-    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
+  .icon-arrow-v2 * {
+    stroke: ${({ theme, mode }): string =>
+      mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   }
-  .icon-weblink *{
-    fill: ${({ theme, mode }) =>
-    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
+  .icon-weblink * {
+    fill: ${({ theme, mode }): string =>
+      mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   }
 `;
 
 const ButtonWrapper = styled.button<ButtonStyleProps>`
   & + & {
-    margin-top: ${({ gap }) => (typeof gap === 'number' ? gap + 'px' : gap)};
+    margin-top: ${({ gap }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
   ${defaultIconStyle};
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   height: 54px;
   padding: 0px 24px 0px 20px;
   border-radius: 18px;
   transition: all 0.3s ease;
-  background-color: ${({ theme }) => theme.color.neutral[6]};
-  color: ${({ theme, mode }) => (mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0])};
+  background-color: ${({ theme }): string => theme.color.neutral[6]};
+  color: ${({ theme, mode }): string =>
+    mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[11]};
+    background-color: ${({ theme }): string => theme.color.neutral[11]};
     ${hoverIconStyle};
   }
 `;

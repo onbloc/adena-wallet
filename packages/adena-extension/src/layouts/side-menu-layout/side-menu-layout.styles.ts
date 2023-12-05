@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 
 export const SideMenuOverlay = styled.div<{ open: boolean }>`
   position: fixed;
@@ -11,8 +11,8 @@ export const SideMenuOverlay = styled.div<{ open: boolean }>`
   height: 100%;
   transition: 0.4s;
   background-color: rgba(255, 255, 255, 0.05);
-  opacity: ${({ open }) => (open ? 1 : 0)};
-  visibility: ${({ open }) => (open ? 'visible' : 'hidden')};
+  opacity: ${({ open }): 0 | 1 => (open ? 1 : 0)};
+  visibility: ${({ open }): 'visible' | 'hidden' => (open ? 'visible' : 'hidden')};
   -webkit-backdrop-filter: blur(20px);
   -moz-backdrop-filter: blur(20px);
   -o-backdrop-filter: blur(20px);
@@ -26,15 +26,14 @@ export const SideMenuBackground = styled.div`
   right: 0;
   bottom: 0;
   left: 0;
-  background-color: ${({ theme }) => theme.dimmed400};
 `;
 
 export const SideMenuContent = styled.div<{ open: boolean }>`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'space-between')};
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   position: fixed;
   top: 0px;
-  left: ${({ open }) => (open ? '0px' : '-100%')};
+  left: ${({ open }): '0px' | '-100%' => (open ? '0px' : '-100%')};
   width: 270px;
   height: 100%;
   z-index: 99;

@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const CustomNetworkInputWrapper = styled.div`
   display: flex;
@@ -17,9 +17,9 @@ export const CustomNetworkInputWrapper = styled.div`
       width: 100%;
       min-height: 48px;
       padding: 12px 16px;
-      ${({ theme }) => theme.fonts.body2Reg};
-      background-color: ${({ theme }) => theme.color.neutral[8]};
-      border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+      background-color: ${({ theme }): string => theme.color.neutral[8]};
+      border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
       border-radius: 30px;
       align-items: center;
       margin-top: 12px;
@@ -37,7 +37,7 @@ export const CustomNetworkInputWrapper = styled.div`
         line-height: 25px;
 
         ::placeholder {
-          color: ${({ theme }) => theme.color.neutral[9]};
+          color: ${({ theme }): string => theme.color.neutral[9]};
         }
       }
     }
@@ -46,8 +46,8 @@ export const CustomNetworkInputWrapper = styled.div`
   .error-message {
     position: relative;
     padding: 0 16px;
-    ${({ theme }) => theme.fonts.captionReg};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg};
     height: 14px;
-    color: ${({ theme }) => theme.color.red[2]};
+    color: ${({ theme }): string => theme.color.red[2]};
   }
 `;

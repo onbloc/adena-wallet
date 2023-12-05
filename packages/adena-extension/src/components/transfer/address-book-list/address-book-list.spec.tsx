@@ -12,9 +12,9 @@ describe('AddressBookList Component', () => {
       addressBookInfos: [{
         addressBookId: '1',
         description: '(g1uh...ohno)',
-        name: 'Account 1'
+        name: 'Account 1',
       }],
-      onClickItem: () => { return; }
+      onClickItem: () => { return; },
     };
 
     render(

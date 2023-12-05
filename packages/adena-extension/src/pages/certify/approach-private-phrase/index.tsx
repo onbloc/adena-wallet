@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import WarningBox from '@components/warning/warning-box';
 import SeedBox from '@components/seed-box';
@@ -9,7 +9,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useWalletContext } from '@hooks/use-context';
 
-export const ApproachPrivatePhrase = () => {
+export const ApproachPrivatePhrase = (): JSX.Element => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { wallet } = useWalletContext();
@@ -21,21 +21,21 @@ export const ApproachPrivatePhrase = () => {
     initPrivateKey();
   }, [currentAccount, state]);
 
-  const initPrivateKey = async () => {
+  const initPrivateKey = async (): Promise<void> => {
     if (!wallet || !currentAccount) {
       return;
     }
     const clone = wallet.clone();
     if (state?.accountId) {
-      clone.currentAccountId = state.accountId
+      clone.currentAccountId = state.accountId;
     } else {
-      clone.currentAccountId = currentAccount.id
+      clone.currentAccountId = currentAccount.id;
     }
     const privateKey = clone.privateKeyStr;
     setPrivateKey('0x' + privateKey);
-  }
+  };
 
-  const doneButtonClick = () => {
+  const doneButtonClick = (): void => {
     navigate(-2);
   };
 
@@ -63,13 +63,13 @@ export const ApproachPrivatePhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
   overflow-y: auto;
   .private-key-style {
-    ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
     .seed-text {
       word-break: break-all;
       text-align: center;

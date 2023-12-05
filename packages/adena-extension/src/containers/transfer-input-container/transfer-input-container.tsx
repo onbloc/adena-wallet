@@ -22,7 +22,7 @@ interface HistoryData {
       createdAt: string;
     } | null;
     address?: string;
-  }
+  };
 }
 
 const TransferInputContainer: React.FC = () => {
@@ -58,7 +58,7 @@ const TransferInputContainer: React.FC = () => {
     }
   }, [getHistoryData()]);
 
-  const saveHistoryData = () => {
+  const saveHistoryData = (): void => {
     setHistoryData({
       isTokenSearch,
       tokenMetainfo,
@@ -66,10 +66,10 @@ const TransferInputContainer: React.FC = () => {
       addressInput: {
         selected: addressBookInput.selected,
         selectedAddressBook: addressBookInput.selectedAddressBook,
-        address: addressBookInput.address
-      }
+        address: addressBookInput.address,
+      },
     });
-  }
+  };
 
   const isNext = useCallback(() => {
     if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
@@ -97,7 +97,8 @@ const TransferInputContainer: React.FC = () => {
     if (!isNext()) {
       return;
     }
-    const validAddress = addressBookInput.validateAddressBookInput() &&
+    const validAddress =
+      addressBookInput.validateAddressBookInput() &&
       (isNativeTokenModel(tokenMetainfo) || addressBookInput.validateEqualAddress());
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -109,10 +110,10 @@ const TransferInputContainer: React.FC = () => {
           toAddress: addressBookInput.resultAddress,
           transferAmount: {
             value: balanceInput.amount,
-            denom: balanceInput.denom
+            denom: balanceInput.denom,
           },
-          networkFee: balanceInput.networkFee
-        }
+          networkFee: balanceInput.networkFee,
+        },
       });
     }
   }, [addressBookInput, balanceInput, isNext()]);

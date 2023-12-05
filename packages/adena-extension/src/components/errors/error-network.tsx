@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import IconConnectFail from '@assets/connect-fail-permission.svg';
 import TitleWithDesc from '@components/title-with-desc';
 
@@ -11,7 +11,7 @@ const Container = styled.main`
 `;
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   gap: 16px;
@@ -33,7 +33,7 @@ const text = {
   desc: 'We couldn’t load your assets. Please\ncheck your connection with the network\nand try again.',
 };
 
-export const ErrorNetwork = () => {
+export const ErrorNetwork = (): JSX.Element => {
   return (
     <Container>
       <Wrapper>

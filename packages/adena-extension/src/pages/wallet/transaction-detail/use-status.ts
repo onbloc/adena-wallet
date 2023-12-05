@@ -51,10 +51,15 @@ const statusSymbol = {
   '/vm.m_run': gnot,
 };
 
-const useStatus = () => {
+type UseStatusReturn = {
+  initTxState: (state: TxProps) => ResultTxStateType;
+  handleLinkClick: (hash: string) => void;
+};
+
+const useStatus = (): UseStatusReturn => {
   const { currentNetwork } = useNetwork();
 
-  const initTxState = (state: TxProps) => {
+  const initTxState = (state: TxProps): ResultTxStateType => {
     let result: ResultTxStateType = {
       txStatusStyle: getStatusStyle(state.txStatus),
       txSymbol: statusSymbol[state.txType as TxTypeValue],
@@ -102,7 +107,7 @@ const useStatus = () => {
     return result;
   };
 
-  const handleLinkClick = (hash: string) => {
+  const handleLinkClick = (hash: string): void => {
     window.open(
       `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
       '_blank',

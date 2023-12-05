@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 
 interface RoundProps {
   width?: string;
@@ -11,15 +11,23 @@ interface RoundProps {
 }
 
 const RoundStyle = styled.div<RoundProps>`
-  ${({ children, theme }) => children && theme.mixins.flexbox('row', 'center', 'center')};
-  width: ${({ width }) => (width ? width : '100%')};
-  height: ${({ height }) => height && height};
-  background-color: ${({ theme, bgColor }) => (bgColor ? bgColor : theme.color.neutral[4])};
-  margin: ${({ margin }) => margin && margin};
-  border-radius: ${({ radius }) => radius && radius};
+  ${({ children, theme }): false | CSSProp =>
+    !!children && theme.mixins.flexbox('row', 'center', 'center')};
+  width: ${({ width }): string => (width ? width : '100%')};
+  height: ${({ height }): string | undefined => height && height};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.color.neutral[4])};
+  margin: ${({ margin }): string | undefined => margin && margin};
+  border-radius: ${({ radius }): string | undefined => radius && radius};
 `;
 
-export const Round = ({ width, height, bgColor, radius, margin, children }: RoundProps) => {
+export const Round = ({
+  width,
+  height,
+  bgColor,
+  radius,
+  margin,
+  children,
+}: RoundProps): JSX.Element => {
   return (
     <RoundStyle width={width} height={height} bgColor={bgColor} radius={radius} margin={margin}>
       {children}

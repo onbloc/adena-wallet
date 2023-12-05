@@ -19,7 +19,7 @@ export class WalletRepository {
     this.sessionStorage = sessionStorage;
   }
 
-  public getSerializedWallet = async () => {
+  public getSerializedWallet = async (): Promise<string> => {
     const serializedWallet = await this.localStorage.get('SERIALIZED');
     if (!serializedWallet || serializedWallet === '') {
       throw new WalletError('NOT_FOUND_SERIALIZED');
@@ -27,18 +27,18 @@ export class WalletRepository {
     return serializedWallet;
   };
 
-  public updateSerializedWallet = async (serializedWallet: string) => {
+  public updateSerializedWallet = async (serializedWallet: string): Promise<boolean> => {
     await this.localStorage.set('SERIALIZED', serializedWallet);
     return true;
   };
 
-  public deleteSerializedWallet = async () => {
+  public deleteSerializedWallet = async (): Promise<boolean> => {
     await this.localStorage.remove('SERIALIZED');
     await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     return true;
   };
 
-  public existsWalletPassword = async () => {
+  public existsWalletPassword = async (): Promise<boolean> => {
     try {
       const password = await this.getWalletPassword();
       if (password === '') {
@@ -51,7 +51,7 @@ export class WalletRepository {
     return true;
   };
 
-  public getWalletPassword = async () => {
+  public getWalletPassword = async (): Promise<string> => {
     const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
     const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
 
@@ -68,7 +68,7 @@ export class WalletRepository {
     }
   };
 
-  public updateWalletPassword = async (password: string) => {
+  public updateWalletPassword = async (password: string): Promise<boolean> => {
     const { encryptedKey, encryptedPassword } = encryptPassword(password);
     const storedPassword = encryptSha256Password(password);
     this.updateStoragePassword(password);
@@ -78,18 +78,18 @@ export class WalletRepository {
     return true;
   };
 
-  public deleteWalletPassword = async () => {
+  public deleteWalletPassword = async (): Promise<boolean> => {
     await this.sessionStorage.remove('ENCRYPTED_KEY');
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
     return true;
   };
 
-  public getEncryptedPassword = async () => {
+  public getEncryptedPassword = async (): Promise<string> => {
     const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
     return encryptedPassword;
   };
 
-  public updateStoragePassword = (password: string) => {
+  public updateStoragePassword = (password: string): void => {
     this.localStorage.updatePassword(password);
   };
 }

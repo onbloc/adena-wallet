@@ -5,16 +5,23 @@ import { useNavigate } from 'react-router-dom';
 
 const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 
-export const useEnterSeed = () => {
+export const useEnterSeed = (): {
+  seedState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+    error: boolean;
+    errorMessage: string;
+  };
+  termsState: { terms: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void };
+  buttonState: { onClick: () => Promise<void>; disabled: boolean };
+} => {
   const navigate = useNavigate();
   const [seed, setSeed] = useState('');
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
 
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -25,14 +32,14 @@ export const useEnterSeed = () => {
     [seed],
   );
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleButtonClick();
     }
   };
 
-  const handleButtonClick = async () => {
+  const handleButtonClick = async (): Promise<void> => {
     if (seed.length === 0 || !terms) {
       return;
     }

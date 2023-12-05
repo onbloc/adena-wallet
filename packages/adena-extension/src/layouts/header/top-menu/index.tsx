@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import theme from '@styles/theme';
 import Text from '@components/text';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { CopyTooltip } from '@components/tooltips';
 import { StatusDot } from '@components/status-dot';
 import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
@@ -17,27 +17,27 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
 `;
 
 const Header = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   position: relative;
   & > img {
-    ${({ theme }) => theme.mixins.positionCenter('absolute')}
+    ${({ theme }): CSSProp => theme.mixins.positionCenter('absolute')}
   }
 `;
 
-export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
+export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
   const [, setUrl] = useState('');
   const { currentAccount, currentAddress } = useCurrentAccount();
-  const toggleMenuHandler = () => setOpen(!open);
+  const toggleMenuHandler = (): void => setOpen(!open);
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
@@ -65,7 +65,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     updateEstablished();
   }, [location.pathname, hostname, currentAccount, currentNetwork]);
 
-  const initAccountInfo = async () => {
+  const initAccountInfo = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
@@ -79,7 +79,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     }
   };
 
-  const updateEstablished = async () => {
+  const updateEstablished = async (): Promise<void> => {
     if (currentAccount && hostname !== '') {
       const siteName = getSiteName(protocol, hostname);
       const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName);
@@ -92,10 +92,12 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
     if (!hostname.includes('.')) {
       currentHostname = 'chrome-extension';
     }
-    return isEstablish ? `You are connected to ${currentHostname}` : `You are not connected to ${currentHostname}`;
-  }
+    return isEstablish
+      ? `You are connected to ${currentHostname}`
+      : `You are not connected to ${currentHostname}`;
+  };
 
-  const getCurrentUrl = () => {
+  const getCurrentUrl = (): Promise<unknown> => {
     return new Promise((resolver) => {
       const queryOptions = { active: true, lastFocusedWindow: true };
       chrome.tabs.query(queryOptions).then((currentTabs) => {
@@ -122,5 +124,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }) => {
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />
     </Wrapper>
-  ) : <></>;
+  ) : (
+    <></>
+  );
 };

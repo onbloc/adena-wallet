@@ -84,13 +84,13 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: changable === false,
           text: 'Switch',
-          onClick: onClickSwitch
+          onClick: onClickSwitch,
         }}
       />
     </ApproveChangingNetworkWrapper>

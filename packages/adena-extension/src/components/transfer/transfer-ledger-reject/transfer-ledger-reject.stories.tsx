@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<TransferLedgerRejectProps> = {
   args: {
-    onClickClose: action('click close')
+    onClickClose: action('click close'),
   },
 };

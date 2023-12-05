@@ -24,7 +24,7 @@ const Wrapper = styled.div`
   }
 `;
 
-export const Staking = () => {
+export const Staking = (): JSX.Element => {
   return (
     <Wrapper>
       <Text className='staking-title' type='header4'>

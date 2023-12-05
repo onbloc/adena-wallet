@@ -20,15 +20,17 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
   moveEditPage,
   changeNetwork,
 }) => {
-
-  const onClickEditButton = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (locked) {
-      return;
-    }
-    moveEditPage(networkMetainfo.id);
-  }, [locked, moveEditPage, networkMetainfo.id]);
+  const onClickEditButton = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (locked) {
+        return;
+      }
+      moveEditPage(networkMetainfo.id);
+    },
+    [locked, moveEditPage, networkMetainfo.id],
+  );
 
   const onClickItem = useCallback(() => {
     changeNetwork(networkMetainfo.id);

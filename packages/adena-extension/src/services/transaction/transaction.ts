@@ -23,18 +23,18 @@ export class TransactionService {
     this.gnoProvider = null;
   }
 
-  public getGnoProvider() {
+  public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
     return this.gnoProvider;
   }
 
-  public setGnoProvider(gnoProvider: GnoProvider) {
+  public setGnoProvider(gnoProvider: GnoProvider): void {
     this.gnoProvider = gnoProvider;
   }
 
-  private getGasAmount = async (gasFee?: number) => {
+  private getGasAmount = async (gasFee?: number): Promise<{ value: string; denom: string }> => {
     const gasFeeAmount = {
       value: `${gasFee ?? 1}`,
       denom: 'ugnot',
@@ -49,7 +49,7 @@ export class TransactionService {
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
-  ) => {
+  ): Promise<StdSignDoc> => {
     const provider = this.getGnoProvider();
     const address = account.getAddress('g');
     const [accountSequence, accountNumber] = await Promise.all([
@@ -79,13 +79,19 @@ export class TransactionService {
     );
   };
 
-  public createSignature = async (account: Account, document: StdSignDoc) => {
+  public createSignature = async (
+    account: Account,
+    document: StdSignDoc,
+  ): Promise<StdSignature> => {
     const wallet = await this.walletService.loadWallet();
     const { signature } = await wallet.signByAccountId(account.id, document);
     return signature;
   };
 
-  public createSignatureWithLedger = async (account: LedgerAccount, document: StdSignDoc) => {
+  public createSignatureWithLedger = async (
+    account: LedgerAccount,
+    document: StdSignDoc,
+  ): Promise<StdSignature> => {
     const connected = await LedgerConnector.openConnected();
     if (!connected) {
       throw new Error('Ledger not found');
@@ -105,7 +111,7 @@ export class TransactionService {
     gasWanted: number,
     gasFee?: number,
     memo?: string | undefined,
-  ) => {
+  ): Promise<{ document: StdSignDoc; signature: StdSignature }> => {
     const document = await this.createDocument(account, chainId, messages, gasWanted, gasFee, memo);
     const signature = await this.createSignature(account, document);
     return { document, signature };
@@ -120,7 +126,7 @@ export class TransactionService {
    * @param gasFee gas fee
    * @returns transaction value
    */
-  public createTransaction = (document: StdSignDoc, signature: StdSignature) => {
+  public createTransaction = (document: StdSignDoc, signature: StdSignature): number[] => {
     const transaction = TransactionBuilder.builder()
       .signDoucment(document)
       .signatures([signature])
@@ -135,14 +141,14 @@ export class TransactionService {
    * @param gnoClient gno api client
    * @param transaction created transaction
    */
-  public sendTransaction = async (transaction: Array<number>) => {
+  public sendTransaction = async (transaction: Array<number>): Promise<string> => {
     const provider = this.getGnoProvider();
     const encodedTransaction = Buffer.from(transaction).toString('base64');
     const response = await provider.sendTransactionCommit(encodedTransaction);
     return response.hash;
   };
 
-  public createHash(transaction: Array<number>) {
+  public createHash(transaction: Array<number>): string {
     const hash = sha256(new Uint8Array(transaction));
     return Buffer.from(hash).toString('base64');
   }

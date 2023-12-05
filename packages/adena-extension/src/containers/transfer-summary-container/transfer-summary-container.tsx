@@ -38,7 +38,7 @@ const TransferSummaryContainer: React.FC = () => {
     const { value, denom } = summaryInfo.transferAmount;
     return {
       value: `${BigNumber(value).toFormat()}`,
-      denom
+      denom,
     };
   }, [summaryInfo]);
 
@@ -62,13 +62,13 @@ const TransferSummaryContainer: React.FC = () => {
     }
     return TransactionMessage.createMessageOfVmCall({
       caller: currentAddress || '',
-      send: "",
+      send: '',
       pkgPath: tokenMetainfo.pkgPath,
-      func: "Transfer",
+      func: 'Transfer',
       args: [
         toAddress,
-        transferAmount.value
-      ]
+        transferAmount.value,
+      ],
     });
   }, [summaryInfo, currentAddress]);
 
@@ -87,7 +87,7 @@ const TransferSummaryContainer: React.FC = () => {
       currentNetwork.networkId,
       [message],
       GAS_WANTED,
-      networkFeeAmount
+      networkFeeAmount,
     );
     return document;
   }, [summaryInfo, currentAccount]);
@@ -148,7 +148,7 @@ const TransferSummaryContainer: React.FC = () => {
     const document = await createDocument();
     if (document) {
       const state = {
-        document
+        document,
       };
       navigate(RoutePath.TransferLedgerLoading, { state });
     }

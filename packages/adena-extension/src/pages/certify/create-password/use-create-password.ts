@@ -27,7 +27,31 @@ interface GoogleState extends CreatePasswordState {
   privateKey: string;
 }
 
-export const useCreatePassword = () => {
+export type UseCreatePasswordReturn = {
+  pwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+    ref: React.RefObject<HTMLInputElement>;
+  };
+  confirmPwdState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
+  termsState: {
+    value: boolean;
+    onChange: () => void;
+  };
+  errorMessage: string;
+  buttonState: {
+    onClick: () => void;
+    disabled: boolean;
+  };
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+};
+
+export const useCreatePassword = (): UseCreatePasswordReturn => {
   const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
@@ -81,13 +105,13 @@ export const useCreatePassword = () => {
     return state.type === 'GOOGLE';
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && terms && pwd && confirmPwd) {
       nextButtonClick();
     }
   };
 
-  const handleTermsChange = () => setTerms((prev: boolean) => !prev);
+  const handleTermsChange = (): void => setTerms((prev: boolean) => !prev);
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,7 +121,7 @@ export const useCreatePassword = () => {
     [pwd, confirmPwd],
   );
 
-  const validationConfirmPassword = (isValidPassword?: boolean) => {
+  const validationConfirmPassword = (isValidPassword?: boolean): boolean => {
     const password = pwd;
     const confirmPassword = confirmPwd;
     try {
@@ -119,7 +143,7 @@ export const useCreatePassword = () => {
     return false;
   };
 
-  const validationPassword = () => {
+  const validationPassword = (): boolean => {
     const password = pwd;
     try {
       validateEmptyPassword(password);
@@ -135,13 +159,13 @@ export const useCreatePassword = () => {
     return false;
   };
 
-  const validationCheck = async () => {
+  const validationCheck = async (): Promise<boolean> => {
     const isValidPassword = validationPassword();
     const isValidConfirmPassword = validationConfirmPassword(isValidPassword);
     return isValidPassword && isValidConfirmPassword;
   };
 
-  const createAccounts = () => {
+  const createAccounts = (): 'FAIL' | Promise<'FAIL' | 'FINISH'> => {
     if (isSeedPharase(locationState)) {
       return createWalletAccountsBySeed(locationState);
     }
@@ -154,14 +178,14 @@ export const useCreatePassword = () => {
     return 'FAIL';
   };
 
-  const createWalletAccountsBySeed = async (seedState: SeedState) => {
+  const createWalletAccountsBySeed = async (seedState: SeedState): Promise<'FAIL' | 'FINISH'> => {
     try {
       const wallet = await walletService.createWallet({
         mnemonic: seedState.seeds,
         password: pwd,
       });
       await accountService.changeCurrentAccount(wallet.currentAccount);
-      await walletService.changePassowrd(pwd);
+      await walletService.changePassword(pwd);
     } catch (error) {
       console.error(error);
       return 'FAIL';
@@ -169,7 +193,9 @@ export const useCreatePassword = () => {
     return 'FINISH';
   };
 
-  const createWalletAccountsByGoogle = async (googleState: GoogleState) => {
+  const createWalletAccountsByGoogle = async (
+    googleState: GoogleState,
+  ): Promise<'FAIL' | 'FINISH'> => {
     try {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
       await accountService.changeCurrentAccount(wallet.currentAccount);
@@ -181,7 +207,7 @@ export const useCreatePassword = () => {
     return 'FINISH';
   };
 
-  const create = async () => {
+  const create = async (): Promise<void> => {
     const validationState = await validationCheck();
     if (!validationState) {
       setActivated(false);
@@ -196,7 +222,7 @@ export const useCreatePassword = () => {
     }
   };
 
-  const nextButtonClick = async () => {
+  const nextButtonClick = async (): Promise<void> => {
     if (activated) {
       return;
     }

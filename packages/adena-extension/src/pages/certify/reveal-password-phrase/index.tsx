@@ -3,7 +3,7 @@ import DefaultInput from '@components/default-input';
 import WarningBox from '@components/warning/warning-box';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
@@ -13,10 +13,10 @@ import { ErrorText } from '@components/error-text';
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';
 
-export const RevealPasswoardPhrase = () => {
+export const RevealPasswoardPhrase = (): JSX.Element => {
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
-  const backButtonClick = () => navigate(-1);
+  const backButtonClick = (): void => navigate(-1);
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -25,26 +25,26 @@ export const RevealPasswoardPhrase = () => {
   const disabled = termsA && termsB && pwd;
   const [clicked, setClicked] = useState(false);
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setPwd(e.target.value);
     setError(false);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && termsA && termsB && pwd) {
       confirmButtonClick();
     }
   };
 
-  const termsAChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const termsAChange = (): void => {
     setTermsA((prev: boolean) => !prev);
   };
 
-  const termsBChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const termsBChange = (): void => {
     setTermsB((prev: boolean) => !prev);
   };
 
-  const confirmButtonClick = async () => {
+  const confirmButtonClick = async (): Promise<void> => {
     if (clicked) {
       return;
     }
@@ -56,7 +56,7 @@ export const RevealPasswoardPhrase = () => {
     }
     setClicked(true);
 
-    const equalPassword = await walletService.equalsPassowrd(pwd);
+    const equalPassword = await walletService.equalsPassword(pwd);
     if (!equalPassword) {
       setErrorMessage('Invalid Password');
       setError(true);
@@ -112,7 +112,7 @@ export const RevealPasswoardPhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

@@ -3,7 +3,7 @@ import { addressValidationCheck } from '@common/utils/client-utils';
 import { BookListProps } from '@pages/certify/address-book';
 import { Account } from 'adena-module';
 
-export const validateInvalidAddress = (address: string) => {
+export const validateInvalidAddress = (address: string): boolean => {
   const invalidCheck = addressValidationCheck(address);
   if (!invalidCheck) {
     throw new AddressBookValidationError('INVALID_ADDRESS');
@@ -15,7 +15,7 @@ export const validateAlreadyAddress = (
   currData: BookListProps,
   allDatas: BookListProps[],
   isAdd: boolean,
-) => {
+): boolean => {
   let check: boolean;
   if (isAdd) {
     check = allDatas.some((v: BookListProps) => v.address === currData.address);
@@ -35,7 +35,7 @@ export const validateAlreadyAddressByAccounts = (
   currData: BookListProps,
   accounts: Account[],
   isAdd: boolean,
-) => {
+): boolean => {
   let check: boolean;
   if (isAdd) {
     check = accounts.some((account) => account.getAddress('g') === currData.address);
@@ -53,7 +53,7 @@ export const validateAlreadyName = (
   currData: BookListProps,
   allDatas: BookListProps[],
   isAdd: boolean,
-) => {
+): boolean => {
   let check: boolean;
   if (isAdd) {
     check = allDatas.some((v: BookListProps) => v.name === currData.name);

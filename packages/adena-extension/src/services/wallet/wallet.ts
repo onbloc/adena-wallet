@@ -11,7 +11,7 @@ export class WalletService {
     this.walletRepository = walletRepository;
   }
 
-  public existsWallet = () => {
+  public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
       .getSerializedWallet()
       .then(() => true)
@@ -26,7 +26,13 @@ export class WalletService {
    * - password: wallet's password
    * @returns Wallet
    */
-  public createWallet = async ({ mnemonic, password }: { mnemonic: string; password: string }) => {
+  public createWallet = async ({
+    mnemonic,
+    password,
+  }: {
+    mnemonic: string;
+    password: string;
+  }): Promise<AdenaWallet> => {
     const wallet = await this.createWalletByMnemonic(mnemonic);
     await this.saveWallet(wallet, password);
     return wallet;
@@ -37,7 +43,7 @@ export class WalletService {
    *
    * @returns Wallet
    */
-  public loadWallet = async () => {
+  public loadWallet = async (): Promise<AdenaWallet> => {
     const isExists = await this.existsWallet();
     if (!isExists) {
       throw new WalletError('NOT_FOUND_SERIALIZED');
@@ -53,7 +59,7 @@ export class WalletService {
    * @param password wallet's password
    * @returns Wallet
    */
-  public loadWalletWithPassword = async (password: string) => {
+  public loadWalletWithPassword = async (password: string): Promise<AdenaWallet> => {
     const isExists = await this.existsWallet();
     if (!isExists) {
       throw new WalletError('NOT_FOUND_SERIALIZED');
@@ -68,7 +74,7 @@ export class WalletService {
    *
    * @returns boolean
    */
-  public isLocked = async () => {
+  public isLocked = async (): Promise<boolean> => {
     try {
       const password = await this.walletRepository.getWalletPassword();
       return password === '';
@@ -77,7 +83,7 @@ export class WalletService {
     }
   };
 
-  public loadWalletPassword = async () => {
+  public loadWalletPassword = async (): Promise<string> => {
     return this.walletRepository.getWalletPassword();
   };
 
@@ -90,7 +96,10 @@ export class WalletService {
    * @throws WalletError 'FAILED_TO_CREATE'
    * @returns Wallet
    */
-  public createWalletByMnemonic = async (mnemonic: string, accountPaths?: Array<number>) => {
+  public createWalletByMnemonic = async (
+    mnemonic: string,
+    accountPaths?: Array<number>,
+  ): Promise<AdenaWallet> => {
     try {
       const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
       return wallet;
@@ -105,7 +114,7 @@ export class WalletService {
    * @param wallet Wallet instance
    * @param password wallet's password
    */
-  public saveWallet = async (wallet: Wallet, password: string) => {
+  public saveWallet = async (wallet: Wallet, password: string): Promise<void> => {
     const serializedWallet = await wallet.serialize(password);
     await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
@@ -117,7 +126,7 @@ export class WalletService {
    * @throws WalletError 'FAILED_TO_LOAD'
    * @returns Wallet
    */
-  public deserializeWallet = async (password: string) => {
+  public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       await this.walletRepository.updateWalletPassword(password);
       const serializedWallet = await this.walletRepository.getSerializedWallet();
@@ -128,7 +137,7 @@ export class WalletService {
     }
   };
 
-  public lockWallet = async () => {
+  public lockWallet = async (): Promise<void> => {
     try {
       await this.walletRepository.deleteWalletPassword();
     } catch (e) {
@@ -136,7 +145,7 @@ export class WalletService {
     }
   };
 
-  public equalsPassowrd = async (password: string) => {
+  public equalsPassword = async (password: string): Promise<boolean> => {
     try {
       const storedPassword = await this.walletRepository.getEncryptedPassword();
       if (storedPassword !== '') {
@@ -149,7 +158,7 @@ export class WalletService {
       if (isWallet) {
         const wallet = await this.deserializeWallet(password);
         if (wallet) {
-          await this.updatePassowrd(password);
+          await this.updatePassword(password);
           return true;
         }
       }
@@ -159,7 +168,7 @@ export class WalletService {
     return false;
   };
 
-  public getRawPassword = async () => {
+  public getRawPassword = async (): Promise<string> => {
     try {
       const rawPassword = await this.walletRepository.getWalletPassword();
       return rawPassword;
@@ -168,12 +177,12 @@ export class WalletService {
     }
   };
 
-  public updatePassowrd = async (password: string) => {
+  public updatePassword = async (password: string): Promise<boolean> => {
     await this.walletRepository.updateWalletPassword(password);
     return true;
   };
 
-  public changePassowrd = async (password: string) => {
+  public changePassword = async (password: string): Promise<boolean> => {
     try {
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
@@ -183,7 +192,7 @@ export class WalletService {
     return true;
   };
 
-  public clear = async () => {
+  public clear = async (): Promise<boolean> => {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     return true;

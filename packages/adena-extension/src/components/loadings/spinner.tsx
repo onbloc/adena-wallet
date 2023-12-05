@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { CSSProp, keyframes } from 'styled-components';
 
 const spinAnimation = keyframes`
   0% {
@@ -11,7 +11,7 @@ const spinAnimation = keyframes`
 `;
 
 const SpinRing = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   position: relative;
   width: 70px;
   height: 70px;
@@ -20,7 +20,7 @@ const SpinRing = styled.div`
   animation: ${spinAnimation} 0.9s linear infinite;
   :before {
     content: '';
-    background-color: ${({ theme }) => theme.color.neutral[7]};
+    background-color: ${({ theme }): string => theme.color.neutral[7]};
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -34,10 +34,10 @@ const SpinBall = styled.span`
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: ${({ theme }) => theme.color.primary[3]};
+  background-color: ${({ theme }): string => theme.color.primary[3]};
 `;
 
-export const Spinner = () => (
+export const Spinner = (): JSX.Element => (
   <SpinRing>
     <SpinBall />
   </SpinRing>

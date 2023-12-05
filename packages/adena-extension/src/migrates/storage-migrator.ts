@@ -49,11 +49,11 @@ export class StorageMigrator implements Migrator {
     private password?: string,
   ) {}
 
-  setPassword(passowrd: string) {
+  setPassword(passowrd: string): void {
     this.password = passowrd;
   }
 
-  async saveable() {
+  async saveable(): Promise<boolean | '' | undefined> {
     const current = await this.getCurrent();
     const latestVersion = Math.max(...this.migrations.map((m) => m.version));
     if (current.data.SERIALIZED === '') {
@@ -65,11 +65,13 @@ export class StorageMigrator implements Migrator {
     return this.password && this.password.length > 0;
   }
 
-  async serialize(data: StorageModel<unknown>) {
+  async serialize(data: StorageModel<unknown>): Promise<string> {
     return JSON.stringify(data);
   }
 
-  async deserialize(data: string | undefined) {
+  async deserialize(
+    data: string | undefined,
+  ): Promise<StorageModelV004 | StorageModelV003 | StorageModelV002 | StorageModelV001> {
     let jsonData = null;
     if (data) {
       try {
@@ -81,7 +83,12 @@ export class StorageMigrator implements Migrator {
     return this.mappedJson(jsonData);
   }
 
-  async getCurrent() {
+  async getCurrent(): Promise<
+    | StorageModelV004
+    | StorageModelV003
+    | StorageModelV002
+    | { version: number; data: StorageModelDataV001 }
+  > {
     const storedValues = await this.storage.get(StorageMigrator.StorageKey);
     const data = await this.deserialize(storedValues[StorageMigrator.StorageKey]);
     if (data) {
@@ -93,7 +100,7 @@ export class StorageMigrator implements Migrator {
     };
   }
 
-  async migrate(current: StorageModel) {
+  async migrate(current: StorageModel): Promise<StorageModelV003 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -112,7 +119,7 @@ export class StorageMigrator implements Migrator {
     return latest as StorageModelLatest;
   }
 
-  async save(latest: StorageModel) {
+  async save(latest: StorageModel): Promise<void> {
     if (!(await this.saveable())) {
       throw new Error('Unable to save');
     }
@@ -122,13 +129,15 @@ export class StorageMigrator implements Migrator {
     });
   }
 
-  private async backup(current: StorageModel) {
+  private async backup(current: StorageModel): Promise<void> {
     const backupStorageKey = `${StorageMigrator.StorageKey}_${Date.now()}`;
     const savedData = await this.serialize(current);
     await this.storage.set({ [backupStorageKey]: savedData });
   }
 
-  private async mappedJson(json: any) {
+  private async mappedJson(
+    json: any,
+  ): Promise<StorageModelV004 | StorageModelV003 | StorageModelV002 | StorageModelV001> {
     if (json?.version === 4) {
       return json as StorageModelV004;
     }
@@ -154,7 +163,7 @@ export class StorageMigrator implements Migrator {
     } as StorageModelV001;
   }
 
-  private async getLegacyData() {
+  private async getLegacyData(): Promise<StorageModelDataV001> {
     const legacyData: { [key in string]: unknown } = defaultData;
     for (const key of LegacyStorageKeys) {
       const data = (await this.storage.get(key))[key];

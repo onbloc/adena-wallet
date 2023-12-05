@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -14,7 +14,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
@@ -31,12 +31,12 @@ const Wrapper = styled.main`
   }
 `;
 
-export const ApproveConnectHardwareWalletFinish = () => {
+export const ApproveConnectHardwareWalletFinish = (): JSX.Element => {
   const { wallet, updateWallet } = useWalletContext();
   const { accountService } = useAdenaContext();
   const location = useLocation();
 
-  const onClickDoneButton = async () => {
+  const onClickDoneButton = async (): Promise<void> => {
     const { accounts } = location.state;
     if (!wallet) {
       return;

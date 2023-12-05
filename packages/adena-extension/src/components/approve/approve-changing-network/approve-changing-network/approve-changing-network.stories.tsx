@@ -10,10 +10,10 @@ export default {
 export const Default: StoryObj<ApproveChangingNetworkProps> = {
   args: {
     fromChain: {
-      name: 'Testnet3'
+      name: 'Testnet3',
     },
     toChain: {
-      name: 'Onbloc Testnet'
+      name: 'Onbloc Testnet',
     },
     changable: true,
     processing: false,

@@ -8,19 +8,17 @@ import { useEvent } from './use-event';
 import { EventMessage } from '@inject/message/event-message';
 
 export const useCurrentAccount = (): {
-  currentAccount: Account | null,
-  currentAddress: string | null,
-  changeCurrentAccount: (changedAccount: Account) => Promise<boolean>,
+  currentAccount: Account | null;
+  currentAddress: string | null;
+  changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
-  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount)
+  const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
   const { accountService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const { dispatchEvent } = useEvent();
 
-  const changeCurrentAccount = async (
-    changedAccount: Account,
-  ) => {
+  const changeCurrentAccount = async (changedAccount: Account): Promise<boolean> => {
     if (!wallet) {
       return false;
     }
@@ -32,15 +30,18 @@ export const useCurrentAccount = (): {
     return true;
   };
 
-  const dispatchChangedEvent = useCallback((account: Account) => {
-    const address = account.getAddress(currentNetwork.addressPrefix);
-    const message = EventMessage.event('changedAccount', address);
-    dispatchEvent(message);
-  }, [currentNetwork]);
+  const dispatchChangedEvent = useCallback(
+    (account: Account) => {
+      const address = account.getAddress(currentNetwork.addressPrefix);
+      const message = EventMessage.event('changedAccount', address);
+      dispatchEvent(message);
+    },
+    [currentNetwork],
+  );
 
   return {
     currentAccount,
     currentAddress: currentAccount?.getAddress(currentNetwork?.addressPrefix ?? 'g') || null,
-    changeCurrentAccount
+    changeCurrentAccount,
   };
 };

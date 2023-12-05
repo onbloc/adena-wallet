@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const MainManageTokenButtonWrapper = styled.div`
   display: flex;
@@ -22,7 +22,7 @@ export const MainManageTokenButtonWrapper = styled.div`
   }
 
   .title {
-    color: ${({ theme }) => theme.color.neutral[9]};
-    ${({ theme }) => theme.fonts.body1Reg};
+    color: ${({ theme }): string => theme.color.neutral[9]};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
   }
 `;

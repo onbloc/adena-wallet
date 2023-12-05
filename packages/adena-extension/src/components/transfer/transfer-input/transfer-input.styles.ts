@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
   position: relative;
@@ -40,12 +40,12 @@ export const TransferInputWrapper = styled.div`
       width: 100%;
       height: 48px;
       border-radius: 30px;
-      ${({ theme }) => theme.fonts.body1Bold};
-      background-color: ${({ theme }) => theme.color.neutral[4]};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Bold};
+      background-color: ${({ theme }): string => theme.color.neutral[4]};
       transition: 0.2s;
 
       :hover {
-        background-color: ${({ theme }) => theme.color.neutral[5]};
+        background-color: ${({ theme }): string => theme.color.neutral[5]};
       }
 
       &:last-child {
@@ -53,15 +53,15 @@ export const TransferInputWrapper = styled.div`
       }
 
       &.next {
-        background-color: ${({ theme }) => theme.color.primary[3]};
+        background-color: ${({ theme }): string => theme.color.primary[3]};
 
         :hover {
-          background-color: ${({ theme }) => theme.color.primary[4]};
+          background-color: ${({ theme }): string => theme.color.primary[4]};
         }
 
         &.disabled {
-          color: ${({ theme }) => theme.color.neutral[4]};
-          background-color: ${({ theme }) => theme.color.primary[6]};
+          color: ${({ theme }): string => theme.color.neutral[4]};
+          background-color: ${({ theme }): string => theme.color.primary[6]};
           cursor: default;
         }
       }

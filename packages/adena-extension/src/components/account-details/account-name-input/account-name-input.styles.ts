@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const AccountNameInputWrapper = styled.div`
   display: flex;
@@ -6,8 +6,8 @@ export const AccountNameInputWrapper = styled.div`
   width: 150px;
   height: auto;
   padding: 12.5px 16px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
-  border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
   border-radius: 18px;
   transition: 0.2s;
   justify-content: center;
@@ -22,7 +22,7 @@ export const AccountNameInputWrapper = styled.div`
     flex-shrink: 1;
     width: 100%;
     overflow: hidden;
-    ${({ theme }) => theme.fonts.body2Reg}
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg}
 
     &:not(:focus) {
       text-overflow: ellipsis;
@@ -47,7 +47,7 @@ export const AccountNameInputWrapper = styled.div`
 
     &:hover {
       svg * {
-        fill: ${({ theme }) => theme.color.neutral[0]};
+        fill: ${({ theme }): string => theme.color.neutral[0]};
       }
     }
   }

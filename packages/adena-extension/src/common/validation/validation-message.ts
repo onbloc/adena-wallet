@@ -1,4 +1,4 @@
-export const validateDoContractRequest = (requestData: any) => {
+export const validateDoContractRequest = (requestData: any): boolean => {
   if (typeof requestData?.gasFee !== 'number') {
     if (Number.isNaN(parseInt(`${requestData?.gasFee}`))) {
       return false;
@@ -15,7 +15,7 @@ export const validateDoContractRequest = (requestData: any) => {
   return true;
 };
 
-export const validateTrasactionMessageOfBankSend = (message: { [key in string]: any }) => {
+export const validateTrasactionMessageOfBankSend = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -38,7 +38,7 @@ export const validateTrasactionMessageOfBankSend = (message: { [key in string]: 
   return true;
 };
 
-export const validateTrasactionMessageOfVmCall = (message: { [key in string]: any }) => {
+export const validateTrasactionMessageOfVmCall = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -67,7 +67,7 @@ export const validateTrasactionMessageOfVmCall = (message: { [key in string]: an
   return true;
 };
 
-export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: any }) => {
+export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -100,7 +100,7 @@ export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: an
   return true;
 };
 
-export const validateTrasactionMessageOfRun = (message: { [key in string]: any }) => {
+export const validateTrasactionMessageOfRun = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }

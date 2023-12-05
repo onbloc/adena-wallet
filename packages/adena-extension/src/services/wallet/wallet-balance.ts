@@ -12,22 +12,22 @@ export class WalletBalanceService {
     this.tokenMetainfos = [];
   }
 
-  public getGnoProvider() {
+  public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
     return this.gnoProvider;
   }
 
-  public setGnoProvider(gnoProvider: GnoProvider) {
+  public setGnoProvider(gnoProvider: GnoProvider): void {
     this.gnoProvider = gnoProvider;
   }
 
-  public setTokenMetainfos(tokenMetainfos: Array<TokenModel>) {
+  public setTokenMetainfos(tokenMetainfos: Array<TokenModel>): void {
     this.tokenMetainfos = tokenMetainfos;
   }
 
-  public getTokenBalances = async (address: string) => {
+  public getTokenBalances = async (address: string): Promise<BalanceState.TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
     const denom = 'ugnot';
     const balance = await gnoProvider
@@ -54,7 +54,11 @@ export class WalletBalanceService {
     return tokenBalances;
   };
 
-  public getGRC20TokenBalance = async (address: string, packagePath: string, symbol: string) => {
+  public getGRC20TokenBalance = async (
+    address: string,
+    packagePath: string,
+    symbol: string,
+  ): Promise<BalanceState.TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
     const balance = await gnoProvider.getValueByEvaluteExpression(packagePath, 'BalanceOf', [
       address,
@@ -80,7 +84,10 @@ export class WalletBalanceService {
     denom: string,
     tokenMetainfo: TokenModel,
     convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
-  ) => {
+  ): {
+    value: string;
+    denom: string;
+  } => {
     const decimals = tokenMetainfo.decimals;
     let shift = 0;
     let convertedDenom = tokenMetainfo.symbol;

@@ -2,10 +2,6 @@ import EditCustomNetworkConatiner from '@containers/edit-custom-network-conatine
 import EditCustomNetworkLayout from '@layouts/edit-custom-network-layout/edit-custom-network-layout';
 import React from 'react';
 
-export default function EditCustomNetworkPage() {
-  return (
-    <EditCustomNetworkLayout
-      editCustomNetwork={<EditCustomNetworkConatiner />}
-    />
-  );
+export default function EditCustomNetworkPage(): JSX.Element {
+  return <EditCustomNetworkLayout editCustomNetwork={<EditCustomNetworkConatiner />} />;
 }

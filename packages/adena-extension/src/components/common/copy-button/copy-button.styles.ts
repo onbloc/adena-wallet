@@ -14,14 +14,14 @@ export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
   svg {
     path {
       transition: 0.2s;
-      stroke: ${({ theme, checked }) =>
+      stroke: ${({ theme, checked }): string =>
         checked ? theme.color.neutral[0] : theme.color.neutral[9]};
     }
   }
 
   :hover svg {
     path {
-      stroke: ${({ theme }) => theme.color.neutral[0]};
+      stroke: ${({ theme }): string => theme.color.neutral[0]};
     }
   }
 `;

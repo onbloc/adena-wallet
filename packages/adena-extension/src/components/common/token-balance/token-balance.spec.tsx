@@ -9,8 +9,8 @@ import TokenBalance, { TokenBalanceProps } from './token-balance';
 describe('TokenBalance Component', () => {
   it('TokenBalance render', () => {
     const args: TokenBalanceProps = {
-      value: "123,456,789,123465",
-      denom: "GNOT"
+      value: '123,456,789,123465',
+      denom: 'GNOT',
     };
 
     render(
@@ -25,8 +25,8 @@ describe('TokenBalance Component', () => {
 
   it('TokenBalance empty value', () => {
     const args: TokenBalanceProps = {
-      value: "",
-      denom: ""
+      value: '',
+      denom: '',
     };
 
     render(

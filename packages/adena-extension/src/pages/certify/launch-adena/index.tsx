@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { CSSProp, css } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -13,34 +13,34 @@ const text = {
 };
 
 const popupStyle = css`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
 `;
 
 const defaultStyle = css`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
 `;
 
 const Wrapper = styled.main<{ isPopup: boolean }>`
-  ${({ isPopup }) => (isPopup ? popupStyle : defaultStyle)};
+  ${({ isPopup }): CSSProp => (isPopup ? popupStyle : defaultStyle)};
 `;
 
 interface LaunchAdenaState {
   type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
 }
 
-export const LaunchAdena = () => {
+export const LaunchAdena = (): JSX.Element => {
   const location = useLocation();
   const navigate = useNavigate();
   const { initWallet, initNetworkMetainfos } = useWalletContext();
   const [clicked, setClicked] = useState(false);
 
-  const handleNextButtonClick = () => {
+  const handleNextButtonClick = (): void => {
     if (clicked) {
       return;
     }
@@ -49,10 +49,7 @@ export const LaunchAdena = () => {
     if (locationState.type === 'GOOGLE' || locationState.type === 'LEDGER') {
       window.close();
     }
-    Promise.all([
-      initWallet(),
-      initNetworkMetainfos(),
-    ]).then(() => {
+    Promise.all([initWallet(), initNetworkMetainfos()]).then(() => {
       navigate(RoutePath.Wallet);
       setClicked(false);
     });

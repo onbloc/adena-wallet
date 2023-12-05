@@ -39,13 +39,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
 
   if (processing) {
-    return (
-      <ApproveInjectionLoading
-        done={done}
-        onResponse={onResponse}
-        onTimeout={onTimeout}
-      />
-    );
+    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
   }
 
   return (
@@ -66,16 +60,16 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
       </div>
 
       <BottomFixedButtonGroup
-        fill
+        filled
         leftButton={{
           text: 'Cancel',
-          onClick: cancel
+          onClick: cancel,
         }}
         rightButton={{
           primary: true,
           disabled: approvable === false,
           text: 'Approve',
-          onClick: approve
+          onClick: approve,
         }}
       />
     </ApproveAddingNetworkWrapper>

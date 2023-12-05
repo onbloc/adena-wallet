@@ -1,4 +1,6 @@
-import AdditionalToken, { TokenInfo } from '@components/manage-token/additional-token/additional-token';
+import AdditionalToken, {
+  TokenInfo,
+} from '@components/manage-token/additional-token/additional-token';
 import { useAdenaContext } from '@hooks/use-context';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
@@ -30,16 +32,17 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
   }, [finished]);
 
-  const {
-    data: tokenInfos,
-  } = useQuery<TokenInfo[], Error>({
+  const { data: tokenInfos } = useQuery<TokenInfo[], Error>({
     queryKey: ['search-grc20-tokens', keyword],
     queryFn: () => {
       const grc20TokenInfos = tokenMetainfos.filter(isGRC20TokenModel);
-      return tokenService.fetchGRC20Tokens(keyword, tokenMetainfos).then(tokens => {
-        return tokens.filter(token1 =>
-          grc20TokenInfos.findIndex(token2 => token1.pkgPath === token2.pkgPath) < 0)
-          .map(token => {
+      return tokenService.fetchGRC20Tokens(keyword, tokenMetainfos).then((tokens) => {
+        return tokens
+          .filter(
+            (token1) =>
+              grc20TokenInfos.findIndex((token2) => token1.pkgPath === token2.pkgPath) < 0,
+          )
+          .map((token) => {
             return {
               tokenId: token.tokenId,
               name: token.name,
@@ -47,14 +50,14 @@ const ManageTokenAddedContainer: React.FC = () => {
               path: token.pkgPath,
               decimals: token.decimals,
               chainId: 'test3',
-              pathInfo: token.pkgPath.replace('gno.land/', '')
-            }
-          })
-      })
+              pathInfo: token.pkgPath.replace('gno.land/', ''),
+            };
+          });
+      });
     },
   });
 
-  const closeSelectBox = () => {
+  const closeSelectBox = (): void => {
     setOpened(false);
   };
 
@@ -66,12 +69,15 @@ const ManageTokenAddedContainer: React.FC = () => {
     setKeyword(keyword);
   }, []);
 
-  const onClickListItem = useCallback((tokenId: string) => {
-    const tokenInfo = tokenInfos?.find(tokenInfo => tokenInfo.tokenId === tokenId);
-    setSelected(true);
-    setSelectedTokenInfo(tokenInfo);
-    setOpened(false);
-  }, [tokenInfos]);
+  const onClickListItem = useCallback(
+    (tokenId: string) => {
+      const tokenInfo = tokenInfos?.find((tokenInfo) => tokenInfo.tokenId === tokenId);
+      setSelected(true);
+      setSelectedTokenInfo(tokenInfo);
+      setOpened(false);
+    },
+    [tokenInfos],
+  );
 
   const onClickBack = useCallback(() => {
     navigate(-1);

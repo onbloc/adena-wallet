@@ -64,7 +64,7 @@ export class TransactionHistoryMapper {
       hits: number;
       txs: TransactionInfo[];
     }[],
-  ) {
+  ): { title: string; transactions: TransactionInfo[] }[] {
     const transactions =
       datas.flatMap((history) => {
         if (Array.isArray(history)) {
@@ -92,7 +92,11 @@ export class TransactionHistoryMapper {
     );
   }
 
-  public static fromResposne(response: TransactionHistoryResponse) {
+  public static fromResposne(response: TransactionHistoryResponse): {
+    hits: number;
+    next: boolean;
+    txs: TransactionInfo[];
+  } {
     const { hits, next, txs } = response;
     const mappedTxs = txs
       .sort(TransactionHistoryMapper.compareTransactionItem)
@@ -251,7 +255,7 @@ export class TransactionHistoryMapper {
     };
   }
 
-  private static compareTransactionItem = (item1: HistoryItem, item2: HistoryItem) => {
+  private static compareTransactionItem = (item1: HistoryItem, item2: HistoryItem): 1 | -1 => {
     try {
       const date1 = new Date(item1.date);
       const date2 = new Date(item2.date);

@@ -8,6 +8,6 @@ export default {
 
 export const Default: StoryObj<ApproveChangingNetworkItemProps> = {
   args: {
-    name: 'Testnet3'
+    name: 'Testnet3',
   },
 };

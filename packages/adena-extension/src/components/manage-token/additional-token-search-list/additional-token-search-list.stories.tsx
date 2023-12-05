@@ -47,6 +47,6 @@ const tokenInfos = [
 
 export const Default: StoryObj<AdditionalTokenSearchListProps> = {
   args: {
-    tokenInfos: tokenInfos
+    tokenInfos: tokenInfos,
   },
 };

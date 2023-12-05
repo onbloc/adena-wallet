@@ -9,9 +9,13 @@ import ManageTokenSearchInput, { ManageTokenSearchInputProps } from './manage-to
 describe('ManageTokenSearchInput Component', () => {
   it('ManageTokenSearchInput render', () => {
     const args: ManageTokenSearchInputProps = {
-      keyword: "as",
-      onChangeKeyword: () => { return; },
-      onClickAdded: () => { return; }
+      keyword: 'as',
+      onChangeKeyword: () => {
+        return;
+      },
+      onClickAdded: () => {
+        return;
+      },
     };
 
     render(
