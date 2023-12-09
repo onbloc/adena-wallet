@@ -92,7 +92,7 @@ export class TransactionHistoryMapper {
     );
   }
 
-  public static fromResposne(response: TransactionHistoryResponse): {
+  public static fromResponse(response: TransactionHistoryResponse): {
     hits: number;
     next: boolean;
     txs: TransactionInfo[];

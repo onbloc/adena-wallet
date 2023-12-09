@@ -7,12 +7,12 @@ export const createTransactionLoginPopup = (callback?: () => void): void => {
     left: 800,
     top: 300,
   };
-  chrome.windows.create(popupOption, async (windowResposne) => {
+  chrome.windows.create(popupOption, async (windowResponse) => {
     chrome.tabs.onUpdated.addListener((tabId, info) => {
-      if (!windowResposne) {
+      if (!windowResponse) {
         return;
       }
-      if (info.status === 'complete' && windowResposne.tabs) {
+      if (info.status === 'complete' && windowResponse.tabs) {
         if (callback) {
           (): void => callback();
         }

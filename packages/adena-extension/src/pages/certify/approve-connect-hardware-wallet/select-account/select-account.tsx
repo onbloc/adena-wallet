@@ -11,7 +11,7 @@ import IconCheck from '@assets/check.svg';
 import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
-import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
@@ -213,9 +213,9 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
     setAccounts(accounts);
   };
 
-  const isStoredAccount = (adderss: string): boolean => {
+  const isStoredAccount = (address: string): boolean => {
     return (
-      walletAccounts.find((account) => account.getAddress(addressPrefix) === adderss) !== undefined
+      walletAccounts.find((account) => account.getAddress(addressPrefix) === address) !== undefined
     );
   };
 
@@ -342,7 +342,7 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
         </div>
         <Button className='load-more-button' onClick={onClickLoadMore} disabled={loadPath}>
           {loadPath ? 'Loading' : 'Load more accounts'}
-          {loadPath ? renderLoading() : <img src={IconArraowDown} />}
+          {loadPath ? renderLoading() : <img src={IconArrowDown} />}
         </Button>
       </AccountListContainer>
 

@@ -1,4 +1,4 @@
-import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
+import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import ApproveAddingNetwork from '@components/approve/approve-adding-network/approve-adding-network/approve-adding-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom';
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
   const { addNetwork } = useNetwork();
-  const [requestData, setReqeustData] = useState<InjectionMessage>();
+  const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [chainName, setChainName] = useState('');
   const [rpcUrl, setRPCUrl] = useState('');
@@ -23,9 +23,9 @@ const ApproveAddingNetworkContainer: React.FC = () => {
   }, [search]);
 
   const initRequestData = (): void => {
-    const data = parseParmeters(search);
+    const data = parseParameters(search);
     const parsedData = decodeParameter(data['data']);
-    setReqeustData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
 
     setChainId(parsedData?.data?.chainId || '');
     setChainName(parsedData?.data?.chainName || '');

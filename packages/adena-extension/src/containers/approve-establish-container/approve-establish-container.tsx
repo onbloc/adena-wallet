@@ -6,7 +6,7 @@ import {
   decodeParameter,
   fetchHealth,
   getSiteName,
-  parseParmeters,
+  parseParameters,
 } from '@common/utils/client-utils';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -41,7 +41,7 @@ const ApproveEstablishContainer: React.FC = () => {
   }, [location]);
 
   useEffect(() => {
-    checkEstablised();
+    checkEstablished();
   }, [key, hostname, currentAccount, currentNetwork]);
 
   const checkLockWallet = (): void => {
@@ -52,7 +52,7 @@ const ApproveEstablishContainer: React.FC = () => {
 
   const initRequestSite = async (): Promise<void> => {
     try {
-      const { key, hostname, protocol, data } = parseParmeters(location.search);
+      const { key, hostname, protocol, data } = parseParameters(location.search);
       setKey(key);
       setProtocol(protocol);
       setHostname(hostname);
@@ -66,16 +66,16 @@ const ApproveEstablishContainer: React.FC = () => {
     }
   };
 
-  const checkEstablised = async (): Promise<void> => {
+  const checkEstablished = async (): Promise<void> => {
     if (!currentAccount || !key || !hostname) {
       setLoading(true);
       return;
     }
     const siteName = getSiteName(protocol, hostname);
     const accountId = currentAccount.id ?? '';
-    const isEstablised = await establishService.isEstablishedBy(accountId, siteName);
+    const isEstablished = await establishService.isEstablishedBy(accountId, siteName);
     setLoading(false);
-    if (isEstablised) {
+    if (isEstablished) {
       chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
       return;
     }
@@ -123,7 +123,7 @@ const ApproveEstablishContainer: React.FC = () => {
     return healthy;
   };
 
-  const onClickCancle = (): void => {
+  const onClickCancel = (): void => {
     window.close();
   };
 
@@ -142,7 +142,7 @@ const ApproveEstablishContainer: React.FC = () => {
       app={appName}
       processing={processing}
       done={done}
-      onClickCancel={onClickCancle}
+      onClickCancel={onClickCancel}
       onClickConnect={onClickConnect}
       onResponse={onResponse}
       onTimeout={onTimeout}

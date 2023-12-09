@@ -97,7 +97,7 @@ const ERROR_VALUE: { [key in string]: ErrorValueType } = {
     type: '/std.GasOverflowError',
     message: 'gas overflow error',
   },
-  UNKNOW_ERROR: {
+  UNKNOWN_ERROR: {
     status: 400,
     type: 'UNKNOWN_ERROR',
     message: 'unknown error',

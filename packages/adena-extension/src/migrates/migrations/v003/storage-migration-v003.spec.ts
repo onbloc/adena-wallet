@@ -80,7 +80,7 @@ describe('serialized wallet migration V003', () => {
     const migration = new StorageMigration003();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Stroage Data doesn not match version V002',
+      'Storage Data does not match version V002',
     );
   });
 });

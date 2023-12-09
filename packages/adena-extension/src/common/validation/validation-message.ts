@@ -15,7 +15,9 @@ export const validateDoContractRequest = (requestData: any): boolean => {
   return true;
 };
 
-export const validateTrasactionMessageOfBankSend = (message: { [key in string]: any }): boolean => {
+export const validateTransactionMessageOfBankSend = (message: {
+  [key in string]: any;
+}): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -38,7 +40,7 @@ export const validateTrasactionMessageOfBankSend = (message: { [key in string]: 
   return true;
 };
 
-export const validateTrasactionMessageOfVmCall = (message: { [key in string]: any }): boolean => {
+export const validateTransactionMessageOfVmCall = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -67,7 +69,7 @@ export const validateTrasactionMessageOfVmCall = (message: { [key in string]: an
   return true;
 };
 
-export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: any }): boolean => {
+export const validateTransactionMessageOfAddPkg = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }
@@ -100,7 +102,7 @@ export const validateTrasactionMessageOfAddPkg = (message: { [key in string]: an
   return true;
 };
 
-export const validateTrasactionMessageOfRun = (message: { [key in string]: any }): boolean => {
+export const validateTransactionMessageOfRun = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
     return false;
   }

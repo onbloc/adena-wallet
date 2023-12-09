@@ -14,7 +14,7 @@ import { LaunchAdena } from '@pages/certify/launch-adena';
 import { WalletMain } from '@pages/wallet/wallet-main';
 import { Login } from '@pages/certify/login';
 import { ForgotPassword } from '@pages/certify/forgot-password';
-import { EnterSeedPharse } from '@pages/certify/enter-seed';
+import { EnterSeedPhrase } from '@pages/certify/enter-seed';
 import { Nft } from '@pages/wallet/nft';
 import { Staking } from '@pages/wallet/staking';
 import { Explore } from '@pages/wallet/explore';
@@ -46,7 +46,7 @@ import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/
 import { ApproveSign } from '@pages/wallet/approve-sign';
 import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
-import { RevealPasswoardPhrase } from '@pages/certify/reveal-password-phrase';
+import { RevealPasswordPhrase } from '@pages/certify/reveal-password-phrase';
 import { RevealPrivatePhrase } from '@pages/certify/reveal-private-phrase';
 import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase';
 import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
@@ -97,7 +97,7 @@ export const CustomRouter = (): JSX.Element => {
               </ErrorContainer>
             }
           />
-          <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPharse />} />
+          <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrase />} />
           <Route path={RoutePath.Login} element={<Login />} />
           <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
           <Route path={RoutePath.Nft} element={<Nft />} />
@@ -198,7 +198,7 @@ export const CustomRouter = (): JSX.Element => {
           />
           <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
-          <Route path={RoutePath.RevealPasswoardPhrase} element={<RevealPasswoardPhrase />} />
+          <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
           <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
           <Route path={RoutePath.ApproachPasswordPhrase} element={<ApproachPasswordPhrase />} />
           <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />

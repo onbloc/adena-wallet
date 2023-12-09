@@ -12,7 +12,7 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
   const { accountId } = useParams();
-  const naviage = useNavigate();
+  const navigate = useNavigate();
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
@@ -21,7 +21,7 @@ const AccountDetailsContainer: React.FC = () => {
   const [name, setName] = useState('');
 
   const account = useMemo(() => {
-    return accounts.find(current => current.id === accountId);
+    return accounts.find((current) => current.id === accountId);
   }, [accounts]);
 
   const address = useMemo(() => {
@@ -60,18 +60,21 @@ const AccountDetailsContainer: React.FC = () => {
     if (account) {
       await changeCurrentAccount(account);
     }
-    naviage(RoutePath.ApproachPasswordPhrase, { state: { accountId } });
+    navigate(RoutePath.ApproachPasswordPhrase, { state: { accountId } });
   }, [account]);
 
-  const changeName = useCallback(async (text: string) => {
-    if (!account) {
-      return;
-    }
-    if (text.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
-      await setName(text);
-      await changeAccountName(account, text);
-    }
-  }, [account, setName]);
+  const changeName = useCallback(
+    async (text: string) => {
+      if (!account) {
+        return;
+      }
+      if (text.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
+        await setName(text);
+        await changeAccountName(account, text);
+      }
+    },
+    [account, setName],
+  );
 
   return (
     <AccountDetails

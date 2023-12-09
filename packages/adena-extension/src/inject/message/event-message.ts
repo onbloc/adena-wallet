@@ -14,7 +14,7 @@ const MESSAGE_TYPES: { [key in EventKeyType]: Message } = {
   },
   changedNetwork: {
     code: 0,
-    description: 'Netwrok has been successfully changed.',
+    description: 'Network has been successfully changed.',
   },
 };
 

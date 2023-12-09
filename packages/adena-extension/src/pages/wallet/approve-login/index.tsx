@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { InjectionMessageInstance } from '@inject/message';
 import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
-import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
+import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
@@ -39,7 +39,7 @@ export const ApproveLogin = (): JSX.Element => {
   const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
 
   useEffect(() => {
-    const data = parseParmeters(location.search);
+    const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
     setRequestData({ ...parsedData, hostname: data['hostname'] });
   }, []);

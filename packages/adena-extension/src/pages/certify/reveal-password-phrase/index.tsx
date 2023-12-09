@@ -13,7 +13,7 @@ import { ErrorText } from '@components/error-text';
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';
 
-export const RevealPasswoardPhrase = (): JSX.Element => {
+export const RevealPasswordPhrase = (): JSX.Element => {
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const backButtonClick = (): void => navigate(-1);

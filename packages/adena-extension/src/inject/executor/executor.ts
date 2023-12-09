@@ -2,10 +2,10 @@ import { InjectionMessage, InjectionMessageInstance, MessageKeyType } from '../m
 import { v4 as uuidv4 } from 'uuid';
 import {
   validateDoContractRequest,
-  validateTrasactionMessageOfAddPkg,
-  validateTrasactionMessageOfBankSend,
-  validateTrasactionMessageOfRun,
-  validateTrasactionMessageOfVmCall,
+  validateTransactionMessageOfAddPkg,
+  validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfRun,
+  validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
 
 type Params = { [key in string]: any };
@@ -16,7 +16,7 @@ export interface RequestAddedNetworkMessage {
   rpcUrl: string;
 }
 
-export interface RequestDocontractMessage {
+export interface RequestDoContractMessage {
   messages: Array<{
     type: string;
     value: { [key in string]: any };
@@ -63,8 +63,8 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public doContract = (params: RequestDocontractMessage): Promise<unknown> => {
-    const result = this.valdiateContractMessage(params);
+  public doContract = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -77,8 +77,8 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signAmino = (params: RequestDocontractMessage): Promise<unknown> => {
-    const result = this.valdiateContractMessage(params);
+  public signAmino = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -86,8 +86,8 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signTx = (params: RequestDocontractMessage): Promise<unknown> => {
-    const result = this.valdiateContractMessage(params);
+  public signTx = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -105,8 +105,8 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  private valdiateContractMessage = (
-    params: RequestDocontractMessage,
+  private validateContractMessage = (
+    params: RequestDoContractMessage,
   ): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {
       return InjectionMessageInstance.failure('INVALID_FORMAT');
@@ -114,22 +114,22 @@ export class AdenaExecutor {
     for (const message of params.messages) {
       switch (message.type) {
         case '/bank.MsgSend':
-          if (!validateTrasactionMessageOfBankSend(message)) {
+          if (!validateTransactionMessageOfBankSend(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_call':
-          if (!validateTrasactionMessageOfVmCall(message)) {
+          if (!validateTransactionMessageOfVmCall(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_addpkg':
-          if (!validateTrasactionMessageOfAddPkg(message)) {
+          if (!validateTransactionMessageOfAddPkg(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_run':
-          if (!validateTrasactionMessageOfRun(message)) {
+          if (!validateTransactionMessageOfRun(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;

@@ -17,11 +17,11 @@ export const addNetwork = async (
 ): Promise<void> => {
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
-  const datas = requestData.data;
+  const data = requestData.data;
   if (!locked) {
-    const chainId = datas?.chainId || '';
-    const chainName = datas?.chainName || '';
-    const rpcUrl = datas?.rpcUrl || '';
+    const chainId = data?.chainId || '';
+    const chainName = data?.chainName || '';
+    const rpcUrl = data?.rpcUrl || '';
     if (chainId === '' || chainName === '' || rpcUrl === '') {
       sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
       return;

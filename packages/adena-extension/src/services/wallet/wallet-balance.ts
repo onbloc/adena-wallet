@@ -60,7 +60,7 @@ export class WalletBalanceService {
     symbol: string,
   ): Promise<BalanceState.TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
-    const balance = await gnoProvider.getValueByEvaluteExpression(packagePath, 'BalanceOf', [
+    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
       address,
     ]);
     if (!balance) {

@@ -5,7 +5,7 @@ import Text from '@components/text';
 import etc from '../../../assets/etc.svg';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import DubbleButton from '@components/buttons/double-button';
+import DoubleButton from '@components/buttons/double-button';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
@@ -303,7 +303,7 @@ export const TokenDetails = (): JSX.Element => {
         />
       </div>
 
-      <DubbleButton
+      <DoubleButton
         margin='20px 0px 25px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
         rightProps={{

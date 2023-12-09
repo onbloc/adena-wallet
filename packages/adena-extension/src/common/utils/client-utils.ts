@@ -160,8 +160,8 @@ export function minifyStatus(status: string): string {
 }
 
 export function numberWithCommas(value: number, fixed?: number): string {
-  const currnetFixed = fixed ?? 0;
-  const fixedValue = value > 0 ? value.toFixed(currnetFixed) : value;
+  const currentFixed = fixed ?? 0;
+  const fixedValue = value > 0 ? value.toFixed(currentFixed) : value;
   const parts = fixedValue.toString().split('.');
   const decimal = parts[1] && Number(parts[1]) > 0 ? '.' + parts[1] : '';
   return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + decimal;
@@ -232,7 +232,7 @@ export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
   } else v;
 }
 
-export const parseParmeters = (url: string): { [x: string]: string } => {
+export const parseParameters = (url: string): { [x: string]: string } => {
   const hash = url.split('?');
   if (hash.length < 2) {
     return {};
@@ -255,8 +255,8 @@ export const parseParmeters = (url: string): { [x: string]: string } => {
 
 export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
-    const encodedVaoue = encodeURI(JSON.stringify(data));
-    return toBase64(encodedVaoue);
+    const encodedValue = encodeURI(JSON.stringify(data));
+    return toBase64(encodedValue);
   } catch (error) {
     console.log(error);
   }

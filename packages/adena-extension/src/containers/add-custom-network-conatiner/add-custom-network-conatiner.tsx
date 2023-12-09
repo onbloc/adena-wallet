@@ -12,7 +12,7 @@ function isValidURL(rpcUrl: string): boolean {
 
 function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
   return (
-    networks.findIndex((netowrk) => netowrk.networkId === chainId && netowrk.deleted !== true) > -1
+    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
   );
 }
 
@@ -24,7 +24,7 @@ function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
   );
 }
 
-const AddCustomNetworkConatiner: React.FC = () => {
+const AddCustomNetworkContainer: React.FC = () => {
   const navigate = useNavigate();
   const { networks, addNetwork } = useNetwork();
   const {
@@ -86,4 +86,4 @@ const AddCustomNetworkConatiner: React.FC = () => {
   );
 };
 
-export default AddCustomNetworkConatiner;
+export default AddCustomNetworkContainer;

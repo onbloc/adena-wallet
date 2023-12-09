@@ -61,16 +61,16 @@ export const useTokenBalance = (): {
     [accountTokenBalances],
   );
 
-  const currentTokenBalacnes = useMemo(() => {
+  const currentTokenBalances = useMemo(() => {
     return currentAccount ? getTokenBalancesByAccount(currentAccount) : [];
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getMainTokenBalance = useCallback(() => {
-    return currentTokenBalacnes.find((token) => token.main)?.amount;
+    return currentTokenBalances.find((token) => token.main)?.amount;
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getDisplayTokenBalances = useCallback(() => {
-    return currentTokenBalacnes.filter((token) => token.display);
+    return currentTokenBalances.filter((token) => token.display);
   }, [getTokenBalancesByAccount, currentAccount]);
 
   function matchNetworkId(
@@ -124,7 +124,7 @@ export const useTokenBalance = (): {
     const newTokenBalances = tokenMetainfos
       .filter(
         (tokenMetainfo) =>
-          currentTokenBalacnes.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
+          currentTokenBalances.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
           undefined,
       )
       .map((tokenMetainfo) => {
@@ -141,7 +141,7 @@ export const useTokenBalance = (): {
       accountId: currentAccount.id,
       chainId: currentNetwork.chainId,
       networkId: currentNetwork.id,
-      tokenBalances: [...currentTokenBalacnes, ...newTokenBalances],
+      tokenBalances: [...currentTokenBalances, ...newTokenBalances],
     };
 
     let changedAccountTokenBalances: AccountTokenBalance[] = [...accountTokenBalances];
@@ -173,7 +173,7 @@ export const useTokenBalance = (): {
         (accountTokenBalance) =>
           accountTokenBalance.accountId === account.id &&
           accountTokenBalance.networkId === currentNetwork?.id,
-      )?.tokenBalances || currentTokenBalacnes;
+      )?.tokenBalances || currentTokenBalances;
     const tokenBalancesOfNetwork = tokenBalances.filter(
       (tokenBalance) =>
         tokenBalance.networkId === 'DEFAULT' || tokenBalance.networkId === currentNetwork?.id,
@@ -241,7 +241,7 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
-    if (wallet === null) throw new Error('wallet doesn\'t exist');
+    if (wallet === null) throw new Error('wallet doesn`t exist');
 
     const defaultAmount = {
       value: '0',
@@ -300,7 +300,7 @@ export const useTokenBalance = (): {
 
   return {
     mainTokenBalance: getMainTokenBalance(),
-    tokenBalances: currentTokenBalacnes,
+    tokenBalances: currentTokenBalances,
     displayTokenBalances: getDisplayTokenBalances(),
     accountTokenBalances: filteredAccountBalances,
     accountNativeBalances,
