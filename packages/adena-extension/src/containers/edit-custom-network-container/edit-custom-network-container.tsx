@@ -3,7 +3,7 @@ import EditNetwork from '@components/edint-network/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { parseParmeters } from '@common/utils/client-utils';
+import { parseParameters } from '@common/utils/client-utils';
 import { NetworkMetainfo } from '@states/network';
 
 function isValidURL(rpcURL: string): boolean {
@@ -13,7 +13,7 @@ function isValidURL(rpcURL: string): boolean {
 
 function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
   return (
-    networks.findIndex((netowrk) => netowrk.networkId === chainId && netowrk.deleted !== true) > -1
+    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
   );
 }
 
@@ -25,10 +25,10 @@ function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
   );
 }
 
-const EditCustomNetworkConatiner: React.FC = () => {
+const EditCustomNetworkContainer: React.FC = () => {
   const navigate = useNavigate();
   const { search } = useLocation();
-  const { networkId: currentNetworkId } = parseParmeters(search);
+  const { networkId: currentNetworkId } = parseParameters(search);
   const { networks, updateNetwork, deleteNetwork } = useNetwork();
   const {
     name,
@@ -140,4 +140,4 @@ const EditCustomNetworkConatiner: React.FC = () => {
   );
 };
 
-export default EditCustomNetworkConatiner;
+export default EditCustomNetworkContainer;

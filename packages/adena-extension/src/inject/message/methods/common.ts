@@ -23,17 +23,17 @@ export const createPopup = async (
     top: 300,
   };
 
-  chrome.windows.create(popupOption, async (windowResposne) => {
+  chrome.windows.create(popupOption, async (windowResponse) => {
     chrome.tabs.onUpdated.addListener((tabId, info) => {
-      if (!windowResposne) {
+      if (!windowResponse) {
         return;
       }
       chrome.windows.onRemoved.addListener((removeWindowId) => {
-        if (windowResposne.id === removeWindowId) {
+        if (windowResponse.id === removeWindowId) {
           sendResponse(closeMessage);
         }
       });
-      if (info.status === 'complete' && windowResposne.tabs) {
+      if (info.status === 'complete' && windowResponse.tabs) {
         chrome.tabs.sendMessage(
           tabId,
           {
@@ -44,9 +44,9 @@ export const createPopup = async (
           async () => {
             chrome.runtime.onMessage.addListener((popupMessage) => {
               chrome.runtime.onMessage.removeListener((popupMessage) =>
-                popupMessageListener(windowResposne.id, message, popupMessage, sendResponse),
+                popupMessageListener(windowResponse.id, message, popupMessage, sendResponse),
               );
-              popupMessageListener(windowResposne.id, message, popupMessage, sendResponse);
+              popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
             });
           },
         );

@@ -13,17 +13,17 @@ export const validateInvalidAddress = (address: string): boolean => {
 
 export const validateAlreadyAddress = (
   currData: BookListProps,
-  allDatas: BookListProps[],
+  allData: BookListProps[],
   isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
-    check = allDatas.some((v: BookListProps) => v.address === currData.address);
+    check = allData.some((v: BookListProps) => v.address === currData.address);
   } else {
-    const filterDatas = allDatas.filter(
+    const filterData = allData.filter(
       (v: BookListProps) => v.id !== currData.id && v.address === currData.address,
     );
-    check = Boolean(filterDatas.length);
+    check = Boolean(filterData.length);
   }
   if (check) {
     throw new AddressBookValidationError('ALREADY_ADDRESS');
@@ -40,8 +40,8 @@ export const validateAlreadyAddressByAccounts = (
   if (isAdd) {
     check = accounts.some((account) => account.getAddress('g') === currData.address);
   } else {
-    const filterDatas = accounts.filter((account) => account.getAddress('g') === currData.address);
-    check = Boolean(filterDatas.length);
+    const filterData = accounts.filter((account) => account.getAddress('g') === currData.address);
+    check = Boolean(filterData.length);
   }
   if (check) {
     throw new AddressBookValidationError('ALREADY_ADDRESS');
@@ -51,17 +51,17 @@ export const validateAlreadyAddressByAccounts = (
 
 export const validateAlreadyName = (
   currData: BookListProps,
-  allDatas: BookListProps[],
+  allData: BookListProps[],
   isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
-    check = allDatas.some((v: BookListProps) => v.name === currData.name);
+    check = allData.some((v: BookListProps) => v.name === currData.name);
   } else {
-    const filterDatas = allDatas.filter(
+    const filterData = allData.filter(
       (v: BookListProps) => v.id !== currData.id && v.name === currData.name,
     );
-    check = Boolean(filterDatas.length);
+    check = Boolean(filterData.length);
   }
   if (check) {
     throw new AddressBookValidationError('ALREADY_NAME');

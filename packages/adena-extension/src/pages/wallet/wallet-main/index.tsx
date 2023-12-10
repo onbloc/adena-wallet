@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import DubbleButton from '@components/buttons/double-button';
+import DoubleButton from '@components/buttons/double-button';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import MainTokenBalance from '@components/main/main-token-balance/main-token-balance';
 import TokenList from '@components/common/token-list/token-list';
@@ -93,7 +93,7 @@ export const WalletMain = (): JSX.Element => {
         />
       </div>
 
-      <DubbleButton
+      <DoubleButton
         margin='14px 0px 30px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
         rightProps={{

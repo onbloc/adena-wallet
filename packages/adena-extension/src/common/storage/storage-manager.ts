@@ -23,7 +23,7 @@ export class StorageManager<T extends string = string> {
     await this.storage.remove(valueType);
   };
 
-  claer = async (): Promise<void> => {
+  clear = async (): Promise<void> => {
     await this.storage.clear();
   };
 

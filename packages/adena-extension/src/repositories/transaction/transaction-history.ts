@@ -21,8 +21,8 @@ export class TransactionHistoryRepository {
     return `${this.networkMetainfo.apiUrl}/${this.networkMetainfo.networkId}`;
   }
 
-  public setNetworkMetainfo(networkMetaion: NetworkMetainfo): void {
-    this.networkMetainfo = networkMetaion;
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
+    this.networkMetainfo = networkMetainfo;
   }
 
   public async fetchAllTransactionHistoryBy(
@@ -46,7 +46,7 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 
   public async fetchNativeTransactionHistoryBy(
@@ -69,7 +69,7 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 
   public async fetchGRC20TransactionHistoryBy(
@@ -93,6 +93,6 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 }

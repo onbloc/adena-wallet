@@ -17,7 +17,7 @@ interface WrapperStyleProps {
   margin?: string;
 }
 
-interface DubbleButtonProps extends WrapperStyleProps {
+interface DoubleButtonProps extends WrapperStyleProps {
   leftProps: ButtonProps;
   rightProps: ButtonProps;
 }
@@ -29,7 +29,7 @@ export const Wrapper = styled.div<WrapperStyleProps>`
   ${({ margin }): string | undefined => margin && `margin: ${margin}`};
 `;
 
-const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps): JSX.Element => {
+const DoubleButton = ({ margin, leftProps, rightProps }: DoubleButtonProps): JSX.Element => {
   return (
     <Wrapper margin={margin}>
       <Button
@@ -54,4 +54,4 @@ const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps): JSX
   );
 };
 
-export default DubbleButton;
+export default DoubleButton;

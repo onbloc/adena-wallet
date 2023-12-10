@@ -18,7 +18,7 @@ export class WalletAddressBookService {
     address: string;
   }): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    await this.walletAddressRepository.updateAddressBooke([
+    await this.walletAddressRepository.updateAddressBook([
       ...addressBook,
       {
         id: uuidv4(),
@@ -45,7 +45,7 @@ export class WalletAddressBookService {
       }
       return item;
     });
-    await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
   };
 
   public removeAddressBookItemByAccountId = async (
@@ -57,7 +57,7 @@ export class WalletAddressBookService {
     const changedAddressBook = addressBook.filter(
       (item: AddressBookItem) => item.id !== addressBookId,
     );
-    await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
   };
 
   public clear = async (): Promise<boolean> => {

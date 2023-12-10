@@ -109,7 +109,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     };
   }
 
-  public getValueByEvaluteExpression(
+  public getValueByEvaluateExpression(
     packagePath: string,
     functionName: string,
     params: (string | number)[],
@@ -121,11 +121,11 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     return this.evaluateExpression(packagePath, expression)
       .then((result) => {
-        const parseDatas = result.replace('(', '').replace(')', '').split(' ');
-        if (parseDatas.length === 0) {
+        const parseData = result.replace('(', '').replace(')', '').split(' ');
+        if (parseData.length === 0) {
           return null;
         }
-        return parseDatas[0];
+        return parseData[0];
       })
       .catch(() => null);
   }

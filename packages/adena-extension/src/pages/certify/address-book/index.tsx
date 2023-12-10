@@ -24,21 +24,21 @@ export interface BookListProps {
 const AddressBook = (): JSX.Element => {
   const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
-  const [datas, setDatas] = useState<any>([]);
+  const [addressList, setAddressList] = useState<any>([]);
   const { currentAccount } = useCurrentAccount();
   const addAddressHandler = (status: navigateStatus, curr?: BookListProps): void =>
     navigate(RoutePath.AddAddress, {
       state: {
         status,
         curr: curr ?? null,
-        datas: datas,
+        datas: addressList,
       },
     });
 
   useEffect(() => {
     (async (): Promise<void> => {
-      const addressList = await addressBookService.getAddressBook();
-      setDatas(addressList);
+      const _addressList = await addressBookService.getAddressBook();
+      setAddressList(_addressList);
     })();
   }, [currentAccount]);
 
@@ -49,8 +49,8 @@ const AddressBook = (): JSX.Element => {
         <AddButton onClick={(): void => addAddressHandler('add')} />
       </TopSection>
       <>
-        {datas.length > 0 ? (
-          datas.map((v: any, i: number) => (
+        {addressList.length > 0 ? (
+          addressList.map((v: any, i: number) => (
             <ListBox
               left={<Text type='body2Bold'>{formatNickname(v.name, 15)}</Text>}
               center={null}

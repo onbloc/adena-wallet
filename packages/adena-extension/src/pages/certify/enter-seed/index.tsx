@@ -21,7 +21,7 @@ const forgotContent = {
   terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
-export const EnterSeedPharse = (): JSX.Element => {
+export const EnterSeedPhrase = (): JSX.Element => {
   const { seedState, termsState, buttonState } = useEnterSeed();
   const { state } = useLocation();
 

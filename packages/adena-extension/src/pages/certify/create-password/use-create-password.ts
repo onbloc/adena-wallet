@@ -93,7 +93,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     }
   }, [activated]);
 
-  const isSeedPharase = (state: CreatePasswordState): state is SeedState => {
+  const isSeedPhrase = (state: CreatePasswordState): state is SeedState => {
     return state.type === 'SEED';
   };
 
@@ -166,7 +166,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   };
 
   const createAccounts = (): 'FAIL' | Promise<'FAIL' | 'FINISH'> => {
-    if (isSeedPharase(locationState)) {
+    if (isSeedPhrase(locationState)) {
       return createWalletAccountsBySeed(locationState);
     }
     if (isGoogleState(locationState)) {

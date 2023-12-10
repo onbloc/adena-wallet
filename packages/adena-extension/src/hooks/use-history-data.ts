@@ -24,11 +24,11 @@ const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
   }
 
   function setHistoryDataByPathname(pathname: string, value: T | undefined): void {
-    const stateDatas = {
+    const stateData = {
       ...historyState,
       [pathname]: value,
     };
-    setHistoryState(stateDatas);
+    setHistoryState(stateData);
   }
 
   function setHistoryData(value: T | undefined): void {

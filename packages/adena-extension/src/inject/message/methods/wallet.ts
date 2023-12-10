@@ -6,21 +6,21 @@ import { InjectCore } from './core';
 
 export const getAccount = async (
   requestData: InjectionMessage,
-  sendReponse: (message: any) => void,
+  sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
     const core = new InjectCore();
 
     const isLocked = await core.walletService.isLocked();
     if (isLocked) {
-      sendReponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
+      sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
       return;
     }
 
     const currentAccountAddress = await core.getCurrentAddress();
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
-      sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
+      sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
       return;
     }
 
@@ -29,7 +29,7 @@ export const getAccount = async (
       network.rpcUrl,
       network.chainId,
     );
-    sendReponse(
+    sendResponse(
       InjectionMessageInstance.success(
         'GET_ACCOUNT',
         { ...accountInfo, chainId: network.chainId },
@@ -37,7 +37,7 @@ export const getAccount = async (
       ),
     );
   } catch (error) {
-    sendReponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
+    sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
   }
 };
 
@@ -51,8 +51,8 @@ export const addEstablish = async (
   const siteName = getSiteName(message.protocol, message.hostname);
 
   if (!isLocked) {
-    const isEstablised = await core.establishService.isEstablishedBy(accountId, siteName);
-    if (isEstablised) {
+    const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
+    if (isEstablished) {
       sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, message.key));
       return true;
     }

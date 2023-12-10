@@ -2,7 +2,7 @@ import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import {
   AdenaExecutor,
   RequestAddedNetworkMessage,
-  RequestDocontractMessage,
+  RequestDoContractMessage,
 } from './inject/executor/executor';
 import manifest from '@public/manifest.json';
 
@@ -19,7 +19,7 @@ const init = (): void => {
       const response = await executor.addEstablish(name);
       return response;
     },
-    async DoContract(mesasage: RequestDocontractMessage): Promise<unknown> {
+    async DoContract(mesasage: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.doContract(mesasage);
       return response;
@@ -29,12 +29,12 @@ const init = (): void => {
       const response = await executor.getAccount();
       return response;
     },
-    async Sign(mesasage: RequestDocontractMessage): Promise<unknown> {
+    async Sign(mesasage: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.signAmino(mesasage);
       return response;
     },
-    async SignTx(mesasage: RequestDocontractMessage): Promise<unknown> {
+    async SignTx(mesasage: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.signTx(mesasage);
       return response;

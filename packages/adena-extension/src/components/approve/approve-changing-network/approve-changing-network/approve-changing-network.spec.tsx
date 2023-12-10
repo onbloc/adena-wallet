@@ -15,13 +15,21 @@ describe('ApproveChangingNetwork Component', () => {
       toChain: {
         name: 'Onbloc Testnet',
       },
-      changable: true,
+      changeable: true,
       processing: false,
       done: false,
-      changeNetwork: () => { return; },
-      cancel: () => { return; },
-      onResponse: () => { return; },
-      onTimeout: () => { return; },
+      changeNetwork: () => {
+        return;
+      },
+      cancel: () => {
+        return;
+      },
+      onResponse: () => {
+        return;
+      },
+      onTimeout: () => {
+        return;
+      },
     };
 
     render(

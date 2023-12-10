@@ -21,7 +21,7 @@ const getMenuMakerInfo = (
   },
   {
     title: 'Reveal Seed Phrase',
-    navigatePath: RoutePath.RevealPasswoardPhrase,
+    navigatePath: RoutePath.RevealPasswordPhrase,
     mode: 'DEFAULT',
     disabled: !account || !isSeedAccount(account),
   },

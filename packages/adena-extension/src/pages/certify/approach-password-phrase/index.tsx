@@ -54,7 +54,7 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
     } catch (e) {
       if (e instanceof BaseError) {
         setError(true);
-        setErrorMessage('Invalid pasword');
+        setErrorMessage('Invalid password');
       }
     }
   };

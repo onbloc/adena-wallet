@@ -5,9 +5,9 @@ import Button, { ButtonHierarchy } from '@components/buttons/button';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import GoogleSigninButton from '@components/buttons/google-signin-button';
+import GoogleSignInButton from '@components/buttons/google-signin-button';
 import theme from '@styles/theme';
-import DubbleButton from '@components/buttons/double-button';
+import DoubleButton from '@components/buttons/double-button';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { existsPopups } from '@inject/message/methods';
 
@@ -80,12 +80,12 @@ export const WalletCreate = (): JSX.Element => {
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <GoogleSigninButton onClick={googleLoginHandler} margin='auto auto 3px' />
+      <GoogleSignInButton onClick={googleLoginHandler} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
       </Button>
-      <DubbleButton
+      <DoubleButton
         margin='12px 0px 0px'
         leftProps={{
           onClick: importWalletHandler,

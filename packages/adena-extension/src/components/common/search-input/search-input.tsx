@@ -4,7 +4,7 @@ import { SearchInputWrapper } from './search-input.styles';
 
 interface AdditionalButtonOption {
   button: React.ReactNode;
-  onClickeButton: () => void;
+  onClickButton: () => void;
 }
 
 export interface SearchInputProps {
@@ -30,7 +30,7 @@ const SearchInput: React.FC<SearchInputProps> = ({ keyword, onChangeKeyword, opt
       </div>
 
       {option && (
-        <div className='added-icon-wrapper' onClick={(): void => option.onClickeButton()}>
+        <div className='added-icon-wrapper' onClick={(): void => option.onClickButton()}>
           {option.button}
         </div>
       )}

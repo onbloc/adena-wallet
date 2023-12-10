@@ -48,12 +48,12 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
     const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
     setCurrentBalance(currentBalance);
     if (currentBalance.type === 'gno-native') {
-      const convnetedBalance = convertDenom(
+      const convertedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
         'COMMON',
       );
-      const availAmountNumber = BigNumber(convnetedBalance.value).minus(NETWORK_FEE);
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(NETWORK_FEE);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
       } else {

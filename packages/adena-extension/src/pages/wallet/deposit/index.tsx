@@ -48,7 +48,7 @@ interface DepositState {
 export const Deposit = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [displayaddr, setDisplayaddr] = useState('');
+  const [displayAddr, setDisplayAddr] = useState('');
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
   const [type, setType] = useState('');
@@ -56,7 +56,7 @@ export const Deposit = (): JSX.Element => {
 
   useEffect(() => {
     if (currentAddress) {
-      setDisplayaddr(formatAddress(currentAddress, 4));
+      setDisplayAddr(formatAddress(currentAddress, 4));
     }
   }, [currentAddress]);
 
@@ -85,7 +85,7 @@ export const Deposit = (): JSX.Element => {
           <Text type='body2Reg' display='inline-flex'>
             {formatNickname(accountNames[currentAccount.id], 12)}
             <Text type='body2Reg' color={theme.color.neutral[9]}>
-              {` (${displayaddr})`}
+              {` (${displayAddr})`}
             </Text>
           </Text>
         )}

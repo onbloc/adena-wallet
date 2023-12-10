@@ -6,7 +6,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import {
   createFaviconByHostname,
   decodeParameter,
-  parseParmeters,
+  parseParameters,
 } from '@common/utils/client-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
@@ -44,13 +44,13 @@ const ApproveSignContainer: React.FC = () => {
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const [transactionData, setTrasactionData] = useState<{ [key in string]: any } | undefined>(
+  const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
   const { currentNetwork } = useNetwork();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
-  const [requestData, setReqeustData] = useState<InjectionMessage>();
+  const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<StdSignDoc>();
@@ -93,9 +93,9 @@ const ApproveSignContainer: React.FC = () => {
   }, [location]);
 
   const initRequestData = (): void => {
-    const data = parseParmeters(location.search);
+    const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setReqeustData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
   useEffect(() => {
@@ -135,7 +135,7 @@ const ApproveSignContainer: React.FC = () => {
         requestData?.data?.memo,
       );
       setDocument(document);
-      setTrasactionData(mappedTransactionData(document));
+      setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
       return true;
     } catch (e) {
@@ -150,7 +150,7 @@ const ApproveSignContainer: React.FC = () => {
     return false;
   };
 
-  const createSignDocuemnt = async (): Promise<boolean> => {
+  const createSignDocument = async (): Promise<boolean> => {
     if (!document || !currentAccount) {
       setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
       return false;
@@ -195,7 +195,7 @@ const ApproveSignContainer: React.FC = () => {
       return;
     }
 
-    createSignDocuemnt().finally(() => setProcessType('DONE'));
+    createSignDocument().finally(() => setProcessType('DONE'));
   };
 
   const onClickCancel = (): void => {

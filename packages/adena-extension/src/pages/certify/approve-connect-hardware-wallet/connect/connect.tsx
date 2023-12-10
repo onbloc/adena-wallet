@@ -31,10 +31,10 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
 
   useEffect(() => {
     if (connectState === 'FAILED') {
-      const intervalReqeust = setTimeout(() => {
+      const intervalRequest = setTimeout(() => {
         requestHardwareWallet();
       }, 1000);
-      return () => clearTimeout(intervalReqeust);
+      return () => clearTimeout(intervalRequest);
     }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.accounts.map((account: Account) =>

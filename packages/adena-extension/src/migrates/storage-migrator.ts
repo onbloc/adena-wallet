@@ -49,8 +49,8 @@ export class StorageMigrator implements Migrator {
     private password?: string,
   ) {}
 
-  setPassword(passowrd: string): void {
-    this.password = passowrd;
+  setPassword(password: string): void {
+    this.password = password;
   }
 
   async saveable(): Promise<boolean | '' | undefined> {

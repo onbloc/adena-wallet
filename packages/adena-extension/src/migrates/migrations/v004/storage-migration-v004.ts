@@ -20,7 +20,7 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
     current: StorageModel<StorageModelDataV003>,
   ): Promise<StorageModel<StorageModelDataV004>> {
     if (!this.validateModelV003(current.data)) {
-      throw new Error('Stroage Data doesn not match version V003');
+      throw new Error('Storage Data does not match version V003');
     }
     const previous: StorageModelDataV003 = current.data;
     return {

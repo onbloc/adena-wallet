@@ -8,7 +8,7 @@ import {
   formatAddress,
   formatNickname,
   getSiteName,
-  parseParmeters,
+  parseParameters,
 } from '@common/utils/client-utils';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
@@ -34,14 +34,14 @@ const ApproveMenu = (): JSX.Element => {
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
-  const [requestData, setReqeustData] = useState<any>();
+  const [requestData, setRequestData] = useState<any>();
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     if (location.search) {
-      const data = parseParmeters(location.search);
-      setReqeustData(data);
+      const data = parseParameters(location.search);
+      setRequestData(data);
     }
   }, [location]);
 

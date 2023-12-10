@@ -24,7 +24,7 @@ export class WalletAddressRepository {
     return addressBook as AddressBookItem[];
   };
 
-  public updateAddressBooke = async (addressBook: AddressBookItem[]): Promise<void> => {
+  public updateAddressBook = async (addressBook: AddressBookItem[]): Promise<void> => {
     await this.localStorage.setByObject('ADDRESS_BOOK', addressBook);
   };
 
