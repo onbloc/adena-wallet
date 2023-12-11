@@ -3,7 +3,7 @@ import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import LoadingNft from '@components/loading-screen/loading-nft';
 import ListBox, { ListHierarchy } from '@components/list-box';
 import DefaultImage from '../../../assets/favicon-default-small.svg';

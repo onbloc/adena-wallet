@@ -1,3 +1,6 @@
+import axios from 'axios';
+import { Account } from 'adena-module';
+
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { AdenaStorage } from '@common/storage';
 import { ChainRepository, TokenRepository } from '@repositories/common';
@@ -15,10 +18,8 @@ import {
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
-import { Account } from 'adena-module';
-import axios from 'axios';
 
 export class InjectCore {
   private gnoProvider: GnoProvider | null = null;

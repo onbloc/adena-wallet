@@ -1,7 +1,8 @@
 import React from 'react';
+
 import { NetworkListWrapper } from './network-list.styles';
-import { NetworkMetainfo } from '@states/network';
 import NetworkListItem from '../network-list-item/network-list-item';
+import { NetworkMetainfo } from '@types';
 
 export interface NetworkListProps {
   currentNetworkId: string;
@@ -16,7 +17,6 @@ const NetworkList: React.FC<NetworkListProps> = ({
   changeNetwork,
   moveEditPage,
 }) => {
-
   return (
     <NetworkListWrapper>
       {networkMetainfos.map((networkMetainfo, index) => (

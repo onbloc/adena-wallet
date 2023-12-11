@@ -1,23 +1,16 @@
 import { atom } from 'recoil';
 import { Account, Wallet } from 'adena-module';
-import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
 
-export interface TransactionHistoryState {
+import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
+import { StateType } from '@types';
+
+interface TransactionHistoryState {
   address: string | null;
   currentPage: number;
   init: boolean;
   isFinish: boolean;
   items: Array<HistoryItem>;
 }
-
-/**
- * CREATE: When there is no stored serialized wallet value
- * LOGIN: When there is no encrypted password value
- * LOADING: During deserialization
- * FINISH: When deserialization is complete
- * FAIL: When deserialization has failed
- */
-export type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
 
 export const wallet = atom<Wallet | null>({
   key: 'wallet/wallet',

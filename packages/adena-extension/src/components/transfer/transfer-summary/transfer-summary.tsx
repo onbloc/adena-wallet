@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { TransferSummaryWrapper } from './transfer-summary.styles';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
@@ -6,8 +7,8 @@ import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import SubHeader from '@components/common/sub-header/sub-header';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { Amount } from '@states/balance';
-import { TokenModel } from '@types';
+
+import { TokenModel, Amount } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;

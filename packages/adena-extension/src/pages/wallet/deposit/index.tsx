@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
 import { QRCodeSVG } from 'qrcode.react';
+import styled, { CSSProp } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import Text from '@components/text';
 import Copy from '@components/buttons/copy-button';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';

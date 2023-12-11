@@ -1,9 +1,9 @@
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { BalanceState } from '@states/index';
 import BigNumber from 'bignumber.js';
 
-import { TokenModel } from '@types';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+
+import { TokenBalance, TokenModel } from '@types';
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
@@ -29,7 +29,7 @@ export class WalletBalanceService {
     this.tokenMetainfos = tokenMetainfos;
   }
 
-  public getTokenBalances = async (address: string): Promise<BalanceState.TokenBalance[]> => {
+  public getTokenBalances = async (address: string): Promise<TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
     const denom = 'ugnot';
     const balance = await gnoProvider
@@ -42,7 +42,7 @@ export class WalletBalanceService {
         value: '0',
         denom,
       }));
-    const tokenBalances: Array<BalanceState.TokenBalance> = [];
+    const tokenBalances: Array<TokenBalance> = [];
 
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
@@ -60,7 +60,7 @@ export class WalletBalanceService {
     address: string,
     packagePath: string,
     symbol: string,
-  ): Promise<BalanceState.TokenBalance[]> => {
+  ): Promise<TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
     const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
       address,
@@ -120,7 +120,7 @@ export class WalletBalanceService {
       denom: string;
     },
     tokenMetainfo: TokenModel,
-  ): BalanceState.TokenBalance => {
+  ): TokenBalance => {
     const { value, denom } = this.convertDenom(
       balance.value,
       balance.denom,

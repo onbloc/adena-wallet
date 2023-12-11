@@ -1,10 +1,11 @@
-import { TokenState } from '@states/index';
 import { useRecoilState } from 'recoil';
+
 import { useAdenaContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useNetwork } from './use-network';
 
+import { TokenState } from '@states';
 import { GRC20TokenModel, TokenModel } from '@types';
 
 interface GRC20Token {

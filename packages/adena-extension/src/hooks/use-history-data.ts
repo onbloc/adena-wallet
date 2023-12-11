@@ -1,4 +1,4 @@
-import { CommonState } from '@states/index';
+import { CommonState } from '@states';
 import { useLocation } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 

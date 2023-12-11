@@ -1,4 +1,4 @@
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useRecoilState } from 'recoil';
 import { Account } from 'adena-module';
 

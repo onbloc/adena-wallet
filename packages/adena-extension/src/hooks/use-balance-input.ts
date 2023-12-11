@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
+import BigNumber from 'bignumber.js';
+
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
-import BigNumber from 'bignumber.js';
-import { TokenBalance } from '@states/balance';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { TokenModel } from '@types';
+import { TokenModel, TokenBalance } from '@types';
 
 const NETWORK_FEE = 0.000001;
 

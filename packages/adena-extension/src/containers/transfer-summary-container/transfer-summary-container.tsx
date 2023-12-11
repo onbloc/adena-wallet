@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import BigNumber from 'bignumber.js';
+
+import { isLedgerAccount } from 'adena-module';
+
 import TransferSummary from '@components/transfer/transfer-summary/transfer-summary';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { Amount } from '@states/balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import BigNumber from 'bignumber.js';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
-import { isLedgerAccount } from 'adena-module';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useNetwork } from '@hooks/use-network';
 
-import { TokenModel } from '@types';
+import { Amount, TokenModel } from '@types';
 
 interface TransferSummaryInfo {
   tokenMetainfo: TokenModel;

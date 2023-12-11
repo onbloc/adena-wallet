@@ -1,7 +1,8 @@
-import { Account } from 'adena-module';
-import { useAdenaContext } from './use-context';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { Account } from 'adena-module';
+
+import { useAdenaContext } from './use-context';
+import { WalletState } from '@states';
 
 export type UseAccountNameReturn = {
   accountNames: { [key in string]: string };

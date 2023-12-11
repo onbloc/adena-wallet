@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export type UseLoginReturn = {

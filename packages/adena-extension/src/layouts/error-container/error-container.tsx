@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
-import { CommonState, NetworkState, WalletState } from '@states/index';
+import { CommonState, NetworkState, WalletState } from '@states';
 import { ErrorNetwork } from '@components/errors';
 
 interface Props {

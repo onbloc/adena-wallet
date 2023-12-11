@@ -1,6 +1,6 @@
 import { useRecoilState } from 'recoil';
 import { Account, Keyring } from 'adena-module';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 

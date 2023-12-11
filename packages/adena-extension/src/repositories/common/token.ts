@@ -1,5 +1,6 @@
-import { StorageManager } from '@common/storage/storage-manager';
 import { AxiosInstance } from 'axios';
+
+import { StorageManager } from '@common/storage/storage-manager';
 import { SearchGRC20TokenResponse } from './response/search-grc20-token-response';
 import {
   GRC20TokenResponse,
@@ -8,7 +9,6 @@ import {
   NativeTokenResponse,
 } from './response/token-asset-response';
 import { TokenMapper } from './mapper/token-mapper';
-import { NetworkMetainfo } from '@states/network';
 
 import {
   NativeTokenModel,
@@ -16,6 +16,7 @@ import {
   IBCNativeTokenModel,
   IBCTokenModel,
   TokenModel,
+  NetworkMetainfo,
 } from '@types';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';

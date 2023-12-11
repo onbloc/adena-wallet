@@ -1,9 +1,11 @@
+import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import AddCustomNetwork from '@components/add-custom-network/add-custom-network/add-custom-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
-import { NetworkMetainfo } from '@states/network';
-import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { NetworkMetainfo } from '@types';
 
 function isValidURL(rpcUrl: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;

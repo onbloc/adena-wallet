@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import styled, { CSSProp } from 'styled-components';
+import BigNumber from 'bignumber.js';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import Text from '@components/text';
 import search from '../../../assets/search.svg';
 import cancel from '../../../assets/cancel-dark.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
 import { searchTextFilter } from '@common/utils/client-utils';
@@ -12,9 +14,9 @@ import ListBox, { ListHierarchy } from '@components/list-box';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import TokenBalanceComponent from '@components/common/token-balance/token-balance';
-import { TokenBalance } from '@states/balance';
-import BigNumber from 'bignumber.js';
 import useHistoryData from '@hooks/use-history-data';
+
+import { TokenBalance } from '@types';
 
 const Wrapper = styled.main`
   width: 100%;
