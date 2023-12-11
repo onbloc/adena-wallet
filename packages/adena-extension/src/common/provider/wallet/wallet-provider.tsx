@@ -6,11 +6,12 @@ import { NetworkMetainfo } from '@states/network';
 import { useAdenaContext } from '@hooks/use-context';
 import { TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
+import { StateType } from '@states/wallet';
 
 export interface WalletContextProps {
   wallet: Wallet | null;
   gnoProvider: GnoProvider | undefined;
-  walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+  walletStatus: StateType;
   tokenMetainfos: TokenModel[];
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
