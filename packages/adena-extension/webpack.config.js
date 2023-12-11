@@ -64,6 +64,7 @@ const config = {
     modules: ['node_modules'],
     extensions: ['.js', '.jsx', '.tsx', '.ts'],
     alias: {
+      '@types': path.resolve(__dirname, 'src/types'),
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@ui': path.resolve(__dirname, 'src/ui'),
       '@pages': path.resolve(__dirname, 'src/pages'),

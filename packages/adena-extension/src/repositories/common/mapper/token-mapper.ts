@@ -1,11 +1,4 @@
 import {
-  GRC20TokenModel,
-  IBCNativeTokenModel,
-  IBCTokenModel,
-  NativeTokenModel,
-  TokenModel,
-} from '@models/token-model';
-import {
   SearchGRC20Token,
   SearchGRC20TokenResponse,
 } from '../response/search-grc20-token-response';
@@ -15,6 +8,14 @@ import {
   IBCTokenResponse,
   NativeTokenResponse,
 } from '../response/token-asset-response';
+
+import {
+  NativeTokenModel,
+  GRC20TokenModel,
+  IBCNativeTokenModel,
+  IBCTokenModel,
+  TokenModel,
+} from '@types';
 
 export class TokenMapper {
   private static IMAGE_BASE_URI =

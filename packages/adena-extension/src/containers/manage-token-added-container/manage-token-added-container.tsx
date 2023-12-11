@@ -4,7 +4,7 @@ import AdditionalToken, {
 import { useAdenaContext } from '@hooks/use-context';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { isGRC20TokenModel } from '@models/token-model';
+import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@router/path';
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useState } from 'react';

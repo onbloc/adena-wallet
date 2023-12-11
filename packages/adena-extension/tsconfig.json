@@ -17,6 +17,7 @@
     "lib": ["dom", "es5", "es6"],
     "baseUrl": "./",
     "paths": {
+      "@types": ["src/types"],
       "@hooks/*": ["src/hooks/*"],
       "@ui/*": ["src/ui/*"],
       "@pages/*": ["src/pages/*"],

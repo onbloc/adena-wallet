@@ -21,7 +21,7 @@ import HighlightNumber from '@components/common/highlight-number/highlight-numbe
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
 import BigNumber from 'bignumber.js';
-import { isGRC20TokenModel } from '@models/token-model';
+import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 import useHistoryData from '@hooks/use-history-data';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';

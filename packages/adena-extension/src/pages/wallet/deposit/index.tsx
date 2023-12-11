@@ -11,7 +11,7 @@ import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 
 const Wrapper = styled.main`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};

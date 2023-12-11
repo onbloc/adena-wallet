@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { TokenBalance } from '@states/balance';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 
 const NETWORK_FEE = 0.000001;
 

@@ -1,5 +1,5 @@
 import { atom } from 'recoil';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 
 export interface TokenBalance extends TokenModel {
   amount: Amount;

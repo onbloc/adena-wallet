@@ -4,7 +4,7 @@ import { useRecoilState, useSetRecoilState } from 'recoil';
 import { Wallet } from 'adena-module';
 import { NetworkMetainfo } from '@states/network';
 import { useAdenaContext } from '@hooks/use-context';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
 
 export interface WalletContextProps {

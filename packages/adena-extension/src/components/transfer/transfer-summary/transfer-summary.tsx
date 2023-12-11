@@ -7,7 +7,7 @@ import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import SubHeader from '@components/common/sub-header/sub-header';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { Amount } from '@states/balance';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
@@ -66,16 +66,16 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee.value}
           denom={networkFee.denom}
         />
-        {
-          isErrorNetworkFee && (
-            <span className='error-message'>Insufficient network fee</span>
-          )
-        }
+        {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
       </div>
 
       <div className='button-group'>
-        <button className='cancel' onClick={onClickCancel}>Cancel</button>
-        <button className='send' onClick={onClickSend}>Send</button>
+        <button className='cancel' onClick={onClickCancel}>
+          Cancel
+        </button>
+        <button className='send' onClick={onClickSend}>
+          Send
+        </button>
       </div>
     </TransferSummaryWrapper>
   );

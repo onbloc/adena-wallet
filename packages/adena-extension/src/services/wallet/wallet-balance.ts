@@ -1,7 +1,9 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { BalanceState } from '@states/index';
 import BigNumber from 'bignumber.js';
+
+import { TokenModel } from '@types';
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];

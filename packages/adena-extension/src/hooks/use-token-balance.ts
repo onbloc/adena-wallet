@@ -7,9 +7,11 @@ import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useCallback, useEffect, useMemo } from 'react';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { GnoWallet } from '@gnolang/gno-js-client';
 import { NetworkMetainfo } from '@states/network';
+
+import { TokenModel } from '@types';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
