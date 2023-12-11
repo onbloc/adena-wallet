@@ -28,7 +28,7 @@ export const ConnectedApps = (): JSX.Element => {
     if (!currentAccount) {
       return;
     }
-    await establishService.unestablishBy(currentAccount.id, item.hostname);
+    await establishService.unEstablishBy(currentAccount.id, item.hostname);
     await updateDatas();
   };
 
@@ -36,7 +36,7 @@ export const ConnectedApps = (): JSX.Element => {
     if (!currentAccount) {
       return;
     }
-    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id);
+    const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id);
     setDatas(establishedSites);
   };
 

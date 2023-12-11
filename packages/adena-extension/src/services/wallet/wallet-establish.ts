@@ -7,7 +7,7 @@ export class WalletEstablishService {
     this.walletEstablishRepository = walletEstablishRepository;
   }
 
-  public getEstablisedSitesBy = async (accountId: string): Promise<EstablishSite[]> => {
+  public getEstablishedSitesBy = async (accountId: string): Promise<EstablishSite[]> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
@@ -61,7 +61,7 @@ export class WalletEstablishService {
     await this.walletEstablishRepository.updateEstablishedSites(changedEstablishedSites);
   };
 
-  public unestablishBy = async (accountId: string, hostname: string): Promise<void> => {
+  public unEstablishBy = async (accountId: string, hostname: string): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
     const accountEstablishedSites = await this.selectEstablishedSitesBy(
       accountId,
