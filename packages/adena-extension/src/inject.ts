@@ -19,9 +19,9 @@ const init = (): void => {
       const response = await executor.addEstablish(name);
       return response;
     },
-    async DoContract(mesasage: RequestDoContractMessage): Promise<unknown> {
+    async DoContract(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.doContract(mesasage);
+      const response = await executor.doContract(message);
       return response;
     },
     async GetAccount(): Promise<unknown> {
@@ -29,14 +29,14 @@ const init = (): void => {
       const response = await executor.getAccount();
       return response;
     },
-    async Sign(mesasage: RequestDoContractMessage): Promise<unknown> {
+    async Sign(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.signAmino(mesasage);
+      const response = await executor.signAmino(message);
       return response;
     },
-    async SignTx(mesasage: RequestDoContractMessage): Promise<unknown> {
+    async SignTx(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.signTx(mesasage);
+      const response = await executor.signTx(message);
       return response;
     },
     async AddNetwork(chain: RequestAddedNetworkMessage): Promise<unknown> {
