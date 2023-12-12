@@ -1,5 +1,5 @@
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { SeedAccount } from 'adena-module';
 import { useCurrentAccount } from './use-current-account';

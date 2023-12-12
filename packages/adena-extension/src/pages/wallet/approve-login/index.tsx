@@ -15,7 +15,7 @@ import { ErrorText } from '@components/error-text';
 import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 const text = 'Enter\nYour Password';

@@ -1,12 +1,7 @@
-import {
-  GRC20TokenModel,
-  TokenModel,
-  isGRC20TokenModel,
-  isNativeTokenModel,
-} from '@models/token-model';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse, TokenRepository } from '@repositories/common';
-import { AccountTokenBalance } from '@states/balance';
-import { NetworkMetainfo } from '@states/network';
+
+import { GRC20TokenModel, TokenModel, AccountTokenBalance, NetworkMetainfo } from '@types';
 
 export class TokenService {
   private tokenRepository: TokenRepository;

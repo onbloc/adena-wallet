@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
+
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useWalletContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
-import { CommonState } from '@states/index';
 import useScrollHistory from '@hooks/use-scroll-history';
-import { NetworkMetainfo } from '@states/network';
 import { fetchHealth } from '@common/utils/client-utils';
+
+import { CommonState } from '@states';
+import { NetworkMetainfo } from '@types';
 
 type BackgroundProps = React.PropsWithChildren<unknown>;
 

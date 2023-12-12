@@ -11,7 +11,7 @@ import BigNumber from 'bignumber.js';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 
 const Wrapper = styled.main`

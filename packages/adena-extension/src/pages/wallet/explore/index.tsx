@@ -4,7 +4,7 @@ import styled, { CSSProp } from 'styled-components';
 import link from '../../../assets/share.svg';
 import theme from '@styles/theme';
 import { useRecoilState } from 'recoil';
-import { ExploreState } from '@states/index';
+import { ExploreState } from '@states';
 import LoadingExplore from '@components/loading-screen/loading-explore';
 import { useAdenaContext } from '@hooks/use-context';
 

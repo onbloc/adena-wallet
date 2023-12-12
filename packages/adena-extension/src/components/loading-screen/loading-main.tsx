@@ -1,12 +1,13 @@
 import React, { ReactElement, useMemo } from 'react';
+import { useRecoilState } from 'recoil';
 import styled, { CSSProp } from 'styled-components';
+import { useMatch } from 'react-router-dom';
+
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
-import { useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.main`

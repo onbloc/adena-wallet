@@ -1,3 +1,7 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Account } from 'adena-module';
+
 import { formatNickname, maxFractionDigits } from '@common/utils/client-utils';
 import SideMenu, { SideMenuAccountInfo } from '@components/common/side-menu/side-menu';
 import { useAccountName } from '@hooks/use-account-name';
@@ -7,10 +11,8 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { RoutePath } from '@router/path';
-import { TokenBalance } from '@states/balance';
-import { Account } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { TokenBalance } from '@types';
 
 interface SideMenuContainerProps {
   open: boolean;

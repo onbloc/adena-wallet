@@ -1,11 +1,13 @@
 import React from 'react';
+
 import { TransferInputWrapper } from './transfer-input.styles';
 import SubHeader from '@components/common/sub-header/sub-header';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { TokenModel } from '@models/token-model';
+
+import { TokenModel } from '@types';
 
 export interface TransferInputProps {
   tokenMetainfo: TokenModel;
@@ -53,21 +55,17 @@ const TransferInput: React.FC<TransferInputProps> = ({
 }) => {
   return (
     <TransferInputWrapper>
-      {
-        hasBackButton ? (
-          <SubHeader
-            title={`Send ${tokenMetainfo.symbol}`}
-            leftElement={{
-              element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-              onClick: onClickBack,
-            }}
-          />
-        ) : (
-          <SubHeader
-            title={`Send ${tokenMetainfo.symbol}`}
-          />
-        )
-      }
+      {hasBackButton ? (
+        <SubHeader
+          title={`Send ${tokenMetainfo.symbol}`}
+          leftElement={{
+            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            onClick: onClickBack,
+          }}
+        />
+      ) : (
+        <SubHeader title={`Send ${tokenMetainfo.symbol}`} />
+      )}
       <div className='logo-wrapper'>
         <img className='logo' src={tokenMetainfo.image || UnknownTokenIcon} alt='token image' />
       </div>
@@ -79,7 +77,9 @@ const TransferInput: React.FC<TransferInputProps> = ({
       </div>
       <div className='button-group'>
         <button onClick={onClickCancel}>Cancel</button>
-        <button className={isNext ? 'next' : 'next disabled'} onClick={onClickNext}>Next</button>
+        <button className={isNext ? 'next' : 'next disabled'} onClick={onClickNext}>
+          Next
+        </button>
       </div>
     </TransferInputWrapper>
   );

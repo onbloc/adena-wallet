@@ -1,4 +1,4 @@
-import { BalanceState, CommonState, NetworkState, WalletState } from '@states/index';
+import { BalanceState, CommonState, NetworkState, WalletState } from '@states';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 

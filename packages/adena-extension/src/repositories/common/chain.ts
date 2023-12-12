@@ -1,7 +1,8 @@
-import { StorageManager } from '@common/storage/storage-manager';
 import { AxiosInstance } from 'axios';
+
+import { StorageManager } from '@common/storage/storage-manager';
 import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 
 type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
 

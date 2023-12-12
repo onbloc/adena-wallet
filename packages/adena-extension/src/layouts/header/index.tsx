@@ -7,7 +7,7 @@ import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states';
 import { ArrowTitleMenu } from './arrow-title-menu';
 import { TabMenu } from './tab-menu';
 import { useNetwork } from '@hooks/use-network';

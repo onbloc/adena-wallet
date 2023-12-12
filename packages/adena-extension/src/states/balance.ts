@@ -1,21 +1,6 @@
 import { atom } from 'recoil';
-import { TokenModel } from '@models/token-model';
 
-export interface TokenBalance extends TokenModel {
-  amount: Amount;
-}
-
-export interface Amount {
-  value: string;
-  denom: string;
-}
-
-export interface AccountTokenBalance {
-  accountId: string;
-  chainId: string;
-  networkId: string;
-  tokenBalances: TokenBalance[];
-}
+import { AccountTokenBalance, Amount, TokenBalance } from '@types';
 
 export const isLoading = atom({
   key: 'balance/is-loading',

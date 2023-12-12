@@ -1,16 +1,16 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { NetworkState, TokenState, WalletState } from '@states/index';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { Wallet } from 'adena-module';
-import { NetworkMetainfo } from '@states/network';
+
+import { NetworkState, TokenState, WalletState } from '@states';
 import { useAdenaContext } from '@hooks/use-context';
-import { TokenModel } from '@models/token-model';
 import { GnoProvider } from '../gno/gno-provider';
+import { TokenModel, NetworkMetainfo, StateType } from '@types';
 
 export interface WalletContextProps {
   wallet: Wallet | null;
   gnoProvider: GnoProvider | undefined;
-  walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+  walletStatus: StateType;
   tokenMetainfos: TokenModel[];
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
@@ -136,9 +136,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     balanceService.setTokenMetainfos(tokenMetainfos);
   }
 
-  async function changeNetwork(
-    networkMetainfo: NetworkMetainfo,
-  ): Promise<NetworkState.NetworkMetainfo> {
+  async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {
     const rpcUrl = networkMetainfo.rpcUrl;
     const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
     setCurrentNetwork(networkMetainfo);

@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import TransferInput from '@components/transfer/transfer-input/transfer-input';
+import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+import TransferInput from '@components/transfer/transfer-input/transfer-input';
 import { RoutePath } from '@router/path';
 import { useAddressBookInput } from '@hooks/use-adderss-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import BigNumber from 'bignumber.js';
-import { TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
+
+import { TokenModel } from '@types';
 
 interface HistoryData {
   isTokenSearch: boolean;

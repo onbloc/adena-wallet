@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import BigNumber from 'bignumber.js';
 import styled, { CSSProp } from 'styled-components';
+import { useInfiniteQuery } from '@tanstack/react-query';
+
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import Text from '@components/text';
 import etc from '../../../assets/etc.svg';
@@ -10,8 +13,6 @@ import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { TokenBalance } from '@states/balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
@@ -20,11 +21,12 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
-import BigNumber from 'bignumber.js';
-import { isGRC20TokenModel } from '@models/token-model';
+import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 import useHistoryData from '@hooks/use-history-data';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
+
+import { TokenBalance } from '@types';
 
 const Wrapper = styled.main`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};

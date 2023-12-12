@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import BigNumber from 'bignumber.js';
+
+import { isLedgerAccount } from 'adena-module';
+
 import TransferSummary from '@components/transfer/transfer-summary/transfer-summary';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import { Amount } from '@states/balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import BigNumber from 'bignumber.js';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionMessage } from '@services/index';
-import { isLedgerAccount } from 'adena-module';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useNetwork } from '@hooks/use-network';
+
+import { Amount, TokenModel } from '@types';
 
 interface TransferSummaryInfo {
   tokenMetainfo: TokenModel;
@@ -26,7 +29,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state)
+  const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state);
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
 
@@ -47,7 +50,9 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
     }
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom}`;
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
+      tokenMetainfo.denom
+    }`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
@@ -65,10 +70,7 @@ const TransferSummaryContainer: React.FC = () => {
       send: '',
       pkgPath: tokenMetainfo.pkgPath,
       func: 'Transfer',
-      args: [
-        toAddress,
-        transferAmount.value,
-      ],
+      args: [toAddress, transferAmount.value],
     });
   }, [summaryInfo, currentAddress]);
 
@@ -78,9 +80,8 @@ const TransferSummaryContainer: React.FC = () => {
     }
     const { tokenMetainfo, networkFee } = summaryInfo;
     const GAS_WANTED = 1000000;
-    const message = tokenMetainfo.type === 'gno-native' ?
-      getNativeTransferMessage() :
-      getGRC20TransferMessage();
+    const message =
+      tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
     const document = await transactionService.createDocument(
       currentAccount,
@@ -111,7 +112,7 @@ const TransferSummaryContainer: React.FC = () => {
     const currentBalance = await gnoProvider.getBalance(currentAddress, 'ugnot');
     const networkFee = summaryInfo.networkFee.value;
     return BigNumber(currentBalance).shiftedBy(-6).isGreaterThanOrEqualTo(networkFee);
-  }, [gnoProvider, currentAddress, summaryInfo])
+  }, [gnoProvider, currentAddress, summaryInfo]);
 
   const transfer = useCallback(async () => {
     if (isSent || !currentAccount) {

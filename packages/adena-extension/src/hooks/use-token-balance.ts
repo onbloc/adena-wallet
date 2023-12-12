@@ -1,15 +1,17 @@
-import { BalanceState } from '@states/index';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
+import { GnoWallet } from '@gnolang/gno-js-client';
+import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
+
 import { useNetwork } from './use-network';
 import { useCurrentAccount } from './use-current-account';
-import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
-import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useCallback, useEffect, useMemo } from 'react';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
-import { GnoWallet } from '@gnolang/gno-js-client';
-import { NetworkMetainfo } from '@states/network';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { BalanceState } from '@states';
+import { NetworkMetainfo } from '@types';
+
+import { TokenModel, AccountTokenBalance, Amount, TokenBalance } from '@types';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;

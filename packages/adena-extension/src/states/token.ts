@@ -1,5 +1,6 @@
-import { TokenModel } from '@models/token-model';
 import { atom } from 'recoil';
+
+import { TokenModel } from '@types';
 
 export const tokenMetainfos = atom<TokenModel[]>({
   key: 'token/tokenMetainfos',

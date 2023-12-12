@@ -4,7 +4,7 @@ import { useMatch, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import Icon, { IconName } from '@components/icons';
 import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.nav`

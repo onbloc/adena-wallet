@@ -1,6 +1,6 @@
 import { CommonError } from '@common/errors/common';
 import { ChainRepository } from '@repositories/common';
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 
 export class ChainService {
   private chainRepository: ChainRepository;

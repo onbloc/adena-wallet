@@ -1,9 +1,11 @@
-import { WalletState } from '@states/index';
 import { useRecoilState } from 'recoil';
-import { useWalletContext } from './use-context';
 import { Account } from 'adena-module';
+
+import { useWalletContext } from './use-context';
 import { useWalletAccounts } from './use-wallet-accounts';
-import { StateType } from '@states/wallet';
+
+import { WalletState } from '@states';
+import { StateType } from '@types';
 
 export type UseLoadAccountsReturn = {
   state: StateType;

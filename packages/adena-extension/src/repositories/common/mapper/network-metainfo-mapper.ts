@@ -1,4 +1,4 @@
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 
 export type ChainMetainfoResponse = ChainMetainfoItem[];
 
