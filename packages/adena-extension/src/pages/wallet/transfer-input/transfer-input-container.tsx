@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import TransferInput from '@components/transfer/transfer-input/transfer-input';
 import { RoutePath } from '@router/path';
-import { useAddressBookInput } from '@hooks/use-adderss-book-input';
+import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { isNativeTokenModel } from '@common/validation/validation-token';
