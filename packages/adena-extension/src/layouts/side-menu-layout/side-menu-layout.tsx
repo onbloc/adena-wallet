@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import Portal from '@layouts/portal';
 import { SideMenuBackground, SideMenuContent, SideMenuOverlay } from './side-menu-layout.styles';
-import SideMenuContainer from '@containers/side-menu-container/side-menu-container';
+import SideMenuContainer from './side-menu-container';
 
 interface SideMenuLayoutProps {
   open: boolean;
@@ -9,13 +9,11 @@ interface SideMenuLayoutProps {
   selector?: string;
 }
 
-
 const SideMenuLayout: React.FC<SideMenuLayoutProps> = ({
   open,
   setOpen,
   selector = 'portal-root',
 }) => {
-
   const onClickBackground = useCallback(() => {
     setOpen(false);
   }, [setOpen]);
@@ -25,10 +23,7 @@ const SideMenuLayout: React.FC<SideMenuLayoutProps> = ({
       <SideMenuOverlay open={open}>
         <SideMenuBackground onClick={onClickBackground} />
         <SideMenuContent open={open}>
-          <SideMenuContainer
-            open={open}
-            setOpen={setOpen}
-          />
+          <SideMenuContainer open={open} setOpen={setOpen} />
         </SideMenuContent>
       </SideMenuOverlay>
     </Portal>

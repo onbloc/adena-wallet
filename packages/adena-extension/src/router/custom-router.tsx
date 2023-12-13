@@ -59,11 +59,11 @@ import { ProgressMenu } from '@layouts/header/progress-menu';
 import { useWalletContext } from '@hooks/use-context';
 import LoadingMain from '@components/loading-screen/loading-main';
 import ManageToken from '@pages/wallet/manage-token';
-import TransferInput from '@pages/wallet/transfer/transfer-input';
-import TransferSummary from '@pages/wallet/transfer/transfer-summary';
-import ManageTokenAdded from '@pages/wallet/manage-token/added';
-import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loading';
-import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
+import TransferInput from '@pages/wallet/transfer-input';
+import TransferSummary from '@pages/wallet/transfer-summary';
+import ManageTokenAdded from '@pages/wallet/manage-token-added';
+import TransferLedgerLoading from '@pages/wallet/transfer-ledger-loading';
+import TransferLedgerReject from '@pages/wallet/transfer-ledger-reject';
 import { ApproveTransactionLedgerLoading } from '@pages/wallet/approve-transaction-ledger-loading';
 import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-loading';
 import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
@@ -72,8 +72,8 @@ import EditCustomNetworkPage from '@pages/wallet/edit-custom-network';
 import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network/approve-changing-network';
 import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network/approve-adding-network';
 import AccountDetailsPage from '@pages/wallet/account-details';
-import ApproveSignTransactionContainer from '@containers/approve-sign-transaction-container/approve-sign-transaction-container';
-import ApproveSignTransactionLedgerLoadingContainer from '@containers/approve-sign-transaction-ledger-loading-container/approve-sign-transaction-ledger-loading-container';
+import ApproveSignTransaction from '@pages/wallet/approve-sign-transaction/approve-sign-transaction';
+import ApproveSignTransactionLedgerLoading from '@pages/wallet/approve-sign-transaction-ledger-loading/approve-sign-transaction-ledger-loading';
 
 export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();
@@ -127,13 +127,10 @@ export const CustomRouter = (): JSX.Element => {
           />
           <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
           <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
-          <Route
-            path={RoutePath.ApproveSignTransaction}
-            element={<ApproveSignTransactionContainer />}
-          />
+          <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransaction />} />
           <Route
             path={RoutePath.ApproveSignTransactionLoading}
-            element={<ApproveSignTransactionLedgerLoadingContainer />}
+            element={<ApproveSignTransactionLedgerLoading />}
           />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />

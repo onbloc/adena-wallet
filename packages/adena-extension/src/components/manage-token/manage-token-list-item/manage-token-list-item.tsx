@@ -1,8 +1,8 @@
 import React from 'react';
 import { ManageTokenListItemWrapper } from './manage-token-list-item.styles';
-import { ManageTokenInfo } from '@containers/manage-token-search-container/manage-token-search-container';
 import ManageTokenListItemBalance from '@components/manage-token/manage-token-list-item-balance/manage-token-list-item-balance';
 import Toggle from '@components/common/toggle/toggle';
+import { ManageTokenInfo } from '@types';
 
 export interface ManageTokenListItemProps {
   token: ManageTokenInfo;
