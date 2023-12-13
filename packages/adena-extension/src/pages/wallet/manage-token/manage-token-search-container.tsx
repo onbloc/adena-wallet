@@ -8,19 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
-export interface ManageTokenInfo {
-  tokenId: string;
-  logo: string;
-  symbol: string;
-  name: string;
-  display?: boolean;
-  main?: boolean;
-  balanceAmount: {
-    value: string;
-    denom: string;
-  };
-}
-
 const ManageTokenSearchContainer: React.FC = () => {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');

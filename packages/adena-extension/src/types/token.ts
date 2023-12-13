@@ -33,3 +33,16 @@ export interface IBCTokenModel extends TokenModel {
   channel: string;
   port: string;
 }
+
+export interface ManageTokenInfo {
+  tokenId: string;
+  logo: string;
+  symbol: string;
+  name: string;
+  display?: boolean;
+  main?: boolean;
+  balanceAmount: {
+    value: string;
+    denom: string;
+  };
+}

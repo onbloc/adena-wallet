@@ -1,6 +1,6 @@
 import React from 'react';
 import { ManageTokenSearchWrapper } from './manage-token-search.styles';
-import { ManageTokenInfo } from '@containers/manage-token-search-container/manage-token-search-container';
+import { ManageTokenInfo } from '@types';
 // import ManageTokenSearchInput from '@components/manage-token/manage-token-search-input/manage-token-search-input';
 import ManageTokenList from '@components/manage-token/manage-token-list/manage-token-list';
 import ManageTokenSearchInput from '../manage-token-search-input/manage-token-search-input';
@@ -33,14 +33,13 @@ const ManageTokenSearch: React.FC<ManageTokenSearchProps> = ({
           />
         </div>
         <div className='list-wrapper'>
-          <ManageTokenList
-            tokens={tokens}
-            onToggleActiveItem={onToggleActiveItem}
-          />
+          <ManageTokenList tokens={tokens} onToggleActiveItem={onToggleActiveItem} />
         </div>
       </div>
       <div className='close-wrapper'>
-        <button className='close' onClick={onClickClose}>Close</button>
+        <button className='close' onClick={onClickClose}>
+          Close
+        </button>
       </div>
     </ManageTokenSearchWrapper>
   );
