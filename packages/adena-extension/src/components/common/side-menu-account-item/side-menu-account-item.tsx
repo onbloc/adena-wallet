@@ -8,7 +8,7 @@ import CopyButton from '@components/common/copy-button/copy-button';
 import IconEtc from '@assets/icon-etc';
 import IconQRCode from '@assets/icon-qrcode';
 import IconLink from '@assets/icon-link';
-import Portal from '@layouts/portal';
+import { Portal } from '@components/atom';
 
 export interface SideMenuAccountItemProps {
   selected: boolean;

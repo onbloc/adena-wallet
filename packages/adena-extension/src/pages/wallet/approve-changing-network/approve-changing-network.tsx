@@ -1,9 +1,12 @@
 import React from 'react';
-import ApproveChangingNetworkLayout from '@layouts/approve-changing-network-layout/approve-changing-network-layout';
+
+import { CommonFullContentLayout } from '@components/atom';
 import ApproveChangingNetworkContainer from './approve-changing-network-container';
 
 export default function ApproveChangingNetworkPage(): JSX.Element {
   return (
-    <ApproveChangingNetworkLayout approveChangingNetwork={<ApproveChangingNetworkContainer />} />
+    <CommonFullContentLayout>
+      <ApproveChangingNetworkContainer />
+    </CommonFullContentLayout>
   );
 }

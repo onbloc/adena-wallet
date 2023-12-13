@@ -1,9 +1,23 @@
 import React from 'react';
-import TransferLedgerRejectLayout from '@layouts/transfer-ledger-reject-layout/transfer-ledger-reject-layout';
+import styled from 'styled-components';
+
 import TransferLedgerRejectContainer from './transfer-ledger-reject-container';
 
+const TransferLedgerRejectLayout = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  padding: 24px 20px;
+  margin-bottom: 60px;
+`;
+
 const TransferLedgerReject: React.FC = () => {
-  return <TransferLedgerRejectLayout transferLedgerReject={<TransferLedgerRejectContainer />} />;
+  return (
+    <TransferLedgerRejectLayout>
+      <TransferLedgerRejectContainer />
+    </TransferLedgerRejectLayout>
+  );
 };
 
 export default TransferLedgerReject;
