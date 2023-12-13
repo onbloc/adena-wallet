@@ -1,8 +1,8 @@
 import React from 'react';
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+
 import { RoutePath } from './path';
-import { Header } from '@layouts/header';
-import { Navigation } from '@layouts/navigation';
+
 import { WalletCreate } from '@pages/wallet/wallet-create';
 import { ApproveTransactionMain } from '@pages/wallet/approve-transaction-main';
 import { ApproveLogin } from '@pages/wallet/approve-login';
@@ -52,12 +52,7 @@ import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase'
 import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
 import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
-import { ErrorContainer } from '@layouts/error-container';
-import { Background } from '@components/background';
-import { TabContainer } from '@layouts/tab-container';
-import { ProgressMenu } from '@layouts/header/progress-menu';
 import { useWalletContext } from '@hooks/use-context';
-import LoadingMain from '@components/loading-screen/loading-main';
 import ManageToken from '@pages/wallet/manage-token';
 import TransferInput from '@pages/wallet/transfer-input';
 import TransferSummary from '@pages/wallet/transfer-summary';
@@ -74,6 +69,16 @@ import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network/appro
 import AccountDetailsPage from '@pages/wallet/account-details';
 import ApproveSignTransaction from '@pages/wallet/approve-sign-transaction/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/wallet/approve-sign-transaction-ledger-loading/approve-sign-transaction-ledger-loading';
+
+import LoadingMain from '@components/loading-screen/loading-main';
+
+import { TabContainer } from '@components/atom';
+import { ErrorContainer } from '@components/molecules';
+
+import { Header } from '@components/pages/router/header';
+import { ProgressMenu } from '@components/pages/router/header/progress-menu';
+import { Background } from '@components/pages/router/background';
+import { Navigation } from '@components/pages/router/navigation';
 
 export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();
