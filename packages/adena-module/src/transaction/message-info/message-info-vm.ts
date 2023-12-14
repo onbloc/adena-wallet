@@ -45,8 +45,10 @@ export const encodeVmCall = (writer: protobuf.Writer, messageInfo: VmCall) => {
   if (messageInfo.func !== '') {
     writer.uint32(34).string(messageInfo.func);
   }
-  for (const v of messageInfo.args) {
-    writer.uint32(42).string(v!);
+  if (messageInfo.args) {
+    for (const v of messageInfo.args) {
+      writer.uint32(42).string(v!);
+    }
   }
   return writer;
 };
