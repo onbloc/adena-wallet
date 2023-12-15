@@ -15,7 +15,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
-import { TM2Error } from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult, TM2Error } from '@gnolang/tm2-js-client';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];
@@ -176,36 +176,39 @@ const ApproveTransactionContainer: React.FC = () => {
       setProcessType('PROCESSING');
       const transaction = await transactionService.createTransaction(document, signature);
       const hash = transactionService.createHash(transaction);
-      const responseHash = await new Promise<string>((resolve) => {
+      const response = await new Promise<BroadcastTxCommitResult | TM2Error | null>((resolve) => {
         transactionService
           .sendTransaction(transaction)
           .then(resolve)
-          .catch((error: TM2Error) => {
-            const message = {
-              hash,
-              error: {
-                name: error.name,
-                message: error.message,
-                log: error.log,
-              },
-            };
-            setResponse(
-              InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
-            );
+          .catch((error: TM2Error | Error) => {
+            resolve(error);
           });
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       });
-      if (hash === responseHash) {
+      if (!response) {
         setResponse(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+            hash,
+            error: null,
+          }, requestData?.key),
         );
         return true;
-      } else {
-        setResponse(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
-        );
       }
+      if (response instanceof TM2Error || response instanceof Error) {
+        setResponse(
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+            hash,
+            error: response,
+          }, requestData?.key),
+        );
+        return true;
+      }
+
+      setResponse(
+        InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
+      );
+      return true;
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;

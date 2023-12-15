@@ -49,29 +49,33 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       .then(async (signature) => {
         const transaction = await transactionService.createTransaction(document, signature);
         const hash = transactionService.createHash(transaction);
-        const responseHash = await transactionService
+        const response = await transactionService
           .sendTransaction(transaction)
-          .catch((error: TM2Error) => {
-            const message = {
-              hash,
-              error: {
-                name: error.name,
-                message: error.message,
-                log: error.log,
-              },
-            };
-            chrome.runtime.sendMessage(
-              InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
-            );
+          .catch((error: TM2Error | Error) => {
+            return error;
           });
 
-        if (hash === responseHash) {
+        if (!response) {
           chrome.runtime.sendMessage(
-            InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+            InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+              hash,
+              error: null,
+            }, requestData?.key),
           );
+          return true;
         }
+        if (response instanceof TM2Error || response instanceof Error) {
+          chrome.runtime.sendMessage(
+            InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+              hash,
+              error: response,
+            }, requestData?.key),
+          );
+          return true;
+        }
+
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
+          InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
         );
         return true;
       })
