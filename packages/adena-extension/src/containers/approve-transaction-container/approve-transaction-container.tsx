@@ -176,37 +176,39 @@ const ApproveTransactionContainer: React.FC = () => {
       setProcessType('PROCESSING');
       const transaction = await transactionService.createTransaction(document, signature);
       const hash = transactionService.createHash(transaction);
-      const response = await new Promise<BroadcastTxCommitResult | null>((resolve) => {
+      const response = await new Promise<BroadcastTxCommitResult | TM2Error | null>((resolve) => {
         transactionService
           .sendTransaction(transaction)
           .then(resolve)
-          .catch((error: TM2Error) => {
-            const message = {
-              hash,
-              error: {
-                name: error.name,
-                message: error.message,
-                log: error.log,
-              },
-            };
-            setResponse(
-              InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
-            );
-            resolve(null);
+          .catch((error: TM2Error | Error) => {
+            resolve(error);
           });
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       });
-      if (hash === response?.hash) {
+      if (!response) {
         setResponse(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+            hash,
+            error: null,
+          }, requestData?.key),
         );
         return true;
-      } else {
-        setResponse(
-          InjectionMessageInstance.failure('TRANSACTION_FAILED', { hash }, requestData?.key),
-        );
       }
+      if (response instanceof TM2Error || response instanceof Error) {
+        setResponse(
+          InjectionMessageInstance.failure('TRANSACTION_FAILED', {
+            hash,
+            error: response,
+          }, requestData?.key),
+        );
+        return true;
+      }
+
+      setResponse(
+        InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
+      );
+      return true;
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
