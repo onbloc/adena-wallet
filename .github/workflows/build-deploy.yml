@@ -2,7 +2,8 @@ name: Build And Deploy
 
 on:
   push:
-    branches: [release/*]
+    tags:
+      - v*
 
 jobs:
   aws-deployment:
@@ -18,6 +19,11 @@ jobs:
         run: |
           rm -rf packages/adena-torus-signin
 
+      - name: Branch info
+        id: branch-info
+        run: |
+          echo ::set-output name=BRANCH_TAG::${GITHUB_REF#refs/tags/}
+
       - name: Clone adena-torus-signin repository
         uses: actions/checkout@v3
         with:
@@ -32,7 +38,9 @@ jobs:
 
       - name: Make build files
         run: |
-          bash scripts/build-qa.sh
+          bash scripts/build-qa.sh "$BRANCH_TAG"
+        env:
+          BRANCH_TAG: ${{ steps.branch-info.outputs.BRANCH_TAG }}
 
       - name: Deploy AWS S3 (QA)
         uses: shallwefootball/s3-upload-action@master
