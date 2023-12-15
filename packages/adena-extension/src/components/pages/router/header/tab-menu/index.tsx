@@ -1,8 +1,8 @@
 import React from 'react';
 import Text from '@components/text';
 import styled, { CSSProp } from 'styled-components';
-import IconLogo from './../../../install/assets/logo-typeB.svg';
-import IconHelp from './../../../assets/help-fill.svg';
+import IconLogo from '../../../../../install/assets/logo-typeB.svg';
+import IconHelp from '@assets/help-fill.svg';
 
 const Container = styled.div`
   ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')}

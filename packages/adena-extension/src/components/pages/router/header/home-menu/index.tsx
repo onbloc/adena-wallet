@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import logo from '../../../assets/logo-withIcon.svg';
+import logo from '@assets/logo-withIcon.svg';
 import { HamburgerMenuBtn } from '@components/buttons/hamburger-menu-button';
 import { RoutePath } from '@router/path';
 import { SideMenuLayout } from '@components/molecules';
