@@ -9,8 +9,10 @@ import SearchInput, { SearchInputProps } from './search-input';
 describe('SearchInput Component', () => {
   it('SearchInput render', () => {
     const args: SearchInputProps = {
-      keyword: "as",
-      onChangeKeyword: () => { return; },
+      keyword: 'as',
+      onChangeKeyword: () => {
+        return;
+      },
     };
 
     render(

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import { ErrorText } from '@components/error-text';
 import { useNavigate } from 'react-router-dom';
@@ -16,17 +16,17 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
-export const SeedPhrase = () => {
+export const SeedPhrase = (): JSX.Element => {
   const { walletService, accountService } = useAdenaContext();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const cancelButtonClick = () => navigate(-1);
+  const cancelButtonClick = (): void => navigate(-1);
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
     error: false,
@@ -37,10 +37,10 @@ export const SeedPhrase = () => {
     setError({
       error: false,
       message: 'Invalid password',
-    })
-  }, [password])
+    });
+  }, [password]);
 
-  const nextButtonClick = async () => {
+  const nextButtonClick = async (): Promise<void> => {
     await accountService.clear();
     const storedPassword = await walletService.loadWalletPassword();
     try {
@@ -49,7 +49,7 @@ export const SeedPhrase = () => {
         if (wallet) {
           navigate(RoutePath.ViewSeedPhrase, {
             replace: true,
-            state: wallet.mnemonic
+            state: wallet.mnemonic,
           });
         }
       }
@@ -62,8 +62,8 @@ export const SeedPhrase = () => {
     }
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value);
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => setPassword(e.target.value);
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && password) nextButtonClick();
   };
 

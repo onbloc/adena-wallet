@@ -1,44 +1,45 @@
-import React, { useMemo } from 'react';
-import styled from 'styled-components';
+import React, { ReactElement, useMemo } from 'react';
+import { useRecoilState } from 'recoil';
+import styled, { CSSProp } from 'styled-components';
+import { useMatch } from 'react-router-dom';
+
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
-import { useMatch } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   position: absolute;
   width: 100%;
   height: 100%;
   padding: 78px 24px;
   top: 0px;
   z-index: 99;
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
 `;
 
 const RoundsBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-end', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'center')};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')}
   width: 100%;
   gap: 12px;
   margin-top: 31px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
   width: 100%;
   height: 60px;
 `;
 
-const LoadingMain = () => {
+const LoadingMain = (): ReactElement => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);

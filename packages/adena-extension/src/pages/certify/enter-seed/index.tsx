@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import styled from 'styled-components';
+import React from 'react';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedBox from '@components/seed-box';
 import TitleWithDesc from '@components/title-with-desc';
@@ -21,7 +21,7 @@ const forgotContent = {
   terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
 };
 
-export const EnterSeedPharse = () => {
+export const EnterSeedPhrase = (): JSX.Element => {
   const { seedState, termsState, buttonState } = useEnterSeed();
   const { state } = useLocation();
 
@@ -62,7 +62,7 @@ export const EnterSeedPharse = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

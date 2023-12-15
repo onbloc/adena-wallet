@@ -15,7 +15,7 @@ const text = {
 };
 
 const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({
-  onClickClose
+  onClickClose,
 }) => {
   return (
     <TransferLedgerRejectWrapper>

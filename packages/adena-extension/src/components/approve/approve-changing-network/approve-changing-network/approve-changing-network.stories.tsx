@@ -1,4 +1,6 @@
-import ApproveChangingNetwork, { type ApproveChangingNetworkProps } from './approve-changing-network';
+import ApproveChangingNetwork, {
+  type ApproveChangingNetworkProps,
+} from './approve-changing-network';
 import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 
@@ -10,12 +12,12 @@ export default {
 export const Default: StoryObj<ApproveChangingNetworkProps> = {
   args: {
     fromChain: {
-      name: 'Testnet3'
+      name: 'Testnet3',
     },
     toChain: {
-      name: 'Onbloc Testnet'
+      name: 'Onbloc Testnet',
     },
-    changable: true,
+    changeable: true,
     processing: false,
     done: false,
     changeNetwork: action('changeNetwork'),

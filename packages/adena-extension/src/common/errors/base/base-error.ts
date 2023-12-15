@@ -9,27 +9,27 @@ export class BaseError extends Error {
 
   private type: string;
 
-  private occuredAt: number;
+  private occurredAt: number;
 
   constructor(errorInfo: BaseErrorParams) {
     const { type, status } = errorInfo;
     super(`${type} (status: ${status})`);
     this.status = status;
     this.type = type;
-    this.occuredAt = Date.now();
+    this.occurredAt = Date.now();
     this.message = errorInfo.message ?? `${type}`;
     Object.setPrototypeOf(this, BaseError.prototype);
   }
 
-  public getStatus = () => {
+  public getStatus = (): number => {
     return this.status;
   };
 
-  public getType = () => {
+  public getType = (): string => {
     return this.type;
   };
 
-  public getOccuredAt = () => {
-    return this.occuredAt;
+  public getOccuredAt = (): number => {
+    return this.occurredAt;
   };
 }

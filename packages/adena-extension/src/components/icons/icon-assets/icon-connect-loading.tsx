@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const rotate = keyframes`
@@ -21,7 +21,7 @@ const SVG = styled.svg`
   animation: ${rotate} 1.5s infinite;
 `;
 
-const IconConnectLoading = ({ className }: { className: string }) => {
+const IconConnectLoading = ({ className }: { className: string }): ReactElement => {
   return (
     <SVG
       width='100'
@@ -48,8 +48,8 @@ const IconConnectLoading = ({ className }: { className: string }) => {
           y2='43.1492'
           gradientUnits='userSpaceOnUse'
         >
-          <stop stop-color='#0059FF' />
-          <stop offset='1' stop-color='#0058C9' stop-opacity='0' />
+          <stop stopColor='#0059FF' />
+          <stop offset='1' stopColor='#0058C9' stopOpacity='0' />
         </linearGradient>
       </defs>
     </SVG>

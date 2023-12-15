@@ -1,9 +1,14 @@
-export const createMessageOfVmAddPacakge = (info: {
+export const createMessageOfVmAddPackage = (info: {
   creator: string;
   deposit: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   packageInfo?: any;
-}) => {
+}): {
+  type: string;
+  value:
+    | { creator: string; package: any; deposit: string }
+    | { creator: string; deposit: string; package?: undefined };
+} => {
   return {
     type: '/vm.m_addpkg',
     value: info.packageInfo
@@ -25,7 +30,10 @@ export const createMessageOfVmCall = (info: {
   pkgPath: string;
   func: string;
   args: Array<string>;
-}) => {
+}): {
+  type: string;
+  value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
+} => {
   return {
     type: '/vm.m_call',
     value: {
@@ -43,13 +51,13 @@ export const createMessageOfVmRun = (info: {
   send: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   packageInfo: any;
-}) => {
+}): { type: string; value: { caller: string; send: string; package: any } } => {
   return {
     type: '/vm.m_run',
     value: {
       caller: info.caller,
       send: info.send,
-      package: info.packageInfo
+      package: info.packageInfo,
     },
   };
 };

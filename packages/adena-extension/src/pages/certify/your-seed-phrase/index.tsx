@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import TitleWithDesc from '@components/title-with-desc';
 import SeedBox from '@components/seed-box';
 import TermsCheckbox from '@components/terms-checkbox';
@@ -20,7 +20,7 @@ const text = {
   blurScreenText: 'Make sure no one is watching your screen',
 };
 
-export const YourSeedPhrase = () => {
+export const YourSeedPhrase = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
   const { wallet, updateWallet } = useWalletContext();
@@ -31,12 +31,9 @@ export const YourSeedPhrase = () => {
   const [clicked, setClicked] = useState(false);
   const { changeCurrentAccount } = useCurrentAccount();
 
-  const handleTermsChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setTerms((prev: boolean) => !prev),
-    [terms],
-  );
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
-  const handleNextButtonClick = async () => {
+  const handleNextButtonClick = async (): Promise<void> => {
     if (clicked) {
       return;
     }
@@ -55,11 +52,11 @@ export const YourSeedPhrase = () => {
     });
   };
 
-  const isAddAccount = () => {
+  const isAddAccount = (): boolean => {
     return location?.state?.type === 'ADD_ACCOUNT';
   };
 
-  const addAccount = async () => {
+  const addAccount = async (): Promise<void> => {
     if (!wallet) {
       return;
     }
@@ -79,7 +76,7 @@ export const YourSeedPhrase = () => {
     navigate(RoutePath.Wallet);
   };
 
-  const viewSeedAgreeButton = () => {
+  const viewSeedAgreeButton = (): void => {
     if (terms) setViewSeedAgree(true);
     setShowBlurScreen(false);
     setTerms(false);
@@ -138,7 +135,7 @@ export const YourSeedPhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

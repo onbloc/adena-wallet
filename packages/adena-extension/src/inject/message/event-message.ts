@@ -14,7 +14,7 @@ const MESSAGE_TYPES: { [key in EventKeyType]: Message } = {
   },
   changedNetwork: {
     code: 0,
-    description: 'Netwrok has been successfully changed.',
+    description: 'Network has been successfully changed.',
   },
 };
 
@@ -63,27 +63,27 @@ export class EventMessage {
     };
   }
 
-  public getCode = () => {
+  public getCode = (): number => {
     return this.code;
   };
 
-  public getType = () => {
+  public getType = (): 'changedAccount' | 'changedNetwork' => {
     return this.type;
   };
 
-  public getStatus = () => {
+  public getStatus = (): 'event' => {
     return this.status;
   };
 
-  public getDescription = () => {
+  public getDescription = (): string => {
     return this.description;
   };
 
-  public getData = () => {
+  public getData = (): any => {
     return this.data;
   };
 
-  public static event = (messageKey: EventKeyType, data?: any) => {
+  public static event = (messageKey: EventKeyType, data?: any): EventMessageData => {
     return new EventMessage(messageKey, 'event', data).message;
   };
 }

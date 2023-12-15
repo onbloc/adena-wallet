@@ -1,4 +1,4 @@
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 
 export type ChainMetainfoResponse = ChainMetainfoItem[];
 
@@ -18,7 +18,9 @@ export interface ChainMetainfoItem {
 }
 
 export class NetworkMetainfoMapper {
-  public static fromChainMetainfoResponse(chainMetainfoResponse: ChainMetainfoResponse) {
+  public static fromChainMetainfoResponse(
+    chainMetainfoResponse: ChainMetainfoResponse,
+  ): NetworkMetainfo[] {
     return chainMetainfoResponse.map(this.mappedNetworkMetainfo);
   }
 

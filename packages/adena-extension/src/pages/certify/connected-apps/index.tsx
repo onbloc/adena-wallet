@@ -1,9 +1,9 @@
 import theme from '@styles/theme';
 import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import LoadingNft from '@components/loading-screen/loading-nft';
 import ListBox, { ListHierarchy } from '@components/list-box';
 import DefaultImage from '../../../assets/favicon-default-small.svg';
@@ -13,7 +13,7 @@ import disconnected from '../../../assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 
-export const ConnectedApps = () => {
+export const ConnectedApps = (): JSX.Element => {
   const { establishService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const navigate = useNavigate();
@@ -24,23 +24,23 @@ export const ConnectedApps = () => {
     updateDatas();
   }, []);
 
-  const onClickDisconnect = async (item: any) => {
+  const onClickDisconnect = async (item: any): Promise<void> => {
     if (!currentAccount) {
       return;
     }
-    await establishService.unestablishBy(currentAccount.id, item.hostname);
+    await establishService.unEstablishBy(currentAccount.id, item.hostname);
     await updateDatas();
   };
 
-  const updateDatas = async () => {
+  const updateDatas = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
-    const establishedSites = await establishService.getEstablisedSitesBy(currentAccount.id);
+    const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id);
     setDatas(establishedSites);
   };
 
-  const renderAppItem = (item: any, index: number) => {
+  const renderAppItem = (item: any, index: number): JSX.Element => {
     return (
       <ListBox
         left={
@@ -56,7 +56,7 @@ export const ConnectedApps = () => {
           </Text>
         }
         right={
-          <DisconnectedBtn onClick={() => onClickDisconnect(item)}>
+          <DisconnectedBtn onClick={(): Promise<void> => onClickDisconnect(item)}>
             <img src={disconnected} alt='disconnected button' />
           </DisconnectedBtn>
         }
@@ -82,7 +82,7 @@ export const ConnectedApps = () => {
               No connections
             </Text>
           )}
-          <CloseShadowButton onClick={() => navigate(-1)} />
+          <CloseShadowButton onClick={(): void => navigate(-1)} />
         </>
       ) : (
         <LoadingNft />
@@ -92,12 +92,12 @@ export const ConnectedApps = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
   padding-bottom: 120px;
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
 
   .logo {
     width: 20px;
@@ -122,15 +122,15 @@ const Wrapper = styled.main`
 `;
 
 const DisconnectedBtn = styled.button`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   flex-shrink: 0;
   width: 25px;
   height: 25px;
   border-radius: 35px;
-  background-color: ${({ theme }) => theme.color.red[2]};
+  background-color: ${({ theme }): string => theme.color.red[2]};
   transition: all ease 0.4s;
   margin-left: auto;
   :hover {
-    background-color: ${({ theme }) => theme.color.red[5]};
+    background-color: ${({ theme }): string => theme.color.red[5]};
   }
 `;

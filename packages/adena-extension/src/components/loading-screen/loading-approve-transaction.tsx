@@ -1,6 +1,6 @@
 import { GhostButtons, Round, SkeletonBoxStyle } from '@components/loadings';
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 
 interface ApproveProps {
   leftButtonText?: string;
@@ -11,7 +11,7 @@ interface ApproveProps {
 const LoadingApproveTransaction = ({
   leftButtonText,
   rightButtonText,
-}: ApproveProps) => {
+}: ApproveProps): JSX.Element => {
   return (
     <Wrapper>
       <Round width='163px' height='14px' radius='24px' />
@@ -41,7 +41,7 @@ const LoadingApproveTransaction = ({
 };
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;
@@ -51,7 +51,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;
   margin: 39px 0px 24px;
@@ -59,16 +59,16 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 const RoundedBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   padding: 0px 18px;
 `;
 
-const AllRadiusBox = styled(RoundedBox) <{ align?: string }>`
+const AllRadiusBox = styled(RoundedBox)<{ align?: string }>`
   border-radius: 24px;
-  justify-content: ${({ align }) => align && align};
+  justify-content: ${({ align }): string | undefined => align && align};
 `;
 
 const TopRadiusBox = styled(RoundedBox)`

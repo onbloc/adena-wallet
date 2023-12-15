@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/logo-withIcon.svg';
@@ -14,10 +14,10 @@ interface ProgressMenuProps {
 }
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   width: 100%;
   height: 100%;
-  border-bottom: 4px solid ${({ theme }) => theme.color.neutral[6]};
+  border-bottom: 4px solid ${({ theme }): string => theme.color.neutral[6]};
   position: relative;
   padding: 0px 18px 0px 12px;
 `;
@@ -28,9 +28,9 @@ const Button = styled(LeftArrowBtn)`
 `;
 
 const Hr = styled.hr<ProgressMenuProps>`
-  border-color: ${({ theme }) => theme.color.primary[3]};
-  background-color: ${({ theme }) => theme.color.primary[3]};
-  width: ${({ progressLevel }) =>
+  border-color: ${({ theme }): string => theme.color.primary[3]};
+  background-color: ${({ theme }): string => theme.color.primary[3]};
+  width: ${({ progressLevel }): '30%' | '60%' | '100%' =>
     progressLevel === 'first' ? '30%' : progressLevel === 'second' ? '60%' : '100%'};
   height: 4px;
   position: absolute;
@@ -43,9 +43,9 @@ export const ProgressMenu = ({
   progressLevel,
   showLogo = false,
   hideArrow = false,
-}: ProgressMenuProps) => {
+}: ProgressMenuProps): JSX.Element => {
   const navigate = useNavigate();
-  const handlePrevButtonClick = () => navigate(-1);
+  const handlePrevButtonClick = (): void => navigate(-1);
 
   return (
     <Wrapper>

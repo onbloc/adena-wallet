@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import theme from '@styles/theme';
 import Text from '@components/text';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import { CopyTooltip } from '@components/tooltips';
 import { StatusDot } from '@components/status-dot';
-import { formatAddress, formatNickname, getSiteName, parseParmeters } from '@common/utils/client-utils';
+import {
+  formatAddress,
+  formatNickname,
+  getSiteName,
+  parseParameters,
+} from '@common/utils/client-utils';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLocation } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
@@ -15,28 +20,28 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${({ theme }) => theme.color.neutral[6]};
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'flex-end')};
+  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-end')};
   .t-approve {
-    ${({ theme }) => theme.mixins.positionCenter()}
+    ${({ theme }): CSSProp => theme.mixins.positionCenter()}
   }
 `;
 
-const ApproveMenu = () => {
+const ApproveMenu = (): JSX.Element => {
   const { establishService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
-  const [requestData, setReqeustData] = useState<any>();
+  const [requestData, setRequestData] = useState<any>();
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
 
   useEffect(() => {
     if (location.search) {
-      const data = parseParmeters(location.search);
-      setReqeustData(data);
+      const data = parseParameters(location.search);
+      setRequestData(data);
     }
   }, [location]);
 
@@ -50,7 +55,7 @@ const ApproveMenu = () => {
     initAddress();
   }, [currentAccount]);
 
-  const initAddress = async () => {
+  const initAddress = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
@@ -60,18 +65,18 @@ const ApproveMenu = () => {
     setAccountName(currentAccountName);
   };
 
-  const updateEstablishState = async () => {
+  const updateEstablishState = async (): Promise<void> => {
     if (requestData?.hostname) {
-      const id = currentAccount?.id ?? "";
+      const id = currentAccount?.id ?? '';
       const siteName = getSiteName(requestData.protocol, requestData.hostname);
       const currentIsEstablished = await establishService.isEstablishedBy(id, siteName);
       setIsEstablished(currentIsEstablished);
     }
   };
 
-  const getTooltipText = () => {
+  const getTooltipText = (): string => {
     let currentHostname = requestData?.hostname ?? '';
-    if (currentHostname.startsWith("chrome-extension") || !currentHostname.includes('.')) {
+    if (currentHostname.startsWith('chrome-extension') || !currentHostname.includes('.')) {
       currentHostname = 'chrome-extension';
     }
     return isEstablished

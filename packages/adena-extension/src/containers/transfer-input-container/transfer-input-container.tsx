@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import TransferInput from '@components/transfer/transfer-input/transfer-input';
+import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+import TransferInput from '@components/transfer/transfer-input/transfer-input';
 import { RoutePath } from '@router/path';
 import { useAddressBookInput } from '@hooks/use-adderss-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import BigNumber from 'bignumber.js';
-import { TokenModel, isNativeTokenModel } from '@models/token-model';
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
+
+import { TokenModel } from '@types';
 
 interface HistoryData {
   isTokenSearch: boolean;
@@ -22,7 +25,7 @@ interface HistoryData {
       createdAt: string;
     } | null;
     address?: string;
-  }
+  };
 }
 
 const TransferInputContainer: React.FC = () => {
@@ -58,7 +61,7 @@ const TransferInputContainer: React.FC = () => {
     }
   }, [getHistoryData()]);
 
-  const saveHistoryData = () => {
+  const saveHistoryData = (): void => {
     setHistoryData({
       isTokenSearch,
       tokenMetainfo,
@@ -66,10 +69,10 @@ const TransferInputContainer: React.FC = () => {
       addressInput: {
         selected: addressBookInput.selected,
         selectedAddressBook: addressBookInput.selectedAddressBook,
-        address: addressBookInput.address
-      }
+        address: addressBookInput.address,
+      },
     });
-  }
+  };
 
   const isNext = useCallback(() => {
     if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
@@ -97,7 +100,8 @@ const TransferInputContainer: React.FC = () => {
     if (!isNext()) {
       return;
     }
-    const validAddress = addressBookInput.validateAddressBookInput() &&
+    const validAddress =
+      addressBookInput.validateAddressBookInput() &&
       (isNativeTokenModel(tokenMetainfo) || addressBookInput.validateEqualAddress());
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -109,10 +113,10 @@ const TransferInputContainer: React.FC = () => {
           toAddress: addressBookInput.resultAddress,
           transferAmount: {
             value: balanceInput.amount,
-            denom: balanceInput.denom
+            denom: balanceInput.denom,
           },
-          networkFee: balanceInput.networkFee
-        }
+          networkFee: balanceInput.networkFee,
+        },
       });
     }
   }, [addressBookInput, balanceInput, isNext()]);

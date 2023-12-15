@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
 import FullButtonRightIcon, { ButtonMode } from '@components/buttons/full-button-right-icon';
@@ -12,40 +12,40 @@ import { useRemoveAccount } from '@hooks/use-remove-account';
 const getMenuMakerInfo = (
   account: Account | null,
   availRemove: boolean,
-) => [
-    {
-      title: 'Change Password',
-      navigatePath: RoutePath.SettingChangePassword,
-      mode: 'DEFAULT',
-      disabled: false,
-    },
-    {
-      title: 'Reveal Seed Phrase',
-      navigatePath: RoutePath.RevealPasswoardPhrase,
-      mode: 'DEFAULT',
-      disabled: !account || !isSeedAccount(account),
-    },
-    {
-      title: 'Export Private Key',
-      navigatePath: RoutePath.ApproachPasswordPhrase,
-      mode: 'DEFAULT',
-      disabled: !account || isLedgerAccount(account),
-    },
-    {
-      title: 'Remove Account',
-      navigatePath: RoutePath.RemoveAccount,
-      mode: 'DANGER',
-      disabled: !availRemove,
-    },
-    {
-      title: 'Reset Wallet',
-      navigatePath: RoutePath.ResetWallet,
-      mode: 'DANGER',
-      disabled: false,
-    },
-  ];
+): { title: string; navigatePath: RoutePath; mode: string; disabled: boolean }[] => [
+  {
+    title: 'Change Password',
+    navigatePath: RoutePath.SettingChangePassword,
+    mode: 'DEFAULT',
+    disabled: false,
+  },
+  {
+    title: 'Reveal Seed Phrase',
+    navigatePath: RoutePath.RevealPasswordPhrase,
+    mode: 'DEFAULT',
+    disabled: !account || !isSeedAccount(account),
+  },
+  {
+    title: 'Export Private Key',
+    navigatePath: RoutePath.ApproachPasswordPhrase,
+    mode: 'DEFAULT',
+    disabled: !account || isLedgerAccount(account),
+  },
+  {
+    title: 'Remove Account',
+    navigatePath: RoutePath.RemoveAccount,
+    mode: 'DANGER',
+    disabled: !availRemove,
+  },
+  {
+    title: 'Reset Wallet',
+    navigatePath: RoutePath.ResetWallet,
+    mode: 'DANGER',
+    disabled: false,
+  },
+];
 
-export const SecurityPrivacy = () => {
+export const SecurityPrivacy = (): JSX.Element => {
   const navigate = useNavigate();
   const { currentAccount } = useCurrentAccount();
   const { availRemoveAccount } = useRemoveAccount();
@@ -68,7 +68,7 @@ export const SecurityPrivacy = () => {
         <FullButtonRightIcon
           key={i}
           title={v.title}
-          onClick={() => navigate(v.navigatePath)}
+          onClick={(): void => navigate(v.navigatePath)}
           mode={v.mode as ButtonMode}
           disabled={v.disabled as boolean}
         />
@@ -79,7 +79,7 @@ export const SecurityPrivacy = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

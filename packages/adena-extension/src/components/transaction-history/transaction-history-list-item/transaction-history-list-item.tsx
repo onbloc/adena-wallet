@@ -34,7 +34,6 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
   valueType,
   onClickItem,
 }) => {
-
   const getLogoImage = useCallback(() => {
     if (type === 'ADD_PACKAGE') {
       return `${AddPackageIcon}`;
@@ -46,7 +45,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
       return `${ContractIcon}`;
     }
     return `${logo}`;
-  }, [type, logo])
+  }, [type, logo]);
 
   const getValueTypeClassName = useCallback(() => {
     if (valueType === 'ACTIVE') {
@@ -56,16 +55,12 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
       return 'blur';
     }
     return '';
-  }, [valueType])
+  }, [valueType]);
 
   return (
-    <TransactionHistoryListItemWrapper onClick={() => onClickItem(hash)}>
+    <TransactionHistoryListItemWrapper onClick={(): void => onClickItem(hash)}>
       <div className='logo-wrapper'>
-        <img
-          className='logo'
-          src={getLogoImage()}
-          alt='logo image'
-        />
+        <img className='logo' src={getLogoImage()} alt='logo image' />
         <img
           className='badge'
           src={status === 'SUCCESS' ? SuccessIcon : FailedIcon}
@@ -82,17 +77,17 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
       </div>
 
       <div className={`value-wrapper ${getValueTypeClassName()}`}>
-        {
-          type === 'MULTI_CONTRACT_CALL' ?
-            <span className='value more'>More</span> :
-            <TokenBalance
-              value={amount.value}
-              denom={amount.denom}
-              fontStyleKey='body2Reg'
-              minimumFontSize='11px'
-              orientation='HORIZONTAL'
-            />
-        }
+        {type === 'MULTI_CONTRACT_CALL' ? (
+          <span className='value more'>More</span>
+        ) : (
+          <TokenBalance
+            value={amount.value}
+            denom={amount.denom}
+            fontStyleKey='body2Reg'
+            minimumFontSize='11px'
+            orientation='HORIZONTAL'
+          />
+        )}
       </div>
     </TransactionHistoryListItemWrapper>
   );

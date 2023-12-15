@@ -12,15 +12,15 @@ export const Default: StoryObj<AddressBookListProps> = {
     addressBookInfos: [{
       addressBookId: '1',
       description: '(g1uh...ohno)',
-      name: 'Account 1'
+      name: 'Account 1',
     }],
-    onClickItem: action('click item')
+    onClickItem: action('click item'),
   },
 };
 
 export const NoAddress: StoryObj<AddressBookListProps> = {
   args: {
     addressBookInfos: [],
-    onClickItem: action('click item')
+    onClickItem: action('click item'),
   },
 };

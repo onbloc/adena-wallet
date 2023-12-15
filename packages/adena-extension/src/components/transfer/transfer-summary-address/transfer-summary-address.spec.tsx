@@ -9,7 +9,7 @@ import TransferSummaryAddress, { TransferSummaryAddressProps } from './transfer-
 describe('TransferSummaryAddress Component', () => {
   it('TransferSummaryAddress render', () => {
     const args: TransferSummaryAddressProps = {
-      toAddress: ''
+      toAddress: '',
     };
 
     render(

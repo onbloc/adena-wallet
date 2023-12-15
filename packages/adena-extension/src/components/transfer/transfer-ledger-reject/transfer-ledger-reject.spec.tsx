@@ -9,7 +9,7 @@ import TransferLedgerReject, { TransferLedgerRejectProps } from './transfer-ledg
 describe('TransferLedgerReject Component', () => {
   it('TransferLedgerReject render', () => {
     const args: TransferLedgerRejectProps = {
-      onClickClose: () => { return; }
+      onClickClose: () => { return; },
     };
 
     render(

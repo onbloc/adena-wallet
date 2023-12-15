@@ -1,11 +1,11 @@
 import React from 'react';
 import Text from '@components/text';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import IconLogo from './../../../install/assets/logo-typeB.svg';
 import IconHelp from './../../../assets/help-fill.svg';
 
 const Container = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')}
   position: absolute;
   top: 0;
   display: flex;
@@ -14,13 +14,13 @@ const Container = styled.div`
   padding: 0;
   width: 100%;
   height: fit-content;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   padding: 40px 40px 0px;
   .help-text {
     font-size: 19px;
   }
   .help-btn {
-    ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')}
+    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
     font-size: 19px;
     font-weight: 600;
     line-height: 24px;
@@ -37,8 +37,8 @@ const Container = styled.div`
   }
 `;
 
-export const TabMenu = () => {
-  const onClickHelp = () => {
+export const TabMenu = (): JSX.Element => {
+  const onClickHelp = (): void => {
     chrome.tabs.create({ url: 'https://docs.adena.app/resources/faq' });
   };
 

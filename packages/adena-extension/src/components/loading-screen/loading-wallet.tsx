@@ -1,10 +1,10 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { ReactElement } from 'react';
+import styled, { CSSProp } from 'styled-components';
 import { Circle, GhostButtons, Round } from '@components/loadings';
 import { SkeletonBoxStyle } from '@components/loadings';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   position: relative;
   width: 100%;
   height: 492px;
@@ -12,24 +12,24 @@ const Wrapper = styled.main`
 `;
 
 const RoundsBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-end', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'center')};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')}
   width: 100%;
   gap: 12px;
   margin-top: 31px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
   width: 100%;
   height: 60px;
 `;
 
-const LoadingWallet = () => {
+const LoadingWallet = (): ReactElement => {
   return (
     <Wrapper>
       {/* <Header /> */}

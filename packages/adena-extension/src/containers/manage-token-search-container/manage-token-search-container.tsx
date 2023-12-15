@@ -18,7 +18,7 @@ export interface ManageTokenInfo {
   balanceAmount: {
     value: string;
     denom: string;
-  }
+  };
 }
 
 const ManageTokenSearchContainer: React.FC = () => {
@@ -42,25 +42,30 @@ const ManageTokenSearchContainer: React.FC = () => {
     }
   }, [loaded, isClose]);
 
-  const filterTokens = useCallback((keyword: string) => {
-    const comparedKeyword = keyword.toLowerCase();
-    const filterdTokens = tokenBalances.filter(token => {
-      if (comparedKeyword === '') return true;
-      if (token.name.toLowerCase().includes(comparedKeyword)) return true;
-      if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
-      return false;
-    }).map(metainfo => {
-      return {
-        ...metainfo,
-        balanceAmount: {
-          value: BigNumber(metainfo.amount.value).toFormat(),
-          denom: metainfo.amount.denom
-        },
-        logo: metainfo.image || `${UnknownTokenIcon}`
-      }
-    });
-    return filterdTokens;
-  }, [tokenBalances]);
+  const filterTokens = useCallback(
+    (keyword: string) => {
+      const comparedKeyword = keyword.toLowerCase();
+      const filteredTokens = tokenBalances
+        .filter((token) => {
+          if (comparedKeyword === '') return true;
+          if (token.name.toLowerCase().includes(comparedKeyword)) return true;
+          if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
+          return false;
+        })
+        .map((metainfo) => {
+          return {
+            ...metainfo,
+            balanceAmount: {
+              value: BigNumber(metainfo.amount.value).toFormat(),
+              denom: metainfo.amount.denom,
+            },
+            logo: metainfo.image || `${UnknownTokenIcon}`,
+          };
+        });
+      return filteredTokens;
+    },
+    [tokenBalances],
+  );
 
   const moveTokenAddedPage = useCallback(() => {
     navigate(RoutePath.ManageTokenAdded);
@@ -70,15 +75,18 @@ const ManageTokenSearchContainer: React.FC = () => {
     setSearchKeyword(keyword);
   }, []);
 
-  const onToggleActiveItem = useCallback((tokenId: string, activated: boolean) => {
-    if (!currentAccount) {
-      return;
-    }
-    const changedToken = tokenBalances.find(token => tokenId === token.tokenId);
-    if (changedToken) {
-      toggleDisplayOption(currentAccount, changedToken, activated);
-    }
-  }, [tokenBalances])
+  const onToggleActiveItem = useCallback(
+    (tokenId: string, activated: boolean) => {
+      if (!currentAccount) {
+        return;
+      }
+      const changedToken = tokenBalances.find((token) => tokenId === token.tokenId);
+      if (changedToken) {
+        toggleDisplayOption(currentAccount, changedToken, activated);
+      }
+    },
+    [tokenBalances],
+  );
 
   const onClickClose = useCallback(() => {
     setIsClose(true);

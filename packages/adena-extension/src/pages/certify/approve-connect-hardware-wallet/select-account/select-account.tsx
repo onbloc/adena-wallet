@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -11,7 +11,7 @@ import IconCheck from '@assets/check.svg';
 import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
-import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
@@ -21,7 +21,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
@@ -188,7 +188,7 @@ const AccountListContainer = styled.div`
   }
 `;
 
-export const ApproveConnectHardwareWalletSelectAccount = () => {
+export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const navigate = useNavigate();
@@ -207,17 +207,19 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     }
   }, [location]);
 
-  const initAccounts = async (accounts: Array<Account>) => {
+  const initAccounts = async (accounts: Array<Account>): Promise<void> => {
     const lastPath = accounts.map((account) => account.toData().hdPath ?? 0).reverse()[0];
     setLastPath(lastPath);
     setAccounts(accounts);
   };
 
-  const isStoredAccount = (adderss: string) => {
-    return walletAccounts.find((account) => account.getAddress(addressPrefix) === adderss) !== undefined;
+  const isStoredAccount = (address: string): boolean => {
+    return (
+      walletAccounts.find((account) => account.getAddress(addressPrefix) === address) !== undefined
+    );
   };
 
-  const onClickSelectButton = (address: string) => {
+  const onClickSelectButton = (address: string): void => {
     if (selectAccountAddresses.includes(address)) {
       setSelectAccountAddresses(
         selectAccountAddresses.filter((selectAddress) => selectAddress !== address),
@@ -227,7 +229,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     setSelectAccountAddresses([...selectAccountAddresses, address]);
   };
 
-  const onClickLoadMore = async () => {
+  const onClickLoadMore = async (): Promise<void> => {
     setLoadPath(true);
     const accountPaths = Array.from(
       { length: LEDGER_ACCOUNT_LOAD_SIZE },
@@ -250,37 +252,43 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
     setLoadPath(false);
   };
 
-  const onClickNextButton = async () => {
-    const selectAccounts = accounts.filter(account => selectAccountAddresses.includes(account.getAddress(addressPrefix)));
+  const onClickNextButton = async (): Promise<void> => {
+    const selectAccounts = accounts.filter((account) =>
+      selectAccountAddresses.includes(account.getAddress(addressPrefix)),
+    );
     const savedAccounts: Array<Account> = [];
 
     selectAccounts.forEach((account) => {
       if (
-        !walletAccounts.find((storedAccount) => storedAccount.getAddress(addressPrefix) === account.getAddress(addressPrefix))
+        !walletAccounts.find(
+          (storedAccount) =>
+            storedAccount.getAddress(addressPrefix) === account.getAddress(addressPrefix),
+        )
       ) {
         account.name = `${wallet?.nextLedgerAccountName}`;
         savedAccounts.push(account);
       }
     });
-    const resultSavedAccounts = savedAccounts.sort(account => account.toData().hdPath ?? 0);
+    const resultSavedAccounts = savedAccounts.sort((account) => account.toData().hdPath ?? 0);
     let currentAccount = null;
     if (resultSavedAccounts.length > 0) {
       currentAccount = resultSavedAccounts[0];
     }
 
     const locationState = {
-      accounts: resultSavedAccounts.map(account => serializeAccount(account)),
-      currentAccount: currentAccount ? serializeAccount(currentAccount) : null
+      accounts: resultSavedAccounts.map((account) => serializeAccount(account)),
+      currentAccount: currentAccount ? serializeAccount(currentAccount) : null,
     };
 
-    const routePath = walletAccounts.length === 0 ?
-      RoutePath.ApproveHardwareWalletLedgerPassword :
-      RoutePath.ApproveHardwareWalletFinish;
+    const routePath =
+      walletAccounts.length === 0
+        ? RoutePath.ApproveHardwareWalletLedgerPassword
+        : RoutePath.ApproveHardwareWalletFinish;
 
     navigate(routePath, { state: locationState });
   };
 
-  const renderAccount = (account: Account, index: number) => {
+  const renderAccount = (account: Account, index: number): JSX.Element => {
     const hdPath = account.toData().hdPath ?? 0;
     const stored = isStoredAccount(account.getAddress(addressPrefix));
     const selected = selectAccountAddresses.includes(account.getAddress(addressPrefix));
@@ -288,7 +296,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
       <div className='item' key={index}>
         <div className='address-wrapper'>
           <span className='address'>{formatAddress(account.getAddress(addressPrefix))}</span>
-          < span className='path' > {`m/44'/118'/0'/0/${hdPath}`}</span>
+          <span className='path'> {`m/44'/118'/0'/0/${hdPath}`}</span>
         </div>
         {stored ? (
           <span className={'check disabled'}>
@@ -298,17 +306,16 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
         ) : (
           <span
             className={selected ? 'check active' : 'check'}
-            onClick={() => onClickSelectButton(account.getAddress(addressPrefix))}
+            onClick={(): void => onClickSelectButton(account.getAddress(addressPrefix))}
           >
             <img className='icon-check' src={IconCheck} alt='check-image' />
           </span>
-        )
-        }
-      </div >
+        )}
+      </div>
     );
   };
 
-  const renderLoading = () => {
+  const renderLoading = (): JSX.Element => {
     return (
       <div className='icon-loading'>
         <svg width='9' height='9' viewBox='0 0 9 9' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -335,7 +342,7 @@ export const ApproveConnectHardwareWalletSelectAccount = () => {
         </div>
         <Button className='load-more-button' onClick={onClickLoadMore} disabled={loadPath}>
           {loadPath ? 'Loading' : 'Load more accounts'}
-          {loadPath ? renderLoading() : <img src={IconArraowDown} />}
+          {loadPath ? renderLoading() : <img src={IconArrowDown} />}
         </Button>
       </AccountListContainer>
 

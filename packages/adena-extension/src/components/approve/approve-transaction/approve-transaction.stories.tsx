@@ -16,11 +16,11 @@ export const Default: StoryObj<ApproveTransactionProps> = {
     contracts: [{
       type: '/vm.m_call',
       function: 'GetBoardIDFromName',
-      value: ''
+      value: '',
     }],
     networkFee: {
       amount: '0.0048',
-      denom: 'GNOT'
+      denom: 'GNOT',
     },
     transactionData: '',
     opened: false,

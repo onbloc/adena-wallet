@@ -1,6 +1,6 @@
 import BottomFixedButton from '@components/buttons/bottom-fixed-button';
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import logo from '@assets/logo-default-v2.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -40,7 +40,7 @@ const menuMakerInfo = [
   },
 ];
 
-export const AboutAdena = () => {
+export const AboutAdena = (): JSX.Element => {
   const [version, setVersion] = useState('');
   const navigate = useNavigate();
 
@@ -52,12 +52,12 @@ export const AboutAdena = () => {
     navigate(-1);
   }, [navigate]);
 
-  const initVersion = () => {
+  const initVersion = (): void => {
     const manifest = chrome.runtime.getManifest();
     setVersion(`${manifest.version}`);
   };
 
-  const onClickWebLink = (path: string) => {
+  const onClickWebLink = (path: string): Window | null => {
     return window.open(path, '_blank');
   };
 
@@ -71,7 +71,7 @@ export const AboutAdena = () => {
         <FullButtonRightIcon
           key={i}
           title={v.title}
-          onClick={() => onClickWebLink(v.navigatePath)}
+          onClick={(): Window | null => onClickWebLink(v.navigatePath)}
           mode={v.mode as ButtonMode}
           icon='WEBLINK'
         />
@@ -82,7 +82,7 @@ export const AboutAdena = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 36px;

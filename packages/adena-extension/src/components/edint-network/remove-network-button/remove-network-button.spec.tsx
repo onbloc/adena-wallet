@@ -9,7 +9,7 @@ import RemoveNetworkButton, { RemoveNetworkButtonProps } from './remove-network-
 describe('RemoveNetworkButton Component', () => {
   it('RemoveNetworkButton render', () => {
     const args: RemoveNetworkButtonProps = {
-      removeNetwork: () => { return; }
+      removeNetwork: () => { return; },
     };
 
     render(

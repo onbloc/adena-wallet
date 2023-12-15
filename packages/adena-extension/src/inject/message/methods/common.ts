@@ -7,7 +7,7 @@ export const createPopup = async (
   message: InjectionMessage,
   closeMessage: InjectionMessage,
   sendResponse: (response: any) => void,
-) => {
+): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
       `popup.html#${popupPath}` +
@@ -23,17 +23,17 @@ export const createPopup = async (
     top: 300,
   };
 
-  chrome.windows.create(popupOption, async (windowResposne) => {
+  chrome.windows.create(popupOption, async (windowResponse) => {
     chrome.tabs.onUpdated.addListener((tabId, info) => {
-      if (!windowResposne) {
+      if (!windowResponse) {
         return;
       }
       chrome.windows.onRemoved.addListener((removeWindowId) => {
-        if (windowResposne.id === removeWindowId) {
+        if (windowResponse.id === removeWindowId) {
           sendResponse(closeMessage);
         }
       });
-      if (info.status === 'complete' && windowResposne.tabs) {
+      if (info.status === 'complete' && windowResponse.tabs) {
         chrome.tabs.sendMessage(
           tabId,
           {
@@ -44,9 +44,9 @@ export const createPopup = async (
           async () => {
             chrome.runtime.onMessage.addListener((popupMessage) => {
               chrome.runtime.onMessage.removeListener((popupMessage) =>
-                popupMessageListener(windowResposne.id, message, popupMessage, sendResponse),
+                popupMessageListener(windowResponse.id, message, popupMessage, sendResponse),
               );
-              popupMessageListener(windowResposne.id, message, popupMessage, sendResponse);
+              popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
             });
           },
         );
@@ -55,7 +55,7 @@ export const createPopup = async (
   });
 };
 
-export const existsPopups = async () => {
+export const existsPopups = async (): Promise<boolean> => {
   const windows = await chrome.windows.getAll();
   return windows.findIndex((window) => window.type === 'popup') > -1;
 };
@@ -63,7 +63,7 @@ export const existsPopups = async () => {
 export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
-) => {
+): Promise<boolean> => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
 
@@ -81,7 +81,7 @@ const popupMessageListener = (
   requestData: InjectionMessage,
   popupMessage: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): boolean => {
   new Promise((resolve) => {
     if (requestData.key === popupMessage.key) {
       resolve(popupMessage);

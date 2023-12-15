@@ -10,18 +10,26 @@ describe('ApproveChangingNetwork Component', () => {
   it('ApproveChangingNetwork render', () => {
     const args: ApproveChangingNetworkProps = {
       fromChain: {
-        name: 'Testnet3'
+        name: 'Testnet3',
       },
       toChain: {
-        name: 'Onbloc Testnet'
+        name: 'Onbloc Testnet',
       },
-      changable: true,
+      changeable: true,
       processing: false,
       done: false,
-      changeNetwork: () => { return; },
-      cancel: () => { return; },
-      onResponse: () => { return; },
-      onTimeout: () => { return; },
+      changeNetwork: () => {
+        return;
+      },
+      cancel: () => {
+        return;
+      },
+      onResponse: () => {
+        return;
+      },
+      onTimeout: () => {
+        return;
+      },
     };
 
     render(

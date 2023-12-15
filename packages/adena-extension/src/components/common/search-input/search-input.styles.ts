@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const SearchInputWrapper = styled.div`
   display: flex;
@@ -10,7 +10,7 @@ export const SearchInputWrapper = styled.div`
   align-items: center;
   justify-content: flex-start;
   border-radius: 30px;
-  border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
 
   .search-icon-wrapper {
     display: inline-flex;
@@ -34,7 +34,7 @@ export const SearchInputWrapper = styled.div`
 
     .search-input {
       width: 100%;
-      ${({ theme }) => theme.fonts.body2Reg};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
     }
   }
 

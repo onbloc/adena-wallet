@@ -10,7 +10,7 @@ describe('AdditionalTokenSearchList Component', () => {
   it('AdditionalTokenSearchList render', () => {
     const args: AdditionalTokenSearchListProps = {
       tokenInfos: [],
-      onClickListItem: () => { return; }
+      onClickListItem: () => { return; },
     };
 
     render(

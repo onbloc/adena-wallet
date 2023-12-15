@@ -1,6 +1,6 @@
 import { atom } from 'recoil';
 
-export interface SiteInfo {
+interface SiteInfo {
   symbol: string;
   name: string;
   description: string;
@@ -11,6 +11,6 @@ export interface SiteInfo {
 }
 
 export const sites = atom<Array<SiteInfo>>({
-  key: `explore/sites`,
+  key: 'explore/sites',
   default: [],
 });

@@ -11,16 +11,16 @@ import { ConnectInit } from './connect-init';
 import { serializeAccount } from 'adena-module';
 
 type ConnectType =
-  'INIT' |
-  'REQUEST' |
-  'NOT_PERMISSION' |
-  'REQUEST_WALLET' |
-  'REQUEST_WALLET_LOAD' |
-  'FAILED' |
-  'SUCCESS' |
-  'NONE';
+  | 'INIT'
+  | 'REQUEST'
+  | 'NOT_PERMISSION'
+  | 'REQUEST_WALLET'
+  | 'REQUEST_WALLET_LOAD'
+  | 'FAILED'
+  | 'SUCCESS'
+  | 'NONE';
 
-export const ApproveConnectHardwareWalletConnect = () => {
+export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
   const navigate = useNavigate();
   const [connectState, setConnectState] = useState<ConnectType>('NONE');
   const [wallet, setWallet] = useState<Wallet>();
@@ -31,28 +31,32 @@ export const ApproveConnectHardwareWalletConnect = () => {
 
   useEffect(() => {
     if (connectState === 'FAILED') {
-      const intervalReqeust = setTimeout(() => {
+      const intervalRequest = setTimeout(() => {
         requestHardwareWallet();
       }, 1000);
-      return () => clearTimeout(intervalReqeust);
+      return () => clearTimeout(intervalRequest);
     }
     if (connectState === 'SUCCESS' && wallet) {
-      const serializedAccounts = wallet.accounts.map((account: Account) => serializeAccount(account));
-      navigate(RoutePath.ApproveHardwareWalletSelectAccount, { state: { accounts: serializedAccounts } });
+      const serializedAccounts = wallet.accounts.map((account: Account) =>
+        serializeAccount(account),
+      );
+      navigate(RoutePath.ApproveHardwareWalletSelectAccount, {
+        state: { accounts: serializedAccounts },
+      });
     }
   }, [connectState, wallet]);
 
-  const initWallet = async () => {
+  const initWallet = async (): Promise<void> => {
     requestPermission();
   };
 
-  const requestPermission = async () => {
+  const requestPermission = async (): Promise<void> => {
     setConnectState('REQUEST');
     try {
       const connected = await checkHardwareConnect();
-      const transport = connected ?
-        await LedgerConnector.openConnected() :
-        await LedgerConnector.request();
+      const transport = connected
+        ? await LedgerConnector.openConnected()
+        : await LedgerConnector.request();
       await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
@@ -61,7 +65,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     }
   };
 
-  const checkHardwareConnect = async () => {
+  const checkHardwareConnect = async (): Promise<boolean> => {
     const devices = await LedgerConnector.devices();
     if (devices.length === 0) {
       return false;
@@ -70,7 +74,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
     return true;
   };
 
-  const requestHardwareWallet = async () => {
+  const requestHardwareWallet = async (): Promise<void> => {
     let retry = true;
     try {
       const connectedCosmosApp = await checkHardwareConnect();
@@ -97,7 +101,7 @@ export const ApproveConnectHardwareWalletConnect = () => {
       retry = false;
     } catch (e) {
       if (e instanceof Error) {
-        if (e.message !== "The device is already open.") {
+        if (e.message !== 'The device is already open.') {
           console.log(e);
         }
       }
@@ -113,26 +117,25 @@ export const ApproveConnectHardwareWalletConnect = () => {
     navigate(0);
   }, []);
 
-  const renderByState = () => {
-
+  const renderByState = (): JSX.Element => {
     if (connectState === 'INIT') {
-      return <ConnectInit init={initWallet} />
+      return <ConnectInit init={initWallet} />;
     }
 
     if (connectState === 'REQUEST') {
-      return <ConnectRequest />
+      return <ConnectRequest />;
     }
 
     if (connectState === 'NOT_PERMISSION') {
-      return <ConnectFail retry={requestPermission} />
+      return <ConnectFail retry={requestPermission} />;
     }
 
     if (connectState === 'REQUEST_WALLET' || connectState === 'FAILED') {
-      return <ConnectRequestWallet onClickClose={onClickClose} />
+      return <ConnectRequestWallet onClickClose={onClickClose} />;
     }
 
     if (connectState === 'REQUEST_WALLET_LOAD') {
-      return <ConnectRequestWalletLoad />
+      return <ConnectRequestWalletLoad />;
     }
 
     return <></>;

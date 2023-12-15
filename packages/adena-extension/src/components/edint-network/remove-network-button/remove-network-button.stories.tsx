@@ -1,6 +1,6 @@
 import RemoveNetworkButton, { type RemoveNetworkButtonProps } from './remove-network-button';
 import { Meta, StoryObj } from '@storybook/react';
-import { action } from "@storybook/addon-actions";
+import { action } from '@storybook/addon-actions';
 
 export default {
   title: 'components/edit-network/RemoveNetworkButton',
@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<RemoveNetworkButtonProps> = {
   args: {
-    removeNetwork: action("removeNetwork")
+    removeNetwork: action('removeNetwork'),
   },
 };

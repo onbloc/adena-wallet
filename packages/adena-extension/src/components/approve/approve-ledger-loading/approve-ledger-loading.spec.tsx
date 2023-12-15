@@ -9,7 +9,7 @@ import ApproveLedgerLoading, { ApproveLedgerLoadingProps } from './approve-ledge
 describe('ApproveLedgerLoading Component', () => {
   it('ApproveLedgerLoading render', () => {
     const args: ApproveLedgerLoadingProps = {
-      onClickCancel: () => { return; }
+      onClickCancel: () => { return; },
     };
 
     render(

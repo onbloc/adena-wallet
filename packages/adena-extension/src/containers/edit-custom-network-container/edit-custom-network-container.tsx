@@ -1,29 +1,36 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import EditNetwork from '@components/edint-network/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { parseParmeters } from '@common/utils/client-utils';
-import { NetworkMetainfo } from '@states/network';
+import { parseParameters } from '@common/utils/client-utils';
 
-function isValidURL(rpcURL: string) {
+import { NetworkMetainfo } from '@types';
+
+function isValidURL(rpcURL: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return regExp.test(rpcURL);
 }
 
-function existsChainId(chainId: string, networks: NetworkMetainfo[]) {
-  return networks.findIndex(netowrk => netowrk.networkId === chainId && netowrk.deleted !== true) > -1;
+function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
+  return (
+    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
+  );
 }
 
-function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]) {
+function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
   const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-  return networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true) > -1;
+  return (
+    networks.findIndex((network) => network.rpcUrl === currentRPCUrl && network.deleted !== true) >
+    -1
+  );
 }
 
-const EditCustomNetworkConatiner: React.FC = () => {
+const EditCustomNetworkContainer: React.FC = () => {
   const navigate = useNavigate();
   const { search } = useLocation();
-  const { networkId: currentNetworkId } = parseParmeters(search);
+  const { networkId: currentNetworkId } = parseParameters(search);
   const { networks, updateNetwork, deleteNetwork } = useNetwork();
   const {
     name,
@@ -40,10 +47,10 @@ const EditCustomNetworkConatiner: React.FC = () => {
 
   useEffect(() => {
     initInput(currentNetworkId);
-  }, [currentNetworkId])
+  }, [currentNetworkId]);
 
   const originNetwork = useMemo(() => {
-    const currentNetwork = networks.find(network => network.id === currentNetworkId);
+    const currentNetwork = networks.find((network) => network.id === currentNetworkId);
     return currentNetwork;
   }, [networks, currentNetworkId]);
 
@@ -51,22 +58,18 @@ const EditCustomNetworkConatiner: React.FC = () => {
     if (!originNetwork) {
       return false;
     }
-    if (
-      name === '' ||
-      rpcUrl === '' ||
-      chainId === ''
-    ) {
+    if (name === '' || rpcUrl === '' || chainId === '') {
       return false;
     }
     return (
       originNetwork.networkName !== name ||
       originNetwork.rpcUrl !== rpcUrl ||
       originNetwork.networkId !== chainId
-    )
+    );
   }, [originNetwork, name, rpcUrl, chainId]);
 
-  function initInput(networkId: string) {
-    const network = networks.find(current => current.id === networkId);
+  function initInput(networkId: string): void {
+    const network = networks.find((current) => current.id === networkId);
     if (network) {
       changeName(network.networkName);
       changeRPCUrl(network.rpcUrl);
@@ -95,7 +98,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
     if (!isValid) {
       return;
     }
-    const network = networks.find(current => current.id === currentNetworkId);
+    const network = networks.find((current) => current.id === currentNetworkId);
     if (network) {
       const parsedName = name.trim();
       await updateNetwork({
@@ -104,7 +107,7 @@ const EditCustomNetworkConatiner: React.FC = () => {
         networkId: chainId,
         chainName: parsedName,
         networkName: parsedName,
-        rpcUrl
+        rpcUrl,
       });
     }
     setRPCUrlError('');
@@ -139,4 +142,4 @@ const EditCustomNetworkConatiner: React.FC = () => {
   );
 };
 
-export default EditCustomNetworkConatiner;
+export default EditCustomNetworkContainer;

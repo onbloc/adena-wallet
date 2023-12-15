@@ -1,7 +1,8 @@
 import { AxiosInstance } from 'axios';
 import { TransactionHistoryResponse } from './response/transaction-history-response';
 import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
+import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 
 export class TransactionHistoryRepository {
   private axiosInstance: AxiosInstance;
@@ -13,18 +14,22 @@ export class TransactionHistoryRepository {
     this.networkMetainfo = null;
   }
 
-  private getAPIUrl() {
+  private getAPIUrl(): string | null {
     if (this.networkMetainfo === null || this.networkMetainfo.apiUrl === '') {
       return null;
     }
     return `${this.networkMetainfo.apiUrl}/${this.networkMetainfo.networkId}`;
   }
 
-  public setNetworkMetainfo(networkMetaion: NetworkMetainfo) {
-    this.networkMetainfo = networkMetaion;
+  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
+    this.networkMetainfo = networkMetainfo;
   }
 
-  public async fetchAllTransactionHistoryBy(address: string, from: number, size?: number) {
+  public async fetchAllTransactionHistoryBy(
+    address: string,
+    from: number,
+    size?: number,
+  ): Promise<{ hits: number; next: boolean; txs: TransactionInfo[] }> {
     const apiUri = this.getAPIUrl();
     if (!apiUri) {
       return {
@@ -41,10 +46,14 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 
-  public async fetchNativeTransactionHistoryBy(address: string, from: number, size?: number) {
+  public async fetchNativeTransactionHistoryBy(
+    address: string,
+    from: number,
+    size?: number,
+  ): Promise<{ hits: number; next: boolean; txs: TransactionInfo[] }> {
     const apiUri = this.getAPIUrl();
     if (!apiUri) {
       return {
@@ -60,7 +69,7 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 
   public async fetchGRC20TransactionHistoryBy(
@@ -68,7 +77,7 @@ export class TransactionHistoryRepository {
     packagePath: string,
     from: number,
     size?: number,
-  ) {
+  ): Promise<{ hits: number; next: boolean; txs: TransactionInfo[] }> {
     const apiUri = this.getAPIUrl();
     if (!apiUri) {
       return {
@@ -84,6 +93,6 @@ export class TransactionHistoryRepository {
         size: size || 20,
       },
     });
-    return TransactionHistoryMapper.fromResposne(response.data);
+    return TransactionHistoryMapper.fromResponse(response.data);
   }
 }

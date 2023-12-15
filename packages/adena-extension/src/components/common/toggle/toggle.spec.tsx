@@ -10,7 +10,7 @@ describe('Toggle Component', () => {
   it('Toggle render', () => {
     const args: ToggleProps = {
       activated: true,
-      onToggle: () => { return; }
+      onToggle: () => { return; },
     };
 
     render(

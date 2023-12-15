@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { FlattenSimpleInterpolation } from 'styled-components';
 
 export const HistoryLayoutWrapper = styled.div`
   display: flex;
@@ -12,7 +13,7 @@ export const HistoryLayoutWrapper = styled.div`
     margin-bottom: 12px;
 
     .title {
-      ${({ theme }) => theme.fonts.header4};
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
     }
   }
 `;

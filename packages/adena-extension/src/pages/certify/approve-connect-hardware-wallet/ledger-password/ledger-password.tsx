@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -13,11 +13,10 @@ const text = {
   desc: 'This will be used to unlock your wallet.',
 };
 
-
-export const ApproveHardwareWalletLedgerPassword = () => {
+export const ApproveHardwareWalletLedgerPassword = (): JSX.Element => {
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useLedgerPassword();
-  const handleLinkClick = () => window.open('https://adena.app/terms', '_blank');
+  const handleLinkClick = (): Window | null => window.open('https://adena.app/terms', '_blank');
 
   return (
     <Wrapper>
@@ -66,7 +65,7 @@ export const ApproveHardwareWalletLedgerPassword = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   padding-top: 50px;
 `;

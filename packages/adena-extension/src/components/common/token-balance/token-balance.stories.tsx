@@ -13,8 +13,8 @@ export const VerticalTokenBalance: StoryObj<TokenBalanceProps> = {
     orientation: 'VERTICAL',
     fontStyleKey: 'header6',
     fontColor: 'white',
-    minimumFontSize: '14px'
-  }
+    minimumFontSize: '14px',
+  },
 };
 
 export const HorizontalTokenBalance: StoryObj<TokenBalanceProps> = {
@@ -24,6 +24,6 @@ export const HorizontalTokenBalance: StoryObj<TokenBalanceProps> = {
     orientation: 'HORIZONTAL',
     fontStyleKey: 'header6',
     fontColor: 'white',
-    minimumFontSize: '14px'
-  }
+    minimumFontSize: '14px',
+  },
 };

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import Text from '@components/text';
 
 interface CopyTooltipProps {
@@ -10,15 +10,15 @@ interface CopyTooltipProps {
 }
 
 const ToolTipInner = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  ${({ theme }) => theme.fonts.body2Reg};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
   position: absolute;
   width: max-content;
   height: 25px;
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${({ theme }) => theme.color.neutral[8]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
   border-radius: 13px;
   transform: scale(0.6);
   cursor: default;
@@ -33,7 +33,7 @@ const ToolTipInner = styled.div`
 `;
 
 const ToolTipWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   position: relative;
   cursor: pointer;
   &:hover .tooltip,
@@ -44,16 +44,18 @@ const ToolTipWrap = styled.div`
   }
 `;
 
-export const CopyTooltip = ({ children, copyText, className, position = 'bottom' }: CopyTooltipProps) => {
+export const CopyTooltip = ({
+  children,
+  copyText,
+  className,
+  position = 'bottom',
+}: CopyTooltipProps): JSX.Element => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
-  const handleButtonClick = useCallback(
-    () => {
-      setIsClicked(true);
-      navigator.clipboard.writeText(copyText);
-    },
-    [isClicked, copyText],
-  );
+  const handleButtonClick = useCallback(() => {
+    setIsClicked(true);
+    navigator.clipboard.writeText(copyText);
+  }, [isClicked, copyText]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsClicked(false), 2000);

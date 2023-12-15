@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
+import BigNumber from 'bignumber.js';
+import styled, { CSSProp } from 'styled-components';
+import { useInfiniteQuery } from '@tanstack/react-query';
+
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import Text from '@components/text';
 import etc from '../../../assets/etc.svg';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
-import DubbleButton from '@components/buttons/double-button';
+import DoubleButton from '@components/buttons/double-button';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { TokenBalance } from '@states/balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
@@ -20,14 +21,15 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import HighlightNumber from '@components/common/highlight-number/highlight-number';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
-import BigNumber from 'bignumber.js';
-import { isGRC20TokenModel } from '@models/token-model';
+import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 import useHistoryData from '@hooks/use-history-data';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
+import { TokenBalance } from '@types';
+
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -55,7 +57,7 @@ const Wrapper = styled.main`
 `;
 
 const HeaderWrap = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   position: relative;
   width: 100%;
   margin-bottom: 20px;
@@ -73,7 +75,7 @@ const EtcIcon = styled.div`
   border-radius: 50%;
   cursor: pointer;
   &.show-tooltip {
-    background-color: ${({ theme }) => theme.color.neutral[6]};
+    background-color: ${({ theme }): string => theme.color.neutral[6]};
     & > .static-tooltip {
       visibility: visible;
       transition: all 0.1s ease-in-out;
@@ -82,12 +84,35 @@ const EtcIcon = styled.div`
   }
 `;
 
-export const TokenDetails = () => {
+type TokenHistoriesType = {
+  hits: number;
+  next: boolean;
+  txs: {
+    logo: string;
+    amount: { value: string; denom: string };
+    hash: string;
+    type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
+    typeName?: string | undefined;
+    status: 'FAIL' | 'SUCCESS';
+    title: string;
+    description?: string | undefined;
+    extraInfo?: string | undefined;
+    valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
+    date: string;
+    from?: string | undefined;
+    to?: string | undefined;
+    originFrom?: string | undefined;
+    originTo?: string | undefined;
+    networkFee?: { value: string; denom: string } | undefined;
+  }[];
+};
+
+export const TokenDetails = (): JSX.Element => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  useNetwork();
   const [tokenBalance] = useState<TokenBalance>(state);
   const [balance] = useState(tokenBalance.amount.value);
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
@@ -97,15 +122,12 @@ export const TokenDetails = () => {
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { saveScrollPosition } = useScrollHistory();
   const { clearHistoryData } = useHistoryData();
-  const {
-    status,
-    isLoading,
-    isFetching,
-    data,
-    refetch,
-    fetchNextPage,
-  } = useInfiniteQuery(
-    ['history/grc20-token-history', currentAddress, isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : ''],
+  const { status, isLoading, isFetching, data, refetch, fetchNextPage } = useInfiniteQuery(
+    [
+      'history/grc20-token-history',
+      currentAddress,
+      isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
+    ],
     ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
     {
       getNextPageParam: (lastPage, allPosts) => {
@@ -124,7 +146,7 @@ export const TokenDetails = () => {
   useEffect(() => {
     if (currentAddress) {
       const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (_, index) => index === 0 })
+        refetch({ refetchPage: (_, index) => index === 0 });
       }, HISTORY_FETCH_INTERVAL_TIME);
       return () => clearInterval(historyFetchTimer);
     }
@@ -147,7 +169,7 @@ export const TokenDetails = () => {
     return () => bodyElement?.removeEventListener('scroll', onScrollListener);
   }, [bodyElement]);
 
-  const onScrollListener = () => {
+  const onScrollListener = (): void => {
     if (bodyElement) {
       const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
       if (remain < 20) {
@@ -156,90 +178,107 @@ export const TokenDetails = () => {
     }
   };
 
-  const fetchTokenHistories = async (pageParam: number) => {
+  const fetchTokenHistories = async (pageParam: number): Promise<TokenHistoriesType> => {
     if (!currentAddress) {
       return {
         hits: 0,
         next: false,
-        txs: []
+        txs: [],
       };
     }
     const size = 20;
-    const histories = isGRC20TokenModel(tokenBalance) ?
-      await transactionHistoryService.fetchGRC20TransactionHistory(currentAddress, tokenBalance.pkgPath, pageParam, size) :
-      await transactionHistoryService.fetchNativeTransactionHistory(currentAddress, pageParam, size);
-    const txs = histories.txs.map(transaction => {
-      const { value, denom } = convertDenom(transaction.amount.value, transaction.amount.denom, 'COMMON');
+    const histories = isGRC20TokenModel(tokenBalance)
+      ? await transactionHistoryService.fetchGRC20TransactionHistory(
+          currentAddress,
+          tokenBalance.pkgPath,
+          pageParam,
+          size,
+        )
+      : await transactionHistoryService.fetchNativeTransactionHistory(
+          currentAddress,
+          pageParam,
+          size,
+        );
+    const txs = histories.txs.map((transaction) => {
+      const { value, denom } = convertDenom(
+        transaction.amount.value,
+        transaction.amount.denom,
+        'COMMON',
+      );
       return {
         ...transaction,
         logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
         amount: {
           value: BigNumber(value).toFormat(),
-          denom
-        }
-      }
+          denom,
+        },
+      };
     });
     return {
       hits: histories.hits,
       next: histories.next,
-      txs: txs
-    }
+      txs: txs,
+    };
   };
 
-  const onClickItem = useCallback((hash: string) => {
-    const transactions = TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(group => group.transactions) ?? [];
-    const transactionInfo = transactions.find(transaction => transaction.hash === hash);
-    if (transactionInfo) {
-      saveScrollPosition(bodyElement?.scrollTop);
-      navigate(RoutePath.TransactionDetail, {
-        state: transactionInfo
-      })
-    }
-  }, [data, bodyElement]);
+  const onClickItem = useCallback(
+    (hash: string) => {
+      const transactions =
+        TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(
+          (group) => group.transactions,
+        ) ?? [];
+      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      if (transactionInfo) {
+        saveScrollPosition(bodyElement?.scrollTop);
+        navigate(RoutePath.TransactionDetail, {
+          state: transactionInfo,
+        });
+      }
+    },
+    [data, bodyElement],
+  );
 
-  const handlePrevButtonClick = () => navigate(RoutePath.Wallet);
-  const DepositButtonClick = () => navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
-  const SendButtonClick = () => {
+  const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet);
+  const DepositButtonClick = (): void =>
+    navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
+  const SendButtonClick = (): void => {
     clearHistoryData(RoutePath.TransferInput);
-    navigate(RoutePath.TransferInput, { state: { tokenBalance } })
+    navigate(RoutePath.TransferInput, { state: { tokenBalance } });
   };
-  const etcButtonClick = () => setEtcClicked((prev: boolean) => !prev);
+  const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
   const getTransactionInfoLists = useCallback(() => {
     return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
   }, [data]);
 
-  const getAccountDetailUri = () => {
+  const getAccountDetailUri = (): string => {
     return `https://gnoscan.io/accounts/${currentAddress}`;
   };
 
-  const getTokenUri = () => {
+  const getTokenUri = (): string => {
     if (isGRC20TokenModel(tokenBalance)) {
       return `https://gnoscan.io/tokens/${tokenBalance.pkgPath}`;
     }
     return '';
   };
 
-  const moveScanner = (uri: string) => {
+  const moveScanner = (uri: string): void => {
     window.open(uri, '_blank');
   };
 
-  const getTooltipItems = () => {
+  const getTooltipItems = (): { tooltipText: string; onClick: () => void }[] => {
     const accountDetailItem = {
       tooltipText: 'View on Gnoscan',
-      onClick: () => moveScanner(getAccountDetailUri())
-    }
+      onClick: () => moveScanner(getAccountDetailUri()),
+    };
     if (!isGRC20TokenModel(tokenBalance)) {
       return [accountDetailItem];
     }
     const realmDetailItem = {
       tooltipText: 'Token Details',
-      onClick: () => moveScanner(getTokenUri())
-    }
-    return [
-      accountDetailItem,
-      realmDetailItem
-    ]
+      onClick: () => moveScanner(getTokenUri()),
+    };
+    return [accountDetailItem, realmDetailItem];
   };
 
   return (
@@ -266,7 +305,7 @@ export const TokenDetails = () => {
         />
       </div>
 
-      <DubbleButton
+      <DoubleButton
         margin='20px 0px 25px'
         leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
         rightProps={{

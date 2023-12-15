@@ -66,7 +66,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
         title='Add Custom Network'
         leftElement={{
           element: <img src={LeftArrowIcon} alt={'back icon'} />,
-          onClick: onClickBack
+          onClick: onClickBack,
         }}
       />
       <WarningBox
@@ -87,13 +87,13 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
           disabled: !isSavable,
           text: 'Save',
-          onClick: onClickSave
+          onClick: onClickSave,
         }}
       />
     </AddCustomNetworkWrapper>

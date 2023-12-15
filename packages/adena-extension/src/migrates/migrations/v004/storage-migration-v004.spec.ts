@@ -50,7 +50,7 @@ describe('serialized wallet migration V003', () => {
     };
     const password = '123';
     const migration = new StorageMigration004();
-    const result = await migration.up(mockData, password);
+    const result = await migration.up(mockData);
 
     expect(result.version).toBe(4);
     expect(result.data).not.toBeNull();
@@ -80,7 +80,7 @@ describe('serialized wallet migration V003', () => {
     const migration = new StorageMigration004();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Stroage Data doesn not match version V003',
+      'Storage Data does not match version V003',
     );
   });
 });

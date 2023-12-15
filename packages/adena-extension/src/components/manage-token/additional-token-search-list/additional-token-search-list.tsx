@@ -1,5 +1,8 @@
 import React from 'react';
-import { AdditionalTokenSearchListItemWrapper, AdditionalTokenSearchListWrapper } from './additional-token-search-list.styles';
+import {
+  AdditionalTokenSearchListItemWrapper,
+  AdditionalTokenSearchListWrapper,
+} from './additional-token-search-list.styles';
 import { TokenInfo } from '@components/manage-token/additional-token/additional-token';
 
 export interface AdditionalTokenSearchListProps {
@@ -15,26 +18,35 @@ interface AdditionalTokenSearchListItem {
   onClickListItem: (tokenId: string) => void;
 }
 
-const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({ tokenId, name, symbol, path, onClickListItem }) => {
+const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({
+  tokenId,
+  name,
+  symbol,
+  path,
+  onClickListItem,
+}) => {
   return (
-    <AdditionalTokenSearchListItemWrapper onClick={() => onClickListItem(tokenId)}>
+    <AdditionalTokenSearchListItemWrapper onClick={(): void => onClickListItem(tokenId)}>
       <span className='title'>
         <span className='name'>{name}</span>
         <span className='symbol'>{`(${symbol})`}</span>
       </span>
       <span className='path'>{path}</span>
     </AdditionalTokenSearchListItemWrapper>
-  )
+  );
 };
 
-const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({ tokenInfos, onClickListItem }) => {
+const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
+  tokenInfos,
+  onClickListItem,
+}) => {
   return (
     <AdditionalTokenSearchListWrapper>
       <div className='scroll-wrapper'>
-        {
-          tokenInfos.length === 0 ? (
-            <span className='no-content'>No Tokens to Search</span>
-          ) : tokenInfos.map((tokenInfo, index) =>
+        {tokenInfos.length === 0 ? (
+          <span className='no-content'>No Tokens to Search</span>
+        ) : (
+          tokenInfos.map((tokenInfo, index) => (
             <AdditionalTokenSearchListItem
               key={index}
               tokenId={tokenInfo.tokenId}
@@ -43,8 +55,8 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({ t
               path={tokenInfo.pathInfo}
               onClickListItem={onClickListItem}
             />
-          )
-        }
+          ))
+        )}
       </div>
     </AdditionalTokenSearchListWrapper>
   );

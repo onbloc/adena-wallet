@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const BalanceInputWrapper = styled.div`
   display: flex;
@@ -12,9 +12,9 @@ export const BalanceInputWrapper = styled.div`
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;
-    ${({ theme }) => theme.fonts.body2Reg};
-    background-color: ${({ theme }) => theme.color.neutral[8]};
-    border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+    background-color: ${({ theme }): string => theme.color.neutral[8]};
+    border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
     border-radius: 30px;
     align-items: center;
 
@@ -32,13 +32,13 @@ export const BalanceInputWrapper = styled.div`
       width: 64px;
       height: 24px;
       border-radius: 12px;
-      background-color: ${({ theme }) => theme.color.neutral[6]};
+      background-color: ${({ theme }): string => theme.color.neutral[6]};
       align-items: center;
       justify-content: center;
       transition: 0.2s;
 
       :hover {
-        background-color: ${({ theme }) => theme.color.neutral[11]};
+        background-color: ${({ theme }): string => theme.color.neutral[11]};
       }
     }
   }
@@ -46,17 +46,17 @@ export const BalanceInputWrapper = styled.div`
   .description {
     position: relative;
     padding: 0 16px;
-    ${({ theme }) => theme.fonts.captionReg};
-    color: ${({ theme }) => theme.color.neutral[9]};
+    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg};
+    color: ${({ theme }): string => theme.color.neutral[9]};
   }
 
   &.error {
     .input-wrapper {
-      border-color: ${({ theme }) => theme.color.red[2]};
+      border-color: ${({ theme }): string => theme.color.red[2]};
     }
 
     .description {
-      color: ${({ theme }) => theme.color.red[2]};
+      color: ${({ theme }): string => theme.color.red[2]};
     }
   }
 `;

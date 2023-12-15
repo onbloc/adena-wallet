@@ -3,10 +3,25 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 
-export const useLogin = () => {
+export type UseLoginReturn = {
+  passwordState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onClick: () => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    error: boolean;
+    ref: React.RefObject<HTMLInputElement>;
+  };
+  unlockButtonClick: () => void;
+  forgotButtonClick: () => void;
+  tryLogin: (password: string) => Promise<void>;
+  approveButtonClick: () => void;
+};
+
+export const useLogin = (): UseLoginReturn => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { walletService } = useAdenaContext();
   const { loadAccounts } = useLoadAccounts();
@@ -16,21 +31,21 @@ export const useLogin = () => {
   const navigate = useNavigate();
   const [, setState] = useRecoilState(WalletState.state);
 
-  const tryLogin = async (password: string) => {
-    const equalPassword = await walletService.equalsPassowrd(password);
+  const tryLogin = async (password: string): Promise<void> => {
+    const equalPassword = await walletService.equalsPassword(password);
     if (equalPassword) {
-      await walletService.updatePassowrd(password);
-      setState("LOADING");
+      await walletService.updatePassword(password);
+      setState('LOADING');
       await loadAccounts();
       navigate(RoutePath.Wallet);
     }
   };
 
-  const tryLoginApprove = (password: string) => {
+  const tryLoginApprove = (password: string): void => {
     tryLogin(password);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && location.pathname === RoutePath.ApproveLogin) {
       tryLoginApprove(password);
     } else if (e.key === 'Enter' && location.pathname === '/login') {
@@ -43,11 +58,11 @@ export const useLogin = () => {
     [password],
   );
 
-  const unlockButtonClick = () => tryLogin(password);
+  const unlockButtonClick = (): Promise<void> => tryLogin(password);
 
-  const approveButtonClick = () => tryLoginApprove(password);
+  const approveButtonClick = (): void => tryLoginApprove(password);
 
-  const forgotButtonClick = () => navigate(RoutePath.EnterSeedPhrase);
+  const forgotButtonClick = (): void => navigate(RoutePath.EnterSeedPhrase);
 
   useEffect(() => {
     setError(false);
@@ -59,7 +74,7 @@ export const useLogin = () => {
     }
   }, [inputRef]);
 
-  const handlePwClick = () => {
+  const handlePwClick = (): void => {
     tryLogin(password);
   };
 

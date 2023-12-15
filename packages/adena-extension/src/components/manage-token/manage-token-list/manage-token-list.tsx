@@ -16,7 +16,7 @@ const ManageTokenList: React.FC<ManageTokenListProps> = ({ tokens, onToggleActiv
           key={index}
           token={token}
           onToggleActiveItem={onToggleActiveItem}
-        />
+        />,
       )}
     </ManageTokenListWrapper>
   );

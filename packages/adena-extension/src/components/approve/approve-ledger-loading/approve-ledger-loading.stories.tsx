@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<ApproveLedgerLoadingProps> = {
   args: {
-    onClickCancel: action('cancel')
+    onClickCancel: action('cancel'),
   },
 };

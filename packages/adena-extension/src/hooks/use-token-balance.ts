@@ -1,15 +1,17 @@
-import { BalanceState } from '@states/index';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
+import { GnoWallet } from '@gnolang/gno-js-client';
+import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
+
 import { useNetwork } from './use-network';
 import { useCurrentAccount } from './use-current-account';
-import { AccountTokenBalance, Amount, TokenBalance } from '@states/balance';
-import { Account, isSeedAccount, isSingleAccount } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { useCallback, useEffect, useMemo } from 'react';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
-import { GnoWallet } from '@gnolang/gno-js-client';
-import { NetworkMetainfo } from '@states/network';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { BalanceState } from '@states';
+import { NetworkMetainfo } from '@types';
+
+import { TokenModel, AccountTokenBalance, Amount, TokenBalance } from '@types';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
@@ -61,26 +63,29 @@ export const useTokenBalance = (): {
     [accountTokenBalances],
   );
 
-  const currentTokenBalacnes = useMemo(() => {
+  const currentTokenBalances = useMemo(() => {
     return currentAccount ? getTokenBalancesByAccount(currentAccount) : [];
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getMainTokenBalance = useCallback(() => {
-    return currentTokenBalacnes.find((token) => token.main)?.amount;
+    return currentTokenBalances.find((token) => token.main)?.amount;
   }, [getTokenBalancesByAccount, currentAccount]);
 
   const getDisplayTokenBalances = useCallback(() => {
-    return currentTokenBalacnes.filter((token) => token.display);
+    return currentTokenBalances.filter((token) => token.display);
   }, [getTokenBalancesByAccount, currentAccount]);
 
   function matchNetworkId(
     accountTokenBalance: AccountTokenBalance,
     currentNetwork: NetworkMetainfo,
-  ) {
+  ): boolean {
     return accountTokenBalance.networkId === currentNetwork?.id;
   }
 
-  function matchCurrentAccount(account: Account | null, accountTokenBalance: AccountTokenBalance) {
+  function matchCurrentAccount(
+    account: Account | null,
+    accountTokenBalance: AccountTokenBalance,
+  ): boolean {
     if (!account || !matchNetworkId) return false;
     return (
       accountTokenBalance.accountId === account.id &&
@@ -88,7 +93,11 @@ export const useTokenBalance = (): {
     );
   }
 
-  async function toggleDisplayOption(account: Account, token: TokenModel, activated: boolean) {
+  async function toggleDisplayOption(
+    account: Account,
+    token: TokenModel,
+    activated: boolean,
+  ): Promise<void> {
     const changedAccountTokenBalances = accountTokenBalances.map((accountTokenBalance) => {
       if (matchCurrentAccount(account, accountTokenBalance)) {
         return {
@@ -110,14 +119,14 @@ export const useTokenBalance = (): {
     await tokenService.updateAccountTokenMetainfos(changedAccountTokenBalances);
   }
 
-  async function updateTokenBalanceInfos(tokenMetainfos: TokenModel[]) {
+  async function updateTokenBalanceInfos(tokenMetainfos: TokenModel[]): Promise<boolean> {
     if (!currentAccount || !currentNetwork) {
       return false;
     }
     const newTokenBalances = tokenMetainfos
       .filter(
         (tokenMetainfo) =>
-          currentTokenBalacnes.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
+          currentTokenBalances.find((current) => current.tokenId === tokenMetainfo.tokenId) ===
           undefined,
       )
       .map((tokenMetainfo) => {
@@ -134,7 +143,7 @@ export const useTokenBalance = (): {
       accountId: currentAccount.id,
       chainId: currentNetwork.chainId,
       networkId: currentNetwork.id,
-      tokenBalances: [...currentTokenBalacnes, ...newTokenBalances],
+      tokenBalances: [...currentTokenBalances, ...newTokenBalances],
     };
 
     let changedAccountTokenBalances: AccountTokenBalance[] = [...accountTokenBalances];
@@ -160,13 +169,13 @@ export const useTokenBalance = (): {
   async function updateBalanceAmountByAccount(
     account: Account,
     newAccountTokenBalances?: AccountTokenBalance[],
-  ) {
+  ): Promise<boolean> {
     const tokenBalances =
       newAccountTokenBalances?.find(
         (accountTokenBalance) =>
           accountTokenBalance.accountId === account.id &&
           accountTokenBalance.networkId === currentNetwork?.id,
-      )?.tokenBalances || currentTokenBalacnes;
+      )?.tokenBalances || currentTokenBalances;
     const tokenBalancesOfNetwork = tokenBalances.filter(
       (tokenBalance) =>
         tokenBalance.networkId === 'DEFAULT' || tokenBalance.networkId === currentNetwork?.id,
@@ -191,7 +200,7 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function updateAccountNativeBalances() {
+  async function updateAccountNativeBalances(): Promise<boolean> {
     const nativeTokenInfo = tokenMetainfos.find((info) => info.main);
     if (!nativeTokenInfo || !wallet) {
       return false;
@@ -209,7 +218,7 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function updateMainBalanceByAccount(account: Account) {
+  async function updateMainBalanceByAccount(account: Account): Promise<boolean> {
     const mainToken = tokenMetainfos.find((metainfo) => metainfo.main);
     if (!mainToken) {
       return false;
@@ -234,7 +243,7 @@ export const useTokenBalance = (): {
   }
 
   async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
-    if (wallet === null) throw new Error("wallet doesn't exist");
+    if (wallet === null) throw new Error('wallet doesn`t exist');
 
     const defaultAmount = {
       value: '0',
@@ -293,7 +302,7 @@ export const useTokenBalance = (): {
 
   return {
     mainTokenBalance: getMainTokenBalance(),
-    tokenBalances: currentTokenBalacnes,
+    tokenBalances: currentTokenBalances,
     displayTokenBalances: getDisplayTokenBalances(),
     accountTokenBalances: filteredAccountBalances,
     accountNativeBalances,

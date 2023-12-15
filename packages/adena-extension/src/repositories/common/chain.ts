@@ -1,7 +1,8 @@
-import { StorageManager } from '@common/storage/storage-manager';
 import { AxiosInstance } from 'axios';
+
+import { StorageManager } from '@common/storage/storage-manager';
 import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
-import { NetworkMetainfo } from '@states/network';
+import { NetworkMetainfo } from '@types';
 
 type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
 
@@ -17,14 +18,14 @@ export class ChainRepository {
     this.networkInstance = networkInstance;
   }
 
-  public fetchNetworkMetainfos = async () => {
+  public fetchNetworkMetainfos = async (): Promise<NetworkMetainfo[]> => {
     const response = await this.networkInstance.get<ChainMetainfoResponse>(
       ChainRepository.CHAIN_URI,
     );
     return NetworkMetainfoMapper.fromChainMetainfoResponse(response.data);
   };
 
-  public getNetworks = async () => {
+  public getNetworks = async (): Promise<NetworkMetainfo[]> => {
     const fetchedNetworks = await this.fetchNetworkMetainfos();
     const networks = await this.localStorage
       .getToObject<Array<NetworkMetainfo>>('NETWORKS')
@@ -43,46 +44,46 @@ export class ChainRepository {
     return [...defaultNetworks, ...customNetworks];
   };
 
-  public addNetwork = async (network: NetworkMetainfo) => {
+  public addNetwork = async (network: NetworkMetainfo): Promise<boolean> => {
     const networks = await this.getNetworks();
     await this.updateNetworks([...networks, network]);
     return true;
   };
 
-  public updateNetworks = async (networks: Array<NetworkMetainfo>) => {
+  public updateNetworks = async (networks: Array<NetworkMetainfo>): Promise<boolean> => {
     await this.localStorage.setByObject('NETWORKS', networks);
     return true;
   };
 
-  public deleteNetworks = async () => {
+  public deleteNetworks = async (): Promise<boolean> => {
     await this.localStorage.remove('NETWORKS');
     return true;
   };
 
-  public getCurrentChainId = () => {
+  public getCurrentChainId = (): Promise<string> => {
     return this.localStorage.get('CURRENT_CHAIN_ID');
   };
 
-  public updateCurrentChainId = async (chainId: string) => {
+  public updateCurrentChainId = async (chainId: string): Promise<boolean> => {
     await this.localStorage.set('CURRENT_CHAIN_ID', chainId);
     return true;
   };
 
-  public deleteCurrentChainId = async () => {
+  public deleteCurrentChainId = async (): Promise<boolean> => {
     await this.localStorage.remove('CURRENT_CHAIN_ID');
     return true;
   };
 
-  public getCurrentNetworkId = () => {
+  public getCurrentNetworkId = (): Promise<string> => {
     return this.localStorage.get('CURRENT_NETWORK_ID');
   };
 
-  public updateCurrentNetworkId = async (networkId: string) => {
+  public updateCurrentNetworkId = async (networkId: string): Promise<boolean> => {
     await this.localStorage.set('CURRENT_NETWORK_ID', networkId);
     return true;
   };
 
-  public deleteCurrentNetworkId = async () => {
+  public deleteCurrentNetworkId = async (): Promise<boolean> => {
     await this.localStorage.remove('CURRENT_NETWORK_ID');
     return true;
   };

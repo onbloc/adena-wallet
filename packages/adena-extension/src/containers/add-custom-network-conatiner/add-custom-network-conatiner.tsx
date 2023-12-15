@@ -1,25 +1,32 @@
-import AddCustomNetwork from '@components/add-custom-network/add-custom-network/add-custom-network';
-import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
-import { useNetwork } from '@hooks/use-network';
-import { NetworkMetainfo } from '@states/network';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function isValidURL(rpcUrl: string) {
+import AddCustomNetwork from '@components/add-custom-network/add-custom-network/add-custom-network';
+import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
+import { useNetwork } from '@hooks/use-network';
+
+import { NetworkMetainfo } from '@types';
+
+function isValidURL(rpcUrl: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
   return regExp.test(rpcUrl);
 }
 
-function existsChainId(chainId: string, networks: NetworkMetainfo[]) {
-  return networks.findIndex(netowrk => netowrk.networkId === chainId && netowrk.deleted !== true) > -1;
+function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
+  return (
+    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
+  );
 }
 
-function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]) {
+function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
   const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-  return networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true) > -1;
+  return (
+    networks.findIndex((network) => network.rpcUrl === currentRPCUrl && network.deleted !== true) >
+    -1
+  );
 }
 
-const AddCustomNetworkConatiner: React.FC = () => {
+const AddCustomNetworkContainer: React.FC = () => {
   const navigate = useNavigate();
   const { networks, addNetwork } = useNetwork();
   const {
@@ -81,4 +88,4 @@ const AddCustomNetworkConatiner: React.FC = () => {
   );
 };
 
-export default AddCustomNetworkConatiner;
+export default AddCustomNetworkContainer;

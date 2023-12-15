@@ -1,33 +1,41 @@
-import { Account } from 'adena-module';
-import { useAdenaContext } from './use-context';
 import { useRecoilState } from 'recoil';
-import { WalletState } from '@states/index';
+import { Account } from 'adena-module';
 
-export const useAccountName = () => {
+import { useAdenaContext } from './use-context';
+import { WalletState } from '@states';
+
+export type UseAccountNameReturn = {
+  accountNames: { [key in string]: string };
+  initAccountNames: (accounts: Account[]) => Promise<void>;
+  changeAccountName: (account: Account, name: string) => Promise<void>;
+  clear: () => Promise<void>;
+};
+
+export const useAccountName = (): UseAccountNameReturn => {
   const { accountService } = useAdenaContext();
   const [accountNames, setAccountNames] = useRecoilState(WalletState.accountNames);
 
-  const initAccountNames = async (accounts: Account[]) => {
+  const initAccountNames = async (accounts: Account[]): Promise<void> => {
     const storedAccountNames = await accountService.getAccountNames();
     const accountNames: { [key in string]: string } = {};
     for (const account of accounts) {
       accountNames[account.id] = account.name;
     }
     const changedAccountNames = { ...accountNames, ...storedAccountNames };
-    setAccountNames(changedAccountNames)
+    setAccountNames(changedAccountNames);
     await accountService.updateAccountNames(changedAccountNames);
   };
 
-  const changeAccountName = async (account: Account, name: string) => {
+  const changeAccountName = async (account: Account, name: string): Promise<void> => {
     const changedAccountNames = {
       ...accountNames,
-      [account.id]: name || account.name
+      [account.id]: name || account.name,
     };
     setAccountNames(changedAccountNames);
     await accountService.updateAccountNames(changedAccountNames);
   };
 
-  const clear = async () => {
+  const clear = async (): Promise<void> => {
     setAccountNames({});
     await accountService.deleteAccountNames();
   };
@@ -36,6 +44,6 @@ export const useAccountName = () => {
     accountNames,
     initAccountNames,
     changeAccountName,
-    clear
+    clear,
   };
 };

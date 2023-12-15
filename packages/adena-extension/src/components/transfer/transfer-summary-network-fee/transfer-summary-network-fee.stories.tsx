@@ -9,6 +9,6 @@ export default {
 export const Default: StoryObj<TransferSummaryNetworkFeeProps> = {
   args: {
     value: '0.0048',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
 };

@@ -3,24 +3,22 @@ import DefaultInput from '@components/default-input';
 import WarningBox from '@components/warning/warning-box';
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import TermsCheckbox from '@components/terms-checkbox';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
-import {
-  validateInvalidPassword,
-} from '@common/validation';
+import { validateInvalidPassword } from '@common/validation';
 import { BaseError } from '@common/errors';
 import { ErrorText } from '@components/error-text';
 
 const TermsAText = 'Anyone with my private key will have full control over my funds.';
 const TermsBText = 'I will never share my private key with anyone.';
 
-export const ApproachPasswordPhrase = () => {
+export const ApproachPasswordPhrase = (): JSX.Element => {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const backButtonClick = () => navigate(-1);
+  const backButtonClick = (): void => navigate(-1);
   const { walletService } = useAdenaContext();
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
@@ -29,26 +27,26 @@ export const ApproachPasswordPhrase = () => {
   const [termsB, setTermsB] = useState(false);
   const disabled = termsA && termsB && pwd;
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setPwd(e.target.value);
     setError(false);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && termsA && termsB && pwd) {
       confirmButtonClick();
     }
   };
 
-  const termsAChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const termsAChange = (): void => {
     setTermsA((prev: boolean) => !prev);
   };
 
-  const termsBChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const termsBChange = (): void => {
     setTermsB((prev: boolean) => !prev);
   };
 
-  const confirmButtonClick = async () => {
+  const confirmButtonClick = async (): Promise<void> => {
     try {
       const storedPassword = await walletService.loadWalletPassword();
       validateInvalidPassword(pwd, storedPassword);
@@ -56,7 +54,7 @@ export const ApproachPasswordPhrase = () => {
     } catch (e) {
       if (e instanceof BaseError) {
         setError(true);
-        setErrorMessage('Invalid pasword');
+        setErrorMessage('Invalid password');
       }
     }
   };
@@ -106,7 +104,7 @@ export const ApproachPasswordPhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

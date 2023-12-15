@@ -2,10 +2,10 @@ import { InjectionMessage, InjectionMessageInstance, MessageKeyType } from '../m
 import { v4 as uuidv4 } from 'uuid';
 import {
   validateDoContractRequest,
-  validateTrasactionMessageOfAddPkg,
-  validateTrasactionMessageOfBankSend,
-  validateTrasactionMessageOfRun,
-  validateTrasactionMessageOfVmCall,
+  validateTransactionMessageOfAddPkg,
+  validateTransactionMessageOfBankSend,
+  validateTransactionMessageOfRun,
+  validateTransactionMessageOfVmCall,
 } from '@common/validation/validation-message';
 
 type Params = { [key in string]: any };
@@ -16,7 +16,7 @@ export interface RequestAddedNetworkMessage {
   rpcUrl: string;
 }
 
-export interface RequestDocontractMessage {
+export interface RequestDoContractMessage {
   messages: Array<{
     type: string;
     value: { [key in string]: any };
@@ -56,15 +56,15 @@ export class AdenaExecutor {
     return AdenaExecutor.instance;
   };
 
-  public addEstablish = (name?: string) => {
+  public addEstablish = (name?: string): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_ESTABLISH', {
       name: name ?? 'Unknown',
     });
     return this.sendEventMessage(eventMessage);
   };
 
-  public doContract = (params: RequestDocontractMessage) => {
-    const result = this.valdiateContractMessage(params);
+  public doContract = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -72,13 +72,13 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public getAccount = () => {
+  public getAccount = (): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('GET_ACCOUNT');
     return this.sendEventMessage(eventMessage);
   };
 
-  public signAmino = (params: RequestDocontractMessage) => {
-    const result = this.valdiateContractMessage(params);
+  public signAmino = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -86,8 +86,8 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signTx = (params: RequestDocontractMessage) => {
-    const result = this.valdiateContractMessage(params);
+  public signTx = (params: RequestDoContractMessage): Promise<unknown> => {
+    const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -95,39 +95,41 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public addNetwork = (chain: RequestAddedNetworkMessage) => {
+  public addNetwork = (chain: RequestAddedNetworkMessage): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('ADD_NETWORK', { ...chain });
     return this.sendEventMessage(eventMessage);
   };
 
-  public switchNetwork = (chainId: string) => {
+  public switchNetwork = (chainId: string): Promise<unknown> => {
     const eventMessage = AdenaExecutor.createEventMessage('SWITCH_NETWORK', { chainId });
     return this.sendEventMessage(eventMessage);
   };
 
-  private valdiateContractMessage = (params: RequestDocontractMessage) => {
+  private validateContractMessage = (
+    params: RequestDoContractMessage,
+  ): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {
       return InjectionMessageInstance.failure('INVALID_FORMAT');
     }
     for (const message of params.messages) {
       switch (message.type) {
         case '/bank.MsgSend':
-          if (!validateTrasactionMessageOfBankSend(message)) {
+          if (!validateTransactionMessageOfBankSend(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_call':
-          if (!validateTrasactionMessageOfVmCall(message)) {
+          if (!validateTransactionMessageOfVmCall(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_addpkg':
-          if (!validateTrasactionMessageOfAddPkg(message)) {
+          if (!validateTransactionMessageOfAddPkg(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
         case '/vm.m_run':
-          if (!validateTrasactionMessageOfRun(message)) {
+          if (!validateTransactionMessageOfRun(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
@@ -137,7 +139,7 @@ export class AdenaExecutor {
     }
   };
 
-  private sendEventMessage = (eventMessage: InjectionMessage) => {
+  private sendEventMessage = (eventMessage: InjectionMessage): Promise<unknown> => {
     this.listen();
     this.eventMessage = {
       ...eventMessage,
@@ -156,7 +158,7 @@ export class AdenaExecutor {
     }).finally(() => this.unlisten());
   };
 
-  private listen = () => {
+  private listen = (): void => {
     if (this.isListen) {
       return;
     }
@@ -164,16 +166,16 @@ export class AdenaExecutor {
     window.addEventListener('message', this.messageHandler, true);
   };
 
-  public unlisten = () => {
+  public unlisten = (): void => {
     this.isListen = false;
     window.removeEventListener('message', this.messageHandler, true);
   };
 
-  private static createEventMessage = (type: MessageKeyType, params?: Params) => {
+  private static createEventMessage = (type: MessageKeyType, params?: Params): InjectionMessage => {
     return InjectionMessageInstance.request(type, params);
   };
 
-  private messageHandler = (event: MessageEvent<InjectionMessage | any>) => {
+  private messageHandler = (event: MessageEvent<InjectionMessage | any>): void => {
     const eventData = event.data;
     if (eventData.status) {
       const { key, status, data, code, message, type } = eventData;

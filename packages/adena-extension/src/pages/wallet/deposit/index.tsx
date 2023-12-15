@@ -1,40 +1,41 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
-import Text from '@components/text';
 import { QRCodeSVG } from 'qrcode.react';
+import styled, { CSSProp } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import Text from '@components/text';
 import Copy from '@components/buttons/copy-button';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
-import { TokenModel } from '@models/token-model';
+import { TokenModel } from '@types';
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
 const QRCodeBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
-  background-color: ${({ theme }) => theme.color.neutral[0]};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  background-color: ${({ theme }): string => theme.color.neutral[0]};
   padding: 10px;
   border-radius: 8px;
   margin: 40px 0px;
 `;
 
 const CopyInputBox = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   ${inputStyle};
-  border: 1px solid ${({ theme }) => theme.color.neutral[6]};
+  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
 
   & .nickname {
-    color: ${({ theme }) => theme.color.neutral[2]};
+    color: ${({ theme }): string => theme.color.neutral[2]};
   }
 
   margin-bottom: 8px;
@@ -45,10 +46,10 @@ interface DepositState {
   tokenMetainfo: TokenModel;
 }
 
-export const Deposit = () => {
+export const Deposit = (): JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [displayaddr, setDisplayaddr] = useState('');
+  const [displayAddr, setDisplayAddr] = useState('');
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
   const [type, setType] = useState('');
@@ -56,7 +57,7 @@ export const Deposit = () => {
 
   useEffect(() => {
     if (currentAddress) {
-      setDisplayaddr(formatAddress(currentAddress, 4));
+      setDisplayAddr(formatAddress(currentAddress, 4));
     }
   }, [currentAddress]);
 
@@ -85,7 +86,7 @@ export const Deposit = () => {
           <Text type='body2Reg' display='inline-flex'>
             {formatNickname(accountNames[currentAccount.id], 12)}
             <Text type='body2Reg' color={theme.color.neutral[9]}>
-              {` (${displayaddr})`}
+              {` (${displayAddr})`}
             </Text>
           </Text>
         )}

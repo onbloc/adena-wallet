@@ -8,7 +8,10 @@ export interface ToggleProps {
 
 const Toggle: React.FC<ToggleProps> = ({ activated, onToggle }) => {
   return (
-    <ToggleWrapper className={activated ? 'activated' : ''} onClick={() => onToggle(!activated)}>
+    <ToggleWrapper
+      className={activated ? 'activated' : ''}
+      onClick={(): void => onToggle(!activated)}
+    >
       <div className='circle' />
     </ToggleWrapper>
   );

@@ -10,9 +10,9 @@ describe('MainTokenBalance Component', () => {
   it('MainTokenBalance render', () => {
     const args: MainTokenBalanceProps = {
       amount: {
-        value: "240,255.241155",
-        denom: "GNOT"
-      }
+        value: '240,255.241155',
+        denom: 'GNOT',
+      },
     };
 
     render(

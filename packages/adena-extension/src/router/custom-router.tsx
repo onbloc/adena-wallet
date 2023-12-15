@@ -14,7 +14,7 @@ import { LaunchAdena } from '@pages/certify/launch-adena';
 import { WalletMain } from '@pages/wallet/wallet-main';
 import { Login } from '@pages/certify/login';
 import { ForgotPassword } from '@pages/certify/forgot-password';
-import { EnterSeedPharse } from '@pages/certify/enter-seed';
+import { EnterSeedPhrase } from '@pages/certify/enter-seed';
 import { Nft } from '@pages/wallet/nft';
 import { Staking } from '@pages/wallet/staking';
 import { Explore } from '@pages/wallet/explore';
@@ -46,7 +46,7 @@ import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/
 import { ApproveSign } from '@pages/wallet/approve-sign';
 import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
-import { RevealPasswoardPhrase } from '@pages/certify/reveal-password-phrase';
+import { RevealPasswordPhrase } from '@pages/certify/reveal-password-phrase';
 import { RevealPrivatePhrase } from '@pages/certify/reveal-private-phrase';
 import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase';
 import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
@@ -75,7 +75,7 @@ import AccountDetailsPage from '@pages/wallet/account-details';
 import ApproveSignTransactionContainer from '@containers/approve-sign-transaction-container/approve-sign-transaction-container';
 import ApproveSignTransactionLedgerLoadingContainer from '@containers/approve-sign-transaction-ledger-loading-container/approve-sign-transaction-ledger-loading-container';
 
-export const CustomRouter = () => {
+export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();
 
   return (
@@ -97,7 +97,7 @@ export const CustomRouter = () => {
               </ErrorContainer>
             }
           />
-          <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPharse />} />
+          <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrase />} />
           <Route path={RoutePath.Login} element={<Login />} />
           <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
           <Route path={RoutePath.Nft} element={<Nft />} />
@@ -121,11 +121,20 @@ export const CustomRouter = () => {
           <Route path={RoutePath.Deposit} element={<Deposit />} />
           <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
           <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
-          <Route path={RoutePath.ApproveTransactionLoading} element={<ApproveTransactionLedgerLoading />} />
+          <Route
+            path={RoutePath.ApproveTransactionLoading}
+            element={<ApproveTransactionLedgerLoading />}
+          />
           <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
           <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
-          <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransactionContainer />} />
-          <Route path={RoutePath.ApproveSignTransactionLoading} element={<ApproveSignTransactionLedgerLoadingContainer />} />
+          <Route
+            path={RoutePath.ApproveSignTransaction}
+            element={<ApproveSignTransactionContainer />}
+          />
+          <Route
+            path={RoutePath.ApproveSignTransactionLoading}
+            element={<ApproveSignTransactionLedgerLoadingContainer />}
+          />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
           <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
@@ -189,7 +198,7 @@ export const CustomRouter = () => {
           />
           <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
-          <Route path={RoutePath.RevealPasswoardPhrase} element={<RevealPasswoardPhrase />} />
+          <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
           <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
           <Route path={RoutePath.ApproachPasswordPhrase} element={<ApproachPasswordPhrase />} />
           <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />

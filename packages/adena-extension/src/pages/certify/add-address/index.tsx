@@ -1,7 +1,7 @@
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Text from '@components/text';
 import { useEffect } from 'react';
 import add from '../../../assets/add-symbol.svg';
@@ -24,13 +24,13 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
-const AddAddress = () => {
+const AddAddress = (): JSX.Element => {
   const { wallet } = useWalletContext();
   const { addressBookService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const navigate = useNavigate();
   const location = useLocation();
-  const backButtonClick = () => navigate(-1);
+  const backButtonClick = (): void => navigate(-1);
   const isAdd = location?.state.status === 'add';
   const datas: BookListProps[] = location?.state?.datas;
   const [name, setName] = useState(() => location?.state?.curr?.name ?? '');
@@ -40,19 +40,19 @@ const AddAddress = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const onChangeAddress = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const onChangeAddress = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const patternCheck = e.target.value.replace(specialPatternCheck, '');
     setAddress(() => patternCheck.toLowerCase());
   };
 
-  const onChangeName = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeName = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const inputText = e.target.value;
     if (inputText.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
       setName(e.target.value);
     }
   };
 
-  const saveButtonClick = () => {
+  const saveButtonClick = (): void => {
     let isValid = true;
     let errorMessage = '';
     const currData: BookListProps = {
@@ -116,12 +116,10 @@ const AddAddress = () => {
     }
   };
 
-  const addHandler = async () =>
-    await addressBookService
-      .addAddressBookItem({ name, address })
-      .then(() => backButtonClick());
+  const addHandler = async (): Promise<void> =>
+    await addressBookService.addAddressBookItem({ name, address }).then(() => backButtonClick());
 
-  const editHandler = async () =>
+  const editHandler = async (): Promise<void> =>
     await addressBookService
       .updateAddressBookItemById({
         id: location.state.curr.id,
@@ -130,7 +128,7 @@ const AddAddress = () => {
       })
       .then(() => backButtonClick());
 
-  const removeHandler = async () =>
+  const removeHandler = async (): Promise<void> =>
     await addressBookService
       .removeAddressBookItemByAccountId(currentAccount?.id ?? '', location.state.curr.id)
       .then(() => backButtonClick());
@@ -147,7 +145,7 @@ const AddAddress = () => {
     setErrorMsg('');
   }, [name]);
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter' && Boolean(address) && Boolean(name)) {
       saveButtonClick();
     }
@@ -206,7 +204,7 @@ const RemoveAddressBtn = styled.button<{ error: boolean }>`
   text-decoration-line: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
-  text-decoration-color: ${({ theme }) => theme.color.neutral[9]};
+  text-decoration-color: ${({ theme }): string => theme.color.neutral[9]};
   position: absolute;
   bottom: 91px;
 `;
@@ -216,12 +214,13 @@ const AddressInput = styled.textarea<{ error: boolean }>`
   height: 70px;
   overflow: hidden;
   resize: none;
-  border: 1px solid ${({ error, theme }) => (error ? theme.color.red[2] : theme.color.neutral[6])};
+  border: 1px solid
+    ${({ error, theme }): string => (error ? theme.color.red[2] : theme.color.neutral[6])};
   margin-top: 12px;
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   padding-top: 24px;
   width: 100%;
   height: 100%;
@@ -232,7 +231,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')}
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
   position: relative;
   width: 100%;
   & > button {

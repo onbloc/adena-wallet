@@ -10,9 +10,9 @@ describe('TokenListItemBalance Component', () => {
   it('TokenListItemBalance render', () => {
     const args: TokenListItemBalanceProps = {
       amount: {
-        value: "240,255.241155",
-        denom: "GNOT"
-      }
+        value: '240,255.241155',
+        denom: 'GNOT',
+      },
     };
 
     render(

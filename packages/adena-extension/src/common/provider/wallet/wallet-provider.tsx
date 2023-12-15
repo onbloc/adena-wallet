@@ -1,16 +1,16 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { ExploreState, NetworkState, TokenState, WalletState } from '@states/index';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { Wallet } from 'adena-module';
-import { NetworkMetainfo } from '@states/network';
-import { useAdenaContext } from '@hooks/use-context';
-import { TokenModel } from '@models/token-model';
-import { GnoProvider } from '../gno/gno-provider';
 
-interface WalletContextProps {
+import { NetworkState, TokenState, WalletState } from '@states';
+import { useAdenaContext } from '@hooks/use-context';
+import { GnoProvider } from '../gno/gno-provider';
+import { TokenModel, NetworkMetainfo, StateType } from '@types';
+
+export interface WalletContextProps {
   wallet: Wallet | null;
   gnoProvider: GnoProvider | undefined;
-  walletStatus: 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+  walletStatus: StateType;
   tokenMetainfos: TokenModel[];
   networkMetainfos: NetworkMetainfo[];
   updateWallet: (wallet: Wallet) => Promise<boolean>;
@@ -22,8 +22,15 @@ interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, transactionService, balanceService, accountService, chainService, tokenService, transactionHistoryService } =
-    useAdenaContext();
+  const {
+    walletService,
+    transactionService,
+    balanceService,
+    accountService,
+    chainService,
+    tokenService,
+    transactionHistoryService,
+  } = useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -35,7 +42,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
 
-  const setCurrentNetwrok = useSetRecoilState(NetworkState.currentNetwork);
+  const setCurrentNetwork = useSetRecoilState(NetworkState.currentNetwork);
 
   const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
@@ -50,7 +57,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     }
   }, [wallet, networkMetainfos, tokenMetainfos]);
 
-  async function initWallet() {
+  async function initWallet(): Promise<boolean> {
     const existWallet = await walletService.existsWallet();
     if (!existWallet) {
       setWallet(null);
@@ -79,14 +86,14 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
-  async function updateWallet(wallet: Wallet) {
+  async function updateWallet(wallet: Wallet): Promise<boolean> {
     setWallet(wallet);
     const password = await walletService.loadWalletPassword();
     await walletService.saveWallet(wallet, password);
     return true;
   }
 
-  async function initCurrentAccount(wallet: Wallet) {
+  async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
     const currentAccountId = await accountService.getCurrentAccountId();
     const currentAccount =
       wallet.accounts.find((account) => account.id === currentAccountId) ?? wallet.accounts[0];
@@ -98,7 +105,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
-  async function initNetworkMetainfos() {
+  async function initNetworkMetainfos(): Promise<boolean> {
     const networkMetainfos = await chainService.getNetworks();
     if (networkMetainfos.length === 0) {
       return false;
@@ -110,7 +117,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
-  async function initCurrentNetworkMetainfos(networkMetainfos: NetworkMetainfo[]) {
+  async function initCurrentNetworkMetainfos(
+    networkMetainfos: NetworkMetainfo[],
+  ): Promise<boolean> {
     const currentNetworkId = await chainService.getCurrentNetworkId();
     const currentNetwork =
       networkMetainfos.find((networkMetainfo) => networkMetainfo.id === currentNetworkId) ??
@@ -120,17 +129,17 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     return true;
   }
 
-  async function initTokenMetainfos(accountId: string) {
+  async function initTokenMetainfos(accountId: string): Promise<void> {
     await tokenService.initAccountTokenMetainfos(accountId);
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(accountId);
     setTokenMetainfos(tokenMetainfos);
     balanceService.setTokenMetainfos(tokenMetainfos);
   }
 
-  async function changeNetwork(networkMetainfo: NetworkMetainfo) {
+  async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {
     const rpcUrl = networkMetainfo.rpcUrl;
     const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
-    setCurrentNetwrok(networkMetainfo);
+    setCurrentNetwork(networkMetainfo);
     setGnoProvider(gnoProvider);
 
     accountService.setGnoProvider(gnoProvider);
@@ -152,7 +161,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         initWallet,
         updateWallet,
         initNetworkMetainfos,
-        changeNetwork
+        changeNetwork,
       }}
     >
       {children}

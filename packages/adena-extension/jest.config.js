@@ -1,18 +1,18 @@
-const { pathsToModuleNameMapper } = require("ts-jest");
-const { compilerOptions } = require("./tsconfig");
+const { pathsToModuleNameMapper } = require('ts-jest');
+const { compilerOptions } = require('./tsconfig');
 
 const jestConfig = {
-  roots: ["<rootDir>"],
+  roots: ['<rootDir>'],
   modulePaths: [compilerOptions.baseUrl],
   transform: {
-    "\\.[jt]sx?$": "babel-jest",
-    '\\.svg$': '<rootDir>/jest-svg-transformer.js',
+    '\\.[jt]sx?$': 'babel-jest',
+    '\\.(svg)$': '<rootDir>/svgTransformer.js',
   },
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
-    prefix: "<rootDir>/",
+    prefix: '<rootDir>/',
   }),
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testEnvironment: "jest-environment-jsdom",
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testEnvironment: 'jest-environment-jsdom',
 };
 
 module.exports = jestConfig;

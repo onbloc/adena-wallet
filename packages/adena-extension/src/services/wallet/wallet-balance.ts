@@ -1,7 +1,9 @@
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { TokenModel, isGRC20TokenModel, isNativeTokenModel } from '@models/token-model';
-import { BalanceState } from '@states/index';
 import BigNumber from 'bignumber.js';
+
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+
+import { TokenBalance, TokenModel } from '@types';
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
@@ -12,22 +14,22 @@ export class WalletBalanceService {
     this.tokenMetainfos = [];
   }
 
-  public getGnoProvider() {
+  public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
       throw new Error('Gno provider not initialized.');
     }
     return this.gnoProvider;
   }
 
-  public setGnoProvider(gnoProvider: GnoProvider) {
+  public setGnoProvider(gnoProvider: GnoProvider): void {
     this.gnoProvider = gnoProvider;
   }
 
-  public setTokenMetainfos(tokenMetainfos: Array<TokenModel>) {
+  public setTokenMetainfos(tokenMetainfos: Array<TokenModel>): void {
     this.tokenMetainfos = tokenMetainfos;
   }
 
-  public getTokenBalances = async (address: string) => {
+  public getTokenBalances = async (address: string): Promise<TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
     const denom = 'ugnot';
     const balance = await gnoProvider
@@ -40,7 +42,7 @@ export class WalletBalanceService {
         value: '0',
         denom,
       }));
-    const tokenBalances: Array<BalanceState.TokenBalance> = [];
+    const tokenBalances: Array<TokenBalance> = [];
 
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
@@ -54,9 +56,13 @@ export class WalletBalanceService {
     return tokenBalances;
   };
 
-  public getGRC20TokenBalance = async (address: string, packagePath: string, symbol: string) => {
+  public getGRC20TokenBalance = async (
+    address: string,
+    packagePath: string,
+    symbol: string,
+  ): Promise<TokenBalance[]> => {
     const gnoProvider = this.getGnoProvider();
-    const balance = await gnoProvider.getValueByEvaluteExpression(packagePath, 'BalanceOf', [
+    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
       address,
     ]);
     if (!balance) {
@@ -80,7 +86,10 @@ export class WalletBalanceService {
     denom: string,
     tokenMetainfo: TokenModel,
     convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
-  ) => {
+  ): {
+    value: string;
+    denom: string;
+  } => {
     const decimals = tokenMetainfo.decimals;
     let shift = 0;
     let convertedDenom = tokenMetainfo.symbol;
@@ -111,7 +120,7 @@ export class WalletBalanceService {
       denom: string;
     },
     tokenMetainfo: TokenModel,
-  ): BalanceState.TokenBalance => {
+  ): TokenBalance => {
     const { value, denom } = this.convertDenom(
       balance.value,
       balance.denom,

@@ -10,14 +10,7 @@ export interface ManageTokenListItemProps {
 }
 
 const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({ token, onToggleActiveItem }) => {
-  const {
-    main,
-    tokenId,
-    logo,
-    name,
-    balanceAmount,
-    display
-  } = token;
+  const { main, tokenId, logo, name, balanceAmount, display } = token;
 
   return (
     <ManageTokenListItemWrapper>
@@ -31,14 +24,12 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({ token, onTogg
       </div>
 
       <div className='toggle-wrapper'>
-        {
-          !main && (
-            <Toggle
-              activated={display === true}
-              onToggle={() => onToggleActiveItem(tokenId, !display)}
-            />
-          )
-        }
+        {!main && (
+          <Toggle
+            activated={display === true}
+            onToggle={(): void => onToggleActiveItem(tokenId, !display)}
+          />
+        )}
       </div>
     </ManageTokenListItemWrapper>
   );

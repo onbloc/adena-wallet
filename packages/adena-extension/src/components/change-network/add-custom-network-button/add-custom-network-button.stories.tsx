@@ -1,6 +1,6 @@
 import AddCustomNetworkButton, { type AddCustomNetworkButtonProps } from './add-custom-network-button';
 import { Meta, StoryObj } from '@storybook/react';
-import { action } from "@storybook/addon-actions";
+import { action } from '@storybook/addon-actions';
 
 export default {
   title: 'components/change-network/AddCustomNetworkButton',
@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<AddCustomNetworkButtonProps> = {
   args: {
-    onClick: action("add custom token click")
+    onClick: action('add custom token click'),
   },
 };

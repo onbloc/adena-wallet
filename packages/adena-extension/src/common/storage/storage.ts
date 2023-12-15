@@ -19,14 +19,14 @@ export class AdenaStorage {
 
   private static sessionStorage: StorageManager<any> | null = null;
 
-  public static local = <T extends string = string>(storage?: Storage) => {
+  public static local = <T extends string = string>(storage?: Storage): StorageManager<T> => {
     if (this.localStorage === null) {
       this.localStorage = new StorageManager<T>(storage ?? new ChromeLocalStorage());
     }
     return this.localStorage as StorageManager<T>;
   };
 
-  public static session = <T extends string = string>(storage?: Storage) => {
+  public static session = <T extends string = string>(storage?: Storage): StorageManager<T> => {
     if (this.sessionStorage === null) {
       this.sessionStorage = new StorageManager<T>(storage ?? new ChromeSessionStorage());
     }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -14,7 +14,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
@@ -28,7 +28,7 @@ const Wrapper = styled.main`
   }
 `;
 
-export const GoogleConnect = () => {
+export const GoogleConnect = (): JSX.Element => {
   const navigate = useNavigate();
   const [web3auth, setWeb3auth] = useState<TorusSigner>();
   const [privateKey, setPrivateKey] = useState('');
@@ -45,20 +45,20 @@ export const GoogleConnect = () => {
     disconnect();
   }, [privateKey]);
 
-  const init = async () => {
+  const init = async (): Promise<void> => {
     const auth = GoogleTorusSigner.create();
     await auth.init();
     setWeb3auth(auth);
   };
 
-  const connect = async () => {
+  const connect = async (): Promise<void> => {
     if (!web3auth) {
       return;
     }
     try {
       const connected = await web3auth.connect();
       if (!connected) {
-        throw new Error("Failed to connect web3auth.")
+        throw new Error('Failed to connect web3auth.');
       }
       const privateKey = await web3auth.getPrivateKey();
       setPrivateKey(privateKey);
@@ -67,7 +67,7 @@ export const GoogleConnect = () => {
     }
   };
 
-  const disconnect = async () => {
+  const disconnect = async (): Promise<void> => {
     if (!web3auth) {
       return;
     }
@@ -91,7 +91,7 @@ export const GoogleConnect = () => {
         fullWidth
         hierarchy={ButtonHierarchy.Dark}
         margin='auto 0px 0px'
-        onClick={() => window.close()}
+        onClick={(): void => window.close()}
       >
         <Text type='body1Bold'>Cancel</Text>
       </Button>

@@ -16,7 +16,7 @@ export interface ChangingNetworkInfo {
 export interface ApproveChangingNetworkProps {
   fromChain: ChangingNetworkInfo;
   toChain: ChangingNetworkInfo;
-  changable: boolean;
+  changeable: boolean;
   processing: boolean;
   done: boolean;
   changeNetwork: () => void;
@@ -28,7 +28,7 @@ export interface ApproveChangingNetworkProps {
 const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   fromChain,
   toChain,
-  changable,
+  changeable,
   processing,
   done,
   changeNetwork,
@@ -36,27 +36,21 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   onResponse,
   onTimeout,
 }) => {
-  const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name])
+  const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name]);
 
   const onClickCancel = useCallback(() => {
     cancel();
   }, [cancel]);
 
   const onClickSwitch = useCallback(() => {
-    if (!changable) {
+    if (!changeable) {
       return;
     }
     changeNetwork();
-  }, [changable, changeNetwork]);
+  }, [changeable, changeNetwork]);
 
   if (processing) {
-    return (
-      <ApproveInjectionLoading
-        done={done}
-        onResponse={onResponse}
-        onTimeout={onTimeout}
-      />
-    )
+    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
   }
 
   return (
@@ -65,12 +59,10 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
         <SubHeader title={title} />
 
         <div className='description-wrapper'>
-          <Text
-            type='body1Reg'
-            color={theme.color.neutral[9]}
-            textAlign='center'
-          >
-            {'This will switch the current network on\nAdena to the one that matches the\nconnected dapp.'}
+          <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+            {
+              'This will switch the current network on\nAdena to the one that matches the\nconnected dapp.'
+            }
           </Text>
         </div>
       </div>
@@ -84,13 +76,13 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel
+          onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
-          disabled: changable === false,
+          disabled: changeable === false,
           text: 'Switch',
-          onClick: onClickSwitch
+          onClick: onClickSwitch,
         }}
       />
     </ApproveChangingNetworkWrapper>

@@ -18,10 +18,9 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
 
   async up(
     current: StorageModel<StorageModelDataV003>,
-    password?: string,
   ): Promise<StorageModel<StorageModelDataV004>> {
     if (!this.validateModelV003(current.data)) {
-      throw new Error('Stroage Data doesn not match version V003');
+      throw new Error('Storage Data does not match version V003');
     }
     const previous: StorageModelDataV003 = current.data;
     return {
@@ -35,7 +34,7 @@ export class StorageMigration004 implements Migration<StorageModelDataV004> {
     };
   }
 
-  private validateModelV003(currentData: StorageModelDataV003) {
+  private validateModelV003(currentData: StorageModelDataV003): boolean {
     const storageDataKeys = [
       'NETWORKS',
       'CURRENT_CHAIN_ID',

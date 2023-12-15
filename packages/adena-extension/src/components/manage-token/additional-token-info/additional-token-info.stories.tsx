@@ -10,6 +10,6 @@ export const Default: StoryObj<AdditionalTokenInfoProps> = {
   args: {
     symbol: 'GNOT',
     path: 'gno.land/gnot',
-    decimals: '6'
+    decimals: '6',
   },
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { css } from 'styled-components';
+import styled, { CSSProp, css } from 'styled-components';
 import TermsCheckbox from '@components/terms-checkbox';
 import TitleWithDesc from '@components/title-with-desc';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
@@ -15,21 +15,21 @@ const text = {
 };
 
 const popupStyle = css`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
 `;
 
 const defaultStyle = css`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
 `;
 
 const Wrapper = styled.main<{ isPopup: boolean }>`
-  ${({ isPopup }) => (isPopup ? popupStyle : defaultStyle)};
+  ${({ isPopup }): CSSProp => (isPopup ? popupStyle : defaultStyle)};
 `;
 
 const FormBox = styled.div`
@@ -39,11 +39,11 @@ const FormBox = styled.div`
   }
 `;
 
-export const CreatePassword = () => {
+export const CreatePassword = (): JSX.Element => {
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useCreatePassword();
   const location = useLocation();
-  const handleLinkClick = () => window.open('https://adena.app/terms', '_blank');
+  const handleLinkClick = (): Window | null => window.open('https://adena.app/terms', '_blank');
 
   return (
     <Wrapper isPopup={location?.state?.type !== 'SEED'}>

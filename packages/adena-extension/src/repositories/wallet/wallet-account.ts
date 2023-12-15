@@ -9,34 +9,36 @@ export class WalletAccountRepository {
     this.localStorage = localStorage;
   }
 
-  public getCurrentAccountId = async () => {
+  public getCurrentAccountId = async (): Promise<string> => {
     const currentAccountId = await this.localStorage.get('CURRENT_ACCOUNT_ID');
     return currentAccountId;
   };
 
-  public updateCurrentAccountId = async (accountId: string) => {
+  public updateCurrentAccountId = async (accountId: string): Promise<boolean> => {
     await this.localStorage.set('CURRENT_ACCOUNT_ID', accountId);
     return true;
   };
 
-  public deleteCurrentAccountId = async () => {
+  public deleteCurrentAccountId = async (): Promise<boolean> => {
     await this.localStorage.remove('CURRENT_ACCOUNT_ID');
     return true;
   };
 
-  public getAccountNames = async () => {
+  public getAccountNames = async (): Promise<{ [x: string]: string }> => {
     const accountNames = await this.localStorage.getToObject<{ [key in string]: string }>(
       'ACCOUNT_NAMES',
     );
     return accountNames;
   };
 
-  public updateAccountNames = async (accountNames: { [key in string]: string }) => {
+  public updateAccountNames = async (accountNames: {
+    [key in string]: string;
+  }): Promise<boolean> => {
     await this.localStorage.setByObject('ACCOUNT_NAMES', accountNames);
     return true;
   };
 
-  public deleteAccountNameByAccountId = async (accountId: string) => {
+  public deleteAccountNameByAccountId = async (accountId: string): Promise<boolean> => {
     const accountNames = await this.getAccountNames();
     try {
       delete accountNames[accountId];
@@ -47,7 +49,7 @@ export class WalletAccountRepository {
     return true;
   };
 
-  public deleteAccountNames = async () => {
+  public deleteAccountNames = async (): Promise<boolean> => {
     await this.localStorage.setByObject('ACCOUNT_NAMES', {});
     return true;
   };

@@ -33,7 +33,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   changeChainId,
   moveBack,
   saveNetwork,
-  removeNetwork
+  removeNetwork,
 }) => {
 
   const onClickBack = useCallback(() => {
@@ -78,13 +78,13 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickBack
+          onClick: onClickBack,
         }}
         rightButton={{
           primary: true,
           disabled: !savable,
           text: 'Save',
-          onClick: onClickSave
+          onClick: onClickSave,
         }}
       />
     </EditNetworkWrapper>

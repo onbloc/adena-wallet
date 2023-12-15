@@ -1,9 +1,11 @@
 import React, { useCallback } from 'react';
+
 import { NetworkListItemWrapper } from './network-list-item.styles';
-import { NetworkMetainfo } from '@states/network';
 import IconCheck from '@assets/check-circle.svg';
 import IconLock from '@assets/icon-lock-small';
 import IconEdit from '@assets/icon-edit-small';
+
+import { NetworkMetainfo } from '@types';
 
 export interface NetworkListItemProps {
   selected: boolean;
@@ -20,15 +22,17 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
   moveEditPage,
   changeNetwork,
 }) => {
-
-  const onClickEditButton = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (locked) {
-      return;
-    }
-    moveEditPage(networkMetainfo.id);
-  }, [locked, moveEditPage, networkMetainfo.id]);
+  const onClickEditButton = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (locked) {
+        return;
+      }
+      moveEditPage(networkMetainfo.id);
+    },
+    [locked, moveEditPage, networkMetainfo.id],
+  );
 
   const onClickItem = useCallback(() => {
     changeNetwork(networkMetainfo.id);

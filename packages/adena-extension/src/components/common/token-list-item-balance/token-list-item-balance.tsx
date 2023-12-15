@@ -11,7 +11,7 @@ export interface TokenListItemBalanceProps {
 const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({ amount }) => {
   const {
     value,
-    denom
+    denom,
   } = amount;
 
   return (

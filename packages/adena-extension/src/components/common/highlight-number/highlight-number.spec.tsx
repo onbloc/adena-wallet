@@ -9,7 +9,7 @@ import HighlightNumber, { HighlightNumberProps } from './highlight-number';
 describe('HighlightNumber Component', () => {
   it('HighlightNumber render', () => {
     const args: HighlightNumberProps = {
-      value: "123,456,789.123456"
+      value: '123,456,789.123456',
     };
 
     render(

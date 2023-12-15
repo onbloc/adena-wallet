@@ -64,6 +64,7 @@ const config = {
     modules: ['node_modules'],
     extensions: ['.js', '.jsx', '.tsx', '.ts'],
     alias: {
+      '@types': path.resolve(__dirname, 'src/types'),
       '@hooks': path.resolve(__dirname, 'src/hooks'),
       '@ui': path.resolve(__dirname, 'src/ui'),
       '@pages': path.resolve(__dirname, 'src/pages'),
@@ -80,7 +81,7 @@ const config = {
       '@containers': path.resolve(__dirname, 'src/containers'),
       '@migrates': path.resolve(__dirname, 'src/migrates'),
       '@models': path.resolve(__dirname, 'src/models'),
-      '@pulbic': path.resolve(__dirname, 'public/'),
+      '@public': path.resolve(__dirname, 'public/'),
     },
   },
   plugins: [

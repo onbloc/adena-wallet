@@ -2,7 +2,16 @@ import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export const useImportAccount = () => {
+export const useImportAccount = (): {
+  privateKeyState: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
+    error: boolean;
+    errorMessage: string;
+  };
+  buttonState: { cancel: () => void; import: () => void; disabled: boolean };
+} => {
   const navigate = useNavigate();
   const [privateKey, setPrivateKey] = useState('');
   const [error, setError] = useState(false);
@@ -14,14 +23,14 @@ export const useImportAccount = () => {
     [privateKey],
   );
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter') {
       e.preventDefault();
       importButtonClick();
     }
   };
 
-  const importButtonClick = () => {
+  const importButtonClick = (): void => {
     try {
       if (privateKey === '123') {
         navigate(RoutePath.Home, { replace: true });
@@ -38,7 +47,7 @@ export const useImportAccount = () => {
     }
   }, [privateKey]);
 
-  const cancelButtonClick = () => navigate(-1);
+  const cancelButtonClick = (): void => navigate(-1);
 
   return {
     privateKeyState: {

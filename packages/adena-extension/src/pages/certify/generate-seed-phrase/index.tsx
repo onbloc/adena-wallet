@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import addSymbol from '@assets/add-symbol.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -10,10 +10,10 @@ import { RoutePath } from '@router/path';
 const content =
   'To add new accounts, you need to generate a seed phrase as you created your existing accounts with Google or Ledger, which didn’t require seed phrase generation.';
 
-export const GenerateSeedPhrase = () => {
+export const GenerateSeedPhrase = (): JSX.Element => {
   const navigate = useNavigate();
 
-  const onclick = () => {
+  const onclick = (): void => {
     navigate(RoutePath.YourSeedPhrase, { state: { type: 'ADD_ACCOUNT' } });
   };
 
@@ -34,7 +34,7 @@ export const GenerateSeedPhrase = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;

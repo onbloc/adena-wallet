@@ -7,7 +7,7 @@ import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
 import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states/index';
+import { CommonState, WalletState } from '@states';
 import { ArrowTitleMenu } from './arrow-title-menu';
 import { TabMenu } from './tab-menu';
 import { useNetwork } from '@hooks/use-network';
@@ -16,13 +16,13 @@ import { CloseTitleMenu } from './close-title-menu';
 const Wrapper = styled.header`
   width: 100%;
   height: 48px;
-  background-color: ${({ theme }) => theme.color.neutral[7]};
+  background-color: ${({ theme }): string => theme.color.neutral[7]};
   position: sticky;
   top: 0px;
   z-index: 2;
 `;
 
-export const Header = () => {
+export const Header = (): JSX.Element => {
   const location = useLocation();
   const login = useMatch(RoutePath.Login);
   const approveEstablish = useMatch(RoutePath.ApproveEstablish);
@@ -63,7 +63,7 @@ export const Header = () => {
   const { currentNetwork } = useNetwork();
 
   const loadingComplete = walletState === 'FINISH' || failedNetwork[currentNetwork.id];
-  const renderHeader = () => {
+  const renderHeader = (): JSX.Element | undefined => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;
     }
@@ -107,13 +107,15 @@ export const Header = () => {
       return <TabMenu />;
     }
     if (resetWallet) {
-      return location?.state?.from === 'forgot-password' ?
-        <ArrowTitleMenu title='Reset Wallet' /> :
+      return location?.state?.from === 'forgot-password' ? (
+        <ArrowTitleMenu title='Reset Wallet' />
+      ) : (
         <TopMenu />
+      );
     }
 
     if (accountDetails) {
-      return <CloseTitleMenu title='Account Details' />
+      return <CloseTitleMenu title='Account Details' />;
     }
 
     if (

@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { TransferSummaryWrapper } from './transfer-summary.styles';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
@@ -6,8 +7,8 @@ import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import SubHeader from '@components/common/sub-header/sub-header';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import { Amount } from '@states/balance';
-import { TokenModel } from '@models/token-model';
+
+import { TokenModel, Amount } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
@@ -41,7 +42,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickBack
+            onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
         />
@@ -66,16 +67,16 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee.value}
           denom={networkFee.denom}
         />
-        {
-          isErrorNetworkFee && (
-            <span className='error-message'>Insufficient network fee</span>
-          )
-        }
+        {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
       </div>
 
       <div className='button-group'>
-        <button className='cancel' onClick={onClickCancel}>Cancel</button>
-        <button className='send' onClick={onClickSend}>Send</button>
+        <button className='cancel' onClick={onClickCancel}>
+          Cancel
+        </button>
+        <button className='send' onClick={onClickSend}>
+          Send
+        </button>
       </div>
     </TransferSummaryWrapper>
   );

@@ -97,7 +97,7 @@ const ERROR_VALUE: { [key in string]: ErrorValueType } = {
     type: '/std.GasOverflowError',
     message: 'gas overflow error',
   },
-  UNKNOW_ERROR: {
+  UNKNOWN_ERROR: {
     status: 400,
     type: 'UNKNOWN_ERROR',
     message: 'unknown error',
@@ -115,7 +115,7 @@ export class Tm2Error extends BaseError {
     this.hash = hash;
   }
 
-  get response() {
+  get response(): { error: { type: string; message: string } } {
     return {
       error: {
         type: this.getType(),
@@ -124,7 +124,7 @@ export class Tm2Error extends BaseError {
     };
   }
 
-  public static createTm2Error(hash: string | null, message: string) {
+  public static createTm2Error(hash: string | null, message: string): Tm2Error {
     const errorType =
       Object.keys(ERROR_VALUE).find((key) => ERROR_VALUE[key].type === message) || 'UNKNOWN_ERROR';
     return new Tm2Error(hash, errorType);

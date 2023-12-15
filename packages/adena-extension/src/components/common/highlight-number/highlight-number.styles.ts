@@ -1,5 +1,5 @@
 import theme, { FontsType } from '@styles/theme';
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 interface HighlightNumberWrapperProps {
   fontColor: string;
@@ -16,12 +16,12 @@ export const HighlightNumberWrapper = styled.div<HighlightNumberWrapperProps>`
 
   .value {
     display: contents;
-    ${({ fontStyleKey }) => theme.fonts[fontStyleKey]};
-    color: ${({ fontColor }) => fontColor};
+    ${({ fontStyleKey }): FlattenSimpleInterpolation => theme.fonts[fontStyleKey]};
+    color: ${({ fontColor }): string => fontColor};
     text-align: bottom;
 
     &.decimal {
-      font-size: ${({ minimumFontSize }) => minimumFontSize};
+      font-size: ${({ minimumFontSize }): string => minimumFontSize};
     }
   }
 `;

@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import removeIcon from '@assets/icon-remove-blur.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
@@ -15,16 +15,16 @@ const content =
 const forgotPasswordContent =
   'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
-export const ResetWallet = () => {
+export const ResetWallet = (): JSX.Element => {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { clear } = useClear();
 
-  const cancelButtonClick = () => {
+  const cancelButtonClick = (): void => {
     return state?.backStep ? navigate(state.backStep) : navigate(-1);
   };
 
-  const resetButtonClick = () => {
+  const resetButtonClick = (): void => {
     clear().then(() => navigate(RoutePath.Home));
   };
 
@@ -50,7 +50,7 @@ export const ResetWallet = () => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;

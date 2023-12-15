@@ -61,7 +61,7 @@ export enum RoutePath {
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',
-  RevealPasswoardPhrase = '/settings/security-privacy/reveal-password-phrase',
+  RevealPasswordPhrase = '/settings/security-privacy/reveal-password-phrase',
   RevealPrivatePhrase = '/settings/security-privacy/reveal-private-phrase',
   AboutAdena = '/settings/about-adena',
   ApproachPasswordPhrase = '/settings/security-privacy/export-private-key/approach-password-phrase',

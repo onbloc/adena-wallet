@@ -1,4 +1,4 @@
-import { decodeParameter, parseParmeters } from '@common/utils/client-utils';
+import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import ApproveAddingNetwork from '@components/approve/approve-adding-network/approve-adding-network/approve-adding-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom';
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
   const { addNetwork } = useNetwork();
-  const [requestData, setReqeustData] = useState<InjectionMessage>();
+  const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [chainName, setChainName] = useState('');
   const [rpcUrl, setRPCUrl] = useState('');
@@ -22,10 +22,10 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     }
   }, [search]);
 
-  const initRequestData = () => {
-    const data = parseParmeters(search);
+  const initRequestData = (): void => {
+    const data = parseParameters(search);
     const parsedData = decodeParameter(data['data']);
-    setReqeustData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({ ...parsedData, hostname: data['hostname'] });
 
     setChainId(parsedData?.data?.chainId || '');
     setChainName(parsedData?.data?.chainName || '');
@@ -36,11 +36,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     setProcessing(true);
     await addNetwork(chainName, rpcUrl, chainId);
     setResponse(
-      InjectionMessageInstance.success(
-        'ADD_NETWORK_SUCCESS',
-        requestData?.data,
-        requestData?.key,
-      ),
+      InjectionMessageInstance.success('ADD_NETWORK_SUCCESS', requestData?.data, requestData?.key),
     );
     setDone(true);
   }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
@@ -51,17 +47,15 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     }
   }, [done, response]);
 
-  const onTimeout = () => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key));
-  }
+  const onTimeout = (): void => {
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+    );
+  };
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure(
-        'ADD_NETWORK_REJECTED',
-        requestData?.data,
-        requestData?.key,
-      ),
+      InjectionMessageInstance.failure('ADD_NETWORK_REJECTED', requestData?.data, requestData?.key),
     );
   }, [requestData]);
 
@@ -70,7 +64,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
       networkInfo={{
         name: chainName,
         rpcUrl: rpcUrl,
-        chainId: chainId
+        chainId: chainId,
       }}
       logo={''}
       approvable={requestData !== undefined}

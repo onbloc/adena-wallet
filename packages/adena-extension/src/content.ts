@@ -1,7 +1,7 @@
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { EventMessageData } from '@inject/message';
 
-const sendMessage = (event: MessageEvent) => {
+const sendMessage = (event: MessageEvent): void => {
   const message = event.data;
   chrome.runtime.sendMessage(message, (response) => {
     Promise.resolve(response).then((result) => {
@@ -11,7 +11,7 @@ const sendMessage = (event: MessageEvent) => {
   });
 };
 
-const loadScript = () => {
+const loadScript = (): void => {
   const container = document.head || document.documentElement;
   const scriptElement = document.createElement('script');
   scriptElement.src = chrome.runtime.getURL('inject.js');
@@ -20,7 +20,7 @@ const loadScript = () => {
   scriptElement.remove();
 };
 
-const initListener = () => {
+const initListener = (): void => {
   window.addEventListener(
     'message',
     (event) => {
@@ -38,7 +38,7 @@ const initListener = () => {
   );
 };
 
-const initExtensionListener = () => {
+const initExtensionListener = (): void => {
   chrome.runtime.onMessage.addListener((message: EventMessageData) => {
     if (message.status === 'event') {
       const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {

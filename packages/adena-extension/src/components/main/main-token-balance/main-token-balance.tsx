@@ -11,7 +11,7 @@ export interface MainTokenBalanceProps {
 const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount }) => {
   const {
     value,
-    denom
+    denom,
   } = amount;
 
   return (

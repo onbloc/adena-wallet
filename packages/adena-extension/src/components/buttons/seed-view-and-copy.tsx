@@ -1,10 +1,9 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button from './button';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Copy from './copy-button';
-import { useMatch } from 'react-router-dom';
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean;
@@ -18,7 +17,7 @@ const SeedViewAndCopy = ({
   setShowBlurScreen,
   copyStr,
   toggleText,
-}: SeedViewAndCopyProps) => {
+}: SeedViewAndCopyProps): JSX.Element => {
   const blurScreenHandler = useCallback(() => {
     setShowBlurScreen((prev: boolean) => !prev);
   }, [showBlurScreen]);
@@ -34,20 +33,20 @@ const SeedViewAndCopy = ({
 };
 
 const Wrapper = styled.div`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   margin: 12px auto auto;
   padding: 0px 45px;
 `;
 
 const ButtonStyle = styled(Button)`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${({ theme }) => theme.color.neutral[11]};
+    background-color: ${({ theme }): string => theme.color.neutral[11]};
   }
 `;
 

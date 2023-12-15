@@ -1,6 +1,6 @@
-import theme, { FontsType } from '@styles/theme';
+import { FontsType } from '@styles/theme';
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from './button';
 import Text from '@components/text';
 
@@ -17,19 +17,19 @@ interface WrapperStyleProps {
   margin?: string;
 }
 
-interface DubbleButtonProps extends WrapperStyleProps {
+interface DoubleButtonProps extends WrapperStyleProps {
   leftProps: ButtonProps;
   rightProps: ButtonProps;
 }
 
 export const Wrapper = styled.div<WrapperStyleProps>`
-  ${({ theme }) => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
-  ${({ margin }) => margin && `margin: ${margin}`};
+  ${({ margin }): string | undefined => margin && `margin: ${margin}`};
 `;
 
-const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps) => {
+const DoubleButton = ({ margin, leftProps, rightProps }: DoubleButtonProps): JSX.Element => {
   return (
     <Wrapper margin={margin}>
       <Button
@@ -54,4 +54,4 @@ const DubbleButton = ({ margin, leftProps, rightProps }: DubbleButtonProps) => {
   );
 };
 
-export default DubbleButton;
+export default DoubleButton;

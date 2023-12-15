@@ -1,15 +1,31 @@
 import { useCallback, useState } from 'react';
+import BigNumber from 'bignumber.js';
+
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
-import BigNumber from 'bignumber.js';
-import { TokenBalance } from '@states/balance';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { TokenModel } from '@models/token-model';
+import { TokenModel, TokenBalance } from '@types';
 
 const NETWORK_FEE = 0.000001;
 
-export const useBalanceInput = (tokenMetainfo: TokenModel) => {
+export type UseBalanceInputHookReturn = {
+  hasError: boolean;
+  amount: string;
+  denom: string;
+  description: string;
+  networkFee: {
+    value: string;
+    denom: string;
+  };
+  setAmount: (amount: string) => void;
+  updateCurrentBalance: () => Promise<boolean>;
+  onChangeAmount: (amount: string) => void;
+  onClickMax: () => void;
+  validateBalanceInput: () => boolean;
+};
+
+export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookReturn => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
@@ -32,12 +48,12 @@ export const useBalanceInput = (tokenMetainfo: TokenModel) => {
     const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
     setCurrentBalance(currentBalance);
     if (currentBalance.type === 'gno-native') {
-      const convnetedBalance = convertDenom(
+      const convertedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
         'COMMON',
       );
-      const availAmountNumber = BigNumber(convnetedBalance.value).minus(NETWORK_FEE);
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(NETWORK_FEE);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
       } else {

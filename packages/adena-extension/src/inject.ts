@@ -2,58 +2,58 @@ import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import {
   AdenaExecutor,
   RequestAddedNetworkMessage,
-  RequestDocontractMessage,
+  RequestDoContractMessage,
 } from './inject/executor/executor';
-import manifest from '@pulbic/manifest.json';
+import manifest from '@public/manifest.json';
 
-function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void) {
+function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void): void {
   event.stopImmediatePropagation();
   callback(event.detail);
 }
 
-const init = () => {
+const init = (): void => {
   const adena = {
     version: manifest.version,
-    async AddEstablish(name: string) {
+    async AddEstablish(name: string): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.addEstablish(name);
       return response;
     },
-    async DoContract(mesasage: RequestDocontractMessage) {
+    async DoContract(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.doContract(mesasage);
+      const response = await executor.doContract(message);
       return response;
     },
-    async GetAccount() {
+    async GetAccount(): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.getAccount();
       return response;
     },
-    async Sign(mesasage: RequestDocontractMessage) {
+    async Sign(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.signAmino(mesasage);
+      const response = await executor.signAmino(message);
       return response;
     },
-    async SignTx(mesasage: RequestDocontractMessage) {
+    async SignTx(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
-      const response = await executor.signTx(mesasage);
+      const response = await executor.signTx(message);
       return response;
     },
-    async AddNetwork(chain: RequestAddedNetworkMessage) {
+    async AddNetwork(chain: RequestAddedNetworkMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.addNetwork(chain);
       return response;
     },
-    async SwitchNetwork(chainId: string) {
+    async SwitchNetwork(chainId: string): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.switchNetwork(chainId);
       return response;
     },
-    On(eventName: string, callback: (message: string) => void) {
+    On(eventName: string, callback: (message: string) => void): boolean {
       switch (eventName) {
         case 'changedAccount':
         case 'changedNetwork':
-          window.addEventListener<typeof EVENT_KEYS[typeof eventName]>(
+          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
             (event) => callbackCustomEvent<string>(event, callback),
             true,

@@ -8,14 +8,17 @@ export class WalletAddressBookService {
     this.walletAddressRepository = walletAddressRepository;
   }
 
-  public getAddressBook = async () => {
+  public getAddressBook = async (): Promise<AddressBookItem[]> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
     return addressBook;
   };
 
-  public addAddressBookItem = async (addressBookItem: { name: string; address: string }) => {
+  public addAddressBookItem = async (addressBookItem: {
+    name: string;
+    address: string;
+  }): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
-    await this.walletAddressRepository.updateAddressBooke([
+    await this.walletAddressRepository.updateAddressBook([
       ...addressBook,
       {
         id: uuidv4(),
@@ -30,7 +33,7 @@ export class WalletAddressBookService {
     id: string;
     name: string;
     address: string;
-  }) => {
+  }): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
     const changedAddressBook = addressBook.map((item) => {
       if (item.id === addressBookItem.id) {
@@ -42,19 +45,22 @@ export class WalletAddressBookService {
       }
       return item;
     });
-    await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
   };
 
-  public removeAddressBookItemByAccountId = async (accountId: string, addressBookId: string) => {
+  public removeAddressBookItemByAccountId = async (
+    accountId: string,
+    addressBookId: string,
+  ): Promise<void> => {
     const addressBook = await this.walletAddressRepository.getAddressBook();
 
     const changedAddressBook = addressBook.filter(
       (item: AddressBookItem) => item.id !== addressBookId,
     );
-    await this.walletAddressRepository.updateAddressBooke(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
   };
 
-  public clear = async () => {
+  public clear = async (): Promise<boolean> => {
     await this.walletAddressRepository.deleteAddress();
     return true;
   };

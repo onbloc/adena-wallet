@@ -1,5 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { SideMenuAccountItemWrapper, SideMenuAccountItemMoreInfoWrapper } from './side-menu-account-item.styles';
+import {
+  SideMenuAccountItemWrapper,
+  SideMenuAccountItemMoreInfoWrapper,
+} from './side-menu-account-item.styles';
 import { SideMenuAccountInfo } from '@components/common/side-menu/side-menu';
 import CopyButton from '@components/common/copy-button/copy-button';
 import IconEtc from '@assets/icon-etc';
@@ -48,21 +51,27 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
     setOpenedMoreInfo(false);
   }, [setOpenedMoreInfo]);
 
-  const onClickItem = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    changeAccount(accountId);
-    setOpenedMoreInfo(false);
-  }, [changeAccount, account]);
+  const onClickItem = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      changeAccount(accountId);
+      setOpenedMoreInfo(false);
+    },
+    [changeAccount, account],
+  );
 
-  const onClickMore = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const { x, y } = event.currentTarget.getBoundingClientRect();
-    setPositionX(x);
-    setPositionY(y);
-    setOpenedMoreInfo(!openedMoreInfo);
-  }, [openedMoreInfo]);
+  const onClickMore = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const { x, y } = event.currentTarget.getBoundingClientRect();
+      setPositionX(x);
+      setPositionY(y);
+      setOpenedMoreInfo(!openedMoreInfo);
+    },
+    [openedMoreInfo],
+  );
 
   return (
     <SideMenuAccountItemWrapper
@@ -74,11 +83,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
           <CopyButton className='copy-button' copyText={address} />
-          {
-            label !== null && (
-              <span className='label'>{label}</span>
-            )
-          }
+          {label !== null && <span className='label'>{label}</span>}
         </div>
         <div className='balance-wrapper'>
           <span className='balance'>{balance}</span>
@@ -87,26 +92,23 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
 
       <div className='more-wrapper' onClick={onClickMore}>
         <IconEtc />
-        {
-          openedMoreInfo && (
-            <SideMenuAccountItemMoreInfo
-              accountId={accountId}
-              address={address}
-              close={() => setOpenedMoreInfo(false)}
-              moveGnoscan={moveGnoscan}
-              moveAccountDetail={moveAccountDetail}
-              positionX={positionX}
-              positionY={positionY}
-            />
-          )
-        }
+        {openedMoreInfo && (
+          <SideMenuAccountItemMoreInfo
+            accountId={accountId}
+            address={address}
+            close={(): void => setOpenedMoreInfo(false)}
+            moveGnoscan={moveGnoscan}
+            moveAccountDetail={moveAccountDetail}
+            positionX={positionX}
+            positionY={positionY}
+          />
+        )}
       </div>
     </SideMenuAccountItemWrapper>
   );
 };
 
 export default SideMenuAccountItem;
-
 
 interface SideMenuAccountItemMoreInfoProps {
   accountId: string;
@@ -126,27 +128,36 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   moveGnoscan,
   moveAccountDetail,
 }) => {
-
-  function onHover(event: React.MouseEvent<HTMLDivElement>) {
+  function onHover(event: React.MouseEvent<HTMLDivElement>): void {
     event.preventDefault();
     event.stopPropagation();
   }
 
-  const onClickAccountDetails = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    moveAccountDetail(accountId);
-  }, [moveAccountDetail, accountId]);
+  const onClickAccountDetails = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      moveAccountDetail(accountId);
+    },
+    [moveAccountDetail, accountId],
+  );
 
-  const onClickViewOnGnoscan = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    moveGnoscan(address);
-  }, [moveGnoscan, address]);
+  const onClickViewOnGnoscan = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      moveGnoscan(address);
+    },
+    [moveGnoscan, address],
+  );
 
   return (
     <Portal selector={'portal-popup'}>
-      <SideMenuAccountItemMoreInfoWrapper positionX={positionX} positionY={positionY} onMouseOver={onHover}>
+      <SideMenuAccountItemMoreInfoWrapper
+        positionX={positionX}
+        positionY={positionY}
+        onMouseOver={onHover}
+      >
         <div className='info-wrapper' onClick={onClickViewOnGnoscan}>
           <IconLink />
           <span className='title'>View on Gnoscan</span>
@@ -157,5 +168,5 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
         </div>
       </SideMenuAccountItemMoreInfoWrapper>
     </Portal>
-  )
+  );
 };

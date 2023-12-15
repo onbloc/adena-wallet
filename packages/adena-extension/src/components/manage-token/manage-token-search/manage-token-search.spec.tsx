@@ -16,7 +16,7 @@ const tokens = [
       value: '240,255.241155',
       denom: 'GNOT',
     },
-    activated: true
+    activated: true,
   }, {
     tokenId: 'token2',
     symbol: 'GNOS',
@@ -26,8 +26,8 @@ const tokens = [
       value: '252.844',
       denom: 'GNOS',
     },
-    activated: true
-  }
+    activated: true,
+  },
 ];
 
 describe('ManageTokenSearch Component', () => {
@@ -38,7 +38,7 @@ describe('ManageTokenSearch Component', () => {
       onChangeKeyword: () => { return; },
       onClickAdded: () => { return; },
       onClickClose: () => { return; },
-      onToggleActiveItem: () => { return; }
+      onToggleActiveItem: () => { return; },
     };
 
     render(

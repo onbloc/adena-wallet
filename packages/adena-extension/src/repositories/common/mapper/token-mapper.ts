@@ -1,11 +1,4 @@
 import {
-  GRC20TokenModel,
-  IBCNativeTokenModel,
-  IBCTokenModel,
-  NativeTokenModel,
-  TokenModel,
-} from '@models/token-model';
-import {
   SearchGRC20Token,
   SearchGRC20TokenResponse,
 } from '../response/search-grc20-token-response';
@@ -15,6 +8,14 @@ import {
   IBCTokenResponse,
   NativeTokenResponse,
 } from '../response/token-asset-response';
+
+import {
+  NativeTokenModel,
+  GRC20TokenModel,
+  IBCNativeTokenModel,
+  IBCTokenModel,
+  TokenModel,
+} from '@types';
 
 export class TokenMapper {
   private static IMAGE_BASE_URI =
@@ -115,14 +116,20 @@ export class TokenMapper {
     networkId: string,
     response: SearchGRC20TokenResponse | null,
     tokenInfos?: TokenModel[],
-  ) {
+  ): GRC20TokenModel[] {
     if (response === null) {
       return [];
     }
     return response.map((token) => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
   }
 
-  private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token) {
+  private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token): {
+    name: string;
+    symbol: string;
+    decimals: number;
+    tokenId: string;
+    path: string;
+  } {
     const { name, symbol, decimals, pkg_path: pkgPath } = searchToken;
     return {
       name,

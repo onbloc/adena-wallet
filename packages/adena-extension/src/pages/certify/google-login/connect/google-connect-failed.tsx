@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -13,7 +13,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
@@ -27,10 +27,10 @@ const Wrapper = styled.main`
   }
 `;
 
-export const GoogleConnectFailed = () => {
-  const navigate = useNavigate()
+export const GoogleConnectFailed = (): JSX.Element => {
+  const navigate = useNavigate();
 
-  const onClickRetry = () => {
+  const onClickRetry = (): void => {
     navigate(RoutePath.GoogleConnect);
   };
 

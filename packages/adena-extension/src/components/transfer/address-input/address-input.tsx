@@ -57,7 +57,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
             ref={addressInputRef}
             className='address-input'
             value={address}
-            onChange={event => onChangeAddress(event.target.value)}
+            onChange={(event): void => onChangeAddress(event.target.value)}
             placeholder='Recipient’s Gnoland Address'
             autoComplete='off'
             maxLength={40}
@@ -65,7 +65,10 @@ const AddressInput: React.FC<AddressInputProps> = ({
           />
         )}
 
-        <div className='address-book-icon-wrapper' onClick={() => onClickInputIcon(!selected)}>
+        <div
+          className='address-book-icon-wrapper'
+          onClick={(): void => onClickInputIcon(!selected)}
+        >
           <img
             className='address-book'
             src={selected ? CancelIcon : TransferAddressBookIcon}
@@ -77,10 +80,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
       <div className='list-container'>
         {opened && (
           <div className='list-wrapper'>
-            <AddressBookList
-              addressBookInfos={addressBookInfos}
-              onClickItem={onClickAddressBook}
-            />
+            <AddressBookList addressBookInfos={addressBookInfos} onClickItem={onClickAddressBook} />
           </div>
         )}
       </div>

@@ -1,3 +1,6 @@
+import axios from 'axios';
+import { Account } from 'adena-module';
+
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { AdenaStorage } from '@common/storage';
 import { ChainRepository, TokenRepository } from '@repositories/common';
@@ -15,8 +18,8 @@ import {
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
+import { NetworkMetainfo } from '@types';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
-import axios from 'axios';
 
 export class InjectCore {
   private gnoProvider: GnoProvider | null = null;
@@ -53,7 +56,7 @@ export class InjectCore {
 
   public transactionService = new TransactionService(this.walletService);
 
-  public async initGnoProvider() {
+  public async initGnoProvider(): Promise<boolean> {
     try {
       const network = await this.chainService.getCurrentNetwork();
       this.tokenService.setNetworkMetainfo(network);
@@ -67,11 +70,11 @@ export class InjectCore {
     return true;
   }
 
-  public getCurrentAccountId() {
+  public getCurrentAccountId(): Promise<string> {
     return this.accountRepository.getCurrentAccountId().catch(() => '');
   }
 
-  public async getCurrentNetwork() {
+  public async getCurrentNetwork(): Promise<NetworkMetainfo | null> {
     const networks = await this.chainRepository.getNetworks();
     if (networks.length === 0) {
       return null;
@@ -81,18 +84,18 @@ export class InjectCore {
     return network;
   }
 
-  public getCurrentNetworkId() {
+  public getCurrentNetworkId(): Promise<string> {
     return this.chainRepository.getCurrentNetworkId().catch(() => '');
   }
 
-  public async getCurrentAccount() {
+  public async getCurrentAccount(): Promise<Account | undefined> {
     const wallet = await this.walletService.loadWallet();
     const accountId = await this.accountService.getCurrentAccountId();
     const currentAccount = wallet.accounts.find((account) => account.id === accountId);
     return currentAccount;
   }
 
-  public async getCurrentAddress() {
+  public async getCurrentAddress(): Promise<string | null> {
     const currentAccount = await this.getCurrentAccount();
     if (!currentAccount) {
       return null;

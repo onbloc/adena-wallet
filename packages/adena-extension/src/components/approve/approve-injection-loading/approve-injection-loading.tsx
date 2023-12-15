@@ -46,8 +46,8 @@ const ApproveInjectionLoading: React.FC<ApproveInjectionLoadingProps> = ({
   return (
     <ApproveInjectionLoadingWrapper>
       <Spinner />
-      <span className='description'>{"Processing Request..."}</span>
-      <span className='sub-description'>{"Hang tight, we're working on it!"}</span>
+      <span className='description'>{'Processing Request...'}</span>
+      <span className='sub-description'>{'Hang tight, we\'re working on it!'}</span>
     </ApproveInjectionLoadingWrapper>
   );
 };

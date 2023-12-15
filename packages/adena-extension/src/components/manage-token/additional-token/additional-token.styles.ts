@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 export const AdditionalTokenWrapper = styled.div`
   position: relative;
@@ -39,7 +39,7 @@ export const AdditionalTokenWrapper = styled.div`
       border-radius: 30px;
       align-items: center;
       justify-content: center;
-      ${({ theme }) => theme.fonts.body1Bold}
+      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Bold}
       transition: 0.2s;
 
       &:last-child {
@@ -47,23 +47,23 @@ export const AdditionalTokenWrapper = styled.div`
       }
 
       &.cancel-button {
-        background-color: ${({ theme }) => theme.color.neutral[4]};
+        background-color: ${({ theme }): string => theme.color.neutral[4]};
 
         :hover {
-          background-color: ${({ theme }) => theme.color.neutral[5]};
+          background-color: ${({ theme }): string => theme.color.neutral[5]};
         }
       }
 
       &.add-button {
-        background-color: ${({ theme }) => theme.color.primary[3]};
+        background-color: ${({ theme }): string => theme.color.primary[3]};
 
         &:hover {
-          background-color: ${({ theme }) => theme.color.primary[4]};
+          background-color: ${({ theme }): string => theme.color.primary[4]};
         }
 
         &.disabled {
-          color: ${({ theme }) => theme.color.neutral[4]};
-          background-color: ${({ theme }) => theme.color.primary[6]};
+          color: ${({ theme }): string => theme.color.neutral[4]};
+          background-color: ${({ theme }): string => theme.color.primary[6]};
           cursor: default;
         }
       }

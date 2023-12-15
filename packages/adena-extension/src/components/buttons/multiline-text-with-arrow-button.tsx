@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Icon from '@components/icons';
+import { CSSProp } from 'styled-components';
 
 interface MultiButtonProps {
   title: string;
@@ -11,9 +12,13 @@ interface MultiButtonProps {
   onClick: () => unknown;
 }
 
-export const MultilineTextWithArrowButton = ({ title, subTitle, disabled = false, onClick }: MultiButtonProps) => {
-
-  const onClickWrapper = () => {
+export const MultilineTextWithArrowButton = ({
+  title,
+  subTitle,
+  disabled = false,
+  onClick,
+}: MultiButtonProps): JSX.Element => {
+  const onClickWrapper = (): void => {
     if (disabled) {
       return;
     }
@@ -32,7 +37,7 @@ export const MultilineTextWithArrowButton = ({ title, subTitle, disabled = false
 };
 
 const Wrapper = styled.button`
-  ${({ theme }) => theme.mixins.flexbox('column', 'flex-start', 'center')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
   position: relative;
   width: 100%;
   height: 80px;
@@ -42,10 +47,11 @@ const Wrapper = styled.button`
   cursor: pointer;
 
   .arrow-icon {
-    ${({ theme }) => theme.mixins.posTopCenterRight('24px')};
+    ${({ theme }): CSSProp => theme.mixins.posTopCenterRight('24px')};
   }
 
-  ${({ disabled, theme }) => disabled === false &&
+  ${({ disabled, theme }): string | false =>
+    disabled === false &&
     `
       transition: all 0.3s ease;
       &:hover {
@@ -54,8 +60,7 @@ const Wrapper = styled.button`
           stroke: ${theme.color.neutral[0]};
         }
       }
-    `
-  }
+    `}
   & + & {
     margin-top: 12px;
   }

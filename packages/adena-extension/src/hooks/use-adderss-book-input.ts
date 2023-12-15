@@ -7,7 +7,33 @@ import { useNetwork } from './use-network';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { useAccountName } from './use-account-name';
 
-export const useAddressBookInput = () => {
+export type UseAddressBookInputHookReturn = {
+  opened: boolean;
+  hasError: boolean;
+  errorMessage: string;
+  selected: boolean;
+  selectedAddressBook: AddressBookItem | null;
+  selectedName: string;
+  selectedDescription: string;
+  address: string;
+  addressBookInfos: {
+    addressBookId: string;
+    name: string;
+    description: string;
+  }[];
+  resultAddress: string;
+  setSelected: (selected: boolean) => void;
+  setSelectedAddressBook: (selectedAddressBook: AddressBookItem | null) => void;
+  setAddress: (address: string) => void;
+  updateAddressBook: () => Promise<void>;
+  onClickInputIcon: (selected: boolean) => void;
+  onChangeAddress: (address: string) => void;
+  onClickAddressBook: (addressBookId: string) => void;
+  validateAddressBookInput: () => boolean;
+  validateEqualAddress: () => boolean;
+};
+
+export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
   const { addressBookService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAddress } = useCurrentAccount();
@@ -21,7 +47,7 @@ export const useAddressBookInput = () => {
   const [addressBooks, setAddressBooks] = useState<AddressBookItem[]>([]);
   const { accountNames } = useAccountName();
 
-  const updateAddressBook = async () => {
+  const updateAddressBook = async (): Promise<void> => {
     const addressBooks = await addressBookService.getAddressBook();
     setAddressBooks(addressBooks);
   };
@@ -32,7 +58,7 @@ export const useAddressBookInput = () => {
   }, []);
 
   const getAddressBookInfos = useCallback(() => {
-    const currenAccountInfos =
+    const currentAccountInfos =
       wallet?.accounts
         .filter(
           (account) => account.getAddress(currentNetwork?.addressPrefix || 'g') !== currentAddress,
@@ -56,7 +82,7 @@ export const useAddressBookInput = () => {
         };
       });
 
-    return [...currenAccountInfos, ...addressBookInfos];
+    return [...currentAccountInfos, ...addressBookInfos];
   }, [addressBooks, wallet?.accounts]);
 
   const getSelectedAddressBookInfos = useCallback(() => {

@@ -1,4 +1,3 @@
-import { Tm2Error } from '@common/errors/common/tm2-error';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   BlockInfo,
@@ -8,7 +7,6 @@ import {
   ABCIResponse,
   RPCResponse,
   parseABCI,
-  RestService,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   TransactionEndpoint,
@@ -30,7 +28,7 @@ interface ABCIAccount {
   };
 }
 
-interface AccountInfo {
+export interface AccountInfo {
   address: string;
   coins: string;
   chainId: string;
@@ -111,11 +109,11 @@ export class GnoProvider extends GnoJSONRPCProvider {
     };
   }
 
-  public getValueByEvaluteExpression(
+  public getValueByEvaluateExpression(
     packagePath: string,
     functionName: string,
     params: (string | number)[],
-  ) {
+  ): Promise<string | null> {
     const paramValues = params.map((param) =>
       typeof param === 'number' ? `${param}` : `"${param}"`,
     );
@@ -123,11 +121,11 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     return this.evaluateExpression(packagePath, expression)
       .then((result) => {
-        const parseDatas = result.replace('(', '').replace(')', '').split(' ');
-        if (parseDatas.length === 0) {
+        const parseData = result.replace('(', '').replace(')', '').split(' ');
+        if (parseData.length === 0) {
           return null;
         }
-        return parseDatas[0];
+        return parseData[0];
       })
       .catch(() => null);
   }
@@ -142,7 +140,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return response;
   }
 
-  public waitResultForTransaction(hash: string, timeout?: number) {
+  public waitResultForTransaction(hash: string, timeout?: number): Promise<unknown> {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       // Fetch the starting point

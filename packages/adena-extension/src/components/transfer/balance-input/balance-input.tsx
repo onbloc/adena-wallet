@@ -16,7 +16,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
   denom,
   description,
   onChangeAmount,
-  onClickMax
+  onClickMax,
 }) => {
   return (
     <BalanceInputWrapper className={hasError ? 'error' : ''}>
@@ -26,12 +26,10 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
           type='number'
           value={amount}
           autoComplete='off'
-          onChange={event => onChangeAmount(event.target.value)}
+          onChange={(event): void => onChangeAmount(event.target.value)}
           placeholder='Amount'
         />
-        <span className='denom'>
-          {denom}
-        </span>
+        <span className='denom'>{denom}</span>
 
         <button className='max-button' onClick={onClickMax}>
           {'Max'}

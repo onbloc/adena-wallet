@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
@@ -10,13 +10,13 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }) => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
   max-width: 380px;
   padding-top: 50px;
 `;
 
-export const ApproveHardwareWalletLedgerAllSet = () => {
-  const handleNextButtonClick = () => {
+export const ApproveHardwareWalletLedgerAllSet = (): JSX.Element => {
+  const handleNextButtonClick = (): void => {
     window.close();
   };
 

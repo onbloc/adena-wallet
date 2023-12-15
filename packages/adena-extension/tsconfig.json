@@ -17,6 +17,8 @@
     "lib": ["dom", "es5", "es6"],
     "baseUrl": "./",
     "paths": {
+      "@types": ["src/types"],
+      "@states": ["src/states"],
       "@hooks/*": ["src/hooks/*"],
       "@ui/*": ["src/ui/*"],
       "@pages/*": ["src/pages/*"],
@@ -27,13 +29,12 @@
       "@layouts/*": ["src/layouts/*"],
       "@components/*": ["src/components/*"],
       "@containers/*": ["src/containers/*"],
-      "@states/*": ["src/states/*"],
       "@common/*": ["src/common/*"],
       "@inject/*": ["src/inject/*"],
       "@assets/*": ["src/assets/*"],
       "@migrates/*": ["src/migrates/*"],
       "@models/*": ["src/models/*"],
-      "@pulbic/*": ["public/*"]
+      "@public/*": ["public/*"]
     }
   },
   "include": ["./src/**/*"]

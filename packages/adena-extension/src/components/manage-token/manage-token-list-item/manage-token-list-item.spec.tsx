@@ -15,14 +15,14 @@ const token = {
     value: '240,255.241155',
     denom: 'GNOT',
   },
-  activated: true
+  activated: true,
 };
 
 describe('ManageTokenListItem Component', () => {
   it('ManageTokenListItem render', () => {
     const args: ManageTokenListItemProps = {
       token,
-      onToggleActiveItem: () => { return; }
+      onToggleActiveItem: () => { return; },
     };
 
     render(

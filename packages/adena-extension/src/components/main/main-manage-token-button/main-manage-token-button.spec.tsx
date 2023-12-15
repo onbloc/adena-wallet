@@ -9,7 +9,7 @@ import MainManageTokenButton, { MainManageTokenButtonProps } from './main-manage
 describe('MainManageTokenButton Component', () => {
   it('MainManageTokenButton render', () => {
     const args: MainManageTokenButtonProps = {
-      onClick: () => { return; }
+      onClick: () => { return; },
     };
 
     render(

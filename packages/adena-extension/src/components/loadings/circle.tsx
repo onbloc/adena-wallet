@@ -9,13 +9,13 @@ interface CircleProps {
 }
 
 const CircleStyle = styled.div<CircleProps>`
-  width: ${({ width }) => width && width};
-  height: ${({ height }) => height && height};
-  background-color: ${({ theme, bgColor }) => (bgColor ? bgColor : theme.color.neutral[4])};
-  margin: ${({ margin }) => margin && margin};
+  width: ${({ width }): string | undefined => width && width};
+  height: ${({ height }): string | undefined => height && height};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.color.neutral[4])};
+  margin: ${({ margin }): string | undefined => margin && margin};
   border-radius: 50%;
 `;
 
-export const Circle = ({ width, height, bgColor, margin }: CircleProps) => {
+export const Circle = ({ width, height, bgColor, margin }: CircleProps): JSX.Element => {
   return <CircleStyle width={width} height={height} bgColor={bgColor} margin={margin} />;
 };

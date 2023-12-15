@@ -1,4 +1,7 @@
-import TransactionHistory, { TransactionInfo, type TransactionHistoryProps } from './transaction-history';
+import TransactionHistory, {
+  TransactionInfo,
+  type TransactionHistoryProps,
+} from './transaction-history';
 import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
 
@@ -17,11 +20,11 @@ const transferRSendSuccessInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 const transferReceiveSuccessInfo: TransactionInfo = {
   hash: 'transferReceiveSuccessInfoHash',
@@ -33,11 +36,11 @@ const transferReceiveSuccessInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '+4,000',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'ACTIVE',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 const transferRSendFailedInfo: TransactionInfo = {
   hash: 'transferRSendFailedInfoHash',
@@ -49,55 +52,55 @@ const transferRSendFailedInfo: TransactionInfo = {
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'BLUR',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 const contractSuccessInfo: TransactionInfo = {
   hash: 'contractSuccessInfoHash',
-  logo: ``,
+  logo: '',
   type: 'CONTRACT_CALL',
   status: 'SUCCESS',
   title: 'CreateThread',
   extraInfo: '',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 const multiContractSuccessInfo: TransactionInfo = {
   hash: 'multiContractSuccessInfoHash',
-  logo: ``,
+  logo: '',
   type: 'MULTI_CONTRACT_CALL',
   status: 'SUCCESS',
   title: 'CreateThread',
   extraInfo: '+2',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 const addPackageSuccessInfo: TransactionInfo = {
   hash: 'addPackageSuccessInfoHash',
-  logo: ``,
+  logo: '',
   type: 'ADD_PACKAGE',
   status: 'SUCCESS',
   title: 'AddPkg',
   amount: {
     value: '-4,000.23',
-    denom: 'GNOT'
+    denom: 'GNOT',
   },
   valueType: 'DEFAULT',
-  date: '2023-04-24 07:05:16'
-}
+  date: '2023-04-24 07:05:16',
+};
 
 export const Default: StoryObj<TransactionHistoryProps> = {
   args: {
@@ -109,24 +112,16 @@ export const Default: StoryObj<TransactionHistoryProps> = {
           transferRSendSuccessInfo,
           transferReceiveSuccessInfo,
           transferRSendFailedInfo,
-        ]
+        ],
       },
       {
         title: 'Yesterday',
-        transactions: [
-          contractSuccessInfo,
-          multiContractSuccessInfo,
-          addPackageSuccessInfo,
-        ]
+        transactions: [contractSuccessInfo, multiContractSuccessInfo, addPackageSuccessInfo],
       },
       {
         title: 'Apr 19, 2023',
-        transactions: [
-          contractSuccessInfo,
-          multiContractSuccessInfo,
-          addPackageSuccessInfo,
-        ]
-      }
+        transactions: [contractSuccessInfo, multiContractSuccessInfo, addPackageSuccessInfo],
+      },
     ],
     onClickItem: action('click item'),
   },
