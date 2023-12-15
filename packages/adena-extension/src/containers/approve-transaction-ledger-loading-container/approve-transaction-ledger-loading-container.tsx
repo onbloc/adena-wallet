@@ -49,7 +49,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       .then(async (signature) => {
         const transaction = await transactionService.createTransaction(document, signature);
         const hash = transactionService.createHash(transaction);
-        const responseHash = await transactionService
+        const response = await transactionService
           .sendTransaction(transaction)
           .catch((error: TM2Error) => {
             const message = {
@@ -63,11 +63,12 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
             chrome.runtime.sendMessage(
               InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
             );
+            return null;
           });
 
-        if (hash === responseHash) {
+        if (hash === response?.hash) {
           chrome.runtime.sendMessage(
-            InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+            InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
           );
         }
         chrome.runtime.sendMessage(

@@ -45,8 +45,8 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
       .createSignatureWithLedger(currentAccount, document)
       .then(async (signature) => {
         const transaction = await transactionService.createTransaction(document, signature);
-        const hash = await transactionService.sendTransaction(transaction);
-        return hash;
+        const response = await transactionService.sendTransaction(transaction);
+        return response.hash;
       })
       .catch((error: Error) => {
         if (error.message === 'Transaction signing request was rejected by the user') {

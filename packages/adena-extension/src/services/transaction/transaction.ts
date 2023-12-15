@@ -12,6 +12,7 @@ import { WalletService } from '..';
 import { StdSignDoc } from 'adena-module/src';
 import { Document } from 'adena-module/src/amino/document';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 
 export class TransactionService {
   private walletService: WalletService;
@@ -141,11 +142,11 @@ export class TransactionService {
    * @param gnoClient gno api client
    * @param transaction created transaction
    */
-  public sendTransaction = async (transaction: Array<number>): Promise<string> => {
+  public sendTransaction = async (transaction: Array<number>): Promise<BroadcastTxCommitResult> => {
     const provider = this.getGnoProvider();
     const encodedTransaction = Buffer.from(transaction).toString('base64');
     const response = await provider.sendTransactionCommit(encodedTransaction);
-    return response.hash;
+    return response;
   };
 
   public createHash(transaction: Array<number>): string {

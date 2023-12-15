@@ -15,7 +15,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
-import { TM2Error } from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult, TM2Error } from '@gnolang/tm2-js-client';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];
@@ -176,7 +176,7 @@ const ApproveTransactionContainer: React.FC = () => {
       setProcessType('PROCESSING');
       const transaction = await transactionService.createTransaction(document, signature);
       const hash = transactionService.createHash(transaction);
-      const responseHash = await new Promise<string>((resolve) => {
+      const response = await new Promise<BroadcastTxCommitResult | null>((resolve) => {
         transactionService
           .sendTransaction(transaction)
           .then(resolve)
@@ -192,13 +192,14 @@ const ApproveTransactionContainer: React.FC = () => {
             setResponse(
               InjectionMessageInstance.failure('TRANSACTION_FAILED', message, requestData?.key),
             );
+            resolve(null);
           });
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       });
-      if (hash === responseHash) {
+      if (hash === response?.hash) {
         setResponse(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', { hash }, requestData?.key),
+          InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
         );
         return true;
       } else {
