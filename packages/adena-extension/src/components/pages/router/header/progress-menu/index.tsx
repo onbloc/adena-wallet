@@ -2,7 +2,7 @@ import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import { useNavigate } from 'react-router-dom';
-import logo from '../../../assets/logo-withIcon.svg';
+import logo from '@assets/logo-withIcon.svg';
 
 type ProgressLevel = 'first' | 'second' | 'third';
 
