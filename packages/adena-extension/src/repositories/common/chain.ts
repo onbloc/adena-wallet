@@ -40,7 +40,11 @@ export class ChainRepository {
       (network) =>
         network.default || networks?.find((current) => current.id === network.id) === undefined,
     );
-    const customNetworks = networks.filter((network) => network.default === false);
+    const customNetworks = networks.filter(
+      (network) =>
+        network.default === false &&
+        defaultNetworks.find((network1) => network.id === network1.id) === undefined,
+    );
     return [...defaultNetworks, ...customNetworks];
   };
 
