@@ -45,13 +45,13 @@
     "id": "gnoswap",
     "default": false,
     "main": false,
-    "chainId": "dev.gnoswap",
+    "chainId": "beta.gnoswap",
     "chainName": "Gnoswap-Testnet",
-    "networkId": "dev.gnoswap",
+    "networkId": "beta.gnoswap",
     "networkName": "Gnoswap-Testnet",
     "addressPrefix": "g",
-    "rpcUrl": "https://dev.rpc.gnoswap.io",
-    "gnoUrl": "https://dev.rpc.gnoswap.io",
+    "rpcUrl": "https://beta.rpc.gnoswap.io",
+    "gnoUrl": "https://beta.rpc.gnoswap.io",
     "apiUrl": "",
     "linkUrl": ""
   }
