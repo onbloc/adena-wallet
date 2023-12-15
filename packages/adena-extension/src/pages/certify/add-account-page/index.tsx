@@ -1,12 +1,23 @@
 import React, { useCallback, useMemo } from 'react';
-import Text from '@components/text';
+import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+
 import { RoutePath } from '@router/path';
+import Text from '@components/text';
 import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useWalletContext } from '@hooks/use-context';
-import { Wrapper } from './AddAccountPage.styles';
 import BottomFixedButton from '@components/buttons/bottom-fixed-button';
+
+const Wrapper = styled.main`
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  width: 100%;
+  height: 100%;
+  padding-top: 24px;
+  .main-title {
+    margin-bottom: 12px;
+  }
+`;
 
 const AddAccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -83,10 +94,7 @@ const AddAccountPage: React.FC = () => {
           disabled={v.disabled}
         />
       ))}
-      <BottomFixedButton
-        text='Close'
-        onClick={onClickCancel}
-      />
+      <BottomFixedButton text='Close' onClick={onClickCancel} />
     </Wrapper>
   );
 };

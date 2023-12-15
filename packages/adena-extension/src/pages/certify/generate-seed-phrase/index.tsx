@@ -1,10 +1,11 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+
 import addSymbol from '@assets/add-symbol.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 
 const content =

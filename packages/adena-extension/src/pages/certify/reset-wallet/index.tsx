@@ -1,11 +1,12 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import removeIcon from '@assets/icon-remove-blur.svg';
 import Text from '@components/text';
 import theme from '@styles/theme';
 import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { ButtonHierarchy } from '@components/buttons/button';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 

@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled, { CSSProp } from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
 import Text from '@components/text';
-import etc from '../../../assets/etc.svg';
-import { useLocation, useNavigate } from 'react-router-dom';
+import etc from '@assets/etc.svg';
 import { RoutePath } from '@router/path';
 import DoubleButton from '@components/buttons/double-button';
 import theme from '@styles/theme';

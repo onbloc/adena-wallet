@@ -4,8 +4,8 @@ import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Text from '@components/text';
-import search from '../../../assets/search.svg';
-import cancel from '../../../assets/cancel-dark.svg';
+import search from '@assets/search.svg';
+import cancel from '@assets/cancel-dark.svg';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { RoutePath } from '@router/path';
 import DefaultInput from '@components/default-input';
