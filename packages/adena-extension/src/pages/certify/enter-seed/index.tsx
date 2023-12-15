@@ -1,13 +1,14 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
+import { useLocation } from 'react-router-dom';
+
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import SeedBox from '@components/seed-box';
 import TitleWithDesc from '@components/title-with-desc';
 import Text from '@components/text';
 import { ErrorText } from '@components/error-text';
-import { useEnterSeed } from './use-enter-seed';
 import TermsCheckbox from '@components/terms-checkbox';
-import { useLocation } from 'react-router-dom';
+import { useEnterSeed } from '@hooks/certify/use-enter-seed';
 
 const walletContent = {
   title: 'Import with Seed Phrase',

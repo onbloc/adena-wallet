@@ -1,9 +1,11 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import ApproveChangingNetwork from '@components/approve/approve-changing-network/approve-changing-network/approve-changing-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { CommonFullContentLayout } from '@components/atom';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -78,21 +80,23 @@ const ApproveChangingNetworkContainer: React.FC = () => {
   }, [requestData]);
 
   return (
-    <ApproveChangingNetwork
-      fromChain={{
-        name: currentNetwork.networkName,
-      }}
-      toChain={{
-        name: toNetwork?.networkName || '',
-      }}
-      changeable={changeable}
-      processing={processing}
-      done={done}
-      changeNetwork={onClickChangeNetwork}
-      cancel={onClickCancel}
-      onResponse={onResponse}
-      onTimeout={onTimeout}
-    />
+    <CommonFullContentLayout>
+      <ApproveChangingNetwork
+        fromChain={{
+          name: currentNetwork.networkName,
+        }}
+        toChain={{
+          name: toNetwork?.networkName || '',
+        }}
+        changeable={changeable}
+        processing={processing}
+        done={done}
+        changeNetwork={onClickChangeNetwork}
+        cancel={onClickCancel}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    </CommonFullContentLayout>
   );
 };
 

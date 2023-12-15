@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import Text from '@components/text';
 import theme from '@styles/theme';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
 import DefaultInput from '@components/default-input';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';

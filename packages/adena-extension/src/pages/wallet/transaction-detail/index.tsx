@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import Text from '@components/text';
 import IconShare from '@assets/icon-share';
 import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
 import TokenBalance from '@components/common/token-balance/token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';

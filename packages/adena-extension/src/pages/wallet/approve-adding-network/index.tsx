@@ -1,9 +1,11 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import ApproveAddingNetwork from '@components/approve/approve-adding-network/approve-adding-network/approve-adding-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { CommonFullContentLayout } from '@components/atom';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -60,21 +62,23 @@ const ApproveAddingNetworkContainer: React.FC = () => {
   }, [requestData]);
 
   return (
-    <ApproveAddingNetwork
-      networkInfo={{
-        name: chainName,
-        rpcUrl: rpcUrl,
-        chainId: chainId,
-      }}
-      logo={''}
-      approvable={requestData !== undefined}
-      processing={processing}
-      done={done}
-      approve={onClickApprove}
-      cancel={onClickCancel}
-      onResponse={onResponse}
-      onTimeout={onTimeout}
-    />
+    <CommonFullContentLayout>
+      <ApproveAddingNetwork
+        networkInfo={{
+          name: chainName,
+          rpcUrl: rpcUrl,
+          chainId: chainId,
+        }}
+        logo={''}
+        approvable={requestData !== undefined}
+        processing={processing}
+        done={done}
+        approve={onClickApprove}
+        cancel={onClickCancel}
+        onResponse={onResponse}
+        onTimeout={onTimeout}
+      />
+    </CommonFullContentLayout>
   );
 };
 

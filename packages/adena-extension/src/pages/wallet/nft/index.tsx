@@ -1,7 +1,8 @@
-import theme from '@styles/theme';
-import Text from '@components/text';
 import React, { useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
+
+import theme from '@styles/theme';
+import Text from '@components/text';
 import LoadingNft from '@components/loading-screen/loading-nft';
 
 const Wrapper = styled.main`

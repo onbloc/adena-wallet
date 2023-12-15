@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import TransferLedgerRejectContainer from './transfer-ledger-reject-container';
+import TransferLedgerReject from '@components/transfer/transfer-ledger-reject/transfer-ledger-reject';
+import { RoutePath } from '@router/path';
 
 const TransferLedgerRejectLayout = styled.div`
   display: flex;
@@ -12,12 +14,18 @@ const TransferLedgerRejectLayout = styled.div`
   margin-bottom: 60px;
 `;
 
-const TransferLedgerReject: React.FC = () => {
+const TransferLedgerRejectContainer: React.FC = () => {
+  const navigate = useNavigate();
+
+  const onClickClose = useCallback(() => {
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
+
   return (
     <TransferLedgerRejectLayout>
-      <TransferLedgerRejectContainer />
+      <TransferLedgerReject onClickClose={onClickClose} />
     </TransferLedgerRejectLayout>
   );
 };
 
-export default TransferLedgerReject;
+export default TransferLedgerRejectContainer;
