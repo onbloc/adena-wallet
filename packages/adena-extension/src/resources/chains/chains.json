@@ -43,7 +43,7 @@
   },
   {
     "id": "gnoswap",
-    "default": false,
+    "default": true,
     "main": false,
     "chainId": "beta.gnoswap",
     "chainName": "Gnoswap-Testnet",
