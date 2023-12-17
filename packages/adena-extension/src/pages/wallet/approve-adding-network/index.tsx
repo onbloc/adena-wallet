@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import ApproveAddingNetwork from '@components/approve/approve-adding-network/approve-adding-network/approve-adding-network';
+import ApproveAddingNetwork from '@components/pages/approve-adding-network/approve-adding-network/approve-adding-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { CommonFullContentLayout } from '@components/atom';
+import { CommonFullContentLayout } from '@components/atoms';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();

@@ -1,6 +1,6 @@
 import { TokenModel } from './';
 
-export interface TokenBalance extends TokenModel {
+export interface TokenBalanceType extends TokenModel {
   amount: Amount;
 }
 
@@ -13,7 +13,7 @@ export interface AccountTokenBalance {
   accountId: string;
   chainId: string;
   networkId: string;
-  tokenBalances: TokenBalance[];
+  tokenBalances: TokenBalanceType[];
 }
 
 export interface NetworkMetainfo {

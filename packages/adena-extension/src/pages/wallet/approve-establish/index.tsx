@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import WalletConnect from '@components/approve/wallet-connect/wallet-connect';
+import WalletConnect from '@components/pages/approve-establish/wallet-connect/wallet-connect';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,

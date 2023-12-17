@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import TransferLedgerLoading from '@components/transfer/transfer-ledger-loading/transfer-ledger-loading';
+import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
 import { StdSignDoc, isLedgerAccount } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';

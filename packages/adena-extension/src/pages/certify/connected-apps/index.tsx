@@ -3,14 +3,12 @@ import styled, { CSSProp } from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
+import { Text, ListBox, ListHierarchy } from '@components/atoms';
+import { LoadingNft, CloseShadowButton } from '@components/molecules';
 import theme from '@styles/theme';
 import { WalletState } from '@states';
-import Text from '@components/text';
-import LoadingNft from '@components/loading-screen/loading-nft';
-import ListBox, { ListHierarchy } from '@components/list-box';
 import DefaultImage from '@assets/favicon-default-small.svg';
 import disconnected from '@assets/disconnected.svg';
-import CloseShadowButton from '@components/buttons/close-shadow-button';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 

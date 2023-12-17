@@ -3,11 +3,12 @@ import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { RoutePath } from '@router/path';
-import Text from '@components/text';
-import { MultilineTextWithArrowButton } from '@components/buttons/multiline-text-with-arrow-button';
+import { Text } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useWalletContext } from '@hooks/use-context';
-import BottomFixedButton from '@components/buttons/bottom-fixed-button';
+
+import { MultilineTextWithArrowButton } from './multiline-text-with-arrow-button';
 
 const Wrapper = styled.main`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};

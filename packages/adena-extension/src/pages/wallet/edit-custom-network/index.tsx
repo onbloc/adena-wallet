@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import EditNetwork from '@components/edint-network/edit-network/edit-network';
+import EditNetwork from '@components/pages/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
 import { parseParameters } from '@common/utils/client-utils';
-import { CommonFullContentLayout } from '@components/atom';
+import { CommonFullContentLayout } from '@components/atoms';
 
 import { NetworkMetainfo } from '@types';
 

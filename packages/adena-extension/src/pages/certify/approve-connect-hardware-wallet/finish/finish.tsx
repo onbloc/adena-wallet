@@ -1,12 +1,12 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
-import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useLocation } from 'react-router-dom';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
+
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
+import IconSuccessSymbol from '@assets/success-symbol.svg';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 
 const text = {
   title: 'Account Added',

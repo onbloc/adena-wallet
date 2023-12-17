@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import logo from '@assets/logo-default.svg';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
+
+import logo from '@assets/logo-default.svg';
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { DoubleButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import GoogleSignInButton from '@components/buttons/google-signin-button';
 import theme from '@styles/theme';
-import DoubleButton from '@components/buttons/double-button';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { existsPopups } from '@inject/message/methods';
+
+import GoogleSignInButton from './google-signin-button';
 
 export const WalletCreate = (): JSX.Element => {
   const navigate = useNavigate();

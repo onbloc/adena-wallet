@@ -1,17 +1,13 @@
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import { ErrorText } from '@components/error-text';
-import TermsCheckbox from '@components/terms-checkbox';
-import TitleWithDesc from '@components/title-with-desc';
 import React, { useCallback, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
-import SeedBox from '@components/seed-box';
-import { SingleAccount } from 'adena-module';
-import { RoutePath } from '@router/path';
 import { useNavigate } from 'react-router-dom';
+import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
+
+import { Text, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { SeedBox, TitleWithDesc, TermsCheckbox } from '@components/molecules';
+import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
-import { PrivateKeyKeyring } from 'adena-module';
 
 const content = {
   title: 'Import Private Key',

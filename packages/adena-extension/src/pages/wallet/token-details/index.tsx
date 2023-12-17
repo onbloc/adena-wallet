@@ -4,29 +4,27 @@ import styled, { CSSProp } from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
-import Text from '@components/text';
+import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
+import { TransactionHistory, DoubleButton } from '@components/molecules';
 import etc from '@assets/etc.svg';
 import { RoutePath } from '@router/path';
-import DoubleButton from '@components/buttons/double-button';
 import theme from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import LoadingTokenDetails from '@components/loading-screen/loading-token-details';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
-import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import HighlightNumber from '@components/common/highlight-number/highlight-number';
+import { HighlightNumber } from '@components/atoms';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { useNetwork } from '@hooks/use-network';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
-import { StaticMultiTooltip } from '@components/tooltips/static-multi-tooltip';
 import useHistoryData from '@hooks/use-history-data';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
-import { TokenBalance } from '@types';
+import { TokenBalanceType } from '@types';
+
+import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -113,7 +111,7 @@ export const TokenDetails = (): JSX.Element => {
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   useNetwork();
-  const [tokenBalance] = useState<TokenBalance>(state);
+  const [tokenBalance] = useState<TokenBalanceType>(state);
   const [balance] = useState(tokenBalance.amount.value);
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();

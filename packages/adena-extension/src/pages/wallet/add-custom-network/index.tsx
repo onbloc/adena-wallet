@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { CommonFullContentLayout } from '@components/atom';
-import AddCustomNetwork from '@components/add-custom-network/add-custom-network/add-custom-network';
+import { CommonFullContentLayout } from '@components/atoms';
+import AddCustomNetwork from '@components/pages/add-custom-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
 

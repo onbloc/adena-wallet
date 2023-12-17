@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import TransferInput from '@components/transfer/transfer-input/transfer-input';
+import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
 import { RoutePath } from '@router/path';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';

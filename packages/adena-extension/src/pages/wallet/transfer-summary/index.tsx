@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import { isLedgerAccount } from 'adena-module';
 
-import TransferSummary from '@components/transfer/transfer-summary/transfer-summary';
+import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';

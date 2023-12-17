@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 import { CommonState, NetworkState, WalletState } from '@states';
-import { ErrorNetwork } from '@components/errors';
+import { ErrorNetwork } from './error-network';
 
 interface Props {
   children: React.ReactNode;

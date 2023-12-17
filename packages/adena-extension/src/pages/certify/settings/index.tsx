@@ -1,9 +1,10 @@
 import React, { useCallback } from 'react';
 import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+
+import { FullButtonRightIcon } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import FullButtonRightIcon from '@components/buttons/full-button-right-icon';
-import BottomFixedButton from '@components/buttons/bottom-fixed-button';
 
 const menuMakerInfo = [
   {

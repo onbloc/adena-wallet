@@ -3,20 +3,18 @@ import styled, { CSSProp } from 'styled-components';
 import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import Text from '@components/text';
 import search from '@assets/search.svg';
 import cancel from '@assets/cancel-dark.svg';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
+import { Text, DefaultInput, Button, ButtonHierarchy } from '@components/atoms';
+import { TokenBalance } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import DefaultInput from '@components/default-input';
 import { searchTextFilter } from '@common/utils/client-utils';
-import ListBox, { ListHierarchy } from '@components/list-box';
+import { ListBox, ListHierarchy } from '@components/atoms';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import TokenBalanceComponent from '@components/common/token-balance/token-balance';
 import useHistoryData from '@hooks/use-history-data';
 
-import { TokenBalance } from '@types';
+import { TokenBalanceType } from '@types';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -89,11 +87,11 @@ export const WalletSearch = (): JSX.Element => {
     setSearchText(e.target.value);
   };
 
-  const onClickItem = (tokenBalance: TokenBalance): void => {
+  const onClickItem = (tokenBalance: TokenBalanceType): void => {
     location.state === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
   };
 
-  const moveTransferInput = (tokenBalance: TokenBalance): void => {
+  const moveTransferInput = (tokenBalance: TokenBalanceType): void => {
     clearHistoryData(RoutePath.TransferInput);
     navigate(RoutePath.TransferInput, {
       state: {
@@ -103,7 +101,7 @@ export const WalletSearch = (): JSX.Element => {
     });
   };
 
-  const moveDeposit = (tokenBalance: TokenBalance): void => {
+  const moveDeposit = (tokenBalance: TokenBalanceType): void => {
     navigate(RoutePath.Deposit, {
       state: {
         type: 'wallet',
@@ -154,7 +152,7 @@ export const WalletSearch = (): JSX.Element => {
                 </Text>
               }
               right={
-                <TokenBalanceComponent
+                <TokenBalance
                   value={BigNumber(balance.amount.value).toFormat()}
                   denom={balance.amount.denom}
                   fontStyleKey='body2Reg'

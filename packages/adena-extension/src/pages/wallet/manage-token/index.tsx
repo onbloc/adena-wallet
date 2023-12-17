@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
-import ManageTokenSearch from '@components/manage-token/manage-token-search/manage-token-search';
+import ManageTokenSearch from '@components/pages/manage-token/manage-token';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { RoutePath } from '@router/path';

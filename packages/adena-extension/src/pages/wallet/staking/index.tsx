@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import Text from '@components/text';
+import { Text } from '@components/atoms';
 
 const Wrapper = styled.div`
   position: relative;

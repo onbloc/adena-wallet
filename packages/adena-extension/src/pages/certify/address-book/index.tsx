@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
+
+import { Text, ListBox } from '@components/atoms';
 import theme from '@styles/theme';
-import CloseShadowButton from '@components/buttons/close-shadow-button';
-import plus from '../../../assets/plus.svg';
-import ListBox from '@components/list-box';
+import { CloseShadowButton } from '@components/molecules';
+import plus from '@assets/plus.svg';
 import { RoutePath } from '@router/path';
-import { useEffect } from 'react';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';

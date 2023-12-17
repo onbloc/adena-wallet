@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { LedgerConnector, LedgerAccount } from 'adena-module';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
 import { Account } from 'adena-module';
 import IconAddSymbol from '@assets/add-symbol.svg';
 import IconCheck from '@assets/check.svg';

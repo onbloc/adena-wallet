@@ -1,8 +1,8 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
+
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
 import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 
 const text = {
