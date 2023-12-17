@@ -1,8 +1,7 @@
 import { AxiosInstance } from 'axios';
 import { TransactionHistoryResponse } from './response/transaction-history-response';
 import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
-import { NetworkMetainfo } from '@types';
-import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
+import { NetworkMetainfo, TransactionInfo } from '@types';
 
 export class TransactionHistoryRepository {
   private axiosInstance: AxiosInstance;

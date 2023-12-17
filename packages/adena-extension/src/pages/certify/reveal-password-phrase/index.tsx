@@ -1,14 +1,11 @@
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import DefaultInput from '@components/default-input';
-import WarningBox from '@components/warning/warning-box';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
-import TermsCheckbox from '@components/terms-checkbox';
+import { useNavigate } from 'react-router-dom';
+
+import { Text, WarningBox, DefaultInput, ErrorText } from '@components/atoms';
+import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
-import { ErrorText } from '@components/error-text';
 
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';

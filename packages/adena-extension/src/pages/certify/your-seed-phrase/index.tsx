@@ -1,14 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import TitleWithDesc from '@components/title-with-desc';
-import SeedBox from '@components/seed-box';
-import TermsCheckbox from '@components/terms-checkbox';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
-import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
+
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { SeedBox, TitleWithDesc, TermsCheckbox, SeedViewAndCopy } from '@components/molecules';
+import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 

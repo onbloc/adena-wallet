@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import TitleWithDesc from '@components/title-with-desc';
-import { ErrorText } from '@components/error-text';
 import { useNavigate } from 'react-router-dom';
+
+import { ErrorText, DefaultInput } from '@components/atoms';
+import { TitleWithDesc, CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import DefaultInput from '@components/default-input';
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import { WalletError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';

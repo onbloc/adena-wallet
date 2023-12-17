@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import TransactionHistory from '@components/transaction-history/transaction-history/transaction-history';
+import { TransactionHistory } from '@components/molecules';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';

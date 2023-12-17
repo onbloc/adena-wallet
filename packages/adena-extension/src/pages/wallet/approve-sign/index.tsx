@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import ApproveTransaction from '@components/approve/approve-transaction/approve-transaction';
+import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
+
+import { ApproveTransaction } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import {
@@ -8,11 +11,9 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
 import { RoutePath } from '@router/path';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { validateInjectionData } from '@inject/message/methods';
-import BigNumber from 'bignumber.js';
 import { useNetwork } from '@hooks/use-network';
 
 function mappedTransactionData(document: StdSignDoc): {

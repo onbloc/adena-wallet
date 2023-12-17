@@ -54,9 +54,9 @@ import History from '@pages/wallet/history';
 import { TransactionDetail } from '@pages/wallet/transaction-detail';
 import ApproveEstablish from '@pages/wallet/approve-establish';
 import ApproveSign from '@pages/wallet/approve-sign';
-import ManageToken from '@pages/wallet/manage-token';
 import TransferInput from '@pages/wallet/transfer-input';
 import TransferSummary from '@pages/wallet/transfer-summary';
+import ManageToken from '@pages/wallet/manage-token';
 import ManageTokenAdded from '@pages/wallet/manage-token-added';
 import TransferLedgerLoading from '@pages/wallet/transfer-ledger-loading';
 import TransferLedgerReject from '@pages/wallet/transfer-ledger-reject';
@@ -72,15 +72,14 @@ import ApproveSignTransactionLedgerLoading from '@pages/wallet/approve-sign-tran
 
 import { useWalletContext } from '@hooks/use-context';
 
-import LoadingMain from '@components/loading-screen/loading-main';
-
-import { TabContainer } from '@components/atom';
+import { TabContainer } from '@components/atoms';
 import { ErrorContainer } from '@components/molecules';
 
-import { Header } from '@components/pages/router/header';
-import { ProgressMenu } from '@components/pages/router/header/progress-menu';
-import { Background } from '@components/pages/router/background';
-import { Navigation } from '@components/pages/router/navigation';
+import { Header } from './header';
+import { ProgressMenu } from './header/progress-menu';
+import { Background } from './background';
+import { Navigation } from './navigation';
+import LoadingMain from './loading-main';
 
 export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();

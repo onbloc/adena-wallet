@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { StdSignDoc, isLedgerAccount } from 'adena-module';
-import ApproveLedgerLoading from '@components/approve/approve-ledger-loading/approve-ledger-loading';
+
+import { ApproveLedgerLoading } from '@components/molecules';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';

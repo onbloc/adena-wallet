@@ -1,14 +1,11 @@
-import { LeftArrowBtn } from '@components/buttons/arrow-buttons';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
-import { useEffect } from 'react';
-import add from '../../../assets/add-symbol.svg';
-import edit from '../../../assets/edit-symbol.svg';
-import DefaultInput, { inputStyle } from '@components/default-input';
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { ErrorText } from '@components/error-text';
+
+import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
+import { CancelAndConfirmButton } from '@components/molecules';
+import add from '@assets/add-symbol.svg';
+import edit from '@assets/edit-symbol.svg';
 import theme from '@styles/theme';
 import {
   validateAlreadyAddress,

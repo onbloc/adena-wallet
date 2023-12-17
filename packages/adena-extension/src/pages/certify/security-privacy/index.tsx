@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
 import { useNavigate } from 'react-router-dom';
-import FullButtonRightIcon, { ButtonMode } from '@components/buttons/full-button-right-icon';
-import BottomFixedButton from '@components/buttons/bottom-fixed-button';
-import { RoutePath } from '@router/path';
 import { Account, isLedgerAccount, isSeedAccount } from 'adena-module';
+
+import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import TransferLedgerReject from '@components/transfer/transfer-ledger-reject/transfer-ledger-reject';
+import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
 import { RoutePath } from '@router/path';
 
 const TransferLedgerRejectLayout = styled.div`

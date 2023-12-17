@@ -5,7 +5,7 @@ import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { TokenModel, TokenBalance } from '@types';
+import { TokenModel, TokenBalanceType } from '@types';
 
 const NETWORK_FEE = 0.000001;
 
@@ -32,7 +32,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
-  const [currentBalance, setCurrentBalance] = useState<TokenBalance>();
+  const [currentBalance, setCurrentBalance] = useState<TokenBalanceType>();
   const [availAmountNumber, setAvailAmountNumber] = useState<BigNumber>(BigNumber(0));
   const { fetchBalanceBy } = useTokenBalance();
   const { convertDenom } = useTokenMetainfo();

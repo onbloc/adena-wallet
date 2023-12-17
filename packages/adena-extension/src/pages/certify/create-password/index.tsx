@@ -2,13 +2,9 @@ import React from 'react';
 import styled, { CSSProp, css } from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
-import TermsCheckbox from '@components/terms-checkbox';
-import TitleWithDesc from '@components/title-with-desc';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import Text from '@components/text';
-import { ErrorText } from '@components/error-text';
+import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { useCreatePassword } from '@hooks/certify/use-create-password';
-import DefaultInput from '@components/default-input';
 
 const text = {
   title: 'Create\na Password',

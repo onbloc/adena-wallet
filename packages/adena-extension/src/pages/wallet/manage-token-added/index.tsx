@@ -2,15 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import AdditionalToken, {
-  TokenInfo,
-} from '@components/manage-token/additional-token/additional-token';
+import AdditionalToken from '@components/pages/additional-token/additional-token';
 import { useAdenaContext } from '@hooks/use-context';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@router/path';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import { TokenInfo } from '@types';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const navigate = useNavigate();

@@ -1,8 +1,8 @@
-import gnotLogo from '../../assets/gnot-logo.svg';
-import contractLogo from '../../assets/contract.svg';
-import addPkgLogo from '../../assets/addpkg.svg';
-import success from '../../assets/success.svg';
-import failed from '../../assets/failed.svg';
+import gnotLogo from '@assets/gnot-logo.svg';
+import contractLogo from '@assets/contract.svg';
+import addPkgLogo from '@assets/addpkg.svg';
+import success from '@assets/success.svg';
+import failed from '@assets/failed.svg';
 import theme from '@styles/theme';
 import axios, { AxiosResponse } from 'axios';
 import BigNumber from 'bignumber.js';

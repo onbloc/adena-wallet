@@ -1,22 +1,20 @@
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import DefaultInput from '@components/default-input';
-import Text from '@components/text';
-import { Title } from '@pages/certify/login';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import { RoutePath } from '@router/path';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+
+import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { Title } from '@pages/certify/login';
+import { RoutePath } from '@router/path';
 import { InjectionMessageInstance } from '@inject/message';
-import LoadingApproveTransaction from '@components/loading-screen/loading-approve-transaction';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
-import { ErrorText } from '@components/error-text';
 import { validateEmptyPassword, validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useRecoilState } from 'recoil';
 import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`

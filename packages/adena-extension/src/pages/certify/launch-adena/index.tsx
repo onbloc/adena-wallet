@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import styled, { CSSProp, css } from 'styled-components';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
 

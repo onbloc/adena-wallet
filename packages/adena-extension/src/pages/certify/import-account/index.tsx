@@ -1,11 +1,9 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 
-import Text from '@components/text';
+import { Text, ErrorText } from '@components/atoms';
+import { SeedBox, CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import SeedBox from '@components/seed-box';
-import { ErrorText } from '@components/error-text';
 import { useImportAccount } from '@hooks/certify/use-import-account';
 
 const text = {

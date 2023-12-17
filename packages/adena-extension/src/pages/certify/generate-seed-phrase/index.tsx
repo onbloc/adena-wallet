@@ -3,9 +3,8 @@ import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import addSymbol from '@assets/add-symbol.svg';
-import Text from '@components/text';
+import { Text, Button, ButtonHierarchy } from '@components/atoms';
 import theme from '@styles/theme';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { RoutePath } from '@router/path';
 
 const content =

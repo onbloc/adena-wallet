@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import ApproveChangingNetwork from '@components/approve/approve-changing-network/approve-changing-network/approve-changing-network';
+import ApproveChangingNetwork from '@components/pages/approve-changing-network/approve-changing-network/approve-changing-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { CommonFullContentLayout } from '@components/atom';
+import { CommonFullContentLayout } from '@components/atoms';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();

@@ -2,11 +2,9 @@ import React, { useRef, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-import TitleWithDesc from '@components/title-with-desc';
-import { ErrorText } from '@components/error-text';
 import { RoutePath } from '@router/path';
-import DefaultInput from '@components/default-input';
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
+import { DefaultInput, ErrorText } from '@components/atoms';
+import { TitleWithDesc, CancelAndConfirmButton } from '@components/molecules';
 
 const text = {
   title: 'Export Private Key',

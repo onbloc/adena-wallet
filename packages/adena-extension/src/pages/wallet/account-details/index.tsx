@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isLedgerAccount } from 'adena-module';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import AccountDetails from '@components/account-details/account-details/account-details';
+import AccountDetails from '@components/pages/account-details/account-details';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountName } from '@hooks/use-account-name';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { CommonFullContentLayout } from '@components/atom';
+import { CommonFullContentLayout } from '@components/atoms';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 

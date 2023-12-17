@@ -1,11 +1,11 @@
-import BottomFixedButton from '@components/buttons/bottom-fixed-button';
 import React, { useCallback, useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import logo from '@assets/logo-default-v2.svg';
-import Text from '@components/text';
-import theme from '@styles/theme';
-import FullButtonRightIcon, { ButtonMode } from '@components/buttons/full-button-right-icon';
 import { useNavigate } from 'react-router-dom';
+
+import logo from '@assets/logo-default-v2.svg';
+import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import theme from '@styles/theme';
 
 const menuMakerInfo = [
   {
