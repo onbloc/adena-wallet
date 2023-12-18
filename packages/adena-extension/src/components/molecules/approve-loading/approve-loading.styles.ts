@@ -1,5 +1,6 @@
-import { Loading } from '@components/atoms';
 import styled, { CSSProp } from 'styled-components';
+
+import { SkeletonBoxStyle } from '@components/atoms';
 
 export const ApproveLoadingWrapper = styled.div`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
@@ -10,7 +11,7 @@ export const ApproveLoadingWrapper = styled.div`
   }
 `;
 
-export const ApproveLoadingSkeletonBox = styled(Loading.SkeletonBoxStyle)`
+export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;

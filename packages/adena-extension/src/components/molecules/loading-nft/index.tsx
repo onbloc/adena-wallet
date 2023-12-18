@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import { Loading } from '@components/atoms';
+import { Loading, SkeletonBoxStyle } from '@components/atoms';
 
 const Wrapper = styled.div`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
@@ -18,7 +18,7 @@ const ListBoxWrap = styled.div`
   }
 `;
 
-const SkeletonBox = styled(Loading.SkeletonBoxStyle)`
+const SkeletonBox = styled(SkeletonBoxStyle)`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
   width: 100%;
   flex: 1;

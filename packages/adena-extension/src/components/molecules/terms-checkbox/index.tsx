@@ -86,5 +86,3 @@ export const TermsCheckbox = ({
     </Wrapper>
   );
 };
-
-export default TermsCheckbox;

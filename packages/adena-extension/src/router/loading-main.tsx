@@ -3,7 +3,7 @@ import { useRecoilState } from 'recoil';
 import styled, { CSSProp } from 'styled-components';
 import { useMatch } from 'react-router-dom';
 
-import { Loading } from '@components/atoms';
+import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { RoutePath } from '@router/path';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { CommonState, WalletState } from '@states';
@@ -33,7 +33,7 @@ const ListBoxWrap = styled.div`
   margin-top: 31px;
 `;
 
-const SkeletonBox = styled(Loading.SkeletonBoxStyle)`
+const SkeletonBox = styled(SkeletonBoxStyle)`
   ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
   width: 100%;
   height: 60px;

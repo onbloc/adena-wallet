@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import { Loading } from '@components/atoms';
+import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
 
 interface ApproveProps {
@@ -51,7 +51,7 @@ const Wrapper = styled.div`
   }
 `;
 
-const SkeletonBox = styled(Loading.SkeletonBoxStyle)`
+const SkeletonBox = styled(SkeletonBoxStyle)`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;

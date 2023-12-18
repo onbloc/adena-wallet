@@ -48,5 +48,3 @@ export const Copy = ({
     </CopyButton>
   );
 };
-
-export default Copy;
