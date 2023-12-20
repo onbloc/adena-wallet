@@ -1,8 +1,9 @@
-import theme from '@styles/theme';
-import Text from '@components/text';
 import React, { useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import LoadingNft from '@components/loading-screen/loading-nft';
+
+import { Text } from '@components/atoms';
+import { LoadingNft } from '@components/molecules';
+import theme from '@styles/theme';
 
 const Wrapper = styled.main`
   ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};

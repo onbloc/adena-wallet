@@ -1,16 +1,17 @@
 import React, { useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@router/path';
-import DoubleButton from '@components/buttons/double-button';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import MainTokenBalance from '@components/main/main-token-balance/main-token-balance';
-import TokenList from '@components/common/token-list/token-list';
-import MainManageTokenButton from '@components/main/main-manage-token-button/main-manage-token-button';
+import { useRecoilState } from 'recoil';
 import BigNumber from 'bignumber.js';
+
+import { RoutePath } from '@router/path';
+import { DoubleButton } from '@components/molecules';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
+import TokenList from '@components/pages/wallet-main/token-list/token-list';
+import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useRecoilState } from 'recoil';
 import { WalletState } from '@states';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 

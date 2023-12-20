@@ -3,12 +3,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import styled, { CSSProp } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import Text from '@components/text';
-import Copy from '@components/buttons/copy-button';
+import { Text, inputStyle, Button, ButtonHierarchy, Copy } from '@components/atoms';
 import theme from '@styles/theme';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { RoutePath } from '@router/path';
-import { inputStyle } from '@components/default-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';

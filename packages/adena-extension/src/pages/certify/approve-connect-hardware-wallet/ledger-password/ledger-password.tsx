@@ -1,11 +1,9 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import TermsCheckbox from '@components/terms-checkbox';
-import TitleWithDesc from '@components/title-with-desc';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import Text from '@components/text';
-import { ErrorText } from '@components/error-text';
-import DefaultInput from '@components/default-input';
+
+import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
+
 import { useLedgerPassword } from './use-ledger-password';
 
 const text = {

@@ -11,16 +11,16 @@ import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/valida
 import { BalanceState } from '@states';
 import { NetworkMetainfo } from '@types';
 
-import { TokenModel, AccountTokenBalance, Amount, TokenBalance } from '@types';
+import { TokenModel, AccountTokenBalance, Amount, TokenBalanceType } from '@types';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | undefined;
-  tokenBalances: TokenBalance[];
-  displayTokenBalances: TokenBalance[];
+  tokenBalances: TokenBalanceType[];
+  displayTokenBalances: TokenBalanceType[];
   accountTokenBalances: AccountTokenBalance[];
-  accountNativeBalances: { [key in string]: TokenBalance };
-  getTokenBalancesByAccount: (account: Account) => TokenBalance[];
-  fetchBalanceBy: (account: Account, token: TokenModel) => Promise<TokenBalance>;
+  accountNativeBalances: { [key in string]: TokenBalanceType };
+  getTokenBalancesByAccount: (account: Account) => TokenBalanceType[];
+  fetchBalanceBy: (account: Account, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
   updateBalanceAmountByAccount: (
     account: Account,
@@ -242,7 +242,7 @@ export const useTokenBalance = (): {
     return true;
   }
 
-  async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalance> {
+  async function fetchBalanceBy(account: Account, token: TokenModel): Promise<TokenBalanceType> {
     if (wallet === null) throw new Error('wallet doesn`t exist');
 
     const defaultAmount = {
@@ -274,7 +274,7 @@ export const useTokenBalance = (): {
       }
     }
 
-    let balances: TokenBalance[] = [];
+    let balances: TokenBalanceType[] = [];
     if (isNativeTokenModel(token)) {
       balances = await balanceService.getTokenBalances(address);
     } else if (isGRC20TokenModel(token)) {

@@ -33,3 +33,61 @@ export interface IBCTokenModel extends TokenModel {
   channel: string;
   port: string;
 }
+
+export interface ManageTokenInfo {
+  tokenId: string;
+  logo: string;
+  symbol: string;
+  name: string;
+  display?: boolean;
+  main?: boolean;
+  balanceAmount: {
+    value: string;
+    denom: string;
+  };
+}
+
+export interface TokenInfo {
+  tokenId: string;
+  name: string;
+  symbol: string;
+  path: string;
+  pathInfo: string;
+  decimals: number;
+  chainId: string;
+}
+
+export interface AdditionalTokenProps {
+  opened: boolean;
+  selected: boolean;
+  keyword: string;
+  tokenInfos: TokenInfo[];
+  selectedTokenInfo?: TokenInfo;
+  onChangeKeyword: (keyword: string) => void;
+  onClickOpenButton: (opened: boolean) => void;
+  onClickListItem: (tokenId: string) => void;
+  onClickBack: () => void;
+  onClickCancel: () => void;
+  onClickAdd: () => void;
+}
+
+export interface AdditionalTokenSelectBoxProps {
+  opened: boolean;
+  keyword: string;
+  selected: boolean;
+  selectedTitle: string;
+  tokenInfos: TokenInfo[];
+  onChangeKeyword: (keyword: string) => void;
+  onClickOpenButton: (opened: boolean) => void;
+  onClickListItem: (tokenId: string) => void;
+}
+
+export interface MainToken {
+  tokenId: string;
+  logo: string;
+  name: string;
+  balanceAmount: {
+    value: string;
+    denom: string;
+  };
+}

@@ -1,10 +1,9 @@
-import Copy from '@components/buttons/copy-button';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+
+import { Text, Button, ButtonHierarchy, Copy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 

@@ -1,6 +1,5 @@
 import { TransactionHistoryRepository } from '@repositories/transaction';
-import { NetworkMetainfo } from '@types';
-import { TransactionInfo } from '../../components/transaction-history/transaction-history/transaction-history';
+import { NetworkMetainfo, TransactionInfo } from '@types';
 
 export class TransactionHistoryService {
   private transactionHisotyrRepository: TransactionHistoryRepository;

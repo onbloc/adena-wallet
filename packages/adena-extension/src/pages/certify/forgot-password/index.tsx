@@ -1,11 +1,11 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import lockLogo from '@assets/icon-lock.svg';
-import Text from '@components/text';
-import theme from '@styles/theme';
-import Icon from '@components/icons';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useNavigate } from 'react-router-dom';
+
+import lockLogo from '@assets/icon-lock.svg';
+import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import theme from '@styles/theme';
+
 import { RoutePath } from '@router/path';
 
 const text = {

@@ -1,38 +1,25 @@
 import React from 'react';
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+
 import { RoutePath } from './path';
-import { Header } from '@layouts/header';
-import { Navigation } from '@layouts/navigation';
-import { WalletCreate } from '@pages/wallet/wallet-create';
-import { ApproveTransactionMain } from '@pages/wallet/approve-transaction-main';
-import { ApproveLogin } from '@pages/wallet/approve-login';
+
 import { YourSeedPhrase } from '@pages/certify/your-seed-phrase';
 import { ImportPrivateKey } from '@pages/certify/import-private-key';
 import { GenerateSeedPhrase } from '@pages/certify/generate-seed-phrase';
 import { CreatePassword } from '@pages/certify/create-password';
 import { LaunchAdena } from '@pages/certify/launch-adena';
-import { WalletMain } from '@pages/wallet/wallet-main';
 import { Login } from '@pages/certify/login';
 import { ForgotPassword } from '@pages/certify/forgot-password';
 import { EnterSeedPhrase } from '@pages/certify/enter-seed';
-import { Nft } from '@pages/wallet/nft';
-import { Staking } from '@pages/wallet/staking';
-import { Explore } from '@pages/wallet/explore';
-import { History } from '@pages/wallet/history';
-import { TransactionDetail } from '@pages/wallet/transaction-detail';
 import { Settings } from '@pages/certify/settings';
 import { ChangePassword } from '@pages/certify/change-password';
 import { ExportAccount } from '@pages/certify/export-account';
 import { ViewPrivateKey } from '@pages/certify/view-private-key';
 import { SeedPhrase } from '@pages/certify/seed-phrase';
 import { ViewSeedPhrase } from '@pages/certify/view-seed-phrase';
-import { WalletSearch } from '@pages/wallet/search';
-import { Deposit } from '@pages/wallet/deposit';
-import { TokenDetails } from '@pages/wallet/token-details';
 import { ConnectedApps } from '@pages/certify/connected-apps';
-import AddAccountPage from '@pages/certify/add-account-page/AddAccountPage';
+import AddAccountPage from '@pages/certify/add-account-page';
 import { ImportAccount } from '@pages/certify/import-account';
-import { ApproveEstablish } from '@pages/wallet/approve-establish';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
 import {
@@ -43,7 +30,6 @@ import {
   ApproveHardwareWalletLedgerAllSet,
 } from '@pages/certify/approve-connect-hardware-wallet';
 import { GoogleConnect, GoogleConnectFailed } from '@pages/certify/google-login/connect';
-import { ApproveSign } from '@pages/wallet/approve-sign';
 import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
 import { RevealPasswordPhrase } from '@pages/certify/reveal-password-phrase';
@@ -52,28 +38,48 @@ import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase'
 import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
 import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
-import { ErrorContainer } from '@layouts/error-container';
-import { Background } from '@components/background';
-import { TabContainer } from '@layouts/tab-container';
-import { ProgressMenu } from '@layouts/header/progress-menu';
-import { useWalletContext } from '@hooks/use-context';
-import LoadingMain from '@components/loading-screen/loading-main';
-import ManageToken from '@pages/wallet/manage-token';
-import TransferInput from '@pages/wallet/transfer/transfer-input';
-import TransferSummary from '@pages/wallet/transfer/transfer-summary';
-import ManageTokenAdded from '@pages/wallet/manage-token/added';
-import TransferLedgerLoading from '@pages/wallet/transfer/transfer-ledger-loading';
-import TransferLedgerReject from '@pages/wallet/transfer/transfer-ledger-reject';
-import { ApproveTransactionLedgerLoading } from '@pages/wallet/approve-transaction-ledger-loading';
-import { ApproveSignLedgerLoading } from '@pages/wallet/approve-sign-ledger-loading';
-import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
 import ChangeNetwork from '@pages/certify/change-network';
+
+import { WalletCreate } from '@pages/wallet/wallet-create';
+import ApproveTransactionMain from '@pages/wallet/approve-transaction-main';
+import { ApproveLogin } from '@pages/wallet/approve-login';
+import { WalletSearch } from '@pages/wallet/search';
+import { Deposit } from '@pages/wallet/deposit';
+import { TokenDetails } from '@pages/wallet/token-details';
+import { WalletMain } from '@pages/wallet/wallet-main';
+import { Nft } from '@pages/wallet/nft';
+import { Staking } from '@pages/wallet/staking';
+import { Explore } from '@pages/wallet/explore';
+import History from '@pages/wallet/history';
+import { TransactionDetail } from '@pages/wallet/transaction-detail';
+import ApproveEstablish from '@pages/wallet/approve-establish';
+import ApproveSign from '@pages/wallet/approve-sign';
+import TransferInput from '@pages/wallet/transfer-input';
+import TransferSummary from '@pages/wallet/transfer-summary';
+import ManageToken from '@pages/wallet/manage-token';
+import ManageTokenAdded from '@pages/wallet/manage-token-added';
+import TransferLedgerLoading from '@pages/wallet/transfer-ledger-loading';
+import TransferLedgerReject from '@pages/wallet/transfer-ledger-reject';
+import ApproveTransactionLedgerLoading from '@pages/wallet/approve-transaction-ledger-loading';
+import ApproveSignLedgerLoading from '@pages/wallet/approve-sign-ledger-loading';
+import AddCustomNetworkPage from '@pages/wallet/add-custom-network';
 import EditCustomNetworkPage from '@pages/wallet/edit-custom-network';
-import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network/approve-changing-network';
-import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network/approve-adding-network';
+import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network';
+import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network';
 import AccountDetailsPage from '@pages/wallet/account-details';
-import ApproveSignTransactionContainer from '@containers/approve-sign-transaction-container/approve-sign-transaction-container';
-import ApproveSignTransactionLedgerLoadingContainer from '@containers/approve-sign-transaction-ledger-loading-container/approve-sign-transaction-ledger-loading-container';
+import ApproveSignTransaction from '@pages/wallet/approve-sign-transaction';
+import ApproveSignTransactionLedgerLoading from '@pages/wallet/approve-sign-transaction-ledger-loading';
+
+import { useWalletContext } from '@hooks/use-context';
+
+import { TabContainer } from '@components/atoms';
+import { ErrorContainer } from '@components/molecules';
+
+import { Header } from './header';
+import { ProgressMenu } from './header/progress-menu';
+import { Background } from './background';
+import { Navigation } from './navigation';
+import LoadingMain from './loading-main';
 
 export const CustomRouter = (): JSX.Element => {
   const { wallet } = useWalletContext();
@@ -127,13 +133,10 @@ export const CustomRouter = (): JSX.Element => {
           />
           <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
           <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
-          <Route
-            path={RoutePath.ApproveSignTransaction}
-            element={<ApproveSignTransactionContainer />}
-          />
+          <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransaction />} />
           <Route
             path={RoutePath.ApproveSignTransactionLoading}
-            element={<ApproveSignTransactionLedgerLoadingContainer />}
+            element={<ApproveSignTransactionLedgerLoading />}
           />
           <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
           <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />

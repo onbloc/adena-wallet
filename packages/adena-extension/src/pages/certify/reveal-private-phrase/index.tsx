@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
-import WarningBox from '@components/warning/warning-box';
-import SeedBox from '@components/seed-box';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import SeedViewAndCopy from '@components/buttons/seed-view-and-copy';
 import { useNavigate } from 'react-router-dom';
+
+import { Text, WarningBox, Button, ButtonHierarchy } from '@components/atoms';
+import { SeedBox, SeedViewAndCopy } from '@components/molecules';
 import { useWalletContext } from '@hooks/use-context';
 
 export const RevealPrivatePhrase = (): JSX.Element => {

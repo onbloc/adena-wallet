@@ -1,11 +1,10 @@
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Text from '@components/text';
+
+import { Text, ErrorText } from '@components/atoms';
+import { SeedBox, CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
-import SeedBox from '@components/seed-box';
-import { useImportAccount } from './use-import-account';
-import { ErrorText } from '@components/error-text';
+import { useImportAccount } from '@hooks/certify/use-import-account';
 
 const text = {
   title: 'Import Account',

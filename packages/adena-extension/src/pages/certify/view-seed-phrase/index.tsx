@@ -1,11 +1,9 @@
-import Copy from '@components/buttons/copy-button';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import SeedBox from '@components/seed-box';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+import { Text, Button, ButtonHierarchy, Copy } from '@components/atoms';
+import { SeedBox, TitleWithDesc } from '@components/molecules';
 
 const text = {
   title: 'Reveal Seed Phrase',

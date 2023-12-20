@@ -1,12 +1,13 @@
-import Text from '@components/text';
 import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import link from '../../../assets/share.svg';
-import theme from '@styles/theme';
 import { useRecoilState } from 'recoil';
+
+import { Text } from '@components/atoms';
+import link from '@assets/share.svg';
+import theme from '@styles/theme';
 import { ExploreState } from '@states';
-import LoadingExplore from '@components/loading-screen/loading-explore';
 import { useAdenaContext } from '@hooks/use-context';
+import LoadingExplore from './loading-explore';
 
 export const Explore = (): JSX.Element => {
   const { tokenService } = useAdenaContext();

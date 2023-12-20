@@ -1,15 +1,15 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import removeIcon from '@assets/icon-remove-blur.svg';
-import Text from '@components/text';
-import theme from '@styles/theme';
-import CancelAndConfirmButton from '@components/buttons/cancel-and-confirm-button';
-import { ButtonHierarchy } from '@components/buttons/button';
+import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
+
+import removeIcon from '@assets/icon-remove-blur.svg';
+import { Text, ButtonHierarchy } from '@components/atoms';
+import { CancelAndConfirmButton } from '@components/molecules';
+import theme from '@styles/theme';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
-import { useRecoilState } from 'recoil';
 import { WalletState } from '@states';
 
 const content =

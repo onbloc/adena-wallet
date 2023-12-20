@@ -1,17 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
-import Text from '@components/text';
-import IconShare from '@assets/icon-share';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TransactionInfo } from '@components/transaction-history/transaction-history/transaction-history';
-import TokenBalance from '@components/common/token-balance/token-balance';
+
+import { Text, CopyIconButton, Button, ButtonHierarchy } from '@components/atoms';
+import { TokenBalance } from '@components/molecules';
+import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
+import IconShare from '@assets/icon-share';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
-import CopyButton from '@components/common/copy-button/copy-button';
+import { TransactionInfo } from '@types';
 
 interface DLProps {
   color?: string;
@@ -113,7 +112,7 @@ export const TransactionDetail = (): JSX.Element => {
             <dt>To</dt>
             <dd>
               {transactionItem.to}
-              <CopyButton className='copy-button' copyText={transactionItem.originTo || ''} />
+              <CopyIconButton className='copy-button' copyText={transactionItem.originTo || ''} />
             </dd>
           </DLWrap>
         )}
@@ -122,7 +121,7 @@ export const TransactionDetail = (): JSX.Element => {
             <dt>From</dt>
             <dd>
               {transactionItem.from}
-              <CopyButton className='copy-button' copyText={transactionItem.originFrom || ''} />
+              <CopyIconButton className='copy-button' copyText={transactionItem.originFrom || ''} />
             </dd>
           </DLWrap>
         )}
@@ -130,7 +129,7 @@ export const TransactionDetail = (): JSX.Element => {
           <dt>TxID</dt>
           <dd>
             {formatHash(transactionItem.hash)}
-            <CopyButton className='copy-button' copyText={transactionItem.hash} />
+            <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
           </dd>
         </DLWrap>
         {transactionItem.networkFee && (

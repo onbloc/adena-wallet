@@ -1,10 +1,9 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
-import Button, { ButtonHierarchy } from '@components/buttons/button';
-import TitleWithDesc from '@components/title-with-desc';
-import Text from '@components/text';
-import Icon from '@components/icons';
 import { useNavigate } from 'react-router-dom';
+
+import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 
 const text = {
