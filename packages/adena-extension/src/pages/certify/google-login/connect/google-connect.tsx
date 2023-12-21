@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { GoogleTorusSigner, TorusSigner } from 'adena-torus-signin/src';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
@@ -88,12 +88,7 @@ export const GoogleConnect = (): JSX.Element => {
     <Wrapper>
       <Icon name='iconConnectLoading' />
       <TitleWithDesc title={text.title} desc={text.desc} className='google-login-connect' />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Dark}
-        margin='auto 0px 0px'
-        onClick={(): void => window.close()}
-      >
+      <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={(): void => window.close()}>
         <Text type='body1Bold'>Cancel</Text>
       </Button>
     </Wrapper>

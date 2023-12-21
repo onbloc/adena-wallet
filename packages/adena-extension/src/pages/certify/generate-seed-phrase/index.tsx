@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import addSymbol from '@assets/add-symbol.svg';
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
@@ -27,7 +27,7 @@ export const GenerateSeedPhrase = (): JSX.Element => {
       <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
         {content}
       </Text>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onclick} margin='auto 0px 0px'>
+      <Button fullWidth onClick={onclick} margin='auto 0px 0px'>
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>

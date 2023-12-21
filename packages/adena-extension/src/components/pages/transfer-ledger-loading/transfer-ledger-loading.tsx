@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { TransferLedgerLoadingWrapper } from './transfer-ledger-loading.styles';
 
@@ -20,7 +20,7 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({ onClickCa
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy='dark'
         className={'cancel-button'}
         margin='0px auto'
         onClick={onClickCancel}

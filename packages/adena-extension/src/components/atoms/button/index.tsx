@@ -8,14 +8,7 @@ type XOR<T, U> = T | U extends Record<string, unknown>
   ? (Without<T, U> & U) | (Without<U, T> & T)
   : T | U;
 
-export enum ButtonHierarchy {
-  Normal = 'normal',
-  Primary = 'Primary',
-  Ghost = 'Ghost',
-  Dark = 'Dark',
-  Danger = 'Danger',
-  Custom = 'Custom',
-}
+type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom';
 
 export const modeVariants = {
   normal: css`
@@ -73,7 +66,7 @@ export const modeVariants = {
   `,
 };
 
-type ButtonProps = XOR<
+export type ButtonProps = XOR<
   {
     fullWidth?: boolean;
     height?: CSSProperties['height'];
@@ -119,12 +112,12 @@ const ButtonWrapper = styled.button<ButtonProps>`
   }};
   margin: ${(props): any => props.margin};
   ${({ hierarchy, bgColor }): any => {
-    if (hierarchy === ButtonHierarchy.Primary) return modeVariants.primary;
-    if (hierarchy === ButtonHierarchy.Normal) return modeVariants.normal;
-    if (hierarchy === ButtonHierarchy.Ghost) return modeVariants.ghost;
-    if (hierarchy === ButtonHierarchy.Dark) return modeVariants.dark;
-    if (hierarchy === ButtonHierarchy.Danger) return modeVariants.danger;
-    if (hierarchy === ButtonHierarchy.Custom)
+    if (hierarchy === 'primary') return modeVariants.primary;
+    if (hierarchy === 'normal') return modeVariants.normal;
+    if (hierarchy === 'ghost') return modeVariants.ghost;
+    if (hierarchy === 'dark') return modeVariants.dark;
+    if (hierarchy === 'danger') return modeVariants.danger;
+    if (hierarchy === 'custom')
       return css`
         background-color: ${bgColor};
       `;

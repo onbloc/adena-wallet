@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy, Copy } from '@components/atoms';
+import { Text, Button, Copy } from '@components/atoms';
 import { SeedBox, TitleWithDesc } from '@components/molecules';
 import mixins from '@styles/mixins';
 
@@ -46,7 +46,7 @@ export const ViewSeedPhrase = (): JSX.Element => {
         <SeedBox seeds={mnemonic.split(' ')} />
         <Copy copyStr={mnemonic} />
       </SeedBoxWrap>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
+      <Button fullWidth onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

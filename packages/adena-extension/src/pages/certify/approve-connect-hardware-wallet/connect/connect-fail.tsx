@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 import mixins from '@styles/mixins';
@@ -38,7 +38,7 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
     <Wrapper>
       <img className='icon' src={IconConnectFailPermission} alt='logo-image' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} margin='auto 0px 0px' onClick={retry}>
+      <Button fullWidth margin='auto 0px 0px' onClick={retry}>
         <Text type='body1Bold'>Retry</Text>
       </Button>
     </Wrapper>

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Button, ButtonHierarchy } from '@components/atoms';
+import { Button } from '@components/atoms';
 import mixins from '@styles/mixins';
 import theme, { fonts } from '@styles/theme';
 
@@ -29,10 +29,10 @@ const GhostBtn = styled(Button)`
 export const GhostButtons = ({ left, right, className }: GhostButtonsProps): JSX.Element => {
   return (
     <GhostBtnWrap className={className}>
-      <GhostBtn fullWidth height='48px' hierarchy={ButtonHierarchy.Ghost} disabled>
+      <GhostBtn fullWidth height='48px' hierarchy='ghost' disabled>
         {left}
       </GhostBtn>
-      <GhostBtn fullWidth height='48px' hierarchy={ButtonHierarchy.Ghost} disabled>
+      <GhostBtn fullWidth height='48px' hierarchy='ghost' disabled>
         {right}
       </GhostBtn>
     </GhostBtnWrap>

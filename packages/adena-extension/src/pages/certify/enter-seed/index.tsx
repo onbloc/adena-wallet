@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
-import { Text, ErrorText, Button, ButtonHierarchy, SecureTextarea } from '@components/atoms';
+import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
@@ -47,7 +47,6 @@ export const EnterSeedPhrase = (): JSX.Element => {
         />
         <Button
           fullWidth
-          hierarchy={ButtonHierarchy.Primary}
           margin='auto 0px 0px'
           disabled={!buttonState.disabled}
           onClick={buttonState.onClick}

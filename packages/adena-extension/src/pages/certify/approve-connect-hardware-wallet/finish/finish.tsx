@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -73,12 +73,7 @@ export const ApproveConnectHardwareWalletFinish = (): JSX.Element => {
     <Wrapper>
       <img className='icon' src={IconSuccessSymbol} alt='logo-image' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        margin='auto 0px 0px'
-        onClick={onClickDoneButton}
-      >
+      <Button fullWidth margin='auto 0px 0px' onClick={onClickDoneButton}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy, BlurScreen } from '@components/atoms';
+import { Text, Button, BlurScreen } from '@components/atoms';
 import { SeedViewAndCopy } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
@@ -62,7 +62,7 @@ const ApproachPrivateKey = ({ backButtonClick }: { backButtonClick: () => void }
         copyStr={privateKey}
         toggleText='Private Key'
       />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={backButtonClick}>
+      <Button fullWidth onClick={backButtonClick}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </>

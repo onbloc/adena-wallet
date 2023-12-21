@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-import { Text, WarningBox, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, WarningBox, Button } from '@components/atoms';
 import { SeedBox, SeedViewAndCopy } from '@components/molecules';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
@@ -32,7 +32,7 @@ export const RevealPrivatePhrase = (): JSX.Element => {
         copyStr={seeds.join(' ')}
         toggleText='Seed Phrase'
       />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
+      <Button fullWidth onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

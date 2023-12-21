@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, CopyIconButton, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, CopyIconButton, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import IconShare from '@assets/icon-share';
@@ -156,7 +156,7 @@ export const TransactionDetail = (): JSX.Element => {
           className='close-button'
           margin='auto 0px 0px'
           fullWidth
-          hierarchy={ButtonHierarchy.Dark}
+          hierarchy='dark'
           onClick={closeButtonClick}
         >
           <Text type='body1Bold'>Close</Text>

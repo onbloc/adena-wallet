@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
@@ -38,12 +38,7 @@ export const GoogleConnectFailed = (): JSX.Element => {
     <Wrapper>
       <Icon name='iconConnectFailed' />
       <TitleWithDesc title={text.title} desc={text.desc} className='google-login-failed' />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={onClickRetry}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={onClickRetry} margin='auto 0px 0px'>
         <Text type='body1Bold'>Retry</Text>
       </Button>
     </Wrapper>

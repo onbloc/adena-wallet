@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
-import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
 import { Title } from '@pages/certify/login';
 import { RoutePath } from '@router/path';
 import { InjectionMessageInstance } from '@inject/message';
@@ -146,12 +146,7 @@ export const ApproveLogin = (): JSX.Element => {
             ref={inputRef}
           />
           {error && <ErrorText text={error.message} />}
-          <Button
-            fullWidth
-            hierarchy={ButtonHierarchy.Primary}
-            onClick={approveButtonClick}
-            margin='auto 0px 0px'
-          >
+          <Button fullWidth onClick={approveButtonClick} margin='auto 0px 0px'>
             <Text type='body1Bold'>Unlock</Text>
           </Button>
         </Wrapper>

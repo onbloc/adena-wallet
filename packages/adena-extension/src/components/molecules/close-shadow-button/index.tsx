@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import mixins from '@styles/mixins';
 import theme from '@styles/theme';
 
@@ -12,7 +12,7 @@ interface Props {
 export const CloseShadowButton = ({ onClick }: Props): JSX.Element => {
   return (
     <ButtonWrap>
-      <Button fullWidth hierarchy={ButtonHierarchy.Dark} onClick={onClick}>
+      <Button fullWidth hierarchy='dark' onClick={onClick}>
         <Text type='body1Bold'>Close</Text>
       </Button>
     </ButtonWrap>

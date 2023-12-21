@@ -1,18 +1,18 @@
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
-import { Button, Text, ButtonHierarchy } from '@components/atoms';
+import { Button, ButtonProps, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import theme from '@styles/theme';
 
 interface BottomFixedButtonProps {
-  hierarchy?: ButtonHierarchy;
+  hierarchy?: ButtonProps['hierarchy'];
   onClick: () => unknown;
   text?: string;
 }
 
 export const BottomFixedButton = ({
-  hierarchy = ButtonHierarchy.Dark,
+  hierarchy = 'dark',
   onClick,
   text = 'Close',
 }: BottomFixedButtonProps): JSX.Element => {

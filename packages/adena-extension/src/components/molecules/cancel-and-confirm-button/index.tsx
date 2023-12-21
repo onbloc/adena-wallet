@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button, ButtonProps } from '@components/atoms';
 import mixins from '@styles/mixins';
 
 interface DefaultButtonProps {
@@ -11,7 +11,7 @@ interface DefaultButtonProps {
 
 interface ConfirmButtonProps extends DefaultButtonProps {
   text: string;
-  hierarchy?: ButtonHierarchy;
+  hierarchy?: ButtonProps['hierarchy'];
 }
 
 interface CancelAndConfirmLocation {
@@ -34,7 +34,7 @@ export const CancelAndConfirmButton = ({
     <Wrapper>
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy='dark'
         onClick={cancelButtonProps.onClick}
         {...cancelButtonProps.props}
       >
@@ -42,7 +42,7 @@ export const CancelAndConfirmButton = ({
       </Button>
       <Button
         fullWidth
-        hierarchy={confirmButtonProps.hierarchy ?? ButtonHierarchy.Primary}
+        hierarchy={confirmButtonProps.hierarchy ?? 'primary'}
         onClick={confirmButtonProps.onClick}
         {...confirmButtonProps.props}
       >

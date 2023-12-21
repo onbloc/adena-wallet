@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, inputStyle, Button, ButtonHierarchy, Copy } from '@components/atoms';
+import { Text, inputStyle, Button, Copy } from '@components/atoms';
 import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -94,12 +94,7 @@ export const Deposit = (): JSX.Element => {
       <Text type='captionReg' color={theme.color.neutral[9]}>
         Only use this address to receive tokens on Gnoland.
       </Text>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Dark}
-        margin='auto 0px 0px'
-        onClick={closeButtonClick}
-      >
+      <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={closeButtonClick}>
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>

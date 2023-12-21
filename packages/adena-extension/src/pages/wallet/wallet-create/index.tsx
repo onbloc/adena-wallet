@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default.svg';
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { DoubleButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import theme from '@styles/theme';
@@ -84,7 +84,7 @@ export const WalletCreate = (): JSX.Element => {
       <Logo src={logo} alt='logo' />
       <GoogleSignInButton onClick={googleLoginHandler} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
+      <Button fullWidth onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
       </Button>
       <DoubleButton
@@ -92,13 +92,13 @@ export const WalletCreate = (): JSX.Element => {
         leftProps={{
           onClick: importWalletHandler,
           text: 'Import Wallet',
-          hierarchy: ButtonHierarchy.Normal,
+          hierarchy: 'normal',
           fontType: 'body2Bold',
         }}
         rightProps={{
           onClick: ConnectLedgerHandler,
           text: 'Connect Ledger',
-          hierarchy: ButtonHierarchy.Normal,
+          hierarchy: 'normal',
           fontType: 'body2Bold',
         }}
       />

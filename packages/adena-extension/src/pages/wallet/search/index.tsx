@@ -5,7 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import search from '@assets/search.svg';
 import cancel from '@assets/cancel-dark.svg';
-import { Text, DefaultInput, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, DefaultInput, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { searchTextFilter } from '@common/utils/client-utils';
@@ -170,11 +170,7 @@ export const WalletSearch = (): JSX.Element => {
           ))}
       </DataListWrap>
       <ButtonWrap>
-        <Button
-          fullWidth
-          hierarchy={ButtonHierarchy.Dark}
-          onClick={(): void => navigate(RoutePath.Wallet)}
-        >
+        <Button fullWidth hierarchy='dark' onClick={(): void => navigate(RoutePath.Wallet)}>
           <Text type='body1Bold'>Close</Text>
         </Button>
       </ButtonWrap>

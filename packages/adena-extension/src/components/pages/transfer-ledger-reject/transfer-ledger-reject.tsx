@@ -2,7 +2,7 @@ import React from 'react';
 
 import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { TransferLedgerRejectWrapper } from './transfer-ledger-reject.styles';
 
@@ -22,7 +22,7 @@ const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({ onClickClos
       <TitleWithDesc title={text.title} desc={text.desc} />
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy='dark'
         className={'close-button'}
         margin='0px auto'
         onClick={onClickClose}

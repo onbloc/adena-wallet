@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import mixins from '@styles/mixins';
 
@@ -31,7 +31,7 @@ export const ConnectRequestWalletLoad = (): JSX.Element => {
     <Wrapper>
       <Icon name='iconConnectLoading' className='icon' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} margin='auto 0px 0px' disabled>
+      <Button fullWidth margin='auto 0px 0px' disabled>
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>

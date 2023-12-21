@@ -1,9 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
-import { Text, ButtonHierarchy } from '@components/atoms';
+import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
@@ -43,7 +43,7 @@ export const ResetWallet = (): JSX.Element => {
         confirmButtonProps={{
           onClick: resetButtonClick,
           text: 'Reset',
-          hierarchy: ButtonHierarchy.Danger,
+          hierarchy: 'danger',
         }}
       />
     </Wrapper>

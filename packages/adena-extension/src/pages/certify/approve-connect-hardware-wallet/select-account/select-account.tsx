@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { LedgerConnector, LedgerAccount } from 'adena-module';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { Account } from 'adena-module';
 import IconAddSymbol from '@assets/add-symbol.svg';
@@ -349,7 +349,6 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
 
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Primary}
         margin='auto 0px 0px'
         disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}

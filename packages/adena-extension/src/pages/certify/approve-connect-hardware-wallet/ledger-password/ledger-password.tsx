@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useLedgerPassword } from './use-ledger-password';
@@ -50,13 +50,7 @@ export const ApproveHardwareWalletLedgerPassword = (): JSX.Element => {
           Terms of Use.
         </button>
       </TermsCheckbox>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        disabled={buttonState.disabled}
-        onClick={buttonState.onClick}
-        tabIndex={5}
-      >
+      <Button fullWidth disabled={buttonState.disabled} onClick={buttonState.onClick} tabIndex={5}>
         <Text type='body1Bold'>Save</Text>
       </Button>
     </Wrapper>

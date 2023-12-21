@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import IconConnectHardwareWallet from '@assets/connect-hardware-wallet.svg';
 import mixins from '@styles/mixins';
@@ -34,7 +34,7 @@ export const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Elemen
     <Wrapper>
       <img className='icon' src={IconConnectHardwareWallet} alt='logo-image' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} margin='auto 0px 0px' onClick={init}>
+      <Button fullWidth margin='auto 0px 0px' onClick={init}>
         <Text type='body1Bold'>Connect</Text>
       </Button>
     </Wrapper>

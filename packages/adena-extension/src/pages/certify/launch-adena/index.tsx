@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled, { CSSProp, css } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
@@ -59,12 +59,7 @@ export const LaunchAdena = (): JSX.Element => {
   return (
     <Wrapper isPopup={location?.state?.type !== 'SEED'}>
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={handleNextButtonClick}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={handleNextButtonClick} margin='auto 0px 0px'>
         <Text type='body1Bold'>Start</Text>
       </Button>
     </Wrapper>

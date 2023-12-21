@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
 
-import { Text, ErrorText, Button, ButtonHierarchy, SecureTextarea } from '@components/atoms';
+import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
@@ -95,12 +95,7 @@ export const ImportPrivateKey = (): JSX.Element => {
           text={content.terms}
           checkboxPos='TOP'
         />
-        <Button
-          fullWidth
-          hierarchy={ButtonHierarchy.Primary}
-          disabled={!isImportButton}
-          onClick={nextButtonClick}
-        >
+        <Button fullWidth disabled={!isImportButton} onClick={nextButtonClick}>
           <Text type='body1Bold'>Import</Text>
         </Button>
       </TermsWrap>

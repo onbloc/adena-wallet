@@ -4,7 +4,7 @@ import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
-import { Text, ButtonHierarchy } from '@components/atoms';
+import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
 import { useRemoveAccount } from '@hooks/use-remove-account';
@@ -49,7 +49,7 @@ export const RemoveAccount = (): JSX.Element => {
         confirmButtonProps={{
           onClick: removeButtonClick,
           text: 'Remove',
-          hierarchy: ButtonHierarchy.Danger,
+          hierarchy: 'danger',
         }}
       />
     </Wrapper>

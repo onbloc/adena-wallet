@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, DefaultInput, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, DefaultInput, Button } from '@components/atoms';
 import theme, { fonts } from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
@@ -120,12 +120,7 @@ export const Login = (): JSX.Element => {
           Forgot Password?
         </Text>
       </ForgetPwd>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={onClickUnLockButton}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={onClickUnLockButton} margin='auto 0px 0px'>
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>

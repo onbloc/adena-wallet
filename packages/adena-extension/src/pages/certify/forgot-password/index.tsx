@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import lockLogo from '@assets/icon-lock.svg';
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import theme from '@styles/theme';
 
 import { RoutePath } from '@router/path';
@@ -53,7 +53,7 @@ export const ForgotPassword = (): JSX.Element => {
         I don’t have my seed phrase
         <Icon name='iconArrowV2' />
       </TextStyled>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onClickForgotButton}>
+      <Button fullWidth onClick={onClickForgotButton}>
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>

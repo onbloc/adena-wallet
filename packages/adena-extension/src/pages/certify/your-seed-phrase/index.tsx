@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { SeedBox, TitleWithDesc, TermsCheckbox, SeedViewAndCopy } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
@@ -119,7 +119,6 @@ export const YourSeedPhrase = (): JSX.Element => {
         />
         <Button
           fullWidth
-          hierarchy={ButtonHierarchy.Primary}
           disabled={!terms}
           onClick={viewSeedAgree ? handleNextButtonClick : viewSeedAgreeButton}
           tabIndex={2}
