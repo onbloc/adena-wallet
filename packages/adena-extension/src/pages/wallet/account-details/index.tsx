@@ -62,7 +62,7 @@ const AccountDetailsContainer: React.FC = () => {
     if (account) {
       await changeCurrentAccount(account);
     }
-    navigate(RoutePath.ApproachPasswordPhrase, { state: { accountId } });
+    navigate(RoutePath.ExportPrivateKey, { state: { accountId } });
   }, [account]);
 
   const changeName = useCallback(

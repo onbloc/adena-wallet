@@ -27,7 +27,7 @@ const getMenuMakerInfo = (
   },
   {
     title: 'Export Private Key',
-    navigatePath: RoutePath.ApproachPasswordPhrase,
+    navigatePath: RoutePath.ExportPrivateKey,
     mode: 'DEFAULT',
     disabled: !account || isLedgerAccount(account),
   },

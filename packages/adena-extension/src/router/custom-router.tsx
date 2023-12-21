@@ -34,8 +34,7 @@ import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
 import { RevealPasswordPhrase } from '@pages/certify/reveal-password-phrase';
 import { RevealPrivatePhrase } from '@pages/certify/reveal-private-phrase';
-import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase';
-import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
+import { ExportPrivateKey } from '@pages/certify/export-private-key';
 import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
 import ChangeNetwork from '@pages/certify/change-network';
@@ -203,8 +202,7 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
           <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
           <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
-          <Route path={RoutePath.ApproachPasswordPhrase} element={<ApproachPasswordPhrase />} />
-          <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />
+          <Route path={RoutePath.ExportPrivateKey} element={<ExportPrivateKey />} />
           <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
           <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
           <Route path={RoutePath.GoogleConnect} element={<GoogleConnect />} />

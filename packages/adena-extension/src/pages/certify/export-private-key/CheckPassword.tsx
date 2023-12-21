@@ -1,21 +1,29 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
-import { Text, WarningBox, DefaultInput, ErrorText } from '@components/atoms';
+import { DefaultInput, ErrorText } from '@components/atoms';
 import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
-import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
 import { BaseError } from '@common/errors';
 
+const StyledTermsWrap = styled.div`
+  margin-top: auto;
+  .terms-A {
+    margin-bottom: 13px;
+  }
+`;
+
 const TermsAText = 'Anyone with my private key will have full control over my funds.';
 const TermsBText = 'I will never share my private key with anyone.';
 
-export const ApproachPasswordPhrase = (): JSX.Element => {
-  const { state } = useLocation();
-  const navigate = useNavigate();
-  const backButtonClick = (): void => navigate(-1);
+const CheckPassword = ({
+  setIsValidPwd,
+  backButtonClick,
+}: {
+  setIsValidPwd: (isValidPwd: boolean) => void;
+  backButtonClick: () => void;
+}): JSX.Element => {
   const { walletService } = useAdenaContext();
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
@@ -47,7 +55,7 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
     try {
       const storedPassword = await walletService.loadWalletPassword();
       validateInvalidPassword(pwd, storedPassword);
-      navigate(RoutePath.ApproachPrivatePhrase, { state });
+      setIsValidPwd(true);
     } catch (e) {
       if (e instanceof BaseError) {
         setError(true);
@@ -57,9 +65,7 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
   };
 
   return (
-    <Wrapper>
-      <Text type='header4'>Export Private Key</Text>
-      <WarningBox type='approachPassword' margin='12px 0px 20px' />
+    <>
       <DefaultInput
         type='password'
         placeholder='Password'
@@ -69,7 +75,7 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
         error={error}
       />
       {Boolean(errorMessage) && <ErrorText text={errorMessage} />}
-      <TermsWrap>
+      <StyledTermsWrap>
         <TermsCheckbox
           checked={termsA}
           onChange={termsAChange}
@@ -95,22 +101,9 @@ export const ApproachPasswordPhrase = (): JSX.Element => {
             props: { disabled: !disabled },
           }}
         />
-      </TermsWrap>
-    </Wrapper>
+      </StyledTermsWrap>
+    </>
   );
 };
 
-const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
-  width: 100%;
-  height: 100%;
-  padding-top: 24px;
-  overflow-y: auto;
-`;
-
-const TermsWrap = styled.div`
-  margin-top: auto;
-  .terms-A {
-    margin-bottom: 13px;
-  }
-`;
+export default CheckPassword;

@@ -1,26 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
-import { Text, WarningBox, Button, ButtonHierarchy, BlurScreen } from '@components/atoms';
+import { Text, Button, ButtonHierarchy, BlurScreen } from '@components/atoms';
 import { SeedViewAndCopy } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
-
-const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
-  width: 100%;
-  height: 100%;
-  padding-top: 24px;
-  overflow-y: auto;
-  .private-key-style {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
-    .seed-text {
-      word-break: break-all;
-      text-align: center;
-    }
-  }
-`;
 
 const StyledPrivateKeyBox = styled.div`
   position: relative;
@@ -38,8 +23,7 @@ const StyledText = styled(Text)`
   text-align: center;
 `;
 
-export const ApproachPrivatePhrase = (): JSX.Element => {
-  const navigate = useNavigate();
+const ApproachPrivateKey = ({ backButtonClick }: { backButtonClick: () => void }): JSX.Element => {
   const { state } = useLocation();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
@@ -60,18 +44,12 @@ export const ApproachPrivatePhrase = (): JSX.Element => {
     } else {
       clone.currentAccountId = currentAccount.id;
     }
-    const privateKey = clone.privateKeyStr;
-    setPrivateKey('0x' + privateKey);
-  };
 
-  const doneButtonClick = (): void => {
-    navigate(-2);
+    setPrivateKey(`0x${clone.privateKeyStr}`);
   };
 
   return (
-    <Wrapper>
-      <Text type='header4'>Export Private Key</Text>
-      <WarningBox type='approachPrivate' margin='12px 0px 20px' />
+    <>
       <StyledPrivateKeyBox>
         <StyledText type='captionReg'>{privateKey}</StyledText>
         {showBlurScreen && <BlurScreen />}
@@ -82,9 +60,11 @@ export const ApproachPrivatePhrase = (): JSX.Element => {
         copyStr={privateKey}
         toggleText='Private Key'
       />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
+      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={backButtonClick}>
         <Text type='body1Bold'>Done</Text>
       </Button>
-    </Wrapper>
+    </>
   );
 };
+
+export default ApproachPrivateKey;
