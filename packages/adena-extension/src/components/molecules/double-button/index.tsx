@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { FontsType } from '@styles/theme';
 import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 interface ButtonProps {
   onClick: () => void;
@@ -23,7 +24,7 @@ interface DoubleButtonProps extends WrapperStyleProps {
 }
 
 const Wrapper = styled.div<WrapperStyleProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
   ${({ margin }): string | undefined => margin && `margin: ${margin}`};

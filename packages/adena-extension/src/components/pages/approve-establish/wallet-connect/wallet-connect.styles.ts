@@ -1,9 +1,11 @@
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import check from '@assets/check-circle.svg';
-import { FlattenSimpleInterpolation } from 'styled-components';
+import mixins from '@styles/mixins';
+import theme, { fonts } from '@styles/theme';
 
 export const WalletConnectWrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   padding: 0 20px;
   align-self: center;
 
@@ -29,37 +31,37 @@ export const WalletConnectWrapper = styled.div`
   }
 
   .domain-wrapper {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+    ${mixins.flex('row', 'center', 'center')};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
     padding: 10px 18px;
     margin-bottom: 12px;
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+    background-color: ${theme.color.neutral[8]};
+    ${fonts.body2Reg};
   }
 
   .info-table {
     width: 100%;
     height: auto;
     border-radius: 18px;
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
+    background-color: ${theme.color.neutral[8]};
 
     .info-table-header {
-      ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+      ${mixins.flex('column', 'flex-start', 'center')};
       width: 100%;
       padding: 12px;
-      color: ${({ theme }): string => theme.color.neutral[9]};
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold};
-      border-bottom: 2px solid ${({ theme }): string => theme.color.neutral[7]};
+      color: ${theme.color.neutral[9]};
+      ${fonts.body2Bold};
+      border-bottom: 2px solid ${theme.color.neutral[7]};
     }
 
     .info-table-body {
-      ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+      ${mixins.flex('column', 'flex-start', 'center')};
       width: 100%;
       padding: 12px;
       gap: 8px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+      ${fonts.body2Reg};
 
       .row {
         position: relative;
@@ -69,22 +71,22 @@ export const WalletConnectWrapper = styled.div`
           width: 16px;
           height: 16px;
           background-image: url(${check});
-          ${({ theme }): CSSProp => theme.mixins.posTopCenterLeft()}
+          ${mixins.posTopCenterLeft()}
         }
       }
     }
   }
 
   .description-wrapper {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+    ${mixins.flex('column', 'flex-start', 'center')};
     padding: 4px 0;
     margin-bottom: 43px;
-    color: ${({ theme }): string => theme.color.neutral[9]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg};
+    color: ${theme.color.neutral[9]};
+    ${fonts.captionReg};
   }
 
   .button-wrapper {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'flex-start', 'center')};
+    ${mixins.flex('row', 'flex-start', 'center')};
     width: 100%;
     margin-bottom: 24px;
     gap: 10px;
@@ -93,15 +95,15 @@ export const WalletConnectWrapper = styled.div`
       width: 100%;
       height: 48px;
       border-radius: 30px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Bold};
+      ${fonts.body1Bold};
     }
 
     button.cancel {
-      background-color: ${({ theme }): string => theme.color.neutral[4]};
+      background-color: ${theme.color.neutral[4]};
     }
 
     button.connect {
-      background-color: ${({ theme }): string => theme.color.primary[3]};
+      background-color: ${theme.color.primary[3]};
     }
   }
 `;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import theme from '@styles/theme';
 import { Text, CopyTooltip, StatusDot } from '@components/atoms';
@@ -14,15 +14,16 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-end')};
+  border-bottom: 1px solid ${theme.color.neutral[6]};
+  ${mixins.flex('row', 'center', 'flex-end')};
   .t-approve {
-    ${({ theme }): CSSProp => theme.mixins.positionCenter()}
+    ${mixins.positionCenter()}
   }
 `;
 

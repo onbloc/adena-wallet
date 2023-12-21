@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import lockLogo from '@assets/icon-lock.svg';
@@ -7,6 +7,7 @@ import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
 import theme from '@styles/theme';
 
 import { RoutePath } from '@router/path';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Forgot Password?',
@@ -60,7 +61,7 @@ export const ForgotPassword = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -72,20 +73,20 @@ const Wrapper = styled.main`
 const LearnMore = styled.button`
   font-size: 16px;
   font-weight: 700;
-  color: ${({ theme }): string => theme.color.primary[3]};
+  color: ${theme.color.primary[3]};
   margin-top: 24px;
   &:hover {
     text-decoration-line: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
-    text-decoration-color: ${({ theme }): string => theme.color.primary[3]};
+    text-decoration-color: ${theme.color.primary[3]};
   }
 `;
 
 const TextStyled = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: 100%;
-  color: ${({ theme }): string => theme.color.neutral[9]};
+  color: ${theme.color.neutral[9]};
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -98,9 +99,9 @@ const TextStyled = styled.div`
     transition: all 0.3s ease;
   }
   &:hover {
-    color: ${({ theme }): string => theme.color.primary[3]};
+    color: ${theme.color.primary[3]};
     svg * {
-      stroke: ${({ theme }): string => theme.color.primary[3]};
+      stroke: ${theme.color.primary[3]};
     }
   }
 `;

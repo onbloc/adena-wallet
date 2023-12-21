@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Loading Accounts',
@@ -10,7 +11,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;

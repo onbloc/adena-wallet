@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
@@ -17,6 +17,7 @@ import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
@@ -201,7 +202,7 @@ const RemoveAddressBtn = styled.button<{ error: boolean }>`
   text-decoration-line: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
-  text-decoration-color: ${({ theme }): string => theme.color.neutral[9]};
+  text-decoration-color: ${theme.color.neutral[9]};
   position: absolute;
   bottom: 91px;
 `;
@@ -217,7 +218,7 @@ const AddressInput = styled.textarea<{ error: boolean }>`
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   padding-top: 24px;
   width: 100%;
   height: 100%;
@@ -228,7 +229,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
+  ${mixins.flex('row', 'center', 'center')}
   position: relative;
   width: 100%;
   & > button {

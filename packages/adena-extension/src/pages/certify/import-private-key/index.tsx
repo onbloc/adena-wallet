@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
 
@@ -8,6 +8,7 @@ import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 const content = {
   title: 'Import Private Key',
@@ -108,7 +109,7 @@ export const ImportPrivateKey = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

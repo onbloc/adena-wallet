@@ -1,13 +1,14 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, DefaultInput, ErrorText } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 
 import { useChangePassword } from '@hooks/certify/use-change-password';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

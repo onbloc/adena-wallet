@@ -1,7 +1,8 @@
 import React, { ReactElement } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 interface DefaultButtonProps {
   onClick: () => void;
@@ -20,7 +21,7 @@ interface CancelAndConfirmLocation {
 
 const Wrapper = styled.div`
   margin-top: auto;
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
 `;

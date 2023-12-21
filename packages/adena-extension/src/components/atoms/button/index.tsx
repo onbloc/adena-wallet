@@ -1,6 +1,7 @@
 import styled, { css } from 'styled-components';
 import React, { CSSProperties } from 'react';
 import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 type XOR<T, U> = T | U extends Record<string, unknown>
@@ -18,56 +19,56 @@ export enum ButtonHierarchy {
 
 export const modeVariants = {
   normal: css`
-    background: ${({ theme }): string => theme.color.neutral[6]};
+    background: ${theme.color.neutral[6]};
     &:hover {
-      background: ${({ theme }): string => theme.color.neutral[11]};
+      background: ${theme.color.neutral[11]};
     }
     /* &:disabled {
-      background: ${({ theme }): string => theme.color.primary[6]};
-      color: ${({ theme }): string => theme.color.neutral[4]};
+      background: ${theme.color.primary[6]};
+      color: ${theme.color.neutral[4]};
     } */
   `,
   primary: css`
-    background: ${({ theme }): string => theme.color.primary[3]};
+    background: ${theme.color.primary[3]};
     &:hover {
-      background: ${({ theme }): string => theme.color.primary[4]};
+      background: ${theme.color.primary[4]};
     }
     &:disabled {
-      background: ${({ theme }): string => theme.color.primary[6]};
-      color: ${({ theme }): string => theme.color.neutral[4]};
+      background: ${theme.color.primary[6]};
+      color: ${theme.color.neutral[4]};
     }
   `,
   ghost: css`
-    background: ${({ theme }): string => theme.color.neutral[8]};
-    border: 1px solid ${({ theme }): string => theme.color.neutral[2]};
+    background: ${theme.color.neutral[8]};
+    border: 1px solid ${theme.color.neutral[2]};
     &:hover {
-      background: ${({ theme }): string => theme.color.neutral[5]};
-      border: 1px solid ${({ theme }): string => theme.color.neutral[2]};
+      background: ${theme.color.neutral[5]};
+      border: 1px solid ${theme.color.neutral[2]};
     }
     &:disabled {
-      background: ${({ theme }): string => theme.color.neutral[6]};
-      border: 1px solid ${({ theme }): string => theme.color.neutral[3]};
-      color: ${({ theme }): string => theme.color.neutral[4]};
+      background: ${theme.color.neutral[6]};
+      border: 1px solid ${theme.color.neutral[3]};
+      color: ${theme.color.neutral[4]};
     }
   `,
   dark: css`
-    background: ${({ theme }): string => theme.color.neutral[4]};
+    background: ${theme.color.neutral[4]};
     &:hover {
-      background: ${({ theme }): string => theme.color.neutral[5]};
+      background: ${theme.color.neutral[5]};
     }
     &:disabled {
-      background: ${({ theme }): string => theme.color.neutral[5]};
-      color: ${({ theme }): string => theme.color.neutral[4]};
+      background: ${theme.color.neutral[5]};
+      color: ${theme.color.neutral[4]};
     }
   `,
   danger: css`
-    background: ${({ theme }): string => theme.color.red[2]};
+    background: ${theme.color.red[2]};
     &:hover {
-      background: ${({ theme }): string => theme.color.red[8]};
+      background: ${theme.color.red[8]};
     }
     /* &:disabled {
-      background: ${({ theme }): string => theme.color.neutral[5]};
-      color: ${({ theme }): string => theme.color.neutral[4]};
+      background: ${theme.color.neutral[5]};
+      color: ${theme.color.neutral[4]};
     } */
   `,
 };
@@ -106,7 +107,7 @@ export const Button = (props: ButtonProps): JSX.Element => {
 };
 
 const ButtonWrapper = styled.button<ButtonProps>`
-  ${mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: ${({ width, fullWidth }): string => {
     if (width) return typeof width === 'number' ? `${width}px` : width;
     if (fullWidth) return '100%';
@@ -130,7 +131,7 @@ const ButtonWrapper = styled.button<ButtonProps>`
   }};
   border-radius: ${({ radius }): string => (radius ? radius : '30px')};
   transition: all 0.4s ease;
-  color: ${({ theme }): string => theme.color.neutral[0]};
+  color: ${theme.color.neutral[0]};
   background-color: ${({ bgColor }): string | undefined => bgColor};
 `;
 

@@ -1,28 +1,30 @@
 import React, { ReactElement } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   z-index: 1;
 `;
 
 const RoundsBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'center')};
+  ${mixins.flex('column', 'flex-end', 'center')};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')}
+  ${mixins.flex('column', 'center', 'flex-start')}
   width: 100%;
   gap: 12px;
   padding-top: 12px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${mixins.flex('row', 'center', 'flex-start')}
   width: 100%;
   height: 60px;
 `;

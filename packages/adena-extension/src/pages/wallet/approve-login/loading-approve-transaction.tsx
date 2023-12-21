@@ -1,7 +1,10 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface ApproveProps {
   leftButtonText?: string;
@@ -42,7 +45,7 @@ const LoadingApproveTransaction = ({
 };
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;
@@ -52,7 +55,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
+  ${mixins.flex('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;
   margin: 39px 0px 24px;
@@ -60,10 +63,10 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 const RoundedBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   padding: 0px 18px;
 `;
 

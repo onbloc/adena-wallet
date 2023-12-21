@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme, { fonts } from '@styles/theme';
 
 interface CopyTooltipProps {
   children: React.ReactNode;
@@ -10,15 +12,15 @@ interface CopyTooltipProps {
 }
 
 const ToolTipInner = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  ${mixins.flex('row', 'center', 'center')};
+  ${fonts.body2Reg};
   position: absolute;
   width: max-content;
   height: 25px;
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 13px;
   transform: scale(0.6);
   cursor: default;
@@ -33,7 +35,7 @@ const ToolTipInner = styled.div`
 `;
 
 const ToolTipWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   position: relative;
   cursor: pointer;
   &:hover .tooltip,

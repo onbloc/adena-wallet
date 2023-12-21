@@ -1,6 +1,8 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { Text, BlurScreen } from '../../atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface SeedScrollBoxProps {
   seeds: string[];
@@ -14,8 +16,8 @@ const Wrapper = styled.div`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border: 1px solid ${theme.color.neutral[6]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 18px;
   padding: 8px;
 `;
@@ -29,7 +31,7 @@ const Inner = styled.div`
   gap: 20px;
   padding: 10px 18px;
   .seed-text {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
+    ${mixins.flex('row', 'center', 'center')}
   }
 `;
 

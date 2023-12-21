@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default.svg';
@@ -11,6 +11,7 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { existsPopups } from '@inject/message/methods';
 
 import GoogleSignInButton from './google-signin-button';
+import mixins from '@styles/mixins';
 
 export const WalletCreate = (): JSX.Element => {
   const navigate = useNavigate();
@@ -117,12 +118,12 @@ const PoweredByWeb3AuthWihDivider = (): JSX.Element => (
 const Divider = styled.span`
   width: calc(100% - 48px);
   height: 1px;
-  background-color: ${({ theme }): string => theme.color.neutral[4]};
+  background-color: ${theme.color.neutral[4]};
   margin: 20px 0px;
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
+  ${mixins.flex('column', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   & > header {

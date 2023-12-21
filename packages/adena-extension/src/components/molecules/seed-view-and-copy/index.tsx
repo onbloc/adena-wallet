@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, Button, Copy } from '@components/atoms';
 import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean;
@@ -32,19 +33,19 @@ export const SeedViewAndCopy = ({
 };
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   margin: 12px auto auto;
   padding: 0px 45px;
 `;
 
 const ButtonStyle = styled(Button)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[11]};
+    background-color: ${theme.color.neutral[11]};
   }
 `;

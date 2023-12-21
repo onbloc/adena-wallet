@@ -1,7 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Text, Icon } from '@components/atoms';
 import blurBg from '@assets/blur-bg.svg';
+import mixins from '@styles/mixins';
 
 interface BlurScreenProps {
   hasText?: boolean;
@@ -20,8 +22,8 @@ export const BlurScreen = ({ hasText, text }: BlurScreenProps): JSX.Element => {
 };
 
 const Wrapper = styled.div<{ hasText?: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
-  ${({ theme }): CSSProp => theme.mixins.positionCenter()};
+  ${mixins.flex('column', 'center', 'center')};
+  ${mixins.positionCenter()};
   gap: ${({ hasText }): false | '21px' | undefined => hasText && '21px'};
   background: url(${blurBg}) no-repeat 100% 100% / 100% 100%;
   width: calc(100% - 12px);

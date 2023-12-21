@@ -1,6 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface TooltipProps {
   bgColor?: string;
@@ -15,7 +18,7 @@ interface StaticTooltipProps extends TooltipProps {
 }
 
 const Tooltip = styled.div<TooltipProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: 171px;
   height: auto;
   visibility: hidden;
@@ -33,7 +36,7 @@ const Tooltip = styled.div<TooltipProps>`
     width: 100%;
     height: 26px;
     padding: 2px 25px;
-    border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[9]};
+    border-bottom: 1px solid ${theme.color.neutral[9]};
 
     &:last-child {
       border-bottom: none;

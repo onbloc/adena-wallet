@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
 
@@ -7,6 +7,7 @@ import { Text, Button, ButtonHierarchy } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Account Added',
@@ -14,7 +15,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;

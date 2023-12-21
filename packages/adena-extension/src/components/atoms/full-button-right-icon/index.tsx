@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp, css } from 'styled-components';
+import styled, { css } from 'styled-components';
 
 import { Text, Icon } from '@components/atoms';
-import { FontsType } from '@styles/theme';
+import theme, { FontsType } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER';
 export type IconMode = 'ARROW' | 'WEBLINK';
@@ -72,17 +73,17 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
     margin-top: ${({ gap }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
   ${defaultIconStyle};
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 54px;
   padding: 0px 24px 0px 20px;
   border-radius: 18px;
   transition: all 0.3s ease;
-  background-color: ${({ theme }): string => theme.color.neutral[6]};
+  background-color: ${theme.color.neutral[6]};
   color: ${({ theme, mode }): string =>
     mode === 'DANGER' ? theme.color.red[2] : theme.color.neutral[0]};
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[11]};
+    background-color: ${theme.color.neutral[11]};
     ${hoverIconStyle};
   }
 `;

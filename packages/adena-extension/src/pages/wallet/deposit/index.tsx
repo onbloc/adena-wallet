@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, inputStyle, Button, ButtonHierarchy, Copy } from '@components/atoms';
@@ -10,29 +10,30 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
 import { TokenModel } from '@types';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${mixins.flex('column', 'center', 'stretch')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
 const QRCodeBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
-  background-color: ${({ theme }): string => theme.color.neutral[0]};
+  ${mixins.flex('row', 'center', 'center')};
+  background-color: ${theme.color.neutral[0]};
   padding: 10px;
   border-radius: 8px;
   margin: 40px 0px;
 `;
 
 const CopyInputBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   ${inputStyle};
-  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  border: 1px solid ${theme.color.neutral[6]};
 
   & .nickname {
-    color: ${({ theme }): string => theme.color.neutral[2]};
+    color: ${theme.color.neutral[2]};
   }
 
   margin-bottom: 8px;

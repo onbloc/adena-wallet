@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const SideMenuAccountItemWrapper = styled.div`
   display: flex;
@@ -12,11 +13,11 @@ export const SideMenuAccountItemWrapper = styled.div`
   cursor: pointer;
 
   &.selected {
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    background-color: ${theme.color.neutral[6]};
   }
 
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    background-color: ${theme.color.neutral[6]};
   }
 
   .info-wrapper {
@@ -29,7 +30,7 @@ export const SideMenuAccountItemWrapper = styled.div`
       flex-direction: row;
 
       .name {
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold}
+        ${fonts.body2Bold}
         line-height: 18px;
       }
 
@@ -45,7 +46,7 @@ export const SideMenuAccountItemWrapper = styled.div`
         background: #191920;
         justify-content: center;
         align-items: center;
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg}
+        ${fonts.captionReg}
       }
     }
 
@@ -54,8 +55,8 @@ export const SideMenuAccountItemWrapper = styled.div`
       width: 100%;
       height: auto;
       .balance {
-        color: ${({ theme }): string => theme.color.neutral[9]};
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body3Reg}
+        color: ${theme.color.neutral[9]};
+        ${fonts.body3Reg}
         line-height: 18px;
       }
     }
@@ -74,12 +75,12 @@ export const SideMenuAccountItemWrapper = styled.div`
     }
     & > svg ellipse {
       transition: 0.2s;
-      fill: ${({ theme }): string => theme.color.neutral[2]};
+      fill: ${theme.color.neutral[2]};
     }
 
     &:hover {
       & > svg ellipse {
-        fill: ${({ theme }): string => theme.color.neutral[0]};
+        fill: ${theme.color.neutral[0]};
       }
     }
   }
@@ -93,8 +94,8 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
   left: ${({ positionX }): string => `${positionX - 130}px`};
   top: ${({ positionY }): string => `${positionY - 40}px`};
   width: 146px;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
-  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  background-color: ${theme.color.neutral[7]};
+  border: 1px solid ${theme.color.neutral[6]};
   border-radius: 12.5px;
   box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.2);
   z-index: 99;
@@ -104,12 +105,12 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
     display: flex;
     flex-direction: row;
     padding: 7px 0 7px 12px;
-    border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+    border-bottom: 1px solid ${theme.color.neutral[6]};
     cursor: pointer;
 
     &:hover {
       transition: 0.2s;
-      background-color: ${({ theme }): string => theme.color.neutral[6]};
+      background-color: ${theme.color.neutral[6]};
     }
 
     &:last-child {
@@ -124,7 +125,7 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
     .title {
       width: 100%;
       margin-left: 8px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body3Reg}
+      ${fonts.body3Reg}
       line-height: 12px;
     }
   }

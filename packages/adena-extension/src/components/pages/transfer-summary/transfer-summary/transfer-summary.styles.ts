@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TransferSummaryWrapper = styled.div`
   position: relative;
@@ -35,8 +36,8 @@ export const TransferSummaryWrapper = styled.div`
       position: relative;
       width: 100%;
       padding: 0 16px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg};
-      color: ${({ theme }): string => theme.color.red[2]};
+      ${fonts.captionReg};
+      color: ${theme.color.red[2]};
     }
   }
 
@@ -51,12 +52,12 @@ export const TransferSummaryWrapper = styled.div`
       width: 100%;
       height: 48px;
       border-radius: 30px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Bold};
-      background-color: ${({ theme }): string => theme.color.neutral[4]};
+      ${fonts.body1Bold};
+      background-color: ${theme.color.neutral[4]};
       transition: 0.2s;
 
       :hover {
-        background-color: ${({ theme }): string => theme.color.neutral[5]};
+        background-color: ${theme.color.neutral[5]};
       }
 
       &:last-child {
@@ -64,10 +65,10 @@ export const TransferSummaryWrapper = styled.div`
       }
 
       &.send {
-        background-color: ${({ theme }): string => theme.color.primary[3]};
+        background-color: ${theme.color.primary[3]};
 
         :hover {
-          background-color: ${({ theme }): string => theme.color.primary[4]};
+          background-color: ${theme.color.primary[4]};
         }
       }
     }

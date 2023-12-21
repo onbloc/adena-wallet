@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import { TransactionHistoryMapper } from '@repositories/transaction/mapper/trans
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
+import { fonts } from '@styles/theme';
 
 const HistoryLayout = styled.div`
   display: flex;
@@ -26,7 +27,7 @@ const HistoryLayout = styled.div`
     margin-bottom: 12px;
 
     .title {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
+      ${fonts.header4};
     }
   }
 `;

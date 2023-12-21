@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import theme from '@styles/theme';
 import { Text, Button } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 const CopyButton = styled(Button)<{ isClicked: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[11]};
+    background-color: ${theme.color.neutral[11]};
   }
 `;
 

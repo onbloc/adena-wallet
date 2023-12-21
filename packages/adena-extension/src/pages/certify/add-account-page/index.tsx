@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { RoutePath } from '@router/path';
@@ -7,11 +7,12 @@ import { Text } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import { useAddAccount } from '@hooks/use-add-account';
 import { useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 import { MultilineTextWithArrowButton } from './multiline-text-with-arrow-button';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

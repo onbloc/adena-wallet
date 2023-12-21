@@ -1,11 +1,12 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
 import { Text, ErrorText, Button, ButtonHierarchy, SecureTextarea } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
+import mixins from '@styles/mixins';
 
 const walletContent = {
   title: 'Import with Seed Phrase',
@@ -59,7 +60,7 @@ export const EnterSeedPhrase = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

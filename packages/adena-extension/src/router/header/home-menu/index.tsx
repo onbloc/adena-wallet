@@ -1,27 +1,28 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { CSSProp } from 'styled-components';
 
 import logo from '@assets/logo-withIcon.svg';
 import { HamburgerMenuBtn } from '@components/atoms';
 
 import { RoutePath } from '@router/path';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
-  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  border-bottom: 1px solid ${theme.color.neutral[6]};
 `;
 
 const Header = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${mixins.flex('row', 'center', 'flex-start')}
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
   position: relative;
   & > img {
-    ${({ theme }): CSSProp => theme.mixins.positionCenter('absolute')}
+    ${mixins.positionCenter()}
   }
 `;
 

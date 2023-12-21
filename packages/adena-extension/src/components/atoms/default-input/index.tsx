@@ -1,4 +1,6 @@
-import styled, { FlattenSimpleInterpolation, css } from 'styled-components';
+import styled, { css } from 'styled-components';
+
+import theme, { fonts } from '@styles/theme';
 
 interface InputProps {
   error?: boolean;
@@ -6,15 +8,15 @@ interface InputProps {
 }
 
 export const inputStyle = css`
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  ${fonts.body2Reg};
   width: 100%;
   height: 48px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
-  color: ${({ theme }): string => theme.color.neutral[0]};
+  background-color: ${theme.color.neutral[8]};
+  color: ${theme.color.neutral[0]};
   border-radius: 30px;
   padding: 14px 16px;
   ::placeholder {
-    color: ${({ theme }): string => theme.color.neutral[9]};
+    color: ${theme.color.neutral[9]};
   }
 `;
 

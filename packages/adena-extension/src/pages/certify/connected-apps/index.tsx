@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ import DefaultImage from '@assets/favicon-default-small.svg';
 import disconnected from '@assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 export const ConnectedApps = (): JSX.Element => {
   const { establishService } = useAdenaContext();
@@ -91,12 +92,12 @@ export const ConnectedApps = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
   padding-bottom: 120px;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${theme.color.neutral[7]};
 
   .logo {
     width: 20px;
@@ -121,15 +122,15 @@ const Wrapper = styled.main`
 `;
 
 const DisconnectedBtn = styled.button`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   flex-shrink: 0;
   width: 25px;
   height: 25px;
   border-radius: 35px;
-  background-color: ${({ theme }): string => theme.color.red[2]};
+  background-color: ${theme.color.red[2]};
   transition: all ease 0.4s;
   margin-left: auto;
   :hover {
-    background-color: ${({ theme }): string => theme.color.red[5]};
+    background-color: ${theme.color.red[5]};
   }
 `;

@@ -1,9 +1,11 @@
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 export const ApproveLoadingWrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   padding: 35px 20px 0;
   .l-approve {
     margin-top: 51px;
@@ -12,7 +14,7 @@ export const ApproveLoadingWrapper = styled.div`
 `;
 
 export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
+  ${mixins.flex('column', 'flex-end', 'space-between')}
   width: 80px;
   height: 80px;
   margin: 35px 0px 24px;
@@ -20,10 +22,10 @@ export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 export const ApproveLoadingRoundedBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   padding: 0px 18px;
 `;
 

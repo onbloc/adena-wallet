@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
 
@@ -11,21 +11,22 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  border-bottom: 1px solid ${theme.color.neutral[6]};
 `;
 
 const Header = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   position: relative;
   & > img {
-    ${({ theme }): CSSProp => theme.mixins.positionCenter('absolute')}
+    ${mixins.positionCenter()}
   }
 `;
 

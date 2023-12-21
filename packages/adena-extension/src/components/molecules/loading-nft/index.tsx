@@ -1,16 +1,18 @@
 import React, { ReactElement } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   gap: 16px;
 `;
 
 const ListBoxWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${mixins.flex('row', 'center', 'flex-start')}
   width: 100%;
   gap: 16px;
   :first-child {
@@ -19,7 +21,7 @@ const ListBoxWrap = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'space-between')}
+  ${mixins.flex('column', 'flex-end', 'space-between')}
   width: 100%;
   flex: 1;
   height: 152px;

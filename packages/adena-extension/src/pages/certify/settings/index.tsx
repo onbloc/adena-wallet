@@ -1,10 +1,12 @@
 import React, { useCallback } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { FullButtonRightIcon } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
+import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
 
 const menuMakerInfo = [
   {
@@ -54,7 +56,7 @@ export const Settings = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -66,7 +68,7 @@ const Wrapper = styled.main`
     margin-bottom: 12px;
 
     .title {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
+      ${fonts.header4};
     }
   }
 `;

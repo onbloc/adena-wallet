@@ -8,6 +8,7 @@ import { CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
+import mixins from '@styles/mixins';
 
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
@@ -50,7 +51,7 @@ export const ResetWallet = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;

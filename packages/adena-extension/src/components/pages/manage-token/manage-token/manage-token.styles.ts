@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ManageTokenSearchWrapper = styled.div`
   display: flex;
@@ -27,13 +28,13 @@ export const ManageTokenSearchWrapper = styled.div`
     .close {
       width: 100%;
       height: 100%;
-      background-color: ${({ theme }): string => theme.color.neutral[4]};
+      background-color: ${theme.color.neutral[4]};
       border-radius: 30px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Bold};
+      ${fonts.body1Bold};
       transition: 0.2s;
 
       :hover {
-        background-color: ${({ theme }): string => theme.color.neutral[5]};
+        background-color: ${theme.color.neutral[5]};
       }
     }
   }

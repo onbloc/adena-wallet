@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, ListBox } from '@components/atoms';
 import theme from '@styles/theme';
@@ -10,6 +10,7 @@ import { RoutePath } from '@router/path';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 type navigateStatus = 'add' | 'edit';
 
@@ -77,7 +78,7 @@ const AddressBook = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -92,7 +93,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   margin-bottom: 12px;
 `;

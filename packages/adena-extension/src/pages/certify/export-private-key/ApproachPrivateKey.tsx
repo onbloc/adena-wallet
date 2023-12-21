@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
 import { Text, Button, ButtonHierarchy, BlurScreen } from '@components/atoms';
 import { SeedViewAndCopy } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 const StyledPrivateKeyBox = styled.div`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border: 1px solid ${theme.color.neutral[6]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 18px;
   padding: 8px;
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
 `;
 
 const StyledText = styled(Text)`

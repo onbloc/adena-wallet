@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -25,9 +25,10 @@ import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant
 import { TokenBalanceType } from '@types';
 
 import LoadingTokenDetails from './loading-token-details';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -55,7 +56,7 @@ const Wrapper = styled.main`
 `;
 
 const HeaderWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   position: relative;
   width: 100%;
   margin-bottom: 20px;
@@ -73,7 +74,7 @@ const EtcIcon = styled.div`
   border-radius: 50%;
   cursor: pointer;
   &.show-tooltip {
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    background-color: ${theme.color.neutral[6]};
     & > .static-tooltip {
       visibility: visible;
       transition: all 0.1s ease-in-out;

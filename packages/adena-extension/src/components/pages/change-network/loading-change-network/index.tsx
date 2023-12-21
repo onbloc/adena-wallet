@@ -1,10 +1,11 @@
 import React, { ReactElement } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   margin-top: 13px;
@@ -12,7 +13,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')}
+  ${mixins.flex('column', 'flex-start', 'center')}
   width: 100%;
   height: 60px;
 `;

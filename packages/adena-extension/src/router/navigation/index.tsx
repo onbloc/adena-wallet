@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useMatch, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
@@ -7,12 +7,14 @@ import { RoutePath } from '@router/path';
 import { Icon, IconName } from '@components/atoms';
 import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
+import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  ${mixins.flex('row', 'center', 'space-between')};
+  background-color: ${theme.color.neutral[7]};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
   padding: 0px 40px;
   gap: 40px;
@@ -26,10 +28,10 @@ const Wrapper = styled.nav`
     &:hover,
     &.active {
       .icon-default {
-        fill: ${({ theme }): string => theme.color.neutral[0]};
+        fill: ${theme.color.neutral[0]};
       }
       .icon-primary {
-        fill: ${({ theme }): string => theme.color.primary[3]};
+        fill: ${theme.color.primary[3]};
       }
     }
   }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 
 import { Text } from '@components/atoms';
@@ -8,6 +8,7 @@ import theme from '@styles/theme';
 import { ExploreState } from '@states';
 import { useAdenaContext } from '@hooks/use-context';
 import LoadingExplore from './loading-explore';
+import mixins from '@styles/mixins';
 
 export const Explore = (): JSX.Element => {
   const { tokenService } = useAdenaContext();
@@ -67,13 +68,13 @@ const MoveToLink = styled.img`
 `;
 
 const Contents = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+  ${mixins.flex('column', 'flex-start', 'center')};
   margin-left: 12px;
 `;
 
 const BoxContainer = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  ${mixins.flex('row', 'center', 'flex-start')};
+  background-color: ${theme.color.neutral[8]};
   width: 100%;
   height: 60px;
   padding: 10px 17px;
@@ -83,7 +84,7 @@ const BoxContainer = styled.div`
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

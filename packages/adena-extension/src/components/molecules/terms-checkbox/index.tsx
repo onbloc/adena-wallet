@@ -1,7 +1,10 @@
 import React from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
+
 import checkOff from '@assets/check-off.svg';
 import checkOn from '@assets/check-on.svg';
+import mixins from '@styles/mixins';
+import theme, { fonts } from '@styles/theme';
 
 type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
@@ -16,14 +19,14 @@ interface TermsCheckboxProps {
 }
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
+  ${mixins.flex('row', 'center', 'flex-start')};
   width: 100%;
   margin: auto 0px 10px;
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  ${fonts.body2Reg};
 `;
 
 const Label = styled.label<{ checkboxPos: CheckboxPos }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
+  ${mixins.flex('row', 'center', 'flex-start')};
   position: relative;
   padding-left: 32px;
   cursor: pointer;
@@ -45,7 +48,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   &,
   * {
     font: inherit;
-    color: ${({ theme }): string => theme.color.neutral[9]};
+    color: ${theme.color.neutral[9]};
   }
 `;
 

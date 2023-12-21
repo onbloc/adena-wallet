@@ -1,18 +1,20 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { Text, LeftArrowBtn } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface ArrowTitleMenuProps {
   title?: string;
 }
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: 100%;
   height: 100%;
-  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  border-bottom: 1px solid ${theme.color.neutral[6]};
   position: relative;
   padding: 0px 18px 0px 12px;
 `;

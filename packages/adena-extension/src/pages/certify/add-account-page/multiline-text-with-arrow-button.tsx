@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, Icon } from '@components/atoms';
 import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 interface MultiButtonProps {
   title: string;
@@ -36,7 +37,7 @@ export const MultilineTextWithArrowButton = ({
 };
 
 const Wrapper = styled.button`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+  ${mixins.flex('column', 'flex-start', 'center')};
   position: relative;
   width: 100%;
   height: 80px;
@@ -46,7 +47,7 @@ const Wrapper = styled.button`
   cursor: pointer;
 
   .arrow-icon {
-    ${({ theme }): CSSProp => theme.mixins.posTopCenterRight('24px')};
+    ${mixins.posTopCenterRight('24px')};
   }
 
   ${({ disabled, theme }): string | false =>

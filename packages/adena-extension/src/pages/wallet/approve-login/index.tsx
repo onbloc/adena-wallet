@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
@@ -15,10 +15,11 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import LoadingApproveTransaction from './loading-approve-transaction';
+import mixins from '@styles/mixins';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;

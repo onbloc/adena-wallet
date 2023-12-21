@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { LedgerConnector, LedgerAccount } from 'adena-module';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -15,13 +15,14 @@ import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Select Accounts',
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;

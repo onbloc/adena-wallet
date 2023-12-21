@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -15,6 +15,8 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import useHistoryData from '@hooks/use-history-data';
 
 import { TokenBalanceType } from '@types';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -33,7 +35,7 @@ const SearchClickBtn = styled.button`
   width: 24px;
   height: 24px;
   background: url(${search}) no-repeat center center;
-  ${({ theme }): CSSProp => theme.mixins.posTopCenterLeft('11px')};
+  ${mixins.posTopCenterLeft('11px')};
   cursor: default;
 `;
 
@@ -45,7 +47,7 @@ const InputResetBtn = styled.button`
   width: 24px;
   height: 24px;
   background: url(${cancel}) no-repeat center center;
-  ${({ theme }): CSSProp => theme.mixins.posTopCenterRight('11px')}
+  ${mixins.posTopCenterRight('11px')}
 `;
 
 const DataListWrap = styled.div`
@@ -58,7 +60,7 @@ const DataListWrap = styled.div`
 `;
 
 const ButtonWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   position: fixed;
   bottom: 0px;
   left: 0px;
@@ -66,7 +68,7 @@ const ButtonWrap = styled.div`
   height: 96px;
   padding: 0px 20px;
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${theme.color.neutral[7]};
   z-index: 1;
 `;
 

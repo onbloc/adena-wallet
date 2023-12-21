@@ -1,6 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface StatusDotProps {
   status: boolean;
@@ -23,13 +26,13 @@ const Dot = styled.div<{ status: boolean }>`
 `;
 
 const Tooltip = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: max-content;
   height: 25px;
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 13px;
   position: absolute;
   right: 0px;

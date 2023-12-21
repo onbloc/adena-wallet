@@ -1,5 +1,7 @@
 import React from 'react';
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
+
+import theme, { fonts } from '@styles/theme';
 
 interface SecureTextareaProps {
   value: string;
@@ -14,7 +16,7 @@ const StyledWrapper = styled.div<{ error: boolean }>`
   height: 140px;
   border: 1px solid
     ${({ error, theme }): string => (error ? theme.color.red[2] : theme.color.neutral[6])};
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 18px;
   overflow-y: auto;
   padding: 14px 16px 8px;
@@ -22,7 +24,7 @@ const StyledWrapper = styled.div<{ error: boolean }>`
 `;
 
 const StyledTextarea = styled.textarea`
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  ${fonts.body2Reg};
   width: 100%;
   word-wrap: break-word;
   background-color: inherit;

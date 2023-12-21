@@ -1,11 +1,12 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const SideMenuWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100vh;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${theme.color.neutral[7]};
 
   .header-wrapper {
     display: flex;
@@ -15,7 +16,7 @@ export const SideMenuWrapper = styled.div`
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
+    background-color: ${theme.color.neutral[8]};
 
     .logo {
       width: 82px;
@@ -33,14 +34,14 @@ export const SideMenuWrapper = styled.div`
 
         line {
           transition: 0.2s;
-          stroke: ${({ theme }): string => theme.color.neutral[9]};
+          stroke: ${theme.color.neutral[9]};
         }
       }
 
       &:hover {
         svg {
           line {
-            stroke: ${({ theme }): string => theme.color.neutral[0]};
+            stroke: ${theme.color.neutral[0]};
           }
         }
       }
@@ -59,31 +60,31 @@ export const SideMenuWrapper = styled.div`
     display: flex;
     height: 100%;
     padding: 16px 20px;
-    border-top: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+    border-top: 1px solid ${theme.color.neutral[6]};
 
     .add-account-button {
       display: inline-flex;
       width: fit-content;
       height: fit-content;
-      color: ${({ theme }): string => theme.color.neutral[0]};
+      color: ${theme.color.neutral[0]};
       transition: 0.2s;
       align-items: center;
       cursor: pointer;
 
       svg * {
         transition: 0.2s;
-        stroke: ${({ theme }): string => theme.color.neutral[0]};
+        stroke: ${theme.color.neutral[0]};
       }
 
       .text {
         margin-left: 8px;
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold}
+        ${fonts.body2Bold}
       }
 
       &:hover {
-        color: ${({ theme }): string => theme.color.neutral[9]};
+        color: ${theme.color.neutral[9]};
         svg * {
-          stroke: ${({ theme }): string => theme.color.neutral[9]};
+          stroke: ${theme.color.neutral[9]};
         }
       }
     }

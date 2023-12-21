@@ -1,5 +1,8 @@
 import React, { ReactElement } from 'react';
-import styled, { css, CSSProp, CSSProperties } from 'styled-components';
+import styled, { css, CSSProperties } from 'styled-components';
+
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 export enum ListHierarchy {
   Default = 'default',
@@ -24,19 +27,19 @@ interface ListBoxProps extends ListBoxStyleProps {
 
 const modeVariants = {
   default: css`
-    background: ${({ theme }): string => theme.color.neutral[6]};
+    background: ${theme.color.neutral[6]};
     &:hover {
-      background: ${({ theme }): string => theme.color.neutral[11]};
+      background: ${theme.color.neutral[11]};
     }
   `,
   normal: css`
-    background: ${({ theme }): string => theme.color.neutral[8]};
+    background: ${theme.color.neutral[8]};
     &:hover {
-      background: ${({ theme }): string => theme.color.neutral[6]};
+      background: ${theme.color.neutral[6]};
     }
   `,
   static: css`
-    background: ${({ theme }): string => theme.color.neutral[6]};
+    background: ${theme.color.neutral[6]};
   `,
 };
 
@@ -68,7 +71,7 @@ export const ListBox = ({
 };
 
 const Wrapper = styled.div<ListBoxStyleProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   ${({ mode }): any => {
     if (mode === ListHierarchy.Default) return modeVariants.default;
     if (mode === ListHierarchy.Normal) return modeVariants.normal;

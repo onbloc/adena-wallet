@@ -1,3 +1,4 @@
+import theme from '@styles/theme';
 import styled from 'styled-components';
 
 interface CopyButtonWrapperProps {
@@ -21,7 +22,7 @@ export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
 
   :hover svg {
     path {
-      stroke: ${({ theme }): string => theme.color.neutral[0]};
+      stroke: ${theme.color.neutral[0]};
     }
   }
 `;

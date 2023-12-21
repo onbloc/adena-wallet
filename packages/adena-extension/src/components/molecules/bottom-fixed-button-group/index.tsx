@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { Text, Button } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme from '@styles/theme';
 
 interface ButtonProps {
   primary?: boolean;
@@ -53,7 +55,7 @@ export const BottomFixedButtonGroup = ({
 };
 
 const ButtonWrap = styled.div<{ filled?: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'flex-start', 'center')};
+  ${mixins.flex('row', 'flex-start', 'center')};
   position: fixed;
   left: 0px;
   width: 100%;
@@ -69,32 +71,32 @@ const ButtonWrap = styled.div<{ filled?: boolean }>`
 
   & > button {
     margin-right: 10px;
-    background-color: ${({ theme }): string => theme.color.neutral[4]};
+    background-color: ${theme.color.neutral[4]};
 
     &:last-child {
       margin-right: 0;
     }
 
     &:hover:not(.disabled) {
-      background-color: ${({ theme }): string => theme.color.neutral[5]};
+      background-color: ${theme.color.neutral[5]};
     }
 
     &.primary {
-      background-color: ${({ theme }): string => theme.color.primary[3]};
+      background-color: ${theme.color.primary[3]};
 
       &:hover:not(.disabled) {
-        background-color: ${({ theme }): string => theme.color.primary[4]};
+        background-color: ${theme.color.primary[4]};
       }
     }
   }
 
   & > button.disabled {
     cursor: default;
-    color: ${({ theme }): string => theme.color.neutral[4]};
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    color: ${theme.color.neutral[4]};
+    background-color: ${theme.color.neutral[6]};
 
     &.primary {
-      background-color: ${({ theme }): string => theme.color.primary[6]};
+      background-color: ${theme.color.primary[6]};
     }
   }
 `;

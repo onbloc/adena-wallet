@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TransactionHistoryListItemWrapper = styled.div`
   display: flex;
@@ -7,13 +8,13 @@ export const TransactionHistoryListItemWrapper = styled.div`
   height: 60px;
   padding: 12px 14px;
   align-items: center;
-  background-color: ${({ theme }): string => theme.color.neutral[6]};
+  background-color: ${theme.color.neutral[6]};
   border-radius: 18px;
   cursor: pointer;
   transition: 0.2s;
 
   :hover {
-    background-color: ${({ theme }): string => theme.color.neutral[11]};
+    background-color: ${theme.color.neutral[11]};
   }
 
   & + & {
@@ -52,11 +53,11 @@ export const TransactionHistoryListItemWrapper = styled.div`
     .title {
       display: inline-flex;
       align-items: center;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body3Bold};
+      ${fonts.body3Bold};
       line-height: 18px;
 
       &.extend {
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Bold};
+        ${fonts.body2Bold};
       }
 
       .info {
@@ -67,14 +68,14 @@ export const TransactionHistoryListItemWrapper = styled.div`
       }
 
       .extra-info {
-        ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body4Bold};
+        ${fonts.body4Bold};
         margin-left: 5px;
       }
     }
 
     .description {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body3Reg};
-      color: ${({ theme }): string => theme.color.neutral[9]};
+      ${fonts.body3Reg};
+      color: ${theme.color.neutral[9]};
       line-height: 18px;
     }
   }
@@ -91,15 +92,15 @@ export const TransactionHistoryListItemWrapper = styled.div`
     word-break: break-all;
 
     .value.more {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+      ${fonts.body2Reg};
     }
 
     &.active div * {
-      color: ${({ theme }): string => theme.color.green[2]};
+      color: ${theme.color.green[2]};
     }
 
     &.blur div * {
-      color: ${({ theme }): string => theme.color.neutral[9]};
+      color: ${theme.color.neutral[9]};
     }
   }
 `;

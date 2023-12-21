@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, CopyIconButton, Button, ButtonHierarchy } from '@components/atoms';
@@ -11,6 +11,8 @@ import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
 import { TransactionInfo } from '@types';
+import theme, { fonts } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 interface DLProps {
   color?: string;
@@ -167,7 +169,7 @@ export const TransactionDetail = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   padding-top: 30px;
   .status-icon {
@@ -184,16 +186,16 @@ const Wrapper = styled.main`
     width: 100%;
     padding: 24px 20px;
     bottom: 0;
-    background: ${({ theme }): string => theme.color.neutral[7]};
+    background: ${theme.color.neutral[7]};
     box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.4);
   }
 `;
 
 const TokenBox = styled.div<{ color: string }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 70px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   border: 1px solid ${({ color }): string => color};
   border-radius: 18px;
   padding: 0px 15px;
@@ -212,28 +214,28 @@ const TokenBox = styled.div<{ color: string }>`
 `;
 
 const DataBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
+  ${mixins.flex('column', 'center', 'center')};
   width: 100%;
   border-radius: 18px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   margin-bottom: 96px;
 `;
 
 const DLWrap = styled.dl<DLProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
+  ${mixins.flex('row', 'center', 'space-between')};
+  ${fonts.body1Reg};
   width: 100%;
   height: 40px;
   padding: 0px 18px;
   :not(:last-child) {
-    border-bottom: 2px solid ${({ theme }): string => theme.color.neutral[7]};
+    border-bottom: 2px solid ${theme.color.neutral[7]};
   }
   dd,
   dt {
     font: inherit;
   }
   dt {
-    color: ${({ theme }): string => theme.color.neutral[9]};
+    color: ${theme.color.neutral[9]};
   }
   dd {
     display: flex;
@@ -247,7 +249,7 @@ const DLWrap = styled.dl<DLProps>`
 `;
 
 const StatusInfo = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   .link-icon {
     display: flex;
     cursor: pointer;
@@ -255,7 +257,7 @@ const StatusInfo = styled.div`
 
     svg {
       path {
-        fill: ${({ theme }): string => theme.color.neutral[9]};
+        fill: ${theme.color.neutral[9]};
         transition: 0.2s;
       }
     }
@@ -263,7 +265,7 @@ const StatusInfo = styled.div`
     :hover {
       svg {
         path {
-          fill: ${({ theme }): string => theme.color.neutral[0]};
+          fill: ${theme.color.neutral[0]};
         }
       }
     }

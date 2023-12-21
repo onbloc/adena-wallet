@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import theme, { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TransferSummaryBalanceWrapper = styled.div`
   display: flex;
@@ -6,7 +7,7 @@ export const TransferSummaryBalanceWrapper = styled.div`
   width: 100%;
   height: auto;
   padding: 20px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${theme.color.neutral[8]};
   border-radius: 18px;
   justify-content: space-between;
   align-items: center;
@@ -18,6 +19,6 @@ export const TransferSummaryBalanceWrapper = styled.div`
 
   .balance {
     display: contents;
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header5};
+    ${fonts.header5};
   }
 `;

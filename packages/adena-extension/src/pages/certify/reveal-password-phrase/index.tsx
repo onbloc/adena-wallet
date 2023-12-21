@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { Text, WarningBox, DefaultInput, ErrorText } from '@components/atoms';
 import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';
@@ -109,7 +110,7 @@ export const RevealPasswordPhrase = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

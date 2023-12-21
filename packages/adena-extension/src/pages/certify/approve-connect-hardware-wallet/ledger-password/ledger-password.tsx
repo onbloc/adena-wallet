@@ -1,10 +1,11 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useLedgerPassword } from './use-ledger-password';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Create\na Password',
@@ -63,7 +64,7 @@ export const ApproveHardwareWalletLedgerPassword = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   padding-top: 50px;
 `;

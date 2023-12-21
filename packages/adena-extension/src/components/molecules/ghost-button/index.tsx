@@ -1,7 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Button, ButtonHierarchy } from '@components/atoms';
+import mixins from '@styles/mixins';
+import theme, { fonts } from '@styles/theme';
 
 interface GhostButtonsProps {
   left: string;
@@ -10,16 +12,16 @@ interface GhostButtonsProps {
 }
 
 const GhostBtnWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
 `;
 
 const GhostBtn = styled(Button)`
-  ${({ theme }): CSSProp => theme.fonts.body1Bold};
+  ${fonts.body1Bold};
   transition: all 0.4s ease;
   :disabled {
-    color: ${({ theme }): string => theme.color.neutral[3]};
+    color: ${theme.color.neutral[3]};
     border: none;
   }
 `;

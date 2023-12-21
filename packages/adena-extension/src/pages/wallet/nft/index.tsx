@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { Text } from '@components/atoms';
 import { LoadingNft } from '@components/molecules';
 import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${theme.color.neutral[7]};
   .desc {
     position: absolute;
     top: 210px;

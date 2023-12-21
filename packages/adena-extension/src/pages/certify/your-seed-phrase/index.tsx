@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 
@@ -8,6 +8,7 @@ import { SeedBox, TitleWithDesc, TermsCheckbox, SeedViewAndCopy } from '@compone
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Seed Phrase',
@@ -131,7 +132,7 @@ export const YourSeedPhrase = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

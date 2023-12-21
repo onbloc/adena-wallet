@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
 import { WalletState } from '@states';
+import mixins from '@styles/mixins';
 
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
@@ -56,7 +57,7 @@ export const RemoveAccount = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;
