@@ -13,13 +13,10 @@ import { ForgotPassword } from '@pages/certify/forgot-password';
 import { EnterSeedPhrase } from '@pages/certify/enter-seed';
 import { Settings } from '@pages/certify/settings';
 import { ChangePassword } from '@pages/certify/change-password';
-import { ExportAccount } from '@pages/certify/export-account';
-import { ViewPrivateKey } from '@pages/certify/view-private-key';
 import { SeedPhrase } from '@pages/certify/seed-phrase';
 import { ViewSeedPhrase } from '@pages/certify/view-seed-phrase';
 import { ConnectedApps } from '@pages/certify/connected-apps';
 import AddAccountPage from '@pages/certify/add-account-page';
-import { ImportAccount } from '@pages/certify/import-account';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
 import {
@@ -114,8 +111,6 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.ManageTokenAdded} element={<ManageTokenAdded />} />
           <Route path={RoutePath.Setting} element={<Settings />} />
           <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
-          <Route path={RoutePath.SettingExportAccount} element={<ExportAccount />} />
-          <Route path={RoutePath.ViewPrivateKey} element={<ViewPrivateKey />} />
           <Route path={RoutePath.SettingSeedPhrase} element={<SeedPhrase />} />
           <Route path={RoutePath.ViewSeedPhrase} element={<ViewSeedPhrase />} />
           <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
@@ -147,7 +142,6 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
           <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
           <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
-          <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route

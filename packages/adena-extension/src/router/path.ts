@@ -50,7 +50,6 @@ export enum RoutePath {
   // settings
   Setting = '/settings',
   SettingChangePassword = '/settings/change-password',
-  SettingExportAccount = '/settings/export-account',
   SettingSeedPhrase = '/settings/seed-phrase',
   ViewPrivateKey = '/settings/view-private-key',
   ViewSeedPhrase = '/settings/view-seed-phrase',
