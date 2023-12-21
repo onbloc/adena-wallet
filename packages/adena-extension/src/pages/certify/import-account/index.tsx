@@ -1,8 +1,8 @@
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 
-import { Text, ErrorText } from '@components/atoms';
-import { SeedBox, CancelAndConfirmButton } from '@components/molecules';
+import { Text, ErrorText, SecureTextarea } from '@components/atoms';
+import { CancelAndConfirmButton } from '@components/molecules';
 import theme from '@styles/theme';
 import { useImportAccount } from '@hooks/certify/use-import-account';
 
@@ -26,12 +26,11 @@ export const ImportAccount = (): JSX.Element => {
       <Text type='body1Reg' color={theme.color.neutral[2]}>
         {text.desc}
       </Text>
-      <SeedBox
+      <SecureTextarea
         value={privateKeyState.value}
         onChange={privateKeyState.onChange}
         onKeyDown={privateKeyState.onKeyDown}
         error={privateKeyState.error}
-        scroll={true}
       />
       {privateKeyState.error && <ErrorText text={privateKeyState.errorMessage} />}
       <CancelAndConfirmButton

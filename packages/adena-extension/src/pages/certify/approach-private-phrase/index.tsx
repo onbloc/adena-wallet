@@ -2,10 +2,41 @@ import React, { useEffect, useState } from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, WarningBox, Button, ButtonHierarchy } from '@components/atoms';
-import { SeedBox, SeedViewAndCopy } from '@components/molecules';
+import { Text, WarningBox, Button, ButtonHierarchy, BlurScreen } from '@components/atoms';
+import { SeedViewAndCopy } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
+
+const Wrapper = styled.main`
+  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  width: 100%;
+  height: 100%;
+  padding-top: 24px;
+  overflow-y: auto;
+  .private-key-style {
+    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+    .seed-text {
+      word-break: break-all;
+      text-align: center;
+    }
+  }
+`;
+
+const StyledPrivateKeyBox = styled.div`
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  border-radius: 18px;
+  padding: 8px;
+  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+`;
+
+const StyledText = styled(Text)`
+  word-break: break-all;
+  text-align: center;
+`;
 
 export const ApproachPrivatePhrase = (): JSX.Element => {
   const navigate = useNavigate();
@@ -41,12 +72,10 @@ export const ApproachPrivatePhrase = (): JSX.Element => {
     <Wrapper>
       <Text type='header4'>Export Private Key</Text>
       <WarningBox type='approachPrivate' margin='12px 0px 20px' />
-      <SeedBox
-        seeds={privateKey}
-        scroll={false}
-        hasBlurScreen={showBlurScreen}
-        className='private-key-style'
-      />
+      <StyledPrivateKeyBox>
+        <StyledText type='captionReg'>{privateKey}</StyledText>
+        {showBlurScreen && <BlurScreen />}
+      </StyledPrivateKeyBox>
       <SeedViewAndCopy
         showBlurScreen={showBlurScreen}
         setShowBlurScreen={setShowBlurScreen}
@@ -59,18 +88,3 @@ export const ApproachPrivatePhrase = (): JSX.Element => {
     </Wrapper>
   );
 };
-
-const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
-  width: 100%;
-  height: 100%;
-  padding-top: 24px;
-  overflow-y: auto;
-  .private-key-style {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
-    .seed-text {
-      word-break: break-all;
-      text-align: center;
-    }
-  }
-`;

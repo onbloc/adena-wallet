@@ -24,7 +24,7 @@ export const RevealPrivatePhrase = (): JSX.Element => {
     <Wrapper>
       <Text type='header4'>Reveal Seed Phrase</Text>
       <WarningBox type='revealPrivate' margin='12px 0px 20px' />
-      <SeedBox seeds={seeds} scroll={false} hasBlurScreen={showBlurScreen} />
+      <SeedBox seeds={seeds} hasBlurScreen={showBlurScreen} />
       <SeedViewAndCopy
         showBlurScreen={showBlurScreen}
         setShowBlurScreen={setShowBlurScreen}

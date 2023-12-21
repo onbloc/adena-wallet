@@ -42,7 +42,7 @@ export const ViewSeedPhrase = (): JSX.Element => {
     <Wrapper>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <SeedBoxWrap>
-        <SeedBox seeds={mnemonic.split(' ')} scroll={false} />
+        <SeedBox seeds={mnemonic.split(' ')} />
         <Copy copyStr={mnemonic} />
       </SeedBoxWrap>
       <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>

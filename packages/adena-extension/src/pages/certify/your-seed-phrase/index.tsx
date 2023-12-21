@@ -94,7 +94,6 @@ export const YourSeedPhrase = (): JSX.Element => {
       <TitleWithDesc title={text.title} desc={text.desc} isWarningDesc />
       <SeedBox
         seeds={seeds.split(' ')}
-        scroll={false}
         hasBlurScreen={showBlurScreen}
         hasBlurText={!viewSeedAgree}
         blurScreenText={text.blurScreenText}

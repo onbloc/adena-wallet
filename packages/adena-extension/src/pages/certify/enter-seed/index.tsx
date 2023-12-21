@@ -2,8 +2,8 @@ import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
-import { Text, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
-import { SeedBox, TitleWithDesc, TermsCheckbox } from '@components/molecules';
+import { Text, ErrorText, Button, ButtonHierarchy, SecureTextarea } from '@components/atoms';
+import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
 
@@ -29,12 +29,11 @@ export const EnterSeedPhrase = (): JSX.Element => {
         title={state?.from === 'forgot-password' ? forgotContent.title : walletContent.title}
         desc={state?.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
       />
-      <SeedBox
+      <SecureTextarea
         value={seedState.value}
         onChange={seedState.onChange}
         onKeyDown={seedState.onKeyDown}
         error={seedState.error}
-        scroll={true}
       />
       {seedState.error && <ErrorText text={seedState.errorMessage} />}
       <TermsWrap>

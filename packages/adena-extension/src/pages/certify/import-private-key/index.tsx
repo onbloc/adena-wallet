@@ -3,8 +3,8 @@ import styled, { CSSProp } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
 
-import { Text, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
-import { SeedBox, TitleWithDesc, TermsCheckbox } from '@components/molecules';
+import { Text, ErrorText, Button, ButtonHierarchy, SecureTextarea } from '@components/atoms';
+import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
@@ -84,13 +84,7 @@ export const ImportPrivateKey = (): JSX.Element => {
   return (
     <Wrapper onKeyDown={onKeyDown}>
       <TitleWithDesc title={content.title} desc={content.desc} />
-      <SeedBox
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        error={error}
-        scroll={true}
-      />
+      <SecureTextarea value={value} onChange={onChange} onKeyDown={onKeyDown} error={error} />
       {error && <ErrorText text={errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
