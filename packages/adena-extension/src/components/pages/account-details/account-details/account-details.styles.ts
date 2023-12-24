@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AccountDetailsWrapper = styled.div`
@@ -36,7 +36,7 @@ export const AccountDetailsWrapper = styled.div`
       flex-direction: row;
       width: 100%;
       height: 42px;
-      background-color: ${theme.color.neutral[8]};
+      background-color: ${getTheme('neutral', '_9')};
       margin-top: 12px;
       padding: 12px 18px 12px 16px;
       border-radius: 18px;

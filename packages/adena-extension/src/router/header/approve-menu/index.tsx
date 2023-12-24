@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { Text, CopyTooltip, StatusDot } from '@components/atoms';
 import {
   formatAddress,
@@ -20,7 +20,7 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${theme.color.neutral[6]};
+  border-bottom: 1px solid ${getTheme('neutral', '_7')};
   ${mixins.flex('row', 'center', 'flex-end')};
   .t-approve {
     ${mixins.positionCenter()}
@@ -28,6 +28,7 @@ const Wrapper = styled.div`
 `;
 
 const ApproveMenu = (): JSX.Element => {
+  const theme = useTheme();
   const { establishService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const [address, setAddress] = useState('');
@@ -91,7 +92,7 @@ const ApproveMenu = (): JSX.Element => {
           <CopyTooltip copyText={address} className='t-approve'>
             <Text type='body1Bold' display='inline-flex' style={{ whiteSpace: 'pre' }}>
               {formatNickname(accountName, 12)}
-              <Text type='body1Reg' color={theme.color.neutral[9]} style={{ whiteSpace: 'pre' }}>
+              <Text type='body1Reg' color={theme.neutral.a} style={{ whiteSpace: 'pre' }}>
                 {` (${formatAddress(address)})`}
               </Text>
             </Text>

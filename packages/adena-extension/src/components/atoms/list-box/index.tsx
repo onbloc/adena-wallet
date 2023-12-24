@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import styled, { css, CSSProperties } from 'styled-components';
 
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 export enum ListHierarchy {
   Default = 'default',
@@ -27,19 +27,19 @@ interface ListBoxProps extends ListBoxStyleProps {
 
 const modeVariants = {
   default: css`
-    background: ${theme.color.neutral[6]};
+    background: ${getTheme('neutral', '_7')};
     &:hover {
-      background: ${theme.color.neutral[11]};
+      background: ${getTheme('neutral', 'b')};
     }
   `,
   normal: css`
-    background: ${theme.color.neutral[8]};
+    background: ${getTheme('neutral', '_9')};
     &:hover {
-      background: ${theme.color.neutral[6]};
+      background: ${getTheme('neutral', '_7')};
     }
   `,
   static: css`
-    background: ${theme.color.neutral[6]};
+    background: ${getTheme('neutral', '_7')};
   `,
 };
 

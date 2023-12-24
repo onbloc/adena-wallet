@@ -11,7 +11,7 @@ import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
 import { TransactionInfo } from '@types';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
 interface DLProps {
@@ -186,7 +186,7 @@ const Wrapper = styled.main`
     width: 100%;
     padding: 24px 20px;
     bottom: 0;
-    background: ${theme.color.neutral[7]};
+    background: ${getTheme('neutral', '_8')};
     box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.4);
   }
 `;
@@ -195,7 +195,7 @@ const TokenBox = styled.div<{ color: string }>`
   ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 70px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border: 1px solid ${({ color }): string => color};
   border-radius: 18px;
   padding: 0px 15px;
@@ -217,7 +217,7 @@ const DataBox = styled.div`
   ${mixins.flex('column', 'center', 'center')};
   width: 100%;
   border-radius: 18px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   margin-bottom: 96px;
 `;
 
@@ -228,18 +228,18 @@ const DLWrap = styled.dl<DLProps>`
   height: 40px;
   padding: 0px 18px;
   :not(:last-child) {
-    border-bottom: 2px solid ${theme.color.neutral[7]};
+    border-bottom: 2px solid ${getTheme('neutral', '_8')};
   }
   dd,
   dt {
     font: inherit;
   }
   dt {
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
   dd {
     display: flex;
-    color: ${(props): string => (props.color ? props.color : props.theme.color.neutral[0])};
+    color: ${({ theme, color }): string => (color ? color : theme.neutral._1)};
     align-items: center;
   }
 
@@ -257,7 +257,7 @@ const StatusInfo = styled.div`
 
     svg {
       path {
-        fill: ${theme.color.neutral[9]};
+        fill: ${getTheme('neutral', 'a')};
         transition: 0.2s;
       }
     }
@@ -265,7 +265,7 @@ const StatusInfo = styled.div`
     :hover {
       svg {
         path {
-          fill: ${theme.color.neutral[0]};
+          fill: ${getTheme('neutral', '_1')};
         }
       }
     }

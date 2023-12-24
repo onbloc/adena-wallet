@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryBalanceWrapper = styled.div`
@@ -7,7 +7,7 @@ export const TransferSummaryBalanceWrapper = styled.div`
   width: 100%;
   height: auto;
   padding: 20px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   justify-content: space-between;
   align-items: center;

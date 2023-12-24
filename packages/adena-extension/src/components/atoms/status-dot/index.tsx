@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 interface StatusDotProps {
   status: boolean;
@@ -15,8 +15,7 @@ const Dot = styled.div<{ status: boolean }>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: ${({ status, theme }): string =>
-    status ? theme.color.green[2] : theme.color.red[2]};
+  background-color: ${({ status, theme }): string => (status ? theme.green._5 : theme.red._5)};
   cursor: pointer;
   &:hover > .static-tooltip {
     visibility: visible;
@@ -32,7 +31,7 @@ const Tooltip = styled.div`
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 13px;
   position: absolute;
   right: 0px;

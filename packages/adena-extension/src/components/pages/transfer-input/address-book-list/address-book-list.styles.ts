@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AddressBookListWrapper = styled.div`
@@ -6,7 +6,7 @@ export const AddressBookListWrapper = styled.div`
   flex-direction: column;
   width: 100%;
   height: auto;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
 
   .no-address-wrapper {
     display: flex;
@@ -29,7 +29,7 @@ export const AddressBookListItemWrapper = styled.div`
   cursor: pointer;
 
   :hover {
-    background-color: ${theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
   }
 
   .name {
@@ -37,6 +37,6 @@ export const AddressBookListItemWrapper = styled.div`
   }
 
   .address {
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
 `;

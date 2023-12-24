@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ApproveChangingNetworkItemWrapper = styled.div`
@@ -20,7 +20,7 @@ export const ApproveChangingNetworkItemWrapper = styled.div`
     display: flex;
     width: 100px;
     padding: 5px 8px;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
     border-radius: 8px;
     text-align: center;
     justify-content: center;
@@ -28,7 +28,7 @@ export const ApproveChangingNetworkItemWrapper = styled.div`
     .chain-name {
       display: -webkit-box;
       width: 100%;
-      color: ${theme.color.neutral[0]};
+      color: ${getTheme('neutral', '_1')};
       ${fonts.body2Reg};
       font-weight: 500;
       text-align: center;

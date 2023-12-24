@@ -7,12 +7,12 @@ import { HamburgerMenuBtn } from '@components/atoms';
 import { RoutePath } from '@router/path';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
-  border-bottom: 1px solid ${theme.color.neutral[6]};
+  border-bottom: 1px solid ${getTheme('neutral', '_7')};
 `;
 
 const Header = styled.div`

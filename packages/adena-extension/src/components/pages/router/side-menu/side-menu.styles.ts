@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuWrapper = styled.div`
@@ -6,7 +6,7 @@ export const SideMenuWrapper = styled.div`
   flex-direction: column;
   width: 100%;
   height: 100vh;
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
 
   .header-wrapper {
     display: flex;
@@ -16,7 +16,7 @@ export const SideMenuWrapper = styled.div`
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
 
     .logo {
       width: 82px;
@@ -34,14 +34,14 @@ export const SideMenuWrapper = styled.div`
 
         line {
           transition: 0.2s;
-          stroke: ${theme.color.neutral[9]};
+          stroke: ${getTheme('neutral', 'a')};
         }
       }
 
       &:hover {
         svg {
           line {
-            stroke: ${theme.color.neutral[0]};
+            stroke: ${getTheme('neutral', '_1')};
           }
         }
       }
@@ -60,20 +60,20 @@ export const SideMenuWrapper = styled.div`
     display: flex;
     height: 100%;
     padding: 16px 20px;
-    border-top: 1px solid ${theme.color.neutral[6]};
+    border-top: 1px solid ${getTheme('neutral', '_7')};
 
     .add-account-button {
       display: inline-flex;
       width: fit-content;
       height: fit-content;
-      color: ${theme.color.neutral[0]};
+      color: ${getTheme('neutral', '_1')};
       transition: 0.2s;
       align-items: center;
       cursor: pointer;
 
       svg * {
         transition: 0.2s;
-        stroke: ${theme.color.neutral[0]};
+        stroke: ${getTheme('neutral', '_1')};
       }
 
       .text {
@@ -82,9 +82,9 @@ export const SideMenuWrapper = styled.div`
       }
 
       &:hover {
-        color: ${theme.color.neutral[9]};
+        color: ${getTheme('neutral', 'a')};
         svg * {
-          stroke: ${theme.color.neutral[9]};
+          stroke: ${getTheme('neutral', 'a')};
         }
       }
     }

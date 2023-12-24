@@ -2,7 +2,7 @@ import React from 'react';
 import styled, { keyframes } from 'styled-components';
 
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 const spinAnimation = keyframes`
   0% {
@@ -23,7 +23,7 @@ const SpinRing = styled.div`
   animation: ${spinAnimation} 0.9s linear infinite;
   :before {
     content: '';
-    background-color: ${theme.color.neutral[7]};
+    background-color: ${getTheme('neutral', '_8')};
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -37,7 +37,7 @@ const SpinBall = styled.span`
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: ${theme.color.primary[3]};
+  background-color: ${getTheme('primary', '_6')};
 `;
 
 export const Spinner = (): JSX.Element => (

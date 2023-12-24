@@ -1,4 +1,4 @@
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import styled, { keyframes } from 'styled-components';
 
 const pulseKeyframe = keyframes`
@@ -16,7 +16,7 @@ const pulseKeyframe = keyframes`
 export const SkeletonBoxStyle = styled.div`
   & {
     position: relative;
-    background-color: ${theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
     border-radius: 18px;
     padding: 0px 17px 0px 14px;
     overflow: hidden;

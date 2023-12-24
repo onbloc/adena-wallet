@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default.svg';
 import { Text, Button } from '@components/atoms';
 import { DoubleButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { existsPopups } from '@inject/message/methods';
 
@@ -106,19 +106,22 @@ export const WalletCreate = (): JSX.Element => {
   );
 };
 
-const PoweredByWeb3AuthWihDivider = (): JSX.Element => (
-  <>
-    <Text type='light11' color={theme.color.neutral[9]}>
-      Powered by Web3Auth
-    </Text>
-    <Divider />
-  </>
-);
+const PoweredByWeb3AuthWihDivider = (): JSX.Element => {
+  const theme = useTheme();
+  return (
+    <>
+      <Text type='light11' color={theme.neutral.a}>
+        Powered by Web3Auth
+      </Text>
+      <Divider />
+    </>
+  );
+};
 
 const Divider = styled.span`
   width: calc(100% - 48px);
   height: 1px;
-  background-color: ${theme.color.neutral[4]};
+  background-color: ${getTheme('neutral', '_5')};
   margin: 20px 0px;
 `;
 

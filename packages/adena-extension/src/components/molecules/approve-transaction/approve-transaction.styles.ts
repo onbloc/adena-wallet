@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 import mixins from '@styles/mixins';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
   ${mixins.flex('column', 'center', 'flex-start')};
@@ -14,7 +14,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     position: relative;
     padding: 10px 18px;
     justify-content: space-between;
-    border-bottom: 2px solid ${theme.color.neutral[7]};
+    border-bottom: 2px solid ${getTheme('neutral', '_8')};
     ${fonts.body1Reg};
 
     &:last-child {
@@ -25,7 +25,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
       display: inline-flex;
       width: fit-content;
       flex-shrink: 0;
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
     }
 
     .value {
@@ -65,7 +65,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     border-radius: 24px;
     padding: 10px 18px;
     margin-bottom: 8px;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
     ${fonts.body2Reg};
   }
 
@@ -74,7 +74,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     height: auto;
     border-radius: 18px;
     margin-bottom: 8px;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
   }
 
   .fee-amount-wrapper {
@@ -83,11 +83,11 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     border-radius: 30px;
     padding: 10px 18px;
     margin-bottom: 8px;
-    background-color: ${theme.color.neutral[8]};
-    border: 1px solid ${theme.color.neutral[7]};
+    background-color: ${getTheme('neutral', '_9')};
+    border: 1px solid ${getTheme('neutral', '_8')};
     ${fonts.body2Reg};
     ${({ isErrorNetworkFee, theme }): string | false =>
-      isErrorNetworkFee && `border-color: ${theme.color.red[2]};`}
+      isErrorNetworkFee && `border-color: ${theme.red._5};`}
   }
 
   .error-message {
@@ -98,7 +98,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     height: 14px;
     margin-top: -5px;
     margin-bottom: 10px;
-    color: ${theme.color.red[2]};
+    color: ${getTheme('red', '_5')};
   }
 
   .transaction-data-wrapper {
@@ -107,7 +107,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     ${mixins.flex('column', 'center', 'center')};
 
     .visible-button {
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
       height: fit-content;
       margin-bottom: 5px;
 
@@ -119,8 +119,8 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
       width: 100%;
       height: 120px;
       border-radius: 24px;
-      background-color: ${theme.color.neutral[8]};
-      border: 1px solid ${theme.color.neutral[6]};
+      background-color: ${getTheme('neutral', '_9')};
+      border: 1px solid ${getTheme('neutral', '_7')};
       padding: 12px 16px;
     }
     .raw-info-textarea {

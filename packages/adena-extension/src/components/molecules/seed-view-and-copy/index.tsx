@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text, Button, Copy } from '@components/atoms';
-import theme from '@styles/theme';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean;
@@ -18,13 +18,14 @@ export const SeedViewAndCopy = ({
   copyStr,
   toggleText,
 }: SeedViewAndCopyProps): JSX.Element => {
+  const theme = useTheme();
   const blurScreenHandler = useCallback(() => {
     setShowBlurScreen((prev: boolean) => !prev);
   }, [showBlurScreen]);
 
   return (
     <Wrapper>
-      <ButtonStyle bgColor={theme.color.neutral[6]} onClick={blurScreenHandler}>
+      <ButtonStyle bgColor={theme.neutral._7} onClick={blurScreenHandler}>
         <Text type='body2Reg'>{showBlurScreen ? `View ${toggleText}` : `Hide ${toggleText}`}</Text>
       </ButtonStyle>
       <Copy copyStr={copyStr} />
@@ -46,6 +47,6 @@ const ButtonStyle = styled(Button)`
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${theme.color.neutral[11]};
+    background-color: ${getTheme('neutral', 'b')};
   }
 `;

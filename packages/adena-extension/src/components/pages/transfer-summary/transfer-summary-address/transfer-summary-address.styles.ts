@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryAddressWrapper = styled.div`
@@ -8,7 +8,7 @@ export const TransferSummaryAddressWrapper = styled.div`
   height: auto;
   padding: 20px;
   ${fonts.body2Reg};
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   justify-content: space-between;
   align-items: center;

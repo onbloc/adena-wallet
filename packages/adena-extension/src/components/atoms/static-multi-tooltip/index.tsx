@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 interface TooltipProps {
   bgColor?: string;
@@ -23,7 +23,7 @@ const Tooltip = styled.div<TooltipProps>`
   height: auto;
   visibility: hidden;
   z-index: 1;
-  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.color.neutral[8])};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.neutral._9)};
   border-radius: 13px;
   position: absolute;
   right: 0px;
@@ -36,7 +36,7 @@ const Tooltip = styled.div<TooltipProps>`
     width: 100%;
     height: 26px;
     padding: 2px 25px;
-    border-bottom: 1px solid ${theme.color.neutral[9]};
+    border-bottom: 1px solid ${getTheme('neutral', 'a')};
 
     &:last-child {
       border-bottom: none;

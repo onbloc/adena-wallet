@@ -1,4 +1,4 @@
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkListItemWrapper = styled.div`
@@ -7,13 +7,13 @@ export const NetworkListItemWrapper = styled.div`
   width: 100%;
   height: auto;
   padding: 9px 16px;
-  background-color: ${theme.color.neutral[6]};
+  background-color: ${getTheme('neutral', '_7')};
   border-radius: 18px;
   transition: 0.2s;
   cursor: pointer;
 
   &:hover {
-    background-color: ${theme.color.neutral[11]};
+    background-color: ${getTheme('neutral', 'b')};
   }
 
   .info-wrapper {
@@ -32,7 +32,7 @@ export const NetworkListItemWrapper = styled.div`
       .name {
         display: block;
         max-width: 236px;
-        color: ${theme.color.neutral[0]};
+        color: ${getTheme('neutral', '_1')};
 
         overflow: hidden;
         text-overflow: ellipsis;
@@ -51,12 +51,12 @@ export const NetworkListItemWrapper = styled.div`
         & .icon-edit {
           path {
             transition: 0.2s;
-            fill: ${theme.color.neutral[9]};
+            fill: ${getTheme('neutral', 'a')};
           }
 
           &:hover {
             path {
-              fill: ${theme.color.neutral[0]};
+              fill: ${getTheme('neutral', '_1')};
             }
           }
         }
@@ -71,7 +71,7 @@ export const NetworkListItemWrapper = styled.div`
       .description {
         display: block;
         max-width: 244px;
-        color: ${theme.color.neutral[9]};
+        color: ${getTheme('neutral', 'a')};
         font-weight: 400;
         white-space: nowrap;
         overflow: hidden;

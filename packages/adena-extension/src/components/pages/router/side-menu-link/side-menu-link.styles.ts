@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const SideMenuLinkWrapper = styled.div`
   display: flex;
@@ -10,12 +10,12 @@ export const SideMenuLinkWrapper = styled.div`
   padding: 16px 20px;
   justify-content: flex-start;
   align-items: center;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   transition: 0.2s;
   cursor: pointer;
 
   &:hover {
-    background-color: ${theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
   }
 
   .icon {

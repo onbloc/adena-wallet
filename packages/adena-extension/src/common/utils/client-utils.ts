@@ -181,17 +181,17 @@ export function getStatusStyle(status: string): { color: string; statusIcon: any
   switch (status) {
     case 'SUCCESS':
       return {
-        color: theme.color.green[2],
+        color: theme.green._5,
         statusIcon: success,
       };
     case 'FAIL':
       return {
-        color: theme.color.red[2],
+        color: theme.red._5,
         statusIcon: failed,
       };
     default:
       return {
-        color: theme.color.red[2],
+        color: theme.red._5,
         statusIcon: failed,
       };
   }

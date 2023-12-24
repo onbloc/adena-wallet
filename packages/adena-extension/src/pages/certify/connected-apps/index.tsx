@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
 import { Text, ListBox, ListHierarchy } from '@components/atoms';
 import { LoadingNft, CloseShadowButton } from '@components/molecules';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { WalletState } from '@states';
 import DefaultImage from '@assets/favicon-default-small.svg';
 import disconnected from '@assets/disconnected.svg';
@@ -14,6 +14,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
 
 export const ConnectedApps = (): JSX.Element => {
+  const theme = useTheme();
   const { establishService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ export const ConnectedApps = (): JSX.Element => {
           {datas.length > 0 ? (
             datas.map(renderAppItem)
           ) : (
-            <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+            <Text className='desc' type='body1Reg' color={theme.neutral.a}>
               No connections
             </Text>
           )}
@@ -97,7 +98,7 @@ const Wrapper = styled.main`
   height: 100%;
   padding-top: 24px;
   padding-bottom: 120px;
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
 
   .logo {
     width: 20px;
@@ -127,10 +128,10 @@ const DisconnectedBtn = styled.button`
   width: 25px;
   height: 25px;
   border-radius: 35px;
-  background-color: ${theme.color.red[2]};
+  background-color: ${getTheme('red', '_5')};
   transition: all ease 0.4s;
   margin-left: auto;
   :hover {
-    background-color: ${theme.color.red[5]};
+    background-color: #bb160b;
   }
 `;

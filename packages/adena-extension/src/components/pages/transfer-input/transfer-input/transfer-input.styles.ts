@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
@@ -42,11 +42,11 @@ export const TransferInputWrapper = styled.div`
       height: 48px;
       border-radius: 30px;
       ${fonts.body1Bold};
-      background-color: ${theme.color.neutral[4]};
+      background-color: ${getTheme('neutral', '_5')};
       transition: 0.2s;
 
       :hover {
-        background-color: ${theme.color.neutral[5]};
+        background-color: ${getTheme('neutral', '_6')};
       }
 
       &:last-child {
@@ -54,15 +54,15 @@ export const TransferInputWrapper = styled.div`
       }
 
       &.next {
-        background-color: ${theme.color.primary[3]};
+        background-color: ${getTheme('primary', '_6')};
 
         :hover {
-          background-color: ${theme.color.primary[4]};
+          background-color: ${getTheme('primary', '_7')};
         }
 
         &.disabled {
-          color: ${theme.color.neutral[4]};
-          background-color: ${theme.color.primary[6]};
+          color: ${getTheme('neutral', '_5')};
+          background-color: ${getTheme('primary', '_9')};
           cursor: default;
         }
       }

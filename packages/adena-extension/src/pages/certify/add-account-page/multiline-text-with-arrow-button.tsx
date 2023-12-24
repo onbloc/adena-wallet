@@ -1,8 +1,8 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text, Icon } from '@components/atoms';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
 interface MultiButtonProps {
@@ -18,6 +18,7 @@ export const MultilineTextWithArrowButton = ({
   disabled = false,
   onClick,
 }: MultiButtonProps): JSX.Element => {
+  const theme = useTheme();
   const onClickWrapper = (): void => {
     if (disabled) {
       return;
@@ -28,7 +29,7 @@ export const MultilineTextWithArrowButton = ({
   return (
     <Wrapper disabled={disabled} onClick={onClickWrapper}>
       <Text type='body1Bold'>{title}</Text>
-      <Text type='body2Reg' color={theme.color.neutral[9]}>
+      <Text type='body2Reg' color={theme.neutral.a}>
         {subTitle}
       </Text>
       <Icon name='iconArrowV2' className='arrow-icon' />
@@ -43,7 +44,7 @@ const Wrapper = styled.button`
   height: 80px;
   border-radius: 18px;
   padding: 15px 20px;
-  background-color: ${theme.color.neutral[6]};
+  background-color: ${getTheme('neutral', '_7')};
   cursor: pointer;
 
   .arrow-icon {
@@ -55,9 +56,9 @@ const Wrapper = styled.button`
     `
       transition: all 0.3s ease;
       &:hover {
-        background-color: ${theme.color.neutral[11]};
+        background-color: ${theme.neutral.b};
         .arrow-icon * {
-          stroke: ${theme.color.neutral[0]};
+          stroke: ${theme.neutral._1};
         }
       }
     `}

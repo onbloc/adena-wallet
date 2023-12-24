@@ -1,3 +1,4 @@
+import mixins from '@styles/mixins';
 import React from 'react';
 import styled, { CSSProp } from 'styled-components';
 
@@ -11,11 +12,10 @@ interface RoundProps {
 }
 
 const RoundStyle = styled.div<RoundProps>`
-  ${({ children, theme }): false | CSSProp =>
-    !!children && theme.mixins.flex('row', 'center', 'center')};
+  ${({ children }): false | CSSProp => !!children && mixins.flex('row', 'center', 'center')};
   width: ${({ width }): string => (width ? width : '100%')};
   height: ${({ height }): string | undefined => height && height};
-  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.color.neutral[4])};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.neutral._5)};
   margin: ${({ margin }): string | undefined => margin && margin};
   border-radius: ${({ radius }): string | undefined => radius && radius};
 `;

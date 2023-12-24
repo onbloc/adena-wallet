@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 interface SecureTextareaProps {
   value: string;
@@ -14,9 +14,8 @@ const StyledWrapper = styled.div<{ error: boolean }>`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid
-    ${({ error, theme }): string => (error ? theme.color.red[2] : theme.color.neutral[6])};
-  background-color: ${theme.color.neutral[8]};
+  border: 1px solid ${({ error, theme }): string => (error ? theme.red._5 : theme.neutral._7)};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   overflow-y: auto;
   padding: 14px 16px 8px;

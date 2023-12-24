@@ -16,7 +16,7 @@ import useHistoryData from '@hooks/use-history-data';
 
 import { TokenBalanceType } from '@types';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -68,7 +68,7 @@ const ButtonWrap = styled.div`
   height: 96px;
   padding: 0px 20px;
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
   z-index: 1;
 `;
 

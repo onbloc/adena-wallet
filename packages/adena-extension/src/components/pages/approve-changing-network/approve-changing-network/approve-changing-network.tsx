@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 
 import { Text, SubHeader } from '@components/atoms';
 import { ApproveInjectionLoading, BottomFixedButtonGroup } from '@components/molecules';
-import theme from '@styles/theme';
 import IconArrowRight from '@assets/arrowL-right-bold.svg';
 import { ApproveChangingNetworkWrapper } from './approve-changing-network.styles';
 import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item';
@@ -37,6 +37,8 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
 }) => {
   const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name]);
 
+  const theme = useTheme();
+
   const onClickCancel = useCallback(() => {
     cancel();
   }, [cancel]);
@@ -58,7 +60,7 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
         <SubHeader title={title} />
 
         <div className='description-wrapper'>
-          <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+          <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {
               'This will switch the current network on\nAdena to the one that matches the\nconnected dapp.'
             }

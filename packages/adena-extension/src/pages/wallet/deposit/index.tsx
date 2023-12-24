@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, inputStyle, Button, Copy } from '@components/atoms';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
@@ -21,7 +21,7 @@ const Wrapper = styled.main`
 
 const QRCodeBox = styled.div`
   ${mixins.flex('row', 'center', 'center')};
-  background-color: ${theme.color.neutral[0]};
+  background-color: ${getTheme('neutral', '_1')};
   padding: 10px;
   border-radius: 8px;
   margin: 40px 0px;
@@ -30,10 +30,10 @@ const QRCodeBox = styled.div`
 const CopyInputBox = styled.div`
   ${mixins.flex('row', 'center', 'space-between')};
   ${inputStyle};
-  border: 1px solid ${theme.color.neutral[6]};
+  border: 1px solid ${getTheme('neutral', '_7')};
 
   & .nickname {
-    color: ${theme.color.neutral[2]};
+    color: ${getTheme('neutral', '_3')};
   }
 
   margin-bottom: 8px;
@@ -45,6 +45,7 @@ interface DepositState {
 }
 
 export const Deposit = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [displayAddr, setDisplayAddr] = useState('');
@@ -83,7 +84,7 @@ export const Deposit = (): JSX.Element => {
         {currentAccount && (
           <Text type='body2Reg' display='inline-flex'>
             {formatNickname(accountNames[currentAccount.id], 12)}
-            <Text type='body2Reg' color={theme.color.neutral[9]}>
+            <Text type='body2Reg' color={theme.neutral.a}>
               {` (${displayAddr})`}
             </Text>
           </Text>
@@ -91,7 +92,7 @@ export const Deposit = (): JSX.Element => {
 
         <Copy copyStr={currentAddress || ''} />
       </CopyInputBox>
-      <Text type='captionReg' color={theme.color.neutral[9]}>
+      <Text type='captionReg' color={theme.neutral.a}>
         Only use this address to receive tokens on Gnoland.
       </Text>
       <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={closeButtonClick}>

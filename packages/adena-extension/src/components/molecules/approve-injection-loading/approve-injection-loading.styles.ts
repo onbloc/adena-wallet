@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const ApproveInjectionLoadingWrapper = styled.div`
   display: flex;
@@ -13,13 +13,13 @@ export const ApproveInjectionLoadingWrapper = styled.div`
 
   .description {
     margin-top: 23px;
-    color: ${theme.color.neutral[0]};
+    color: ${getTheme('neutral', '_1')};
     ${fonts.header4}
   }
 
   .sub-description {
     margin-top: 12px;
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
     ${fonts.body1Reg}
   }
 `;

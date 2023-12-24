@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 import { SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 export const ApproveLoadingWrapper = styled.div`
   ${mixins.flex('column', 'center', 'flex-start')};
@@ -25,7 +25,7 @@ export const ApproveLoadingRoundedBox = styled.div`
   ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   padding: 0px 18px;
 `;
 

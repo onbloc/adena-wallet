@@ -7,14 +7,14 @@ import { RoutePath } from '@router/path';
 import { Icon, IconName } from '@components/atoms';
 import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
   ${mixins.flex('row', 'center', 'space-between')};
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
   padding: 0px 40px;
   gap: 40px;
@@ -28,10 +28,10 @@ const Wrapper = styled.nav`
     &:hover,
     &.active {
       .icon-default {
-        fill: ${theme.color.neutral[0]};
+        fill: ${getTheme('neutral', '_1')};
       }
       .icon-primary {
-        fill: ${theme.color.primary[3]};
+        fill: ${getTheme('primary', '_6')};
       }
     }
   }

@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransactionHistoryListWrapper = styled.div`
@@ -9,7 +9,7 @@ export const TransactionHistoryListWrapper = styled.div`
 
   & > .title {
     ${fonts.body1Reg};
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
 
   & > .list-wrapper {

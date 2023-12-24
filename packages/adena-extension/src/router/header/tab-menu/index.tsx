@@ -5,7 +5,7 @@ import { Text } from '@components/atoms';
 import IconLogo from '../../../install/assets/logo-typeB.svg';
 import IconHelp from '@assets/help-fill.svg';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 const Container = styled.div`
   ${mixins.flex('row', 'center', 'space-between')}
@@ -17,7 +17,7 @@ const Container = styled.div`
   padding: 0;
   width: 100%;
   height: fit-content;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   padding: 40px 40px 0px;
   .help-text {
     font-size: 19px;

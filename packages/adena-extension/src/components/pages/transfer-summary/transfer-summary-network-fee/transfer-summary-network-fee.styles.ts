@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryNetworkFeeWrapper = styled.div<{ isError?: boolean }>`
@@ -6,16 +6,15 @@ export const TransferSummaryNetworkFeeWrapper = styled.div<{ isError?: boolean }
   flex-direction: row;
   width: 100%;
   padding: 14px 16px;
-  background-color: ${theme.color.neutral[8]};
-  border: 1px solid ${theme.color.neutral[6]};
+  background-color: ${getTheme('neutral', '_9')};
+  border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 30px;
   justify-content: space-between;
   align-items: center;
-  ${({ isError, theme }): string | false | undefined =>
-    isError && `border-color: ${theme.color.red[2]};`}
+  ${({ isError, theme }): string | false | undefined => isError && `border-color: ${theme.red._5};`}
 
   .key {
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
     ${fonts.body2Reg};
   }
 `;

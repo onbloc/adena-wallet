@@ -1,10 +1,9 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import addSymbol from '@assets/add-symbol.svg';
 import { Text, Button } from '@components/atoms';
-import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
 
@@ -12,6 +11,7 @@ const content =
   'To add new accounts, you need to generate a seed phrase as you created your existing accounts with Google or Ledger, which didn’t require seed phrase generation.';
 
 export const GenerateSeedPhrase = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
 
   const onclick = (): void => {
@@ -24,7 +24,7 @@ export const GenerateSeedPhrase = (): JSX.Element => {
       <Text type='header4' margin='23px 0px 12px'>
         Generate Seed Phrase
       </Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+      <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
         {content}
       </Text>
       <Button fullWidth onClick={onclick} margin='auto 0px 0px'>

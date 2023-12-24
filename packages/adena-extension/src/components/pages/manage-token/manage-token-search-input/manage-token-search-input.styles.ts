@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ManageTokenSearchInputWrapper = styled.div`
@@ -9,9 +9,9 @@ export const ManageTokenSearchInputWrapper = styled.div`
   padding: 12px 16px;
   align-items: center;
   justify-content: flex-start;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 30px;
-  border: 1px solid ${theme.color.neutral[6]};
+  border: 1px solid ${getTheme('neutral', '_7')};
 
   .search-icon-wrapper {
     display: inline-flex;
@@ -50,13 +50,13 @@ export const ManageTokenSearchInputWrapper = styled.div`
     .added {
       width: 100%;
       height: 100%;
-      fill: ${theme.color.neutral[6]};
+      fill: ${getTheme('neutral', '_7')};
       transition: 0.2s;
     }
 
     :hover {
       .added {
-        fill: ${theme.color.neutral[11]};
+        fill: ${getTheme('neutral', 'b')};
       }
     }
   }

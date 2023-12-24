@@ -4,7 +4,7 @@ import styled, { CSSProp } from 'styled-components';
 import checkOff from '@assets/check-off.svg';
 import checkOn from '@assets/check-on.svg';
 import mixins from '@styles/mixins';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
@@ -31,8 +31,8 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   padding-left: 32px;
   cursor: pointer;
   &:before {
-    ${({ theme, checkboxPos }): CSSProp =>
-      checkboxPos === 'TOP' ? theme.mixins.posTopLeft('2px') : theme.mixins.posTopCenterLeft()};
+    ${({ checkboxPos }): CSSProp =>
+      checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
     width: 20px;
@@ -48,7 +48,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   &,
   * {
     font: inherit;
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
 `;
 

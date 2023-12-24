@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { Text, BlurScreen } from '../../atoms';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 interface SeedScrollBoxProps {
   seeds: string[];
@@ -16,8 +16,8 @@ const Wrapper = styled.div`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${theme.color.neutral[6]};
-  background-color: ${theme.color.neutral[8]};
+  border: 1px solid ${getTheme('neutral', '_7')};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   padding: 8px;
 `;

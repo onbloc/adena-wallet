@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, DefaultInput, Button } from '@components/atoms';
-import theme, { fonts } from '@styles/theme';
+import { fonts } from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';
@@ -33,6 +33,8 @@ export const ForgetPwd = styled.button`
 
 export const Login = (): JSX.Element => {
   usePreventHistoryBack();
+
+  const theme = useTheme();
   const navigate = useNavigate();
   const { walletService } = useAdenaContext();
   const location = useLocation();
@@ -116,7 +118,7 @@ export const Login = (): JSX.Element => {
         ref={inputRef}
       />
       <ForgetPwd onClick={onClickForgotButton}>
-        <Text type='body2Reg' color={theme.color.neutral[9]}>
+        <Text type='body2Reg' color={theme.neutral.a}>
           Forgot Password?
         </Text>
       </ForgetPwd>

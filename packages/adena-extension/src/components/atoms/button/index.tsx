@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components';
 import React, { CSSProperties } from 'react';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 type XOR<T, U> = T | U extends Record<string, unknown>
@@ -12,56 +12,56 @@ type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'cus
 
 export const modeVariants = {
   normal: css`
-    background: ${theme.color.neutral[6]};
+    background: ${getTheme('neutral', '_7')};
     &:hover {
-      background: ${theme.color.neutral[11]};
+      background: ${getTheme('neutral', 'b')};
     }
     /* &:disabled {
-      background: ${theme.color.primary[6]};
-      color: ${theme.color.neutral[4]};
+      background: ${getTheme('primary', '_9')};
+      color: ${getTheme('neutral', '_5')};
     } */
   `,
   primary: css`
-    background: ${theme.color.primary[3]};
+    background: ${getTheme('primary', '_6')};
     &:hover {
-      background: ${theme.color.primary[4]};
+      background: ${getTheme('primary', '_7')};
     }
     &:disabled {
-      background: ${theme.color.primary[6]};
-      color: ${theme.color.neutral[4]};
+      background: ${getTheme('primary', '_9')};
+      color: ${getTheme('neutral', '_5')};
     }
   `,
   ghost: css`
-    background: ${theme.color.neutral[8]};
-    border: 1px solid ${theme.color.neutral[2]};
+    background: ${getTheme('neutral', '_9')};
+    border: 1px solid ${getTheme('neutral', '_3')};
     &:hover {
-      background: ${theme.color.neutral[5]};
-      border: 1px solid ${theme.color.neutral[2]};
+      background: ${getTheme('neutral', '_6')};
+      border: 1px solid ${getTheme('neutral', '_3')};
     }
     &:disabled {
-      background: ${theme.color.neutral[6]};
-      border: 1px solid ${theme.color.neutral[3]};
-      color: ${theme.color.neutral[4]};
+      background: ${getTheme('neutral', '_7')};
+      border: 1px solid ${getTheme('neutral', '_4')};
+      color: ${getTheme('neutral', '_5')};
     }
   `,
   dark: css`
-    background: ${theme.color.neutral[4]};
+    background: ${getTheme('neutral', '_5')};
     &:hover {
-      background: ${theme.color.neutral[5]};
+      background: ${getTheme('neutral', '_6')};
     }
     &:disabled {
-      background: ${theme.color.neutral[5]};
-      color: ${theme.color.neutral[4]};
+      background: ${getTheme('neutral', '_6')};
+      color: ${getTheme('neutral', '_5')};
     }
   `,
   danger: css`
-    background: ${theme.color.red[2]};
+    background: ${getTheme('red', '_5')};
     &:hover {
-      background: ${theme.color.red[8]};
+      background: #bb150b;
     }
     /* &:disabled {
-      background: ${theme.color.neutral[5]};
-      color: ${theme.color.neutral[4]};
+      background: ${getTheme('neutral', '_6')};
+      color: ${getTheme('neutral', '_5')};
     } */
   `,
 };
@@ -124,7 +124,7 @@ const ButtonWrapper = styled.button<ButtonProps>`
   }};
   border-radius: ${({ radius }): string => (radius ? radius : '30px')};
   transition: all 0.4s ease;
-  color: ${theme.color.neutral[0]};
+  color: ${getTheme('neutral', '_1')};
   background-color: ${({ bgColor }): string | undefined => bgColor};
 `;
 

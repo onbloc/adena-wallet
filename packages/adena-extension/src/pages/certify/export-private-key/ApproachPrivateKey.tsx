@@ -7,14 +7,14 @@ import { SeedViewAndCopy } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 const StyledPrivateKeyBox = styled.div`
   position: relative;
   width: 100%;
   height: 140px;
-  border: 1px solid ${theme.color.neutral[6]};
-  background-color: ${theme.color.neutral[8]};
+  border: 1px solid ${getTheme('neutral', '_7')};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   padding: 8px;
   ${mixins.flex('row', 'center', 'center')};

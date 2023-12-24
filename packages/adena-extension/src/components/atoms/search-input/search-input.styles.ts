@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SearchInputWrapper = styled.div`
@@ -11,7 +11,7 @@ export const SearchInputWrapper = styled.div`
   align-items: center;
   justify-content: flex-start;
   border-radius: 30px;
-  border: 1px solid ${theme.color.neutral[6]};
+  border: 1px solid ${getTheme('neutral', '_7')};
 
   .search-icon-wrapper {
     display: inline-flex;

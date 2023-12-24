@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TokenListItemWrapper = styled.div`
@@ -7,7 +7,7 @@ export const TokenListItemWrapper = styled.div`
   padding: 13px;
   width: 100%;
   height: auto;
-  background: ${theme.color.neutral[8]};
+  background: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   align-items: center;
   justify-items: flex-start;
@@ -18,7 +18,7 @@ export const TokenListItemWrapper = styled.div`
   }
 
   &:hover {
-    background: ${theme.color.neutral[6]};
+    background: ${getTheme('neutral', '_7')};
     cursor: pointer;
   }
 

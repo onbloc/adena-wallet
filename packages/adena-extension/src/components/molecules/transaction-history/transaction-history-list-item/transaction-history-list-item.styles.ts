@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransactionHistoryListItemWrapper = styled.div`
@@ -8,13 +8,13 @@ export const TransactionHistoryListItemWrapper = styled.div`
   height: 60px;
   padding: 12px 14px;
   align-items: center;
-  background-color: ${theme.color.neutral[6]};
+  background-color: ${getTheme('neutral', '_7')};
   border-radius: 18px;
   cursor: pointer;
   transition: 0.2s;
 
   :hover {
-    background-color: ${theme.color.neutral[11]};
+    background-color: ${getTheme('neutral', 'b')};
   }
 
   & + & {
@@ -75,7 +75,7 @@ export const TransactionHistoryListItemWrapper = styled.div`
 
     .description {
       ${fonts.body3Reg};
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
       line-height: 18px;
     }
   }
@@ -96,11 +96,11 @@ export const TransactionHistoryListItemWrapper = styled.div`
     }
 
     &.active div * {
-      color: ${theme.color.green[2]};
+      color: ${getTheme('green', '_5')};
     }
 
     &.blur div * {
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
     }
   }
 `;

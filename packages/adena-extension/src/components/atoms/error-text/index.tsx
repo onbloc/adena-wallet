@@ -1,6 +1,6 @@
 import React from 'react';
-import theme from '@styles/theme';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
+
 import { Text } from '../text';
 
 const ErrorMsg = styled(Text)`
@@ -9,8 +9,9 @@ const ErrorMsg = styled(Text)`
 `;
 
 export const ErrorText = ({ text }: { text: string }): JSX.Element => {
+  const theme = useTheme();
   return (
-    <ErrorMsg type='captionReg' color={theme.color.red[2]}>
+    <ErrorMsg type='captionReg' color={theme.red._5}>
       {text}
     </ErrorMsg>
   );

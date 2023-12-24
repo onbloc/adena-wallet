@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
 import { TransactionHistory, DoubleButton } from '@components/molecules';
 import etc from '@assets/etc.svg';
 import { RoutePath } from '@router/path';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
@@ -74,7 +74,7 @@ const EtcIcon = styled.div`
   border-radius: 50%;
   cursor: pointer;
   &.show-tooltip {
-    background-color: ${theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
     & > .static-tooltip {
       visibility: visible;
       transition: all 0.1s ease-in-out;
@@ -107,6 +107,7 @@ type TokenHistoriesType = {
 };
 
 export const TokenDetails = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { state } = useLocation();
   const [etcClicked, setEtcClicked] = useState(false);
@@ -287,18 +288,14 @@ export const TokenDetails = (): JSX.Element => {
         <Text type='header4'>{tokenBalance.name}</Text>
         <EtcIcon className={etcClicked ? 'show-tooltip' : ''} onClick={etcButtonClick}>
           <img src={etc} alt='View on Gnoscan' />
-          <StaticMultiTooltip
-            bgColor={theme.color.neutral[6]}
-            posTop='28px'
-            items={getTooltipItems()}
-          />
+          <StaticMultiTooltip bgColor={theme.neutral._7} posTop='28px' items={getTooltipItems()} />
         </EtcIcon>
       </HeaderWrap>
 
       <div className='balance-wrapper'>
         <HighlightNumber
           value={BigNumber(balance).toFormat()}
-          fontColor={theme.color.neutral[0]}
+          fontColor={theme.neutral._1}
           fontStyleKey={'header2'}
           minimumFontSize={'24px'}
         />
@@ -321,7 +318,7 @@ export const TokenDetails = (): JSX.Element => {
           onClickItem={onClickItem}
         />
       ) : (
-        <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
           No transaction to display
         </Text>
       )}

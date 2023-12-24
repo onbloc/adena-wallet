@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 export const ToggleWrapper = styled.div`
   display: flex;
@@ -10,7 +10,7 @@ export const ToggleWrapper = styled.div`
   height: 26px;
   padding: 3px;
   border-radius: 100px;
-  background-color: ${theme.color.neutral[4]};
+  background-color: ${getTheme('neutral', '_5')};
   transition: 0.2s;
   cursor: pointer;
 
@@ -18,13 +18,13 @@ export const ToggleWrapper = styled.div`
     display: block;
     width: 20px;
     height: 20px;
-    background-color: ${theme.color.neutral[0]};
+    background-color: ${getTheme('neutral', '_1')};
     border-radius: 20px;
     transition: 0.2s;
   }
 
   &.activated {
-    background-color: ${theme.color.primary[4]};
+    background-color: ${getTheme('primary', '_7')};
 
     .circle {
       margin-left: 20px;

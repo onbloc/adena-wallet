@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 import add from '@assets/add-symbol.svg';
 import edit from '@assets/edit-symbol.svg';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import {
   validateAlreadyAddress,
   validateAlreadyAddressByAccounts,
@@ -23,6 +23,7 @@ const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AddAddress = (): JSX.Element => {
+  const theme = useTheme();
   const { wallet } = useWalletContext();
   const { addressBookService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -181,7 +182,7 @@ const AddAddress = (): JSX.Element => {
       <ErrorText text={errorMsg} />
       {!isAdd && (
         <RemoveAddressBtn error={Boolean(errorMsg)} onClick={removeHandler}>
-          <Text type='body1Reg' color={theme.color.neutral[9]}>
+          <Text type='body1Reg' color={theme.neutral.a}>
             Remove Address
           </Text>
         </RemoveAddressBtn>
@@ -202,7 +203,7 @@ const RemoveAddressBtn = styled.button<{ error: boolean }>`
   text-decoration-line: underline;
   text-underline-offset: 2px;
   text-decoration-thickness: 1px;
-  text-decoration-color: ${theme.color.neutral[9]};
+  text-decoration-color: ${getTheme('neutral', 'a')};
   position: absolute;
   bottom: 91px;
 `;
@@ -212,8 +213,7 @@ const AddressInput = styled.textarea<{ error: boolean }>`
   height: 70px;
   overflow: hidden;
   resize: none;
-  border: 1px solid
-    ${({ error, theme }): string => (error ? theme.color.red[2] : theme.color.neutral[6])};
+  border: 1px solid ${({ error, theme }): string => (error ? theme.red._5 : theme.neutral._7)};
   margin-top: 12px;
 `;
 

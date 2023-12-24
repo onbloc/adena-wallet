@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 import { Button } from '@components/atoms';
 import mixins from '@styles/mixins';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 interface GhostButtonsProps {
   left: string;
@@ -21,7 +21,7 @@ const GhostBtn = styled(Button)`
   ${fonts.body1Bold};
   transition: all 0.4s ease;
   :disabled {
-    color: ${theme.color.neutral[3]};
+    color: ${getTheme('neutral', '_4')};
     border: none;
   }
 `;

@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const CustomNetworkInputWrapper = styled.div`
   display: flex;
@@ -20,8 +20,8 @@ export const CustomNetworkInputWrapper = styled.div`
       min-height: 48px;
       padding: 12px 16px;
       ${fonts.body2Reg};
-      background-color: ${theme.color.neutral[8]};
-      border: 1px solid ${theme.color.neutral[6]};
+      background-color: ${getTheme('neutral', '_9')};
+      border: 1px solid ${getTheme('neutral', '_7')};
       border-radius: 30px;
       align-items: center;
       margin-top: 12px;
@@ -39,7 +39,7 @@ export const CustomNetworkInputWrapper = styled.div`
         line-height: 25px;
 
         ::placeholder {
-          color: ${theme.color.neutral[9]};
+          color: ${getTheme('neutral', 'a')};
         }
       }
     }
@@ -50,6 +50,6 @@ export const CustomNetworkInputWrapper = styled.div`
     padding: 0 16px;
     ${fonts.captionReg};
     height: 14px;
-    color: ${theme.color.red[2]};
+    color: ${getTheme('red', '_5')};
   }
 `;

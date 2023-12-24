@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const UnderlineTextButtonWrapper = styled.div`
   display: flex;
@@ -19,7 +19,7 @@ export const UnderlineTextButtonWrapper = styled.div`
   }
 
   .title {
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
     ${fonts.body1Reg};
     white-space: pre;
     text-decoration: underline;

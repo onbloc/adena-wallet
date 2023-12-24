@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
 
 import { Text } from '@components/atoms';
 import link from '@assets/share.svg';
-import theme from '@styles/theme';
 import { ExploreState } from '@states';
 import { useAdenaContext } from '@hooks/use-context';
 import LoadingExplore from './loading-explore';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 export const Explore = (): JSX.Element => {
+  const theme = useTheme();
   const { tokenService } = useAdenaContext();
   const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ export const Explore = (): JSX.Element => {
             <img src={exploreSite.logo} alt='logo-image' />
             <Contents>
               <Text type='body2Bold'>{exploreSite.name}</Text>
-              <Text type='captionReg' color={theme.color.neutral[9]}>
+              <Text type='captionReg' color={theme.neutral.a}>
                 {exploreSite.description}
               </Text>
             </Contents>
@@ -74,7 +75,7 @@ const Contents = styled.div`
 
 const BoxContainer = styled.div`
   ${mixins.flex('row', 'center', 'flex-start')};
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   width: 100%;
   height: 60px;
   padding: 10px 17px;

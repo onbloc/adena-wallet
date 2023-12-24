@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 interface CopyTooltipProps {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ const ToolTipInner = styled.div`
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 13px;
   transform: scale(0.6);
   cursor: default;

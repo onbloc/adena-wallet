@@ -2,7 +2,7 @@ import styled from 'styled-components';
 
 import check from '@assets/check-circle.svg';
 import mixins from '@styles/mixins';
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 
 export const WalletConnectWrapper = styled.div`
   ${mixins.flex('column', 'center', 'flex-start')};
@@ -37,7 +37,7 @@ export const WalletConnectWrapper = styled.div`
     border-radius: 24px;
     padding: 10px 18px;
     margin-bottom: 12px;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
     ${fonts.body2Reg};
   }
 
@@ -45,15 +45,15 @@ export const WalletConnectWrapper = styled.div`
     width: 100%;
     height: auto;
     border-radius: 18px;
-    background-color: ${theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
 
     .info-table-header {
       ${mixins.flex('column', 'flex-start', 'center')};
       width: 100%;
       padding: 12px;
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
       ${fonts.body2Bold};
-      border-bottom: 2px solid ${theme.color.neutral[7]};
+      border-bottom: 2px solid ${getTheme('neutral', '_8')};
     }
 
     .info-table-body {
@@ -81,7 +81,7 @@ export const WalletConnectWrapper = styled.div`
     ${mixins.flex('column', 'flex-start', 'center')};
     padding: 4px 0;
     margin-bottom: 43px;
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
     ${fonts.captionReg};
   }
 
@@ -99,11 +99,11 @@ export const WalletConnectWrapper = styled.div`
     }
 
     button.cancel {
-      background-color: ${theme.color.neutral[4]};
+      background-color: ${getTheme('neutral', '_5')};
     }
 
     button.connect {
-      background-color: ${theme.color.primary[3]};
+      background-color: ${getTheme('primary', '_6')};
     }
   }
 `;

@@ -1,10 +1,10 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import lockLogo from '@assets/icon-lock.svg';
 import { Text, Icon, Button } from '@components/atoms';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
@@ -15,6 +15,7 @@ const text = {
 };
 
 export const ForgotPassword = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
 
   const onClickLearnMore = (): void => {
@@ -45,7 +46,7 @@ export const ForgotPassword = (): JSX.Element => {
       <Text type='header4' margin='23px 0px 12px'>
         {text.title}
       </Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+      <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
         {text.desc}
       </Text>
       <LearnMore onClick={onClickLearnMore}>Learn more</LearnMore>
@@ -73,20 +74,20 @@ const Wrapper = styled.main`
 const LearnMore = styled.button`
   font-size: 16px;
   font-weight: 700;
-  color: ${theme.color.primary[3]};
+  color: ${getTheme('primary', '_6')};
   margin-top: 24px;
   &:hover {
     text-decoration-line: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
-    text-decoration-color: ${theme.color.primary[3]};
+    text-decoration-color: ${getTheme('primary', '_6')};
   }
 `;
 
 const TextStyled = styled.div`
   ${mixins.flex('row', 'center', 'center')};
   width: 100%;
-  color: ${theme.color.neutral[9]};
+  color: ${getTheme('neutral', 'a')};
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -99,9 +100,9 @@ const TextStyled = styled.div`
     transition: all 0.3s ease;
   }
   &:hover {
-    color: ${theme.color.primary[3]};
+    color: ${getTheme('primary', '_6')};
     svg * {
-      stroke: ${theme.color.primary[3]};
+      stroke: ${getTheme('primary', '_6')};
     }
   }
 `;

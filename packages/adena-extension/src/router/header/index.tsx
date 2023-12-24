@@ -6,7 +6,7 @@ import { useRecoilState } from 'recoil';
 import { RoutePath } from '@router/path';
 import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
@@ -19,7 +19,7 @@ import { CloseTitleMenu } from './close-title-menu';
 const Wrapper = styled.header`
   width: 100%;
   height: 48px;
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
   position: sticky;
   top: 0px;
   z-index: 2;

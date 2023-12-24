@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
 
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
@@ -17,7 +17,7 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
-  border-bottom: 1px solid ${theme.color.neutral[6]};
+  border-bottom: 1px solid ${getTheme('neutral', '_7')};
 `;
 
 const Header = styled.div`
@@ -31,6 +31,7 @@ const Header = styled.div`
 `;
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
+  const theme = useTheme();
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
@@ -115,7 +116,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
         <CopyTooltip copyText={currentAddress || ''}>
           <Text type='body1Bold' display='inline-flex'>
             {formatNickname(currentAccountName, 12)}
-            <Text type='body1Reg' color={theme.color.neutral[9]}>
+            <Text type='body1Reg' color={theme.neutral.a}>
               {` (${formatAddress(currentAddress || '')})`}
             </Text>
           </Text>

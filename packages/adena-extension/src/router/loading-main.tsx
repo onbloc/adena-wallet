@@ -9,7 +9,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 import { GhostButtons } from '@components/molecules';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
@@ -20,7 +20,7 @@ const Wrapper = styled.main`
   padding: 78px 24px;
   top: 0px;
   z-index: 99;
-  background-color: ${theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
 `;
 
 const RoundsBox = styled.div`

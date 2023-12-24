@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ManageTokenListItemWrapper = styled.div`
@@ -7,7 +7,7 @@ export const ManageTokenListItemWrapper = styled.div`
   padding: 10px 14px;
   width: 100%;
   height: auto;
-  background: ${theme.color.neutral[8]};
+  background: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   align-items: center;
   justify-items: flex-start;

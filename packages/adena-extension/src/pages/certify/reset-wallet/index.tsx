@@ -1,11 +1,10 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
-import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 import mixins from '@styles/mixins';
@@ -17,6 +16,7 @@ const forgotPasswordContent =
   'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
 export const ResetWallet = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { state } = useLocation();
   const { clear } = useClear();
@@ -35,7 +35,7 @@ export const ResetWallet = (): JSX.Element => {
       <Text type='header4' margin='23px 0px 12px'>
         Reset Wallet
       </Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+      <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
         {state?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton

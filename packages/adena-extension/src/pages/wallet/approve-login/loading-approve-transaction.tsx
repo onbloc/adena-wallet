@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { GhostButtons } from '@components/molecules';
 import mixins from '@styles/mixins';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 
 interface ApproveProps {
   leftButtonText?: string;
@@ -66,7 +66,7 @@ const RoundedBox = styled.div`
   ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 41px;
-  background-color: ${theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   padding: 0px 18px;
 `;
 

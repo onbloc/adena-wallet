@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AccountNameInputWrapper = styled.div`
@@ -7,8 +7,8 @@ export const AccountNameInputWrapper = styled.div`
   width: 150px;
   height: auto;
   padding: 12.5px 16px;
-  background-color: ${theme.color.neutral[8]};
-  border: 1px solid ${theme.color.neutral[6]};
+  background-color: ${getTheme('neutral', '_9')};
+  border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 18px;
   transition: 0.2s;
   justify-content: center;
@@ -48,7 +48,7 @@ export const AccountNameInputWrapper = styled.div`
 
     &:hover {
       svg * {
-        fill: ${theme.color.neutral[0]};
+        fill: ${getTheme('neutral', '_1')};
       }
     }
   }

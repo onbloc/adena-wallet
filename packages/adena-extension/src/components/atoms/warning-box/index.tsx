@@ -1,8 +1,7 @@
 import React from 'react';
-import styled, { CSSProperties } from 'styled-components';
+import styled, { CSSProperties, useTheme } from 'styled-components';
 
 import { Text } from '@components/atoms';
-import theme from '@styles/theme';
 import mixins from '@styles/mixins';
 
 type WarningKeyType =
@@ -58,10 +57,11 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
 };
 
 export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Element => {
+  const theme = useTheme();
   return (
     <Wrapper margin={margin} padding={padding}>
       {warningType[type].title && (
-        <Text type='header7' color={theme.color.red[6]}>
+        <Text type='header7' color={theme.red.a}>
           {warningType[type].title}
         </Text>
       )}

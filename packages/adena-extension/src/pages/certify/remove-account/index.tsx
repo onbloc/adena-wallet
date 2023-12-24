@@ -1,12 +1,11 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
-import theme from '@styles/theme';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
@@ -17,6 +16,7 @@ const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { currentAccount } = useCurrentAccount();
   const { removeAccount } = useRemoveAccount();
@@ -41,7 +41,7 @@ export const RemoveAccount = (): JSX.Element => {
       <Text type='header4' margin='23px 0px 12px'>
         Remove Account
       </Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+      <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
         {content}
       </Text>
       <CancelAndConfirmButton

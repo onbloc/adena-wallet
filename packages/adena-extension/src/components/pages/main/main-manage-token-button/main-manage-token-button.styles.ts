@@ -1,4 +1,4 @@
-import theme, { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const MainManageTokenButtonWrapper = styled.div`
@@ -23,7 +23,7 @@ export const MainManageTokenButtonWrapper = styled.div`
   }
 
   .title {
-    color: ${theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
     ${fonts.body1Reg};
   }
 `;
