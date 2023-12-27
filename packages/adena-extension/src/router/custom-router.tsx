@@ -13,13 +13,10 @@ import { ForgotPassword } from '@pages/certify/forgot-password';
 import { EnterSeedPhrase } from '@pages/certify/enter-seed';
 import { Settings } from '@pages/certify/settings';
 import { ChangePassword } from '@pages/certify/change-password';
-import { ExportAccount } from '@pages/certify/export-account';
-import { ViewPrivateKey } from '@pages/certify/view-private-key';
 import { SeedPhrase } from '@pages/certify/seed-phrase';
 import { ViewSeedPhrase } from '@pages/certify/view-seed-phrase';
 import { ConnectedApps } from '@pages/certify/connected-apps';
 import AddAccountPage from '@pages/certify/add-account-page';
-import { ImportAccount } from '@pages/certify/import-account';
 import AddressBook from '@pages/certify/address-book';
 import AddAddress from '@pages/certify/add-address';
 import {
@@ -34,8 +31,7 @@ import { SecurityPrivacy } from '@pages/certify/security-privacy';
 import { AboutAdena } from '@pages/certify/about-adena';
 import { RevealPasswordPhrase } from '@pages/certify/reveal-password-phrase';
 import { RevealPrivatePhrase } from '@pages/certify/reveal-private-phrase';
-import { ApproachPasswordPhrase } from '@pages/certify/approach-password-phrase';
-import { ApproachPrivatePhrase } from '@pages/certify/approach-private-phrase';
+import { ExportPrivateKey } from '@pages/certify/export-private-key';
 import { RemoveAccount } from '@pages/certify/remove-account';
 import { ResetWallet } from '@pages/certify/reset-wallet';
 import ChangeNetwork from '@pages/certify/change-network';
@@ -115,8 +111,6 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.ManageTokenAdded} element={<ManageTokenAdded />} />
           <Route path={RoutePath.Setting} element={<Settings />} />
           <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
-          <Route path={RoutePath.SettingExportAccount} element={<ExportAccount />} />
-          <Route path={RoutePath.ViewPrivateKey} element={<ViewPrivateKey />} />
           <Route path={RoutePath.SettingSeedPhrase} element={<SeedPhrase />} />
           <Route path={RoutePath.ViewSeedPhrase} element={<ViewSeedPhrase />} />
           <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
@@ -148,7 +142,6 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
           <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
           <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
-          <Route path={RoutePath.ImportAccount} element={<ImportAccount />} />
           <Route path={RoutePath.AddressBook} element={<AddressBook />} />
           <Route path={RoutePath.AddAddress} element={<AddAddress />} />
           <Route
@@ -203,8 +196,7 @@ export const CustomRouter = (): JSX.Element => {
           <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
           <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
           <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
-          <Route path={RoutePath.ApproachPasswordPhrase} element={<ApproachPasswordPhrase />} />
-          <Route path={RoutePath.ApproachPrivatePhrase} element={<ApproachPrivatePhrase />} />
+          <Route path={RoutePath.ExportPrivateKey} element={<ExportPrivateKey />} />
           <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
           <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
           <Route path={RoutePath.GoogleConnect} element={<GoogleConnect />} />

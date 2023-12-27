@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, CopyIconButton, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, CopyIconButton, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import IconShare from '@assets/icon-share';
@@ -11,6 +11,8 @@ import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
 import { TransactionInfo } from '@types';
+import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 interface DLProps {
   color?: string;
@@ -154,7 +156,7 @@ export const TransactionDetail = (): JSX.Element => {
           className='close-button'
           margin='auto 0px 0px'
           fullWidth
-          hierarchy={ButtonHierarchy.Dark}
+          hierarchy='dark'
           onClick={closeButtonClick}
         >
           <Text type='body1Bold'>Close</Text>
@@ -167,7 +169,7 @@ export const TransactionDetail = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   padding-top: 30px;
   .status-icon {
@@ -184,16 +186,16 @@ const Wrapper = styled.main`
     width: 100%;
     padding: 24px 20px;
     bottom: 0;
-    background: ${({ theme }): string => theme.color.neutral[7]};
+    background: ${getTheme('neutral', '_8')};
     box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.4);
   }
 `;
 
 const TokenBox = styled.div<{ color: string }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   height: 70px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border: 1px solid ${({ color }): string => color};
   border-radius: 18px;
   padding: 0px 15px;
@@ -212,32 +214,32 @@ const TokenBox = styled.div<{ color: string }>`
 `;
 
 const DataBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'center')};
+  ${mixins.flex('column', 'center', 'center')};
   width: 100%;
   border-radius: 18px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   margin-bottom: 96px;
 `;
 
 const DLWrap = styled.dl<DLProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
+  ${mixins.flex('row', 'center', 'space-between')};
+  ${fonts.body1Reg};
   width: 100%;
   height: 40px;
   padding: 0px 18px;
   :not(:last-child) {
-    border-bottom: 2px solid ${({ theme }): string => theme.color.neutral[7]};
+    border-bottom: 2px solid ${getTheme('neutral', '_8')};
   }
   dd,
   dt {
     font: inherit;
   }
   dt {
-    color: ${({ theme }): string => theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
   dd {
     display: flex;
-    color: ${(props): string => (props.color ? props.color : props.theme.color.neutral[0])};
+    color: ${({ theme, color }): string => (color ? color : theme.neutral._1)};
     align-items: center;
   }
 
@@ -247,7 +249,7 @@ const DLWrap = styled.dl<DLProps>`
 `;
 
 const StatusInfo = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   .link-icon {
     display: flex;
     cursor: pointer;
@@ -255,7 +257,7 @@ const StatusInfo = styled.div`
 
     svg {
       path {
-        fill: ${({ theme }): string => theme.color.neutral[9]};
+        fill: ${getTheme('neutral', 'a')};
         transition: 0.2s;
       }
     }
@@ -263,7 +265,7 @@ const StatusInfo = styled.div`
     :hover {
       svg {
         path {
-          fill: ${({ theme }): string => theme.color.neutral[0]};
+          fill: ${getTheme('neutral', '_1')};
         }
       }
     }

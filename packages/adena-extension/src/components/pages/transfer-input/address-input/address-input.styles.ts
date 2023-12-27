@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AddressInputWrapper = styled.div`
   position: relative;
@@ -12,9 +13,9 @@ export const AddressInputWrapper = styled.div`
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
-    border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+    ${fonts.body2Reg};
+    background-color: ${getTheme('neutral', '_9')};
+    border: 1px solid ${getTheme('neutral', '_7')};
     border-radius: 30px;
     align-items: center;
 
@@ -25,7 +26,7 @@ export const AddressInputWrapper = styled.div`
       }
       .description {
         margin-left: 5px;
-        color: ${({ theme }): string => theme.color.neutral[9]};
+        color: ${getTheme('neutral', 'a')};
       }
     }
 
@@ -38,7 +39,7 @@ export const AddressInputWrapper = styled.div`
       line-height: 25px;
 
       ::placeholder {
-        color: ${({ theme }): string => theme.color.neutral[9]};
+        color: ${getTheme('neutral', 'a')};
       }
     }
   }
@@ -50,14 +51,14 @@ export const AddressInputWrapper = styled.div`
     height: 25px;
     padding: 3px 14px;
     margin-left: 5px;
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
     border-radius: 15px;
     align-items: center;
     transition: 0.2s;
     cursor: pointer;
 
     :hover {
-      background-color: ${({ theme }): string => theme.color.neutral[11]};
+      background-color: ${getTheme('neutral', 'b')};
     }
 
     .address-book {
@@ -78,7 +79,7 @@ export const AddressInputWrapper = styled.div`
     height: auto;
     max-height: 142px;
     left: 0;
-    border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+    border: 1px solid ${getTheme('neutral', '_7')};
     border-bottom-right-radius: 25px;
     border-bottom-left-radius: 25px;
     z-index: 4;
@@ -95,19 +96,19 @@ export const AddressInputWrapper = styled.div`
 
   &.error {
     .input-wrapper {
-      border-color: ${({ theme }): string => theme.color.red[2]};
+      border-color: ${getTheme('red', '_5')};
     }
 
     .list-wrapper {
-      border-color: ${({ theme }): string => theme.color.red[2]};
-      border-top-color: ${({ theme }): string => theme.color.neutral[6]};
+      border-color: ${getTheme('red', '_5')};
+      border-top-color: ${getTheme('neutral', '_7')};
     }
   }
 
   .error-message {
     position: relative;
     padding: 0 16px;
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.captionReg};
-    color: ${({ theme }): string => theme.color.red[2]};
+    ${fonts.captionReg};
+    color: ${getTheme('red', '_5')};
   }
 `;

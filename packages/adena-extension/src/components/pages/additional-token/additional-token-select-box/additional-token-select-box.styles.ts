@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AdditionalTokenSelectBoxWrapper = styled.div`
   position: relative;
@@ -15,8 +16,8 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     height: auto;
     min-height: 48px;
     border-radius: 30px;
-    border: 1px solid ${({ theme }): string => theme.color.neutral[6]};
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
+    border: 1px solid ${getTheme('neutral', '_7')};
+    background-color: ${getTheme('neutral', '_9')};
     overflow: hidden;
     z-index: 2;
 
@@ -38,8 +39,8 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     .title {
       width: 100%;
       padding: 0 4px;
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
-      color: ${({ theme }): string => theme.color.neutral[9]};
+      ${fonts.body2Reg};
+      color: ${getTheme('neutral', 'a')};
     }
 
     .icon-wrapper {
@@ -50,7 +51,7 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
 
     &.selected {
       .title {
-        color: ${({ theme }): string => theme.color.neutral[0]};
+        color: ${getTheme('neutral', '_1')};
       }
     }
   }
@@ -59,10 +60,10 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     .search-input-wrapper {
       height: 48px;
       padding: 4px 5px;
-      border-top: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+      border-top: 1px solid ${getTheme('neutral', '_7')};
 
       & > * {
-        background-color: ${({ theme }): string => theme.color.neutral[6]};
+        background-color: ${getTheme('neutral', '_7')};
       }
     }
   }

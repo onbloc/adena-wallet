@@ -1,14 +1,15 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import { FontsType } from '@styles/theme';
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button, ButtonProps } from '@components/atoms';
+import mixins from '@styles/mixins';
 
-interface ButtonProps {
+interface EachButtonProps {
   onClick: () => void;
   text: string;
   props?: React.ComponentPropsWithoutRef<'button'>;
-  hierarchy?: ButtonHierarchy;
+  hierarchy?: ButtonProps['hierarchy'];
   bgColor?: string;
   fontType?: FontsType;
 }
@@ -18,12 +19,12 @@ interface WrapperStyleProps {
 }
 
 interface DoubleButtonProps extends WrapperStyleProps {
-  leftProps: ButtonProps;
-  rightProps: ButtonProps;
+  leftProps: EachButtonProps;
+  rightProps: EachButtonProps;
 }
 
 const Wrapper = styled.div<WrapperStyleProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
   ${({ margin }): string | undefined => margin && `margin: ${margin}`};
@@ -34,7 +35,7 @@ export const DoubleButton = ({ margin, leftProps, rightProps }: DoubleButtonProp
     <Wrapper margin={margin}>
       <Button
         fullWidth
-        hierarchy={leftProps.hierarchy ?? ButtonHierarchy.Dark}
+        hierarchy={leftProps.hierarchy ?? 'dark'}
         onClick={leftProps.onClick}
         bgColor={leftProps.bgColor}
         {...leftProps.props}
@@ -43,7 +44,7 @@ export const DoubleButton = ({ margin, leftProps, rightProps }: DoubleButtonProp
       </Button>
       <Button
         fullWidth
-        hierarchy={rightProps.hierarchy ?? ButtonHierarchy.Primary}
+        hierarchy={rightProps.hierarchy ?? 'primary'}
         onClick={rightProps.onClick}
         bgColor={rightProps.bgColor}
         {...rightProps.props}

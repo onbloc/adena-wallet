@@ -1,5 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
-import theme from './theme';
+import { fonts } from './theme';
 
 export const GlobalStyle = createGlobalStyle`
   html, body {
@@ -92,31 +92,31 @@ export const GlobalStyle = createGlobalStyle`
   };
 
   h1 {
-    ${theme.fonts.header1}
+    ${fonts.header1}
   }
 
   h2 {
-    ${theme.fonts.header2}
+    ${fonts.header2}
   }
 
   h3 {
-    ${theme.fonts.header3}
+    ${fonts.header3}
   }
 
   h4 {
-    ${theme.fonts.header4}
+    ${fonts.header4}
   }
 
   h5 {
-    ${theme.fonts.header5}
+    ${fonts.header5}
   }
 
   h6 {
-    ${theme.fonts.header6}
+    ${fonts.header6}
   }
 
   h7 {
-    ${theme.fonts.header7}
+    ${fonts.header7}
   }
 
 `;

@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { Text, Button } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 const CopyButton = styled(Button)<{ isClicked: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
   transition: background-color 0.4s ease;
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[11]};
+    background-color: ${getTheme('neutral', 'b')};
   }
 `;
 
@@ -24,6 +25,7 @@ export const Copy = ({
 }): JSX.Element => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 
+  const theme = useTheme();
   const handleButtonClick = useCallback(() => {
     setIsClicked((prev: boolean) => !prev);
     navigator.clipboard.writeText(copyStr);
@@ -42,7 +44,7 @@ export const Copy = ({
       onClick={handleButtonClick}
       disabled={isClicked}
       tabIndex={tabIndex && tabIndex}
-      bgColor={theme.color.neutral[6]}
+      bgColor={theme.neutral._7}
     >
       <Text type='body2Reg'>{isClicked ? 'Copied!' : 'Copy'}</Text>
     </CopyButton>

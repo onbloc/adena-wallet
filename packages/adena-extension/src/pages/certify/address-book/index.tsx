@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text, ListBox } from '@components/atoms';
-import theme from '@styles/theme';
 import { CloseShadowButton } from '@components/molecules';
 import plus from '@assets/plus.svg';
 import { RoutePath } from '@router/path';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 type navigateStatus = 'add' | 'edit';
 
@@ -21,6 +21,7 @@ export interface BookListProps {
 }
 
 const AddressBook = (): JSX.Element => {
+  const theme = useTheme();
   const { addressBookService } = useAdenaContext();
   const navigate = useNavigate();
   const [addressList, setAddressList] = useState<any>([]);
@@ -54,7 +55,7 @@ const AddressBook = (): JSX.Element => {
               left={<Text type='body2Bold'>{formatNickname(v.name, 15)}</Text>}
               center={null}
               right={
-                <Text type='body2Reg' color={theme.color.neutral[9]} margin='0px 0px 0px auto'>
+                <Text type='body2Reg' color={theme.neutral.a} margin='0px 0px 0px auto'>
                   {formatAddress(v.address)}
                 </Text>
               }
@@ -66,7 +67,7 @@ const AddressBook = (): JSX.Element => {
             />
           ))
         ) : (
-          <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+          <Text className='desc' type='body1Reg' color={theme.neutral.a}>
             No addresses to display
           </Text>
         )}
@@ -77,7 +78,7 @@ const AddressBook = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -92,7 +93,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   margin-bottom: 12px;
 `;

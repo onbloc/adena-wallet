@@ -1,4 +1,5 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ApproveAddingNetworkTableWrapper = styled.div`
   display: flex;
@@ -11,7 +12,7 @@ export const ApproveAddingNetworkTableWrapper = styled.div`
     display: flex;
     flex-direction: column;
     padding: 8px 16px;
-    background-color: ${({ theme }): string => theme.color.neutral[8]};
+    background-color: ${getTheme('neutral', '_9')};
     margin-bottom: 2px;
 
     &:first-child {
@@ -26,14 +27,14 @@ export const ApproveAddingNetworkTableWrapper = styled.div`
     }
 
     .title {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
-      color: ${({ theme }): string => theme.color.neutral[9]};
+      ${fonts.body1Reg};
+      color: ${getTheme('neutral', 'a')};
       margin-bottom: 4px;
     }
 
     .value {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
-      color: ${({ theme }): string => theme.color.neutral[0]};
+      ${fonts.body1Reg};
+      color: ${getTheme('neutral', '_1')};
       word-break: break-all;
     }
   }

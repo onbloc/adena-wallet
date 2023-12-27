@@ -1,6 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
 import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 interface StatusDotProps {
   status: boolean;
@@ -12,8 +15,7 @@ const Dot = styled.div<{ status: boolean }>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: ${({ status, theme }): string =>
-    status ? theme.color.green[2] : theme.color.red[2]};
+  background-color: ${({ status, theme }): string => (status ? theme.green._5 : theme.red._5)};
   cursor: pointer;
   &:hover > .static-tooltip {
     visibility: visible;
@@ -23,13 +25,13 @@ const Dot = styled.div<{ status: boolean }>`
 `;
 
 const Tooltip = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: max-content;
   height: 25px;
   visibility: hidden;
   z-index: 1;
   padding: 0px 17px;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   border-radius: 13px;
   position: absolute;
   right: 0px;

@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import styled, { CSSProp, css } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'You’re All Set!',
@@ -13,14 +14,14 @@ const text = {
 };
 
 const popupStyle = css`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
 `;
 
 const defaultStyle = css`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
+  ${mixins.flex('column', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -58,12 +59,7 @@ export const LaunchAdena = (): JSX.Element => {
   return (
     <Wrapper isPopup={location?.state?.type !== 'SEED'}>
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={handleNextButtonClick}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={handleNextButtonClick} margin='auto 0px 0px'>
         <Text type='body1Bold'>Start</Text>
       </Button>
     </Wrapper>

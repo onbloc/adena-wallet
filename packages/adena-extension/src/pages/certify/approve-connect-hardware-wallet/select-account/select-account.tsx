@@ -1,27 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { LedgerConnector, LedgerAccount } from 'adena-module';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { Account } from 'adena-module';
 import IconAddSymbol from '@assets/add-symbol.svg';
 import IconCheck from '@assets/check.svg';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
 import { RoutePath } from '@router/path';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Select Accounts',
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
@@ -53,8 +54,8 @@ const AccountListContainer = styled.div`
   width: 320px;
   height: 166px;
   border-radius: 10px;
-  border: 1px solid ${theme.color.neutral[6]};
-  background-color: ${theme.color.neutral[8]};
+  border: 1px solid ${getTheme('neutral', '_7')};
+  background-color: ${getTheme('neutral', '_9')};
   overflow: hidden;
 
   @keyframes rotate {
@@ -82,7 +83,7 @@ const AccountListContainer = styled.div`
       display: flex;
       width: 100%;
       padding: 20px;
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
       justify-content: center;
       align-items: center;
     }
@@ -96,8 +97,8 @@ const AccountListContainer = styled.div`
     height: 46px;
     align-items: center;
     justify-content: center;
-    color: ${theme.color.neutral[9]};
-    border-top: 1px solid ${theme.color.neutral[6]};
+    color: ${getTheme('neutral', 'a')};
+    border-top: 1px solid ${getTheme('neutral', '_7')};
     border-radius: 0;
 
     & .icon-loading {
@@ -110,7 +111,7 @@ const AccountListContainer = styled.div`
         animation: rotate 1.5s infinite;
       }
       circle {
-        stroke: ${theme.color.neutral[9]};
+        stroke: ${getTheme('neutral', 'a')};
         stroke-dasharray: 10;
         stroke-dashoffset: 7;
       }
@@ -121,7 +122,7 @@ const AccountListContainer = styled.div`
     }
 
     &:hover {
-      background-color: ${theme.color.neutral[6]};
+      background-color: ${getTheme('neutral', '_7')};
     }
   }
 
@@ -133,21 +134,21 @@ const AccountListContainer = styled.div`
     padding: 10px 20px;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid ${theme.color.neutral[6]};
+    border-bottom: 1px solid ${getTheme('neutral', '_7')};
 
     .address {
       margin-right: 10px;
     }
 
     .path {
-      color: ${theme.color.neutral[9]};
+      color: ${getTheme('neutral', 'a')};
     }
 
     .check {
       display: inline-flex;
       width: 20px;
       height: 20px;
-      border: 1px solid ${theme.color.neutral[4]};
+      border: 1px solid ${getTheme('neutral', '_5')};
       border-radius: 4px;
       cursor: pointer;
 
@@ -160,8 +161,8 @@ const AccountListContainer = styled.div`
 
       &.active,
       &.disabled {
-        background-color: ${theme.color.primary[4]};
-        border: 1px solid ${theme.color.primary[4]};
+        background-color: ${getTheme('primary', '_7')};
+        border: 1px solid ${getTheme('primary', '_7')};
         img {
           display: block;
         }
@@ -348,7 +349,6 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
 
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Primary}
         margin='auto 0px 0px'
         disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}

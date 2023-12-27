@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
 import IconConnectFail from '@assets/connect-fail-permission.svg';
 import { TitleWithDesc } from '@components/molecules';
+import mixins from '@styles/mixins';
 
 const Container = styled.main`
   display: flex;
@@ -12,7 +13,7 @@ const Container = styled.main`
 `;
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   position: relative;
   width: 100%;
   gap: 16px;

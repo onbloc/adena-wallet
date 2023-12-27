@@ -1,7 +1,8 @@
 import React from 'react';
-import styled, { CSSProp, CSSProperties } from 'styled-components';
+import styled, { CSSProperties, useTheme } from 'styled-components';
+
 import { Text } from '@components/atoms';
-import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 type WarningKeyType =
   | 'revealPassword'
@@ -56,10 +57,11 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
 };
 
 export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Element => {
+  const theme = useTheme();
   return (
     <Wrapper margin={margin} padding={padding}>
       {warningType[type].title && (
-        <Text type='header7' color={theme.color.red[6]}>
+        <Text type='header7' color={theme.red.a}>
           {warningType[type].title}
         </Text>
       )}
@@ -73,7 +75,7 @@ export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Elem
 };
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'space-between')};
+  ${mixins.flex('column', 'flex-start', 'space-between')};
   width: 100%;
   padding: ${(props): CSSProperties['padding'] => props.padding ?? '14px 16px'};
   gap: 11px;

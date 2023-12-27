@@ -1,4 +1,4 @@
-import theme, { FontsType } from '@styles/theme';
+import { FontsType, fonts } from '@styles/theme';
 import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
 interface TokenBalanceWrapperProps {
@@ -23,7 +23,7 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
     .denom {
       display: contents;
       color: ${({ fontColor }): string => fontColor};
-      ${({ fontStyleKey }): FlattenSimpleInterpolation => theme.fonts[fontStyleKey]};
+      ${({ fontStyleKey }): FlattenSimpleInterpolation => fonts[fontStyleKey]};
       text-align: bottom;
     }
   }

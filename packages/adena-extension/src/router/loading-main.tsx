@@ -1,6 +1,6 @@
 import React, { ReactElement, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useMatch } from 'react-router-dom';
 
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
@@ -9,32 +9,34 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { CommonState, WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 import { GhostButtons } from '@components/molecules';
+import { getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${mixins.flex('column', 'center', 'stretch')};
   position: absolute;
   width: 100%;
   height: 100%;
   padding: 78px 24px;
   top: 0px;
   z-index: 99;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
 `;
 
 const RoundsBox = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-end', 'center')};
+  ${mixins.flex('column', 'flex-end', 'center')};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')}
+  ${mixins.flex('column', 'center', 'flex-start')}
   width: 100%;
   gap: 12px;
   margin-top: 31px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')}
+  ${mixins.flex('row', 'center', 'flex-start')}
   width: 100%;
   height: 60px;
 `;

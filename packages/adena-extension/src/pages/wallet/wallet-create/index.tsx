@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default.svg';
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { DoubleButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { existsPopups } from '@inject/message/methods';
 
 import GoogleSignInButton from './google-signin-button';
+import mixins from '@styles/mixins';
 
 export const WalletCreate = (): JSX.Element => {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ export const WalletCreate = (): JSX.Element => {
       <Logo src={logo} alt='logo' />
       <GoogleSignInButton onClick={googleLoginHandler} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={onCreateButtonClick}>
+      <Button fullWidth onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
       </Button>
       <DoubleButton
@@ -91,13 +92,13 @@ export const WalletCreate = (): JSX.Element => {
         leftProps={{
           onClick: importWalletHandler,
           text: 'Import Wallet',
-          hierarchy: ButtonHierarchy.Normal,
+          hierarchy: 'normal',
           fontType: 'body2Bold',
         }}
         rightProps={{
           onClick: ConnectLedgerHandler,
           text: 'Connect Ledger',
-          hierarchy: ButtonHierarchy.Normal,
+          hierarchy: 'normal',
           fontType: 'body2Bold',
         }}
       />
@@ -105,24 +106,27 @@ export const WalletCreate = (): JSX.Element => {
   );
 };
 
-const PoweredByWeb3AuthWihDivider = (): JSX.Element => (
-  <>
-    <Text type='light11' color={theme.color.neutral[9]}>
-      Powered by Web3Auth
-    </Text>
-    <Divider />
-  </>
-);
+const PoweredByWeb3AuthWihDivider = (): JSX.Element => {
+  const theme = useTheme();
+  return (
+    <>
+      <Text type='light11' color={theme.neutral.a}>
+        Powered by Web3Auth
+      </Text>
+      <Divider />
+    </>
+  );
+};
 
 const Divider = styled.span`
   width: calc(100% - 48px);
   height: 1px;
-  background-color: ${({ theme }): string => theme.color.neutral[4]};
+  background-color: ${getTheme('neutral', '_5')};
   margin: 20px 0px;
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
+  ${mixins.flex('column', 'center', 'space-between')};
   width: 100%;
   height: 100%;
   & > header {

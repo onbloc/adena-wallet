@@ -1,9 +1,11 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { LeftArrowBtn } from '@components/atoms';
 import logo from '@assets/logo-withIcon.svg';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 type ProgressLevel = 'first' | 'second' | 'third';
 
@@ -15,10 +17,10 @@ interface ProgressMenuProps {
 }
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: 100%;
   height: 100%;
-  border-bottom: 4px solid ${({ theme }): string => theme.color.neutral[6]};
+  border-bottom: 4px solid ${getTheme('neutral', '_7')};
   position: relative;
   padding: 0px 18px 0px 12px;
 `;
@@ -29,8 +31,8 @@ const Button = styled(LeftArrowBtn)`
 `;
 
 const Hr = styled.hr<ProgressMenuProps>`
-  border-color: ${({ theme }): string => theme.color.primary[3]};
-  background-color: ${({ theme }): string => theme.color.primary[3]};
+  border-color: ${getTheme('primary', '_6')};
+  background-color: ${getTheme('primary', '_6')};
   width: ${({ progressLevel }): '30%' | '60%' | '100%' =>
     progressLevel === 'first' ? '30%' : progressLevel === 'second' ? '60%' : '100%'};
   height: 4px;

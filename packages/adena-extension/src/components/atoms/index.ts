@@ -24,3 +24,4 @@ export * from './copy-button';
 export * from './full-button-right-icon';
 export * from './hamburger-menu-button';
 export * from './skeleton-box';
+export * from './secure-textarea';

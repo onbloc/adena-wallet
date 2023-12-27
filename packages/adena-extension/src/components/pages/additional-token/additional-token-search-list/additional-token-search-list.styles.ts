@@ -1,4 +1,6 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
+
+import { fonts, getTheme } from '@styles/theme';
 
 export const AdditionalTokenSearchListWrapper = styled.div`
   display: flex;
@@ -18,8 +20,8 @@ export const AdditionalTokenSearchListWrapper = styled.div`
     display: flex;
     width: 100%;
     margin: 40px auto 180px auto;
-    color: ${({ theme }): string => theme.color.neutral[9]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.body1Reg};
     justify-content: center;
     align-items: center;
   }
@@ -36,15 +38,15 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
   cursor: pointer;
 
   &:hover {
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    background-color: ${getTheme('neutral', '_7')};
   }
 
   .title {
     display: inline-block;
     flex-shrink: 0;
     max-width: calc(100% - 140px);
-    color: ${({ theme }): string => theme.color.neutral[0]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+    color: ${getTheme('neutral', '_1')};
+    ${fonts.body2Reg};
 
     .name {
       overflow: hidden;
@@ -58,8 +60,8 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
     display: inline-block;
     flex-shrink: 0;
     max-width: 140px;
-    color: ${({ theme }): string => theme.color.neutral[9]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg}
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.body2Reg}
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

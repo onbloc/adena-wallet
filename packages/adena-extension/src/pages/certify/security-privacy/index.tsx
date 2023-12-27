@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { Account, isLedgerAccount, isSeedAccount } from 'adena-module';
 
@@ -8,6 +8,7 @@ import { BottomFixedButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
+import mixins from '@styles/mixins';
 
 const getMenuMakerInfo = (
   account: Account | null,
@@ -27,7 +28,7 @@ const getMenuMakerInfo = (
   },
   {
     title: 'Export Private Key',
-    navigatePath: RoutePath.ApproachPasswordPhrase,
+    navigatePath: RoutePath.ExportPrivateKey,
     mode: 'DEFAULT',
     disabled: !account || isLedgerAccount(account),
   },
@@ -79,7 +80,7 @@ export const SecurityPrivacy = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

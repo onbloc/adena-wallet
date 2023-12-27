@@ -1,11 +1,14 @@
 import React from 'react';
+import styled from 'styled-components';
+
 import { Text } from '@components/atoms';
-import styled, { CSSProp } from 'styled-components';
 import IconLogo from '../../../install/assets/logo-typeB.svg';
 import IconHelp from '@assets/help-fill.svg';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 const Container = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')}
+  ${mixins.flex('row', 'center', 'space-between')}
   position: absolute;
   top: 0;
   display: flex;
@@ -14,13 +17,13 @@ const Container = styled.div`
   padding: 0;
   width: 100%;
   height: fit-content;
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  background-color: ${getTheme('neutral', '_9')};
   padding: 40px 40px 0px;
   .help-text {
     font-size: 19px;
   }
   .help-btn {
-    ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')}
+    ${mixins.flex('row', 'center', 'center')}
     font-size: 19px;
     font-weight: 600;
     line-height: 24px;

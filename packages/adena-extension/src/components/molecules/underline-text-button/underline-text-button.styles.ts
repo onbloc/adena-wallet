@@ -1,4 +1,6 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
+
+import { fonts, getTheme } from '@styles/theme';
 
 export const UnderlineTextButtonWrapper = styled.div`
   display: flex;
@@ -17,8 +19,8 @@ export const UnderlineTextButtonWrapper = styled.div`
   }
 
   .title {
-    color: ${({ theme }): string => theme.color.neutral[9]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg};
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.body1Reg};
     white-space: pre;
     text-decoration: underline;
   }

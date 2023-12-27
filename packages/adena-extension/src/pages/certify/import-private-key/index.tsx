@@ -1,13 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
 
-import { Text, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
-import { SeedBox, TitleWithDesc, TermsCheckbox } from '@components/molecules';
+import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
+import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
+import mixins from '@styles/mixins';
 
 const content = {
   title: 'Import Private Key',
@@ -84,13 +85,7 @@ export const ImportPrivateKey = (): JSX.Element => {
   return (
     <Wrapper onKeyDown={onKeyDown}>
       <TitleWithDesc title={content.title} desc={content.desc} />
-      <SeedBox
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        error={error}
-        scroll={true}
-      />
+      <SecureTextarea value={value} onChange={onChange} onKeyDown={onKeyDown} error={error} />
       {error && <ErrorText text={errorMessage} />}
       <TermsWrap>
         <TermsCheckbox
@@ -100,12 +95,7 @@ export const ImportPrivateKey = (): JSX.Element => {
           text={content.terms}
           checkboxPos='TOP'
         />
-        <Button
-          fullWidth
-          hierarchy={ButtonHierarchy.Primary}
-          disabled={!isImportButton}
-          onClick={nextButtonClick}
-        >
+        <Button fullWidth disabled={!isImportButton} onClick={nextButtonClick}>
           <Text type='body1Bold'>Import</Text>
         </Button>
       </TermsWrap>
@@ -114,7 +104,7 @@ export const ImportPrivateKey = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

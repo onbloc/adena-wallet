@@ -1,17 +1,20 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+
 import { Text, Icon } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 interface CloseTitleMenuProps {
   title?: string;
 }
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'center')};
+  ${mixins.flex('row', 'center', 'center')};
   width: 100%;
   height: 100%;
-  border-bottom: 1px solid ${({ theme }): string => theme.color.neutral[6]};
+  border-bottom: 1px solid ${getTheme('neutral', '_7')};
   position: relative;
   padding: 0px 18px 0px 12px;
 `;
@@ -24,14 +27,14 @@ const Button = styled.button`
 
   .icon-close {
     * {
-      stroke: ${({ theme }): string => theme.color.neutral[9]};
+      stroke: ${getTheme('neutral', 'a')};
       transition: 0.2s;
     }
   }
 
   &:hover {
     * {
-      stroke: ${({ theme }): string => theme.color.neutral[0]};
+      stroke: ${getTheme('neutral', '_1')};
     }
   }
 `;

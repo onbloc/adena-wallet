@@ -11,7 +11,7 @@ interface CircleProps {
 const CircleStyle = styled.div<CircleProps>`
   width: ${({ width }): string | undefined => width && width};
   height: ${({ height }): string | undefined => height && height};
-  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.color.neutral[4])};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.neutral._5)};
   margin: ${({ margin }): string | undefined => margin && margin};
   border-radius: 50%;
 `;

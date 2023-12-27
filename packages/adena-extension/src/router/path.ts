@@ -50,7 +50,6 @@ export enum RoutePath {
   // settings
   Setting = '/settings',
   SettingChangePassword = '/settings/change-password',
-  SettingExportAccount = '/settings/export-account',
   SettingSeedPhrase = '/settings/seed-phrase',
   ViewPrivateKey = '/settings/view-private-key',
   ViewSeedPhrase = '/settings/view-seed-phrase',
@@ -64,8 +63,7 @@ export enum RoutePath {
   RevealPasswordPhrase = '/settings/security-privacy/reveal-password-phrase',
   RevealPrivatePhrase = '/settings/security-privacy/reveal-private-phrase',
   AboutAdena = '/settings/about-adena',
-  ApproachPasswordPhrase = '/settings/security-privacy/export-private-key/approach-password-phrase',
-  ApproachPrivatePhrase = '/settings/security-privacy/export-private-key/approach-private-phrase',
+  ExportPrivateKey = '/settings/security-privacy/export-private-key',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
   ApproveHardwareWalletConnect = '/approve/settings/hardware-wallet',

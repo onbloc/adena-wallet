@@ -1,7 +1,8 @@
 import React, { ReactElement } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button, ButtonProps } from '@components/atoms';
+import mixins from '@styles/mixins';
 
 interface DefaultButtonProps {
   onClick: () => void;
@@ -10,7 +11,7 @@ interface DefaultButtonProps {
 
 interface ConfirmButtonProps extends DefaultButtonProps {
   text: string;
-  hierarchy?: ButtonHierarchy;
+  hierarchy?: ButtonProps['hierarchy'];
 }
 
 interface CancelAndConfirmLocation {
@@ -20,7 +21,7 @@ interface CancelAndConfirmLocation {
 
 const Wrapper = styled.div`
   margin-top: auto;
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'space-between')};
+  ${mixins.flex('row', 'center', 'space-between')};
   width: 100%;
   gap: 10px;
 `;
@@ -33,7 +34,7 @@ export const CancelAndConfirmButton = ({
     <Wrapper>
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy='dark'
         onClick={cancelButtonProps.onClick}
         {...cancelButtonProps.props}
       >
@@ -41,7 +42,7 @@ export const CancelAndConfirmButton = ({
       </Button>
       <Button
         fullWidth
-        hierarchy={confirmButtonProps.hierarchy ?? ButtonHierarchy.Primary}
+        hierarchy={confirmButtonProps.hierarchy ?? 'primary'}
         onClick={confirmButtonProps.onClick}
         {...confirmButtonProps.props}
       >

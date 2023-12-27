@@ -1,7 +1,6 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
-import theme from '@styles/theme';
 import { Text } from '../../atoms';
 
 interface TitleWithDescProps {
@@ -24,10 +23,11 @@ export const TitleWithDesc = ({
   isWarningDesc = false,
   className = '',
 }: TitleWithDescProps): JSX.Element => {
+  const theme = useTheme();
   return (
     <Wrapper className={className}>
       <Text type='header4'>{title}</Text>
-      <Text type='body1Reg' color={isWarningDesc ? theme.color.red[6] : theme.color.neutral[9]}>
+      <Text type='body1Reg' color={isWarningDesc ? theme.red.a : theme.neutral.a}>
         {desc}
       </Text>
     </Wrapper>

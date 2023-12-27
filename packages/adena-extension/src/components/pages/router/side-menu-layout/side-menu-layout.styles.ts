@@ -1,4 +1,7 @@
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
+
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 export const SideMenuOverlay = styled.div<{ open: boolean }>`
   position: fixed;
@@ -29,8 +32,8 @@ export const SideMenuBackground = styled.div`
 `;
 
 export const SideMenuContent = styled.div<{ open: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'space-between')};
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  ${mixins.flex('column', 'center', 'space-between')};
+  background-color: ${getTheme('neutral', '_8')};
   position: fixed;
   top: 0px;
   left: ${({ open }): '0px' | '-100%' => (open ? '0px' : '-100%')};

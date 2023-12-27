@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -13,23 +13,25 @@ import { TransactionHistoryMapper } from '@repositories/transaction/mapper/trans
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
+import { fonts } from '@styles/theme';
 
-const HistoryLayout = styled.div`
+const StyledHistoryLayout = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
   height: auto;
   padding: 24px 20px;
   margin-bottom: 60px;
-
-  .title-wrapper {
-    margin-bottom: 12px;
-
-    .title {
-      ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
-    }
-  }
 `;
+
+const StyledTitleWrapper = styled.div`
+  margin-bottom: 12px;
+`;
+
+const StyledTitle = styled.span`
+  ${fonts.header4};
+`;
+
 const HistoryContainer: React.FC = () => {
   const navigate = useNavigate();
   const { currentAddress } = useCurrentAccount();
@@ -162,18 +164,16 @@ const HistoryContainer: React.FC = () => {
   );
 
   return (
-    <HistoryLayout>
-      <div className='title-wrapper'>
-        <span className='title'>History</span>
-      </div>
-      <div className='transaction-history-wrapper'>
-        <TransactionHistory
-          status={status}
-          transactionInfoLists={TransactionHistoryMapper.queryToDisplay(data?.pages ?? [])}
-          onClickItem={onClickItem}
-        />
-      </div>
-    </HistoryLayout>
+    <StyledHistoryLayout>
+      <StyledTitleWrapper>
+        <StyledTitle>History</StyledTitle>
+      </StyledTitleWrapper>
+      <TransactionHistory
+        status={status}
+        transactionInfoLists={TransactionHistoryMapper.queryToDisplay(data?.pages ?? [])}
+        onClickItem={onClickItem}
+      />
+    </StyledHistoryLayout>
   );
 };
 

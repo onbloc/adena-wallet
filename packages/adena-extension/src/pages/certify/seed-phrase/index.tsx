@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import { ErrorText, DefaultInput } from '@components/atoms';
@@ -8,6 +8,7 @@ import { RoutePath } from '@router/path';
 import { WalletError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Reveal Seed Phrase',
@@ -15,7 +16,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

@@ -1,13 +1,13 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
-import { Text, ButtonHierarchy } from '@components/atoms';
+import { Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
-import theme from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
+import mixins from '@styles/mixins';
 
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
@@ -16,6 +16,7 @@ const forgotPasswordContent =
   'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
 export const ResetWallet = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const { state } = useLocation();
   const { clear } = useClear();
@@ -34,7 +35,7 @@ export const ResetWallet = (): JSX.Element => {
       <Text type='header4' margin='23px 0px 12px'>
         Reset Wallet
       </Text>
-      <Text type='body1Reg' color={theme.color.neutral[9]} textAlign='center'>
+      <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
         {state?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton
@@ -42,7 +43,7 @@ export const ResetWallet = (): JSX.Element => {
         confirmButtonProps={{
           onClick: resetButtonClick,
           text: 'Reset',
-          hierarchy: ButtonHierarchy.Danger,
+          hierarchy: 'danger',
         }}
       />
     </Wrapper>
@@ -50,7 +51,7 @@ export const ResetWallet = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 56px;

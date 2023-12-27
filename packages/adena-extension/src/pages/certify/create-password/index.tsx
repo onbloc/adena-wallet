@@ -2,9 +2,10 @@ import React from 'react';
 import styled, { CSSProp, css } from 'styled-components';
 import { useLocation } from 'react-router-dom';
 
-import { Text, DefaultInput, ErrorText, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { useCreatePassword } from '@hooks/certify/use-create-password';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Create\na Password',
@@ -12,14 +13,14 @@ const text = {
 };
 
 const popupStyle = css`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
 `;
 
 const defaultStyle = css`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -75,13 +76,7 @@ export const CreatePassword = (): JSX.Element => {
           Terms of Use.
         </button>
       </TermsCheckbox>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        disabled={buttonState.disabled}
-        onClick={buttonState.onClick}
-        tabIndex={5}
-      >
+      <Button fullWidth disabled={buttonState.disabled} onClick={buttonState.onClick} tabIndex={5}>
         <Text type='body1Bold'>Save</Text>
       </Button>
     </Wrapper>

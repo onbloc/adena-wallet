@@ -1,7 +1,10 @@
 import React from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { CSSProp } from 'styled-components';
+
 import checkOff from '@assets/check-off.svg';
 import checkOn from '@assets/check-on.svg';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 
 type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
@@ -16,20 +19,20 @@ interface TermsCheckboxProps {
 }
 
 const Wrapper = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
+  ${mixins.flex('row', 'center', 'flex-start')};
   width: 100%;
   margin: auto 0px 10px;
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body2Reg};
+  ${fonts.body2Reg};
 `;
 
 const Label = styled.label<{ checkboxPos: CheckboxPos }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
+  ${mixins.flex('row', 'center', 'flex-start')};
   position: relative;
   padding-left: 32px;
   cursor: pointer;
   &:before {
-    ${({ theme, checkboxPos }): CSSProp =>
-      checkboxPos === 'TOP' ? theme.mixins.posTopLeft('2px') : theme.mixins.posTopCenterLeft()};
+    ${({ checkboxPos }): CSSProp =>
+      checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
     width: 20px;
@@ -45,7 +48,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   &,
   * {
     font: inherit;
-    color: ${({ theme }): string => theme.color.neutral[9]};
+    color: ${getTheme('neutral', 'a')};
   }
 `;
 

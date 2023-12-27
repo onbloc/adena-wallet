@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { Text } from '@components/atoms';
 import { LoadingNft } from '@components/molecules';
-import theme from '@styles/theme';
+import { getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
   .desc {
     position: absolute;
     top: 210px;
@@ -21,6 +22,7 @@ const Wrapper = styled.main`
 `;
 
 export const Nft = (): JSX.Element => {
+  const theme = useTheme();
   const [state] = useState('FINISH');
   const [datas] = useState([]);
 
@@ -31,7 +33,7 @@ export const Nft = (): JSX.Element => {
         datas.length > 0 ? (
           datas.map(() => <></>)
         ) : (
-          <Text className='desc' type='body1Reg' color={theme.color.neutral[9]}>
+          <Text className='desc' type='body1Reg' color={theme.neutral.a}>
             No NFTs to display
           </Text>
         )

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { ApproveLedgerLoadingWrapper } from './approve-ledger-loading.styles';
 
@@ -18,7 +18,7 @@ export const ApproveLedgerLoading: React.FC<ApproveLedgerLoadingProps> = ({ onCl
       />
       <Button
         fullWidth
-        hierarchy={ButtonHierarchy.Dark}
+        hierarchy='dark'
         className={'cancel-button'}
         margin='auto 0px 0px'
         onClick={onClickCancel}

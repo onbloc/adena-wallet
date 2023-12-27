@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default-v2.svg';
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
-import theme from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const menuMakerInfo = [
   {
@@ -41,6 +41,7 @@ const menuMakerInfo = [
 ];
 
 export const AboutAdena = (): JSX.Element => {
+  const theme = useTheme();
   const [version, setVersion] = useState('');
   const navigate = useNavigate();
 
@@ -64,7 +65,7 @@ export const AboutAdena = (): JSX.Element => {
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <Text type='light13' color={theme.color.neutral[9]} margin='0px 0px 22px'>
+      <Text type='light13' color={theme.neutral.a} margin='0px 0px 22px'>
         {`Version ${version}`}
       </Text>
       {menuMakerInfo.map((v, i) => (
@@ -82,7 +83,7 @@ export const AboutAdena = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 36px;

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, Button, ButtonHierarchy, Copy } from '@components/atoms';
+import { Text, Button, Copy } from '@components/atoms';
 import { SeedBox, TitleWithDesc } from '@components/molecules';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Reveal Seed Phrase',
@@ -11,7 +12,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${mixins.flex('column', 'center', 'stretch')};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -22,7 +23,7 @@ const Wrapper = styled.main`
 `;
 
 const SeedBoxWrap = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')};
+  ${mixins.flex('column', 'center', 'stretch')};
   width: 100%;
   margin-bottom: auto;
   margin-top: 24px;
@@ -42,10 +43,10 @@ export const ViewSeedPhrase = (): JSX.Element => {
     <Wrapper>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <SeedBoxWrap>
-        <SeedBox seeds={mnemonic.split(' ')} scroll={false} />
+        <SeedBox seeds={mnemonic.split(' ')} />
         <Copy copyStr={mnemonic} />
       </SeedBoxWrap>
-      <Button fullWidth hierarchy={ButtonHierarchy.Primary} onClick={doneButtonClick}>
+      <Button fullWidth onClick={doneButtonClick}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

@@ -1,22 +1,25 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useLocation, useMatch } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+
 import { RoutePath } from '@router/path';
+import { CommonState, WalletState } from '@states';
+import { useNetwork } from '@hooks/use-network';
+import { getTheme } from '@styles/theme';
+
 import { HomeMenu } from './home-menu';
 import { TopMenu } from './top-menu';
 import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
-import { useRecoilState } from 'recoil';
-import { CommonState, WalletState } from '@states';
 import { ArrowTitleMenu } from './arrow-title-menu';
 import { TabMenu } from './tab-menu';
-import { useNetwork } from '@hooks/use-network';
 import { CloseTitleMenu } from './close-title-menu';
 
 const Wrapper = styled.header`
   width: 100%;
   height: 48px;
-  background-color: ${({ theme }): string => theme.color.neutral[7]};
+  background-color: ${getTheme('neutral', '_8')};
   position: sticky;
   top: 0px;
   z-index: 2;

@@ -1,3 +1,4 @@
+import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 interface CopyButtonWrapperProps {
@@ -14,14 +15,13 @@ export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
   svg {
     path {
       transition: 0.2s;
-      stroke: ${({ theme, checked }): string =>
-        checked ? theme.color.neutral[0] : theme.color.neutral[9]};
+      stroke: ${({ theme, checked }): string => (checked ? theme.neutral._1 : theme.neutral.a)};
     }
   }
 
   :hover svg {
     path {
-      stroke: ${({ theme }): string => theme.color.neutral[0]};
+      stroke: ${getTheme('neutral', '_1')};
     }
   }
 `;

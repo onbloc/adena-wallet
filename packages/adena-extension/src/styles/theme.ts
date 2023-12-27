@@ -1,49 +1,45 @@
-import { css, FlattenSimpleInterpolation } from 'styled-components';
-import mixins from './mixins';
+import { css, DefaultTheme, FlattenSimpleInterpolation } from 'styled-components';
 
 export enum Neutral {
-  '#FFFFFF', // 0
-  '#E7E8F3', // 1
-  '#A3A3B5', // 2
-  '#646486', // 3
-  '#52526B', // 4
-  '#39394E', // 5
-  '#32323D', // 6
-  '#212128', // 7
-  '#191920', // 8
-  '#777777', // 9
-  '#636368', // 10
-  '#454554', //11
+  _1 = '#FFFFFF',
+  _2 = '#E7E8F3',
+  _3 = '#A3A3B5',
+  _4 = '#646486',
+  _5 = '#52526B',
+  _6 = '#39394E',
+  _7 = '#32323D',
+  _8 = '#212128',
+  _9 = '#191920',
+  a = '#777777',
+  b = '#454554',
 }
 
 export enum Primary {
-  '#B0CCFF', // 0
-  '#78A7FF', // 1
-  '#377DFF', // 2
-  '#0059FF', // 3
-  '#0043C1', // 4
-  '#003290', // 5
-  '#001D52', // 6
+  _3 = '#B0CCFF',
+  _4 = '#78A7FF',
+  _5 = '#377DFF',
+  _6 = '#0059FF',
+  _7 = '#0043C1',
+  _8 = '#003290',
+  _9 = '#001D52',
 }
 
 export enum Red {
-  '#FFA59F', // 0
-  '#FF7B73', // 1
-  '#EF2D21', // 2
-  '#D6160A', // 3
-  '#BB0B00', // 4
-  '#BB160B', // 5
-  '#E7323B', // 6
-  '#B62E29', // 7
-  '#BB150B', // 8
+  _3 = '#FFA59F',
+  _4 = '#FF7B73',
+  _5 = '#EF2D21',
+  _6 = '#D6160A',
+  _7 = '#BB0B00',
+  a = '#E7323B',
+  b = '#B62E29',
 }
 
 export enum Green {
-  '#7DEECC', // 0
-  '#5ADAB3', // 1
-  '#0DBE89', // 2
-  '#09A375', // 3
-  '#057E5A', // 4
+  _3 = '#7DEECC',
+  _4 = '#5ADAB3',
+  _5 = '#0DBE89',
+  _6 = '#09A375',
+  _7 = '#057E5A',
 }
 
 export const fonts: FontsKeyType = {
@@ -182,15 +178,16 @@ type FontsKeyType = { [key in FontsType]: FlattenSimpleInterpolation };
 type ThemeType = typeof theme;
 
 const theme = {
-  color: {
-    neutral: Neutral,
-    primary: Primary,
-    red: Red,
-    green: Green,
-  },
-  mixins,
-  fonts,
+  neutral: Neutral,
+  primary: Primary,
+  red: Red,
+  green: Green,
 };
+
+export const getTheme =
+  <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
+  ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
+    theme[val1][val2];
 
 export default theme;
 

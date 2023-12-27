@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { Text, Button } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 interface ButtonProps {
   primary?: boolean;
@@ -53,7 +55,7 @@ export const BottomFixedButtonGroup = ({
 };
 
 const ButtonWrap = styled.div<{ filled?: boolean }>`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'flex-start', 'center')};
+  ${mixins.flex('row', 'flex-start', 'center')};
   position: fixed;
   left: 0px;
   width: 100%;
@@ -63,38 +65,37 @@ const ButtonWrap = styled.div<{ filled?: boolean }>`
   ${({ filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
     filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
   ${({ filled }): false | 'align-items: center;' | undefined => filled && 'align-items: center;'}
-  background-color: ${({ filled, theme }): string =>
-    filled ? theme.color.neutral[7] : 'transparent'};
+  background-color: ${({ filled, theme }): string => (filled ? theme.neutral._8 : 'transparent')};
   z-index: 1;
 
   & > button {
     margin-right: 10px;
-    background-color: ${({ theme }): string => theme.color.neutral[4]};
+    background-color: ${getTheme('neutral', '_5')};
 
     &:last-child {
       margin-right: 0;
     }
 
     &:hover:not(.disabled) {
-      background-color: ${({ theme }): string => theme.color.neutral[5]};
+      background-color: ${getTheme('neutral', '_6')};
     }
 
     &.primary {
-      background-color: ${({ theme }): string => theme.color.primary[3]};
+      background-color: ${getTheme('primary', '_6')};
 
       &:hover:not(.disabled) {
-        background-color: ${({ theme }): string => theme.color.primary[4]};
+        background-color: ${getTheme('primary', '_7')};
       }
     }
   }
 
   & > button.disabled {
     cursor: default;
-    color: ${({ theme }): string => theme.color.neutral[4]};
-    background-color: ${({ theme }): string => theme.color.neutral[6]};
+    color: ${getTheme('neutral', '_5')};
+    background-color: ${getTheme('neutral', '_7')};
 
     &.primary {
-      background-color: ${({ theme }): string => theme.color.primary[6]};
+      background-color: ${getTheme('primary', '_9')};
     }
   }
 `;

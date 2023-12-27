@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
-import { Text, Icon, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Requesting Permission',
@@ -10,7 +11,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
@@ -26,7 +27,7 @@ export const ConnectRequest = (): JSX.Element => {
     <Wrapper>
       <Icon name='iconConnectLoading' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button disabled fullWidth hierarchy={ButtonHierarchy.Primary} margin='auto 0px 0px'>
+      <Button disabled fullWidth margin='auto 0px 0px'>
         <Text type='body1Bold'>Connect</Text>
       </Button>
     </Wrapper>

@@ -1,13 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { SeedBox, TitleWithDesc, TermsCheckbox, SeedViewAndCopy } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Seed Phrase',
@@ -94,7 +95,6 @@ export const YourSeedPhrase = (): JSX.Element => {
       <TitleWithDesc title={text.title} desc={text.desc} isWarningDesc />
       <SeedBox
         seeds={seeds.split(' ')}
-        scroll={false}
         hasBlurScreen={showBlurScreen}
         hasBlurText={!viewSeedAgree}
         blurScreenText={text.blurScreenText}
@@ -119,7 +119,6 @@ export const YourSeedPhrase = (): JSX.Element => {
         />
         <Button
           fullWidth
-          hierarchy={ButtonHierarchy.Primary}
           disabled={!terms}
           onClick={viewSeedAgree ? handleNextButtonClick : viewSeedAgreeButton}
           tabIndex={2}
@@ -132,7 +131,7 @@ export const YourSeedPhrase = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 50px;

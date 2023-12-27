@@ -1,25 +1,26 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled, { CSSProp, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Text, DefaultInput, Button, ButtonHierarchy } from '@components/atoms';
-import theme from '@styles/theme';
+import { Text, DefaultInput, Button } from '@components/atoms';
+import { fonts } from '@styles/theme';
 import { RoutePath } from '@router/path';
 import { validateWrongPasswordLength } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
+import mixins from '@styles/mixins';
 
 const text = 'Enter\nYour Password';
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'stretch')}
+  ${mixins.flex('column', 'center', 'stretch')}
   width: 100%;
   height: 100%;
 `;
 
 export const Title = styled.p`
-  ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4};
+  ${fonts.header4};
   margin: 54px 0px 56px;
   white-space: pre-wrap;
   width: 100%;
@@ -32,6 +33,8 @@ export const ForgetPwd = styled.button`
 
 export const Login = (): JSX.Element => {
   usePreventHistoryBack();
+
+  const theme = useTheme();
   const navigate = useNavigate();
   const { walletService } = useAdenaContext();
   const location = useLocation();
@@ -115,16 +118,11 @@ export const Login = (): JSX.Element => {
         ref={inputRef}
       />
       <ForgetPwd onClick={onClickForgotButton}>
-        <Text type='body2Reg' color={theme.color.neutral[9]}>
+        <Text type='body2Reg' color={theme.neutral.a}>
           Forgot Password?
         </Text>
       </ForgetPwd>
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={onClickUnLockButton}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={onClickUnLockButton} margin='auto 0px 0px'>
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>

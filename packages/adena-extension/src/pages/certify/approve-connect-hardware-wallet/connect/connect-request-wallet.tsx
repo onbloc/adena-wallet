@@ -1,9 +1,10 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import IconConnectRequestHardwareWallet from '@assets/connect-request-hardware-wallet.svg';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'Open Cosmos App\nin Your Ledger',
@@ -11,7 +12,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
@@ -37,12 +38,7 @@ export const ConnectRequestWallet: React.FC<Props> = ({ onClickClose }) => {
     <Wrapper>
       <img className='icon' src={IconConnectRequestHardwareWallet} alt='logo-image' />
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Dark}
-        margin='auto 0px 0px'
-        onClick={onClickClose}
-      >
+      <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={onClickClose}>
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>

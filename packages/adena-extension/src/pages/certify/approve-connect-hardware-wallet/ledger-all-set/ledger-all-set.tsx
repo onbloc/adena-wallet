@@ -1,8 +1,9 @@
 import React from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled from 'styled-components';
 
-import { Text, Button, ButtonHierarchy } from '@components/atoms';
+import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
+import mixins from '@styles/mixins';
 
 const text = {
   title: 'You’re All Set!',
@@ -10,7 +11,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'center', 'flex-start')};
+  ${mixins.flex('column', 'center', 'flex-start')};
   max-width: 380px;
   padding-top: 50px;
 `;
@@ -23,12 +24,7 @@ export const ApproveHardwareWalletLedgerAllSet = (): JSX.Element => {
   return (
     <Wrapper>
       <TitleWithDesc title={text.title} desc={text.desc} />
-      <Button
-        fullWidth
-        hierarchy={ButtonHierarchy.Primary}
-        onClick={handleNextButtonClick}
-        margin='auto 0px 0px'
-      >
+      <Button fullWidth onClick={handleNextButtonClick} margin='auto 0px 0px'>
         <Text type='body1Bold'>Start</Text>
       </Button>
     </Wrapper>

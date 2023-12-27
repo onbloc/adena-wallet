@@ -1,6 +1,6 @@
 import styled, { CSSProp, css } from 'styled-components';
 import React, { CSSProperties, PropsWithChildren } from 'react';
-import { FontsType } from '@styles/theme';
+import { FontsType, fonts } from '@styles/theme';
 
 interface TextProps extends React.ComponentPropsWithoutRef<'div'> {
   className?: string;
@@ -39,7 +39,7 @@ export const Text = ({
 const Wrapper = styled.div<TextProps>`
   ${(props): CSSProp => {
     return css`
-      ${props.theme.fonts[props.type]};
+      ${fonts[props.type]};
       text-align: ${props.textAlign};
       display: ${props.display};
       color: ${props.color};

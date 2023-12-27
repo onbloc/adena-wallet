@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import styled, { CSSProp } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
 
 import { Text } from '@components/atoms';
 import link from '@assets/share.svg';
-import theme from '@styles/theme';
 import { ExploreState } from '@states';
 import { useAdenaContext } from '@hooks/use-context';
 import LoadingExplore from './loading-explore';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 export const Explore = (): JSX.Element => {
+  const theme = useTheme();
   const { tokenService } = useAdenaContext();
   const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export const Explore = (): JSX.Element => {
             <img src={exploreSite.logo} alt='logo-image' />
             <Contents>
               <Text type='body2Bold'>{exploreSite.name}</Text>
-              <Text type='captionReg' color={theme.color.neutral[9]}>
+              <Text type='captionReg' color={theme.neutral.a}>
                 {exploreSite.description}
               </Text>
             </Contents>
@@ -67,13 +69,13 @@ const MoveToLink = styled.img`
 `;
 
 const Contents = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'center')};
+  ${mixins.flex('column', 'flex-start', 'center')};
   margin-left: 12px;
 `;
 
 const BoxContainer = styled.div`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('row', 'center', 'flex-start')};
-  background-color: ${({ theme }): string => theme.color.neutral[8]};
+  ${mixins.flex('row', 'center', 'flex-start')};
+  background-color: ${getTheme('neutral', '_9')};
   width: 100%;
   height: 60px;
   padding: 10px 17px;
@@ -83,7 +85,7 @@ const BoxContainer = styled.div`
 `;
 
 const Wrapper = styled.main`
-  ${({ theme }): CSSProp => theme.mixins.flexbox('column', 'flex-start', 'flex-start')};
+  ${mixins.flex('column', 'flex-start', 'flex-start')};
   width: 100%;
   height: 100%;
   padding-top: 24px;

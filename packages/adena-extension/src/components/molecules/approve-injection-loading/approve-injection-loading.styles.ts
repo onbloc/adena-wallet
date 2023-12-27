@@ -1,4 +1,6 @@
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled from 'styled-components';
+
+import { fonts, getTheme } from '@styles/theme';
 
 export const ApproveInjectionLoadingWrapper = styled.div`
   display: flex;
@@ -11,13 +13,13 @@ export const ApproveInjectionLoadingWrapper = styled.div`
 
   .description {
     margin-top: 23px;
-    color: ${({ theme }): string => theme.color.neutral[0]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.header4}
+    color: ${getTheme('neutral', '_1')};
+    ${fonts.header4}
   }
 
   .sub-description {
     margin-top: 12px;
-    color: ${({ theme }): string => theme.color.neutral[9]};
-    ${({ theme }): FlattenSimpleInterpolation => theme.fonts.body1Reg}
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.body1Reg}
   }
 `;
