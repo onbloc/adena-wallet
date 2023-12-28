@@ -1,21 +1,19 @@
 import styled from 'styled-components';
 
 import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const CustomNetworkInputWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100%;
 
   .input-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
 
     .input-box {
-      display: flex;
-      flex-direction: row;
+      ${mixins.flex({ direction: 'row', justify: 'normal' })};
       width: 100%;
       min-height: 48px;
       padding: 12px 16px;
@@ -23,7 +21,6 @@ export const CustomNetworkInputWrapper = styled.div`
       background-color: ${getTheme('neutral', '_9')};
       border: 1px solid ${getTheme('neutral', '_7')};
       border-radius: 30px;
-      align-items: center;
       margin-top: 12px;
 
       :first-child {

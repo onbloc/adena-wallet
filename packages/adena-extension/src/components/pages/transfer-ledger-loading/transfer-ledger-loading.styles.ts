@@ -1,13 +1,12 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const TransferLedgerLoadingWrapper = styled.div`
+  ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: 100%;
   min-height: 444px;
-  justify-content: flex-start;
 
   @keyframes rotate {
     from {

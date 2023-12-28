@@ -1,17 +1,16 @@
 import styled from 'styled-components';
 
 import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const AdditionalTokenSearchListWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   max-height: 240px;
 
   .scroll-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     overflow-y: auto;
   }
@@ -28,12 +27,10 @@ export const AdditionalTokenSearchListWrapper = styled.div`
 `;
 
 export const AdditionalTokenSearchListItemWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'space-between' })};
   width: 100%;
   height: auto;
   padding: 14px 15px;
-  justify-content: space-between;
   transition: 0.2s;
   cursor: pointer;
 

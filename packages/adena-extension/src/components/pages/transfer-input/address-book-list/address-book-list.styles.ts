@@ -1,9 +1,9 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AddressBookListWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   background-color: ${getTheme('neutral', '_9')};
@@ -17,13 +17,10 @@ export const AddressBookListWrapper = styled.div`
 `;
 
 export const AddressBookListItemWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   min-height: 48px;
   padding: 13px 16px;
-  justify-content: space-between;
-  align-items: center;
   ${fonts.body2Reg};
   transition: 0.2s;
   cursor: pointer;

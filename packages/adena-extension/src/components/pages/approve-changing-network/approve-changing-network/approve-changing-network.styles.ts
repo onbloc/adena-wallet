@@ -1,8 +1,8 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const ApproveChangingNetworkWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex()};
   width: 100%;
   height: auto;
   justify-content: center;
@@ -10,8 +10,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
   padding: 24px 20px;
 
   .title-container {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     height: 152px;
     margin-bottom: 16px;
@@ -36,10 +35,8 @@ export const ApproveChangingNetworkWrapper = styled.div`
   }
 
   .info-wrapper {
-    display: flex;
-    flex-direction: row;
+    ${mixins.flex({ direction: 'row', align: 'flex-start', justify: 'normal' })};
     width: fit-content;
-    align-items: flex-start;
 
     .icon-arrow {
       width: 24px;

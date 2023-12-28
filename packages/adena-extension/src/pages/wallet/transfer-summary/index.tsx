@@ -15,10 +15,10 @@ import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/valida
 import { useNetwork } from '@hooks/use-network';
 
 import { Amount, TokenModel } from '@types';
+import mixins from '@styles/mixins';
 
 const TransferSummaryLayout = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;

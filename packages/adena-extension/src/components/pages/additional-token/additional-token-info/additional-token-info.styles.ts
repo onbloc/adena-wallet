@@ -1,23 +1,20 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AdditionalTokenInfoWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
 `;
 
 export const AdditionalTokenInfoItemWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 48px;
   padding: 13px 16px;
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 30px;
-  align-items: center;
-  justify-content: space-between;
 
   & + & {
     margin-top: 12px;

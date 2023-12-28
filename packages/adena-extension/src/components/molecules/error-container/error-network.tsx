@@ -6,10 +6,7 @@ import { TitleWithDesc } from '@components/molecules';
 import mixins from '@styles/mixins';
 
 const Container = styled.main`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
+  ${mixins.flex({ justify: 'flex-start' })};
 `;
 
 const Wrapper = styled.div`

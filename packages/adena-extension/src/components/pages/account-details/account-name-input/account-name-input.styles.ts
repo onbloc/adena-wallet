@@ -1,9 +1,9 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AccountNameInputWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row' })};
   width: 150px;
   height: auto;
   padding: 12.5px 16px;
@@ -11,8 +11,6 @@ export const AccountNameInputWrapper = styled.div`
   border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 18px;
   transition: 0.2s;
-  justify-content: center;
-  align-items: center;
 
   &.extended {
     width: 100%;

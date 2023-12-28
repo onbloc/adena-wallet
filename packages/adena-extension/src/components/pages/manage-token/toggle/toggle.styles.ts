@@ -1,10 +1,10 @@
 import styled from 'styled-components';
 
 import { getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const ToggleWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   flex-shrink: 0;
   width: 46px;
   height: 26px;

@@ -1,13 +1,11 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ApproveChangingNetworkItemWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex()};
   width: 80px;
   height: auto;
-  justify-content: center;
-  align-items: center;
 
   img {
     display: flex;

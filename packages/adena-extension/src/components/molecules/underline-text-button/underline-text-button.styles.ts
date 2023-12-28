@@ -1,16 +1,14 @@
 import styled from 'styled-components';
 
 import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const UnderlineTextButtonWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row' })};
   flex-shrink: 0;
   width: 180px;
   height: 24px;
   margin: 24px auto;
-  justify-content: center;
-  align-items: center;
   cursor: pointer;
   transition: 0.2s;
 

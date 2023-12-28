@@ -1,13 +1,11 @@
+import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SubHeaderWrapper = styled.div`
+  ${mixins.flex({ direction: 'row' })};
   position: relative;
-  display: flex;
-  flex-direction: row;
   width: 100%;
-  justify-content: center;
-  align-items: center;
 
   .icon-wrapper {
     position: absolute;

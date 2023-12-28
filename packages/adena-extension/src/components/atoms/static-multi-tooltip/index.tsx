@@ -18,7 +18,7 @@ interface StaticTooltipProps extends TooltipProps {
 }
 
 const Tooltip = styled.div<TooltipProps>`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex()};
   width: 171px;
   height: auto;
   visibility: hidden;
@@ -29,8 +29,6 @@ const Tooltip = styled.div<TooltipProps>`
   right: 0px;
   top: ${({ posTop }): string => (posTop ? posTop : '20px')};
   transform: scale(0.6);
-  display: flex;
-  flex-direction: column;
 
   & > * {
     width: 100%;

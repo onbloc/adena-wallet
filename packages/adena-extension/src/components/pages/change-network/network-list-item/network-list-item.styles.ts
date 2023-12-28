@@ -1,9 +1,9 @@
+import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkListItemWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 9px 16px;
@@ -17,17 +17,14 @@ export const NetworkListItemWrapper = styled.div`
   }
 
   .info-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     font-size: 12px;
     font-weight: 600;
     line-height: 21px;
 
     .name-wrapper {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
+      ${mixins.flex({ direction: 'row', justify: 'normal' })};
 
       .name {
         display: block;
@@ -64,9 +61,7 @@ export const NetworkListItemWrapper = styled.div`
     }
 
     .description-wrapper {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
+      ${mixins.flex({ direction: 'row', justify: 'normal' })};
 
       .description {
         display: block;

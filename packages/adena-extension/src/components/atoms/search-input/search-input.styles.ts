@@ -1,15 +1,13 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SearchInputWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   max-height: 48px;
   padding: 12px 16px;
-  align-items: center;
-  justify-content: flex-start;
   border-radius: 30px;
   border: 1px solid ${getTheme('neutral', '_7')};
 

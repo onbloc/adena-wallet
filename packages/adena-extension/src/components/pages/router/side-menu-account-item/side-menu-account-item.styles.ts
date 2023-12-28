@@ -1,14 +1,12 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuAccountItemWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: auto;
   padding: 12px 20px;
-  justify-content: space-between;
-  align-items: center;
   transition: 0.2s;
   cursor: pointer;
 
@@ -21,9 +19,7 @@ export const SideMenuAccountItemWrapper = styled.div`
   }
 
   .info-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    ${mixins.flex({ align: 'flex-start', justify: 'normal' })};
 
     .address-wrapper {
       display: inline-flex;
@@ -102,8 +98,7 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
   overflow: hidden;
 
   .info-wrapper {
-    display: flex;
-    flex-direction: row;
+    ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
     padding: 7px 0 7px 12px;
     border-bottom: 1px solid ${getTheme('neutral', '_7')};
     cursor: pointer;

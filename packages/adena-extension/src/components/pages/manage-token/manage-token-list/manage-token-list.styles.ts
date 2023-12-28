@@ -1,8 +1,8 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const ManageTokenListWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
 `;

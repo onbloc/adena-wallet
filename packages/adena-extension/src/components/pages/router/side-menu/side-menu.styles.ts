@@ -1,21 +1,18 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100vh;
   background-color: ${getTheme('neutral', '_8')};
 
   .header-wrapper {
-    display: flex;
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     height: 50px;
     flex-shrink: 0;
     padding: 0 20px;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
     background-color: ${getTheme('neutral', '_9')};
 
     .logo {
@@ -91,8 +88,7 @@ export const SideMenuWrapper = styled.div`
   }
 
   .bottom-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     flex-shrink: 0;
     height: fit-content;
 

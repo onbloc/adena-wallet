@@ -1,15 +1,14 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const AddressInputWrapper = styled.div`
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
 
   .input-wrapper {
-    display: flex;
-    flex-direction: row;
+    ${mixins.flex({ direction: 'row', justify: 'normal' })};
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;
@@ -17,7 +16,6 @@ export const AddressInputWrapper = styled.div`
     background-color: ${getTheme('neutral', '_9')};
     border: 1px solid ${getTheme('neutral', '_7')};
     border-radius: 30px;
-    align-items: center;
 
     .selected-title-wrapper {
       width: 100%;
