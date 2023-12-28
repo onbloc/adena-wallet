@@ -69,7 +69,7 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
     margin-top: ${({ gap }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
   ${defaultIconStyle};
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 54px;
   padding: 0px 24px 0px 20px;

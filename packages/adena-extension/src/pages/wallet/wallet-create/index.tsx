@@ -126,7 +126,7 @@ const Divider = styled.span`
 `;
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'space-between')};
+  ${mixins.flex({ justify: 'space-between' })};
   width: 100%;
   height: 100%;
   & > header {

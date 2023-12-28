@@ -21,7 +21,7 @@ const Wrapper = styled.div`
 `;
 
 const Header = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 100%;
   position: relative;

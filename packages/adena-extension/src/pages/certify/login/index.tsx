@@ -14,7 +14,7 @@ import mixins from '@styles/mixins';
 const text = 'Enter\nYour Password';
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'stretch')}
+  ${mixins.flex({ justify: 'stretch' })}
   width: 100%;
   height: 100%;
 `;

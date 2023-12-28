@@ -93,7 +93,7 @@ export const ConnectedApps = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -123,7 +123,7 @@ const Wrapper = styled.main`
 `;
 
 const DisconnectedBtn = styled.button`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   flex-shrink: 0;
   width: 25px;
   height: 25px;

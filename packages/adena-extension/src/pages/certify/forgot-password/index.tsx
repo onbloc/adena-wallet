@@ -62,7 +62,7 @@ export const ForgotPassword = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -85,7 +85,7 @@ const LearnMore = styled.button`
 `;
 
 const TextStyled = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   width: 100%;
   color: ${getTheme('neutral', 'a')};
   gap: 6px;

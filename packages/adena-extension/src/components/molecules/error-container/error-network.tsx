@@ -13,7 +13,7 @@ const Container = styled.main`
 `;
 
 const Wrapper = styled.div`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   position: relative;
   width: 100%;
   gap: 16px;

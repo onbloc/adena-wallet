@@ -22,7 +22,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding: 24px 20px;

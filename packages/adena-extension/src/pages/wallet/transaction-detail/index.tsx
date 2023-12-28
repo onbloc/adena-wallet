@@ -169,7 +169,7 @@ export const TransactionDetail = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding-top: 30px;
   .status-icon {
@@ -192,7 +192,7 @@ const Wrapper = styled.main`
 `;
 
 const TokenBox = styled.div<{ color: string }>`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 70px;
   background-color: ${getTheme('neutral', '_9')};
@@ -214,7 +214,7 @@ const TokenBox = styled.div<{ color: string }>`
 `;
 
 const DataBox = styled.div`
-  ${mixins.flex('column', 'center', 'center')};
+  ${mixins.flex()};
   width: 100%;
   border-radius: 18px;
   background-color: ${getTheme('neutral', '_9')};
@@ -222,7 +222,7 @@ const DataBox = styled.div`
 `;
 
 const DLWrap = styled.dl<DLProps>`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   ${fonts.body1Reg};
   width: 100%;
   height: 40px;
@@ -249,7 +249,7 @@ const DLWrap = styled.dl<DLProps>`
 `;
 
 const StatusInfo = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   .link-icon {
     display: flex;
     cursor: pointer;

@@ -5,7 +5,7 @@ import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   position: relative;
   width: 100%;
   margin-top: 13px;
@@ -13,7 +13,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex('column', 'flex-start', 'center')}
+  ${mixins.flex({ align: 'flex-start' })}
   width: 100%;
   height: 60px;
 `;

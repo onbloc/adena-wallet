@@ -19,14 +19,14 @@ interface TermsCheckboxProps {
 }
 
 const Wrapper = styled.div`
-  ${mixins.flex('row', 'center', 'flex-start')};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
   margin: auto 0px 10px;
   ${fonts.body2Reg};
 `;
 
 const Label = styled.label<{ checkboxPos: CheckboxPos }>`
-  ${mixins.flex('row', 'center', 'flex-start')};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   position: relative;
   padding-left: 32px;
   cursor: pointer;

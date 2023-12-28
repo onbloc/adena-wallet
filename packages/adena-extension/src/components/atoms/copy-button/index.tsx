@@ -6,7 +6,7 @@ import { Text, Button } from '@components/atoms';
 import mixins from '@styles/mixins';
 
 const CopyButton = styled(Button)<{ isClicked: boolean }>`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;

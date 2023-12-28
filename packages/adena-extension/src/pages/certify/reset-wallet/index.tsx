@@ -51,7 +51,7 @@ export const ResetWallet = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 56px;

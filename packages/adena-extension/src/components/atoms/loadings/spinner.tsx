@@ -14,7 +14,7 @@ const spinAnimation = keyframes`
 `;
 
 const SpinRing = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   position: relative;
   width: 70px;
   height: 70px;

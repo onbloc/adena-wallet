@@ -12,7 +12,7 @@ interface CopyTooltipProps {
 }
 
 const ToolTipInner = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   ${fonts.body2Reg};
   position: absolute;
   width: max-content;
@@ -35,7 +35,7 @@ const ToolTipInner = styled.div`
 `;
 
 const ToolTipWrap = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   position: relative;
   cursor: pointer;
   &:hover .tooltip,

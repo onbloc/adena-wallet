@@ -56,7 +56,7 @@ export const Settings = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

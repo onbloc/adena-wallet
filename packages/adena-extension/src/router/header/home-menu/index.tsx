@@ -16,7 +16,7 @@ const Wrapper = styled.div`
 `;
 
 const Header = styled.div`
-  ${mixins.flex('row', 'center', 'flex-start')}
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })}
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;

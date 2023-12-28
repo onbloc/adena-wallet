@@ -4,26 +4,26 @@ import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.div`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   position: relative;
   width: 100%;
   z-index: 1;
 `;
 
 const RoundsBox = styled.div`
-  ${mixins.flex('column', 'flex-end', 'center')};
+  ${mixins.flex({ align: 'flex-end' })};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')}
+  ${mixins.flex({ justify: 'flex-start' })}
   width: 100%;
   gap: 12px;
   padding-top: 12px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex('row', 'center', 'flex-start')}
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })}
   width: 100%;
   height: 60px;
 `;

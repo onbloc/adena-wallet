@@ -12,7 +12,7 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'stretch')};
+  ${mixins.flex({ justify: 'stretch' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -23,7 +23,7 @@ const Wrapper = styled.main`
 `;
 
 const SeedBoxWrap = styled.div`
-  ${mixins.flex('column', 'center', 'stretch')};
+  ${mixins.flex({ justify: 'stretch' })};
   width: 100%;
   margin-bottom: auto;
   margin-top: 24px;

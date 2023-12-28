@@ -4,13 +4,13 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 
 export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding: 0 20px;
   margin-bottom: 96px;
   align-self: center;
 
   .row {
-    ${mixins.flex('row', 'center', 'center')};
+    ${mixins.flex({ direction: 'row' })};
     position: relative;
     padding: 10px 18px;
     justify-content: space-between;
@@ -59,7 +59,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
   }
 
   .domain-wrapper {
-    ${mixins.flex('row', 'center', 'center')};
+    ${mixins.flex({ direction: 'row' })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
@@ -104,7 +104,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
   .transaction-data-wrapper {
     width: 100%;
     ${fonts.body1Reg};
-    ${mixins.flex('column', 'center', 'center')};
+    ${mixins.flex()};
 
     .visible-button {
       color: ${getTheme('neutral', 'a')};

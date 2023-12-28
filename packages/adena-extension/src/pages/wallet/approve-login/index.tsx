@@ -19,7 +19,7 @@ import mixins from '@styles/mixins';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;

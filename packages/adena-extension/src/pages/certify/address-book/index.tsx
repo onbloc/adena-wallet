@@ -78,7 +78,7 @@ const AddressBook = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -93,7 +93,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   margin-bottom: 12px;
 `;

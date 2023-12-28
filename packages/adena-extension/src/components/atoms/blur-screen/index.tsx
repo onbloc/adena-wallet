@@ -22,7 +22,7 @@ export const BlurScreen = ({ hasText, text }: BlurScreenProps): JSX.Element => {
 };
 
 const Wrapper = styled.div<{ hasText?: boolean }>`
-  ${mixins.flex('column', 'center', 'center')};
+  ${mixins.flex()};
   ${mixins.positionCenter()};
   gap: ${({ hasText }): false | '21px' | undefined => hasText && '21px'};
   background: url(${blurBg}) no-repeat 100% 100% / 100% 100%;

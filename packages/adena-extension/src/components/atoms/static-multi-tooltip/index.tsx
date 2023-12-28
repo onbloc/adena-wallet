@@ -18,7 +18,7 @@ interface StaticTooltipProps extends TooltipProps {
 }
 
 const Tooltip = styled.div<TooltipProps>`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   width: 171px;
   height: auto;
   visibility: hidden;

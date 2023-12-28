@@ -45,7 +45,7 @@ const LoadingApproveTransaction = ({
 };
 
 const Wrapper = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   max-width: 380px;
   min-height: 514px;
   padding: 29px 20px 24px;
@@ -55,7 +55,7 @@ const Wrapper = styled.div`
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex('column', 'flex-end', 'space-between')}
+  ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
   width: 80px;
   height: 80px;
   margin: 39px 0px 24px;
@@ -63,7 +63,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 const RoundedBox = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 41px;
   background-color: ${getTheme('neutral', '_9')};
