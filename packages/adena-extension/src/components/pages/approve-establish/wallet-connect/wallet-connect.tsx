@@ -1,7 +1,11 @@
 import React from 'react';
 
 import { Text } from '@components/atoms';
-import { ApproveInjectionLoading, ApproveLoading } from '@components/molecules';
+import {
+  ApproveInjectionLoading,
+  ApproveLoading,
+  BottomFixedButtonGroup,
+} from '@components/molecules';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import { WalletConnectWrapper } from './wallet-connect.styles';
 
@@ -70,14 +74,18 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         <span>Only connect to websites you trust.</span>
       </div>
 
-      <div className='button-wrapper'>
-        <button className='cancel' onClick={onClickCancel}>
-          Cancel
-        </button>
-        <button className='connect' onClick={onClickConnect}>
-          Connect
-        </button>
-      </div>
+      <BottomFixedButtonGroup
+        filled
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel,
+        }}
+        rightButton={{
+          primary: true,
+          text: 'Connect',
+          onClick: onClickConnect,
+        }}
+      />
     </WalletConnectWrapper>
   );
 };

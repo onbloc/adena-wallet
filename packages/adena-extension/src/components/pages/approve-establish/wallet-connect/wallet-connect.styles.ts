@@ -84,26 +84,4 @@ export const WalletConnectWrapper = styled.div`
     color: ${getTheme('neutral', 'a')};
     ${fonts.captionReg};
   }
-
-  .button-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'flex-start' })};
-    width: 100%;
-    margin-bottom: 24px;
-    gap: 10px;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${fonts.body1Bold};
-    }
-
-    button.cancel {
-      background-color: ${getTheme('neutral', '_5')};
-    }
-
-    button.connect {
-      background-color: ${getTheme('primary', '_6')};
-    }
-  }
 `;
