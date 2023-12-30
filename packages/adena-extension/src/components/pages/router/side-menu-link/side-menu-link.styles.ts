@@ -1,15 +1,13 @@
 import styled from 'styled-components';
 
 import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const SideMenuLinkWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
   height: auto;
   padding: 16px 20px;
-  justify-content: flex-start;
-  align-items: center;
   background-color: ${getTheme('neutral', '_9')};
   transition: 0.2s;
   cursor: pointer;

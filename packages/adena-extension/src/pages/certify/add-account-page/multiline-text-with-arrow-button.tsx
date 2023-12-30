@@ -38,7 +38,7 @@ export const MultilineTextWithArrowButton = ({
 };
 
 const Wrapper = styled.button`
-  ${mixins.flex('column', 'flex-start', 'center')};
+  ${mixins.flex({ align: 'flex-start' })};
   position: relative;
   width: 100%;
   height: 80px;

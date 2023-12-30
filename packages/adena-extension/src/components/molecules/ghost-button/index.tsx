@@ -12,7 +12,7 @@ interface GhostButtonsProps {
 }
 
 const GhostBtnWrap = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   gap: 10px;
 `;

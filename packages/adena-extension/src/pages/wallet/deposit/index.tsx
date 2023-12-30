@@ -13,14 +13,14 @@ import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'stretch')};
+  ${mixins.flex({ justify: 'stretch' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
 const QRCodeBox = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   background-color: ${getTheme('neutral', '_1')};
   padding: 10px;
   border-radius: 8px;
@@ -28,7 +28,7 @@ const QRCodeBox = styled.div`
 `;
 
 const CopyInputBox = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   ${inputStyle};
   border: 1px solid ${getTheme('neutral', '_7')};
 

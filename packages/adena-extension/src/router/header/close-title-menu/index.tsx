@@ -11,7 +11,7 @@ interface CloseTitleMenuProps {
 }
 
 const Wrapper = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   width: 100%;
   height: 100%;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};

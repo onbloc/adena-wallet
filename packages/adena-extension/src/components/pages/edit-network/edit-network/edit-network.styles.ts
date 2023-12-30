@@ -1,22 +1,20 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const EditNetworkWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100vh;
 
   & .content-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     height: 100%;
     padding: 24px 20px 72px 20px;
   }
 
   & .form-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     height: 100%;
     padding: 12px 0;

@@ -22,15 +22,14 @@ const text = {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
   margin: 0 auto;
 
   .title {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
   }
 
@@ -49,8 +48,7 @@ const Wrapper = styled.main`
 `;
 
 const AccountListContainer = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 320px;
   height: 166px;
   border-radius: 10px;
@@ -72,8 +70,7 @@ const AccountListContainer = styled.div`
   }
 
   .list-wrapper {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     flex-shrink: 1;
     width: 100%;
     height: 100%;
@@ -90,13 +87,10 @@ const AccountListContainer = styled.div`
   }
 
   .load-more-button {
-    display: flex;
-    flex-direction: row;
+    ${mixins.flex({ direction: 'row' })};
     flex-shrink: 0;
     width: 100%;
     height: 46px;
-    align-items: center;
-    justify-content: center;
     color: ${getTheme('neutral', 'a')};
     border-top: 1px solid ${getTheme('neutral', '_7')};
     border-radius: 0;
@@ -127,13 +121,10 @@ const AccountListContainer = styled.div`
   }
 
   .item {
-    display: flex;
-    flex-direction: row;
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     width: 100%;
     height: 46px;
     padding: 10px 20px;
-    justify-content: space-between;
-    align-items: center;
     border-bottom: 1px solid ${getTheme('neutral', '_7')};
 
     .address {

@@ -21,7 +21,7 @@ export const TabContainer = ({ header, children }: Props): JSX.Element => {
 };
 
 const Container = styled.div`
-  ${mixins.flex('column', 'center', 'center')};
+  ${mixins.flex()};
   width: 100vw;
   height: 100vh;
   margin-top: -48px;
@@ -30,7 +30,7 @@ const Container = styled.div`
 
 const Wrapper = styled.div`
   position: relative;
-  ${mixins.flex('column', 'center', 'center')};
+  ${mixins.flex()};
   width: 360px;
   height: 540px;
   background-color: ${getTheme('neutral', '_8')};

@@ -5,7 +5,7 @@ import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 
 export const ApproveLoadingWrapper = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding: 35px 20px 0;
   .l-approve {
     margin-top: 51px;
@@ -14,7 +14,7 @@ export const ApproveLoadingWrapper = styled.div`
 `;
 
 export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex('column', 'flex-end', 'space-between')}
+  ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
   width: 80px;
   height: 80px;
   margin: 35px 0px 24px;
@@ -22,7 +22,7 @@ export const ApproveLoadingSkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 export const ApproveLoadingRoundedBox = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   height: 41px;
   background-color: ${getTheme('neutral', '_9')};

@@ -14,14 +14,14 @@ const text = {
 };
 
 const popupStyle = css`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
 `;
 
 const defaultStyle = css`
-  ${mixins.flex('column', 'center', 'space-between')};
+  ${mixins.flex({ justify: 'space-between' })};
   width: 100%;
   height: 100%;
   padding-top: 50px;

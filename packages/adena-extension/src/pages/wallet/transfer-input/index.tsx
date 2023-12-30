@@ -12,10 +12,10 @@ import { isNativeTokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
 
 import { TokenModel } from '@types';
+import mixins from '@styles/mixins';
 
 const TransferInputLayoutWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;

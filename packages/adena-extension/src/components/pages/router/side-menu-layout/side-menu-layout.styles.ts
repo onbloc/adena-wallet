@@ -32,7 +32,7 @@ export const SideMenuBackground = styled.div`
 `;
 
 export const SideMenuContent = styled.div<{ open: boolean }>`
-  ${mixins.flex('column', 'center', 'space-between')};
+  ${mixins.flex({ justify: 'space-between' })};
   background-color: ${getTheme('neutral', '_8')};
   position: fixed;
   top: 0px;

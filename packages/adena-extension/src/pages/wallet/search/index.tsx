@@ -60,7 +60,7 @@ const DataListWrap = styled.div`
 `;
 
 const ButtonWrap = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   position: fixed;
   bottom: 0px;
   left: 0px;

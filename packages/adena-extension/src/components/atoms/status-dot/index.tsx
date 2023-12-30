@@ -25,7 +25,7 @@ const Dot = styled.div<{ status: boolean }>`
 `;
 
 const Tooltip = styled.div`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   width: max-content;
   height: 25px;
   visibility: hidden;

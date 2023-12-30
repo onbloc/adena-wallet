@@ -31,7 +31,7 @@ const Inner = styled.div`
   gap: 20px;
   padding: 10px 18px;
   .seed-text {
-    ${mixins.flex('row', 'center', 'center')}
+    ${mixins.flex({ direction: 'row' })}
   }
 `;
 

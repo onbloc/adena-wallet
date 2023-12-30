@@ -1,14 +1,12 @@
 import styled from 'styled-components';
 
 import { fonts, getTheme } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 export const ApproveInjectionLoadingWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex()};
   width: 100%;
   height: auto;
-  justify-content: center;
-  align-items: center;
   margin-top: 80px;
 
   .description {

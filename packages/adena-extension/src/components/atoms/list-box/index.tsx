@@ -71,7 +71,7 @@ export const ListBox = ({
 };
 
 const Wrapper = styled.div<ListBoxStyleProps>`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   ${({ mode }): any => {
     if (mode === ListHierarchy.Default) return modeVariants.default;
     if (mode === ListHierarchy.Normal) return modeVariants.normal;

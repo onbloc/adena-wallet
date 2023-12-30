@@ -58,7 +58,7 @@ export const ApproveHardwareWalletLedgerPassword = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   max-width: 380px;
   padding-top: 50px;
 `;

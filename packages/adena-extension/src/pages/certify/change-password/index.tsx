@@ -8,7 +8,7 @@ import { useChangePassword } from '@hooks/certify/use-change-password';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

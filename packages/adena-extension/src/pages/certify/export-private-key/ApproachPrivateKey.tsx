@@ -17,7 +17,7 @@ const StyledPrivateKeyBox = styled.div`
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   padding: 8px;
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
 `;
 
 const StyledText = styled(Text)`

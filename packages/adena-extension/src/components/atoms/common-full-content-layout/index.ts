@@ -1,9 +1,9 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const CommonFullContentLayout = styled.section`
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: calc(100vh - 48px);
 `;

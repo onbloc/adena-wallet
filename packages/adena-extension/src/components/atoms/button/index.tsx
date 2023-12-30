@@ -100,7 +100,7 @@ export const Button = (props: ButtonProps): JSX.Element => {
 };
 
 const ButtonWrapper = styled.button<ButtonProps>`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   width: ${({ width, fullWidth }): string => {
     if (width) return typeof width === 'number' ? `${width}px` : width;
     if (fullWidth) return '100%';

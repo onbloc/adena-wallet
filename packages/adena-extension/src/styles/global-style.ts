@@ -1,5 +1,6 @@
 import { createGlobalStyle } from 'styled-components';
 import { fonts } from './theme';
+import mixins from './mixins';
 
 export const GlobalStyle = createGlobalStyle`
   html, body {
@@ -18,10 +19,10 @@ export const GlobalStyle = createGlobalStyle`
   };
 
   #popup {
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     width: 100%;
     position: relative;
-    display: flex;
-    flex-direction: column;
+    
   };
 
   main {

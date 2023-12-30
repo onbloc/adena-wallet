@@ -13,7 +13,7 @@ import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'stretch')};
+  ${mixins.flex({ justify: 'stretch' })};
   position: absolute;
   width: 100%;
   height: 100%;
@@ -24,19 +24,19 @@ const Wrapper = styled.main`
 `;
 
 const RoundsBox = styled.div`
-  ${mixins.flex('column', 'flex-end', 'center')};
+  ${mixins.flex({ align: 'flex-end' })};
   margin-left: auto;
 `;
 
 const ListBoxWrap = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')}
+  ${mixins.flex({ justify: 'flex-start' })}
   width: 100%;
   gap: 12px;
   margin-top: 31px;
 `;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex('row', 'center', 'flex-start')}
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })}
   width: 100%;
   height: 60px;
 `;

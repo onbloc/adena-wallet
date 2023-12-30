@@ -75,7 +75,7 @@ export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Elem
 };
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
-  ${mixins.flex('column', 'flex-start', 'space-between')};
+  ${mixins.flex({ align: 'flex-start', justify: 'space-between' })};
   width: 100%;
   padding: ${(props): CSSProperties['padding'] => props.padding ?? '14px 16px'};
   gap: 11px;

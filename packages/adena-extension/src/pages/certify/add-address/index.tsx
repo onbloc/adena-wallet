@@ -218,7 +218,7 @@ const AddressInput = styled.textarea<{ error: boolean }>`
 `;
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding-top: 24px;
   width: 100%;
   height: 100%;
@@ -229,7 +229,7 @@ const Wrapper = styled.main`
 `;
 
 const TopSection = styled.div`
-  ${mixins.flex('row', 'center', 'center')}
+  ${mixins.flex({ direction: 'row' })}
   position: relative;
   width: 100%;
   & > button {

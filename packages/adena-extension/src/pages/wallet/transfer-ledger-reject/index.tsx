@@ -4,10 +4,10 @@ import styled from 'styled-components';
 
 import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
 import { RoutePath } from '@router/path';
+import mixins from '@styles/mixins';
 
 const TransferLedgerRejectLayout = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;

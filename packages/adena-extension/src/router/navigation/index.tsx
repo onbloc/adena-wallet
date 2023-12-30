@@ -13,7 +13,7 @@ import mixins from '@styles/mixins';
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   background-color: ${getTheme('neutral', '_8')};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
   padding: 0px 40px;

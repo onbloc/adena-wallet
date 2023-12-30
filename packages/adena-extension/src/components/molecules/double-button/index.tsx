@@ -24,7 +24,7 @@ interface DoubleButtonProps extends WrapperStyleProps {
 }
 
 const Wrapper = styled.div<WrapperStyleProps>`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   gap: 10px;
   ${({ margin }): string | undefined => margin && `margin: ${margin}`};

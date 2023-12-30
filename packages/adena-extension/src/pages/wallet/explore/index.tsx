@@ -69,12 +69,12 @@ const MoveToLink = styled.img`
 `;
 
 const Contents = styled.div`
-  ${mixins.flex('column', 'flex-start', 'center')};
+  ${mixins.flex({ align: 'flex-start' })};
   margin-left: 12px;
 `;
 
 const BoxContainer = styled.div`
-  ${mixins.flex('row', 'center', 'flex-start')};
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   background-color: ${getTheme('neutral', '_9')};
   width: 100%;
   height: 60px;
@@ -85,7 +85,7 @@ const BoxContainer = styled.div`
 `;
 
 const Wrapper = styled.main`
-  ${mixins.flex('column', 'flex-start', 'flex-start')};
+  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

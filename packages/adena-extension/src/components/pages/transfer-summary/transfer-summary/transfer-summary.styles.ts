@@ -1,16 +1,15 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryWrapper = styled.div`
+  ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   height: 100%;
   padding-top: 5px;
   min-height: 444px;
   align-items: center;
-  justify-content: flex-start;
 
   .sub-header-wrapper {
     width: 100%;

@@ -8,7 +8,7 @@ import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 
 const Container = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')}
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })}
   position: absolute;
   top: 0;
   display: flex;
@@ -23,7 +23,7 @@ const Container = styled.div`
     font-size: 19px;
   }
   .help-btn {
-    ${mixins.flex('row', 'center', 'center')}
+    ${mixins.flex({ direction: 'row' })}
     font-size: 19px;
     font-weight: 600;
     line-height: 24px;

@@ -1,8 +1,8 @@
+import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const SpinnerWrapper = styled.div<{ size: string | number }>`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: ${({ size }): string => (typeof size === 'number' ? `${size}px` : size)};
   height: ${({ size }): string => (typeof size === 'number' ? `${size}px` : size)};
 

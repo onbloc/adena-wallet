@@ -14,10 +14,10 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import useScrollHistory from '@hooks/use-scroll-history';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 import { fonts } from '@styles/theme';
+import mixins from '@styles/mixins';
 
 const StyledHistoryLayout = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;

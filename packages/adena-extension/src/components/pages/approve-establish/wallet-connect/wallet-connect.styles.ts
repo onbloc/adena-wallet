@@ -5,7 +5,7 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 
 export const WalletConnectWrapper = styled.div`
-  ${mixins.flex('column', 'center', 'flex-start')};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding: 0 20px;
   align-self: center;
 
@@ -31,7 +31,7 @@ export const WalletConnectWrapper = styled.div`
   }
 
   .domain-wrapper {
-    ${mixins.flex('row', 'center', 'center')};
+    ${mixins.flex({ direction: 'row' })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
@@ -48,7 +48,7 @@ export const WalletConnectWrapper = styled.div`
     background-color: ${getTheme('neutral', '_9')};
 
     .info-table-header {
-      ${mixins.flex('column', 'flex-start', 'center')};
+      ${mixins.flex({ align: 'flex-start' })};
       width: 100%;
       padding: 12px;
       color: ${getTheme('neutral', 'a')};
@@ -57,7 +57,7 @@ export const WalletConnectWrapper = styled.div`
     }
 
     .info-table-body {
-      ${mixins.flex('column', 'flex-start', 'center')};
+      ${mixins.flex({ align: 'flex-start' })};
       width: 100%;
       padding: 12px;
       gap: 8px;
@@ -78,32 +78,10 @@ export const WalletConnectWrapper = styled.div`
   }
 
   .description-wrapper {
-    ${mixins.flex('column', 'flex-start', 'center')};
+    ${mixins.flex({ align: 'flex-start' })};
     padding: 4px 0;
     margin-bottom: 43px;
     color: ${getTheme('neutral', 'a')};
     ${fonts.captionReg};
-  }
-
-  .button-wrapper {
-    ${mixins.flex('row', 'flex-start', 'center')};
-    width: 100%;
-    margin-bottom: 24px;
-    gap: 10px;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${fonts.body1Bold};
-    }
-
-    button.cancel {
-      background-color: ${getTheme('neutral', '_5')};
-    }
-
-    button.connect {
-      background-color: ${getTheme('primary', '_6')};
-    }
   }
 `;

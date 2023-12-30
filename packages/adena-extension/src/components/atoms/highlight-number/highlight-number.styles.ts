@@ -1,3 +1,4 @@
+import mixins from '@styles/mixins';
 import { FontsType, fonts } from '@styles/theme';
 import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
@@ -8,8 +9,7 @@ interface HighlightNumberWrapperProps {
 }
 
 export const HighlightNumberWrapper = styled.div<HighlightNumberWrapperProps>`
-  display: flex;
-  flex-direction: row;
+  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
   width: fit-content;
   height: auto;
   vertical-align: top;

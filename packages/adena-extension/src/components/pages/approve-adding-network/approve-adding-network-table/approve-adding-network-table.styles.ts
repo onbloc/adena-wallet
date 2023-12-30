@@ -1,16 +1,15 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ApproveAddingNetworkTableWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   border-radius: 18px;
 
   .table-row {
-    display: flex;
-    flex-direction: column;
+    ${mixins.flex({ align: 'normal', justify: 'normal' })};
     padding: 8px 16px;
     background-color: ${getTheme('neutral', '_9')};
     margin-bottom: 2px;

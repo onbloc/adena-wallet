@@ -1,10 +1,10 @@
+import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   min-height: 444px;
   padding-top: 5px;

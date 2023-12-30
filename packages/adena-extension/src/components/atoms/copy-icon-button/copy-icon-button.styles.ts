@@ -1,3 +1,4 @@
+import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
@@ -6,8 +7,7 @@ interface CopyButtonWrapperProps {
 }
 
 export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
-  display: inline-flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 16px;
   height: 16px;
   cursor: pointer;

@@ -2,11 +2,16 @@ import { CSSProperties } from 'react';
 import { css, CSSProp } from 'styled-components';
 
 export type MixinsType = {
-  flex: (
-    direction?: CSSProperties['flexDirection'],
-    align?: CSSProperties['alignItems'],
-    justify?: CSSProperties['justifyContent'],
-  ) => CSSProp;
+  /**
+   * @param direction flex-direction, default: column
+   * @param align align-items, default: center
+   * @param justify justify-content, default: center
+   */
+  flex: (props?: {
+    direction?: CSSProperties['flexDirection'];
+    align?: CSSProperties['alignItems'];
+    justify?: CSSProperties['justifyContent'];
+  }) => CSSProp;
   positionCenter: () => CSSProp;
   posTopCenterRight: (right?: string) => CSSProp;
   posTopCenterLeft: (left?: string) => CSSProp;
@@ -14,11 +19,11 @@ export type MixinsType = {
 };
 
 const mixins: MixinsType = {
-  flex: (direction = 'row', align = 'center', justify = 'center') => css`
+  flex: (props) => css`
     display: flex;
-    flex-direction: ${direction};
-    align-items: ${align};
-    justify-content: ${justify};
+    flex-direction: ${props?.direction || 'column'};
+    align-items: ${props?.align || 'center'};
+    justify-content: ${props?.justify || 'center'};
   `,
   positionCenter: () => css`
     position: absolute;

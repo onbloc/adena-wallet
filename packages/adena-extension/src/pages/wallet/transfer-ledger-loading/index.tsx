@@ -7,10 +7,10 @@ import { StdSignDoc, isLedgerAccount } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
+import mixins from '@styles/mixins';
 
 const TransferLedgerLoadingLayout = styled.div`
-  display: flex;
-  flex-direction: column;
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
   padding: 24px 20px;

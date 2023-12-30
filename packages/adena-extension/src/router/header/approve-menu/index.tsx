@@ -21,7 +21,7 @@ const Wrapper = styled.div`
   height: 100%;
   padding: 0px 20px 0px 12px;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
-  ${mixins.flex('row', 'center', 'flex-end')};
+  ${mixins.flex({ direction: 'row', justify: 'flex-end' })};
   .t-approve {
     ${mixins.positionCenter()}
   }

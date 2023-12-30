@@ -34,14 +34,14 @@ export const SeedViewAndCopy = ({
 };
 
 const Wrapper = styled.div`
-  ${mixins.flex('row', 'center', 'space-between')};
+  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
   width: 100%;
   margin: 12px auto auto;
   padding: 0px 45px;
 `;
 
 const ButtonStyle = styled(Button)`
-  ${mixins.flex('row', 'center', 'center')};
+  ${mixins.flex({ direction: 'row' })};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
