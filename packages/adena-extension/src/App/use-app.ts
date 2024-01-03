@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
@@ -14,9 +14,7 @@ import { fetchHealth } from '@common/utils/client-utils';
 import { CommonState } from '@states';
 import { NetworkMetainfo } from '@types';
 
-type BackgroundProps = React.PropsWithChildren<unknown>;
-
-export const Background: React.FC<BackgroundProps> = ({ children }) => {
+const useApp = (): void => {
   const { wallet, walletStatus } = useWalletContext();
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
@@ -73,6 +71,6 @@ export const Background: React.FC<BackgroundProps> = ({ children }) => {
       [currentNetwork.id]: !healthy,
     });
   }
-
-  return <div>{children}</div>;
 };
+
+export default useApp;
