@@ -17,6 +17,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
 import { BroadcastTxCommitResult, TM2Error } from '@gnolang/tm2-js-client';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];
@@ -54,7 +55,8 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 const DEFAULT_DENOM = 'GNOT';
 
 const ApproveTransactionContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const nomarlNavigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
@@ -98,7 +100,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && nomarlNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {

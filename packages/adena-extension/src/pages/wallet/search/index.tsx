@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import search from '@assets/search.svg';
 import cancel from '@assets/cancel-dark.svg';
@@ -17,6 +16,7 @@ import useHistoryData from '@hooks/use-history-data';
 import { TokenBalanceType } from '@types';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -73,8 +73,7 @@ const ButtonWrap = styled.div`
 `;
 
 export const WalletSearch = (): JSX.Element => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { navigate, params } = useAppNavigate<RoutePath.WalletSearch>();
 
   const { displayTokenBalances } = useTokenBalance();
   const { clearHistoryData } = useHistoryData();
@@ -90,7 +89,7 @@ export const WalletSearch = (): JSX.Element => {
   };
 
   const onClickItem = (tokenBalance: TokenBalanceType): void => {
-    location.state === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
+    params.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
   };
 
   const moveTransferInput = (tokenBalance: TokenBalanceType): void => {

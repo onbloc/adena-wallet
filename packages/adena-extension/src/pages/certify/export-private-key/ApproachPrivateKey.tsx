@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useLocation } from 'react-router-dom';
 
 import { Text, Button, BlurScreen } from '@components/atoms';
 import { SeedViewAndCopy } from '@components/molecules';
@@ -8,6 +7,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { RoutePath } from '@router/path';
 
 const StyledPrivateKeyBox = styled.div`
   position: relative;
@@ -25,8 +26,8 @@ const StyledText = styled(Text)`
   text-align: center;
 `;
 
-const ApproachPrivateKey = ({ backButtonClick }: { backButtonClick: () => void }): JSX.Element => {
-  const { state } = useLocation();
+const ApproachPrivateKey = (): JSX.Element => {
+  const { params, goBack } = useAppNavigate<RoutePath.ExportPrivateKey>();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
@@ -34,15 +35,15 @@ const ApproachPrivateKey = ({ backButtonClick }: { backButtonClick: () => void }
 
   useEffect(() => {
     initPrivateKey();
-  }, [currentAccount, state]);
+  }, [currentAccount]);
 
   const initPrivateKey = async (): Promise<void> => {
     if (!wallet || !currentAccount) {
       return;
     }
     const clone = wallet.clone();
-    if (state?.accountId) {
-      clone.currentAccountId = state.accountId;
+    if (params?.accountId) {
+      clone.currentAccountId = params.accountId;
     } else {
       clone.currentAccountId = currentAccount.id;
     }
@@ -62,7 +63,7 @@ const ApproachPrivateKey = ({ backButtonClick }: { backButtonClick: () => void }
         copyStr={privateKey}
         toggleText='Private Key'
       />
-      <Button fullWidth onClick={backButtonClick}>
+      <Button fullWidth onClick={goBack}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </>

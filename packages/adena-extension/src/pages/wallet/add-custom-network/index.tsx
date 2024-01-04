@@ -1,5 +1,4 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { CommonFullContentLayout } from '@components/atoms';
 import AddCustomNetwork from '@components/pages/add-custom-network';
@@ -7,6 +6,7 @@ import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
 
 import { NetworkMetainfo } from '@types';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 function isValidURL(rpcUrl: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
@@ -28,7 +28,7 @@ function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
 }
 
 const AddCustomNetworkContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
   const { networks, addNetwork } = useNetwork();
   const {
     name,
@@ -61,16 +61,8 @@ const AddCustomNetworkContainer: React.FC = () => {
       return;
     }
     await addNetwork(name, rpcUrl, chainId);
-    navigate(-1);
+    goBack;
   }, [networks, name, rpcUrl, chainId]);
-
-  const cancel = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   return (
     <CommonFullContentLayout>
@@ -84,8 +76,8 @@ const AddCustomNetworkContainer: React.FC = () => {
         changeRPCUrl={changeRPCUrl}
         changeChainId={changeChainId}
         save={save}
-        cancel={cancel}
-        moveBack={moveBack}
+        cancel={goBack}
+        moveBack={goBack}
       />
     </CommonFullContentLayout>
   );

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
 
 import ManageTokenSearch from '@components/pages/manage-token/manage-token';
@@ -9,9 +8,10 @@ import { RoutePath } from '@router/path';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const ManageTokenSearchContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [isClose, setIsClose] = useState(false);
@@ -27,7 +27,7 @@ const ManageTokenSearchContainer: React.FC = () => {
 
   useEffect(() => {
     if (loaded && isClose) {
-      navigate(-1);
+      goBack();
     }
   }, [loaded, isClose]);
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
 import { Text, ListBox } from '@components/atoms';
@@ -10,28 +9,23 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { AddressBookItem } from '@repositories/wallet';
 
 type navigateStatus = 'add' | 'edit';
-
-export interface BookListProps {
-  id?: string;
-  address: string;
-  name: string;
-  createdAt?: string;
-}
 
 const AddressBook = (): JSX.Element => {
   const theme = useTheme();
   const { addressBookService } = useAdenaContext();
-  const navigate = useNavigate();
-  const [addressList, setAddressList] = useState<any>([]);
+  const { navigate, goBack } = useAppNavigate();
+  const [addressList, setAddressList] = useState<AddressBookItem[]>([]);
   const { currentAccount } = useCurrentAccount();
-  const addAddressHandler = (status: navigateStatus, curr?: BookListProps): void =>
-    navigate(RoutePath.AddAddress, {
+  const addAddressHandler = (status: navigateStatus, curr?: AddressBookItem): void =>
+    navigate<RoutePath.AddAddress>(RoutePath.AddAddress, {
       state: {
         status,
-        curr: curr ?? null,
-        datas: addressList,
+        addressList,
+        curr,
       },
     });
 
@@ -72,7 +66,7 @@ const AddressBook = (): JSX.Element => {
           </Text>
         )}
       </>
-      <CloseShadowButton onClick={(): void => navigate(-1)} />
+      <CloseShadowButton onClick={goBack} />
     </Wrapper>
   );
 };

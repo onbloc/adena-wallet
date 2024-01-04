@@ -64,7 +64,6 @@ import ApproveChangingNetworkPage from '@pages/wallet/approve-changing-network';
 import ApproveAddingNetworkPage from '@pages/wallet/approve-adding-network';
 import AccountDetailsPage from '@pages/wallet/account-details';
 import ApproveSignTransaction from '@pages/wallet/approve-sign-transaction';
-import ApproveSignTransactionLedgerLoading from '@pages/wallet/approve-sign-transaction-ledger-loading';
 
 import { useWalletContext } from '@hooks/use-context';
 
@@ -126,10 +125,7 @@ export const CustomRouter = (): JSX.Element => {
         <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
         <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
         <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransaction />} />
-        <Route
-          path={RoutePath.ApproveSignTransactionLoading}
-          element={<ApproveSignTransactionLedgerLoading />}
-        />
+
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />

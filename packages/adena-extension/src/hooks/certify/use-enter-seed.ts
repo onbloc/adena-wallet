@@ -1,7 +1,8 @@
-import { RoutePath } from '@router/path';
 import { EnglishMnemonic } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import { RoutePath } from '@router/path';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 
@@ -16,8 +17,8 @@ export const useEnterSeed = (): {
   termsState: { terms: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void };
   buttonState: { onClick: () => Promise<void>; disabled: boolean };
 } => {
-  const navigate = useNavigate();
-  const [seed, setSeed] = useState('');
+  const { navigate } = useAppNavigate();
+  const [seeds, setSeeds] = useState('');
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
 
@@ -26,10 +27,10 @@ export const useEnterSeed = (): {
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
       const patternCheck = e.target.value.replace(specialPatternCheck, '');
-      setSeed(() => patternCheck.toLowerCase());
+      setSeeds(() => patternCheck.toLowerCase());
       setError(false);
     },
-    [seed],
+    [seeds],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
@@ -40,17 +41,17 @@ export const useEnterSeed = (): {
   };
 
   const handleButtonClick = async (): Promise<void> => {
-    if (seed.length === 0 || !terms) {
+    if (seeds.length === 0 || !terms) {
       return;
     }
 
     try {
-      const checkedMnemonic = new EnglishMnemonic(seed);
+      const checkedMnemonic = new EnglishMnemonic(seeds);
       if (checkedMnemonic) {
         navigate(RoutePath.CreatePassword, {
           state: {
             type: 'SEED',
-            seeds: seed,
+            seeds,
           },
         });
         setError(false);
@@ -63,14 +64,14 @@ export const useEnterSeed = (): {
   };
 
   useEffect(() => {
-    if (seed === '') {
+    if (seeds === '') {
       setError(false);
     }
-  }, [seed]);
+  }, [seeds]);
 
   return {
     seedState: {
-      value: seed,
+      value: seeds,
       onChange,
       onKeyDown,
       error: error,
@@ -82,7 +83,7 @@ export const useEnterSeed = (): {
     },
     buttonState: {
       onClick: handleButtonClick,
-      disabled: seed !== '' && terms,
+      disabled: seeds !== '' && terms,
     },
   };
 };

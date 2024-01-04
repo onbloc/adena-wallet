@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useLocation } from 'react-router-dom';
 import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
 
 import { Text, Button } from '@components/atoms';
@@ -8,6 +7,8 @@ import { TitleWithDesc } from '@components/molecules';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Account Added',
@@ -35,10 +36,10 @@ const Wrapper = styled.main`
 export const ApproveConnectHardwareWalletFinish = (): JSX.Element => {
   const { wallet, updateWallet } = useWalletContext();
   const { accountService } = useAdenaContext();
-  const location = useLocation();
+  const { params } = useAppNavigate<RoutePath.ApproveHardwareWalletFinish>();
 
   const onClickDoneButton = async (): Promise<void> => {
-    const { accounts } = location.state;
+    const { accounts } = params;
     if (!wallet) {
       return;
     }
@@ -46,7 +47,7 @@ export const ApproveConnectHardwareWalletFinish = (): JSX.Element => {
     if (!transport) {
       return;
     }
-    const deserializeAccounts: LedgerAccount[] = accounts.map(deserializeAccount);
+    const deserializeAccounts = accounts.map(deserializeAccount) as LedgerAccount[];
     const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
     const accountInfos = deserializeAccounts.map((account) => account.toData());
     const clone = wallet.clone();

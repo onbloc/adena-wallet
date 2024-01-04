@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isLedgerAccount } from 'adena-module';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import AccountDetails from '@components/pages/account-details/account-details';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
@@ -9,12 +9,13 @@ import { useAccountName } from '@hooks/use-account-name';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
   const { accountId } = useParams();
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();

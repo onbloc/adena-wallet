@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default.svg';
 import { Text, Button } from '@components/atoms';
@@ -12,9 +11,10 @@ import { existsPopups } from '@inject/message/methods';
 
 import GoogleSignInButton from './google-signin-button';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 export const WalletCreate = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
 
   const { state } = useLoadAccounts();
 

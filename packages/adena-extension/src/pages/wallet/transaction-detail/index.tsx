@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, CopyIconButton, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
@@ -10,9 +9,10 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
-import { TransactionInfo } from '@types';
 import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { RoutePath } from '@router/path';
 
 interface DLProps {
   color?: string;
@@ -21,15 +21,8 @@ interface DLProps {
 export const TransactionDetail = (): JSX.Element => {
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork } = useNetwork();
-  const location = useLocation();
-  const [transactionItem, setTransactionItem] = useState<TransactionInfo>();
-  const navigate = useNavigate();
-  const closeButtonClick = (): void => navigate(-1);
-
-  useEffect(() => {
-    setTransactionItem(location.state);
-    console.log(location.state);
-  }, [location]);
+  const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
+  const transactionItem = params.transactionInfo;
 
   const getLogoImage = useCallback(() => {
     if (transactionItem?.type === 'ADD_PACKAGE') {
@@ -157,7 +150,7 @@ export const TransactionDetail = (): JSX.Element => {
           margin='auto 0px 0px'
           fullWidth
           hierarchy='dark'
-          onClick={closeButtonClick}
+          onClick={goBack}
         >
           <Text type='body1Bold'>Close</Text>
         </Button>

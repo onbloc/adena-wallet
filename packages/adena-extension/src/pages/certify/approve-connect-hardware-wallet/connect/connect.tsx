@@ -5,10 +5,10 @@ import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
 import { ConnectFail } from './connect-fail';
 import { ConnectRequestWallet } from './connect-request-wallet';
-import { useNavigate } from 'react-router-dom';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
 import { ConnectInit } from './connect-init';
 import { serializeAccount } from 'adena-module';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 type ConnectType =
   | 'INIT'
@@ -21,7 +21,7 @@ type ConnectType =
   | 'NONE';
 
 export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const [connectState, setConnectState] = useState<ConnectType>('NONE');
   const [wallet, setWallet] = useState<Wallet>();
 
@@ -114,7 +114,7 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
 
   const onClickClose = useCallback(() => {
     setConnectState('INIT');
-    navigate(0);
+    window.location.reload();
   }, []);
 
   const renderByState = (): JSX.Element => {

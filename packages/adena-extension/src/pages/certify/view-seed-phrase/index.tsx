@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, Button, Copy } from '@components/atoms';
 import { SeedBox, TitleWithDesc } from '@components/molecules';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { RoutePath } from '@router/path';
 
 const text = {
   title: 'Reveal Seed Phrase',
@@ -31,22 +32,16 @@ const SeedBoxWrap = styled.div`
 `;
 
 export const ViewSeedPhrase = (): JSX.Element => {
-  const navigate = useNavigate();
-  const doneButtonClick = (): void => navigate(-1);
-  const location = useLocation();
-  const [mnemonic, setMnemonic] = useState('');
-  useEffect(() => {
-    const state = location.state as string;
-    setMnemonic(state);
-  }, []);
+  const { goBack, params } = useAppNavigate<RoutePath.ViewSeedPhrase>();
+
   return (
     <Wrapper>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <SeedBoxWrap>
-        <SeedBox seeds={mnemonic.split(' ')} />
-        <Copy copyStr={mnemonic} />
+        <SeedBox seeds={params.mnemonic.split(' ')} />
+        <Copy copyStr={params.mnemonic} />
       </SeedBoxWrap>
-      <Button fullWidth onClick={doneButtonClick}>
+      <Button fullWidth onClick={goBack}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

@@ -16,7 +16,7 @@ import { useNetwork } from '@hooks/use-network';
 import { RoutePath } from '@router/path';
 
 const ApproveEstablishContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const normalNavigate = useNavigate();
   const location = useLocation();
   const { walletService, establishService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -47,7 +47,7 @@ const ApproveEstablishContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestSite = async (): Promise<void> => {

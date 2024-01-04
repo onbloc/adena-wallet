@@ -1,14 +1,22 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { FullButtonRightIcon } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigation';
 
-const menuMakerInfo = [
+const menuMakerInfo: {
+  title: string;
+  navigatePath:
+    | RoutePath.ConnectedApps
+    | RoutePath.AddressBook
+    | RoutePath.ChangeNetwork
+    | RoutePath.SecurityPrivacy
+    | RoutePath.AboutAdena;
+}[] = [
   {
     title: 'Connected Apps',
     navigatePath: RoutePath.ConnectedApps,
@@ -32,11 +40,7 @@ const menuMakerInfo = [
 ];
 
 export const Settings = (): JSX.Element => {
-  const navigate = useNavigate();
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+  const { navigate, goBack } = useAppNavigate();
 
   return (
     <Wrapper>
@@ -50,7 +54,7 @@ export const Settings = (): JSX.Element => {
           onClick={(): void => navigate(v.navigatePath)}
         />
       ))}
-      <BottomFixedButton text='Close' onClick={moveBack} />
+      <BottomFixedButton text='Close' onClick={goBack} />
     </Wrapper>
   );
 };

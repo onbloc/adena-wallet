@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled, { useTheme } from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
 import { TransactionHistory, DoubleButton } from '@components/molecules';
@@ -22,10 +21,9 @@ import { isGRC20TokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
-import { TokenBalanceType } from '@types';
-
 import LoadingTokenDetails from './loading-token-details';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -108,13 +106,12 @@ type TokenHistoriesType = {
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const { state } = useLocation();
+  const { navigate, params } = useAppNavigate<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   useNetwork();
-  const [tokenBalance] = useState<TokenBalanceType>(state);
-  const [balance] = useState(tokenBalance.amount.value);
+  const tokenBalance = params.tokenBalance;
+  const [balance] = useState(tokenBalance?.amount.value);
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
@@ -231,7 +228,7 @@ export const TokenDetails = (): JSX.Element => {
       if (transactionInfo) {
         saveScrollPosition(bodyElement?.scrollTop);
         navigate(RoutePath.TransactionDetail, {
-          state: transactionInfo,
+          state: { transactionInfo },
         });
       }
     },

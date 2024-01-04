@@ -1,6 +1,6 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
@@ -8,6 +8,7 @@ import { CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
@@ -17,12 +18,12 @@ const forgotPasswordContent =
 
 export const ResetWallet = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const { state } = useLocation();
+  const normalNavigate = useNavigate();
+  const { navigate, goBack, params } = useAppNavigate<RoutePath.ResetWallet>();
   const { clear } = useClear();
 
   const cancelButtonClick = (): void => {
-    return state?.backStep ? navigate(state.backStep) : navigate(-1);
+    return params?.backStep ? normalNavigate(params.backStep) : goBack();
   };
 
   const resetButtonClick = (): void => {
@@ -36,7 +37,7 @@ export const ResetWallet = (): JSX.Element => {
         Reset Wallet
       </Text>
       <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-        {state?.from === 'forgot-password' ? forgotPasswordContent : content}
+        {params?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton
         cancelButtonProps={{ onClick: cancelButtonClick }}

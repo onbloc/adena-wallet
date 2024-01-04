@@ -1,11 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { LeftArrowBtn } from '@components/atoms';
 import logo from '@assets/logo-withIcon.svg';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 type ProgressLevel = 'first' | 'second' | 'third';
 
@@ -47,13 +47,12 @@ export const ProgressMenu = ({
   showLogo = false,
   hideArrow = false,
 }: ProgressMenuProps): JSX.Element => {
-  const navigate = useNavigate();
-  const handlePrevButtonClick = (): void => navigate(-1);
+  const { goBack } = useAppNavigate();
 
   return (
     <Wrapper>
       {(progressLevel === 'third' || showLogo) && <img src={logo} alt='adena logo' />}
-      {!hideArrow && <Button onClick={handlePrevButtonClick} tabIndex={0} />}
+      {!hideArrow && <Button onClick={goBack} tabIndex={0} />}
       <Hr progressLevel={progressLevel} />
     </Wrapper>
   );

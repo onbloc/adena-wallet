@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled from 'styled-components';
 
 import { isLedgerAccount } from 'adena-module';
 
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { RoutePath } from '@router/path';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -14,8 +14,8 @@ import { TransactionMessage } from '@services/index';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useNetwork } from '@hooks/use-network';
 
-import { Amount, TokenModel } from '@types';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -24,27 +24,16 @@ const TransferSummaryLayout = styled.div`
   padding: 24px 20px;
 `;
 
-interface TransferSummaryInfo {
-  tokenMetainfo: TokenModel;
-  toAddress: string;
-  transferAmount: Amount;
-  networkFee: Amount;
-}
-
 const TransferSummaryContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const normalNavigate = useNavigate();
+  const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
+  const summaryInfo = params;
   const { gnoProvider } = useWalletContext();
-  const { state } = useLocation();
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const [summaryInfo, setSummaryInfo] = useState<TransferSummaryInfo>(state);
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
-
-  useEffect(() => {
-    setSummaryInfo(state);
-  }, [state]);
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
@@ -157,29 +146,18 @@ const TransferSummaryContainer: React.FC = () => {
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
     if (document) {
-      const state = {
-        document,
-      };
-      navigate(RoutePath.TransferLedgerLoading, { state });
+      navigate(RoutePath.TransferLedgerLoading, { state: { document } });
     }
     return true;
   }, [summaryInfo, currentAccount, currentAccount, isSent]);
 
-  const onClickBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   const onClickCancel = useCallback(() => {
-    if (state.isTokenSearch === true) {
+    if (summaryInfo.isTokenSearch === true) {
       navigate(RoutePath.Wallet);
       return;
     }
-    navigate(-2);
-  }, [navigate]);
-
-  const onClickSend = useCallback(() => {
-    transfer();
-  }, [transfer]);
+    normalNavigate(-2);
+  }, []);
 
   return (
     <TransferSummaryLayout>
@@ -191,9 +169,9 @@ const TransferSummaryContainer: React.FC = () => {
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isErrorNetworkFee}
           networkFee={summaryInfo.networkFee}
-          onClickBack={onClickBack}
+          onClickBack={goBack}
           onClickCancel={onClickCancel}
-          onClickSend={onClickSend}
+          onClickSend={transfer}
         />
       </div>
     </TransferSummaryLayout>

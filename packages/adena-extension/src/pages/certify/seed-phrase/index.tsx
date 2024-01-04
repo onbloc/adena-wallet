@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { ErrorText, DefaultInput } from '@components/atoms';
 import { TitleWithDesc, CancelAndConfirmButton } from '@components/molecules';
@@ -9,6 +8,7 @@ import { WalletError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const text = {
   title: 'Reveal Seed Phrase',
@@ -24,9 +24,8 @@ const Wrapper = styled.main`
 
 export const SeedPhrase = (): JSX.Element => {
   const { walletService, accountService } = useAdenaContext();
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const cancelButtonClick = (): void => navigate(-1);
   const [password, setPassword] = useState('');
   const [error, setError] = useState({
     error: false,
@@ -49,7 +48,7 @@ export const SeedPhrase = (): JSX.Element => {
         if (wallet) {
           navigate(RoutePath.ViewSeedPhrase, {
             replace: true,
-            state: wallet.mnemonic,
+            state: { mnemonic: wallet.mnemonic },
           });
         }
       }
@@ -81,7 +80,7 @@ export const SeedPhrase = (): JSX.Element => {
       />
       {error.error && <ErrorText text={error.message} />}
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: cancelButtonClick }}
+        cancelButtonProps={{ onClick: goBack }}
         confirmButtonProps={{
           onClick: nextButtonClick,
           text: 'Next',

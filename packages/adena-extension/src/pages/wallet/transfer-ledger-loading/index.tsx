@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
-import { StdSignDoc, isLedgerAccount } from 'adena-module';
+import { isLedgerAccount } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -18,12 +18,11 @@ const TransferLedgerLoadingLayout = styled.div`
 `;
 
 const TransferLedgerLoadingContainer = (): JSX.Element => {
-  const navigate = useNavigate();
-  const { state } = useLocation();
+  const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferLedgerLoading>();
   const { transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [connected, setConnected] = useState(false);
-  const document: StdSignDoc = state.document;
+  const document = params.document;
 
   useEffect(() => {
     requestTransaction();
@@ -68,13 +67,9 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
     return result;
   }, [currentAccount, document]);
 
-  const onClickCancel = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   return (
     <TransferLedgerLoadingLayout>
-      <TransferLedgerLoading onClickCancel={onClickCancel} />
+      <TransferLedgerLoading onClickCancel={goBack} />
     </TransferLedgerLoadingLayout>
   );
 };

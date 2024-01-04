@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import BigNumber from 'bignumber.js';
 
@@ -14,6 +13,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { WalletState } from '@states';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const Wrapper = styled.main`
   padding-top: 14px;
@@ -35,14 +35,15 @@ const Wrapper = styled.main`
 
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
     useTokenBalance();
 
-  const DepositButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: 'deposit' });
-  const SendButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: 'send' });
+  const DepositButtonClick = (): void =>
+    navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
+  const SendButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -72,8 +73,15 @@ export const WalletMain = (): JSX.Element => {
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
+      const tokenBalance = displayTokenBalances.find(
+        (tokenBalance) => tokenBalance.tokenId === tokenId,
+      );
+      if (!tokenBalance) {
+        window.alert('Token not found');
+        return;
+      }
       navigate(RoutePath.TokenDetails, {
-        state: displayTokenBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId),
+        state: { tokenBalance },
       });
     },
     [tokens],

@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default-v2.svg';
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const menuMakerInfo = [
   {
@@ -43,15 +43,11 @@ const menuMakerInfo = [
 export const AboutAdena = (): JSX.Element => {
   const theme = useTheme();
   const [version, setVersion] = useState('');
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
 
   useEffect(() => {
     initVersion();
   }, []);
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   const initVersion = (): void => {
     const manifest = chrome.runtime.getManifest();
@@ -77,7 +73,7 @@ export const AboutAdena = (): JSX.Element => {
           icon='WEBLINK'
         />
       ))}
-      <BottomFixedButton onClick={moveBack} />
+      <BottomFixedButton onClick={goBack} />
     </Wrapper>
   );
 };

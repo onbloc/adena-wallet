@@ -15,6 +15,7 @@ import { RoutePath } from '@router/path';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];
@@ -41,7 +42,8 @@ function mappedTransactionData(document: StdSignDoc): {
 const DEFAULT_DENOM = 'GNOT';
 
 const ApproveSignContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const normalNavigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -84,7 +86,7 @@ const ApproveSignContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {

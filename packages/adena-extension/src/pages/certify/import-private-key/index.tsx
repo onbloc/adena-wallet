@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import { SingleAccount, PrivateKeyKeyring } from 'adena-module';
 
 import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
@@ -9,6 +8,7 @@ import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigation';
 
 const content = {
   title: 'Import Private Key',
@@ -17,7 +17,7 @@ const content = {
 };
 
 export const ImportPrivateKey = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { wallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
   const [value, setValue] = useState('');

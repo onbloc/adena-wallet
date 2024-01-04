@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import EditNetwork from '@components/pages/edit-network/edit-network';
 import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
-import { parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 
 import { NetworkMetainfo } from '@types';
+import useAppNavigate from '@hooks/use-app-navigation';
+import { RoutePath } from '@router/path';
 
 function isValidURL(rpcURL: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
@@ -29,9 +29,8 @@ function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
 }
 
 const EditCustomNetworkContainer: React.FC = () => {
-  const navigate = useNavigate();
-  const { search } = useLocation();
-  const { networkId: currentNetworkId } = parseParameters(search);
+  const { params, goBack } = useAppNavigate<RoutePath.EditCustomNetwork>();
+  const currentNetworkId = params.networkId;
   const { networks, updateNetwork, deleteNetwork } = useNetwork();
   const {
     name,
@@ -113,17 +112,13 @@ const EditCustomNetworkContainer: React.FC = () => {
     }
     setRPCUrlError('');
     setChainIdError('');
-    navigate(-1);
+    goBack;
   }, [networks, name, rpcUrl, chainId, currentNetworkId, originNetwork]);
 
   const removeNetwork = useCallback(async () => {
     await deleteNetwork(currentNetworkId);
-    navigate(-1);
+    goBack;
   }, [currentNetworkId]);
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   return (
     <CommonFullContentLayout>
@@ -139,7 +134,7 @@ const EditCustomNetworkContainer: React.FC = () => {
         changeChainId={changeChainId}
         saveNetwork={saveNetwork}
         removeNetwork={removeNetwork}
-        moveBack={moveBack}
+        moveBack={goBack}
       />
     </CommonFullContentLayout>
   );
