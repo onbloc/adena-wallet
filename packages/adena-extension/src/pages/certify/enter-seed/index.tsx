@@ -28,8 +28,8 @@ export const EnterSeedPhrase = (): JSX.Element => {
   return (
     <Wrapper onKeyDown={seedState.onKeyDown}>
       <TitleWithDesc
-        title={params.from === 'forgot-password' ? forgotContent.title : walletContent.title}
-        desc={params.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
+        title={params?.from === 'forgot-password' ? forgotContent.title : walletContent.title}
+        desc={params?.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
       />
       <SecureTextarea
         value={seedState.value}
@@ -43,7 +43,7 @@ export const EnterSeedPhrase = (): JSX.Element => {
           checked={termsState.terms}
           onChange={termsState.onChange}
           tabIndex={2}
-          text={params.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
+          text={params?.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
           checkboxPos='TOP'
         />
         <Button

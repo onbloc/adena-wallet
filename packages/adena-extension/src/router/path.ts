@@ -88,7 +88,7 @@ export type RouteParams = {
   [RoutePath.ForgotPassword]: undefined;
 
   //phrase
-  [RoutePath.EnterSeedPhrase]: {
+  [RoutePath.EnterSeedPhrase]?: {
     from: 'forgot-password' | 'wallet-create';
   };
   [RoutePath.CreatePassword]: CreateAccountState;
