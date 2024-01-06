@@ -60,7 +60,7 @@ export const RevealPasswordPhrase = (): JSX.Element => {
       setClicked(false);
       return;
     }
-    navigate(RoutePath.RevealPrivatePhrase);
+    navigate(RoutePath.RevealPrivatePhrase, { replace: true });
     setClicked(false);
   };
 

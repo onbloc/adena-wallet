@@ -29,7 +29,7 @@ export const ForgotPassword = (): JSX.Element => {
   };
 
   const onClickHaveNotSeedPhrase = (): void => {
-    navigate(RoutePath.ResetWallet, { state: { backStep: -2, from: 'forgot-password' } });
+    navigate(RoutePath.ResetWallet, { state: { from: 'forgot-password' }, replace: true });
   };
 
   const onClickForgotButton = (): void => {

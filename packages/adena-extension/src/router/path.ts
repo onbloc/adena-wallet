@@ -185,7 +185,6 @@ export type RouteParams = {
   };
   [RoutePath.RemoveAccount]: undefined;
   [RoutePath.ResetWallet]?: {
-    backStep: number;
     from: 'forgot-password';
   };
   [RoutePath.ApproveHardwareWalletConnect]: undefined;

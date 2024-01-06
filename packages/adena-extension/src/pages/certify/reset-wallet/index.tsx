@@ -1,6 +1,5 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
@@ -18,13 +17,8 @@ const forgotPasswordContent =
 
 export const ResetWallet = (): JSX.Element => {
   const theme = useTheme();
-  const normalNavigate = useNavigate();
   const { navigate, goBack, params } = useAppNavigate<RoutePath.ResetWallet>();
   const { clear } = useClear();
-
-  const cancelButtonClick = (): void => {
-    return params?.backStep ? normalNavigate(params.backStep) : goBack();
-  };
 
   const resetButtonClick = (): void => {
     clear().then(() => navigate(RoutePath.Home));
@@ -40,7 +34,7 @@ export const ResetWallet = (): JSX.Element => {
         {params?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: cancelButtonClick }}
+        cancelButtonProps={{ onClick: goBack }}
         confirmButtonProps={{
           onClick: resetButtonClick,
           text: 'Reset',
