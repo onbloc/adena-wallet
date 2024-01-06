@@ -13,6 +13,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { RoutePath } from '@router/path';
 
 import { SideMenuAccountInfo, TokenBalanceType } from '@types';
+import useLink from '@hooks/use-link';
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface SideMenuContainerProps {
 }
 
 const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) => {
+  const { openLink } = useLink();
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
@@ -77,10 +79,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     [navigate, setOpen],
   );
 
-  const openLink = useCallback(
+  const onOpenLink = useCallback(
     async (link: string) => {
       setOpen(false);
-      window.open(link, '_blank');
+      openLink(link);
     },
     [setOpen],
   );
@@ -115,7 +117,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       accounts={sideMenuAccounts}
       changeAccount={changeAccount}
       movePage={movePage}
-      openLink={openLink}
+      openLink={onOpenLink}
       lock={lock}
       close={close}
     />

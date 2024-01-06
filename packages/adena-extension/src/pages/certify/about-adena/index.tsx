@@ -6,6 +6,7 @@ import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigation';
+import useLink from '@hooks/use-link';
 
 const menuMakerInfo = [
   {
@@ -42,6 +43,7 @@ const menuMakerInfo = [
 
 export const AboutAdena = (): JSX.Element => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const [version, setVersion] = useState('');
   const { goBack } = useAppNavigate();
 
@@ -54,10 +56,6 @@ export const AboutAdena = (): JSX.Element => {
     setVersion(`${manifest.version}`);
   };
 
-  const onClickWebLink = (path: string): Window | null => {
-    return window.open(path, '_blank');
-  };
-
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
@@ -68,7 +66,7 @@ export const AboutAdena = (): JSX.Element => {
         <FullButtonRightIcon
           key={i}
           title={v.title}
-          onClick={(): Window | null => onClickWebLink(v.navigatePath)}
+          onClick={(): void => openLink(v.navigatePath)}
           mode={v.mode as ButtonMode}
           icon='WEBLINK'
         />

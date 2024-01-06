@@ -24,6 +24,7 @@ import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant
 import LoadingTokenDetails from './loading-token-details';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigation';
+import useLink from '@hooks/use-link';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -106,6 +107,7 @@ type TokenHistoriesType = {
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const { navigate, params } = useAppNavigate<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
@@ -259,21 +261,17 @@ export const TokenDetails = (): JSX.Element => {
     return '';
   };
 
-  const moveScanner = (uri: string): void => {
-    window.open(uri, '_blank');
-  };
-
   const getTooltipItems = (): { tooltipText: string; onClick: () => void }[] => {
     const accountDetailItem = {
       tooltipText: 'View on Gnoscan',
-      onClick: () => moveScanner(getAccountDetailUri()),
+      onClick: () => openLink(getAccountDetailUri()),
     };
     if (!isGRC20TokenModel(tokenBalance)) {
       return [accountDetailItem];
     }
     const realmDetailItem = {
       tooltipText: 'Token Details',
-      onClick: () => moveScanner(getTokenUri()),
+      onClick: () => openLink(getTokenUri()),
     };
     return [accountDetailItem, realmDetailItem];
   };

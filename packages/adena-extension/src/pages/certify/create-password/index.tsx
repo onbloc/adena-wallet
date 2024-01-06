@@ -7,6 +7,7 @@ import { useCreatePassword } from '@hooks/certify/use-create-password';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigation';
 import { RoutePath } from '@router/path';
+import useLink from '@hooks/use-link';
 
 const text = {
   title: 'Create\na Password',
@@ -39,10 +40,11 @@ const FormBox = styled.div`
 `;
 
 export const CreatePassword = (): JSX.Element => {
+  const { openLink } = useLink();
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useCreatePassword();
   const { params } = useAppNavigate<RoutePath.CreatePassword>();
-  const handleLinkClick = (): Window | null => window.open('https://adena.app/terms', '_blank');
+  const handleLinkClick = (): void => openLink('https://adena.app/terms');
 
   return (
     <Wrapper isPopup={params.type !== 'SEED'}>

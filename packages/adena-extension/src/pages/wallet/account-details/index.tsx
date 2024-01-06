@@ -10,10 +10,12 @@ import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigation';
+import useLink from '@hooks/use-link';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
+  const { openLink } = useLink();
   const { accountId } = useParams();
   const { navigate } = useAppNavigate();
   const { accounts } = useLoadAccounts();
@@ -56,7 +58,7 @@ const AccountDetailsContainer: React.FC = () => {
   }, [name, originName, account]);
 
   const moveGnoscan = useCallback(() => {
-    window.open(`https://gnoscan.io/accounts/${address}`, '_blank');
+    openLink(`https://gnoscan.io/accounts/${address}`);
   }, [address]);
 
   const moveExportPrivateKey = useCallback(async () => {

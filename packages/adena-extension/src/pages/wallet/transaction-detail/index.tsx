@@ -13,12 +13,14 @@ import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigation';
 import { RoutePath } from '@router/path';
+import useLink from '@hooks/use-link';
 
 interface DLProps {
   color?: string;
 }
 
 export const TransactionDetail = (): JSX.Element => {
+  const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork } = useNetwork();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
@@ -38,9 +40,8 @@ export const TransactionDetail = (): JSX.Element => {
   }, [transactionItem]);
 
   const handleLinkClick = (hash: string): void => {
-    window.open(
+    openLink(
       `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
-      '_blank',
     );
   };
 
