@@ -19,10 +19,10 @@ export const ConnectedApps = (): JSX.Element => {
   const { currentAccount } = useCurrentAccount();
   const { goBack } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
-  const [datas, setDatas] = useState<any>([]);
+  const [data, setData] = useState<any>([]);
 
   useEffect(() => {
-    updateDatas();
+    updateData();
   }, []);
 
   const onClickDisconnect = async (item: any): Promise<void> => {
@@ -30,15 +30,15 @@ export const ConnectedApps = (): JSX.Element => {
       return;
     }
     await establishService.unEstablishBy(currentAccount.id, item.hostname);
-    await updateDatas();
+    await updateData();
   };
 
-  const updateDatas = async (): Promise<void> => {
+  const updateData = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
     const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id);
-    setDatas(establishedSites);
+    setData(establishedSites);
   };
 
   const renderAppItem = (item: any, index: number): JSX.Element => {
@@ -76,8 +76,8 @@ export const ConnectedApps = (): JSX.Element => {
       </Text>
       {state === 'FINISH' ? (
         <>
-          {datas.length > 0 ? (
-            datas.map(renderAppItem)
+          {data.length > 0 ? (
+            data.map(renderAppItem)
           ) : (
             <Text className='desc' type='body1Reg' color={theme.neutral.a}>
               No connections
