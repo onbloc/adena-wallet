@@ -10,7 +10,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const text = 'Enter\nYour Password';
 

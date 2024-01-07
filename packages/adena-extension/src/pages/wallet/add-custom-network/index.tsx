@@ -6,7 +6,7 @@ import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
 import { useNetwork } from '@hooks/use-network';
 
 import { NetworkMetainfo } from '@types';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 function isValidURL(rpcUrl: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;

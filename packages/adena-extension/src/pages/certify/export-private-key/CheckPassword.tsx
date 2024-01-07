@@ -6,7 +6,7 @@ import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
 import { BaseError } from '@common/errors';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const StyledTermsWrap = styled.div`
   margin-top: auto;

@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import { useImportAccount } from '@hooks/use-import-account';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const content = {
   title: 'Import Private Key',

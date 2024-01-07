@@ -5,7 +5,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath } from '@router/path';
 import { CommonFullContentLayout } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const ChangeNetworkContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();

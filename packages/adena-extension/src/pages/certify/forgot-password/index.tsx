@@ -7,7 +7,7 @@ import { getTheme } from '@styles/theme';
 
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const text = {
   title: 'Forgot Password?',

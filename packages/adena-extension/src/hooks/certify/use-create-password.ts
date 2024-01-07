@@ -8,7 +8,7 @@ import {
   validateWrongPasswordLength,
 } from '@common/validation';
 import { AdenaWallet } from 'adena-module';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { CreateAccountState, GoogleState, LedgerState, SeedState } from '@types';
 
 export type UseCreatePasswordReturn = {

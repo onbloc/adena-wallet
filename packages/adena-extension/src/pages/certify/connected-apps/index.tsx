@@ -11,7 +11,7 @@ import disconnected from '@assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 export const ConnectedApps = (): JSX.Element => {
   const theme = useTheme();

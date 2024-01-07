@@ -14,7 +14,7 @@ import useScrollHistory from '@hooks/use-scroll-history';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 import { fonts } from '@styles/theme';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

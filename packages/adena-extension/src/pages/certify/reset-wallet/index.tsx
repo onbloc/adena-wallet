@@ -7,7 +7,7 @@ import { CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useClear } from '@hooks/use-clear';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const content =
   'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';

@@ -9,7 +9,7 @@ import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 
 import { MultilineTextWithArrowButton } from './multiline-text-with-arrow-button';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};

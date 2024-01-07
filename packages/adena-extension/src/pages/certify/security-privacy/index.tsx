@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const getMenuMakerInfo = (
   account: Account | null,

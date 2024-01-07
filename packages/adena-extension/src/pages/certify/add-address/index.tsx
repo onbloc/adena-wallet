@@ -17,7 +17,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
 import { AddressBookItem } from '@repositories/wallet';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { RoutePath } from '@router/path';
 
 const specialPatternCheck = /\W|\s/g;

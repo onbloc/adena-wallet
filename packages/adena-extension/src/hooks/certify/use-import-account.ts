@@ -1,4 +1,4 @@
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useState } from 'react';
 

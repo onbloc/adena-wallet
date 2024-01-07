@@ -7,7 +7,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { TM2Error } from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { RoutePath } from '@router/path';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {

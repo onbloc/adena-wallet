@@ -5,7 +5,7 @@ import { ApproveLedgerLoading } from '@components/molecules';
 import { InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { RoutePath } from '@router/path';
 
 const ApproveSignLedgerLoadingContainer: React.FC = () => {

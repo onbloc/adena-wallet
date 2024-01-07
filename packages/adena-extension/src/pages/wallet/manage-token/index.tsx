@@ -8,7 +8,7 @@ import { RoutePath } from '@router/path';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const ManageTokenSearchContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();

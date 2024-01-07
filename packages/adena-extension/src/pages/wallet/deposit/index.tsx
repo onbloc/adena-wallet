@@ -9,7 +9,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};

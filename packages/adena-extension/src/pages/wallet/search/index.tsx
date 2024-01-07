@@ -16,7 +16,7 @@ import useHistoryData from '@hooks/use-history-data';
 import { TokenBalanceType } from '@types';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 
 const Wrapper = styled.main`
   width: 100%;

@@ -9,7 +9,7 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigation';
+import useAppNavigate from '@hooks/use-app-navige';
 import { AddressBookItem } from '@repositories/wallet';
 
 type navigateStatus = 'add' | 'edit';
