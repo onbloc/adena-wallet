@@ -29,6 +29,7 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   navigate: <RouteName extends keyof RouteParams>(...args: NavigateProps<RouteName>) => void;
   params: RouteParams[RouteName];
   goBack: () => void;
+  reload: () => void;
 } => {
   const params = useLocation().state as RouteParams[RouteName];
 
@@ -45,10 +46,15 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
     baseNavigate(-1);
   };
 
+  const reload = (): void => {
+    baseNavigate(0);
+  };
+
   return {
     navigate,
     params,
     goBack,
+    reload,
   };
 };
 

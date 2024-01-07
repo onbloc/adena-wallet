@@ -21,7 +21,7 @@ type ConnectType =
   | 'NONE';
 
 export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
-  const { navigate } = useAppNavigate();
+  const { navigate, reload } = useAppNavigate();
   const [connectState, setConnectState] = useState<ConnectType>('NONE');
   const [wallet, setWallet] = useState<Wallet>();
 
@@ -114,7 +114,7 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
 
   const onClickClose = useCallback(() => {
     setConnectState('INIT');
-    window.location.reload();
+    reload();
   }, []);
 
   const renderByState = (): JSX.Element => {
