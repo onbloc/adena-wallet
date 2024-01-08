@@ -2,7 +2,7 @@ import { NavigateOptions, useLocation, useNavigate } from 'react-router-dom';
 import { RouteParams } from '@router/path';
 
 type NavigateProps<key extends keyof RouteParams> = key extends unknown
-  ? undefined extends RouteParams[key]
+  ? null extends RouteParams[key]
     ?
         | [screen: key] // if the params are optional, we don't have to provide it
         | [

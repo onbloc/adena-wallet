@@ -78,31 +78,31 @@ export enum RoutePath {
 }
 
 export type RouteParams = {
-  [RoutePath.Home]: undefined;
-  [RoutePath.Login]: undefined;
-  [RoutePath.Nft]: undefined;
-  [RoutePath.Staking]: undefined;
-  [RoutePath.Explore]: undefined;
-  [RoutePath.History]: undefined;
-  [RoutePath.Create]: undefined;
-  [RoutePath.ForgotPassword]: undefined;
+  [RoutePath.Home]: null;
+  [RoutePath.Login]: null;
+  [RoutePath.Nft]: null;
+  [RoutePath.Staking]: null;
+  [RoutePath.Explore]: null;
+  [RoutePath.History]: null;
+  [RoutePath.Create]: null;
+  [RoutePath.ForgotPassword]: null;
 
   //phrase
-  [RoutePath.EnterSeedPhrase]?: {
+  [RoutePath.EnterSeedPhrase]: {
     from: 'forgot-password' | 'wallet-create';
-  };
+  } | null;
   [RoutePath.CreatePassword]: CreateAccountState;
   [RoutePath.LaunchAdena]: CreateAccountState;
-  [RoutePath.YourSeedPhrase]?: { type: 'ADD_ACCOUNT' };
-  [RoutePath.ImportPrivateKey]: undefined;
-  [RoutePath.GenerateSeedPhrase]: undefined;
+  [RoutePath.YourSeedPhrase]: { type: 'ADD_ACCOUNT' } | null;
+  [RoutePath.ImportPrivateKey]: null;
+  [RoutePath.GenerateSeedPhrase]: null;
 
   //google login
-  [RoutePath.GoogleConnect]: undefined;
-  [RoutePath.GoogleConnectFailed]: undefined;
+  [RoutePath.GoogleConnect]: null;
+  [RoutePath.GoogleConnectFailed]: null;
 
   //wallet
-  [RoutePath.Wallet]: undefined;
+  [RoutePath.Wallet]: null;
   [RoutePath.WalletSearch]: {
     type: 'deposit' | 'send';
   };
@@ -113,30 +113,30 @@ export type RouteParams = {
     type: 'token' | 'wallet';
     tokenMetainfo: TokenBalanceType;
   };
-  [RoutePath.Send]: undefined;
+  [RoutePath.Send]: null;
   [RoutePath.TokenDetails]: {
     tokenBalance: TokenBalanceType;
   };
-  [RoutePath.ApproveLogin]: undefined;
-  [RoutePath.ApproveTransaction]: undefined;
+  [RoutePath.ApproveLogin]: null;
+  [RoutePath.ApproveTransaction]: null;
   [RoutePath.ApproveTransactionLoading]: {
     document?: StdSignDoc;
     requestData?: InjectionMessage;
   };
-  [RoutePath.ApproveSign]: undefined;
+  [RoutePath.ApproveSign]: null;
   [RoutePath.ApproveSignLoading]: {
     document?: StdSignDoc;
     requestData?: InjectionMessage;
   };
-  [RoutePath.ApproveSignTransaction]: undefined;
-  [RoutePath.ApproveEstablish]: undefined;
-  [RoutePath.ApproveChangingNetwork]: undefined;
-  [RoutePath.ApproveAddingNetwork]: undefined;
-  [RoutePath.ImportAccount]: undefined;
-  [RoutePath.AddAccount]: undefined;
-  [RoutePath.AccountDetails]: undefined;
-  [RoutePath.ManageToken]: undefined;
-  [RoutePath.ManageTokenAdded]: undefined;
+  [RoutePath.ApproveSignTransaction]: null;
+  [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveChangingNetwork]: null;
+  [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.ImportAccount]: null;
+  [RoutePath.AddAccount]: null;
+  [RoutePath.AccountDetails]: null;
+  [RoutePath.ManageToken]: null;
+  [RoutePath.ManageTokenAdded]: null;
   [RoutePath.TransferInput]: {
     tokenBalance: TokenBalanceType;
     isTokenSearch?: boolean;
@@ -157,37 +157,37 @@ export type RouteParams = {
   [RoutePath.TransferLedgerLoading]: {
     document: StdSignDoc;
   };
-  [RoutePath.TransferLedgerReject]: undefined;
+  [RoutePath.TransferLedgerReject]: null;
 
-  [RoutePath.Setting]: undefined;
-  [RoutePath.SettingChangePassword]: undefined;
-  [RoutePath.SettingSeedPhrase]: undefined;
-  [RoutePath.ViewPrivateKey]: undefined;
+  [RoutePath.Setting]: null;
+  [RoutePath.SettingChangePassword]: null;
+  [RoutePath.SettingSeedPhrase]: null;
+  [RoutePath.ViewPrivateKey]: null;
   [RoutePath.ViewSeedPhrase]: { mnemonic: string };
-  [RoutePath.ConnectedApps]: undefined;
-  [RoutePath.ChangeNetwork]: undefined;
-  [RoutePath.AddCustomNetwork]: undefined;
+  [RoutePath.ConnectedApps]: null;
+  [RoutePath.ChangeNetwork]: null;
+  [RoutePath.AddCustomNetwork]: null;
   [RoutePath.EditCustomNetwork]: {
     networkId: string;
   };
-  [RoutePath.AddressBook]: undefined;
+  [RoutePath.AddressBook]: null;
   [RoutePath.AddAddress]: {
     status: 'add' | 'edit';
     curr?: AddressBookItem;
     addressList: AddressBookItem[];
   };
-  [RoutePath.SecurityPrivacy]: undefined;
-  [RoutePath.RevealPasswordPhrase]: undefined;
-  [RoutePath.RevealPrivatePhrase]: undefined;
-  [RoutePath.AboutAdena]: undefined;
-  [RoutePath.ExportPrivateKey]?: {
+  [RoutePath.SecurityPrivacy]: null;
+  [RoutePath.RevealPasswordPhrase]: null;
+  [RoutePath.RevealPrivatePhrase]: null;
+  [RoutePath.AboutAdena]: null;
+  [RoutePath.ExportPrivateKey]: {
     accountId?: string;
-  };
-  [RoutePath.RemoveAccount]: undefined;
-  [RoutePath.ResetWallet]?: {
+  } | null;
+  [RoutePath.RemoveAccount]: null;
+  [RoutePath.ResetWallet]: {
     from: 'forgot-password';
-  };
-  [RoutePath.ApproveHardwareWalletConnect]: undefined;
+  } | null;
+  [RoutePath.ApproveHardwareWalletConnect]: null;
   [RoutePath.ApproveHardwareWalletSelectAccount]: {
     accounts: string[];
   };
@@ -197,5 +197,5 @@ export type RouteParams = {
   [RoutePath.ApproveHardwareWalletLedgerPassword]: {
     accounts: string[];
   };
-  [RoutePath.ApproveHardwareWalletLedgerAllSet]: undefined;
+  [RoutePath.ApproveHardwareWalletLedgerAllSet]: null;
 };
