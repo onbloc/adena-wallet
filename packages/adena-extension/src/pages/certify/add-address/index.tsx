@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
 import { Text, DefaultInput, inputStyle, ErrorText, LeftArrowBtn } from '@components/atoms';
@@ -13,11 +12,13 @@ import {
   validateAlreadyName,
   validateInvalidAddress,
 } from '@services/index';
-import { BookListProps } from '../address-book';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
+import { AddressBookItem } from '@repositories/wallet';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
@@ -27,13 +28,12 @@ const AddAddress = (): JSX.Element => {
   const { wallet } = useWalletContext();
   const { addressBookService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const backButtonClick = (): void => navigate(-1);
-  const isAdd = location?.state.status === 'add';
-  const datas: BookListProps[] = location?.state?.datas;
-  const [name, setName] = useState(() => location?.state?.curr?.name ?? '');
-  const [address, setAddress] = useState(() => location?.state?.curr?.address ?? '');
+  const { params, goBack } = useAppNavigate<RoutePath.AddAddress>();
+  const isAdd = params.status === 'add';
+
+  const addressList: AddressBookItem[] = params.addressList;
+  const [name, setName] = useState(() => params.curr?.name ?? '');
+  const [address, setAddress] = useState(() => params.curr?.address ?? '');
   const [nameError, setNameError] = useState<boolean>(false);
   const [addressError, setAddressError] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -54,11 +54,11 @@ const AddAddress = (): JSX.Element => {
   const saveButtonClick = (): void => {
     let isValid = true;
     let errorMessage = '';
-    const currData: BookListProps = {
-      id: location?.state?.curr?.id ?? '',
+    const currData: AddressBookItem = {
+      id: params.curr?.id ?? '',
       name: name,
       address: address,
-      createdAt: location?.state?.curr?.createdAt ?? '',
+      createdAt: params.curr?.createdAt ?? '',
     };
 
     try {
@@ -74,7 +74,7 @@ const AddAddress = (): JSX.Element => {
     }
 
     try {
-      validateAlreadyAddress(currData, datas, isAdd);
+      validateAlreadyAddress(currData, addressList, isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -98,7 +98,7 @@ const AddAddress = (): JSX.Element => {
     }
 
     try {
-      validateAlreadyName(currData, datas, isAdd);
+      validateAlreadyName(currData, addressList, isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {
@@ -116,21 +116,21 @@ const AddAddress = (): JSX.Element => {
   };
 
   const addHandler = async (): Promise<void> =>
-    await addressBookService.addAddressBookItem({ name, address }).then(() => backButtonClick());
+    await addressBookService.addAddressBookItem({ name, address }).then(goBack);
 
   const editHandler = async (): Promise<void> =>
     await addressBookService
       .updateAddressBookItemById({
-        id: location.state.curr.id,
+        id: params.curr?.id || '',
         name,
         address,
       })
-      .then(() => backButtonClick());
+      .then(goBack);
 
   const removeHandler = async (): Promise<void> =>
     await addressBookService
-      .removeAddressBookItemByAccountId(currentAccount?.id ?? '', location.state.curr.id)
-      .then(() => backButtonClick());
+      .removeAddressBookItemByAccountId(currentAccount?.id ?? '', params.curr?.id || '')
+      .then(goBack);
 
   useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
 
@@ -153,7 +153,7 @@ const AddAddress = (): JSX.Element => {
   return (
     <Wrapper>
       <TopSection>
-        <LeftArrowBtn onClick={backButtonClick} />
+        <LeftArrowBtn onClick={goBack} />
         <Text type='header4'>{isAdd ? 'Add Address' : 'Edit Address'}</Text>
       </TopSection>
       <img
@@ -188,7 +188,7 @@ const AddAddress = (): JSX.Element => {
         </RemoveAddressBtn>
       )}
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: backButtonClick }}
+        cancelButtonProps={{ onClick: goBack }}
         confirmButtonProps={{
           onClick: saveButtonClick,
           text: 'Save',

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { LedgerConnector, LedgerAccount } from 'adena-module';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
@@ -16,6 +15,7 @@ import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Select Accounts',
@@ -183,8 +183,7 @@ const AccountListContainer = styled.div`
 export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { params, navigate } = useAppNavigate<RoutePath.ApproveHardwareWalletSelectAccount>();
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
   const [loadPath, setLoadPath] = useState(false);
@@ -194,8 +193,8 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
   const addressPrefix = currentNetwork.addressPrefix;
 
   useEffect(() => {
-    if (Array.isArray(location.state?.accounts)) {
-      initAccounts(location.state.accounts.map(deserializeAccount));
+    if (Array.isArray(params.accounts)) {
+      initAccounts(params.accounts.map(deserializeAccount));
     }
   }, [location]);
 
@@ -262,14 +261,9 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
       }
     });
     const resultSavedAccounts = savedAccounts.sort((account) => account.toData().hdPath ?? 0);
-    let currentAccount = null;
-    if (resultSavedAccounts.length > 0) {
-      currentAccount = resultSavedAccounts[0];
-    }
 
     const locationState = {
       accounts: resultSavedAccounts.map((account) => serializeAccount(account)),
-      currentAccount: currentAccount ? serializeAccount(currentAccount) : null,
     };
 
     const routePath =

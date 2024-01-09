@@ -1,18 +1,18 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import addSymbol from '@assets/add-symbol.svg';
 import { Text, Button } from '@components/atoms';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const content =
   'To add new accounts, you need to generate a seed phrase as you created your existing accounts with Google or Ledger, which didn’t require seed phrase generation.';
 
 export const GenerateSeedPhrase = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
 
   const onclick = (): void => {
     navigate(RoutePath.YourSeedPhrase, { state: { type: 'ADD_ACCOUNT' } });

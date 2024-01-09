@@ -1,6 +1,5 @@
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import {
@@ -9,23 +8,8 @@ import {
   validateWrongPasswordLength,
 } from '@common/validation';
 import { AdenaWallet } from 'adena-module';
-
-interface CreatePasswordState {
-  type: 'SEED' | 'LEDGER' | 'GOOGLE' | 'NONE';
-}
-
-interface SeedState extends CreatePasswordState {
-  seeds: string;
-}
-
-interface LedgerState extends CreatePasswordState {
-  accounts: Array<string>;
-  currentAccount: string | null;
-}
-
-interface GoogleState extends CreatePasswordState {
-  privateKey: string;
-}
+import useAppNavigate from '@hooks/use-app-navigate';
+import { CreateAccountState, GoogleState, LedgerState, SeedState } from '@types';
 
 export type UseCreatePasswordReturn = {
   pwdState: {
@@ -52,9 +36,8 @@ export type UseCreatePasswordReturn = {
 };
 
 export const useCreatePassword = (): UseCreatePasswordReturn => {
-  const location = useLocation();
+  const { navigate, params } = useAppNavigate<RoutePath.CreatePassword>();
   const { walletService, accountService } = useAdenaContext();
-  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     pwd: '',
@@ -64,16 +47,8 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const { pwd, confirmPwd } = inputs;
-  const [locationState, setLocationState] = useState<SeedState | LedgerState | GoogleState>(
-    location.state,
-  );
   const [errorMessage, setErrorMessage] = useState('');
   const [activated, setActivated] = useState(false);
-
-  useEffect(() => {
-    const locationState = location.state;
-    setLocationState(locationState);
-  }, [location]);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -93,15 +68,15 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     }
   }, [activated]);
 
-  const isSeedPhrase = (state: CreatePasswordState): state is SeedState => {
+  const isSeedPhrase = (state: CreateAccountState): state is SeedState => {
     return state.type === 'SEED';
   };
 
-  const isLedgerState = (state: CreatePasswordState): state is LedgerState => {
+  const isLedgerState = (state: CreateAccountState): state is LedgerState => {
     return state.type === 'LEDGER';
   };
 
-  const isGoogleState = (state: CreatePasswordState): state is GoogleState => {
+  const isGoogleState = (state: CreateAccountState): state is GoogleState => {
     return state.type === 'GOOGLE';
   };
 
@@ -166,13 +141,13 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   };
 
   const createAccounts = (): 'FAIL' | Promise<'FAIL' | 'FINISH'> => {
-    if (isSeedPhrase(locationState)) {
-      return createWalletAccountsBySeed(locationState);
+    if (isSeedPhrase(params)) {
+      return createWalletAccountsBySeed(params);
     }
-    if (isGoogleState(locationState)) {
-      return createWalletAccountsByGoogle(locationState);
+    if (isGoogleState(params)) {
+      return createWalletAccountsByGoogle(params);
     }
-    if (isLedgerState(locationState)) {
+    if (isLedgerState(params)) {
       return 'FAIL';
     }
     return 'FAIL';
@@ -216,7 +191,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     await accountService.clear();
     const result = await createAccounts();
     if (result === 'FINISH') {
-      navigate(RoutePath.LaunchAdena, { state: locationState });
+      navigate(RoutePath.LaunchAdena, { state: params });
       setActivated(false);
       return;
     }

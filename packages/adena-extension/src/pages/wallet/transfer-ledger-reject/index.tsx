@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferLedgerRejectLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -15,7 +15,7 @@ const TransferLedgerRejectLayout = styled.div`
 `;
 
 const TransferLedgerRejectContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
 
   const onClickClose = useCallback(() => {
     navigate(RoutePath.Wallet);

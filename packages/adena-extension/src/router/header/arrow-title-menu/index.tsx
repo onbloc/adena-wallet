@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { Text, LeftArrowBtn } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 interface ArrowTitleMenuProps {
   title?: string;
@@ -25,13 +25,11 @@ const Button = styled(LeftArrowBtn)`
 `;
 
 export const ArrowTitleMenu = ({ title }: ArrowTitleMenuProps): JSX.Element => {
-  const navigate = useNavigate();
-
-  const handlePrevButtonClick = (): void => navigate(-1);
+  const { goBack } = useAppNavigate();
 
   return (
     <Wrapper>
-      <Button onClick={handlePrevButtonClick} tabIndex={0} />
+      <Button onClick={goBack} tabIndex={0} />
       {title && <Text type='body1Bold'>{title}</Text>}
     </Wrapper>
   );

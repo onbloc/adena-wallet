@@ -1,21 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { StdSignDoc, isLedgerAccount } from 'adena-module';
+import { isLedgerAccount } from 'adena-module';
 
 import { ApproveLedgerLoading } from '@components/molecules';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
-
-interface ApproveSignLedgerLoadingState {
-  requestData?: InjectionMessage;
-  document?: StdSignDoc;
-}
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
 
 const ApproveSignLedgerLoadingContainer: React.FC = () => {
-  const location = useLocation();
+  const { params } = useAppNavigate<RoutePath.ApproveSignLoading>();
   const { transactionService } = useAdenaContext();
-  const { document, requestData } = location.state as ApproveSignLedgerLoadingState;
+  const { document, requestData } = params;
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
 

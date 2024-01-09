@@ -24,14 +24,14 @@ const Wrapper = styled.main`
 export const Nft = (): JSX.Element => {
   const theme = useTheme();
   const [state] = useState('FINISH');
-  const [datas] = useState([]);
+  const [data] = useState([]);
 
   return (
     <Wrapper>
       <Text type='header4'>NFTs</Text>
       {state === 'FINISH' ? (
-        datas.length > 0 ? (
-          datas.map(() => <></>)
+        data.length > 0 ? (
+          data.map(() => <></>)
         ) : (
           <Text className='desc' type='body1Reg' color={theme.neutral.a}>
             No NFTs to display

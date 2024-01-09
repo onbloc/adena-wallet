@@ -1,7 +1,6 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
-import { useNavigate } from 'react-router-dom';
 
 import removeIcon from '@assets/icon-remove-blur.svg';
 import { Text } from '@components/atoms';
@@ -11,20 +10,17 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const { currentAccount } = useCurrentAccount();
   const { removeAccount } = useRemoveAccount();
   const [, setState] = useRecoilState(WalletState.state);
-
-  const cancelButtonClick = (): void => {
-    navigate(-1);
-  };
 
   const removeButtonClick = async (): Promise<void> => {
     if (!currentAccount) {
@@ -45,7 +41,7 @@ export const RemoveAccount = (): JSX.Element => {
         {content}
       </Text>
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: cancelButtonClick }}
+        cancelButtonProps={{ onClick: goBack }}
         confirmButtonProps={{
           onClick: removeButtonClick,
           text: 'Remove',

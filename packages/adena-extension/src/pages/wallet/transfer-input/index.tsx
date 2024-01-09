@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
@@ -13,6 +12,7 @@ import useHistoryData from '@hooks/use-history-data';
 
 import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferInputLayoutWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -38,21 +38,20 @@ interface HistoryData {
 }
 
 const TransferInputContainer: React.FC = () => {
-  const navigate = useNavigate();
-  const { state } = useLocation();
-  const [isTokenSearch, setIsTokenSearch] = useState(state.isTokenSearch === true);
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>(state.tokenBalance);
+  const { navigate, params, goBack } = useAppNavigate<RoutePath.TransferInput>();
+  const [isTokenSearch, setIsTokenSearch] = useState(params.isTokenSearch === true);
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>(params.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
 
   useEffect(() => {
-    setIsTokenSearch(state.isTokenSearch === true);
-    setTokenMetainfo(state.tokenBalance);
+    setIsTokenSearch(params.isTokenSearch === true);
+    setTokenMetainfo(params.tokenBalance);
     addressBookInput.updateAddressBook();
     balanceInput.updateCurrentBalance();
-  }, [state, currentAccount]);
+  }, [params, currentAccount]);
 
   useEffect(() => {
     const historyData = getHistoryData();
@@ -93,16 +92,12 @@ const TransferInputContainer: React.FC = () => {
     return true;
   }, [addressBookInput, balanceInput]);
 
-  const onClickBack = useCallback(() => {
-    navigate(-1);
-  }, [isTokenSearch]);
-
   const onClickCancel = useCallback(() => {
     if (isTokenSearch) {
       navigate(RoutePath.Wallet);
       return;
     }
-    navigate(-1);
+    goBack();
   }, [isTokenSearch]);
 
   const onClickNext = useCallback(() => {
@@ -139,7 +134,7 @@ const TransferInputContainer: React.FC = () => {
           addressInput={addressBookInput}
           balanceInput={balanceInput}
           isNext={isNext()}
-          onClickBack={onClickBack}
+          onClickBack={goBack}
           onClickCancel={onClickCancel}
           onClickNext={onClickNext}
         />

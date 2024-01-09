@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import { Text, DefaultInput, Button } from '@components/atoms';
 import { fonts } from '@styles/theme';
@@ -10,6 +10,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = 'Enter\nYour Password';
 
@@ -35,7 +36,7 @@ export const Login = (): JSX.Element => {
   usePreventHistoryBack();
 
   const theme = useTheme();
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
   const location = useLocation();
   const [password, setPassword] = useState('');

@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { Text, WarningBox, Button } from '@components/atoms';
 import { SeedBox, SeedViewAndCopy } from '@components/molecules';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export const RevealPrivatePhrase = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
   const { wallet } = useWalletContext();
   const [showBlurScreen, setShowBlurScreen] = useState(true);
 
@@ -16,10 +16,6 @@ export const RevealPrivatePhrase = (): JSX.Element => {
     const mnemonic = wallet?.mnemonic || '';
     return mnemonic.split(' ');
   }, [wallet?.mnemonic]);
-
-  const doneButtonClick = (): void => {
-    navigate(-2);
-  };
 
   return (
     <Wrapper>
@@ -32,7 +28,7 @@ export const RevealPrivatePhrase = (): JSX.Element => {
         copyStr={seeds.join(' ')}
         toggleText='Seed Phrase'
       />
-      <Button fullWidth onClick={doneButtonClick}>
+      <Button fullWidth onClick={goBack}>
         <Text type='body1Bold'>Done</Text>
       </Button>
     </Wrapper>

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import {
@@ -8,6 +7,7 @@ import {
   validateNotMatchConfirmPassword,
   validateWrongPasswordLength,
 } from '@common/validation';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
@@ -39,7 +39,7 @@ export type UseChangePasswordReturn = {
 
 export const useChangePassword = (): UseChangePasswordReturn => {
   const { walletService } = useAdenaContext();
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     currPwd: '',
@@ -144,12 +144,11 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     }
     return 'FAIL';
   };
-  const cancelButtonClick = (): void => navigate(-1);
 
   const saveButtonClick = async (): Promise<void> => {
     const state = await validationCheck();
     if (state === 'FINISH') {
-      return navigate(-1);
+      return goBack();
     }
   };
 
@@ -173,7 +172,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     errorMessage: errorMessage,
     buttonState: {
       onClick: {
-        cancel: cancelButtonClick,
+        cancel: goBack,
         save: saveButtonClick,
       },
       disabled: Object.values(inputs).some((el) => el === ''),

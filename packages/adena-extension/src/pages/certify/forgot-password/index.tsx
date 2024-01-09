@@ -1,6 +1,5 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import lockLogo from '@assets/icon-lock.svg';
 import { Text, Icon, Button } from '@components/atoms';
@@ -8,6 +7,7 @@ import { getTheme } from '@styles/theme';
 
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Forgot Password?',
@@ -16,7 +16,7 @@ const text = {
 
 export const ForgotPassword = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
 
   const onClickLearnMore = (): void => {
     try {
@@ -29,7 +29,7 @@ export const ForgotPassword = (): JSX.Element => {
   };
 
   const onClickHaveNotSeedPhrase = (): void => {
-    navigate(RoutePath.ResetWallet, { state: { backStep: -2, from: 'forgot-password' } });
+    navigate(RoutePath.ResetWallet, { state: { from: 'forgot-password' }, replace: true });
   };
 
   const onClickForgotButton = (): void => {

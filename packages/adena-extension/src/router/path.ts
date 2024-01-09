@@ -1,3 +1,8 @@
+import { InjectionMessage } from '@inject/message';
+import { AddressBookItem } from '@repositories/wallet';
+import { CreateAccountState, TokenBalanceType, TokenModel, TransactionInfo } from '@types';
+import { StdSignDoc } from 'adena-module';
+
 export enum RoutePath {
   Home = '/',
   Login = '/login',
@@ -33,7 +38,6 @@ export enum RoutePath {
   ApproveSign = '/approve/wallet/sign',
   ApproveSignLoading = '/approve/wallet/sign/loading',
   ApproveSignTransaction = '/approve/wallet/sign-tx',
-  ApproveSignTransactionLoading = '/approve/wallet/sign-tx/loading',
   ApproveEstablish = '/approve/wallet/establish',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
@@ -72,3 +76,126 @@ export enum RoutePath {
   ApproveHardwareWalletLedgerPassword = '/approve/settings/hardware-wallet/ledger-password',
   ApproveHardwareWalletLedgerAllSet = '/approve/settings/hardware-wallet/ledger-all-set',
 }
+
+export type RouteParams = {
+  [RoutePath.Home]: null;
+  [RoutePath.Login]: null;
+  [RoutePath.Nft]: null;
+  [RoutePath.Staking]: null;
+  [RoutePath.Explore]: null;
+  [RoutePath.History]: null;
+  [RoutePath.Create]: null;
+  [RoutePath.ForgotPassword]: null;
+
+  //phrase
+  [RoutePath.EnterSeedPhrase]: {
+    from: 'forgot-password' | 'wallet-create';
+  } | null;
+  [RoutePath.CreatePassword]: CreateAccountState;
+  [RoutePath.LaunchAdena]: CreateAccountState;
+  [RoutePath.YourSeedPhrase]: { type: 'ADD_ACCOUNT' } | null;
+  [RoutePath.ImportPrivateKey]: null;
+  [RoutePath.GenerateSeedPhrase]: null;
+
+  //google login
+  [RoutePath.GoogleConnect]: null;
+  [RoutePath.GoogleConnectFailed]: null;
+
+  //wallet
+  [RoutePath.Wallet]: null;
+  [RoutePath.WalletSearch]: {
+    type: 'deposit' | 'send';
+  };
+  [RoutePath.TransactionDetail]: {
+    transactionInfo: TransactionInfo;
+  };
+  [RoutePath.Deposit]: {
+    type: 'token' | 'wallet';
+    tokenMetainfo: TokenBalanceType;
+  };
+  [RoutePath.Send]: null;
+  [RoutePath.TokenDetails]: {
+    tokenBalance: TokenBalanceType;
+  };
+  [RoutePath.ApproveLogin]: null;
+  [RoutePath.ApproveTransaction]: null;
+  [RoutePath.ApproveTransactionLoading]: {
+    document?: StdSignDoc;
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSign]: null;
+  [RoutePath.ApproveSignLoading]: {
+    document?: StdSignDoc;
+    requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveSignTransaction]: null;
+  [RoutePath.ApproveEstablish]: null;
+  [RoutePath.ApproveChangingNetwork]: null;
+  [RoutePath.ApproveAddingNetwork]: null;
+  [RoutePath.ImportAccount]: null;
+  [RoutePath.AddAccount]: null;
+  [RoutePath.AccountDetails]: null;
+  [RoutePath.ManageToken]: null;
+  [RoutePath.ManageTokenAdded]: null;
+  [RoutePath.TransferInput]: {
+    tokenBalance: TokenBalanceType;
+    isTokenSearch?: boolean;
+  };
+  [RoutePath.TransferSummary]: {
+    isTokenSearch: boolean;
+    tokenMetainfo: TokenModel;
+    toAddress: string;
+    transferAmount: {
+      value: string;
+      denom: string;
+    };
+    networkFee: {
+      value: string;
+      denom: string;
+    };
+  };
+  [RoutePath.TransferLedgerLoading]: {
+    document: StdSignDoc;
+  };
+  [RoutePath.TransferLedgerReject]: null;
+
+  [RoutePath.Setting]: null;
+  [RoutePath.SettingChangePassword]: null;
+  [RoutePath.SettingSeedPhrase]: null;
+  [RoutePath.ViewPrivateKey]: null;
+  [RoutePath.ViewSeedPhrase]: { mnemonic: string };
+  [RoutePath.ConnectedApps]: null;
+  [RoutePath.ChangeNetwork]: null;
+  [RoutePath.AddCustomNetwork]: null;
+  [RoutePath.EditCustomNetwork]: {
+    networkId: string;
+  };
+  [RoutePath.AddressBook]: null;
+  [RoutePath.AddAddress]: {
+    status: 'add' | 'edit';
+    curr?: AddressBookItem;
+    addressList: AddressBookItem[];
+  };
+  [RoutePath.SecurityPrivacy]: null;
+  [RoutePath.RevealPasswordPhrase]: null;
+  [RoutePath.RevealPrivatePhrase]: null;
+  [RoutePath.AboutAdena]: null;
+  [RoutePath.ExportPrivateKey]: {
+    accountId?: string;
+  } | null;
+  [RoutePath.RemoveAccount]: null;
+  [RoutePath.ResetWallet]: {
+    from: 'forgot-password';
+  } | null;
+  [RoutePath.ApproveHardwareWalletConnect]: null;
+  [RoutePath.ApproveHardwareWalletSelectAccount]: {
+    accounts: string[];
+  };
+  [RoutePath.ApproveHardwareWalletFinish]: {
+    accounts: string[];
+  };
+  [RoutePath.ApproveHardwareWalletLedgerPassword]: {
+    accounts: string[];
+  };
+  [RoutePath.ApproveHardwareWalletLedgerAllSet]: null;
+};

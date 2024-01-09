@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { Text, WarningBox } from '@components/atoms';
 import mixins from '@styles/mixins';
@@ -17,9 +16,6 @@ const StyledWrapper = styled.main`
 `;
 
 export const ExportPrivateKey = (): JSX.Element => {
-  const navigate = useNavigate();
-  const backButtonClick = (): void => navigate(-1);
-
   const [isValidPwd, setIsValidPwd] = useState(false);
 
   return (
@@ -29,11 +25,7 @@ export const ExportPrivateKey = (): JSX.Element => {
         type={isValidPwd ? 'approachPrivate' : 'approachPassword'}
         margin='12px 0px 20px'
       />
-      {isValidPwd ? (
-        <ApproachPrivateKey backButtonClick={backButtonClick} />
-      ) : (
-        <CheckPassword setIsValidPwd={setIsValidPwd} backButtonClick={backButtonClick} />
-      )}
+      {isValidPwd ? <ApproachPrivateKey /> : <CheckPassword setIsValidPwd={setIsValidPwd} />}
     </StyledWrapper>
   );
 };

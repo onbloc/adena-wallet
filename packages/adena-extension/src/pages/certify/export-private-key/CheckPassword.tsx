@@ -6,6 +6,7 @@ import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
 import { BaseError } from '@common/errors';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const StyledTermsWrap = styled.div`
   margin-top: auto;
@@ -19,11 +20,10 @@ const TermsBText = 'I will never share my private key with anyone.';
 
 const CheckPassword = ({
   setIsValidPwd,
-  backButtonClick,
 }: {
   setIsValidPwd: (isValidPwd: boolean) => void;
-  backButtonClick: () => void;
 }): JSX.Element => {
+  const { goBack } = useAppNavigate();
   const { walletService } = useAdenaContext();
   const [pwd, setPwd] = useState('');
   const [error, setError] = useState(false);
@@ -94,7 +94,7 @@ const CheckPassword = ({
           checkboxPos='TOP'
         />
         <CancelAndConfirmButton
-          cancelButtonProps={{ onClick: backButtonClick }}
+          cancelButtonProps={{ onClick: goBack }}
           confirmButtonProps={{
             onClick: confirmButtonClick,
             text: 'Next',

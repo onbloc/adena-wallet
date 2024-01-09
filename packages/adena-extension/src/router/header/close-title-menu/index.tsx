@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { Text, Icon } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 interface CloseTitleMenuProps {
   title?: string;
@@ -40,13 +40,12 @@ const Button = styled.button`
 `;
 
 export const CloseTitleMenu = ({ title }: CloseTitleMenuProps): JSX.Element => {
-  const navigate = useNavigate();
-  const handlePrevButtonClick = (): void => navigate(-1);
+  const { goBack } = useAppNavigate();
 
   return (
     <Wrapper>
       {title && <Text type='body1Bold'>{title}</Text>}
-      <Button onClick={handlePrevButtonClick} tabIndex={0}>
+      <Button onClick={goBack} tabIndex={0}>
         <Icon name='iconCancel' className='icon-close' />
       </Button>
     </Wrapper>

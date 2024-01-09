@@ -6,6 +6,7 @@ import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useLedgerPassword } from './use-ledger-password';
 import mixins from '@styles/mixins';
+import useLink from '@hooks/use-link';
 
 const text = {
   title: 'Create\na Password',
@@ -13,9 +14,10 @@ const text = {
 };
 
 export const ApproveHardwareWalletLedgerPassword = (): JSX.Element => {
+  const { openLink } = useLink();
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useLedgerPassword();
-  const handleLinkClick = (): Window | null => window.open('https://adena.app/terms', '_blank');
+  const handleLinkClick = (): void => openLink('https://adena.app/terms');
 
   return (
     <Wrapper>

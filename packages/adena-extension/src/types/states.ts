@@ -40,3 +40,21 @@ export interface NetworkMetainfo {
  * FAIL: When deserialization has failed
  */
 export type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+
+export interface SeedState {
+  type: 'SEED';
+  seeds: string;
+}
+
+export interface LedgerState {
+  type: 'LEDGER';
+  accounts: Array<string>;
+  currentAccount: string | null;
+}
+
+export interface GoogleState {
+  type: 'GOOGLE';
+  privateKey: string;
+}
+
+export type CreateAccountState = SeedState | LedgerState | GoogleState;

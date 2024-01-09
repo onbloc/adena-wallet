@@ -1,6 +1,5 @@
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import {
@@ -15,11 +14,7 @@ import {
   deserializeAccount,
   isLedgerAccount,
 } from 'adena-module';
-
-interface LocationState {
-  accounts: Array<string>;
-  currentAccount: string | null;
-}
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export type UseLedgerPasswordReturn = {
   pwdState: {
@@ -46,10 +41,9 @@ export type UseLedgerPasswordReturn = {
 };
 
 export const useLedgerPassword = (): UseLedgerPasswordReturn => {
-  const location = useLocation();
   const { walletService, accountService } = useAdenaContext();
   useWalletContext();
-  const navigate = useNavigate();
+  const { navigate, params } = useAppNavigate<RoutePath.ApproveHardwareWalletLedgerPassword>();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     pwd: '',
@@ -144,7 +138,7 @@ export const useLedgerPassword = (): UseLedgerPasswordReturn => {
   const nextButtonClick = async (): Promise<void> => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
-      const { accounts } = location.state as LocationState;
+      const { accounts } = params;
       const transport = await LedgerConnector.openConnected();
       if (!transport) {
         return;

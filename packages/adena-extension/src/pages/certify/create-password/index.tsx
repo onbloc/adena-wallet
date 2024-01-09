@@ -1,11 +1,13 @@
 import React from 'react';
 import styled, { CSSProp, css } from 'styled-components';
-import { useLocation } from 'react-router-dom';
 
 import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { useCreatePassword } from '@hooks/certify/use-create-password';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
+import useLink from '@hooks/use-link';
 
 const text = {
   title: 'Create\na Password',
@@ -38,13 +40,14 @@ const FormBox = styled.div`
 `;
 
 export const CreatePassword = (): JSX.Element => {
+  const { openLink } = useLink();
   const { pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown } =
     useCreatePassword();
-  const location = useLocation();
-  const handleLinkClick = (): Window | null => window.open('https://adena.app/terms', '_blank');
+  const { params } = useAppNavigate<RoutePath.CreatePassword>();
+  const handleLinkClick = (): void => openLink('https://adena.app/terms');
 
   return (
-    <Wrapper isPopup={location?.state?.type !== 'SEED'}>
+    <Wrapper isPopup={params.type !== 'SEED'}>
       <TitleWithDesc title={text.title} desc={text.desc} />
       <FormBox>
         <DefaultInput
