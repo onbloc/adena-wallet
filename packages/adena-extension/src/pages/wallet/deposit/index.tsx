@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import styled, { useTheme } from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, inputStyle, Button, Copy } from '@components/atoms';
 import { getTheme } from '@styles/theme';
@@ -9,8 +8,8 @@ import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
-import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
@@ -39,20 +38,14 @@ const CopyInputBox = styled.div`
   margin-bottom: 8px;
 `;
 
-interface DepositState {
-  type: 'token' | 'wallet';
-  tokenMetainfo: TokenModel;
-}
-
 export const Deposit = (): JSX.Element => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { navigate, params, goBack } = useAppNavigate<RoutePath.Deposit>();
   const [displayAddr, setDisplayAddr] = useState('');
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
-  const [type, setType] = useState('');
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>();
+  const type = params.type;
+  const tokenMetainfo = params.tokenMetainfo;
 
   useEffect(() => {
     if (currentAddress) {
@@ -60,18 +53,12 @@ export const Deposit = (): JSX.Element => {
     }
   }, [currentAddress]);
 
-  useEffect(() => {
-    const state = location.state as DepositState;
-    setType(state.type);
-    setTokenMetainfo(state.tokenMetainfo);
-  }, [location]);
-
   const closeButtonClick = useCallback(() => {
     if (type === 'wallet') {
       navigate(RoutePath.Wallet);
       return;
     }
-    navigate(-1);
+    goBack();
   }, [type]);
 
   return (

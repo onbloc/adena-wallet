@@ -59,14 +59,14 @@ function isVmAddPkgType(func?: string): boolean {
 
 export class TransactionHistoryMapper {
   public static queryToDisplay(
-    datas: {
+    data: {
       next: boolean;
       hits: number;
       txs: TransactionInfo[];
     }[],
   ): { title: string; transactions: TransactionInfo[] }[] {
     const transactions =
-      datas.flatMap((history) => {
+      data.flatMap((history) => {
         if (Array.isArray(history)) {
           return [];
         }
@@ -110,7 +110,7 @@ export class TransactionHistoryMapper {
 
   private static mappedHistoryItem(historyItem: HistoryItem): TransactionInfo {
     if (historyItem.msg_num > 1) {
-      return TransactionHistoryMapper.mappedHistoryItemMutiCall(historyItem);
+      return TransactionHistoryMapper.mappedHistoryItemMultiCall(historyItem);
     }
     if (isHistoryItemGRC20Transfer(historyItem)) {
       return TransactionHistoryMapper.mappedBankMsgSend(historyItem);
@@ -127,7 +127,7 @@ export class TransactionHistoryMapper {
     return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem);
   }
 
-  private static mappedHistoryItemMutiCall(historyItem: HistoryItem): TransactionInfo {
+  private static mappedHistoryItemMultiCall(historyItem: HistoryItem): TransactionInfo {
     const { hash, result, func, msg_num, date, fee, to, from } = historyItem;
     const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
 

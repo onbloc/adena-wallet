@@ -18,6 +18,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 function mappedTransactionData(document: Document): {
   messages: readonly any[];
@@ -55,8 +56,9 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 const DEFAULT_DENOM = 'GNOT';
 
 const ApproveTransactionContainer: React.FC = () => {
-  const navigate = useNavigate();
   const { wallet } = useWalletContext();
+  const nomarlNavigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount, getCurrentAddress } = useCurrentAccount();
@@ -100,7 +102,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && nomarlNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {

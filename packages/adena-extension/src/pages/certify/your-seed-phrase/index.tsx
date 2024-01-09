@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 
 import { Text, Button } from '@components/atoms';
@@ -9,6 +8,7 @@ import { RoutePath } from '@router/path';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Seed Phrase',
@@ -19,8 +19,7 @@ const text = {
 };
 
 export const YourSeedPhrase = (): JSX.Element => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { navigate, params } = useAppNavigate<RoutePath.YourSeedPhrase>();
   const { wallet, updateWallet } = useWalletContext();
   const [terms, setTerms] = useState(false);
   const [seeds] = useState(() => AdenaWallet.generateMnemonic());
@@ -31,12 +30,14 @@ export const YourSeedPhrase = (): JSX.Element => {
 
   const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
 
+  const isAddAccount = params?.type === 'ADD_ACCOUNT';
+
   const handleNextButtonClick = async (): Promise<void> => {
     if (clicked) {
       return;
     }
     setClicked(true);
-    if (isAddAccount()) {
+    if (isAddAccount) {
       addAccount();
       return;
     }
@@ -48,10 +49,6 @@ export const YourSeedPhrase = (): JSX.Element => {
         seeds,
       },
     });
-  };
-
-  const isAddAccount = (): boolean => {
-    return location?.state?.type === 'ADD_ACCOUNT';
   };
 
   const addAccount = async (): Promise<void> => {
@@ -84,11 +81,11 @@ export const YourSeedPhrase = (): JSX.Element => {
     if (!viewSeedAgree) {
       return 'Reveal Seed Phrase';
     }
-    if (isAddAccount()) {
+    if (isAddAccount) {
       return 'Create Account';
     }
     return 'Next';
-  }, [viewSeedAgree, isAddAccount()]);
+  }, [viewSeedAgree, isAddAccount]);
 
   return (
     <Wrapper>

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath } from '@router/path';
 import { CommonFullContentLayout } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const ChangeNetworkContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const { modified, currentNetwork, networks, setModified, changeNetwork } = useNetwork();
   const { initTokenMetainfos } = useTokenMetainfo();
 
@@ -32,16 +32,12 @@ const ChangeNetworkContainer: React.FC = () => {
 
   const moveEditPage = useCallback(
     (networkId: string) => {
-      navigate(RoutePath.EditCustomNetwork + '?networkId=' + networkId, {
+      navigate(RoutePath.EditCustomNetwork, {
         state: { networkId },
       });
     },
     [navigate],
   );
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   const changeNetworkAndRoutePage = async (networkId: string): Promise<void> => {
     if (networkId === currentNetwork?.id) {
@@ -61,7 +57,7 @@ const ChangeNetworkContainer: React.FC = () => {
         changeNetwork={changeNetworkAndRoutePage}
         moveAddPage={moveAddPage}
         moveEditPage={moveEditPage}
-        moveBack={moveBack}
+        moveBack={goBack}
       />
     </CommonFullContentLayout>
   );

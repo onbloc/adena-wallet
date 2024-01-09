@@ -15,6 +15,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 function mappedTransactionData(document: Document): {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,8 +43,9 @@ function mappedTransactionData(document: Document): {
 const DEFAULT_DENOM = 'GNOT';
 
 const ApproveSignTransactionContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const normalNavigate = useNavigate();
   const { wallet, gnoProvider } = useWalletContext();
+  const { navigate } = useAppNavigate();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
@@ -85,7 +87,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && navigate(RoutePath.ApproveLogin + location.search));
+      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {

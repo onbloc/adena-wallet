@@ -9,9 +9,11 @@ import { useAdenaContext } from '@hooks/use-context';
 import LoadingExplore from './loading-explore';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import useLink from '@hooks/use-link';
 
 export const Explore = (): JSX.Element => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const { tokenService } = useAdenaContext();
   const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ export const Explore = (): JSX.Element => {
             <MoveToLink
               src={link}
               alt='move to link'
-              onClick={(): Window | null => window.open(exploreSite.link)}
+              onClick={(): void => openLink(exploreSite.link)}
             />
           </BoxContainer>
         ))

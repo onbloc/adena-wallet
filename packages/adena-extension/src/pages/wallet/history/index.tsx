@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
-import { useNavigate } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { TransactionHistory } from '@components/molecules';
@@ -15,6 +14,7 @@ import useScrollHistory from '@hooks/use-scroll-history';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 import { fonts } from '@styles/theme';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -33,7 +33,7 @@ const StyledTitle = styled.span`
 `;
 
 const HistoryContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
@@ -156,7 +156,7 @@ const HistoryContainer: React.FC = () => {
       if (transactionInfo) {
         saveScrollPosition(bodyElement?.scrollTop);
         navigate(RoutePath.TransactionDetail, {
-          state: transactionInfo,
+          state: { transactionInfo },
         });
       }
     },

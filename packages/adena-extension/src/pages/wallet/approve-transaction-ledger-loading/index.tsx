@@ -1,24 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { isLedgerAccount, Document, AdenaLedgerConnector } from 'adena-module';
+import { isLedgerAccount, AdenaLedgerConnector } from 'adena-module';
 import { TM2Error } from '@gnolang/tm2-js-client';
 
 import { ApproveLedgerLoading } from '@components/molecules';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
-
-interface ApproveSignLedgerLoadingState {
-  requestData?: InjectionMessage;
-  document?: Document;
-}
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
-  const location = useLocation();
+  const { params } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
   const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
-  const { document, requestData } = location.state as ApproveSignLedgerLoadingState;
+  const { document, requestData } = params;
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
   const { currentNetwork } = useNetwork();

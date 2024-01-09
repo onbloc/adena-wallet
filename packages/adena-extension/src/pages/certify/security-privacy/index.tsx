@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 import { Account, isLedgerAccount, isSeedAccount } from 'adena-module';
 
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
@@ -9,11 +8,22 @@ import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const getMenuMakerInfo = (
   account: Account | null,
   availRemove: boolean,
-): { title: string; navigatePath: RoutePath; mode: string; disabled: boolean }[] => [
+): {
+  title: string;
+  navigatePath:
+    | RoutePath.SettingChangePassword
+    | RoutePath.RevealPasswordPhrase
+    | RoutePath.ExportPrivateKey
+    | RoutePath.RemoveAccount
+    | RoutePath.ResetWallet;
+  mode: string;
+  disabled: boolean;
+}[] => [
   {
     title: 'Change Password',
     navigatePath: RoutePath.SettingChangePassword,
@@ -47,7 +57,7 @@ const getMenuMakerInfo = (
 ];
 
 export const SecurityPrivacy = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const { currentAccount } = useCurrentAccount();
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
@@ -55,10 +65,6 @@ export const SecurityPrivacy = (): JSX.Element => {
   useEffect(() => {
     availRemoveAccount().then(setAvailRemove);
   }, []);
-
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
 
   return (
     <Wrapper>
@@ -74,7 +80,7 @@ export const SecurityPrivacy = (): JSX.Element => {
           disabled={v.disabled as boolean}
         />
       ))}
-      <BottomFixedButton onClick={moveBack} />
+      <BottomFixedButton onClick={goBack} />
     </Wrapper>
   );
 };

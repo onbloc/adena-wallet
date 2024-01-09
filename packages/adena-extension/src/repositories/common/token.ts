@@ -84,7 +84,7 @@ export class TokenRepository {
       this.fetchGRC20TokenAssets(),
       this.fetchIBCNativeTokenAssets(),
       this.fetchIBCTokenAssets(),
-    ]).then((datas) => datas.flat());
+    ]).then((data) => data.flat());
   };
 
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {

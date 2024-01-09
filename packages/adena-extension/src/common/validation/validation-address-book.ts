@@ -1,6 +1,6 @@
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { addressValidationCheck } from '@common/utils/client-utils';
-import { BookListProps } from '@pages/certify/address-book';
+import { AddressBookItem } from '@repositories/wallet';
 import { Account } from 'adena-module';
 
 export const validateInvalidAddress = (address: string): boolean => {
@@ -12,16 +12,16 @@ export const validateInvalidAddress = (address: string): boolean => {
 };
 
 export const validateAlreadyAddress = (
-  currData: BookListProps,
-  allData: BookListProps[],
+  currData: AddressBookItem,
+  allData: AddressBookItem[],
   isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
-    check = allData.some((v: BookListProps) => v.address === currData.address);
+    check = allData.some((v: AddressBookItem) => v.address === currData.address);
   } else {
     const filterData = allData.filter(
-      (v: BookListProps) => v.id !== currData.id && v.address === currData.address,
+      (v: AddressBookItem) => v.id !== currData.id && v.address === currData.address,
     );
     check = Boolean(filterData.length);
   }
@@ -32,7 +32,7 @@ export const validateAlreadyAddress = (
 };
 
 export const validateAlreadyAddressByAccounts = async (
-  currData: BookListProps,
+  currData: AddressBookItem,
   accounts: Account[],
   isAdd: boolean,
 ): Promise<boolean> => {
@@ -51,16 +51,16 @@ export const validateAlreadyAddressByAccounts = async (
 };
 
 export const validateAlreadyName = (
-  currData: BookListProps,
-  allData: BookListProps[],
+  currData: AddressBookItem,
+  allData: AddressBookItem[],
   isAdd: boolean,
 ): boolean => {
   let check: boolean;
   if (isAdd) {
-    check = allData.some((v: BookListProps) => v.name === currData.name);
+    check = allData.some((v: AddressBookItem) => v.name === currData.name);
   } else {
     const filterData = allData.filter(
-      (v: BookListProps) => v.id !== currData.id && v.name === currData.name,
+      (v: AddressBookItem) => v.id !== currData.id && v.name === currData.name,
     );
     check = Boolean(filterData.length);
   }

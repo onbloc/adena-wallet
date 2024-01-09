@@ -1,7 +1,8 @@
-import React, { ReactElement, Suspense } from 'react';
+import React, { ReactElement, ReactNode, Suspense } from 'react';
+import { HashRouter } from 'react-router-dom';
+
 import { ThemeProvider } from 'styled-components';
 import theme from '@styles/theme';
-import { CustomRouter } from '@router/custom-router';
 import { GlobalStyle } from '@styles/global-style';
 import { RecoilRoot } from 'recoil';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -9,7 +10,7 @@ import { AdenaProvider, WalletProvider } from '@common/provider';
 
 const queryClient = new QueryClient();
 
-const App = (): ReactElement => {
+const AppProvider = ({ children }: { children: ReactNode }): ReactElement => {
   return (
     <>
       <GlobalStyle />
@@ -19,7 +20,7 @@ const App = (): ReactElement => {
             <WalletProvider>
               <ThemeProvider theme={theme}>
                 <Suspense fallback={<div>Loading...</div>}>
-                  <CustomRouter />
+                  <HashRouter>{children}</HashRouter>
                 </Suspense>
               </ThemeProvider>
             </WalletProvider>
@@ -30,4 +31,4 @@ const App = (): ReactElement => {
   );
 };
 
-export default App;
+export default AppProvider;

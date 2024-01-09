@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import logo from '@assets/logo-default-v2.svg';
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
 
 const menuMakerInfo = [
   {
@@ -42,24 +43,17 @@ const menuMakerInfo = [
 
 export const AboutAdena = (): JSX.Element => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const [version, setVersion] = useState('');
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
 
   useEffect(() => {
     initVersion();
   }, []);
 
-  const moveBack = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
-
   const initVersion = (): void => {
     const manifest = chrome.runtime.getManifest();
     setVersion(`${manifest.version}`);
-  };
-
-  const onClickWebLink = (path: string): Window | null => {
-    return window.open(path, '_blank');
   };
 
   return (
@@ -72,12 +66,12 @@ export const AboutAdena = (): JSX.Element => {
         <FullButtonRightIcon
           key={i}
           title={v.title}
-          onClick={(): Window | null => onClickWebLink(v.navigatePath)}
+          onClick={(): void => openLink(v.navigatePath)}
           mode={v.mode as ButtonMode}
           icon='WEBLINK'
         />
       ))}
-      <BottomFixedButton onClick={moveBack} />
+      <BottomFixedButton onClick={goBack} />
     </Wrapper>
   );
 };

@@ -1,12 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useLocation } from 'react-router-dom';
 
 import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
 
 const walletContent = {
   title: 'Import with Seed Phrase',
@@ -22,13 +23,13 @@ const forgotContent = {
 
 export const EnterSeedPhrase = (): JSX.Element => {
   const { seedState, termsState, buttonState } = useEnterSeed();
-  const { state } = useLocation();
+  const { params } = useAppNavigate<RoutePath.EnterSeedPhrase>();
 
   return (
     <Wrapper onKeyDown={seedState.onKeyDown}>
       <TitleWithDesc
-        title={state?.from === 'forgot-password' ? forgotContent.title : walletContent.title}
-        desc={state?.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
+        title={params?.from === 'forgot-password' ? forgotContent.title : walletContent.title}
+        desc={params?.from === 'forgot-password' ? forgotContent.desc : walletContent.desc}
       />
       <SecureTextarea
         value={seedState.value}
@@ -42,7 +43,7 @@ export const EnterSeedPhrase = (): JSX.Element => {
           checked={termsState.terms}
           onChange={termsState.onChange}
           tabIndex={2}
-          text={state?.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
+          text={params?.from === 'forgot-password' ? forgotContent.terms : walletContent.terms}
           checkboxPos='TOP'
         />
         <Button

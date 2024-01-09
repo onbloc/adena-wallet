@@ -176,7 +176,7 @@ export class InjectionMessageInstance {
     this.data = data;
   }
 
-  public get datas(): InjectionMessage {
+  public get dataObj(): InjectionMessage {
     return {
       key: this.key,
       code: this.code,
@@ -245,7 +245,7 @@ export class InjectionMessageInstance {
     data?: { [key in string]: any },
     key?: string,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'request', data, key).datas;
+    return new InjectionMessageInstance(messageKey, 'request', data, key).dataObj;
   };
 
   public static response = (
@@ -253,7 +253,7 @@ export class InjectionMessageInstance {
     data?: { [key in string]: any },
     key?: string,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'response', data, key).datas;
+    return new InjectionMessageInstance(messageKey, 'response', data, key).dataObj;
   };
 
   public static success = (
@@ -261,7 +261,7 @@ export class InjectionMessageInstance {
     data?: { [key in string]: any },
     key?: string,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'success', data, key).datas;
+    return new InjectionMessageInstance(messageKey, 'success', data, key).dataObj;
   };
 
   public static failure = (
@@ -269,6 +269,6 @@ export class InjectionMessageInstance {
     data?: { [key in string]: any },
     key?: string,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'failure', data, key).datas;
+    return new InjectionMessageInstance(messageKey, 'failure', data, key).dataObj;
   };
 }

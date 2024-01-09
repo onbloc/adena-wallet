@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useRecoilState } from 'recoil';
-import { useNavigate } from 'react-router-dom';
 
 import { Text, ListBox, ListHierarchy } from '@components/atoms';
 import { LoadingNft, CloseShadowButton } from '@components/molecules';
@@ -12,17 +11,18 @@ import disconnected from '@assets/disconnected.svg';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export const ConnectedApps = (): JSX.Element => {
   const theme = useTheme();
   const { establishService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const navigate = useNavigate();
+  const { goBack } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
-  const [datas, setDatas] = useState<any>([]);
+  const [data, setData] = useState<any>([]);
 
   useEffect(() => {
-    updateDatas();
+    updateData();
   }, []);
 
   const onClickDisconnect = async (item: any): Promise<void> => {
@@ -30,15 +30,15 @@ export const ConnectedApps = (): JSX.Element => {
       return;
     }
     await establishService.unEstablishBy(currentAccount.id, item.hostname);
-    await updateDatas();
+    await updateData();
   };
 
-  const updateDatas = async (): Promise<void> => {
+  const updateData = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
     const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id);
-    setDatas(establishedSites);
+    setData(establishedSites);
   };
 
   const renderAppItem = (item: any, index: number): JSX.Element => {
@@ -76,14 +76,14 @@ export const ConnectedApps = (): JSX.Element => {
       </Text>
       {state === 'FINISH' ? (
         <>
-          {datas.length > 0 ? (
-            datas.map(renderAppItem)
+          {data.length > 0 ? (
+            data.map(renderAppItem)
           ) : (
             <Text className='desc' type='body1Reg' color={theme.neutral.a}>
               No connections
             </Text>
           )}
-          <CloseShadowButton onClick={(): void => navigate(-1)} />
+          <CloseShadowButton onClick={goBack} />
         </>
       ) : (
         <LoadingNft />

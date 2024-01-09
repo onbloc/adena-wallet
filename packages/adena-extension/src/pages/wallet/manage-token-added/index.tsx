@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import AdditionalToken from '@components/pages/additional-token/additional-token';
@@ -10,9 +9,10 @@ import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@router/path';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import { TokenInfo } from '@types';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const ManageTokenAddedContainer: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const { tokenService } = useAdenaContext();
   const { tokenMetainfos, addGRC20TokenMetainfo } = useTokenMetainfo();
   const { updateTokenBalanceInfos } = useTokenBalance();
@@ -29,7 +29,7 @@ const ManageTokenAddedContainer: React.FC = () => {
 
   useEffect(() => {
     if (finished) {
-      navigate(-1);
+      goBack();
     }
   }, [finished]);
 
@@ -80,10 +80,6 @@ const ManageTokenAddedContainer: React.FC = () => {
     [tokenInfos],
   );
 
-  const onClickBack = useCallback(() => {
-    navigate(-1);
-  }, []);
-
   const onClickCancel = useCallback(() => {
     navigate(RoutePath.Wallet);
   }, []);
@@ -108,7 +104,7 @@ const ManageTokenAddedContainer: React.FC = () => {
         onChangeKeyword={onChangeKeyword}
         onClickOpenButton={setOpened}
         onClickListItem={onClickListItem}
-        onClickBack={onClickBack}
+        onClickBack={goBack}
         onClickCancel={onClickCancel}
         onClickAdd={onClickAdd}
       />

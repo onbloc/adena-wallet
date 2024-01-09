@@ -1,6 +1,6 @@
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 export const useImportAccount = (): {
   privateKeyState: {
@@ -12,7 +12,7 @@ export const useImportAccount = (): {
   };
   buttonState: { cancel: () => void; import: () => void; disabled: boolean };
 } => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const [privateKey, setPrivateKey] = useState('');
   const [error, setError] = useState(false);
 
@@ -47,8 +47,6 @@ export const useImportAccount = (): {
     }
   }, [privateKey]);
 
-  const cancelButtonClick = (): void => navigate(-1);
-
   return {
     privateKeyState: {
       value: privateKey,
@@ -58,7 +56,7 @@ export const useImportAccount = (): {
       errorMessage: 'Invalid private key',
     },
     buttonState: {
-      cancel: cancelButtonClick,
+      cancel: goBack,
       import: importButtonClick,
       disabled: !privateKey,
     },

@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { RoutePath } from '@router/path';
 import { Text } from '@components/atoms';
@@ -10,6 +9,7 @@ import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 
 import { MultilineTextWithArrowButton } from './multiline-text-with-arrow-button';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -22,7 +22,7 @@ const Wrapper = styled.main`
 `;
 
 const AddAccountPage: React.FC = () => {
-  const navigate = useNavigate();
+  const { navigate, goBack } = useAppNavigate();
   const { wallet } = useWalletContext();
   const { addAccount } = useAddAccount();
 
@@ -33,7 +33,7 @@ const AddAccountPage: React.FC = () => {
       return;
     }
     navigate(RoutePath.GenerateSeedPhrase);
-  }, [navigate, wallet, addAccount]);
+  }, [wallet, addAccount]);
 
   const onClickConnectHardwareWallet = useCallback(async () => {
     const windows = await chrome.windows.getAll();
@@ -53,10 +53,6 @@ const AddAccountPage: React.FC = () => {
 
   const onClickImportPrivateKey = useCallback(() => {
     navigate(RoutePath.ImportPrivateKey);
-  }, [navigate]);
-
-  const onClickCancel = useCallback(() => {
-    navigate(-1);
   }, [navigate]);
 
   const addAccountContent = useMemo(
@@ -96,7 +92,7 @@ const AddAccountPage: React.FC = () => {
           disabled={v.disabled}
         />
       ))}
-      <BottomFixedButton text='Close' onClick={onClickCancel} />
+      <BottomFixedButton text='Close' onClick={goBack} />
     </Wrapper>
   );
 };

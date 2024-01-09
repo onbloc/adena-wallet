@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
 
 import { GoogleTorusSigner, TorusSigner } from 'adena-torus-signin/src';
 
@@ -8,6 +7,7 @@ import { Text, Icon, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Waiting for Google Login',
@@ -30,7 +30,7 @@ const Wrapper = styled.main`
 `;
 
 export const GoogleConnect = (): JSX.Element => {
-  const navigate = useNavigate();
+  const { navigate } = useAppNavigate();
   const [web3auth, setWeb3auth] = useState<TorusSigner>();
   const [privateKey, setPrivateKey] = useState('');
 

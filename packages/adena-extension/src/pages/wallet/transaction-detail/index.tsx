@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, CopyIconButton, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
@@ -10,26 +9,22 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
-import { TransactionInfo } from '@types';
 import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@router/path';
+import useLink from '@hooks/use-link';
 
 interface DLProps {
   color?: string;
 }
 
 export const TransactionDetail = (): JSX.Element => {
+  const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork } = useNetwork();
-  const location = useLocation();
-  const [transactionItem, setTransactionItem] = useState<TransactionInfo>();
-  const navigate = useNavigate();
-  const closeButtonClick = (): void => navigate(-1);
-
-  useEffect(() => {
-    setTransactionItem(location.state);
-    console.log(location.state);
-  }, [location]);
+  const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
+  const transactionItem = params.transactionInfo;
 
   const getLogoImage = useCallback(() => {
     if (transactionItem?.type === 'ADD_PACKAGE') {
@@ -45,9 +40,8 @@ export const TransactionDetail = (): JSX.Element => {
   }, [transactionItem]);
 
   const handleLinkClick = (hash: string): void => {
-    window.open(
+    openLink(
       `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
-      '_blank',
     );
   };
 
@@ -157,7 +151,7 @@ export const TransactionDetail = (): JSX.Element => {
           margin='auto 0px 0px'
           fullWidth
           hierarchy='dark'
-          onClick={closeButtonClick}
+          onClick={goBack}
         >
           <Text type='body1Bold'>Close</Text>
         </Button>
