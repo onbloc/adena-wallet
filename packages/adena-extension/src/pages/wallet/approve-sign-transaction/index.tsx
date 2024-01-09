@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
+import { Document, Account, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 
 import { ApproveTransaction } from '@components/molecules';
@@ -15,14 +15,14 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
-import { bytesToBase64 } from '@common/utils/encoding-util';
 
-function mappedTransactionData(document: StdSignDoc): {
-  messages: readonly AminoMsg[];
+function mappedTransactionData(document: Document): {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  messages: readonly any[];
   contracts: { type: string; function: any; value: any }[];
   gasWanted: string;
   gasFee: string;
-  document: StdSignDoc;
+  document: Document;
 } {
   return {
     messages: document.msgs,
@@ -43,7 +43,7 @@ const DEFAULT_DENOM = 'GNOT';
 
 const ApproveSignTransactionContainer: React.FC = () => {
   const navigate = useNavigate();
-  const { gnoProvider } = useWalletContext();
+  const { wallet, gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
@@ -55,7 +55,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [document, setDocument] = useState<StdSignDoc>();
+  const [document, setDocument] = useState<Document>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
 
@@ -102,15 +102,17 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (validate(currentAccount, requestData)) {
-        initFavicon();
-        initTransactionData();
-      }
+      validate(currentAccount, requestData).then(validated => {
+        if (validated) {
+          initFavicon();
+          initTransactionData();
+        }
+      });
     }
   }, [currentAccount, requestData, gnoProvider]);
 
-  const validate = (currentAccount: Account, requestData: InjectionMessage): boolean => {
-    const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
+  const validate = async (currentAccount: Account, requestData: InjectionMessage): Promise<boolean> => {
+    const validationMessage = validateInjectionData(await currentAccount.getAddress('g'), requestData);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -153,16 +155,15 @@ const ApproveSignTransactionContainer: React.FC = () => {
   };
 
   const signTransaction = async (): Promise<boolean> => {
-    if (!document || !currentAccount) {
+    if (!document || !currentAccount || !wallet) {
       setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
       return false;
     }
 
     try {
-      const signature = await transactionService.createSignature(currentAccount, document);
       setProcessType('PROCESSING');
-      const transactionBytes = await transactionService.createTransaction(document, signature);
-      const encodedTransaction = bytesToBase64(transactionBytes);
+      const { signed } = await transactionService.createTransaction(wallet, document);
+      const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(
         InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
       );
@@ -190,7 +191,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       return;
     }
     if (isLedgerAccount(currentAccount)) {
-      navigate(RoutePath.ApproveSignLoading, {
+      navigate(RoutePath.ApproveSignTransactionLoading, {
         state: {
           document,
           requestData,

@@ -30,7 +30,7 @@ const Wrapper = styled.div`
 const ApproveMenu = (): JSX.Element => {
   const theme = useTheme();
   const { establishService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, getCurrentAddress } = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
@@ -60,7 +60,7 @@ const ApproveMenu = (): JSX.Element => {
     if (!currentAccount) {
       return;
     }
-    const address = currentAddress || '';
+    const address = await getCurrentAddress(currentNetwork.addressPrefix) || '';
     const currentAccountName = accountNames[currentAccount.id] || currentAccount.name;
     setAddress(address);
     setAccountName(currentAccountName);

@@ -251,7 +251,7 @@ export const useTokenBalance = (): {
     };
     const prefix = currentNetwork?.addressPrefix ?? 'g';
 
-    let address = account.getAddress(prefix);
+    let address = await account.getAddress(prefix);
 
     if (isSeedAccount(account)) {
       const keyring = wallet.keyrings.find((keyring) => keyring.id === account.keyringId);

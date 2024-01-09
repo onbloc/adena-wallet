@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { StdSignDoc, isLedgerAccount } from 'adena-module';
+import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
 
 import { ApproveLedgerLoading } from '@components/molecules';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
-import { bytesToBase64 } from '@common/utils/encoding-util';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 
 interface ApproveSignTransactionLedgerLoadingState {
   requestData?: InjectionMessage;
-  document?: StdSignDoc;
+  document?: Document;
 }
 
 const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
   const location = useLocation();
+  const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
   const { document, requestData } = location.state as ApproveSignTransactionLedgerLoadingState;
   const { currentAccount } = useCurrentAccount();
@@ -36,7 +36,7 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async (): Promise<boolean> => {
-    if (!currentAccount || !document) {
+    if (!currentAccount || !document || !wallet) {
       return false;
     }
 
@@ -44,11 +44,16 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
       return false;
     }
 
-    const result = await transactionService
-      .createSignatureWithLedger(currentAccount, document)
-      .then(async (signature) => {
-        const transactionBytes = await transactionService.createTransaction(document, signature);
-        const encodedTransaction = bytesToBase64(transactionBytes);
+    const connected = await AdenaLedgerConnector.openConnected();
+    if (!connected) {
+      console.log('Ledger not found');
+      return false;
+    }
+    const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
+
+    const result = await transactionService.createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .then(async ({ signed }) => {
+        const encodedTransaction = transactionService.encodeTransaction(signed);
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
         );

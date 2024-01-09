@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { LedgerConnector, LedgerAccount } from 'adena-module';
+import { LedgerAccount, AdenaLedgerConnector } from 'adena-module';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Text, Button } from '@components/atoms';
@@ -92,6 +92,7 @@ const AccountListContainer = styled.div`
     width: 100%;
     height: 46px;
     color: ${getTheme('neutral', 'a')};
+    background-color: ${getTheme('neutral', '_9')};
     border-top: 1px solid ${getTheme('neutral', '_7')};
     border-radius: 0;
 
@@ -192,6 +193,13 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
   const LEDGER_ACCOUNT_LOAD_SIZE = 5;
   const walletAccounts = wallet?.accounts ?? [];
   const addressPrefix = currentNetwork.addressPrefix;
+  const [accountInfos, setAccountInfos] = useState<{
+    index: number;
+    address: string;
+    hdPath: number;
+    stored: boolean;
+    selected: boolean;
+  }[]>([]);
 
   useEffect(() => {
     if (Array.isArray(location.state?.accounts)) {
@@ -205,10 +213,9 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
     setAccounts(accounts);
   };
 
-  const isStoredAccount = (address: string): boolean => {
-    return (
-      walletAccounts.find((account) => account.getAddress(addressPrefix) === address) !== undefined
-    );
+  const isStoredAccount = async (address: string): Promise<boolean> => {
+    return walletAccounts.find(async (account) => await account.getAddress(addressPrefix) === address) !== undefined
+      ;
   };
 
   const onClickSelectButton = (address: string): void => {
@@ -227,12 +234,12 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
       { length: LEDGER_ACCOUNT_LOAD_SIZE },
       (_, index) => index + lastPath + 1,
     );
-    const transport = await LedgerConnector.openConnected();
+    const transport = await AdenaLedgerConnector.openConnected();
     if (!transport) {
       setLoadPath(false);
       return;
     }
-    const ledgerConnector = new LedgerConnector(transport);
+    const ledgerConnector = AdenaLedgerConnector.fromTransport(transport);
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
     const ledgerAccounts = [];
     for (const hdPath of accountPaths) {
@@ -245,16 +252,16 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
   };
 
   const onClickNextButton = async (): Promise<void> => {
-    const selectAccounts = accounts.filter((account) =>
-      selectAccountAddresses.includes(account.getAddress(addressPrefix)),
+    const selectAccounts = accounts.filter(async (account) =>
+      selectAccountAddresses.includes(await account.getAddress(addressPrefix)),
     );
     const savedAccounts: Array<Account> = [];
 
-    selectAccounts.forEach((account) => {
+    selectAccounts.forEach(async (account) => {
       if (
-        !walletAccounts.find(
-          (storedAccount) =>
-            storedAccount.getAddress(addressPrefix) === account.getAddress(addressPrefix),
+        !await walletAccounts.find(
+          async (storedAccount) =>
+            await storedAccount.getAddress(addressPrefix) === await account.getAddress(addressPrefix),
         )
       ) {
         account.name = `${wallet?.nextLedgerAccountName}`;
@@ -280,14 +287,49 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
     navigate(routePath, { state: locationState });
   };
 
-  const renderAccount = (account: Account, index: number): JSX.Element => {
+  const mapAccountInfo = async (account: Account, index: number): Promise<{
+    index: number;
+    address: string;
+    hdPath: number;
+    stored: boolean;
+    selected: boolean;
+  }> => {
+    const address = await account.getAddress(addressPrefix);
     const hdPath = account.toData().hdPath ?? 0;
-    const stored = isStoredAccount(account.getAddress(addressPrefix));
-    const selected = selectAccountAddresses.includes(account.getAddress(addressPrefix));
+    const stored = await isStoredAccount(address);
+    const selected = selectAccountAddresses.includes(address);
+    return {
+      index,
+      address,
+      hdPath,
+      stored,
+      selected,
+    }
+  };
+
+  useEffect(() => {
+    Promise.all(accounts.map(mapAccountInfo)).then(setAccountInfos);
+  }, [accounts]);
+
+  const renderAccountInfo = (accountInfo:
+    {
+      index: number;
+      address: string;
+      hdPath: number;
+      stored: boolean;
+      selected: boolean;
+    }): JSX.Element => {
+    const {
+      index,
+      address,
+      hdPath,
+      stored,
+      selected,
+    } = accountInfo;
     return (
       <div className='item' key={index}>
         <div className='address-wrapper'>
-          <span className='address'>{formatAddress(account.getAddress(addressPrefix))}</span>
+          <span className='address'>{formatAddress(address)}</span>
           <span className='path'> {`m/44'/118'/0'/0/${hdPath}`}</span>
         </div>
         {stored ? (
@@ -298,7 +340,7 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
         ) : (
           <span
             className={selected ? 'check active' : 'check'}
-            onClick={(): void => onClickSelectButton(account.getAddress(addressPrefix))}
+            onClick={(): void => onClickSelectButton(address)}
           >
             <img className='icon-check' src={IconCheck} alt='check-image' />
           </span>
@@ -326,8 +368,8 @@ export const ApproveConnectHardwareWalletSelectAccount = (): JSX.Element => {
 
       <AccountListContainer>
         <div className='list-wrapper'>
-          {accounts.length > 0 ? (
-            accounts.map(renderAccount)
+          {accountInfos.length > 0 ? (
+            accountInfos.map(renderAccountInfo)
           ) : (
             <span className='description'>{'No data to display'}</span>
           )}

@@ -21,17 +21,11 @@ const AccountDetailsContainer: React.FC = () => {
   const { changeCurrentAccount } = useCurrentAccount();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
+  const [address, setAddress] = useState<string>('');
 
   const account = useMemo(() => {
     return accounts.find((current) => current.id === accountId);
   }, [accounts]);
-
-  const address = useMemo(() => {
-    if (!account || !currentNetwork) {
-      return '';
-    }
-    return account.getAddress(currentNetwork.addressPrefix);
-  }, [account, currentNetwork]);
 
   const hasPrivateKey = useMemo(() => {
     if (!account) {
@@ -77,6 +71,14 @@ const AccountDetailsContainer: React.FC = () => {
     },
     [account, setName],
   );
+
+  useEffect(() => {
+    if (!currentNetwork || !account) {
+      setAddress('');
+      return;
+    }
+    account.getAddress(currentNetwork.addressPrefix).then(setAddress);
+  }, [currentNetwork, account])
 
   return (
     <CommonFullContentLayout>

@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
-import { StdSignDoc, isLedgerAccount } from 'adena-module';
+import { isLedgerAccount, Document, AdenaLedgerConnector } from 'adena-module';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
 
@@ -20,10 +20,11 @@ const TransferLedgerLoadingLayout = styled.div`
 const TransferLedgerLoadingContainer = (): JSX.Element => {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [connected, setConnected] = useState(false);
-  const document: StdSignDoc = state.document;
+  const document: Document = state.document;
 
   useEffect(() => {
     requestTransaction();
@@ -45,21 +46,31 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
   }, [connected]);
 
   const createTransaction = useCallback(async () => {
-    if (!currentAccount) {
+    if (!wallet) {
       return null;
     }
-    if (!isLedgerAccount(currentAccount)) {
+    if (!currentAccount || !isLedgerAccount(currentAccount)) {
       return null;
     }
 
+    const connected = await AdenaLedgerConnector.openConnected();
+    if (!connected) {
+      console.log('Ledger not found');
+      return null;
+    }
+    const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
+
     const result = await transactionService
-      .createSignatureWithLedger(currentAccount, document)
-      .then(async (signature) => {
-        const transaction = await transactionService.createTransaction(document, signature);
-        const response = await transactionService.sendTransaction(transaction);
+      .createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .then(async ({ signed }) => {
+        console.log(signed);
+        connected.close();
+        const response = await transactionService.sendTransactionByLedger(ledgerConnector, currentAccount, signed);
         return response.hash;
       })
       .catch((error: Error) => {
+        console.log(error);
+        connected.close();
         if (error.message === 'Transaction signing request was rejected by the user') {
           navigate(RoutePath.TransferLedgerReject);
         }

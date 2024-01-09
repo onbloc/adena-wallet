@@ -3,13 +3,14 @@ import { Account } from 'adena-module';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useNetwork } from './use-network';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useEvent } from './use-event';
 import { EventMessage } from '@inject/message/event-message';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
   currentAddress: string | null;
+  getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
   const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
@@ -17,6 +18,14 @@ export const useCurrentAccount = (): {
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const { dispatchEvent } = useEvent();
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
+
+  const getCurrentAddress = useCallback(async (prefix?: string) => {
+    if (!currentAccount) {
+      return null;
+    }
+    return await currentAccount.getAddress(prefix ?? 'g');
+  }, [currentAccount]);
 
   const changeCurrentAccount = async (changedAccount: Account): Promise<boolean> => {
     if (!wallet) {
@@ -31,17 +40,22 @@ export const useCurrentAccount = (): {
   };
 
   const dispatchChangedEvent = useCallback(
-    (account: Account) => {
-      const address = account.getAddress(currentNetwork.addressPrefix);
+    async (account: Account) => {
+      const address = await account.getAddress(currentNetwork.addressPrefix);
       const message = EventMessage.event('changedAccount', address);
       dispatchEvent(message);
     },
     [currentNetwork],
   );
 
+  useEffect(() => {
+    getCurrentAddress(currentNetwork.addressPrefix).then(setCurrentAddress);
+  }, [getCurrentAddress, currentNetwork]);
+
   return {
     currentAccount,
-    currentAddress: currentAccount?.getAddress(currentNetwork?.addressPrefix ?? 'g') || null,
+    currentAddress,
+    getCurrentAddress,
     changeCurrentAccount,
   };
 };

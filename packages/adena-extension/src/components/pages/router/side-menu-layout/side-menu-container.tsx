@@ -29,6 +29,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { accountNativeBalances } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
+  const [sideMenuAccounts, setSideMenuAccounts] = useState<SideMenuAccountInfo[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -41,7 +42,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     return currentAccount?.id || null;
   }, [currentAccount]);
 
-  const sideMenuAccounts: SideMenuAccountInfo[] = useMemo(() => {
+  const getSideMenuAccounts = useCallback(async () => {
     if (locked) {
       return [];
     }
@@ -60,13 +61,13 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       return `${maxFractionDigits(amount.value, 6)} ${amount.denom}`;
     }
 
-    return accounts.map((account) => ({
+    return Promise.all(accounts.map(async (account) => ({
       accountId: account.id,
       name: formatNickname(accountNames[account.id] || account.name, 10),
-      address: account.getAddress(currentNetwork.addressPrefix),
+      address: await account.getAddress(currentNetwork.addressPrefix),
       type: account.type,
       balance: mapBalance(accountNativeBalances, account),
-    }));
+    })));
   }, [locked, accountNames, accounts, accountNativeBalances, currentNetwork]);
 
   const movePage = useCallback(
@@ -107,6 +108,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const close = useCallback(async () => {
     setOpen(false);
   }, [setOpen]);
+
+  useEffect(() => {
+    getSideMenuAccounts().then(setSideMenuAccounts);
+  }, [getSideMenuAccounts]);
 
   return (
     <SideMenu

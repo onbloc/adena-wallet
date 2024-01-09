@@ -10,7 +10,7 @@ import {
 } from '@common/validation';
 import {
   AdenaWallet,
-  LedgerConnector,
+  AdenaLedgerConnector,
   LedgerKeyring,
   deserializeAccount,
   isLedgerAccount,
@@ -145,12 +145,12 @@ export const useLedgerPassword = (): UseLedgerPasswordReturn => {
     const validationState = await validationCheck();
     if (validationState === 'FINISH') {
       const { accounts } = location.state as LocationState;
-      const transport = await LedgerConnector.openConnected();
+      const transport = await AdenaLedgerConnector.openConnected();
       if (!transport) {
         return;
       }
       const deserializeAccounts = accounts.map(deserializeAccount).filter(isLedgerAccount);
-      const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
+      const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
       const mappedAccounts = deserializeAccounts.map((account) => {
         return {
           ...account.toData(),

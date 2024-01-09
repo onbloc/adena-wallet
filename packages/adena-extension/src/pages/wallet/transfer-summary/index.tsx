@@ -33,7 +33,7 @@ interface TransferSummaryInfo {
 
 const TransferSummaryContainer: React.FC = () => {
   const navigate = useNavigate();
-  const { gnoProvider } = useWalletContext();
+  const { gnoProvider, wallet } = useWalletContext();
   const { state } = useLocation();
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
@@ -59,9 +59,8 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
     }
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
-      tokenMetainfo.denom
-    }`;
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom
+      }`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
@@ -104,13 +103,12 @@ const TransferSummaryContainer: React.FC = () => {
 
   const createTransaction = useCallback(async () => {
     const document = await createDocument();
-    if (!currentNetwork || !currentAccount || !document) {
+    if (!currentNetwork || !currentAccount || !document || !wallet) {
       return null;
     }
-    const signature = await transactionService.createSignature(currentAccount, document);
 
-    const transaction = await transactionService.createTransaction(document, signature);
-    return transactionService.sendTransaction(transaction);
+    const { signed } = await transactionService.createTransaction(wallet, document);
+    return transactionService.sendTransaction(wallet, currentAccount, signed);
   }, [summaryInfo, currentAccount, currentAccount]);
 
   const hasNetworkFee = useCallback(async () => {

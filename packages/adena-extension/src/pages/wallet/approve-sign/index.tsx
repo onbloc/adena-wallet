@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
+import { Document, isLedgerAccount } from 'adena-module';
 
 import { ApproveTransaction } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -16,12 +16,12 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
 
-function mappedTransactionData(document: StdSignDoc): {
-  messages: readonly AminoMsg[];
+function mappedTransactionData(document: Document): {
+  messages: readonly any[];
   contracts: { type: string; function: any; value: any }[];
   gasWanted: string;
   gasFee: string;
-  document: StdSignDoc;
+  document: Document;
 } {
   return {
     messages: document.msgs,
@@ -49,12 +49,13 @@ const ApproveSignContainer: React.FC = () => {
     undefined,
   );
   const { currentNetwork } = useNetwork();
+  const [currentAddress, setCurrentAddress] = useState<string>('');
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [document, setDocument] = useState<StdSignDoc>();
+  const [document, setDocument] = useState<Document>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
 
@@ -100,16 +101,16 @@ const ApproveSignContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentAccount && requestData && gnoProvider) {
-      if (validate(currentAccount, requestData)) {
+    if (currentAddress && requestData && gnoProvider) {
+      if (validate(currentAddress, requestData)) {
         initFavicon();
         initTransactionData();
       }
     }
-  }, [currentAccount, requestData, gnoProvider]);
+  }, [currentAddress, requestData, gnoProvider]);
 
-  const validate = (currentAccount: Account, requestData: InjectionMessage): boolean => {
-    const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
+  const validate = (currentAddress: string, requestData: InjectionMessage): boolean => {
+    const validationMessage = validateInjectionData(currentAddress, requestData);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -216,6 +217,14 @@ const ApproveSignContainer: React.FC = () => {
       InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
     );
   }, [requestData]);
+
+  useEffect(() => {
+    if (!currentAccount || !currentNetwork) {
+      setCurrentAddress('');
+      return;
+    }
+    currentAccount.getAddress(currentNetwork.addressPrefix).then(setCurrentAddress);
+  }, [currentAccount, currentNetwork])
 
   return (
     <ApproveTransaction

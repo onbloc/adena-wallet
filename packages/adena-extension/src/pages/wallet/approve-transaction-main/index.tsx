@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { StdSignDoc, Account, isLedgerAccount, AminoMsg } from 'adena-module';
+import { Account, isLedgerAccount, Document } from 'adena-module';
+import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
 
 import { ApproveTransaction } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -16,18 +18,17 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
-import { BroadcastTxCommitResult, TM2Error } from '@gnolang/tm2-js-client';
 
-function mappedTransactionData(document: StdSignDoc): {
-  messages: readonly AminoMsg[];
+function mappedTransactionData(document: Document): {
+  messages: readonly any[];
   contracts: { type: string; function: any; value: any }[];
   gasWanted: string;
   gasFee: string;
-  document: StdSignDoc;
+  document: Document;
 } {
   return {
     messages: document.msgs,
-    contracts: document.msgs.map((message) => {
+    contracts: document.msgs.map((message: any) => {
       return {
         type: message?.type || '',
         function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
@@ -55,9 +56,10 @@ const DEFAULT_DENOM = 'GNOT';
 
 const ApproveTransactionContainer: React.FC = () => {
   const navigate = useNavigate();
+  const { wallet } = useWalletContext();
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { currentAccount, getCurrentAddress } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
     undefined,
   );
@@ -66,7 +68,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [document, setDocument] = useState<StdSignDoc>();
+  const [document, setDocument] = useState<Document>();
   const { currentNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
@@ -107,8 +109,8 @@ const ApproveTransactionContainer: React.FC = () => {
     setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
-  const validate = (currentAccount: Account, requestData: InjectionMessage): boolean => {
-    const validationMessage = validateInjectionData(currentAccount.getAddress('g'), requestData);
+  const validate = async (currentAccount: Account, requestData: InjectionMessage): Promise<boolean> => {
+    const validationMessage = validateInjectionData(await currentAccount.getAddress('g'), requestData);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -122,11 +124,13 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const initBalance = useCallback(() => {
-    if (!currentAddress || !gnoProvider) {
-      return;
-    }
-    gnoProvider.getBalance(currentAddress, 'ugnot').then(setCurrentBalance);
-  }, [currentAddress, gnoProvider]);
+    getCurrentAddress().then(currentAddress => {
+      if (!currentAddress || !gnoProvider) {
+        return;
+      }
+      gnoProvider.getBalance(currentAddress, 'ugnot').then(setCurrentBalance);
+    })
+  }, [getCurrentAddress, gnoProvider]);
 
   const initTransactionData = async (): Promise<boolean> => {
     if (!currentNetwork || !currentAccount || !requestData) {
@@ -167,19 +171,18 @@ const ApproveTransactionContainer: React.FC = () => {
     if (isErrorNetworkFee) {
       return false;
     }
-    if (!document || !currentNetwork || !currentAccount) {
+    if (!document || !currentNetwork || !currentAccount || !wallet) {
       setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
       return false;
     }
 
     try {
-      const signature = await transactionService.createSignature(currentAccount, document);
       setProcessType('PROCESSING');
-      const transaction = await transactionService.createTransaction(document, signature);
-      const hash = transactionService.createHash(transaction);
-      const response = await new Promise<BroadcastTxCommitResult | TM2Error | null>((resolve) => {
+      const { signed } = await transactionService.createTransaction(wallet, document);
+      const hash = transactionService.createHash(signed);
+      const response = await new Promise<BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null>((resolve) => {
         transactionService
-          .sendTransaction(transaction)
+          .sendTransaction(wallet, currentAccount, signed)
           .then(resolve)
           .catch((error: TM2Error | Error) => {
             resolve(error);
@@ -263,11 +266,13 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (validate(currentAccount, requestData)) {
-        initFavicon();
-        initTransactionData();
-        initBalance();
-      }
+      validate(currentAccount, requestData).then(validated => {
+        if (validated) {
+          initFavicon();
+          initTransactionData();
+          initBalance();
+        }
+      });
     }
   }, [currentAccount, requestData, gnoProvider]);
   const onClickCancel = (): void => {
