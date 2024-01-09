@@ -56,9 +56,10 @@ export class PrivateKeyKeyring implements Keyring {
   }
 
   public static async fromPrivateKeyStr(privateKeyStr: string) {
-    const privateKey = Uint8Array.from(Buffer.from(privateKeyStr, 'hex'));
+    const adjustPrivateKeyStr = privateKeyStr.replace('0x', '');
+    const privateKey = Uint8Array.from(Buffer.from(adjustPrivateKeyStr, 'hex'));
     const wallet = await Tm2Wallet.fromPrivateKey(privateKey);
-    const publicKey = await wallet.getSigner().getPrivateKey();
+    const publicKey = await wallet.getSigner().getPublicKey();
     return new PrivateKeyKeyring({
       publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKey),

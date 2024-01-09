@@ -1,10 +1,4 @@
-import {
-  Provider,
-  TransactionEndpoint,
-  Tx,
-  uint8ArrayToBase64,
-  Wallet as Tm2Wallet,
-} from '@gnolang/tm2-js-client';
+import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 import { Document, documentToTx } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
