@@ -1,8 +1,11 @@
-import { MockLedgerConnector } from '../amino';
+import { MockLedgerConnector } from './../test-utils/mock-ledgerconnector';
 import { AdenaWallet } from './wallet';
 
 const mnemonic =
   'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+
+const mnemonic2 =
+  'lens balcony basic cherry half purchase balance soccer solar scissors process eager orchard fatigue rural retire approve crouch repair prepare develop clarify milk suffer';
 
 describe('create wallet by mnemonic', () => {
   it('create success', async () => {
@@ -21,8 +24,9 @@ describe('create wallet by mnemonic', () => {
   it("initilaize account' address is corret", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const account = wallet.accounts[0];
+    const address = await account.getAddress('g');
 
-    expect(account.getAddress('g')).toBe('g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5');
+    expect(address).toBe('g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5');
   });
 });
 
@@ -45,8 +49,9 @@ describe('create wallet by web3 auth', () => {
     const privateKeyHexStr = 'ea97b9fddb7e6bf6867090a7a819657047949fbb9466d617f940538efd888605';
     const wallet = await AdenaWallet.createByWeb3Auth(privateKeyHexStr);
     const account = wallet.accounts[0];
+    const address = await account.getAddress('g');
 
-    expect(account.getAddress('g')).toBe('g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5');
+    expect(address).toBe('g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5');
   });
 });
 

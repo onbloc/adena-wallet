@@ -11,7 +11,7 @@ export interface Account {
   keyringId: string;
   publicKey: Uint8Array;
   toData: () => AccountInfo;
-  getAddress: (prefix: string) => string;
+  getAddress: (prefix: string) => Promise<string>;
 }
 
 export interface AccountInfo {

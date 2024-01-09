@@ -1,9 +1,16 @@
+import {
+  generateKeyPair,
+  Wallet as Tm2Wallet,
+  Tx,
+  TxSignature,
+  Provider,
+  TransactionEndpoint,
+} from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
-import { Bip39, EnglishMnemonic, Secp256k1, Slip10, Slip10Curve, sha256 } from '../../crypto';
-import { makeGnolandPath } from '../../amino/paths';
+import { Bip39, EnglishMnemonic } from '../../crypto';
+import { Document, documentToTx } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { StdSignDoc, encodeSecp256k1Signature } from '../../amino';
-import { serializeSignToGnoDoc } from '../../amino/secp256k1hdwallet';
+import { decodeTxMessages } from './keyring-util';
 
 export class HDWalletKeyring implements Keyring {
   public readonly id: string;
@@ -21,18 +28,12 @@ export class HDWalletKeyring implements Keyring {
   }
 
   async getKeypair(hdPath: number) {
-    const privateKey = this.getPrivateKey(hdPath);
-    const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
-    return { privateKey, publicKey: Secp256k1.compressPubkey(publicKey) };
+    const { privateKey, publicKey } = await generateKeyPair(this.mnemonic, hdPath);
+    return { privateKey, publicKey: publicKey };
   }
 
-  getPrivateKey(hdPath: number) {
-    const gnolandPath = makeGnolandPath(hdPath);
-    const { privkey: privateKey } = Slip10.derivePath(
-      Slip10Curve.Secp256k1,
-      this.seed,
-      gnolandPath,
-    );
+  async getPrivateKey(hdPath: number) {
+    const { privateKey } = await this.getKeypair(hdPath);
     return privateKey;
   }
 
@@ -50,24 +51,43 @@ export class HDWalletKeyring implements Keyring {
     };
   }
 
-  async sign(document: StdSignDoc, hdPath: number = 0) {
-    const { publicKey, privateKey } = await this.getKeypair(hdPath);
-    const message = sha256(serializeSignToGnoDoc(document));
-    const signature = await Secp256k1.createSignature(message, privateKey);
-    const signatureBytes = new Uint8Array([
-      ...(signature.r(32) as any),
-      ...(signature.s(32) as any),
-    ]);
+  async sign(
+    provider: Provider,
+    document: Document,
+    hdPath: number = 0,
+  ): Promise<{
+    signed: Tx;
+    signature: TxSignature[];
+  }> {
+    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    wallet.connect(provider);
+    return this.signByWallet(wallet, document);
+  }
 
+  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+    const tx = documentToTx(document);
+    const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
-      signed: document,
-      signature: encodeSecp256k1Signature(publicKey, signatureBytes),
+      signed: signedTx,
+      signature: signedTx.signatures,
     };
   }
 
+  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
+  }
+
+  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
+  }
+
   public static async fromMnemonic(mnemonic: string) {
-    const enblishMnemonic = new EnglishMnemonic(mnemonic);
-    const seed = await Bip39.mnemonicToSeed(enblishMnemonic);
+    const englishMnemonic = new EnglishMnemonic(mnemonic);
+    const seed = await Bip39.mnemonicToSeed(englishMnemonic);
     return new HDWalletKeyring({ mnemonic, seed: Array.from(seed) });
   }
 }

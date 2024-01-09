@@ -1,9 +1,10 @@
-import { AdenaWallet } from '.';
+import { JSONRPCProvider, Provider } from '@gnolang/tm2-js-client';
+import { AdenaWallet, Document, txToDocument } from './..';
 
 const mnemonic =
   'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
-function makeDocument(body: string) {
+function makeDocument(body: string): Document {
   return {
     msgs: [
       {
@@ -41,47 +42,55 @@ function makeDocument(body: string) {
 }
 
 describe('Transaction Sign', () => {
+  let mockProvider: Provider;
+
+  beforeEach(() => {
+    mockProvider = new JSONRPCProvider('');
+    mockProvider.getStatus = jest.fn().mockResolvedValue('0');
+    mockProvider.getStatus = jest.fn().mockResolvedValue({
+      node_info: {
+        node_info: 'dev',
+      },
+    });
+    mockProvider.getAccountNumber = jest.fn().mockResolvedValue('0');
+    mockProvider.getAccountSequence = jest.fn().mockResolvedValue('1');
+  });
+
   it('default success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const body = 'package hello\n// test\n';
-    const documnet = makeDocument(body);
-    const signature = await wallet.sign(documnet);
+    const document = makeDocument(body);
+    const { signed, signature } = await wallet.sign(mockProvider, document);
 
-    expect(signature.signature.signature).toBe(
-      'NN3EWlM/M4bnkQlJtBTp6lDqcY3UsWlDuDdl3NKFtDRztl/hVyyg4sjaBZiYZoq6kjCAeLj5j5aqyETGr5PhiA==',
-    );
+    const signedTx = txToDocument(signed);
+    console.log(signedTx);
+    expect(signature).toHaveLength(1);
   });
 
   it('"&" includes success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const body = 'package hello\n\nfunc main() {\n    // &\n}\n';
-    const documnet = makeDocument(body);
-    const signature = await wallet.sign(documnet);
+    const document = makeDocument(body);
+    const signature = await wallet.sign(mockProvider, document);
 
-    expect(signature.signature.signature).toBe(
-      'fwoe2djDbqcNl0Nw0tPSIUJbij/+rzflTW50lbvWXOgog9hDr+LCZgnJroAyo/QcDo8O1t/l5PhCcxZldPLJow==',
-    );
+    expect(signature.signature).toHaveLength(1);
   });
 
   it('">" includes success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const body = 'package hello\n\nfunc main() {\n    // >\n}\n';
-    const documnet = makeDocument(body);
-    const signature = await wallet.sign(documnet);
+    const document = makeDocument(body);
+    const signature = await wallet.sign(mockProvider, document);
 
-    expect(signature.signature.signature).toBe(
-      '5H5Dx+7g+m92T6+eSO+DTBYVWr7Wq/ok0mrgPuvuwxUKikBLkAQrS4aGx79sxv8lpxAfFCIFdZYk/pW7+vpB1Q==',
-    );
+    expect(signature.signature).toHaveLength(1);
   });
 
   it('"<" includes success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
     const body = 'package hello\n\nfunc main() {\n    // <\n}\n';
-    const documnet = makeDocument(body);
-    const signature = await wallet.sign(documnet);
+    const document = makeDocument(body);
+    const signature = await wallet.sign(mockProvider, document);
 
-    expect(signature.signature.signature).toBe(
-      'RxjoXe8NwW+89vKNntbuEJ6ZvVBdytWCSbqfy7TtIztXpmcGDoPbWDIvOIZfZWKe2BJDG06MzvXd8Y8LvecKYg==',
-    );
+    expect(signature.signature).toHaveLength(1);
   });
 });

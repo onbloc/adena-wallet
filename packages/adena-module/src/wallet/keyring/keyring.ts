@@ -1,8 +1,15 @@
+import {
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
+  Provider,
+  Tx,
+  TxSignature,
+} from '@gnolang/tm2-js-client';
+import { Document } from './../..';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
-import { StdSignDoc, StdSignature } from '../../amino';
 
 export type KeyringType = 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH';
 
@@ -11,12 +18,23 @@ export interface Keyring {
   type: KeyringType;
   toData: () => KeyringData;
   sign: (
-    document: StdSignDoc,
+    provider: Provider,
+    document: Document,
     hdPath?: number,
   ) => Promise<{
-    signed: StdSignDoc;
-    signature: StdSignature;
+    signed: Tx;
+    signature: TxSignature[];
   }>;
+  broadcastTxSync: (
+    provider: Provider,
+    signedTx: Tx,
+    hdPath?: number,
+  ) => Promise<BroadcastTxSyncResult>;
+  broadcastTxCommit: (
+    provider: Provider,
+    signedTx: Tx,
+    hdPath?: number,
+  ) => Promise<BroadcastTxCommitResult>;
 }
 
 export interface KeyringData {

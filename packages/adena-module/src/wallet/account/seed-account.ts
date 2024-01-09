@@ -2,9 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Account, AccountInfo } from './account';
 import { Wallet } from '../wallet';
 import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
-import { rawSecp256k1PubkeyToRawAddress } from '../../amino';
-import { toBech32 } from '../../encoding';
-import { GnoWallet } from '@gnolang/gno-js-client';
+import { publicKeyToAddress } from '../../utils/address';
 
 export class SeedAccount implements Account {
   public readonly id;
@@ -16,8 +14,6 @@ export class SeedAccount implements Account {
   public readonly hdPath: number;
 
   public readonly publicKey: Uint8Array;
-
-  private _gnoWallet: GnoWallet | null = null; /* Temporarily added */
 
   private _index: number;
 
@@ -50,9 +46,8 @@ export class SeedAccount implements Account {
   }
 
   public getAddress(prefix: string) {
-    return toBech32(prefix, rawSecp256k1PubkeyToRawAddress(this.publicKey));
+    return publicKeyToAddress(this.publicKey, prefix);
   }
-
   public toData() {
     return {
       id: this.id,
