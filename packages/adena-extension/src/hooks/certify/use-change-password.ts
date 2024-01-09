@@ -7,7 +7,7 @@ import {
   validateNotMatchConfirmPassword,
   validateWrongPasswordLength,
 } from '@common/validation';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export type UseChangePasswordReturn = {
   currPwdState: {

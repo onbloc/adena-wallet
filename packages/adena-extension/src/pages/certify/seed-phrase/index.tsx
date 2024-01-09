@@ -8,7 +8,7 @@ import { WalletError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import { validateInvalidPassword } from '@common/validation';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Reveal Seed Phrase',

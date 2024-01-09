@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Text, Button, Copy } from '@components/atoms';
 import { SeedBox, TitleWithDesc } from '@components/molecules';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 const text = {

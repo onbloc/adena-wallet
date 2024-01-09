@@ -6,7 +6,7 @@ import { useNetwork } from '@hooks/use-network';
 import { CommonFullContentLayout } from '@components/atoms';
 
 import { NetworkMetainfo } from '@types';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 function isValidURL(rpcURL: string): boolean {

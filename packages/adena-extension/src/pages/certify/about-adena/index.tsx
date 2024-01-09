@@ -5,7 +5,7 @@ import logo from '@assets/logo-default-v2.svg';
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 
 const menuMakerInfo = [

@@ -7,7 +7,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 const StyledPrivateKeyBox = styled.div`

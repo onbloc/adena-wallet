@@ -7,7 +7,7 @@ import { TitleWithDesc } from '@components/molecules';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 const text = {

@@ -7,7 +7,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

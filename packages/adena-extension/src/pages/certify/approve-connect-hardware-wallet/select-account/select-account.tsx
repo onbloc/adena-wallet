@@ -15,7 +15,7 @@ import { useWalletContext } from '@hooks/use-context';
 import { LedgerKeyring, deserializeAccount, serializeAccount } from 'adena-module';
 import { useNetwork } from '@hooks/use-network';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const text = {
   title: 'Select Accounts',

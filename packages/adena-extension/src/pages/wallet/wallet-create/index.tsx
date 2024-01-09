@@ -11,7 +11,7 @@ import { existsPopups } from '@inject/message/methods';
 
 import GoogleSignInButton from './google-signin-button';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export const WalletCreate = (): JSX.Element => {
   const { navigate } = useAppNavigate();

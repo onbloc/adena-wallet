@@ -8,7 +8,7 @@ import { ConnectRequestWallet } from './connect-request-wallet';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
 import { ConnectInit } from './connect-init';
 import { serializeAccount } from 'adena-module';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 type ConnectType =
   | 'INIT'

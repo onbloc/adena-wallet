@@ -6,7 +6,7 @@ import { TermsCheckbox, CancelAndConfirmButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import { useAdenaContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TermsAText = 'Anyone with the phrase will have full control over my funds.';
 const TermsBText = 'I will never share my seed phrase with anyone.';

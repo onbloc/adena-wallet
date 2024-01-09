@@ -9,7 +9,7 @@ import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@router/path';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import { TokenInfo } from '@types';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();

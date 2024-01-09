@@ -23,7 +23,7 @@ import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant
 
 import LoadingTokenDetails from './loading-token-details';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 
 const Wrapper = styled.main`

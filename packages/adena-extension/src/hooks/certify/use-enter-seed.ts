@@ -2,7 +2,7 @@ import { EnglishMnemonic } from 'adena-module';
 import { useCallback, useEffect, useState } from 'react';
 
 import { RoutePath } from '@router/path';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 

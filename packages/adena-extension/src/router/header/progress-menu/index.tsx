@@ -5,7 +5,7 @@ import { LeftArrowBtn } from '@components/atoms';
 import logo from '@assets/logo-withIcon.svg';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 type ProgressLevel = 'first' | 'second' | 'third';
 

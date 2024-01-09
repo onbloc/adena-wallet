@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Text, Icon } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 interface CloseTitleMenuProps {
   title?: string;

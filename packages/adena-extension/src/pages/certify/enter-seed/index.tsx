@@ -6,7 +6,7 @@ import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 
 import { useEnterSeed } from '@hooks/certify/use-enter-seed';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 const walletContent = {

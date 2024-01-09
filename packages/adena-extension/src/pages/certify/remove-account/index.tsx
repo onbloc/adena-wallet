@@ -10,7 +10,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@router/path';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const content =
   'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';

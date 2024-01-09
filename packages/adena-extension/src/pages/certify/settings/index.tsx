@@ -6,7 +6,7 @@ import { BottomFixedButton } from '@components/molecules';
 import { RoutePath } from '@router/path';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const menuMakerInfo: {
   title: string;

@@ -15,7 +15,7 @@ import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/valida
 import { useNetwork } from '@hooks/use-network';
 
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

@@ -14,7 +14,7 @@ import {
   deserializeAccount,
   isLedgerAccount,
 } from 'adena-module';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export type UseLedgerPasswordReturn = {
   pwdState: {

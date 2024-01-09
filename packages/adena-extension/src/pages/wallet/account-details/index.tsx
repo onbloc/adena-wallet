@@ -9,7 +9,7 @@ import { useAccountName } from '@hooks/use-account-name';
 import { RoutePath } from '@router/path';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;

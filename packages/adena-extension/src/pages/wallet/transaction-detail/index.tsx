@@ -11,7 +11,7 @@ import AddPackageIcon from '@assets/addpkg.svg';
 import { useNetwork } from '@hooks/use-network';
 import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 import useLink from '@hooks/use-link';
 

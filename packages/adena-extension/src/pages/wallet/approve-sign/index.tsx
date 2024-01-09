@@ -15,7 +15,7 @@ import { RoutePath } from '@router/path';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];

@@ -12,7 +12,7 @@ import useHistoryData from '@hooks/use-history-data';
 
 import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const TransferInputLayoutWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};

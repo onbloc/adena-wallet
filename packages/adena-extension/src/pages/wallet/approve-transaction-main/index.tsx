@@ -17,7 +17,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
 import { BroadcastTxCommitResult, TM2Error } from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];

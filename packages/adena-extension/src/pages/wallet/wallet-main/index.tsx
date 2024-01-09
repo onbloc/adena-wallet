@@ -13,7 +13,7 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { WalletState } from '@states';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 const Wrapper = styled.main`
   padding-top: 14px;

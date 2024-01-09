@@ -5,7 +5,7 @@ import { Text, WarningBox, Button } from '@components/atoms';
 import { SeedBox, SeedViewAndCopy } from '@components/molecules';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export const RevealPrivatePhrase = (): JSX.Element => {
   const { goBack } = useAppNavigate();

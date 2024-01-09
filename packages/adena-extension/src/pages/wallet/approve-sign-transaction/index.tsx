@@ -16,7 +16,7 @@ import { RoutePath } from '@router/path';
 import { validateInjectionData } from '@inject/message/methods';
 import { useNetwork } from '@hooks/use-network';
 import { bytesToBase64 } from '@common/utils/encoding-util';
-import useAppNavigate from '@hooks/use-app-navige';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 function mappedTransactionData(document: StdSignDoc): {
   messages: readonly AminoMsg[];
