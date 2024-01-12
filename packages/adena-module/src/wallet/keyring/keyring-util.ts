@@ -1,4 +1,5 @@
 import { Any, MsgAddPackage, MsgCall, MsgSend } from '@gnolang/gno-js-client';
+import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { Keyring } from './keyring';
 import { LedgerKeyring } from './ledger-keyring';
@@ -19,6 +20,10 @@ export function isPrivateKeyKeyring(keyring: Keyring): keyring is PrivateKeyKeyr
 
 export function isWeb3AuthKeyring(keyring: Keyring): keyring is Web3AuthKeyring {
   return keyring.type === 'WEB3_AUTH';
+}
+
+export function isAddressKeyring(keyring: Keyring): keyring is AddressKeyring {
+  return keyring.type === 'AIRGAP';
 }
 
 export function hasPrivateKey(

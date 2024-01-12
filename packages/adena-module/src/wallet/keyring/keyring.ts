@@ -6,12 +6,13 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 import { Document } from './../..';
+import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
 
-export type KeyringType = 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH';
+export type KeyringType = 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH' | 'AIRGAP';
 
 export interface Keyring {
   id: string;
@@ -44,6 +45,7 @@ export interface KeyringData {
   privateKey?: number[];
   seed?: number[];
   mnemonic?: string;
+  addressBytes?: number[];
 }
 
 export function makeKeyring(keyringData: KeyringData) {
@@ -56,6 +58,8 @@ export function makeKeyring(keyringData: KeyringData) {
       return new PrivateKeyKeyring(keyringData);
     case 'WEB3_AUTH':
       return new Web3AuthKeyring(keyringData);
+    case 'AIRGAP':
+      return new AddressKeyring(keyringData);
     default:
       throw new Error('Invalid Account type');
   }
