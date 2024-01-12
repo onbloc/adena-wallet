@@ -1,5 +1,7 @@
-import { Any, Tx, TxFee } from '@gnolang/tm2-js-client';
+import { Any, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
+import { hexToBytes } from '@noble/hashes/utils';
+import { fromUtf8 } from '../encoding';
 
 export interface Document {
   chain_id: string;
@@ -82,3 +84,62 @@ export function documentToTx(document: Document): Tx {
 export function txToDocument(tx: Tx) {
   return Tx.toJSON(tx);
 }
+
+interface RawTx {
+  msg: {
+    '@type': string;
+    caller: string;
+    send: string;
+    pkg_path: string;
+    func: string;
+    args: string[];
+  }[];
+  fee: { gas_wanted: string; gas_fee: string };
+  signatures: {
+    pub_key: {
+      '@type': string;
+      value: string;
+    };
+    signature: string;
+  }[];
+  memo: string;
+}
+
+/**
+ * Change transaction json string to a Signed Tx.
+ *
+ * @param str
+ * @returns Tx | null
+ */
+export const strToSignedTx = (str: string): Tx | null => {
+  let rawTx = null;
+  try {
+    rawTx = JSON.parse(str);
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (rawTx === null) return null;
+
+  try {
+    const sortedDocument = sortedObject(rawTx) as RawTx;
+    const messages: Any[] = sortedDocument.msg
+      .map((msg) => ({
+        type: msg['@type'],
+        value: { ...msg },
+      }))
+      .map(encodeMessageValue);
+    return {
+      messages,
+      fee: TxFee.create({
+        gasWanted: sortedDocument.fee.gas_wanted,
+        gasFee: sortedDocument.fee.gas_fee,
+      }),
+      signatures: rawTx.signatures.map(TxSignature.fromJSON),
+      memo: sortedDocument.memo,
+    };
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+};
