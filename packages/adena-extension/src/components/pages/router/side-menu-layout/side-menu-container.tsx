@@ -14,6 +14,7 @@ import { RoutePath } from '@router/path';
 
 import { SideMenuAccountInfo, TokenBalanceType } from '@types';
 import useLink from '@hooks/use-link';
+import { useQuery } from '@tanstack/react-query';
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -31,7 +32,6 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { accountNativeBalances } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
-  const [sideMenuAccounts, setSideMenuAccounts] = useState<SideMenuAccountInfo[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -43,34 +43,6 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const currentAccountId = useMemo(() => {
     return currentAccount?.id || null;
   }, [currentAccount]);
-
-  const getSideMenuAccounts = useCallback(async () => {
-    if (locked) {
-      return [];
-    }
-    if (accounts.length === 0 || !currentNetwork) {
-      return [];
-    }
-
-    function mapBalance(
-      accountNativeBalances: { [key in string]: TokenBalanceType },
-      account: Account,
-    ): string {
-      const amount = accountNativeBalances[account.id]?.amount;
-      if (!amount) {
-        return '-';
-      }
-      return `${maxFractionDigits(amount.value, 6)} ${amount.denom}`;
-    }
-
-    return Promise.all(accounts.map(async (account) => ({
-      accountId: account.id,
-      name: formatNickname(accountNames[account.id] || account.name, 10),
-      address: await account.getAddress(currentNetwork.addressPrefix),
-      type: account.type,
-      balance: mapBalance(accountNativeBalances, account),
-    })));
-  }, [locked, accountNames, accounts, accountNativeBalances, currentNetwork]);
 
   const movePage = useCallback(
     async (link: string) => {
@@ -110,10 +82,34 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const close = useCallback(async () => {
     setOpen(false);
   }, [setOpen]);
+  const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
+    ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
+    () => {
+      function mapBalance(
+        accountNativeBalances: { [key in string]: TokenBalanceType },
+        account: Account,
+      ): string {
+        const amount = accountNativeBalances[account.id]?.amount;
+        if (!amount) {
+          return '-';
+        }
+        return `${maxFractionDigits(amount.value, 6)} ${amount.denom}`;
+      }
 
-  useEffect(() => {
-    getSideMenuAccounts().then(setSideMenuAccounts);
-  }, [getSideMenuAccounts]);
+      return Promise.all(
+        accounts.map(async (account) => ({
+          accountId: account.id,
+          name: formatNickname(accountNames[account.id] || account.name, 10),
+          address: await account.getAddress(currentNetwork.addressPrefix),
+          type: account.type,
+          balance: mapBalance(accountNativeBalances, account),
+        })),
+      );
+    },
+    {
+      enabled: !locked && accounts.length > 0 && !!currentNetwork,
+    },
+  );
 
   return (
     <SideMenu
