@@ -98,7 +98,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     const { signed } = await transactionService.createTransaction(wallet, document);
     return transactionService.sendTransaction(wallet, currentAccount, signed);
-  }, [summaryInfo, currentAccount, currentAccount]);
+  }, [summaryInfo, currentAccount, currentNetwork]);
 
   const hasNetworkFee = useCallback(async () => {
     if (!gnoProvider || !currentAddress) {
@@ -126,7 +126,7 @@ const TransferSummaryContainer: React.FC = () => {
       return transferByLedger();
     }
     return transferByCommon();
-  }, [summaryInfo, currentAccount, currentAccount, isSent]);
+  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
 
   const transferByCommon = useCallback(async () => {
     try {
@@ -139,7 +139,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
     setIsSent(false);
     return false;
-  }, [summaryInfo, currentAccount, currentAccount, isSent]);
+  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
 
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
@@ -147,7 +147,7 @@ const TransferSummaryContainer: React.FC = () => {
       navigate(RoutePath.TransferLedgerLoading, { state: { document } });
     }
     return true;
-  }, [summaryInfo, currentAccount, currentAccount, isSent]);
+  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
 
   const onClickCancel = useCallback(() => {
     if (summaryInfo.isTokenSearch === true) {
@@ -155,7 +155,7 @@ const TransferSummaryContainer: React.FC = () => {
       return;
     }
     normalNavigate(-2);
-  }, []);
+  }, [summaryInfo, navigate]);
 
   return (
     <TransferSummaryLayout>

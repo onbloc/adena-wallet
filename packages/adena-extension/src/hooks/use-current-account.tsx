@@ -3,9 +3,10 @@ import { Account } from 'adena-module';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useNetwork } from './use-network';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useEvent } from './use-event';
 import { EventMessage } from '@inject/message/event-message';
+import { useQuery } from '@tanstack/react-query';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
@@ -18,7 +19,6 @@ export const useCurrentAccount = (): {
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const { dispatchEvent } = useEvent();
-  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
 
   const getCurrentAddress = useCallback(async (prefix?: string) => {
     if (!currentAccount) {
@@ -48,13 +48,23 @@ export const useCurrentAccount = (): {
     [currentNetwork],
   );
 
-  useEffect(() => {
-    getCurrentAddress(currentNetwork.addressPrefix).then(setCurrentAddress);
-  }, [getCurrentAddress, currentNetwork]);
+  const { data: currentAddress } = useQuery<string | null>(
+    ['currentAddress', currentAccount, currentNetwork],
+    async () => {
+      if (!currentAccount) {
+        return null;
+      }
+      const address = await currentAccount.getAddress(currentNetwork.addressPrefix ?? 'g');
+      return address;
+    },
+    {
+      enabled: currentAccount !== null,
+    },
+  );
 
   return {
     currentAccount,
-    currentAddress,
+    currentAddress: currentAddress || null,
     getCurrentAddress,
     changeCurrentAccount,
   };

@@ -82,6 +82,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const close = useCallback(async () => {
     setOpen(false);
   }, [setOpen]);
+
   const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
     ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
     () => {
