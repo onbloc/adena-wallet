@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { isLedgerAccount } from 'adena-module';
+import { isLedgerAccount, AdenaLedgerConnector } from 'adena-module';
+import { TM2Error } from '@gnolang/tm2-js-client';
 
 import { ApproveLedgerLoading } from '@components/molecules';
 import { InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
-import { TM2Error } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@router/path';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const { params } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
+  const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
   const { document, requestData } = params;
   const { currentAccount } = useCurrentAccount();
@@ -34,20 +35,25 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   };
 
   const createLedgerTransaction = async (): Promise<boolean> => {
-    if (!currentAccount || !document || !currentNetwork) {
+    if (!currentAccount || !document || !currentNetwork || !wallet) {
       return false;
     }
     if (!isLedgerAccount(currentAccount)) {
       return false;
     }
 
-    const result = await transactionService
-      .createSignatureWithLedger(currentAccount, document)
-      .then(async (signature) => {
-        const transaction = await transactionService.createTransaction(document, signature);
-        const hash = transactionService.createHash(transaction);
+    const connected = await AdenaLedgerConnector.openConnected();
+    if (!connected) {
+      console.log('Ledger not found');
+      return false;
+    }
+    const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
+
+    const result = await transactionService.createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .then(async ({ signed }) => {
+        const hash = transactionService.createHash(signed);
         const response = await transactionService
-          .sendTransaction(transaction)
+          .sendTransactionByLedger(ledgerConnector, currentAccount, signed)
           .catch((error: TM2Error | Error) => {
             return error;
           });

@@ -51,7 +51,7 @@ const AddAddress = (): JSX.Element => {
     }
   };
 
-  const saveButtonClick = (): void => {
+  const saveButtonClick = async (): Promise<void> => {
     let isValid = true;
     let errorMessage = '';
     const currData: AddressBookItem = {
@@ -86,7 +86,7 @@ const AddAddress = (): JSX.Element => {
     }
 
     try {
-      validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd);
+      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd);
     } catch (error) {
       isValid = false;
       if (error instanceof AddressBookValidationError) {

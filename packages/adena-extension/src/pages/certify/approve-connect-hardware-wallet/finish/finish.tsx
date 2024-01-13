@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { LedgerAccount, LedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
+import { LedgerAccount, AdenaLedgerConnector, LedgerKeyring, deserializeAccount } from 'adena-module';
 
 import { Text, Button } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
@@ -43,12 +43,12 @@ export const ApproveConnectHardwareWalletFinish = (): JSX.Element => {
     if (!wallet) {
       return;
     }
-    const transport = await LedgerConnector.openConnected();
+    const transport = await AdenaLedgerConnector.openConnected();
     if (!transport) {
       return;
     }
     const deserializeAccounts = accounts.map(deserializeAccount) as LedgerAccount[];
-    const keyring = await LedgerKeyring.fromLedger(new LedgerConnector(transport));
+    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
     const accountInfos = deserializeAccounts.map((account) => account.toData());
     const clone = wallet.clone();
     let currentAccount = null;

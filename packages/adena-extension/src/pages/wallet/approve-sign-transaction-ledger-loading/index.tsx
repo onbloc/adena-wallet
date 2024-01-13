@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import { useLocation } from 'react-router-dom';
+import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
 
 import { ApproveLedgerLoading } from '@components/molecules';
-import { InjectionMessageInstance } from '@inject/message';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@router/path';
 
-const ApproveSignLedgerLoadingContainer: React.FC = () => {
-  const { wallet } = useWalletContext()
-  const { params } = useAppNavigate<RoutePath.ApproveSignLoading>();
+interface ApproveSignTransactionLedgerLoadingState {
+  requestData?: InjectionMessage;
+  document?: Document;
+}
+
+const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
+  const location = useLocation();
+  const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
-  const { document, requestData } = params;
+  const { document, requestData } = location.state as ApproveSignTransactionLedgerLoadingState;
   const { currentAccount } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
 
@@ -47,11 +51,11 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
     }
     const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
 
-    const result = await transactionService
-      .createTransactionWithLedger(ledgerConnector, currentAccount, document)
-      .then(async ({ signature }) => {
+    const result = await transactionService.createTransactionWithLedger(ledgerConnector, currentAccount, document)
+      .then(async ({ signed }) => {
+        const encodedTransaction = transactionService.encodeTransaction(signed);
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('SIGN_AMINO', { document, signature }, requestData?.key),
+          InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
         );
         return true;
       })
@@ -83,4 +87,4 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
   return <ApproveLedgerLoading onClickCancel={onClickCancel} />;
 };
 
-export default ApproveSignLedgerLoadingContainer;
+export default ApproveSignTransactionLedgerLoadingContainer;

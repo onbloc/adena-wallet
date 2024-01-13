@@ -6,10 +6,12 @@ import { useNetwork } from './use-network';
 import { useCallback } from 'react';
 import { useEvent } from './use-event';
 import { EventMessage } from '@inject/message/event-message';
+import { useQuery } from '@tanstack/react-query';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
   currentAddress: string | null;
+  getCurrentAddress: (prefix?: string) => Promise<string | null>;
   changeCurrentAccount: (changedAccount: Account) => Promise<boolean>;
 } => {
   const [currentAccount, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
@@ -17,6 +19,13 @@ export const useCurrentAccount = (): {
   const { wallet } = useWalletContext();
   const { currentNetwork } = useNetwork();
   const { dispatchEvent } = useEvent();
+
+  const getCurrentAddress = useCallback(async (prefix?: string) => {
+    if (!currentAccount) {
+      return null;
+    }
+    return await currentAccount.getAddress(prefix ?? 'g');
+  }, [currentAccount]);
 
   const changeCurrentAccount = async (changedAccount: Account): Promise<boolean> => {
     if (!wallet) {
@@ -31,17 +40,32 @@ export const useCurrentAccount = (): {
   };
 
   const dispatchChangedEvent = useCallback(
-    (account: Account) => {
-      const address = account.getAddress(currentNetwork.addressPrefix);
+    async (account: Account) => {
+      const address = await account.getAddress(currentNetwork.addressPrefix);
       const message = EventMessage.event('changedAccount', address);
       dispatchEvent(message);
     },
     [currentNetwork],
   );
 
+  const { data: currentAddress } = useQuery<string | null>(
+    ['currentAddress', currentAccount, currentNetwork],
+    async () => {
+      if (!currentAccount) {
+        return null;
+      }
+      const address = await currentAccount.getAddress(currentNetwork.addressPrefix ?? 'g');
+      return address;
+    },
+    {
+      enabled: currentAccount !== null,
+    },
+  );
+
   return {
     currentAccount,
-    currentAddress: currentAccount?.getAddress(currentNetwork?.addressPrefix ?? 'g') || null,
+    currentAddress: currentAddress || null,
+    getCurrentAddress,
     changeCurrentAccount,
   };
 };

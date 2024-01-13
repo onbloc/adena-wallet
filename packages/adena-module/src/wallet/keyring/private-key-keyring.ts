@@ -1,8 +1,8 @@
+import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { Secp256k1, sha256 } from '../../crypto';
-import { StdSignDoc, encodeSecp256k1Signature } from '../../amino';
-import { serializeSignToGnoDoc } from '../../amino/secp256k1hdwallet';
+import { decodeTxMessages } from './keyring-util';
+import { Document, documentToTx } from './../..';
 
 export class PrivateKeyKeyring implements Keyring {
   public readonly id: string;
@@ -28,25 +28,40 @@ export class PrivateKeyKeyring implements Keyring {
     };
   }
 
-  async sign(document: StdSignDoc) {
-    const message = sha256(serializeSignToGnoDoc(document));
-    const signature = await Secp256k1.createSignature(message, this.privateKey);
-    const signatureBytes = new Uint8Array([
-      ...(signature.r(32) as any),
-      ...(signature.s(32) as any),
-    ]);
+  async sign(provider: Provider, document: Document) {
+    const wallet = await Tm2Wallet.fromPrivateKey(this.privateKey);
+    wallet.connect(provider);
+    return this.signByWallet(wallet, document);
+  }
 
+  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+    const tx = documentToTx(document);
+    const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
-      signed: document,
-      signature: encodeSecp256k1Signature(this.publicKey, signatureBytes),
+      signed: signedTx,
+      signature: signedTx.signatures,
     };
   }
 
+  async broadcastTxSync(provider: Provider, signedTx: Tx) {
+    const wallet = await Tm2Wallet.fromPrivateKey(this.privateKey);
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
+  }
+
+  async broadcastTxCommit(provider: Provider, signedTx: Tx) {
+    const wallet = await Tm2Wallet.fromPrivateKey(this.privateKey);
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
+  }
+
   public static async fromPrivateKeyStr(privateKeyStr: string) {
-    const privateKey = Uint8Array.from(Buffer.from(privateKeyStr, 'hex'));
-    const { pubkey: publicKey } = await Secp256k1.makeKeypair(privateKey);
+    const adjustPrivateKeyStr = privateKeyStr.replace('0x', '');
+    const privateKey = Uint8Array.from(Buffer.from(adjustPrivateKeyStr, 'hex'));
+    const wallet = await Tm2Wallet.fromPrivateKey(privateKey);
+    const publicKey = await wallet.getSigner().getPublicKey();
     return new PrivateKeyKeyring({
-      publicKey: Array.from(Secp256k1.compressPubkey(publicKey)),
+      publicKey: Array.from(publicKey),
       privateKey: Array.from(privateKey),
     });
   }

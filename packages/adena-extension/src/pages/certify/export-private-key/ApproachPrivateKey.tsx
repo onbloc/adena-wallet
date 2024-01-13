@@ -47,8 +47,9 @@ const ApproachPrivateKey = (): JSX.Element => {
     } else {
       clone.currentAccountId = currentAccount.id;
     }
+    const privateKey = await clone.getPrivateKeyStr();
 
-    setPrivateKey(`0x${clone.privateKeyStr}`);
+    setPrivateKey(`0x${privateKey}`);
   };
 
   return (

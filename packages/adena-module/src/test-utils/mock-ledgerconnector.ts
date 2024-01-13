@@ -1,4 +1,4 @@
-import { LedgerConnector } from './ledger-connector';
+import { LedgerConnector } from '@cosmjs/ledger-amino';
 import { RecordStore, openTransportReplayer } from '@ledgerhq/hw-transport-mocker';
 
 export class MockLedgerConnector extends LedgerConnector {

@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
+import { Provider, TransactionEndpoint, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { LedgerConnector, StdSignDoc, encodeSecp256k1Signature } from '../../amino';
-import { makeGnolandPath } from '../../amino/paths';
-import { serializeSignToGnoDoc } from '../../amino/secp256k1hdwallet';
+import { generateHDPath, Tx } from '@gnolang/tm2-js-client';
+import { LedgerConnector } from '@cosmjs/ledger-amino';
+import { decodeTxMessages } from './keyring-util';
+import { Document, documentToTx } from './../..';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -22,7 +24,7 @@ export class LedgerKeyring implements Keyring {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
-    const gnoHdPath = makeGnolandPath(hdPath);
+    const gnoHdPath = generateHDPath(hdPath);
     return this.connector.getPubkey(gnoHdPath);
   }
 
@@ -33,18 +35,46 @@ export class LedgerKeyring implements Keyring {
     };
   }
 
-  async sign(document: StdSignDoc, hdPath: number = 0) {
+  async sign(provider: Provider, document: Document, hdPath: number = 0) {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
-    const message = serializeSignToGnoDoc(document);
-    const gnoHdPath = makeGnolandPath(hdPath);
-    const publicKey = await this.getPublicKey(hdPath);
-    const signature = await this.connector.sign(message, gnoHdPath);
+    const wallet = Tm2Wallet.fromLedger(this.connector, {
+      accountIndex: hdPath,
+    });
+    wallet.connect(provider);
+    return this.signByWallet(wallet, document);
+  }
+
+  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+    const tx = documentToTx(document);
+    const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
-      signed: document,
-      signature: encodeSecp256k1Signature(publicKey, signature),
+      signed: signedTx,
+      signature: signedTx.signatures,
     };
+  }
+
+  async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+    if (!this.connector) {
+      throw new Error('Ledger connector does not found');
+    }
+    const wallet = Tm2Wallet.fromLedger(this.connector, {
+      accountIndex: hdPath,
+    });
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
+  }
+
+  async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
+    if (!this.connector) {
+      throw new Error('Ledger connector does not found');
+    }
+    const wallet = Tm2Wallet.fromLedger(this.connector, {
+      accountIndex: hdPath,
+    });
+    wallet.connect(provider);
+    return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
 
   public static async fromLedger(connector: LedgerConnector) {

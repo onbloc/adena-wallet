@@ -31,16 +31,17 @@ export const validateAlreadyAddress = (
   return true;
 };
 
-export const validateAlreadyAddressByAccounts = (
+export const validateAlreadyAddressByAccounts = async (
   currData: AddressBookItem,
   accounts: Account[],
   isAdd: boolean,
-): boolean => {
+): Promise<boolean> => {
   let check: boolean;
+  const addresses = await Promise.all(accounts.map((account) => account.getAddress('g')));
   if (isAdd) {
-    check = accounts.some((account) => account.getAddress('g') === currData.address);
+    check = addresses.some((address) => address === currData.address);
   } else {
-    const filterData = accounts.filter((account) => account.getAddress('g') === currData.address);
+    const filterData = addresses.filter((address) => address === currData.address);
     check = Boolean(filterData.length);
   }
   if (check) {

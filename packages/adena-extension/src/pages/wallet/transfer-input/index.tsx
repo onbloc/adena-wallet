@@ -100,13 +100,13 @@ const TransferInputContainer: React.FC = () => {
     goBack();
   }, [isTokenSearch]);
 
-  const onClickNext = useCallback(() => {
+  const onClickNext = useCallback(async () => {
     if (!isNext()) {
       return;
     }
     const validAddress =
       addressBookInput.validateAddressBookInput() &&
-      (isNativeTokenModel(tokenMetainfo) || addressBookInput.validateEqualAddress());
+      (isNativeTokenModel(tokenMetainfo) || await addressBookInput.validateEqualAddress());
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
       saveHistoryData();

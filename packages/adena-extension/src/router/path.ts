@@ -1,7 +1,7 @@
 import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
 import { CreateAccountState, TokenBalanceType, TokenModel, TransactionInfo } from '@types';
-import { StdSignDoc } from 'adena-module';
+import { Document } from 'adena-module';
 
 export enum RoutePath {
   Home = '/',
@@ -38,6 +38,7 @@ export enum RoutePath {
   ApproveSign = '/approve/wallet/sign',
   ApproveSignLoading = '/approve/wallet/sign/loading',
   ApproveSignTransaction = '/approve/wallet/sign-tx',
+  ApproveSignTransactionLoading = '/approve/wallet/sign-tx/loading',
   ApproveEstablish = '/approve/wallet/establish',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
@@ -120,15 +121,19 @@ export type RouteParams = {
   [RoutePath.ApproveLogin]: null;
   [RoutePath.ApproveTransaction]: null;
   [RoutePath.ApproveTransactionLoading]: {
-    document?: StdSignDoc;
+    document?: Document;
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveSign]: null;
   [RoutePath.ApproveSignLoading]: {
-    document?: StdSignDoc;
+    document?: Document;
     requestData?: InjectionMessage;
   };
   [RoutePath.ApproveSignTransaction]: null;
+  [RoutePath.ApproveSignTransactionLoading]: {
+    document?: Document;
+    requestData?: InjectionMessage;
+  };
   [RoutePath.ApproveEstablish]: null;
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
@@ -155,7 +160,7 @@ export type RouteParams = {
     };
   };
   [RoutePath.TransferLedgerLoading]: {
-    document: StdSignDoc;
+    document: Document;
   };
   [RoutePath.TransferLedgerReject]: null;
 

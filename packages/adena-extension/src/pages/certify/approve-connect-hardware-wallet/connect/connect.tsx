@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LedgerConnector, AdenaWallet } from 'adena-module';
-import { Wallet, Account } from 'adena-module';
+import { AdenaLedgerConnector, AdenaWallet, Wallet, Account, serializeAccount } from 'adena-module';
 import { RoutePath } from '@router/path';
 import { ConnectRequest } from './connect-request';
 import { ConnectFail } from './connect-fail';
 import { ConnectRequestWallet } from './connect-request-wallet';
 import { ConnectRequestWalletLoad } from './connect-request-wallet-load';
 import { ConnectInit } from './connect-init';
-import { serializeAccount } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
 
 type ConnectType =
@@ -55,8 +53,8 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
     try {
       const connected = await checkHardwareConnect();
       const transport = connected
-        ? await LedgerConnector.openConnected()
-        : await LedgerConnector.request();
+        ? await AdenaLedgerConnector.openConnected()
+        : await AdenaLedgerConnector.request();
       await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
@@ -66,7 +64,7 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
   };
 
   const checkHardwareConnect = async (): Promise<boolean> => {
-    const devices = await LedgerConnector.devices();
+    const devices = await AdenaLedgerConnector.devices();
     if (devices.length === 0) {
       return false;
     }
@@ -88,13 +86,14 @@ export const ApproveConnectHardwareWalletConnect = (): JSX.Element => {
 
     try {
       setConnectState('REQUEST_WALLET');
-      const transport = await LedgerConnector.openConnected();
+      const transport = await AdenaLedgerConnector.openConnected();
       setConnectState('REQUEST_WALLET_LOAD');
       if (!transport) {
         throw new Error('Not found Connect');
       }
       const initHdPaths = [0, 1, 2, 3, 4];
-      const wallet = await AdenaWallet.createByLedger(new LedgerConnector(transport), initHdPaths);
+      const ledgerConnector = AdenaLedgerConnector.fromTransport(transport);
+      const wallet = await AdenaWallet.createByLedger(ledgerConnector, initHdPaths);
       await transport?.close();
       setWallet(wallet);
       setConnectState('SUCCESS');
