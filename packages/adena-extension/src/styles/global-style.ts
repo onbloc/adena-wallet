@@ -2,7 +2,7 @@ import { createGlobalStyle } from 'styled-components';
 import { fonts } from './theme';
 import mixins from './mixins';
 
-export const GlobalStyle = createGlobalStyle`
+export const GlobalPopupStyle = createGlobalStyle`
   html, body {
     min-width: 360px;
     min-height: 540px;

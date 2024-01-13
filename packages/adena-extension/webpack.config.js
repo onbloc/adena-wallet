@@ -9,6 +9,7 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const config = {
   devtool: 'cheap-module-source-map',
   entry: {
+    web: path.join(__dirname, './src/web.tsx'),
     popup: path.join(__dirname, './src/popup.tsx'),
     content: path.join(__dirname, './src/content.ts'),
     background: path.join(__dirname, './src/background.ts'),
@@ -133,6 +134,11 @@ const config = {
           to: './resources',
         },
       ],
+    }),
+    new HtmlWebPackPlugin({
+      template: './public/web.html',
+      chunks: ['web'],
+      filename: 'web.html',
     }),
     new HtmlWebPackPlugin({
       template: './public/popup.html',

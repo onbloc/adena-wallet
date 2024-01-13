@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TransferInput, { TransferInputProps } from './transfer-input';
 
 describe('TransferInput Component', () => {
@@ -25,8 +25,12 @@ describe('TransferInput Component', () => {
         amount: '132123123123',
         denom: 'GNOT',
         description: 'Insufficient balance',
-        onChangeAmount: () => { return; },
-        onClickMax: () => { return; },
+        onChangeAmount: () => {
+          return;
+        },
+        onClickMax: () => {
+          return;
+        },
       },
       addressInput: {
         opened: false,
@@ -37,20 +41,32 @@ describe('TransferInput Component', () => {
         selectedDescription: '(g1ff...jpae)',
         address: '',
         addressBookInfos: [],
-        onClickInputIcon: () => { return; },
-        onChangeAddress: () => { return; },
-        onClickAddressBook: () => { return; },
+        onClickInputIcon: () => {
+          return;
+        },
+        onChangeAddress: () => {
+          return;
+        },
+        onClickAddressBook: () => {
+          return;
+        },
       },
       isNext: true,
       hasBackButton: true,
-      onClickBack: () => { return; },
-      onClickCancel: () => { return; },
-      onClickNext: () => { return; },
+      onClickBack: () => {
+        return;
+      },
+      onClickCancel: () => {
+        return;
+      },
+      onClickNext: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferInput {...args} />
         </ThemeProvider>

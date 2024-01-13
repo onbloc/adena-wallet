@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import AddCustomNetwork, { AddCustomNetworkProps } from '.';
 
 describe('AddCustomNetwork Component', () => {
@@ -35,7 +35,7 @@ describe('AddCustomNetwork Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <AddCustomNetwork {...args} />
         </ThemeProvider>

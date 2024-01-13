@@ -3,8 +3,10 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
-import ApproveAddingNetworkTable, { ApproveAddingNetworkTableProps } from './approve-adding-network-table';
+import { GlobalPopupStyle } from '@styles/global-style';
+import ApproveAddingNetworkTable, {
+  ApproveAddingNetworkTableProps,
+} from './approve-adding-network-table';
 
 describe('ApproveAddingNetworkTable Component', () => {
   it('ApproveAddingNetworkTable render', () => {
@@ -16,7 +18,7 @@ describe('ApproveAddingNetworkTable Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ApproveAddingNetworkTable {...args} />
         </ThemeProvider>

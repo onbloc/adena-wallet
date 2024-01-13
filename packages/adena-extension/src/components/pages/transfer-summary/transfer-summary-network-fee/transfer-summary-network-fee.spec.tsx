@@ -3,8 +3,10 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
-import TransferSummaryNetworkFee, { TransferSummaryNetworkFeeProps } from './transfer-summary-network-fee';
+import { GlobalPopupStyle } from '@styles/global-style';
+import TransferSummaryNetworkFee, {
+  TransferSummaryNetworkFeeProps,
+} from './transfer-summary-network-fee';
 
 describe('TransferSummaryNetworkFee Component', () => {
   it('TransferSummaryNetworkFee render', () => {
@@ -15,7 +17,7 @@ describe('TransferSummaryNetworkFee Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferSummaryNetworkFee {...args} />
         </ThemeProvider>

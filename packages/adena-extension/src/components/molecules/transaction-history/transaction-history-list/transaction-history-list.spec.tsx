@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TransactionHistoryList, { TransactionHistoryListProps } from './transaction-history-list';
 
 describe('TransactionHistoryList Component', () => {
@@ -11,12 +11,14 @@ describe('TransactionHistoryList Component', () => {
     const args: TransactionHistoryListProps = {
       title: '',
       transactions: [],
-      onClickItem: () => { return; },
+      onClickItem: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransactionHistoryList {...args} />
         </ThemeProvider>

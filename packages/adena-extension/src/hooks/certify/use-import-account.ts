@@ -1,5 +1,5 @@
 import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@router/path';
+import { RoutePath } from '@types';
 import { useCallback, useEffect, useState } from 'react';
 
 export const useImportAccount = (): {

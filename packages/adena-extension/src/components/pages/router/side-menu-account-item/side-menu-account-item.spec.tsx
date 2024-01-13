@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import SideMenuAccountItem from './side-menu-account-item';
 import { SideMenuAccountItemProps } from '@types';
 
@@ -31,7 +31,7 @@ describe('SideMenuAccountItem Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <SideMenuAccountItem {...args} />
         </ThemeProvider>

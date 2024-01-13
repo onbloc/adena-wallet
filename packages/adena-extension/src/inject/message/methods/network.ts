@@ -1,8 +1,7 @@
-import { RoutePath } from '@router/path';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
-import { NetworkMetainfo } from '@types';
+import { NetworkMetainfo, RoutePath } from '@types';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;

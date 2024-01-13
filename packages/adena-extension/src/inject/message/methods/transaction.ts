@@ -1,4 +1,4 @@
-import { RoutePath } from '@router/path';
+import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
