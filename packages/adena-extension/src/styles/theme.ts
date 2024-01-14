@@ -1,6 +1,47 @@
 import { css, DefaultTheme, FlattenSimpleInterpolation } from 'styled-components';
 
-export enum Neutral {
+enum WebNeutral {
+  _0 = '#FFFFFF',
+  _100 = '#FAFCFF',
+  _200 = '#D8DEEB',
+  _300 = '#C5CBD6',
+  _400 = '#B0B3B8',
+  _500 = '#8D9199',
+  _600 = '#71747A',
+  _700 = '#54575C',
+  _800 = '#383A3D',
+  _900 = '#1D1E1F',
+}
+
+enum WebPrimary {
+  _100 = '#0059FF',
+}
+
+enum WebBase {
+  _100 = '#0C0D0F',
+}
+
+enum WebInput {
+  _100 = '#181B1F',
+}
+
+enum WebError {
+  _100 = '#EB545E',
+  _200 = '#5C2125',
+  _300 = '#1F1518',
+}
+
+enum WebSuccess {
+  _100 = '#10B981',
+  _200 = '#215C48',
+  _300 = '#151F1B',
+}
+
+enum WebWarning {
+  _100 = '#FBBF24',
+}
+
+enum Neutral {
   _1 = '#FFFFFF',
   _2 = '#E7E8F3',
   _3 = '#A3A3B5',
@@ -14,7 +55,7 @@ export enum Neutral {
   b = '#454554',
 }
 
-export enum Primary {
+enum Primary {
   _3 = '#B0CCFF',
   _4 = '#78A7FF',
   _5 = '#377DFF',
@@ -24,7 +65,7 @@ export enum Primary {
   _9 = '#001D52',
 }
 
-export enum Red {
+enum Red {
   _3 = '#FFA59F',
   _4 = '#FF7B73',
   _5 = '#EF2D21',
@@ -34,13 +75,190 @@ export enum Red {
   b = '#B62E29',
 }
 
-export enum Green {
+enum Green {
   _3 = '#7DEECC',
   _4 = '#5ADAB3',
   _5 = '#0DBE89',
   _6 = '#09A375',
   _7 = '#057E5A',
 }
+
+export type WebFontType =
+  | 'title1'
+  | 'title2'
+  | 'title3'
+  | 'title4'
+  | 'title5'
+  | 'title6'
+  | 'titleOverline1'
+  | 'titleOverline2'
+  | 'titleOverline3'
+  | 'body1'
+  | 'body2'
+  | 'body3'
+  | 'body4'
+  | 'body5'
+  | 'body6'
+  | 'headline1'
+  | 'headline2'
+  | 'headline3'
+  | 'headline4'
+  | 'display1'
+  | 'display2'
+  | 'display3'
+  | 'display4'
+  | 'display5';
+
+export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
+  title1: css`
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px; /* 133.333% */
+    letter-spacing: -0.24px;
+  `,
+  title2: css`
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px; /* 140% */
+    letter-spacing: -0.4px;
+  `,
+  title3: css`
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px; /* 133.333% */
+    letter-spacing: -0.18px;
+  `,
+  title4: css`
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 22px; /* 137.5% */
+    letter-spacing: -0.16px;
+  `,
+  title5: css`
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 18px; /* 128.571% */
+    letter-spacing: -0.28px;
+  `,
+  title6: css`
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px; /* 133.333% */
+    letter-spacing: -0.24px;
+  `,
+  titleOverline1: css`
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px; /* 125% */
+    letter-spacing: 1.28px;
+    text-transform: uppercase;
+  `,
+  titleOverline2: css`
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 18px; /* 128.571% */
+    letter-spacing: 1.12px;
+    text-transform: uppercase;
+  `,
+  titleOverline3: css`
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 14px; /* 116.667% */
+    letter-spacing: 0.96px;
+    text-transform: uppercase;
+  `,
+  body1: css`
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 32px; /* 133.333% */
+    letter-spacing: -0.48px;
+  `,
+  body2: css`
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 28px; /* 140% */
+    letter-spacing: -0.4px;
+  `,
+  body3: css`
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 26px; /* 144.444% */
+    letter-spacing: -0.36px;
+  `,
+  body4: css`
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px; /* 150% */
+    letter-spacing: -0.16px;
+  `,
+  body5: css`
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px; /* 142.857% */
+    letter-spacing: -0.28px;
+  `,
+  body6: css`
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px; /* 133.33% */
+    letter-spacing: -0.24px;
+  `,
+  headline1: css`
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 48px; /* 120% */
+    letter-spacing: -0.8px;
+  `,
+  headline2: css`
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 44px; /* 122.222% */
+    letter-spacing: -0.72px;
+  `,
+  headline3: css`
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 40px; /* 125% */
+    letter-spacing: -0.64px;
+  `,
+  headline4: css`
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 32px; /* 114.286% */
+    letter-spacing: -0.56px;
+  `,
+  display1: css`
+    font-size: 72px;
+    font-weight: 600;
+    line-height: 84px; /* 116.667% */
+    letter-spacing: -2.16px;
+  `,
+  display2: css`
+    font-size: 64px;
+    font-weight: 600;
+    line-height: 72px; /* 112.5% */
+    letter-spacing: -1.92px;
+  `,
+  display3: css`
+    font-size: 56px;
+    font-weight: 600;
+    line-height: 68px; /* 121.429% */
+    letter-spacing: -1.68px;
+  `,
+  display4: css`
+    font-size: 48px;
+    font-weight: 600;
+    line-height: 60px; /* 125% */
+    letter-spacing: -1.44px;
+  `,
+  display5: css`
+    font-size: 44px;
+    font-weight: 600;
+    line-height: 52px; /* 118.182% */
+    letter-spacing: -1.32px;
+  `,
+};
 
 export const fonts: FontsKeyType = {
   header1: css`
@@ -182,6 +400,13 @@ const theme = {
   primary: Primary,
   red: Red,
   green: Green,
+  webNeutral: WebNeutral,
+  webPrimary: WebPrimary,
+  webBase: WebBase,
+  webInput: WebInput,
+  webError: WebError,
+  webSuccess: WebSuccess,
+  webWarning: WebWarning,
 };
 
 export const getTheme =

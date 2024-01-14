@@ -2,6 +2,23 @@ import { createGlobalStyle } from 'styled-components';
 import { fonts } from './theme';
 import mixins from './mixins';
 
+export const GlobalWebStyle = createGlobalStyle`
+
+  html,
+  body,
+  #web {
+    height: 100%;
+  }
+
+  html {
+    background: black;
+  }
+  body {
+    margin: 0;
+    background: radial-gradient(100% 100% at 50% 0%, rgba(16, 18, 20, 0.00) 48.83%, rgba(0, 89, 255, 0.24) 100%);
+  }
+`;
+
 export const GlobalPopupStyle = createGlobalStyle`
   html, body {
     min-width: 360px;
