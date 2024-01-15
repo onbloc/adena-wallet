@@ -1,7 +1,5 @@
 import { Any, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
-import { hexToBytes } from '@noble/hashes/utils';
-import { fromUtf8 } from '../encoding';
 
 export interface Document {
   chain_id: string;
@@ -135,7 +133,15 @@ export const strToSignedTx = (str: string): Tx | null => {
         gasWanted: sortedDocument.fee.gas_wanted,
         gasFee: sortedDocument.fee.gas_fee,
       }),
-      signatures: rawTx.signatures.map(TxSignature.fromJSON),
+      signatures: rawTx.signatures.map((signature: any) =>
+        TxSignature.fromJSON({
+          ...signature,
+          pubKey: {
+            ...signature.pub_key,
+            typeUrl: signature.pub_key['@type'],
+          },
+        }),
+      ),
       memo: sortedDocument.memo,
     };
   } catch (e) {
