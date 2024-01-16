@@ -1,7 +1,8 @@
 import { ReactElement } from 'react';
 import { useTheme } from 'styled-components';
+import Lottie from 'react-lottie';
 
-import adenaLogo from '@assets/web/adena-logo.svg';
+import welcomeJson from '@assets/web/lottie/welcome.json';
 import hardWallet from '@assets/web/hard-wallet.svg';
 import airgap from '@assets/web/airgap.svg';
 import thunder from '@assets/web/thunder.svg';
@@ -17,14 +18,19 @@ const LandingScreen = (): ReactElement => {
 
   return (
     <WebMain>
-      <View style={{ rowGap: 40 }}>
-        <WebImg src={adenaLogo} size={80} />
-        <View style={{ rowGap: 16 }}>
-          <WebText type='headline1'>Welcome to Adena</WebText>
-          <WebText type='body2' color={theme.webNeutral._500}>
-            The only wallet you need for Gnoland with unparalleled security
-          </WebText>
-        </View>
+      <View style={{ marginLeft: -100, marginTop: -200 }}>
+        <Lottie
+          options={{
+            animationData: welcomeJson,
+          }}
+          height={320}
+        />
+      </View>
+      <View style={{ rowGap: 16 }}>
+        <WebText type='headline1'>Welcome to Adena</WebText>
+        <WebText type='body2' color={theme.webNeutral._500}>
+          The only wallet you need for Gnoland with unparalleled security
+        </WebText>
       </View>
 
       <Row style={{ columnGap: 12 }}>
