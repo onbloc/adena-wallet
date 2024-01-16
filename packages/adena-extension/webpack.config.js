@@ -138,7 +138,7 @@ const config = {
     new HtmlWebPackPlugin({
       template: './public/web.html',
       chunks: ['web'],
-      filename: 'web.html',
+      filename: 'register.html',
     }),
     new HtmlWebPackPlugin({
       template: './public/popup.html',
