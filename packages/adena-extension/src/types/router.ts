@@ -79,6 +79,14 @@ export enum RoutePath {
 
   // web
   WebConnectLedgerDeviceScreen = '/web/connect-ledger-device',
+  WebAdvancedOptionScreen = '/web/option',
+  WebCreatePasswordScreen = '/web/create-password',
+  WebGoogleLoginScreen = '/web/google-login',
+  WebSetupAirgapScreen = '/web/airgap',
+  WebWalletCreateScreen = '/web/wallet-create',
+  WebWalletImportScreen = '/web/wallet-import',
+  WebWalletExportScreen = '/web/wallet-export',
+  WebWalletCreateSuccessScreen = '/web/success',
 }
 
 export type RouteParams = {
@@ -208,4 +216,12 @@ export type RouteParams = {
   [RoutePath.ApproveHardwareWalletLedgerAllSet]: null;
 
   [RoutePath.WebConnectLedgerDeviceScreen]: null;
+  [RoutePath.WebAdvancedOptionScreen]: null;
+  [RoutePath.WebCreatePasswordScreen]: null;
+  [RoutePath.WebGoogleLoginScreen]: null;
+  [RoutePath.WebSetupAirgapScreen]: null;
+  [RoutePath.WebWalletCreateScreen]: null;
+  [RoutePath.WebWalletImportScreen]: null;
+  [RoutePath.WebWalletExportScreen]: null;
+  [RoutePath.WebWalletCreateSuccessScreen]: null;
 };
