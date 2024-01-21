@@ -1,10 +1,8 @@
 import styled, { useTheme } from 'styled-components';
 
 import openCosmosGif from '@assets/web/open-cosmos.gif';
-import rightSrc from '@assets/web/chevron-right.svg';
 
-import { Row, View, WebButton, WebText } from '@components/atoms';
-import WebImg from '@components/atoms/web-img';
+import { View, WebText, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -16,7 +14,7 @@ const StyledMessageBox = styled(View)`
   row-gap: 16px;
 `;
 
-const ConnectRequestWallet = ({ retry }: { retry: () => void }): JSX.Element => {
+const ConnectRequestWallet = (): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
@@ -27,12 +25,6 @@ const ConnectRequestWallet = ({ retry }: { retry: () => void }): JSX.Element => 
           Make sure the Cosmos App is opened in your ledger device.
         </WebText>
       </StyledMessageBox>
-      <WebButton onClick={retry} figure='primary' size='small'>
-        <Row>
-          <WebText type='title4'>Retry</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
     </StyledContainer>
   );
 };

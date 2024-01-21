@@ -2,12 +2,11 @@ import styled, { useTheme } from 'styled-components';
 
 import rightSrc from '@assets/web/chevron-right.svg';
 
-import { WebMain, View, WebText, WebButton, Row, WebCheckBox } from '@components/atoms';
+import { WebMain, View, WebText, WebButton, Row, WebCheckBox, WebImg } from '@components/atoms';
 import { formatAddress } from '@common/utils/client-utils';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
 import Header from './header';
-import WebImg from '@components/atoms/web-img';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;

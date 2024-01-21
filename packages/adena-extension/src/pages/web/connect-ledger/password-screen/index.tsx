@@ -11,13 +11,13 @@ import {
   Pressable,
   WebButton,
   Row,
+  WebImg,
 } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 
 import { useLedgerPasswordScreen } from '@hooks/web/connect-ledger/use-ledger-password-screen';
 import useLink from '@hooks/use-link';
 import Header from './header';
-import WebImg from '@components/atoms/web-img';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;

@@ -2,8 +2,7 @@ import styled, { useTheme } from 'styled-components';
 
 import openCosmosGif from '@assets/web/open-cosmos.gif';
 
-import { View, WebText } from '@components/atoms';
-import WebImg from '@components/atoms/web-img';
+import { View, WebText, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;

@@ -8,8 +8,6 @@ type WebImgProps = {
   color?: string;
 };
 
-const WebImg = ({ src, size, width = size, height = size }: WebImgProps): ReactElement => {
+export const WebImg = ({ src, size, width = size, height = size }: WebImgProps): ReactElement => {
   return <img src={src} width={width} height={height} alt={src?.toString()} />;
 };
-
-export default WebImg;

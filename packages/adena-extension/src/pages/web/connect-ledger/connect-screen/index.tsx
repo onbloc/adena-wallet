@@ -22,9 +22,7 @@ const ConnectLedgerScreen = (): ReactElement => {
       {connectState === 'INIT' && <ConnectInit init={initWallet} />}
       {connectState === 'REQUEST' && <ConnectRequest />}
       {connectState === 'NOT_PERMISSION' && <ConnectFail retry={requestPermission} />}
-      {(connectState === 'REQUEST_WALLET' || connectState === 'FAILED') && (
-        <ConnectRequestWallet retry={requestPermission} />
-      )}
+      {(connectState === 'REQUEST_WALLET' || connectState === 'FAILED') && <ConnectRequestWallet />}
       {connectState === 'REQUEST_WALLET_LOAD' && <ConnectRequestWalletLoad />}
     </WebMain>
   );

@@ -3,8 +3,7 @@ import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
 import back from '@assets/web/chevron-left.svg';
 
-import { Pressable, Row, View } from '@components/atoms';
-import WebImg from '@components/atoms/web-img';
+import { Pressable, Row, View, WebImg } from '@components/atoms';
 
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';

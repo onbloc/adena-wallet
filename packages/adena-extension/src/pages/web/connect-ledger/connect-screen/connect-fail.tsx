@@ -3,8 +3,7 @@ import styled, { useTheme } from 'styled-components';
 import failSrc from '@assets/connect-fail-permission.svg';
 import rightSrc from '@assets/web/chevron-right.svg';
 
-import { View, WebText, WebButton, Row } from '@components/atoms';
-import WebImg from '@components/atoms/web-img';
+import { View, WebText, WebButton, Row, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;

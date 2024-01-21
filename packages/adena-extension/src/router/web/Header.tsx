@@ -5,9 +5,8 @@ import logo from '@assets/web/brand.svg';
 import questionCircle from '@assets/web/question-circle.svg';
 
 import mixins from '@styles/mixins';
-import { Pressable, Row, WebText } from '@components/atoms';
+import { Pressable, Row, WebText, WebImg } from '@components/atoms';
 import useLink from '@hooks/use-link';
-import WebImg from '@components/atoms/web-img';
 
 const StyledContainer = styled.header`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })}

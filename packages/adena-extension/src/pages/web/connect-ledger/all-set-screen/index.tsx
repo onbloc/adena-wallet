@@ -1,8 +1,7 @@
 import styled, { useTheme } from 'styled-components';
 import IconSuccessSymbol from '@assets/success-symbol.svg';
 
-import { View, WebButton, WebMain, WebText } from '@components/atoms';
-import WebImg from '@components/atoms/web-img';
+import { View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;

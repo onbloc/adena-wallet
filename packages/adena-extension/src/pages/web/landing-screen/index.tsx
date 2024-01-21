@@ -7,9 +7,8 @@ import hardWallet from '@assets/web/hard-wallet.svg';
 import airgap from '@assets/web/airgap.svg';
 import thunder from '@assets/web/thunder.svg';
 
-import { Row, View, WebButton, WebMain, WebText } from '@components/atoms';
+import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
-import WebImg from '@components/atoms/web-img';
 import { RoutePath } from '@types';
 
 const LandingScreen = (): ReactElement => {

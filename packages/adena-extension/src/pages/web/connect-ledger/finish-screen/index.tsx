@@ -6,12 +6,13 @@ import {
   deserializeAccount,
 } from 'adena-module';
 
-import { WebMain, View, WebText, WebButton } from '@components/atoms';
-import IconSuccessSymbol from '@assets/success-symbol.svg';
+import addGif from '@assets/web/account-added.gif';
+import rightSrc from '@assets/web/chevron-right.svg';
+
+import { WebMain, View, WebText, WebButton, WebImg, Row } from '@components/atoms';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-import WebImg from '@components/atoms/web-img';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -65,19 +66,22 @@ const ConnectLedgerFinish = (): JSX.Element => {
   return (
     <WebMain>
       <StyledContainer>
-        <WebImg src={IconSuccessSymbol} size={64} />
+        <WebImg src={addGif} size={200} />
         <StyledMessageBox>
           <WebText type='headline3' textCenter>
-            Account Added
+            Account Added!
           </WebText>
           <WebText type='body4' color={theme.webNeutral._500} textCenter>
             {
-              'You have successfully added your ledger device account to Adena!\nPlease return to your extension to continue'
+              'You have successfully added your a new account to\nAdena! Please return to your extension to continue.'
             }
           </WebText>
         </StyledMessageBox>
         <WebButton figure='primary' size='small' onClick={onClickDoneButton}>
-          <WebText type='title4'>Done</WebText>
+          <Row>
+            <WebText type='title4'>Return to Extension</WebText>
+            <WebImg src={rightSrc} size={24} />
+          </Row>
         </WebButton>
       </StyledContainer>
     </WebMain>
