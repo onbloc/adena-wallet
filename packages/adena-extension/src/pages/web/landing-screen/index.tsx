@@ -39,22 +39,30 @@ const LandingScreen = (): ReactElement => {
           onClick={(): void => {
             navigate(RoutePath.WebConnectLedger);
           }}
+          style={{ width: 204 }}
         >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={hardWallet} size={24} />
             <WebText type='title5'>Connect Hardware Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='secondary' size='large'>
+        <WebButton figure='secondary' size='large' style={{ width: 204 }}>
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={airgap} size={24} />
-            <WebText type='title5'>Connect Hardware Wallet</WebText>
+            <WebText type='title5'>Set Up Airgap Account</WebText>
           </View>
         </WebButton>
-        <WebButton figure='tertiary' size='large'>
+        <WebButton
+          figure='tertiary'
+          size='large'
+          onClick={(): void => {
+            navigate(RoutePath.WebAdvancedOption);
+          }}
+          style={{ width: 204 }}
+        >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={thunder} size={24} />
-            <WebText type='title5'>Connect Hardware Wallet</WebText>
+            <WebText type='title5'>Advanced Options</WebText>
           </View>
         </WebButton>
       </Row>

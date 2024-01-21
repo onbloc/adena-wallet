@@ -17,7 +17,9 @@ import { TermsCheckbox } from '@components/molecules';
 
 import { useLedgerPasswordScreen } from '@hooks/web/connect-ledger/use-ledger-password-screen';
 import useLink from '@hooks/use-link';
-import Header from './header';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
@@ -34,11 +36,17 @@ const ConnectLedgerPassword = (): JSX.Element => {
     useLedgerPasswordScreen();
   const handleLinkClick = (): void => openLink('https://adena.app/terms');
   const theme = useTheme();
+  const { navigate } = useAppNavigate();
 
   return (
     <WebMain>
-      <Header />
-
+      <WebMainHeader
+        length={5}
+        onClickGoBack={(): void => {
+          navigate(RoutePath.WebConnectLedger);
+        }}
+        step={4}
+      />
       <StyledMessageBox>
         <WebText type='headline3'>Create a password</WebText>
         <WebText type='body4' color={theme.webNeutral._500}>

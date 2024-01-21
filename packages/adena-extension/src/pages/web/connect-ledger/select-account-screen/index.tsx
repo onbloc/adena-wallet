@@ -6,7 +6,9 @@ import { WebMain, View, WebText, WebButton, Row, WebCheckBox, WebImg } from '@co
 import { formatAddress } from '@common/utils/client-utils';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
-import Header from './header';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
@@ -45,6 +47,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
     onClickNextButton,
   } = useSelectAccountScreen();
   const theme = useTheme();
+  const { navigate } = useAppNavigate();
 
   const renderAccountInfo = (accountInfo: {
     index: number;
@@ -74,7 +77,13 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
 
   return (
     <WebMain>
-      <Header />
+      <WebMainHeader
+        length={5}
+        onClickGoBack={(): void => {
+          navigate(RoutePath.WebConnectLedger);
+        }}
+        step={4}
+      />
       <StyledMessageBox>
         <WebText type='headline3'>Select Accounts</WebText>
         <WebText type='body4' color={theme.webNeutral._500}>
