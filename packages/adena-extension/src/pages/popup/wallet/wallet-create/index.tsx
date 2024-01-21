@@ -52,7 +52,7 @@ export const WalletCreate = (): JSX.Element => {
     }
 
     const popupOption: chrome.tabs.CreateProperties = {
-      url: chrome.runtime.getURL(`popup.html#${RoutePath.ApproveHardwareWalletConnect}`),
+      url: chrome.runtime.getURL(`register.html#${RoutePath.WebConnectLedger}`),
       active: true,
     };
 

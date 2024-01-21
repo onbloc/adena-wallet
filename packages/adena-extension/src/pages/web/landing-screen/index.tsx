@@ -38,7 +38,7 @@ const LandingScreen = (): ReactElement => {
           figure='primary'
           size='large'
           onClick={(): void => {
-            navigate(RoutePath.WebConnectLedgerDeviceScreen);
+            navigate(RoutePath.WebConnectLedger);
           }}
         >
           <View style={{ height: 74, justifyContent: 'space-between' }}>

@@ -19,13 +19,6 @@ import { ConnectedApps } from '@pages/popup/certify/connected-apps';
 import AddAccountPage from '@pages/popup/certify/add-account-page';
 import AddressBook from '@pages/popup/certify/address-book';
 import AddAddress from '@pages/popup/certify/add-address';
-import {
-  ApproveConnectHardwareWalletConnect,
-  ApproveConnectHardwareWalletFinish,
-  ApproveConnectHardwareWalletSelectAccount,
-  ApproveHardwareWalletLedgerPassword,
-  ApproveHardwareWalletLedgerAllSet,
-} from '@pages/popup/certify/approve-connect-hardware-wallet';
 import { GoogleConnect, GoogleConnectFailed } from '@pages/popup/certify/google-login/connect';
 import { SecurityPrivacy } from '@pages/popup/certify/security-privacy';
 import { AboutAdena } from '@pages/popup/certify/about-adena';
@@ -66,19 +59,13 @@ import AccountDetailsPage from '@pages/popup/wallet/account-details';
 import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
 
-import { useWalletContext } from '@hooks/use-context';
-
-import { TabContainer } from '@components/atoms';
 import { ErrorContainer } from '@components/molecules';
 
 import { Header } from './header';
-import { ProgressMenu } from './header/progress-menu';
 import { Navigation } from './navigation';
 import LoadingMain from './loading-main';
 
 export const PopupRouter = (): JSX.Element => {
-  const { wallet } = useWalletContext();
-
   return (
     <>
       <Header />
@@ -143,54 +130,6 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
-        <Route
-          path={RoutePath.ApproveHardwareWalletConnect}
-          element={
-            <TabContainer header={<ProgressMenu showLogo progressLevel={'first'} hideArrow />}>
-              <ApproveConnectHardwareWalletConnect />
-            </TabContainer>
-          }
-        />
-        <Route
-          path={RoutePath.ApproveHardwareWalletSelectAccount}
-          element={
-            <TabContainer
-              header={
-                <ProgressMenu
-                  showLogo
-                  progressLevel={wallet && wallet.accounts?.length > 0 ? 'second' : 'first'}
-                  hideArrow
-                />
-              }
-            >
-              <ApproveConnectHardwareWalletSelectAccount />
-            </TabContainer>
-          }
-        />
-        <Route
-          path={RoutePath.ApproveHardwareWalletLedgerPassword}
-          element={
-            <TabContainer header={<ProgressMenu showLogo progressLevel={'second'} hideArrow />}>
-              <ApproveHardwareWalletLedgerPassword />
-            </TabContainer>
-          }
-        />
-        <Route
-          path={RoutePath.ApproveHardwareWalletFinish}
-          element={
-            <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
-              <ApproveConnectHardwareWalletFinish />
-            </TabContainer>
-          }
-        />
-        <Route
-          path={RoutePath.ApproveHardwareWalletLedgerAllSet}
-          element={
-            <TabContainer header={<ProgressMenu showLogo progressLevel={'third'} hideArrow />}>
-              <ApproveHardwareWalletLedgerAllSet />
-            </TabContainer>
-          }
-        />
         <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
         <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
         <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
