@@ -30,6 +30,8 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 import { Document } from './..';
+import { AddressKeyring } from './keyring/address-keyring';
+import { AirgapAccount } from './account/airgap-account';
 
 export interface Wallet {
   accounts: Account[];
@@ -348,6 +350,16 @@ export class AdenaWallet implements Wallet {
     const wallet = new AdenaWallet();
     const keyring = await Web3AuthKeyring.fromPrivateKey(privateKey);
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
+    wallet.currentAccountId = account.id;
+    wallet.addAccount(account);
+    wallet.addKeyring(keyring);
+    return wallet;
+  }
+
+  public static async createByAddress(address: string) {
+    const wallet = new AdenaWallet();
+    const keyring = await AddressKeyring.fromAddress(address);
+    const account = await AirgapAccount.createBy(keyring, wallet.nextAccountName);
     wallet.currentAccountId = account.id;
     wallet.addAccount(account);
     wallet.addKeyring(keyring);

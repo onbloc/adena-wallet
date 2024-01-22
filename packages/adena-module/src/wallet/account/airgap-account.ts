@@ -55,6 +55,7 @@ export class AirgapAccount implements Account {
       type: this.type,
       keyringId: this.keyringId,
       publicKey: Array.from(this.publicKey),
+      addressBytes: Array.from(this.addressBytes),
       name: this._name,
       hdPath: undefined,
     };
