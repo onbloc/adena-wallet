@@ -1,19 +1,23 @@
-import { ReactElement } from 'react';
+import { ReactElement, useCallback } from 'react';
 import { useTheme } from 'styled-components';
 import Lottie from 'react-lottie';
+
+import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 import welcomeJson from '@assets/web/lottie/welcome.json';
 import hardWallet from '@assets/web/hard-wallet.svg';
 import airgap from '@assets/web/airgap.svg';
 import thunder from '@assets/web/thunder.svg';
 
-import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const theme = useTheme();
+
+  const moveSetupAirgapScreen = useCallback(() => {
+    navigate(RoutePath.WebSetupAirgap);
+  }, []);
 
   return (
     <WebMain>
@@ -46,7 +50,7 @@ const LandingScreen = (): ReactElement => {
             <WebText type='title5'>Connect Hardware Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='secondary' size='large' style={{ width: 204 }}>
+        <WebButton figure='secondary' size='large' style={{ width: 204 }} onClick={moveSetupAirgapScreen}>
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={airgap} size={24} />
             <WebText type='title5'>Set Up Airgap Account</WebText>

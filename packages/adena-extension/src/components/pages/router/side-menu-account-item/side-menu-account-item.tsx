@@ -1,13 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react';
+
+import { Portal, CopyIconButton } from '@components/atoms';
+import { SideMenuAccountItemProps } from '@types';
+import IconEtc from '@assets/icon-etc';
+import IconQRCode from '@assets/icon-qrcode';
+import IconLink from '@assets/icon-link';
+
 import {
   SideMenuAccountItemWrapper,
   SideMenuAccountItemMoreInfoWrapper,
 } from './side-menu-account-item.styles';
-import { Portal, CopyIconButton } from '@components/atoms';
-import IconEtc from '@assets/icon-etc';
-import IconQRCode from '@assets/icon-qrcode';
-import IconLink from '@assets/icon-link';
-import { SideMenuAccountItemProps } from '@types';
 
 const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   selected,
@@ -27,6 +29,8 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
 
   const label = useMemo(() => {
     switch (type) {
+      case 'AIRGAP':
+        return 'Airgap';
       case 'WEB3_AUTH':
         return 'Google';
       case 'PRIVATE_KEY':

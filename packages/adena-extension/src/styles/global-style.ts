@@ -23,6 +23,7 @@ export const GlobalWebStyle = createGlobalStyle`
 
   * {
     font-family: Intel, sans-serif;
+    box-sizing: border-box;
   }
 
   html,
