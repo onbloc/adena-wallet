@@ -3,6 +3,27 @@ import { fonts } from './theme';
 import mixins from './mixins';
 
 export const GlobalWebStyle = createGlobalStyle`
+  @font-face {
+    font-family: 'Intel';
+    font-weight: 400;
+    src: url(../assets/fonts/Intel-Regular.ttf) format('ttf');
+  }
+
+  @font-face {
+    font-family: 'Intel';
+    font-weight: 500;
+    src: url(../assets/fonts/Intel-Medium.ttf) format('ttf');
+  }
+
+  @font-face {
+    font-family: 'Intel';
+    font-weight: 600;
+    src: url(../assets/fonts/Intel-SemiBold.ttf) format('ttf');
+  }
+
+  * {
+    font-family: Intel, sans-serif;
+  }
 
   html,
   body,

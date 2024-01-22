@@ -50,13 +50,11 @@ export const Header = (): JSX.Element => {
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
   const resetWallet = useMatch(RoutePath.ResetWallet);
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
-  const approveHardwareWalletConnect = useMatch(RoutePath.ApproveHardwareWalletConnect);
-  const approveHardwareWalletSelectAccount = useMatch(RoutePath.ApproveHardwareWalletSelectAccount);
-  const approveHardwareWalletFinish = useMatch(RoutePath.ApproveHardwareWalletFinish);
-  const approveHardwareWalletLedgerPassword = useMatch(
-    RoutePath.ApproveHardwareWalletLedgerPassword,
-  );
-  const approveHardwareWalletLedgerAllSet = useMatch(RoutePath.ApproveHardwareWalletLedgerAllSet);
+  const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
+  const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
+  const approveHardwareWalletFinish = useMatch(RoutePath.WebConnectLedgerFinish);
+  const approveHardwareWalletLedgerPassword = useMatch(RoutePath.WebConnectLedgerPassword);
+  const approveHardwareWalletLedgerAllSet = useMatch(RoutePath.WebConnectLedgerAllSet);
 
   const googleConnect = useMatch(RoutePath.GoogleConnect);
   const googleFailed = useMatch(RoutePath.GoogleConnectFailed);

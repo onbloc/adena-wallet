@@ -52,7 +52,7 @@ const config = {
         exclude: /node_modules/,
       },
       {
-        test: /\.(png|jpe?g|svg)$/,
+        test: /\.(png|jpe?g|svg|gif)$/,
         loader: 'file-loader',
         options: {
           name: 'assets/[name].[ext]',

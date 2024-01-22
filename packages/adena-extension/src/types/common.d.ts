@@ -8,6 +8,7 @@ declare global {
   }
 
   declare module '*.svg';
+  declare module '*.gif';
 
   interface WindowEventMap {
     [EVENT_KEYS.changedAccount]: CustomEvent<string>;

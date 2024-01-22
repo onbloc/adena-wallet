@@ -45,7 +45,7 @@ const LoadingMain = (): ReactElement => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const isApproveHardwarePath = useMatch(RoutePath.ApproveHardwareWalletConnect + '/*');
+  const isApproveHardwarePath = useMatch(RoutePath.WebConnectLedger + '/*');
   const { tokenBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');

@@ -71,22 +71,21 @@ export enum RoutePath {
   ExportPrivateKey = '/settings/security-privacy/export-private-key',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
-  ApproveHardwareWalletConnect = '/approve/settings/hardware-wallet',
-  ApproveHardwareWalletSelectAccount = '/approve/settings/hardware-wallet/select-account',
-  ApproveHardwareWalletFinish = '/approve/settings/hardware-wallet/finish',
-  ApproveHardwareWalletLedgerPassword = '/approve/settings/hardware-wallet/ledger-password',
-  ApproveHardwareWalletLedgerAllSet = '/approve/settings/hardware-wallet/ledger-all-set',
 
   // web
-  WebConnectLedgerDeviceScreen = '/web/connect-ledger-device',
-  WebAdvancedOptionScreen = '/web/option',
-  WebCreatePasswordScreen = '/web/create-password',
-  WebGoogleLoginScreen = '/web/google-login',
-  WebSetupAirgapScreen = '/web/airgap',
-  WebWalletCreateScreen = '/web/wallet-create',
-  WebWalletImportScreen = '/web/wallet-import',
-  WebWalletExportScreen = '/web/wallet-export',
-  WebWalletCreateSuccessScreen = '/web/success',
+  WebConnectLedger = '/web/connect-ledger',
+  WebConnectLedgerSelectAccount = '/web/connect-ledger/select-account',
+  WebConnectLedgerFinish = '/web/connect-ledger/finish',
+  WebConnectLedgerPassword = '/web/connect-ledger/password',
+  WebConnectLedgerAllSet = '/web/connect-ledger/all-set',
+  WebAdvancedOption = '/web/option',
+  WebCreatePassword = '/web/create-password',
+  WebGoogleLogin = '/web/google-login',
+  WebSetupAirgap = '/web/airgap',
+  WebWalletCreate = '/web/wallet-create',
+  WebWalletImport = '/web/wallet-import',
+  WebWalletExport = '/web/wallet-export',
+  WebWalletCreateSuccess = '/web/success',
 }
 
 export type RouteParams = {
@@ -203,25 +202,25 @@ export type RouteParams = {
   [RoutePath.ResetWallet]: {
     from: 'forgot-password';
   } | null;
-  [RoutePath.ApproveHardwareWalletConnect]: null;
-  [RoutePath.ApproveHardwareWalletSelectAccount]: {
+  [RoutePath.WebConnectLedger]: null;
+  [RoutePath.WebConnectLedgerSelectAccount]: {
     accounts: string[];
   };
-  [RoutePath.ApproveHardwareWalletFinish]: {
+  [RoutePath.WebConnectLedgerFinish]: {
     accounts: string[];
   };
-  [RoutePath.ApproveHardwareWalletLedgerPassword]: {
+  [RoutePath.WebConnectLedgerPassword]: {
     accounts: string[];
   };
-  [RoutePath.ApproveHardwareWalletLedgerAllSet]: null;
+  [RoutePath.WebConnectLedgerAllSet]: null;
 
-  [RoutePath.WebConnectLedgerDeviceScreen]: null;
-  [RoutePath.WebAdvancedOptionScreen]: null;
-  [RoutePath.WebCreatePasswordScreen]: null;
-  [RoutePath.WebGoogleLoginScreen]: null;
-  [RoutePath.WebSetupAirgapScreen]: null;
-  [RoutePath.WebWalletCreateScreen]: null;
-  [RoutePath.WebWalletImportScreen]: null;
-  [RoutePath.WebWalletExportScreen]: null;
-  [RoutePath.WebWalletCreateSuccessScreen]: null;
+  [RoutePath.WebConnectLedger]: null;
+  [RoutePath.WebAdvancedOption]: null;
+  [RoutePath.WebCreatePassword]: null;
+  [RoutePath.WebGoogleLogin]: null;
+  [RoutePath.WebSetupAirgap]: null;
+  [RoutePath.WebWalletCreate]: null;
+  [RoutePath.WebWalletImport]: null;
+  [RoutePath.WebWalletExport]: null;
+  [RoutePath.WebWalletCreateSuccess]: null;
 };
