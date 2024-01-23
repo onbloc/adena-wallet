@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled, { useTheme } from 'styled-components';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { isAirgapAccount } from 'adena-module';
 
 import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
 import { TransactionHistory, DoubleButton } from '@components/molecules';
@@ -188,16 +189,16 @@ export const TokenDetails = (): JSX.Element => {
     const size = 20;
     const histories = isGRC20TokenModel(tokenBalance)
       ? await transactionHistoryService.fetchGRC20TransactionHistory(
-          currentAddress,
-          tokenBalance.pkgPath,
-          pageParam,
-          size,
-        )
+        currentAddress,
+        tokenBalance.pkgPath,
+        pageParam,
+        size,
+      )
       : await transactionHistoryService.fetchNativeTransactionHistory(
-          currentAddress,
-          pageParam,
-          size,
-        );
+        currentAddress,
+        pageParam,
+        size,
+      );
     const txs = histories.txs.map((transaction) => {
       const { value, denom } = convertDenom(
         transaction.amount.value,
@@ -240,8 +241,16 @@ export const TokenDetails = (): JSX.Element => {
   const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet);
   const DepositButtonClick = (): void =>
     navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
+
   const SendButtonClick = (): void => {
+    if (!currentAccount) {
+      return;
+    }
     clearHistoryData(RoutePath.TransferInput);
+    if (isAirgapAccount(currentAccount)) {
+      navigate(RoutePath.BroadcastTransaction);
+      return;
+    }
     navigate(RoutePath.TransferInput, { state: { tokenBalance } });
   };
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);

@@ -58,6 +58,7 @@ import ApproveAddingNetworkPage from '@pages/popup/wallet/approve-adding-network
 import AccountDetailsPage from '@pages/popup/wallet/account-details';
 import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
+import BroadcastTransactionScreen from '@pages/popup/wallet/broadcast-transaction-screen';
 
 import { ErrorContainer } from '@components/molecules';
 
@@ -103,6 +104,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />
         <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
         <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />
+        <Route path={RoutePath.BroadcastTransaction} element={<BroadcastTransactionScreen />} />
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
