@@ -1,7 +1,5 @@
 import styled, { useTheme } from 'styled-components';
 
-import rightSrc from '@assets/web/chevron-right.svg';
-
 import {
   WebInput,
   ErrorText,
@@ -10,8 +8,6 @@ import {
   WebText,
   Pressable,
   WebButton,
-  Row,
-  WebImg,
 } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 
@@ -41,11 +37,11 @@ const ConnectLedgerPassword = (): JSX.Element => {
   return (
     <WebMain>
       <WebMainHeader
-        length={5}
+        stepLength={5}
         onClickGoBack={(): void => {
           navigate(RoutePath.WebConnectLedger);
         }}
-        step={4}
+        currentStep={4}
       />
       <StyledMessageBox>
         <WebText type='headline3'>Create a password</WebText>
@@ -90,12 +86,9 @@ const ConnectLedgerPassword = (): JSX.Element => {
         disabled={buttonState.disabled}
         onClick={buttonState.onClick}
         tabIndex={5}
-      >
-        <Row>
-          <WebText type='title4'>Save</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
+        text='Save'
+        rightIcon='chevronRight'
+      />
     </WebMain>
   );
 };

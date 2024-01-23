@@ -1,9 +1,8 @@
 import styled, { useTheme } from 'styled-components';
 
-import { WebMain, View, WebText, WebButton, WebImg, Row } from '@components/atoms';
+import { WebMain, View, WebText, WebButton, WebImg } from '@components/atoms';
 
 import addGif from '@assets/web/account-added.gif';
-import rightSrc from '@assets/web/chevron-right.svg';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -36,12 +35,13 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
             }
           </WebText>
         </StyledMessageBox>
-        <WebButton figure='primary' size='small' onClick={onClickDoneButton}>
-          <Row>
-            <WebText type='title4'>Return to Extension</WebText>
-            <WebImg src={rightSrc} size={24} />
-          </Row>
-        </WebButton>
+        <WebButton
+          figure='primary'
+          size='small'
+          onClick={onClickDoneButton}
+          text='Return to Extension'
+          rightIcon='chevronRight'
+        />
       </StyledContainer>
     </WebMain>
   );

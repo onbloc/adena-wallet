@@ -1,9 +1,8 @@
 import styled, { useTheme } from 'styled-components';
 
-import failSrc from '@assets/connect-fail-permission.svg';
-import rightSrc from '@assets/web/chevron-right.svg';
+import IconFail from '@assets/connect-fail-permission.svg';
 
-import { View, WebText, WebButton, Row, WebImg } from '@components/atoms';
+import { View, WebText, WebButton, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -23,7 +22,7 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
-      <WebImg src={failSrc} size={64} />
+      <WebImg src={IconFail} size={64} />
       <StyledMessageBox>
         <WebText type='headline3' textCenter>
           Connection Failed
@@ -35,12 +34,13 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
         </WebText>
       </StyledMessageBox>
 
-      <WebButton onClick={retry} figure='primary' size='small'>
-        <Row>
-          <WebText type='title4'>Retry</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
+      <WebButton
+        onClick={retry}
+        figure='primary'
+        size='small'
+        text='Retry'
+        rightIcon='chevronRight'
+      />
     </StyledContainer>
   );
 };

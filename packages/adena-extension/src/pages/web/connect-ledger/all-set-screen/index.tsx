@@ -34,9 +34,13 @@ const ConnectLedgerAllSet = (): JSX.Element => {
             }
           </WebText>
         </StyledMessageBox>
-        <WebButton figure='primary' size='small' onClick={handleNextButtonClick}>
-          <WebText type='title4'>Done</WebText>
-        </WebButton>
+        <WebButton
+          figure='primary'
+          size='small'
+          onClick={handleNextButtonClick}
+          text='Start'
+          rightIcon='chevronRight'
+        />
       </StyledContainer>
     </WebMain>
   );

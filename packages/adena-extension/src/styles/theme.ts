@@ -131,7 +131,7 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
   title4: css`
     font-size: 16px;
     font-weight: 600;
-    line-height: 22px; /* 137.5% */
+    line-height: 21px; // 22px makes a pixel issue in the chrome
     letter-spacing: -0.16px;
   `,
   title5: css`

@@ -1,17 +1,30 @@
 import { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 import styled from 'styled-components';
 
+import IconRight from '@assets/web/chevron-right.svg';
+
+import { WebImg } from '../web-img';
+import { WebText } from '../web-text';
+import { Row } from '../base';
+
 type WebButtonProps = {
   size: 'large' | 'small';
   figure: 'primary' | 'secondary' | 'tertiary';
-  children: ReactNode;
-} & ButtonHTMLAttributes<HTMLButtonElement>;
+} & (
+  | { text: string; rightIcon?: 'chevronRight' }
+  | {
+      children: ReactNode;
+    }
+) &
+  ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button<{ size: 'large' | 'small' }>`
   cursor: pointer;
   border: transparent;
   border-radius: 14px;
   padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 24px')};
+  display: flex;
+  flex-direction: row;
 
   :disabled {
     opacity: 0.4;
@@ -67,5 +80,16 @@ export const WebButton = ({ figure, children, ...rest }: WebButtonProps): ReactE
       StyledComponent = StyledButtonPrimary;
   }
 
-  return <StyledComponent {...rest}>{children}</StyledComponent>;
+  return (
+    <StyledComponent {...rest}>
+      {'text' in rest ? (
+        <Row>
+          <WebText type='title4'>{rest.text}</WebText>
+          {rest.rightIcon === 'chevronRight' && <WebImg src={IconRight} size={24} />}
+        </Row>
+      ) : (
+        children
+      )}
+    </StyledComponent>
+  );
 };

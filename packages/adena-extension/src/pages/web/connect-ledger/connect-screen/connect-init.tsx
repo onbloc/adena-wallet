@@ -1,8 +1,7 @@
 import styled, { useTheme } from 'styled-components';
 
-import ledgerSrc from '@assets/web/ledger.svg';
-import rightSrc from '@assets/web/chevron-right.svg';
-import { View, WebText, WebButton, Row, WebImg } from '@components/atoms';
+import IconLedger from '@assets/web/ledger.svg';
+import { View, WebText, WebButton, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -18,7 +17,7 @@ const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
-      <WebImg src={ledgerSrc} size={64} />
+      <WebImg src={IconLedger} size={64} />
       <StyledMessageBox>
         <WebText type='headline3'>Connect a Ledger Device</WebText>
         <WebText type='body4' color={theme.webNeutral._500}>
@@ -26,12 +25,13 @@ const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Element => {
         </WebText>
       </StyledMessageBox>
 
-      <WebButton onClick={init} figure='primary' size='small'>
-        <Row>
-          <WebText type='title4'>Connect</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
+      <WebButton
+        onClick={init}
+        figure='primary'
+        size='small'
+        text='Connect'
+        rightIcon='chevronRight'
+      />
     </StyledContainer>
   );
 };

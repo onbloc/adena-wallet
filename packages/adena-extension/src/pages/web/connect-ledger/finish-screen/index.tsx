@@ -7,9 +7,8 @@ import {
 } from 'adena-module';
 
 import addGif from '@assets/web/account-added.gif';
-import rightSrc from '@assets/web/chevron-right.svg';
 
-import { WebMain, View, WebText, WebButton, WebImg, Row } from '@components/atoms';
+import { WebMain, View, WebText, WebButton, WebImg } from '@components/atoms';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
@@ -77,12 +76,13 @@ const ConnectLedgerFinish = (): JSX.Element => {
             }
           </WebText>
         </StyledMessageBox>
-        <WebButton figure='primary' size='small' onClick={onClickDoneButton}>
-          <Row>
-            <WebText type='title4'>Return to Extension</WebText>
-            <WebImg src={rightSrc} size={24} />
-          </Row>
-        </WebButton>
+        <WebButton
+          figure='primary'
+          size='small'
+          onClick={onClickDoneButton}
+          text='Return to Extension'
+          rightIcon='chevronRight'
+        />
       </StyledContainer>
     </WebMain>
   );

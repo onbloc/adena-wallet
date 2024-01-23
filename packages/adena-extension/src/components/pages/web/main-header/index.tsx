@@ -19,15 +19,15 @@ const StyledDot = styled(View)<{ selected: boolean }>`
 `;
 
 export type WebMainHeaderProps = {
-  length: number;
+  stepLength: number;
   onClickGoBack: () => void;
-  step: number;
+  currentStep?: number;
 };
 
 export const WebMainHeader = ({
-  length,
   onClickGoBack,
-  step,
+  currentStep,
+  stepLength,
 }: WebMainHeaderProps): ReactElement => {
   const theme = useTheme();
 
@@ -39,11 +39,13 @@ export const WebMainHeader = ({
       >
         <WebImg src={back} size={24} />
       </Pressable>
-      <Row style={{ columnGap: 8 }}>
-        {_.times(length, (index) => (
-          <StyledDot key={index} selected={index === step} />
-        ))}
-      </Row>
+      {stepLength > 0 && (
+        <Row style={{ columnGap: 8 }}>
+          {_.times(stepLength, (index) => (
+            <StyledDot key={index} selected={index === currentStep} />
+          ))}
+        </Row>
+      )}
       <View />
     </StyledContainer>
   );

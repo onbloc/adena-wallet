@@ -9,8 +9,6 @@ import {
   WebText,
   Pressable,
   WebButton,
-  Row,
-  WebImg,
 } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -18,9 +16,6 @@ import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-s
 import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
 import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
-
-import rightSrc from '@assets/web/chevron-right.svg';
-
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
@@ -33,14 +28,8 @@ const StyledInputBox = styled(View)`
 
 const CreatePasswordScreen = (): JSX.Element => {
   const { openLink } = useLink();
-  const {
-    passwordState,
-    confirmPasswordState,
-    termsState,
-    errorMessage,
-    buttonState,
-    onKeyDown,
-  } = useCreatePasswordScreen();
+  const { passwordState, confirmPasswordState, termsState, errorMessage, buttonState, onKeyDown } =
+    useCreatePasswordScreen();
   const theme = useTheme();
   const { goBack } = useAppNavigate();
 
@@ -50,11 +39,7 @@ const CreatePasswordScreen = (): JSX.Element => {
 
   return (
     <WebMain>
-      <WebMainHeader
-        length={5}
-        step={3}
-        onClickGoBack={goBack}
-      />
+      <WebMainHeader stepLength={5} currentStep={3} onClickGoBack={goBack} />
 
       <StyledMessageBox>
         <WebText type='headline3'>Create a password</WebText>
@@ -101,12 +86,9 @@ const CreatePasswordScreen = (): JSX.Element => {
         disabled={buttonState.disabled}
         onClick={buttonState.onClick}
         tabIndex={5}
-      >
-        <Row>
-          <WebText type='title4'>Save</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
+        text='Save'
+        rightIcon='chevronRight'
+      />
     </WebMain>
   );
 };

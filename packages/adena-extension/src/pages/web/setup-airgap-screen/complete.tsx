@@ -3,7 +3,6 @@ import styled, { useTheme } from 'styled-components';
 
 import { Row, View, WebButton, WebImg, WebInput, WebText } from '@components/atoms';
 
-import IconNext from '@assets/web/chevron-right.svg';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCheck from '@assets/web/check.svg';
 
@@ -49,7 +48,9 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
       <StyledMessageBox>
         <WebText type='headline3'>Account Synced!</WebText>
         <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
-          {'Your account has been synced to Adena.\nConfirm your address below and click on Next to\ncontinue.'}
+          {
+            'Your account has been synced to Adena.\nConfirm your address below and click on Next to\ncontinue.'
+          }
         </WebText>
       </StyledMessageBox>
 
@@ -69,12 +70,9 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
           figure='primary'
           size='small'
           onClick={onClickNext}
-        >
-          <Row>
-            <WebText type='title4'>Next</WebText>
-            <WebImg src={IconNext} size={24} />
-          </Row>
-        </WebButton>
+          text='Next'
+          rightIcon='chevronRight'
+        />
       </StyledButtonBox>
     </StyledContainer>
   );

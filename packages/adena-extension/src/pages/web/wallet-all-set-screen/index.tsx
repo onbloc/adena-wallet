@@ -34,9 +34,13 @@ const WalletAllSetScreen = (): JSX.Element => {
             }
           </WebText>
         </StyledMessageBox>
-        <WebButton figure='primary' size='small' onClick={onClickDone}>
-          <WebText type='title4'>Done</WebText>
-        </WebButton>
+        <WebButton
+          figure='primary'
+          size='small'
+          onClick={onClickDone}
+          text='Start'
+          rightIcon='chevronRight'
+        />
       </StyledContainer>
     </WebMain>
   );
