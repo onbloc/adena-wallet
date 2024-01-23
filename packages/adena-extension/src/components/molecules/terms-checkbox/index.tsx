@@ -21,7 +21,7 @@ interface TermsCheckboxProps {
 const Wrapper = styled.div`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
-  margin: auto 0px 10px;
+  margin: 0px 0px 10px;
   ${fonts.body2Reg};
 `;
 
@@ -32,7 +32,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   cursor: pointer;
   &:before {
     ${({ checkboxPos }): CSSProp =>
-      checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
+    checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
     width: 20px;

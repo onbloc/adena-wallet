@@ -110,17 +110,14 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     await updateWallet(wallet);
   };
 
-  const onChangePassword = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setInputs((input) => ({ ...input, [name]: value }));
-    },
-    [setInputs],
-  );
+  const onChangePassword = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setInputs((input) => ({ ...input, [name]: value }));
+  }, []);
 
   const toggleTermState = useCallback((): void => {
     setTerms((prev: boolean) => !prev);
-  }, [setTerms]);
+  }, []);
 
   const onClickCreateButton = useCallback(async (): Promise<void> => {
     const validated = validateMatchPassword();
