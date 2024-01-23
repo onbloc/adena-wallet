@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { isLedgerAccount } from 'adena-module';
 import { useParams } from 'react-router-dom';
+import { hasPrivateKeyAccount } from 'adena-module';
 
 import AccountDetails from '@components/pages/account-details/account-details';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
@@ -34,7 +34,7 @@ const AccountDetailsContainer: React.FC = () => {
     if (!account) {
       return false;
     }
-    return !isLedgerAccount(account);
+    return hasPrivateKeyAccount(account);
   }, []);
 
   useEffect(() => {

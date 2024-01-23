@@ -11,15 +11,16 @@ import {
   ConnectLedgerPassword,
 } from '@pages/web/connect-ledger';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
-import CreatePasswordScreen from '@pages/web/create-password-screan';
+import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
-import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
 import WalletCreateScreen from '@pages/web/wallet-create-screen';
 import WalletImportScreen from '@pages/web/wallet-import-screen';
 import WalletExportScreen from '@pages/web/wallet-export-screen';
-import WalletCreateSuccessScreen from '@pages/web/wallet-create-success-screen';
 
 import Header from './Header';
+import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
+import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
+import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 
 export const WebRouter = (): JSX.Element => {
   return (
@@ -44,7 +45,8 @@ export const WebRouter = (): JSX.Element => {
         <Route path={RoutePath.WebWalletCreate} element={<WalletCreateScreen />} />
         <Route path={RoutePath.WebWalletImport} element={<WalletImportScreen />} />
         <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
-        <Route path={RoutePath.WebWalletCreateSuccess} element={<WalletCreateSuccessScreen />} />
+        <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
+        <Route path={RoutePath.WebAccountAddedComplete} element={<AccountAddedCompleteScreen />} />
       </Routes>
     </>
   );

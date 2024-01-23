@@ -15,6 +15,14 @@ export function isSingleAccount(account: Account): account is SingleAccount {
   return account.type === 'WEB3_AUTH' || account.type === 'PRIVATE_KEY';
 }
 
+export function isAirgapAccount(account: Account): account is SingleAccount {
+  return account.type === 'AIRGAP';
+}
+
+export function hasPrivateKeyAccount(account: Account): boolean {
+  return isSeedAccount(account) || isSingleAccount(account);
+}
+
 export function hasHDPath(account: Account): account is SeedAccount | LedgerAccount {
   return isSeedAccount(account) || isLedgerAccount(account);
 }

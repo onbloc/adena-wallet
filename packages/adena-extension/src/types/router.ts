@@ -85,7 +85,8 @@ export enum RoutePath {
   WebWalletCreate = '/web/wallet-create',
   WebWalletImport = '/web/wallet-import',
   WebWalletExport = '/web/wallet-export',
-  WebWalletCreateSuccess = '/web/success',
+  WebWalletAllSet = '/web/all-set',
+  WebAccountAddedComplete = '/web/account-added',
 }
 
 export type RouteParams = {
@@ -216,11 +217,14 @@ export type RouteParams = {
 
   [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;
-  [RoutePath.WebCreatePassword]: null;
+  [RoutePath.WebCreatePassword]: {
+    serializedWallet: string;
+  };
   [RoutePath.WebGoogleLogin]: null;
   [RoutePath.WebSetupAirgap]: null;
   [RoutePath.WebWalletCreate]: null;
   [RoutePath.WebWalletImport]: null;
   [RoutePath.WebWalletExport]: null;
-  [RoutePath.WebWalletCreateSuccess]: null;
+  [RoutePath.WebWalletAllSet]: null;
+  [RoutePath.WebAccountAddedComplete]: null;
 };

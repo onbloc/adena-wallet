@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { Account, isLedgerAccount, isSeedAccount } from 'adena-module';
+import { Account, hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
 
 import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
@@ -16,45 +16,45 @@ const getMenuMakerInfo = (
 ): {
   title: string;
   navigatePath:
-    | RoutePath.SettingChangePassword
-    | RoutePath.RevealPasswordPhrase
-    | RoutePath.ExportPrivateKey
-    | RoutePath.RemoveAccount
-    | RoutePath.ResetWallet;
+  | RoutePath.SettingChangePassword
+  | RoutePath.RevealPasswordPhrase
+  | RoutePath.ExportPrivateKey
+  | RoutePath.RemoveAccount
+  | RoutePath.ResetWallet;
   mode: string;
   disabled: boolean;
 }[] => [
-  {
-    title: 'Change Password',
-    navigatePath: RoutePath.SettingChangePassword,
-    mode: 'DEFAULT',
-    disabled: false,
-  },
-  {
-    title: 'Reveal Seed Phrase',
-    navigatePath: RoutePath.RevealPasswordPhrase,
-    mode: 'DEFAULT',
-    disabled: !account || !isSeedAccount(account),
-  },
-  {
-    title: 'Export Private Key',
-    navigatePath: RoutePath.ExportPrivateKey,
-    mode: 'DEFAULT',
-    disabled: !account || isLedgerAccount(account),
-  },
-  {
-    title: 'Remove Account',
-    navigatePath: RoutePath.RemoveAccount,
-    mode: 'DANGER',
-    disabled: !availRemove,
-  },
-  {
-    title: 'Reset Wallet',
-    navigatePath: RoutePath.ResetWallet,
-    mode: 'DANGER',
-    disabled: false,
-  },
-];
+    {
+      title: 'Change Password',
+      navigatePath: RoutePath.SettingChangePassword,
+      mode: 'DEFAULT',
+      disabled: false,
+    },
+    {
+      title: 'Reveal Seed Phrase',
+      navigatePath: RoutePath.RevealPasswordPhrase,
+      mode: 'DEFAULT',
+      disabled: !account || !isSeedAccount(account),
+    },
+    {
+      title: 'Export Private Key',
+      navigatePath: RoutePath.ExportPrivateKey,
+      mode: 'DEFAULT',
+      disabled: !account || !hasPrivateKeyAccount(account),
+    },
+    {
+      title: 'Remove Account',
+      navigatePath: RoutePath.RemoveAccount,
+      mode: 'DANGER',
+      disabled: !availRemove,
+    },
+    {
+      title: 'Reset Wallet',
+      navigatePath: RoutePath.ResetWallet,
+      mode: 'DANGER',
+      disabled: false,
+    },
+  ];
 
 export const SecurityPrivacy = (): JSX.Element => {
   const { navigate, goBack } = useAppNavigate();
