@@ -51,6 +51,7 @@ export enum RoutePath {
   TransferSummary = '/wallet/transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
+  BroadcastTransaction = '/wallet/broadcast-transaction',
 
   // settings
   Setting = '/settings',
@@ -174,6 +175,7 @@ export type RouteParams = {
     document: Document;
   };
   [RoutePath.TransferLedgerReject]: null;
+  [RoutePath.BroadcastTransaction]: null;
 
   [RoutePath.Setting]: null;
   [RoutePath.SettingChangePassword]: null;

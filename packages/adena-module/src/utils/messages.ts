@@ -83,15 +83,58 @@ export function txToDocument(tx: Tx) {
   return Tx.toJSON(tx);
 }
 
-interface RawTx {
-  msg: {
-    '@type': string;
-    caller: string;
-    send: string;
-    pkg_path: string;
-    func: string;
-    args: string[];
-  }[];
+export interface RawBankSendMessage {
+  '@type': string;
+  from_address: string;
+  to_address: string;
+  amount: string;
+}
+
+export interface RawVmCallMessage {
+  '@type': string;
+  caller: string;
+  func: string;
+  send: string;
+  pkg_path: string;
+  args: string[];
+}
+
+export interface RawVmAddPackageMessage {
+  '@type': string;
+  creator: string;
+  deposit: string;
+  package: {
+    Name: string;
+    Path: string;
+    Files: {
+      Name: string;
+      Body: string;
+    }[];
+  };
+}
+
+export interface RawVmRunMessage {
+  '@type': string;
+  caller: string;
+  send: string;
+  package: {
+    Name: string;
+    Path: string;
+    Files: {
+      Name: string;
+      Body: string;
+    }[];
+  };
+}
+
+export type RawTxMessageType =
+  | RawBankSendMessage
+  | RawVmCallMessage
+  | RawVmAddPackageMessage
+  | RawVmRunMessage;
+
+export interface RawTx {
+  msg: RawTxMessageType[];
   fee: { gas_wanted: string; gas_fee: string };
   signatures: {
     pub_key: {

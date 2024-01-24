@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import BigNumber from 'bignumber.js';
+import { isAirgapAccount } from 'adena-module';
 
 import { RoutePath } from '@types';
 import { DoubleButton } from '@components/molecules';
@@ -41,9 +42,19 @@ export const WalletMain = (): JSX.Element => {
   const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
     useTokenBalance();
 
-  const DepositButtonClick = (): void =>
+  const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
-  const SendButtonClick = (): void => navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
+
+  const onClickSendButton = (): void => {
+    if (!currentAccount) {
+      return;
+    }
+    if (isAirgapAccount(currentAccount)) {
+      navigate(RoutePath.BroadcastTransaction);
+      return;
+    }
+    navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
+  };
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -104,9 +115,9 @@ export const WalletMain = (): JSX.Element => {
 
       <DoubleButton
         margin='14px 0px 30px'
-        leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+        leftProps={{ onClick: onClickDepositButton, text: 'Deposit' }}
         rightProps={{
-          onClick: SendButtonClick,
+          onClick: onClickSendButton,
           text: 'Send',
         }}
       />
