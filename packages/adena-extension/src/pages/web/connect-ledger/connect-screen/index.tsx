@@ -25,7 +25,7 @@ const ConnectLedgerScreen = (): ReactElement => {
   return (
     <WebMain>
       <WebMainHeader
-        length={5}
+        stepLength={5}
         onClickGoBack={(): void => {
           if (step.stepNo === 0) {
             navigate(RoutePath.Home);
@@ -33,7 +33,7 @@ const ConnectLedgerScreen = (): ReactElement => {
             setConnectState(step.backTo);
           }
         }}
-        step={step.stepNo}
+        currentStep={step.stepNo}
       />
       {connectState === 'INIT' && <ConnectInit init={initWallet} />}
       {connectState === 'REQUEST' && <ConnectRequest />}

@@ -16,6 +16,7 @@ import GoogleLoginScreen from '@pages/web/google-login-screen';
 import WalletCreateScreen from '@pages/web/wallet-create-screen';
 import WalletImportScreen from '@pages/web/wallet-import-screen';
 import WalletExportScreen from '@pages/web/wallet-export-screen';
+import QuestionnaireScreen from '@pages/web/questionnaire-screen';
 
 import Header from './Header';
 import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
@@ -47,6 +48,7 @@ export const WebRouter = (): JSX.Element => {
         <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
         <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
         <Route path={RoutePath.WebAccountAddedComplete} element={<AccountAddedCompleteScreen />} />
+        <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
       </Routes>
     </>
   );

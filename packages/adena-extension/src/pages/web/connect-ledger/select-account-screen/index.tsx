@@ -1,7 +1,5 @@
 import styled, { useTheme } from 'styled-components';
 
-import rightSrc from '@assets/web/chevron-right.svg';
-
 import { WebMain, View, WebText, WebButton, Row, WebCheckBox, WebImg } from '@components/atoms';
 import { formatAddress } from '@common/utils/client-utils';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
@@ -78,11 +76,11 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   return (
     <WebMain>
       <WebMainHeader
-        length={5}
+        stepLength={5}
         onClickGoBack={(): void => {
           navigate(RoutePath.WebConnectLedger);
         }}
-        step={4}
+        currentStep={4}
       />
       <StyledMessageBox>
         <WebText type='headline3'>Select Accounts</WebText>
@@ -111,12 +109,9 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}
         style={{ width: '100%', alignItems: 'center' }}
-      >
-        <Row style={{ justifyContent: 'center' }}>
-          <WebText type='title4'>Next</WebText>
-          <WebImg src={rightSrc} size={24} />
-        </Row>
-      </WebButton>
+        text='Next'
+        rightIcon='chevronRight'
+      />
     </WebMain>
   );
 };

@@ -1,9 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
+import { View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
 
-import IconNext from '@assets/web/chevron-right.svg';
 import IconAirgap from '@assets/web/airgap-green.svg';
 
 const StyledContainer = styled(View)`
@@ -27,12 +26,12 @@ interface StyledInputProps {
   placeholder: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
-const StyledInput = styled(WebInput) <StyledInputProps>`
-  border: ${({ theme, error }): string => error ? `1px solid ${theme.webError._200}` : ''};
-  background-color: ${({ theme, error }): string => error ? theme.webError._300 : ''};
+const StyledInput = styled(WebInput)<StyledInputProps>`
+  border: ${({ theme, error }): string => (error ? `1px solid ${theme.webError._200}` : '')};
+  background-color: ${({ theme, error }): string => (error ? theme.webError._300 : '')};
 
   &:focus-visible {
-    background-color: ${({ theme, error }): string => error ? theme.webError._300 : ''};
+    background-color: ${({ theme, error }): string => (error ? theme.webError._300 : '')};
   }
 `;
 
@@ -91,12 +90,9 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
           size='small'
           onClick={confirmAddress}
           disabled={disabledNextButton}
-        >
-          <Row>
-            <WebText type='title4'>Next</WebText>
-            <WebImg src={IconNext} size={24} />
-          </Row>
-        </WebButton>
+          text='Next'
+          rightIcon='chevronRight'
+        />
       </StyledButtonBox>
     </StyledContainer>
   );

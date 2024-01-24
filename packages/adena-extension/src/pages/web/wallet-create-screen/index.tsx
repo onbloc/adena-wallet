@@ -2,21 +2,26 @@ import { ReactElement } from 'react';
 
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
-import { RoutePath } from '@types';
-import useAppNavigate from '@hooks/use-app-navigate';
+
+import InitStep from './init-step';
+import GetMnemonicStep from './get-mnemonic-step';
+import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
 
 const WalletCreateScreen = (): ReactElement => {
-  const { navigate } = useAppNavigate();
+  const useWalletCreateScreenReturn = useWalletCreateScreen();
+  const { step, onClickGoBack, stepLength, walletCreateStepNo } = useWalletCreateScreenReturn;
 
   return (
     <WebMain>
       <WebMainHeader
-        length={5}
-        onClickGoBack={(): void => {
-          navigate(RoutePath.WebAdvancedOption);
-        }}
-        step={0}
+        stepLength={stepLength}
+        onClickGoBack={onClickGoBack}
+        currentStep={walletCreateStepNo[step]}
       />
+      {step === 'INIT' && <InitStep useWalletCreateScreenReturn={useWalletCreateScreenReturn} />}
+      {step === 'GET_SEED_PHRASE' && (
+        <GetMnemonicStep useWalletCreateScreenReturn={useWalletCreateScreenReturn} />
+      )}
     </WebMain>
   );
 };

@@ -2,7 +2,9 @@ import React, { useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 
 import { WebMain } from '@components/atoms';
-import useSetupAirgapScreen, { setupAirgapStep } from '@hooks/web/setup-airgap/use-setup-airgap-screen';
+import useSetupAirgapScreen, {
+  setupAirgapStep,
+} from '@hooks/web/setup-airgap/use-setup-airgap-screen';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
@@ -43,31 +45,19 @@ const SetupAirgapScreen: React.FC = () => {
 
   return (
     <StyledAirgapMain>
-      <WebMainHeader
-        length={5}
-        onClickGoBack={onClickBack}
-        step={stopNo}
-      />
-      {setupAirgapState === 'INIT' &&
-        <SetupAirgapInit
-          initSetup={initSetup}
-        />
-      }
-      {setupAirgapState === 'ENTER_ADDRESS' &&
+      <WebMainHeader stepLength={5} onClickGoBack={onClickBack} currentStep={stopNo} />
+      {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
+      {setupAirgapState === 'ENTER_ADDRESS' && (
         <SetupAirgapEnterAddress
           address={address}
           errorMessage={errorMessage}
           changeAddress={changeAddress}
           confirmAddress={confirmAddress}
         />
-      }
-      {setupAirgapState === 'COMPLETE' &&
-        <SetupAirgapCompleteScreen
-          address={address}
-          addAccount={addAccount}
-        />
-      }
-
+      )}
+      {setupAirgapState === 'COMPLETE' && (
+        <SetupAirgapCompleteScreen address={address} addAccount={addAccount} />
+      )}
     </StyledAirgapMain>
   );
 };
