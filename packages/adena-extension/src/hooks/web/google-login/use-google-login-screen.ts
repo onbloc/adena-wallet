@@ -117,6 +117,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,
+          stepLength: stepInfo.stepLength,
         },
       });
     },

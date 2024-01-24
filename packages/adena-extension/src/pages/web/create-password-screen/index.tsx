@@ -16,6 +16,7 @@ import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-s
 import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
 import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
@@ -31,7 +32,7 @@ const CreatePasswordScreen = (): JSX.Element => {
   const { passwordState, confirmPasswordState, termsState, errorMessage, buttonState, onKeyDown } =
     useCreatePasswordScreen();
   const theme = useTheme();
-  const { goBack } = useAppNavigate();
+  const { goBack, params } = useAppNavigate<RoutePath.WebCreatePassword>();
 
   const moveAdenaTermsPage = useCallback(() => {
     openLink(ADENA_TERMS_PAGE);
@@ -39,7 +40,11 @@ const CreatePasswordScreen = (): JSX.Element => {
 
   return (
     <WebMain>
-      <WebMainHeader stepLength={5} currentStep={3} onClickGoBack={goBack} />
+      <WebMainHeader
+        stepLength={params.stepLength}
+        currentStep={params.stepLength - 1}
+        onClickGoBack={goBack}
+      />
 
       <StyledMessageBox>
         <WebText type='headline3'>Create a password</WebText>

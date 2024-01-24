@@ -104,6 +104,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     navigate(RoutePath.WebCreatePassword, {
       state: {
         serializedWallet,
+        stepLength: 4,
       },
     });
   }, [address, walletService]);

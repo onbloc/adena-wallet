@@ -11,6 +11,7 @@ import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atom
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { WebMainHeader } from '@components/pages/web/main-header';
+import { useWalletContext } from '@hooks/use-context';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 8px;
@@ -22,6 +23,7 @@ const StyledWarnBox = styled(Row)`
 const AdvancedOptionScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const theme = useTheme();
+  const { wallet } = useWalletContext();
 
   return (
     <WebMain style={{ alignItems: 'flex-start' }}>
@@ -48,7 +50,11 @@ const AdvancedOptionScreen = (): ReactElement => {
           figure='primary'
           size='large'
           onClick={(): void => {
-            navigate(RoutePath.WebWalletCreate);
+            if (wallet) {
+              navigate(RoutePath.WebAddAccount);
+            } else {
+              navigate(RoutePath.WebWalletCreate);
+            }
           }}
           style={{ width: 176 }}
         >
