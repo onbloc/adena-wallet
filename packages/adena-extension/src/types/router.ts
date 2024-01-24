@@ -89,6 +89,7 @@ export enum RoutePath {
   WebWalletAllSet = '/web/all-set',
   WebAccountAddedComplete = '/web/account-added',
   WebQuestionnaire = '/web/questionnaire',
+  WebAddAccount = '/web/add-account',
 }
 
 export type RouteParams = {
@@ -222,6 +223,7 @@ export type RouteParams = {
   [RoutePath.WebAdvancedOption]: null;
   [RoutePath.WebCreatePassword]: {
     serializedWallet: string;
+    stepLength: number;
   };
   [RoutePath.WebGoogleLogin]: {
     doneQuestionnaire: boolean;
@@ -230,11 +232,14 @@ export type RouteParams = {
   [RoutePath.WebWalletCreate]: {
     doneQuestionnaire: boolean;
   } | null;
+  [RoutePath.WebAddAccount]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletImport]: null;
   [RoutePath.WebWalletExport]: null;
   [RoutePath.WebWalletAllSet]: null;
   [RoutePath.WebAccountAddedComplete]: null;
   [RoutePath.WebQuestionnaire]: {
-    callbackPath: RoutePath.WebWalletCreate | RoutePath.WebGoogleLogin;
+    callbackPath: RoutePath.WebWalletCreate | RoutePath.WebGoogleLogin | RoutePath.WebAddAccount;
   };
 };

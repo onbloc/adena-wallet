@@ -61,7 +61,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
       const serializedWallet = await createdWallet.serialize('');
 
       navigate(RoutePath.WebCreatePassword, {
-        state: { serializedWallet },
+        state: { serializedWallet, stepLength },
       });
     }
   }, [step, ableToSkipQuestionnaire]);
