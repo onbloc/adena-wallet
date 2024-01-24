@@ -41,6 +41,13 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
     box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
       0px 1px 2px 0px rgba(0, 0, 0, 0.06);
   }
+
+  :active {
+    outline: 2px solid rgba(255, 255, 255, 0.4);
+    background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
+    box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 0px 0px 3px rgba(0, 89, 255, 0.16),
+      0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  }
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
@@ -52,16 +59,28 @@ const StyledButtonSecondary = styled(StyledButtonBase)`
     background: rgba(0, 89, 255, 0.2);
     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
   }
+
+  :active {
+    outline: 2px solid rgba(122, 169, 255, 0.24);
+    background: rgba(0, 89, 255, 0.2);
+  }
 `;
 
 const StyledButtonTertiary = styled(StyledButtonBase)`
-  outline: 1px solid rgba(188, 197, 214, 0.24);
+  outline: 1px solid rgba(188, 197, 214, 0.16);
   background: rgba(188, 197, 214, 0.04);
 
   :hover {
-    outline: 2px solid rgba(188, 197, 214, 0.24);
+    outline: 2px solid rgba(188, 197, 214, 0.16);
     background: rgba(188, 197, 214, 0.06);
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  }
+
+  :active {
+    outline: 1px solid rgba(188, 197, 214, 0.24);
+    background: rgba(188, 197, 214, 0.04);
+    box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.04),
+      0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+      0px 1px 2px 0px rgba(0, 0, 0, 0.06);
   }
 `;
 

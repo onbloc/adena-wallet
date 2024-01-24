@@ -189,7 +189,7 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
     font-family: Inter;
     font-size: 16px;
     font-weight: 400;
-    line-height: 24px; /* 150% */
+    line-height: 23px; // 24px makes a pixel issue in the chrome
     letter-spacing: -0.16px;
   `,
   body5: css`

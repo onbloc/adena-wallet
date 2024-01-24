@@ -17,3 +17,6 @@ export * from './double-button';
 export * from './seed-view-and-copy';
 export * from './underline-text-button';
 export * from './ghost-button';
+
+// web
+export * from './web-seed-box';
