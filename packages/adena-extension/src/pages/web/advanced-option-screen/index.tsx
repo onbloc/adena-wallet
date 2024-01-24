@@ -63,7 +63,14 @@ const AdvancedOptionScreen = (): ReactElement => {
             <WebText type='title5'>Import Existing Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='tertiary' size='large' style={{ width: 176 }}>
+        <WebButton
+          figure='tertiary'
+          size='large'
+          style={{ width: 176 }}
+          onClick={(): void => {
+            navigate(RoutePath.WebGoogleLogin);
+          }}
+        >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconGoogle} size={24} />
             <WebText type='title5'>Sign In With Google</WebText>
