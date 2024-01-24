@@ -1,8 +1,11 @@
-import useAppNavigate from '@hooks/use-app-navigate';
+import { useCallback, useMemo, useState } from 'react';
+import { AdenaWallet } from 'adena-module';
+
 import { RoutePath } from '@types';
-import { useCallback, useState } from 'react';
+import useAppNavigate from '@hooks/use-app-navigate';
 
 export type UseWalletCreateReturn = {
+  seeds: string;
   step: WalletCreateStateType;
   setStep: React.Dispatch<React.SetStateAction<WalletCreateStateType>>;
   walletCreateStepNo: {
@@ -23,6 +26,8 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     params?.doneQuestionnaire ? 'GET_SEED_PHRASE' : 'INIT',
   );
 
+  const seeds = useMemo(() => AdenaWallet.generateMnemonic(), []);
+
   // TODO
   const ableToSkipQuestionnaire = false;
 
@@ -40,7 +45,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     }
   }, [step]);
 
-  const onClickNext = useCallback(() => {
+  const onClickNext = useCallback(async () => {
     if (step === 'INIT') {
       if (ableToSkipQuestionnaire) {
         setStep('GET_SEED_PHRASE');
@@ -52,15 +57,17 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         });
       }
     } else if (step === 'GET_SEED_PHRASE') {
+      const createdWallet = await AdenaWallet.createByMnemonic(seeds);
+      const serializedWallet = await createdWallet.serialize('');
+
       navigate(RoutePath.WebCreatePassword, {
-        state: {
-          serializedWallet: '',
-        },
+        state: { serializedWallet },
       });
     }
   }, [step, ableToSkipQuestionnaire]);
 
   return {
+    seeds,
     step,
     setStep,
     walletCreateStepNo,

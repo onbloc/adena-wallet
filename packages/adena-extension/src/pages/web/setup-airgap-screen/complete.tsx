@@ -4,7 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import { Row, View, WebButton, WebImg, WebInput, WebText } from '@components/atoms';
 
 import IconAirgap from '@assets/web/airgap-green.svg';
-import IconCheck from '@assets/web/check.svg';
+import IconCheck from '@assets/web/web-check-circle.svg';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;

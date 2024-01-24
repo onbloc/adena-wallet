@@ -5,7 +5,7 @@ import { WebFontType, getTheme, webFonts } from '@styles/theme';
 
 type FormTextProps = {
   type: WebFontType;
-  children: string;
+  children: string | number;
   color?: string;
   style?: React.CSSProperties;
   textCenter?: boolean;
