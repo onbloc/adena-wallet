@@ -236,10 +236,16 @@ export type RouteParams = {
     doneQuestionnaire: boolean;
   } | null;
   [RoutePath.WebWalletImport]: null;
-  [RoutePath.WebWalletExport]: null;
+  [RoutePath.WebWalletExport]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletAllSet]: null;
   [RoutePath.WebAccountAddedComplete]: null;
   [RoutePath.WebQuestionnaire]: {
-    callbackPath: RoutePath.WebWalletCreate | RoutePath.WebGoogleLogin | RoutePath.WebAddAccount;
+    callbackPath:
+      | RoutePath.WebWalletCreate
+      | RoutePath.WebGoogleLogin
+      | RoutePath.WebAddAccount
+      | RoutePath.WebWalletExport;
   };
 };

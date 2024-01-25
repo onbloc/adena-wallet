@@ -9,15 +9,15 @@ import { useAccountName } from '@hooks/use-account-name';
 import { RoutePath } from '@types';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
+import { AdenaStorage } from '@common/storage';
+import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
   const { openLink } = useLink();
   const { accountId } = useParams();
-  const { navigate } = useAppNavigate();
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
@@ -59,7 +59,9 @@ const AccountDetailsContainer: React.FC = () => {
     if (account) {
       await changeCurrentAccount(account);
     }
-    navigate(RoutePath.ExportPrivateKey, { state: { accountId } });
+    const sessionStorage = AdenaStorage.session();
+    await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
+    openLink('/register.html#' + RoutePath.WebWalletExport);
   }, [account]);
 
   const changeName = useCallback(

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Account, hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
 
@@ -9,6 +9,9 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useRemoveAccount } from '@hooks/use-remove-account';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { AdenaStorage } from '@common/storage';
+import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 
 const getMenuMakerInfo = (
   account: Account | null,
@@ -58,9 +61,33 @@ const getMenuMakerInfo = (
 
 export const SecurityPrivacy = (): JSX.Element => {
   const { navigate, goBack } = useAppNavigate();
+  const { openLink } = useLink();
   const { currentAccount } = useCurrentAccount();
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
+
+  const onClickMenuItem = useCallback((navigatePath:
+    RoutePath.SettingChangePassword
+    | RoutePath.RevealPasswordPhrase
+    | RoutePath.ExportPrivateKey
+    | RoutePath.RemoveAccount
+    | RoutePath.ResetWallet,
+  ) => {
+    if (
+      navigatePath === RoutePath.RevealPasswordPhrase ||
+      navigatePath === RoutePath.ExportPrivateKey
+    ) {
+      const exportType = navigatePath ===
+        RoutePath.RevealPasswordPhrase ?
+        'SEED_PHRASE' :
+        'PRIVATE_KEY';
+      AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType).then(() => {
+        openLink('/register.html#' + RoutePath.WebWalletExport);
+      });
+      return;
+    }
+    navigate(navigatePath);
+  }, [navigate])
 
   useEffect(() => {
     availRemoveAccount().then(setAvailRemove);
@@ -75,7 +102,7 @@ export const SecurityPrivacy = (): JSX.Element => {
         <FullButtonRightIcon
           key={i}
           title={v.title}
-          onClick={(): void => navigate(v.navigatePath)}
+          onClick={(): void => onClickMenuItem(v.navigatePath)}
           mode={v.mode as ButtonMode}
           disabled={v.disabled as boolean}
         />
