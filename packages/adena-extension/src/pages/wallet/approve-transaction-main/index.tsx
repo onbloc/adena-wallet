@@ -184,7 +184,7 @@ const ApproveTransactionContainer: React.FC = () => {
       const hash = transactionService.createHash(signed);
       const response = await new Promise<BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null>((resolve) => {
         transactionService
-          .sendTransaction(wallet, currentAccount, signed)
+          .sendTransaction(wallet, currentAccount, signed, true)
           .then(resolve)
           .catch((error: TM2Error | Error) => {
             resolve(error);
@@ -285,7 +285,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onResponseSendTransaction = useCallback(() => {
     if (response) {
-      chrome.runtime.sendMessage(response);
+      // chrome.runtime.sendMessage(response);
     }
   }, [response]);
 

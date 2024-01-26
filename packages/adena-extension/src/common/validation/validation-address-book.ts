@@ -1,7 +1,8 @@
+import { Account } from 'adena-module';
+
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { AddressBookItem } from '@repositories/wallet';
-import { Account } from 'adena-module';
 
 export const validateInvalidAddress = (address: string): boolean => {
   const invalidCheck = addressValidationCheck(address);
