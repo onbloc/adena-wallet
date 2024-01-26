@@ -20,3 +20,4 @@ export * from './ghost-button';
 
 // web
 export * from './web-seed-box';
+export * from './web-seed-input';

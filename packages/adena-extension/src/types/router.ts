@@ -235,7 +235,9 @@ export type RouteParams = {
   [RoutePath.WebAddAccount]: {
     doneQuestionnaire: boolean;
   } | null;
-  [RoutePath.WebWalletImport]: null;
+  [RoutePath.WebWalletImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletExport]: {
     doneQuestionnaire: boolean;
   } | null;
@@ -246,6 +248,7 @@ export type RouteParams = {
       | RoutePath.WebWalletCreate
       | RoutePath.WebGoogleLogin
       | RoutePath.WebAddAccount
-      | RoutePath.WebWalletExport;
+      | RoutePath.WebWalletExport
+      | RoutePath.WebWalletImport;
   };
 };

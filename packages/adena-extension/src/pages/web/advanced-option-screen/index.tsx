@@ -63,7 +63,14 @@ const AdvancedOptionScreen = (): ReactElement => {
             <WebText type='title5'>Create New Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='secondary' size='large' style={{ width: 176 }}>
+        <WebButton
+          figure='secondary'
+          size='large'
+          style={{ width: 176 }}
+          onClick={(): void => {
+            navigate(RoutePath.WebWalletImport);
+          }}
+        >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconImport} size={24} />
             <WebText type='title5'>Import Existing Wallet</WebText>
