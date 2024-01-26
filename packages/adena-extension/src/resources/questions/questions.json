@@ -1,0 +1,56 @@
+[
+  {
+    "index": 1,
+    "question": "If you lose your seed phrase or your private key, who can recover it for you?",
+    "answers": [
+      {
+        "answer": "The Adena Team",
+        "correct": false
+      },
+      {
+        "answer": "The Gnoland Foundation",
+        "correct": false
+      },
+      {
+        "answer": "Nobody",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "question": "If someone claiming to be “Adena Support” asks you to share your seed phrase, how should you respond?",
+    "answers": [
+      {
+        "answer": "Share your phrase right away",
+        "correct": false
+      },
+      {
+        "answer": "Ask for the reason",
+        "correct": false
+      },
+      {
+        "answer": "Ignore the request and end the conversation",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "index": 3,
+    "question": "Which of the below is a safe place to store your seed phrase?",
+    "answers": [
+      {
+        "answer": "In a Messenger",
+        "correct": false
+      },
+      {
+        "answer": "In a Memo App",
+        "correct": false
+      },
+      {
+        "answer": "A Secure Offline Environment",
+        "correct": true
+      }
+    ]
+  }
+]

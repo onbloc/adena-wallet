@@ -78,6 +78,7 @@ const config = {
       '@inject': path.resolve(__dirname, 'src/inject'),
       '@assets': path.resolve(__dirname, 'src/assets'),
       '@repositories': path.resolve(__dirname, 'src/repositories'),
+      '@resources': path.resolve(__dirname, 'src/resources'),
       '@migrates': path.resolve(__dirname, 'src/migrates'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@public': path.resolve(__dirname, 'public/'),
