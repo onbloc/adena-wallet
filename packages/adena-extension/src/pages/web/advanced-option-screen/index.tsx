@@ -50,7 +50,7 @@ const AdvancedOptionScreen = (): ReactElement => {
           figure='primary'
           size='large'
           onClick={(): void => {
-            if (wallet) {
+            if (wallet && wallet.hasHDWallet()) {
               navigate(RoutePath.WebAddAccount);
             } else {
               navigate(RoutePath.WebWalletCreate);

@@ -1,8 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { AdenaWallet } from 'adena-module';
+import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 
 export type UseWalletCreateReturn = {
   seeds: string;
@@ -21,6 +23,8 @@ export type WalletCreateStateType = 'INIT' | 'GET_SEED_PHRASE';
 
 const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletCreate>();
+  const { wallet, updateWallet } = useWalletContext();
+  const { changeCurrentAccount } = useCurrentAccount();
 
   const [step, setStep] = useState<WalletCreateStateType>(
     params?.doneQuestionnaire ? 'GET_SEED_PHRASE' : 'INIT',
@@ -57,14 +61,31 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         });
       }
     } else if (step === 'GET_SEED_PHRASE') {
-      const createdWallet = await AdenaWallet.createByMnemonic(seeds);
-      const serializedWallet = await createdWallet.serialize('');
+      if (wallet) {
+        const keyring = await HDWalletKeyring.fromMnemonic(seeds);
+        const account = await SeedAccount.createBy(
+          keyring,
+          `Account ${wallet.lastAccountIndex + 1}`,
+          0,
+        );
+        account.index = wallet.lastAccountIndex + 1;
 
-      navigate(RoutePath.WebCreatePassword, {
-        state: { serializedWallet, stepLength },
-      });
+        const clone = wallet.clone();
+        clone.addAccount(account);
+        clone.addKeyring(keyring);
+        await updateWallet(clone);
+        await changeCurrentAccount(account);
+        navigate(RoutePath.WebAccountAddedComplete);
+      } else {
+        const createdWallet = await AdenaWallet.createByMnemonic(seeds);
+        const serializedWallet = await createdWallet.serialize('');
+
+        navigate(RoutePath.WebCreatePassword, {
+          state: { serializedWallet, stepLength },
+        });
+      }
     }
-  }, [step, ableToSkipQuestionnaire]);
+  }, [step, ableToSkipQuestionnaire, wallet]);
 
   return {
     seeds,
