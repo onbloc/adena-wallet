@@ -4,7 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import IconAlert from '@assets/web/alert-rounded.svg';
 
 import { View, WebButton, WebImg, WebText } from '@components/atoms';
-import { UseAddAccountScreenReturn } from '@hooks/web/use-add-account-screen';
+import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 
 const StyledContainer = styled(View)`
   width: 540px;
@@ -17,11 +17,11 @@ const StyledMessageBox = styled(View)`
 `;
 
 const InitStep = ({
-  useAddAccountScreenReturn,
+  useAccountAddScreenReturn,
 }: {
-  useAddAccountScreenReturn: UseAddAccountScreenReturn;
+  useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement => {
-  const { onClickNext } = useAddAccountScreenReturn;
+  const { onClickNext } = useAccountAddScreenReturn;
   const theme = useTheme();
 
   return (

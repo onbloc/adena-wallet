@@ -7,24 +7,24 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 
-export type UseAddAccountScreenReturn = {
-  step: AddAccountStateType;
-  setStep: React.Dispatch<React.SetStateAction<AddAccountStateType>>;
+export type UseAccountAddScreenReturn = {
+  step: AccountAddStateType;
+  setStep: React.Dispatch<React.SetStateAction<AccountAddStateType>>;
   stepLength: number;
   onClickGoBack: () => void;
   onClickNext: () => void;
   addAccount: () => Promise<void>;
 };
 
-export type AddAccountStateType = 'INIT' | 'CREATE_ACCOUNT';
+export type AccountAddStateType = 'INIT' | 'CREATE_ACCOUNT';
 
-const useAddAccountScreen = (): UseAddAccountScreenReturn => {
-  const { navigate, params } = useAppNavigate<RoutePath.WebAddAccount>();
+const useAccountAddScreen = (): UseAccountAddScreenReturn => {
+  const { navigate, params } = useAppNavigate<RoutePath.WebAccountAdd>();
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { resetNetworkConnection } = useNetwork();
 
-  const [step, setStep] = useState<AddAccountStateType>(
+  const [step, setStep] = useState<AccountAddStateType>(
     params?.doneQuestionnaire ? 'CREATE_ACCOUNT' : 'INIT',
   );
 
@@ -48,7 +48,7 @@ const useAddAccountScreen = (): UseAddAccountScreenReturn => {
       } else {
         navigate(RoutePath.WebQuestionnaire, {
           state: {
-            callbackPath: RoutePath.WebAddAccount,
+            callbackPath: RoutePath.WebAccountAdd,
           },
         });
       }
@@ -83,4 +83,4 @@ const useAddAccountScreen = (): UseAddAccountScreenReturn => {
   };
 };
 
-export default useAddAccountScreen;
+export default useAccountAddScreen;

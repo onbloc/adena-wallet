@@ -4,7 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
 
 import { View, WebImg, WebText } from '@components/atoms';
-import { UseAddAccountScreenReturn } from '@hooks/web/use-add-account-screen';
+import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -16,11 +16,11 @@ const StyledMessageBox = styled(View)`
 `;
 
 const CreateAccountStep = ({
-  useAddAccountScreenReturn,
+  useAccountAddScreenReturn,
 }: {
-  useAddAccountScreenReturn: UseAddAccountScreenReturn;
+  useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement => {
-  const { addAccount } = useAddAccountScreenReturn;
+  const { addAccount } = useAccountAddScreenReturn;
   const theme = useTheme();
 
   useEffect(() => {

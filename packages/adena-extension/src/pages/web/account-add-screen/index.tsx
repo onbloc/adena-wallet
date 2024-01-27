@@ -2,29 +2,29 @@ import { ReactElement } from 'react';
 
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
-import useAddAccountScreen from '@hooks/web/use-add-account-screen';
+import useAccountAddScreen from '@hooks/web/use-account-add-screen';
 
 import InitStep from './init-step';
 import GetMnemonicStep from './create-account-step';
 
-const AddAccountScreen = (): ReactElement => {
-  const useAddAccountScreenReturn = useAddAccountScreen();
-  const { step, onClickGoBack, stepLength } = useAddAccountScreenReturn;
+const AccountAddScreen = (): ReactElement => {
+  const useAccountAddScreenReturn = useAccountAddScreen();
+  const { step, onClickGoBack, stepLength } = useAccountAddScreenReturn;
 
   return (
     <WebMain>
       {step === 'INIT' && (
         <>
           <WebMainHeader stepLength={stepLength} onClickGoBack={onClickGoBack} currentStep={0} />
-          <InitStep useAddAccountScreenReturn={useAddAccountScreenReturn} />
+          <InitStep useAccountAddScreenReturn={useAccountAddScreenReturn} />
         </>
       )}
 
       {step === 'CREATE_ACCOUNT' && (
-        <GetMnemonicStep useAddAccountScreenReturn={useAddAccountScreenReturn} />
+        <GetMnemonicStep useAccountAddScreenReturn={useAccountAddScreenReturn} />
       )}
     </WebMain>
   );
 };
 
-export default AddAccountScreen;
+export default AccountAddScreen;

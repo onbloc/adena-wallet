@@ -89,7 +89,7 @@ export enum RoutePath {
   WebWalletAllSet = '/web/all-set',
   WebAccountAddedComplete = '/web/account-added',
   WebQuestionnaire = '/web/questionnaire',
-  WebAddAccount = '/web/add-account',
+  WebAccountAdd = '/web/account-add',
 }
 
 export type RouteParams = {
@@ -232,7 +232,7 @@ export type RouteParams = {
   [RoutePath.WebWalletCreate]: {
     doneQuestionnaire: boolean;
   } | null;
-  [RoutePath.WebAddAccount]: {
+  [RoutePath.WebAccountAdd]: {
     doneQuestionnaire: boolean;
   } | null;
   [RoutePath.WebWalletImport]: {
@@ -247,7 +247,7 @@ export type RouteParams = {
     callbackPath:
       | RoutePath.WebWalletCreate
       | RoutePath.WebGoogleLogin
-      | RoutePath.WebAddAccount
+      | RoutePath.WebAccountAdd
       | RoutePath.WebWalletExport
       | RoutePath.WebWalletImport;
   };
