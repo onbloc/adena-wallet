@@ -76,9 +76,6 @@ export enum RoutePath {
   // web
   WebConnectLedger = '/web/connect-ledger',
   WebConnectLedgerSelectAccount = '/web/connect-ledger/select-account',
-  WebConnectLedgerFinish = '/web/connect-ledger/finish',
-  WebConnectLedgerPassword = '/web/connect-ledger/password',
-  WebConnectLedgerAllSet = '/web/connect-ledger/all-set',
   WebAdvancedOption = '/web/option',
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
@@ -212,13 +209,6 @@ export type RouteParams = {
   [RoutePath.WebConnectLedgerSelectAccount]: {
     accounts: string[];
   };
-  [RoutePath.WebConnectLedgerFinish]: {
-    accounts: string[];
-  };
-  [RoutePath.WebConnectLedgerPassword]: {
-    accounts: string[];
-  };
-  [RoutePath.WebConnectLedgerAllSet]: null;
 
   [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;

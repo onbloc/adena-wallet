@@ -3,13 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { RoutePath } from '@types';
 
 import LandingScreen from '@pages/web/landing-screen';
-import {
-  ConnectLedgerScreen,
-  ConnectLedgerSelectAccount,
-  ConnectLedgerFinish,
-  ConnectLedgerAllSet,
-  ConnectLedgerPassword,
-} from '@pages/web/connect-ledger';
+import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
@@ -36,11 +30,6 @@ export const WebRouter = (): JSX.Element => {
           path={RoutePath.WebConnectLedgerSelectAccount}
           element={<ConnectLedgerSelectAccount />}
         />
-        <Route path={RoutePath.WebConnectLedgerFinish} element={<ConnectLedgerFinish />} />
-        <Route path={RoutePath.WebConnectLedgerAllSet} element={<ConnectLedgerAllSet />} />
-        <Route path={RoutePath.WebConnectLedgerPassword} element={<ConnectLedgerPassword />} />
-        <Route path={RoutePath.WebConnectLedgerPassword} element={<ConnectLedgerPassword />} />
-        <Route path={RoutePath.WebConnectLedgerPassword} element={<ConnectLedgerPassword />} />
         <Route path={RoutePath.WebAdvancedOption} element={<AdvancedOptionScreen />} />
         <Route path={RoutePath.WebCreatePassword} element={<CreatePasswordScreen />} />
         <Route path={RoutePath.WebGoogleLogin} element={<GoogleLoginScreen />} />

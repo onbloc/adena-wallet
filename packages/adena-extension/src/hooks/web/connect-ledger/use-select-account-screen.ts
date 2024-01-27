@@ -5,11 +5,11 @@ import {
   Account,
   LedgerKeyring,
   deserializeAccount,
-  serializeAccount,
+  AdenaWallet,
 } from 'adena-module';
 
 import { RoutePath } from '@types';
-import { useWalletContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useQuery } from '@tanstack/react-query';
@@ -32,13 +32,14 @@ export type useSelectAccountScreenReturn = {
 };
 
 const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
-  const { wallet } = useWalletContext();
+  const { wallet, updateWallet } = useWalletContext();
+  const { accountService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
   const { params, navigate } = useAppNavigate<RoutePath.WebConnectLedgerSelectAccount>();
   const [selectAccountAddresses, setSelectAccountAddresses] = useState<Array<string>>([]);
   const [lastPath, setLastPath] = useState(-1);
   const [loadPath, setLoadPath] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const LEDGER_ACCOUNT_LOAD_SIZE = 5;
   const walletAccounts = wallet?.accounts ?? [];
   const addressPrefix = currentNetwork.addressPrefix;
@@ -51,11 +52,11 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
 
   useEffect(() => {
     if (Array.isArray(params.accounts)) {
-      initAccounts(params.accounts.map(deserializeAccount));
+      initAccounts(params.accounts.map(deserializeAccount) as LedgerAccount[]);
     }
   }, []);
 
-  const initAccounts = async (accounts: Array<Account>): Promise<void> => {
+  const initAccounts = async (accounts: Array<LedgerAccount>): Promise<void> => {
     const lastPath = accounts.map((account) => account.toData().hdPath ?? 0).reverse()[0];
     setLastPath(lastPath);
     setAccounts(accounts);
@@ -95,29 +96,59 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   };
 
   const onClickNextButton = async (): Promise<void> => {
-    const savedAccounts: Array<Account> = [];
+    const savedAccounts: Array<LedgerAccount> = [];
     for (const account of accounts) {
       const address = await account.getAddress(addressPrefix);
       if (selectAccountAddresses.includes(address)) {
-        account.name = `${wallet?.nextLedgerAccountName}`;
         savedAccounts.push(account);
       }
     }
 
-    const resultSavedAccounts = savedAccounts.sort((account) => account.toData().hdPath ?? 0);
+    const resultSavedAccounts = savedAccounts
+      .map((account) => ({
+        ...account.toData(),
+        name: `Ledger ${account.hdPath + 1}`,
+      }))
+      .sort((x) => x.hdPath ?? 0);
 
-    console.log('savedAccounts', savedAccounts);
+    const transport = await AdenaLedgerConnector.openConnected();
+    if (!transport) {
+      return;
+    }
+    const keyring = await LedgerKeyring.fromLedger(AdenaLedgerConnector.fromTransport(transport));
 
-    const locationState = {
-      accounts: resultSavedAccounts.map((account) => serializeAccount(account)),
-    };
+    await transport.close();
 
-    const routePath =
-      walletAccounts.length === 0
-        ? RoutePath.WebConnectLedgerPassword
-        : RoutePath.WebConnectLedgerFinish;
+    if (wallet) {
+      const cloneWallet = wallet.clone();
+      cloneWallet.addKeyring(keyring);
 
-    navigate(routePath, { state: locationState });
+      let currentAccount = null;
+      resultSavedAccounts.forEach((accountInfo) => {
+        const account = LedgerAccount.fromData(accountInfo);
+        cloneWallet.addAccount(account);
+        currentAccount = account;
+      });
+      if (currentAccount) {
+        await accountService.changeCurrentAccount(currentAccount);
+      }
+
+      await updateWallet(cloneWallet);
+
+      navigate(RoutePath.WebAccountAddedComplete);
+    } else {
+      const newWallet = new AdenaWallet({
+        accounts: [...resultSavedAccounts],
+        keyrings: [keyring.toData()],
+        currentAccountId: resultSavedAccounts[0]?.id,
+      });
+      navigate(RoutePath.WebCreatePassword, {
+        state: {
+          serializedWallet: await newWallet.serialize(''),
+          stepLength: 5,
+        },
+      });
+    }
   };
 
   const mapAccountInfo = async (account: Account, index: number): Promise<AccountInfoType> => {
