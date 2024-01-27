@@ -118,7 +118,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     }
     .textarea-wrapper {
       width: 100%;
-      height: 120px;
+      height: 200px;
       border-radius: 24px;
       background-color: ${getTheme('neutral', '_9')};
       border: 1px solid ${getTheme('neutral', '_7')};
