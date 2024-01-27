@@ -68,7 +68,11 @@ const AdvancedOptionScreen = (): ReactElement => {
           size='large'
           style={{ width: 176 }}
           onClick={(): void => {
-            navigate(RoutePath.WebWalletImport);
+            if (wallet) {
+              navigate(RoutePath.WebAccountImport);
+            } else {
+              navigate(RoutePath.WebWalletImport);
+            }
           }}
         >
           <View style={{ height: 74, justifyContent: 'space-between' }}>

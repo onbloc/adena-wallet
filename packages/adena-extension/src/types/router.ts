@@ -90,6 +90,7 @@ export enum RoutePath {
   WebAccountAddedComplete = '/web/account-added',
   WebQuestionnaire = '/web/questionnaire',
   WebAccountAdd = '/web/account-add',
+  WebAccountImport = '/web/account-import',
 }
 
 export type RouteParams = {
@@ -235,6 +236,9 @@ export type RouteParams = {
   [RoutePath.WebAccountAdd]: {
     doneQuestionnaire: boolean;
   } | null;
+  [RoutePath.WebAccountImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletImport]: {
     doneQuestionnaire: boolean;
   } | null;
@@ -249,6 +253,7 @@ export type RouteParams = {
       | RoutePath.WebGoogleLogin
       | RoutePath.WebAccountAdd
       | RoutePath.WebWalletExport
-      | RoutePath.WebWalletImport;
+      | RoutePath.WebWalletImport
+      | RoutePath.WebAccountImport;
   };
 };
