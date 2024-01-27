@@ -24,9 +24,11 @@ export interface Document {
 function encodeMessageValue(message: { type: string; value: any }) {
   switch (message.type) {
     case MsgEndpoint.MSG_ADD_PKG:
+      const value = message.value;
+      const msgAddPkg = MsgAddPackage.create(value);
       return {
         typeUrl: MsgEndpoint.MSG_ADD_PKG,
-        value: MsgAddPackage.encode(message.value).finish(),
+        value: MsgAddPackage.encode(msgAddPkg).finish(),
       };
     case MsgEndpoint.MSG_CALL:
       return {

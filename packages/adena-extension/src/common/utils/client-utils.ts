@@ -1,3 +1,4 @@
+import { validateAddress } from 'adena-module';
 import gnotLogo from '@assets/gnot-logo.svg';
 import contractLogo from '@assets/contract.svg';
 import addPkgLogo from '@assets/addpkg.svg';
@@ -33,7 +34,9 @@ export function getDateDiff(d: Date | string): number {
   return new Date().getDate() - new Date(d).getDate();
 }
 
-export function dateTimeFormatEn(d: Date | string): {
+export function dateTimeFormatEn(
+  d: Date | string,
+): {
   year: string;
   month: string;
   day: string;
@@ -168,9 +171,7 @@ export function numberWithCommas(value: number, fixed?: number): string {
 }
 
 export function addressValidationCheck(v: string): boolean {
-  const startStringCheck = /^g1/;
-  const atozAndNumberCheck = /^[a-z0-9]{40}$/;
-  return startStringCheck.test(v) && atozAndNumberCheck.test(v) ? true : false;
+  return validateAddress(v);
 }
 
 export function removeUgly(target: any): any {

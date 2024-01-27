@@ -5,6 +5,7 @@ import { fonts, getTheme } from '@styles/theme';
 
 export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
   ${mixins.flex({ justify: 'flex-start' })};
+  width: 100%;
   padding: 0 20px;
   margin-bottom: 96px;
   align-self: center;
