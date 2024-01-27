@@ -16,14 +16,13 @@ export const ApproveChangingNetworkWrapper = styled.div`
     margin-bottom: 16px;
 
     h4 {
-      display: -webkit-box;
+      display: block;
       max-width: 100%;
       text-align: center;
       text-overflow: ellipsis;
       overflow: hidden;
+      white-space: nowrap;
       word-break: break-all;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
     }
 
     .description-wrapper {
