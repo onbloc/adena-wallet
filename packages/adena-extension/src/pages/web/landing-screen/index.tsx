@@ -22,7 +22,7 @@ const LandingScreen = (): ReactElement => {
   }, []);
 
   return (
-    <WebMain>
+    <WebMain style={{ alignItems: 'flex-start' }}>
       <View style={{ marginLeft: -100, marginTop: -200 }}>
         <Lottie
           options={{
