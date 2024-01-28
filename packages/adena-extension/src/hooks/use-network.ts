@@ -4,7 +4,7 @@ import { useRecoilState, useResetRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { EventMessage } from '@inject/message';
 import { useEvent } from './use-event';
-import { fetchHealth } from '@common/utils/client-utils';
+import { fetchHealth } from '@common/utils/fetch-utils';
 
 import { NetworkMetainfo } from '@types';
 import { CommonState, NetworkState, WalletState } from '@states';

@@ -4,10 +4,10 @@ import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,
   decodeParameter,
-  fetchHealth,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
+import { fetchHealth } from '@common/utils/fetch-utils';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdenaContext } from '@hooks/use-context';
