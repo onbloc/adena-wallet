@@ -7,6 +7,7 @@ import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-scree
 import GoogleLoginRequest from './request';
 import GoogleLoginRequestFail from './request-fail';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
 const GoogleLoginScreen: React.FC = () => {
   const {
@@ -37,6 +38,7 @@ const GoogleLoginScreen: React.FC = () => {
               'You are about to construct a private key on your device using Web3Auth,\na third party service provider. This account will be accessible with your\nsocial logins.'
             }
             onClickNext={initGoogleLogin}
+            link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/sign-in-with-google`}
           />
         </>
       )}
