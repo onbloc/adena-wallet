@@ -1,3 +1,4 @@
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { View, WebText } from '../../atoms';

@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
 import back from '@assets/web/chevron-left.svg';
@@ -10,7 +10,7 @@ const StyledContainer = styled(Row)`
   justify-content: space-between;
 `;
 
-const StyledDot = styled(View)<{ selected: boolean }>`
+const StyledDot = styled(View) <{ selected: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
