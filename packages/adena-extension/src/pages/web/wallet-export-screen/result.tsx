@@ -78,10 +78,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
     return exportData;
   }, [exportType, exportData]);
 
-  const toggleBlur = useCallback(() => {
-    setBlur(prev => !prev);
-  }, []);
-
   const copyData = useCallback(() => {
     const copied = exportData || '';
     navigator.clipboard.writeText(copied);
@@ -122,7 +118,12 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
           <WebButton
             figure='quaternary'
             size='small'
-            onClick={toggleBlur}
+            onMouseDown={(): void => {
+              setBlur(false);
+            }}
+            onMouseUp={(): void => {
+              setBlur(true);
+            }}
             text='Hold to Reveal'
             textType='body6'
             style={{ borderRadius: 8 }}

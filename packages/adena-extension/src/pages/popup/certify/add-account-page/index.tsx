@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 
-import { RoutePath } from '@types';
+import { RoutePath, WEB_BASE_PATH } from '@types';
 import { Text } from '@components/atoms';
 import { BottomFixedButton } from '@components/molecules';
 import { useAddAccount } from '@hooks/use-add-account';
@@ -43,7 +43,7 @@ const AddAccountPage: React.FC = () => {
     }
 
     const popupOption: chrome.tabs.CreateProperties = {
-      url: chrome.runtime.getURL(`register.html#${RoutePath.WebConnectLedger}`),
+      url: chrome.runtime.getURL(WEB_BASE_PATH + RoutePath.WebConnectLedger),
       active: true,
     };
 

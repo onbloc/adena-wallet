@@ -16,7 +16,7 @@ import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.consta
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
-  const { openLink } = useLink();
+  const { openLink, openWebLink } = useLink();
   const { accountId } = useParams();
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
@@ -61,7 +61,7 @@ const AccountDetailsContainer: React.FC = () => {
     }
     const sessionStorage = AdenaStorage.session();
     await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
-    openLink('/register.html#' + RoutePath.WebWalletExport);
+    openWebLink(RoutePath.WebWalletExport);
   }, [account]);
 
   const changeName = useCallback(

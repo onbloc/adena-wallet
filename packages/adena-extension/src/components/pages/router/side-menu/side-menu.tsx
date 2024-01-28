@@ -18,6 +18,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
   accounts,
   movePage,
   openLink,
+  openWebLink,
   changeAccount,
   lock,
   close,
@@ -41,8 +42,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
   }, [close]);
 
   const onClickAddAccount = useCallback(() => {
-    movePage(RoutePath.AddAccount);
-  }, [movePage]);
+    openWebLink(RoutePath.Home);
+  }, [openWebLink]);
 
   const onClickRestoreWallet = useCallback(() => {
     movePage(RoutePath.EnterSeedPhrase);

@@ -3,6 +3,8 @@ import { AddressBookItem } from '@repositories/wallet';
 import { CreateAccountState, TokenBalanceType, TokenModel, TransactionInfo } from '@types';
 import { Document } from 'adena-module';
 
+export const WEB_BASE_PATH = 'register.html#' as const;
+
 export enum RoutePath {
   Home = '/',
   Login = '/login',
