@@ -3,11 +3,6 @@ import { Route, Routes } from 'react-router-dom';
 
 import { RoutePath } from '../../types/router';
 
-import { YourSeedPhrase } from '@pages/popup/certify/your-seed-phrase';
-import { ImportPrivateKey } from '@pages/popup/certify/import-private-key';
-import { GenerateSeedPhrase } from '@pages/popup/certify/generate-seed-phrase';
-import { CreatePassword } from '@pages/popup/certify/create-password';
-import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import { Login } from '@pages/popup/certify/login';
 import { ForgotPassword } from '@pages/popup/certify/forgot-password';
 import { EnterSeedPhrase } from '@pages/popup/certify/enter-seed';
@@ -16,15 +11,10 @@ import { ChangePassword } from '@pages/popup/certify/change-password';
 import { SeedPhrase } from '@pages/popup/certify/seed-phrase';
 import { ViewSeedPhrase } from '@pages/popup/certify/view-seed-phrase';
 import { ConnectedApps } from '@pages/popup/certify/connected-apps';
-import AddAccountPage from '@pages/popup/certify/add-account-page';
 import AddressBook from '@pages/popup/certify/address-book';
 import AddAddress from '@pages/popup/certify/add-address';
-import { GoogleConnect, GoogleConnectFailed } from '@pages/popup/certify/google-login/connect';
 import { SecurityPrivacy } from '@pages/popup/certify/security-privacy';
 import { AboutAdena } from '@pages/popup/certify/about-adena';
-import { RevealPasswordPhrase } from '@pages/popup/certify/reveal-password-phrase';
-import { RevealPrivatePhrase } from '@pages/popup/certify/reveal-private-phrase';
-import { ExportPrivateKey } from '@pages/popup/certify/export-private-key';
 import { RemoveAccount } from '@pages/popup/certify/remove-account';
 import { ResetWallet } from '@pages/popup/certify/reset-wallet';
 import ChangeNetwork from '@pages/popup/certify/change-network';
@@ -65,6 +55,8 @@ import { ErrorContainer } from '@components/molecules';
 import { Header } from './header';
 import { Navigation } from './navigation';
 import LoadingMain from './loading-main';
+import { CreatePassword } from '@pages/popup/certify/create-password';
+import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 
 export const PopupRouter = (): JSX.Element => {
   return (
@@ -72,11 +64,6 @@ export const PopupRouter = (): JSX.Element => {
       <Header />
       <Routes>
         <Route path={RoutePath.Home} element={<WalletCreate />} />
-        <Route path={RoutePath.YourSeedPhrase} element={<YourSeedPhrase />} />
-        <Route path={RoutePath.ImportPrivateKey} element={<ImportPrivateKey />} />
-        <Route path={RoutePath.GenerateSeedPhrase} element={<GenerateSeedPhrase />} />
-        <Route path={RoutePath.CreatePassword} element={<CreatePassword />} />
-        <Route path={RoutePath.LaunchAdena} element={<LaunchAdena />} />
         <Route
           path={RoutePath.Wallet}
           element={
@@ -88,6 +75,9 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.EnterSeedPhrase} element={<EnterSeedPhrase />} />
         <Route path={RoutePath.Login} element={<Login />} />
         <Route path={RoutePath.ForgotPassword} element={<ForgotPassword />} />
+        <Route path={RoutePath.CreatePassword} element={<CreatePassword />} />
+        <Route path={RoutePath.LaunchAdena} element={<LaunchAdena />} />
+
         <Route path={RoutePath.Nft} element={<Nft />} />
         <Route path={RoutePath.Staking} element={<Staking />} />
         <Route path={RoutePath.Explore} element={<Explore />} />
@@ -128,19 +118,13 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.AddCustomNetwork} element={<AddCustomNetworkPage />} />
         <Route path={RoutePath.EditCustomNetwork} element={<EditCustomNetworkPage />} />
         <Route path={RoutePath.ChangeNetwork} element={<ChangeNetwork />} />
-        <Route path={RoutePath.AddAccount} element={<AddAccountPage />} />
         <Route path={RoutePath.AccountDetails} element={<AccountDetailsPage />} />
         <Route path={RoutePath.AddressBook} element={<AddressBook />} />
         <Route path={RoutePath.AddAddress} element={<AddAddress />} />
         <Route path={RoutePath.SecurityPrivacy} element={<SecurityPrivacy />} />
         <Route path={RoutePath.AboutAdena} element={<AboutAdena />} />
-        <Route path={RoutePath.RevealPasswordPhrase} element={<RevealPasswordPhrase />} />
-        <Route path={RoutePath.RevealPrivatePhrase} element={<RevealPrivatePhrase />} />
-        <Route path={RoutePath.ExportPrivateKey} element={<ExportPrivateKey />} />
         <Route path={RoutePath.RemoveAccount} element={<RemoveAccount />} />
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
-        <Route path={RoutePath.GoogleConnect} element={<GoogleConnect />} />
-        <Route path={RoutePath.GoogleConnectFailed} element={<GoogleConnectFailed />} />
       </Routes>
       <Navigation />
       <LoadingMain />
