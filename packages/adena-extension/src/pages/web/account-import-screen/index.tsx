@@ -10,6 +10,7 @@ import { useWalletContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
 const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
@@ -29,6 +30,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
             'You are about to import your private key on this device. We recommend connecting with a hardware wallet for higher security.'
           }
           onClickNext={onClickNext}
+          link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/import-wallet`}
         />
       )}
       {step === 'SET_PRIVATE_KEY' && (

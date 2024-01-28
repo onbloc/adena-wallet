@@ -6,6 +6,7 @@ import { WebMainAccountHeader } from '@components/pages/web/main-account-header'
 import WalletExportCheckPassword from './check-password';
 import WalletExportResult from './result';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
 const WalletExportScreen: React.FC = () => {
   const {
@@ -34,7 +35,15 @@ const WalletExportScreen: React.FC = () => {
     <WebMain>
       <WebMainAccountHeader account={currentAccount} onClickGoBack={onClickGoBack} />
       {walletExportState === 'INIT' && (
-        <SensitiveInfoStep desc={description} onClickNext={initWalletExport} />
+        <SensitiveInfoStep
+          desc={description}
+          onClickNext={initWalletExport}
+          link={
+            exportType === 'PRIVATE_KEY'
+              ? `${ADENA_DOCS_PAGE}/user-guide/sidebar-menu/settings/security-and-privacy/export-private-key`
+              : `${ADENA_DOCS_PAGE}/user-guide/sidebar-menu/settings/security-and-privacy/reveal-seed-phrase`
+          }
+        />
       )}
       {walletExportState === 'CHECK_PASSWORD' && (
         <WalletExportCheckPassword

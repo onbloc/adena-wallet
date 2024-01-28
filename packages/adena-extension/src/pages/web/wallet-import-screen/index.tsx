@@ -1,5 +1,6 @@
 import { ReactElement } from 'react';
 
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
 
@@ -25,6 +26,7 @@ const WalletImportScreen = (): ReactElement => {
             'You are about to import your seed phrase or private key on this device.\nWe recommend connecting with a hardware wallet for higher security.'
           }
           onClickNext={onClickNext}
+          link={`${ADENA_DOCS_PAGE}/user-guide/sign-in/import-wallet`}
         />
       )}
       {step === 'SET_SEED_PHRASE' && (
