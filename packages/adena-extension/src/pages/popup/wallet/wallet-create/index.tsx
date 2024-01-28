@@ -7,14 +7,15 @@ import { DoubleButton } from '@components/molecules';
 import { RoutePath } from '@types';
 import { getTheme } from '@styles/theme';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { existsPopups } from '@inject/message/methods';
 
 import GoogleSignInButton from './google-signin-button';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
 
 export const WalletCreate = (): JSX.Element => {
   const { navigate } = useAppNavigate();
+  const { openWebLink } = useLink();
 
   const { state } = useLoadAccounts();
 
@@ -34,55 +35,25 @@ export const WalletCreate = (): JSX.Element => {
   }, [state]);
 
   const onCreateButtonClick = (): void => {
-    navigate(RoutePath.YourSeedPhrase);
+    openWebLink(RoutePath.Home);
   };
 
-  const importWalletHandler = (): void => {
-    navigate(RoutePath.EnterSeedPhrase, {
-      state: {
-        from: 'wallet-create',
-      },
-    });
+  const onClickImportWallet = (): void => {
+    openWebLink(RoutePath.WebWalletImport);
   };
 
-  const ConnectLedgerHandler = async (): Promise<void> => {
-    const isPopup = await existsPopups();
-    if (isPopup) {
-      return;
-    }
-
-    const popupOption: chrome.tabs.CreateProperties = {
-      url: chrome.runtime.getURL(`register.html#${RoutePath.WebConnectLedger}`),
-      active: true,
-    };
-
-    window.close();
-    chrome.tabs.create(popupOption);
+  const onClickConnectLedger = async (): Promise<void> => {
+    openWebLink(RoutePath.WebConnectLedger);
   };
 
-  const googleLoginHandler = async (): Promise<void> => {
-    const isPopup = await existsPopups();
-    if (isPopup) {
-      return;
-    }
-
-    const popupOption: chrome.windows.CreateData = {
-      url: chrome.runtime.getURL(`popup.html#${RoutePath.GoogleConnect}`),
-      type: 'popup',
-      height: 590,
-      width: 380,
-      left: 800,
-      top: 300,
-    };
-
-    window.close();
-    chrome.windows.create(popupOption);
+  const onClickGoogleLogin = async (): Promise<void> => {
+    openWebLink(RoutePath.WebGoogleLogin);
   };
 
   return (
     <Wrapper>
       <Logo src={logo} alt='logo' />
-      <GoogleSignInButton onClick={googleLoginHandler} margin='auto auto 3px' />
+      <GoogleSignInButton onClick={onClickGoogleLogin} margin='auto auto 3px' />
       <PoweredByWeb3AuthWihDivider />
       <Button fullWidth onClick={onCreateButtonClick}>
         <Text type='body1Bold'>Create New Wallet</Text>
@@ -90,13 +61,13 @@ export const WalletCreate = (): JSX.Element => {
       <DoubleButton
         margin='12px 0px 0px'
         leftProps={{
-          onClick: importWalletHandler,
+          onClick: onClickImportWallet,
           text: 'Import Wallet',
           hierarchy: 'normal',
           fontType: 'body2Bold',
         }}
         rightProps={{
-          onClick: ConnectLedgerHandler,
+          onClick: onClickConnectLedger,
           text: 'Connect Ledger',
           hierarchy: 'normal',
           fontType: 'body2Bold',

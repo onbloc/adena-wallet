@@ -21,7 +21,7 @@ interface SideMenuContainerProps {
 }
 
 const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) => {
-  const { openLink } = useLink();
+  const { openLink, openWebLink } = useLink();
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
@@ -119,6 +119,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       changeAccount={changeAccount}
       movePage={movePage}
       openLink={onOpenLink}
+      openWebLink={openWebLink}
       lock={lock}
       close={close}
     />

@@ -19,6 +19,9 @@ describe('SideMenu Component', () => {
       openLink: () => {
         return;
       },
+      openWebLink: () => {
+        return;
+      },
       movePage: () => {
         return;
       },
