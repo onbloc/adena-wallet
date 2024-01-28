@@ -1,3 +1,4 @@
+import { validateAddress } from 'adena-module';
 import gnotLogo from '@assets/gnot-logo.svg';
 import contractLogo from '@assets/contract.svg';
 import addPkgLogo from '@assets/addpkg.svg';
@@ -169,9 +170,7 @@ export function numberWithCommas(value: number, fixed?: number): string {
 }
 
 export function addressValidationCheck(v: string): boolean {
-  const startStringCheck = /^g1/;
-  const atozAndNumberCheck = /^[a-z0-9]{40}$/;
-  return startStringCheck.test(v) && atozAndNumberCheck.test(v) ? true : false;
+  return validateAddress(v);
 }
 
 export function removeUgly(target: any): any {
