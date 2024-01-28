@@ -8,8 +8,6 @@ import { ForgotPassword } from '@pages/popup/certify/forgot-password';
 import { EnterSeedPhrase } from '@pages/popup/certify/enter-seed';
 import { Settings } from '@pages/popup/certify/settings';
 import { ChangePassword } from '@pages/popup/certify/change-password';
-import { SeedPhrase } from '@pages/popup/certify/seed-phrase';
-import { ViewSeedPhrase } from '@pages/popup/certify/view-seed-phrase';
 import { ConnectedApps } from '@pages/popup/certify/connected-apps';
 import AddressBook from '@pages/popup/certify/address-book';
 import AddAddress from '@pages/popup/certify/add-address';
@@ -87,8 +85,6 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ManageTokenAdded} element={<ManageTokenAdded />} />
         <Route path={RoutePath.Setting} element={<Settings />} />
         <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
-        <Route path={RoutePath.SettingSeedPhrase} element={<SeedPhrase />} />
-        <Route path={RoutePath.ViewSeedPhrase} element={<ViewSeedPhrase />} />
         <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
         <Route path={RoutePath.TransferInput} element={<TransferInput />} />
         <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />

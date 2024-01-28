@@ -35,7 +35,6 @@ export enum RoutePath {
   ApproveEstablish = '/approve/wallet/establish',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
-  ImportAccount = '/wallet/import-account',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageTokenAdded = '/wallet/manage-token/added',
@@ -48,9 +47,6 @@ export enum RoutePath {
   // settings
   Setting = '/settings',
   SettingChangePassword = '/settings/change-password',
-  SettingSeedPhrase = '/settings/seed-phrase',
-  ViewPrivateKey = '/settings/view-private-key',
-  ViewSeedPhrase = '/settings/view-seed-phrase',
   ConnectedApps = '/settings/connected-apps',
   ChangeNetwork = '/settings/change-network',
   AddCustomNetwork = '/settings/change-network/add',
@@ -129,7 +125,6 @@ export type RouteParams = {
   [RoutePath.ApproveEstablish]: null;
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
-  [RoutePath.ImportAccount]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;
@@ -158,9 +153,6 @@ export type RouteParams = {
 
   [RoutePath.Setting]: null;
   [RoutePath.SettingChangePassword]: null;
-  [RoutePath.SettingSeedPhrase]: null;
-  [RoutePath.ViewPrivateKey]: null;
-  [RoutePath.ViewSeedPhrase]: { mnemonic: string };
   [RoutePath.ConnectedApps]: null;
   [RoutePath.ChangeNetwork]: null;
   [RoutePath.AddCustomNetwork]: null;
