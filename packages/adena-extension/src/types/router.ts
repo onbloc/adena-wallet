@@ -14,18 +14,9 @@ export enum RoutePath {
   History = '/history',
   Create = '/create',
   ForgotPassword = '/login/forgot-password',
-
-  //phrase
   EnterSeedPhrase = '/popup/enter-seed',
   CreatePassword = '/popup/create-password',
   LaunchAdena = '/popup/launch-adena',
-  YourSeedPhrase = '/popup/your-seed-phrase',
-  ImportPrivateKey = '/popup/import-private-key',
-  GenerateSeedPhrase = '/popup/generate-seed-phrase',
-
-  //google login
-  GoogleConnect = '/google-login',
-  GoogleConnectFailed = '/google-login/failed',
 
   //wallet
   Wallet = '/wallet',
@@ -45,7 +36,6 @@ export enum RoutePath {
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',
   ImportAccount = '/wallet/import-account',
-  AddAccount = '/wallet/add-account',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
   ManageTokenAdded = '/wallet/manage-token/added',
@@ -68,10 +58,7 @@ export enum RoutePath {
   AddressBook = '/settings/address-book',
   AddAddress = '/settings/add-address',
   SecurityPrivacy = '/settings/security-privacy',
-  RevealPasswordPhrase = '/settings/security-privacy/reveal-password-phrase',
-  RevealPrivatePhrase = '/settings/security-privacy/reveal-private-phrase',
   AboutAdena = '/settings/about-adena',
-  ExportPrivateKey = '/settings/security-privacy/export-private-key',
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
 
@@ -101,20 +88,11 @@ export type RouteParams = {
   [RoutePath.History]: null;
   [RoutePath.Create]: null;
   [RoutePath.ForgotPassword]: null;
-
-  //phrase
   [RoutePath.EnterSeedPhrase]: {
     from: 'forgot-password' | 'wallet-create';
   } | null;
   [RoutePath.CreatePassword]: CreateAccountState;
   [RoutePath.LaunchAdena]: CreateAccountState;
-  [RoutePath.YourSeedPhrase]: { type: 'ADD_ACCOUNT' } | null;
-  [RoutePath.ImportPrivateKey]: null;
-  [RoutePath.GenerateSeedPhrase]: null;
-
-  //google login
-  [RoutePath.GoogleConnect]: null;
-  [RoutePath.GoogleConnectFailed]: null;
 
   //wallet
   [RoutePath.Wallet]: null;
@@ -152,7 +130,6 @@ export type RouteParams = {
   [RoutePath.ApproveChangingNetwork]: null;
   [RoutePath.ApproveAddingNetwork]: null;
   [RoutePath.ImportAccount]: null;
-  [RoutePath.AddAccount]: null;
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;
@@ -197,12 +174,7 @@ export type RouteParams = {
     addressList: AddressBookItem[];
   };
   [RoutePath.SecurityPrivacy]: null;
-  [RoutePath.RevealPasswordPhrase]: null;
-  [RoutePath.RevealPrivatePhrase]: null;
   [RoutePath.AboutAdena]: null;
-  [RoutePath.ExportPrivateKey]: {
-    accountId?: string;
-  } | null;
   [RoutePath.RemoveAccount]: null;
   [RoutePath.ResetWallet]: {
     from: 'forgot-password';

@@ -43,18 +43,14 @@ export const Header = (): JSX.Element => {
 
   const accountDetails = useMatch(RoutePath.AccountDetails);
   const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
-  const importPrivateKey = useMatch(RoutePath.ImportPrivateKey);
-  const yourSeedPhrase = useMatch(RoutePath.YourSeedPhrase);
   const createPassword = useMatch(RoutePath.CreatePassword);
   const launchAdena = useMatch(RoutePath.LaunchAdena);
+
   const forgotPassword = useMatch(RoutePath.ForgotPassword);
   const resetWallet = useMatch(RoutePath.ResetWallet);
-  const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
   const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
 
-  const googleConnect = useMatch(RoutePath.GoogleConnect);
-  const googleFailed = useMatch(RoutePath.GoogleConnectFailed);
 
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
@@ -65,7 +61,7 @@ export const Header = (): JSX.Element => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;
     }
-    if (yourSeedPhrase || enterSeedPhrase) {
+    if (enterSeedPhrase) {
       if (location?.state?.type === 'ADD_ACCOUNT') {
         return <ArrowTitleMenu />;
       }
@@ -74,26 +70,14 @@ export const Header = (): JSX.Element => {
     if (approveEstablish || approveTransaction || approveSign) {
       return <ApproveMenu />;
     }
-    if (location?.state?.type === 'GOOGLE' && createPassword) {
-      return <ProgressMenu showLogo progressLevel={'second'} hideArrow />;
-    }
     if (createPassword) {
       return <ProgressMenu progressLevel={'second'} />;
-    }
-    if (googleConnect || googleFailed) {
-      return <ProgressMenu showLogo progressLevel={'first'} hideArrow />;
     }
     if (launchAdena) {
       return <ProgressMenu progressLevel={'third'} hideArrow />;
     }
-    if (importPrivateKey) {
-      return <ArrowTitleMenu />;
-    }
     if (forgotPassword) {
       return <ArrowTitleMenu title={'Forgot Password?'} />;
-    }
-    if (generateSeedPhrase) {
-      return <ArrowTitleMenu title={'Generate Seed Phrase'} />;
     }
     if (approveHardwareWalletConnect || approveHardwareWalletSelectAccount) {
       return <TabMenu />;

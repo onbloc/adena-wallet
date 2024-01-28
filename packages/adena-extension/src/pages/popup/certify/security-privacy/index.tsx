@@ -13,17 +13,19 @@ import useLink from '@hooks/use-link';
 import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 
+type MenuType =
+  | RoutePath.SettingChangePassword
+  | RoutePath.RemoveAccount
+  | RoutePath.ResetWallet
+  | 'EXPORT_SEED_PHRASE'
+  | 'EXPORT_PRIVATE_KEY';
+
 const getMenuMakerInfo = (
   account: Account | null,
   availRemove: boolean,
 ): {
   title: string;
-  navigatePath:
-  | RoutePath.SettingChangePassword
-  | RoutePath.RevealPasswordPhrase
-  | RoutePath.ExportPrivateKey
-  | RoutePath.RemoveAccount
-  | RoutePath.ResetWallet;
+  navigatePath: MenuType
   mode: string;
   disabled: boolean;
 }[] => [
@@ -35,13 +37,13 @@ const getMenuMakerInfo = (
     },
     {
       title: 'Reveal Seed Phrase',
-      navigatePath: RoutePath.RevealPasswordPhrase,
+      navigatePath: 'EXPORT_SEED_PHRASE',
       mode: 'DEFAULT',
       disabled: !account || !isSeedAccount(account),
     },
     {
       title: 'Export Private Key',
-      navigatePath: RoutePath.ExportPrivateKey,
+      navigatePath: 'EXPORT_PRIVATE_KEY',
       mode: 'DEFAULT',
       disabled: !account || !hasPrivateKeyAccount(account),
     },
@@ -66,19 +68,13 @@ export const SecurityPrivacy = (): JSX.Element => {
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
 
-  const onClickMenuItem = useCallback((navigatePath:
-    RoutePath.SettingChangePassword
-    | RoutePath.RevealPasswordPhrase
-    | RoutePath.ExportPrivateKey
-    | RoutePath.RemoveAccount
-    | RoutePath.ResetWallet,
-  ) => {
+  const onClickMenuItem = useCallback((navigatePath: MenuType) => {
     if (
-      navigatePath === RoutePath.RevealPasswordPhrase ||
-      navigatePath === RoutePath.ExportPrivateKey
+      navigatePath === 'EXPORT_SEED_PHRASE' ||
+      navigatePath === 'EXPORT_PRIVATE_KEY'
     ) {
       const exportType = navigatePath ===
-        RoutePath.RevealPasswordPhrase ?
+        'EXPORT_SEED_PHRASE' ?
         'SEED_PHRASE' :
         'PRIVATE_KEY';
       AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType).then(() => {
