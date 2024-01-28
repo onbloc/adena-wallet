@@ -50,8 +50,8 @@ const AdvancedOptionScreen = (): ReactElement => {
           figure='primary'
           size='large'
           onClick={(): void => {
-            if (wallet) {
-              navigate(RoutePath.WebAddAccount);
+            if (wallet && wallet.hasHDWallet()) {
+              navigate(RoutePath.WebAccountAdd);
             } else {
               navigate(RoutePath.WebWalletCreate);
             }
@@ -63,7 +63,18 @@ const AdvancedOptionScreen = (): ReactElement => {
             <WebText type='title5'>Create New Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='secondary' size='large' style={{ width: 176 }}>
+        <WebButton
+          figure='secondary'
+          size='large'
+          style={{ width: 176 }}
+          onClick={(): void => {
+            if (wallet) {
+              navigate(RoutePath.WebAccountImport);
+            } else {
+              navigate(RoutePath.WebWalletImport);
+            }
+          }}
+        >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconImport} size={24} />
             <WebText type='title5'>Import Existing Wallet</WebText>

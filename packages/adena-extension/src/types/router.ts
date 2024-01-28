@@ -76,9 +76,6 @@ export enum RoutePath {
   // web
   WebConnectLedger = '/web/connect-ledger',
   WebConnectLedgerSelectAccount = '/web/connect-ledger/select-account',
-  WebConnectLedgerFinish = '/web/connect-ledger/finish',
-  WebConnectLedgerPassword = '/web/connect-ledger/password',
-  WebConnectLedgerAllSet = '/web/connect-ledger/all-set',
   WebAdvancedOption = '/web/option',
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
@@ -89,7 +86,8 @@ export enum RoutePath {
   WebWalletAllSet = '/web/all-set',
   WebAccountAddedComplete = '/web/account-added',
   WebQuestionnaire = '/web/questionnaire',
-  WebAddAccount = '/web/add-account',
+  WebAccountAdd = '/web/account-add',
+  WebAccountImport = '/web/account-import',
 }
 
 export type RouteParams = {
@@ -211,13 +209,6 @@ export type RouteParams = {
   [RoutePath.WebConnectLedgerSelectAccount]: {
     accounts: string[];
   };
-  [RoutePath.WebConnectLedgerFinish]: {
-    accounts: string[];
-  };
-  [RoutePath.WebConnectLedgerPassword]: {
-    accounts: string[];
-  };
-  [RoutePath.WebConnectLedgerAllSet]: null;
 
   [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebAdvancedOption]: null;
@@ -232,10 +223,15 @@ export type RouteParams = {
   [RoutePath.WebWalletCreate]: {
     doneQuestionnaire: boolean;
   } | null;
-  [RoutePath.WebAddAccount]: {
+  [RoutePath.WebAccountAdd]: {
     doneQuestionnaire: boolean;
   } | null;
-  [RoutePath.WebWalletImport]: null;
+  [RoutePath.WebAccountImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
+  [RoutePath.WebWalletImport]: {
+    doneQuestionnaire: boolean;
+  } | null;
   [RoutePath.WebWalletExport]: {
     doneQuestionnaire: boolean;
   } | null;
@@ -245,7 +241,9 @@ export type RouteParams = {
     callbackPath:
       | RoutePath.WebWalletCreate
       | RoutePath.WebGoogleLogin
-      | RoutePath.WebAddAccount
-      | RoutePath.WebWalletExport;
+      | RoutePath.WebAccountAdd
+      | RoutePath.WebWalletExport
+      | RoutePath.WebWalletImport
+      | RoutePath.WebAccountImport;
   };
 };

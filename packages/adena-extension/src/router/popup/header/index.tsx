@@ -52,9 +52,6 @@ export const Header = (): JSX.Element => {
   const generateSeedPhrase = useMatch(RoutePath.GenerateSeedPhrase);
   const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
-  const approveHardwareWalletFinish = useMatch(RoutePath.WebConnectLedgerFinish);
-  const approveHardwareWalletLedgerPassword = useMatch(RoutePath.WebConnectLedgerPassword);
-  const approveHardwareWalletLedgerAllSet = useMatch(RoutePath.WebConnectLedgerAllSet);
 
   const googleConnect = useMatch(RoutePath.GoogleConnect);
   const googleFailed = useMatch(RoutePath.GoogleConnectFailed);
@@ -98,13 +95,7 @@ export const Header = (): JSX.Element => {
     if (generateSeedPhrase) {
       return <ArrowTitleMenu title={'Generate Seed Phrase'} />;
     }
-    if (
-      approveHardwareWalletConnect ||
-      approveHardwareWalletSelectAccount ||
-      approveHardwareWalletFinish ||
-      approveHardwareWalletLedgerPassword ||
-      approveHardwareWalletLedgerAllSet
-    ) {
+    if (approveHardwareWalletConnect || approveHardwareWalletSelectAccount) {
       return <TabMenu />;
     }
     if (resetWallet) {

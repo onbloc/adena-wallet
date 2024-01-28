@@ -10,10 +10,12 @@ import welcomeJson from '@assets/web/lottie/welcome.json';
 import hardWallet from '@assets/web/hard-wallet.svg';
 import airgap from '@assets/web/airgap.svg';
 import thunder from '@assets/web/thunder.svg';
+import { useWalletContext } from '@hooks/use-context';
 
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const theme = useTheme();
+  const { wallet } = useWalletContext();
 
   const moveSetupAirgapScreen = useCallback(() => {
     navigate(RoutePath.WebSetupAirgap);
@@ -30,9 +32,11 @@ const LandingScreen = (): ReactElement => {
         />
       </View>
       <View style={{ rowGap: 16 }}>
-        <WebText type='headline1'>Welcome to Adena</WebText>
+        <WebText type='headline1'>{wallet ? 'Add Account' : 'Welcome to Adena'}</WebText>
         <WebText type='body2' color={theme.webNeutral._500}>
-          The only wallet you need for Gnoland with unparalleled security
+          {wallet
+            ? 'Select a method to add a new account to Adena.'
+            : 'The only wallet you need for Gnoland with unparalleled security'}
         </WebText>
       </View>
 
@@ -50,7 +54,12 @@ const LandingScreen = (): ReactElement => {
             <WebText type='title5'>Connect Hardware Wallet</WebText>
           </View>
         </WebButton>
-        <WebButton figure='secondary' size='large' style={{ width: 204 }} onClick={moveSetupAirgapScreen}>
+        <WebButton
+          figure='secondary'
+          size='large'
+          style={{ width: 204 }}
+          onClick={moveSetupAirgapScreen}
+        >
           <View style={{ height: 74, justifyContent: 'space-between' }}>
             <WebImg src={airgap} size={24} />
             <WebText type='title5'>Set Up Airgap Account</WebText>
