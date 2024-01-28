@@ -1,3 +1,4 @@
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
 
@@ -17,7 +18,7 @@ const StyledContainer = styled(View)`
   gap: 12px;
 `;
 
-const StyledItem = styled(Row)<{ showBlur: boolean }>`
+const StyledItem = styled(Row) <{ showBlur: boolean }>`
   position: relative;
   overflow: hidden;
   height: 40px;

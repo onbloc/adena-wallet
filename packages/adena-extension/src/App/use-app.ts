@@ -9,7 +9,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { useWalletContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import useScrollHistory from '@hooks/use-scroll-history';
-import { fetchHealth } from '@common/utils/client-utils';
+import { fetchHealth } from '@common/utils/fetch-utils';
 
 import { CommonState } from '@states';
 import { NetworkMetainfo } from '@types';

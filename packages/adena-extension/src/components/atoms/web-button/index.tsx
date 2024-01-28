@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
+import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 import styled from 'styled-components';
 
 import { WebFontType } from '@styles/theme';

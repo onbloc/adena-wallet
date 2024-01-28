@@ -11,9 +11,9 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import {
   createFaviconByHostname,
   decodeParameter,
-  fetchHealth,
   parseParameters,
 } from '@common/utils/client-utils';
+import { fetchHealth } from '@common/utils/fetch-utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { RoutePath } from '@types';
 import { validateInjectionData } from '@inject/message/methods';
