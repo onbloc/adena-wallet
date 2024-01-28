@@ -4,9 +4,9 @@ import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-screen';
 
-import GoogleLoginInitStep from './init-step';
 import GoogleLoginRequest from './request';
 import GoogleLoginRequestFail from './request-fail';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 
 const GoogleLoginScreen: React.FC = () => {
   const {
@@ -26,26 +26,24 @@ const GoogleLoginScreen: React.FC = () => {
   return (
     <WebMain>
       {googleLoginState === 'INIT' && (
-        <WebMainHeader
-          stepLength={stepLength}
-          currentStep={googleLoginStepNo[googleLoginState]}
-          onClickGoBack={onClickGoBack}
-        />
-      )}
-      {googleLoginState === 'INIT' && (
-        <GoogleLoginInitStep
-          initGoogleLogin={initGoogleLogin}
-        />
+        <>
+          <WebMainHeader
+            stepLength={stepLength}
+            currentStep={googleLoginStepNo[googleLoginState]}
+            onClickGoBack={onClickGoBack}
+          />
+          <SensitiveInfoStep
+            desc={
+              'You are about to construct a private key on your device using Web3Auth,\na third party service provider. This account will be accessible with your\nsocial logins.'
+            }
+            onClickNext={initGoogleLogin}
+          />
+        </>
       )}
       {googleLoginState === 'REQUEST_LOGIN' && (
-        <GoogleLoginRequest
-          requestGoogleLogin={requestGoogleLogin}
-          backStep={backStep}
-        />
+        <GoogleLoginRequest requestGoogleLogin={requestGoogleLogin} backStep={backStep} />
       )}
-      {googleLoginState === 'FAILED' && (
-        <GoogleLoginRequestFail retry={retry} />
-      )}
+      {googleLoginState === 'FAILED' && <GoogleLoginRequestFail retry={retry} />}
     </WebMain>
   );
 };
