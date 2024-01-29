@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TransferSummaryAddress, { TransferSummaryAddressProps } from './transfer-summary-address';
 
 describe('TransferSummaryAddress Component', () => {
@@ -14,7 +14,7 @@ describe('TransferSummaryAddress Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferSummaryAddress {...args} />
         </ThemeProvider>

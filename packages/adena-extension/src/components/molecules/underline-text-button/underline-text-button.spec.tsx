@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import { UnderlineTextButton, UnderlineTextButtonProps } from '.';
 
 describe('UnderlineTextButton Component', () => {
@@ -17,7 +17,7 @@ describe('UnderlineTextButton Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <UnderlineTextButton {...args} />
         </ThemeProvider>

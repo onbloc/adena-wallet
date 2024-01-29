@@ -15,13 +15,14 @@ interface TermsCheckboxProps {
   tabIndex: number;
   checkboxPos?: CheckboxPos;
   className?: string;
+  margin?: string;
   id?: string;
 }
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ margin?: string }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   width: 100%;
-  margin: auto 0px 10px;
+  margin: ${({ margin }): string => margin ?? '0px 0px 10px'};
   ${fonts.body2Reg};
 `;
 
@@ -32,7 +33,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   cursor: pointer;
   &:before {
     ${({ checkboxPos }): CSSProp =>
-      checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
+    checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
     width: 20px;
@@ -71,10 +72,11 @@ export const TermsCheckbox = ({
   tabIndex,
   checkboxPos = 'CENTER',
   className = '',
+  margin,
   id = '',
 }: TermsCheckboxProps): JSX.Element => {
   return (
-    <Wrapper className={className}>
+    <Wrapper className={className} margin={margin}>
       <Input
         id={id ? id : 'terms'}
         type='checkbox'

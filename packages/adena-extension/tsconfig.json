@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "jsx": "react",
+    "jsx": "react-jsx",
     "outDir": "./dist/",
     "noImplicitAny": true,
     "module": "esnext",
@@ -25,6 +25,7 @@
       "@router/*": ["src/router/*"],
       "@services/*": ["src/services/*"],
       "@repositories/*": ["src/repositories/*"],
+      "@resources/*": ["src/resources/*"],
       "@styles/*": ["src/styles/*"],
       "@components/*": ["src/components/*"],
       "@common/*": ["src/common/*"],

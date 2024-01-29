@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import WalletConnect, { WalletConnectProps } from './wallet-connect';
 
 describe('WalletConnect Component', () => {
@@ -15,15 +15,23 @@ describe('WalletConnect Component', () => {
       app: '',
       processing: false,
       done: false,
-      onClickConnect: () => { return },
-      onClickCancel: () => { return },
-      onResponse: () => { return; },
-      onTimeout: () => { return; },
+      onClickConnect: () => {
+        return;
+      },
+      onClickCancel: () => {
+        return;
+      },
+      onResponse: () => {
+        return;
+      },
+      onTimeout: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <WalletConnect {...args} />
         </ThemeProvider>

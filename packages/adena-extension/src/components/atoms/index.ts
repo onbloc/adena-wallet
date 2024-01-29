@@ -1,5 +1,4 @@
 export * from './common-full-content-layout';
-export * from './tab-container';
 export * from './portal';
 export * from './custom-network-input';
 export * from './copy-icon-button';
@@ -25,3 +24,12 @@ export * from './full-button-right-icon';
 export * from './hamburger-menu-button';
 export * from './skeleton-box';
 export * from './secure-textarea';
+export * from './base';
+// web
+export * from './web-text';
+export * from './web-img';
+export * from './web-button';
+export * from './web-main';
+export * from './web-check-box';
+export * from './web-input';
+export * from './web-error-text';

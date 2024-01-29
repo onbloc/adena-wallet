@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import { HighlightNumber, HighlightNumberProps } from '.';
 
 describe('HighlightNumber Component', () => {
@@ -14,7 +14,7 @@ describe('HighlightNumber Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <HighlightNumber {...args} />
         </ThemeProvider>

@@ -3,18 +3,20 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TransferLedgerReject, { TransferLedgerRejectProps } from './transfer-ledger-reject';
 
 describe('TransferLedgerReject Component', () => {
   it('TransferLedgerReject render', () => {
     const args: TransferLedgerRejectProps = {
-      onClickClose: () => { return; },
+      onClickClose: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferLedgerReject {...args} />
         </ThemeProvider>

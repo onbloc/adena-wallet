@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import NetworkList, { NetworkListProps } from './network-list';
 
 describe('NetworkList Component', () => {
@@ -11,13 +11,17 @@ describe('NetworkList Component', () => {
     const args: NetworkListProps = {
       currentNetworkId: 'test3',
       networkMetainfos: [],
-      changeNetwork: () => { return; },
-      moveEditPage: () => { return; },
+      changeNetwork: () => {
+        return;
+      },
+      moveEditPage: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NetworkList {...args} />
         </ThemeProvider>

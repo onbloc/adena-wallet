@@ -1,5 +1,5 @@
 import { NavigateOptions, useLocation, useNavigate } from 'react-router-dom';
-import { RouteParams } from '@router/path';
+import { RouteParams } from 'src/types/router';
 
 type NavigateProps<key extends keyof RouteParams> = key extends unknown
   ? null extends RouteParams[key]

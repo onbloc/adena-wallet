@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import NetworkListItem, { NetworkListItemProps } from './network-list-item';
 
 describe('NetworkListItem Component', () => {
@@ -25,13 +25,17 @@ describe('NetworkListItem Component', () => {
         apiUrl: 'https://api.adena.app',
         linkUrl: 'https://gnoscan.io',
       },
-      moveEditPage: () => { return; },
-      changeNetwork: () => { return; },
+      moveEditPage: () => {
+        return;
+      },
+      changeNetwork: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <NetworkListItem {...args} />
         </ThemeProvider>

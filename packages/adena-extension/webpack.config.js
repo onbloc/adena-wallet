@@ -9,6 +9,7 @@ const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const config = {
   devtool: 'cheap-module-source-map',
   entry: {
+    web: path.join(__dirname, './src/web.tsx'),
     popup: path.join(__dirname, './src/popup.tsx'),
     content: path.join(__dirname, './src/content.ts'),
     background: path.join(__dirname, './src/background.ts'),
@@ -51,7 +52,7 @@ const config = {
         exclude: /node_modules/,
       },
       {
-        test: /\.(png|jpe?g|svg)$/,
+        test: /\.(png|jpe?g|svg|gif)$/,
         loader: 'file-loader',
         options: {
           name: 'assets/[name].[ext]',
@@ -77,6 +78,7 @@ const config = {
       '@inject': path.resolve(__dirname, 'src/inject'),
       '@assets': path.resolve(__dirname, 'src/assets'),
       '@repositories': path.resolve(__dirname, 'src/repositories'),
+      '@resources': path.resolve(__dirname, 'src/resources'),
       '@migrates': path.resolve(__dirname, 'src/migrates'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@public': path.resolve(__dirname, 'public/'),
@@ -133,6 +135,11 @@ const config = {
           to: './resources',
         },
       ],
+    }),
+    new HtmlWebPackPlugin({
+      template: './public/web.html',
+      chunks: ['web'],
+      filename: 'register.html',
     }),
     new HtmlWebPackPlugin({
       template: './public/popup.html',

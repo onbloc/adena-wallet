@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TokenListItemBalance, { TokenListItemBalanceProps } from './token-list-item-balance';
 
 describe('TokenListItemBalance Component', () => {
@@ -17,7 +17,7 @@ describe('TokenListItemBalance Component', () => {
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TokenListItemBalance {...args} />
         </ThemeProvider>

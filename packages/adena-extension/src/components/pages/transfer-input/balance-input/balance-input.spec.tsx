@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import BalanceInput, { BalanceInputProps } from './balance-input';
 
 describe('BalanceInput Component', () => {
@@ -13,13 +13,17 @@ describe('BalanceInput Component', () => {
       amount: '132123123123',
       denom: 'GNOT',
       description: 'Insufficient balance',
-      onChangeAmount: () => { return; },
-      onClickMax: () => { return; },
+      onChangeAmount: () => {
+        return;
+      },
+      onClickMax: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <BalanceInput {...args} />
         </ThemeProvider>

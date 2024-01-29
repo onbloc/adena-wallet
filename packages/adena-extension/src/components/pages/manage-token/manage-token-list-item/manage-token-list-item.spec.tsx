@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import ManageTokenListItem, { ManageTokenListItemProps } from './manage-token-list-item';
 
 const token = {
@@ -22,12 +22,14 @@ describe('ManageTokenListItem Component', () => {
   it('ManageTokenListItem render', () => {
     const args: ManageTokenListItemProps = {
       token,
-      onToggleActiveItem: () => { return; },
+      onToggleActiveItem: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <ManageTokenListItem {...args} />
         </ThemeProvider>

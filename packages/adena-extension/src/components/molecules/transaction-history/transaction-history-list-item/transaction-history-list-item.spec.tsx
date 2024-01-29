@@ -3,8 +3,10 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
-import TransactionHistoryListItem, { TransactionHistoryListItemProps } from './transaction-history-list-item';
+import { GlobalPopupStyle } from '@styles/global-style';
+import TransactionHistoryListItem, {
+  TransactionHistoryListItemProps,
+} from './transaction-history-list-item';
 
 describe('TransactionHistoryListItem Component', () => {
   it('TransactionHistoryListItem render', () => {
@@ -21,12 +23,14 @@ describe('TransactionHistoryListItem Component', () => {
         denom: 'GNOT',
       },
       valueType: 'DEFAULT',
-      onClickItem: () => { return; },
+      onClickItem: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransactionHistoryListItem {...args} />
         </ThemeProvider>

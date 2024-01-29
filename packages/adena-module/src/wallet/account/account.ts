@@ -1,4 +1,5 @@
 import { KeyringType } from '../keyring/keyring';
+import { AirgapAccount } from './airgap-account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
 import { SingleAccount } from './single-account';
@@ -22,6 +23,7 @@ export interface AccountInfo {
   keyringId: string;
   hdPath?: number;
   publicKey: number[];
+  addressBytes?: number[];
 }
 
 export function makeAccount(accountData: AccountInfo) {
@@ -33,6 +35,8 @@ export function makeAccount(accountData: AccountInfo) {
     case 'PRIVATE_KEY':
     case 'WEB3_AUTH':
       return new SingleAccount(accountData);
+    case 'AIRGAP':
+      return new AirgapAccount(accountData);
     default:
       throw new Error('Invalid account type');
   }

@@ -1,4 +1,3 @@
-import { RoutePath } from '@router/path';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
@@ -9,7 +8,7 @@ import {
 } from '@common/validation';
 import { AdenaWallet } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { CreateAccountState, GoogleState, LedgerState, SeedState } from '@types';
+import { CreateAccountState, GoogleState, LedgerState, SeedState, RoutePath } from '@types';
 
 export type UseCreatePasswordReturn = {
   pwdState: {

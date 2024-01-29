@@ -4,9 +4,6 @@ import { AdenaWallet } from './wallet';
 const mnemonic =
   'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
 
-const mnemonic2 =
-  'lens balcony basic cherry half purchase balance soccer solar scissors process eager orchard fatigue rural retire approve crouch repair prepare develop clarify milk suffer';
-
 describe('create wallet by mnemonic', () => {
   it('create success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);

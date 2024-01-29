@@ -5,13 +5,12 @@ import LogoAdena from '@assets/logo-withIcon.svg';
 import { Icon } from '@components/atoms';
 import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
 import SideMenuLink from '@components/pages/router/side-menu-link/side-menu-link';
-import { RoutePath } from '@router/path';
 import IconAdd from '@assets/icon-add';
 import IconSetting from '@assets/icon-side-menu-setting.svg';
 import IconLock from '@assets/icon-side-menu-lock.svg';
 import IconRestore from '@assets/restore.svg';
 import IconHelp from '@assets/help-fill.svg';
-import { SideMenuProps } from '@types';
+import { SideMenuProps, RoutePath } from '@types';
 
 const SideMenu: React.FC<SideMenuProps> = ({
   locked,
@@ -19,6 +18,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
   accounts,
   movePage,
   openLink,
+  openWebLink,
   changeAccount,
   lock,
   close,
@@ -42,8 +42,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
   }, [close]);
 
   const onClickAddAccount = useCallback(() => {
-    movePage(RoutePath.AddAccount);
-  }, [movePage]);
+    openWebLink(RoutePath.Home);
+  }, [openWebLink]);
 
   const onClickRestoreWallet = useCallback(() => {
     movePage(RoutePath.EnterSeedPhrase);

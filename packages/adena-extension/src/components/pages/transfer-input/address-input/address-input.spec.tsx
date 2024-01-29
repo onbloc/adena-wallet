@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import AddressInput, { AddressInputProps } from './address-input';
 
 describe('AddressInput Component', () => {
@@ -17,14 +17,20 @@ describe('AddressInput Component', () => {
       selectedDescription: '(g1ff...jpae)',
       address: '',
       addressBookInfos: [],
-      onClickInputIcon: () => { return; },
-      onChangeAddress: () => { return; },
-      onClickAddressBook: () => { return; },
+      onClickInputIcon: () => {
+        return;
+      },
+      onChangeAddress: () => {
+        return;
+      },
+      onClickAddressBook: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <AddressInput {...args} />
         </ThemeProvider>

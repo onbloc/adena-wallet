@@ -10,9 +10,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { RoutePath } from '@router/path';
 
-import { SideMenuAccountInfo, TokenBalanceType } from '@types';
+import { SideMenuAccountInfo, TokenBalanceType, RoutePath } from '@types';
 import useLink from '@hooks/use-link';
 import { useQuery } from '@tanstack/react-query';
 
@@ -22,7 +21,7 @@ interface SideMenuContainerProps {
 }
 
 const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) => {
-  const { openLink } = useLink();
+  const { openLink, openWebLink } = useLink();
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
@@ -120,6 +119,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       changeAccount={changeAccount}
       movePage={movePage}
       openLink={onOpenLink}
+      openWebLink={openWebLink}
       lock={lock}
       close={close}
     />

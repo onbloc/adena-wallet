@@ -1,8 +1,10 @@
+import dayjs from 'dayjs';
+import { AdenaWallet, Wallet } from 'adena-module';
+
 import { WalletError } from '@common/errors/wallet/wallet-error';
-import { AdenaWallet } from 'adena-module';
-import { Wallet } from 'adena-module';
 import { WalletRepository } from '@repositories/wallet';
 import { encryptSha256Password } from '@common/utils/crypto-utils';
+import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 
 export class WalletService {
   private walletRepository: WalletRepository;
@@ -190,6 +192,19 @@ export class WalletService {
       await this.walletRepository.updateWalletPassword(password);
     }
     return true;
+  };
+
+  public isSkipQuestionnaire = async (): Promise<boolean> => {
+    const expiredDate = await this.walletRepository.getQuestionnaireExpiredDate();
+    if (!expiredDate) {
+      return false;
+    }
+    return dayjs(expiredDate).isBefore(new Date());
+  };
+
+  public updateQuestionnaireExpiredDate = async (): Promise<void> => {
+    const expiredDateTime = dayjs().add(QUESTIONNAIRE_EXPIRATION_MIN, 'minute').unix();
+    await this.walletRepository.updatedQuestionnaireExpiredDate(expiredDateTime);
   };
 
   public clear = async (): Promise<boolean> => {

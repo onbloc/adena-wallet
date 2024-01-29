@@ -3,7 +3,7 @@ import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
-import { GlobalStyle } from '@styles/global-style';
+import { GlobalPopupStyle } from '@styles/global-style';
 import TransferSummary, { TransferSummaryProps } from './transfer-summary';
 
 describe('TransferSummary Component', () => {
@@ -30,14 +30,20 @@ describe('TransferSummary Component', () => {
         value: '0.0048',
         denom: 'GNOT',
       },
-      onClickBack: () => { return; },
-      onClickCancel: () => { return; },
-      onClickSend: () => { return; },
+      onClickBack: () => {
+        return;
+      },
+      onClickCancel: () => {
+        return;
+      },
+      onClickSend: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
-        <GlobalStyle />
+        <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
           <TransferSummary {...args} />
         </ThemeProvider>
