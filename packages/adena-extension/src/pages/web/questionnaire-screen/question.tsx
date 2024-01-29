@@ -52,6 +52,13 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [retryTime, setRetryTime] = useState(0);
 
+  const isWarning = useMemo(() => {
+    if (!question) {
+      return false;
+    }
+    return question.answers.findIndex((answer, index) => answer.correct === false && selectedAnswers.includes(index)) > 0;
+  }, [question, selectedAnswers])
+
   const isRetry = useMemo(() => {
     return retryTime > 0;
   }, [retryTime]);
@@ -93,6 +100,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
       nextQuestion();
     }
     setSelectedAnswers([]);
+    setRetryTime(0);
   }, [availableNext]);
 
 
@@ -134,15 +142,17 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
         ))}
       </StyledAnswerBox>
 
-      <StyledWarningBox>
-        <WebImg src={IconInfo} size={20} />
-        <StyledWarningTextWrapper>
-          <WebText type='body6' color={theme.webWarning._100}>
-            {isRetry ? 'Incorrect answer! Please try again in ' : 'Incorrect answer! Please try again.'}
-          </WebText>
-          <WebText type='title6' color={theme.webWarning._100}>{isRetry ? `${retryTime} seconds.` : ''}</WebText>
-        </StyledWarningTextWrapper>
-      </StyledWarningBox>
+      {isWarning && (
+        <StyledWarningBox>
+          <WebImg src={IconInfo} size={20} />
+          <StyledWarningTextWrapper>
+            <WebText type='body6' color={theme.webWarning._100}>
+              {isRetry ? 'Incorrect answer! Please try again in ' : 'Incorrect answer! Please try again.'}
+            </WebText>
+            <WebText type='title6' color={theme.webWarning._100}>{isRetry ? `${retryTime} seconds.` : ''}</WebText>
+          </StyledWarningTextWrapper>
+        </StyledWarningBox>
+      )}
 
       <WebButton
         figure='primary'
