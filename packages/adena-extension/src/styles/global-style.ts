@@ -4,25 +4,25 @@ import mixins from './mixins';
 
 export const GlobalWebStyle = createGlobalStyle`
   @font-face {
-    font-family: 'Intel';
+    font-family: 'Inter';
     font-weight: 400;
-    src: url(../assets/fonts/Intel-Regular.ttf) format('ttf');
+    src: url(../assets/fonts/Inter-Regular.ttf) format('ttf');
   }
 
   @font-face {
-    font-family: 'Intel';
+    font-family: 'Inter';
     font-weight: 500;
-    src: url(../assets/fonts/Intel-Medium.ttf) format('ttf');
+    src: url(../assets/fonts/Inter-Medium.ttf) format('ttf');
   }
 
   @font-face {
-    font-family: 'Intel';
+    font-family: 'Inter';
     font-weight: 600;
-    src: url(../assets/fonts/Intel-SemiBold.ttf) format('ttf');
+    src: url(../assets/fonts/Inter-SemiBold.ttf) format('ttf');
   }
 
   * {
-    font-family: Intel, sans-serif;
+    font-family: Inter, sans-serif;
     box-sizing: border-box;
   }
 
