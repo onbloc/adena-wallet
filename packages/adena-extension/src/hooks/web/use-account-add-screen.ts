@@ -11,7 +11,6 @@ import useQuestionnaire from './use-questionnaire';
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
   setStep: React.Dispatch<React.SetStateAction<AccountAddStateType>>;
-  stepLength: number;
   onClickGoBack: () => void;
   onClickNext: () => void;
   addAccount: () => Promise<void>;
@@ -29,8 +28,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const [step, setStep] = useState<AccountAddStateType>(
     params?.doneQuestionnaire ? 'CREATE_ACCOUNT' : 'INIT',
   );
-
-  const stepLength = ableToSkipQuestionnaire ? 1 : 2;
 
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
@@ -75,7 +72,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   return {
     step,
     setStep,
-    stepLength,
     onClickGoBack,
     onClickNext,
     addAccount,
