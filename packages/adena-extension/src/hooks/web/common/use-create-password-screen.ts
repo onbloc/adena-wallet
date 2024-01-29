@@ -9,7 +9,7 @@ import {
   validateWrongPasswordLength,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useAdenaContext } from '@hooks/use-context';
 
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
@@ -36,8 +36,7 @@ export type UseCreatePasswordScreenReturn = {
 };
 
 export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
-  const { updateWallet } = useWalletContext();
-  const { walletService } = useAdenaContext();
+  const { walletService, accountService } = useAdenaContext();
   const { navigate, params } = useAppNavigate<RoutePath.WebCreatePassword>();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -107,28 +106,31 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     const { serializedWallet } = params;
     const wallet = await AdenaWallet.deserialize(serializedWallet, '');
     await walletService.saveWallet(wallet, password);
-    await updateWallet(wallet);
+    await accountService.changeCurrentAccount(wallet.currentAccount);
   };
 
-  const onChangePassword = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setInputs((input) => ({ ...input, [name]: value }));
-  }, []);
+  const onChangePassword = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setInputs({ ...inputs, [name]: value });
+    },
+    [inputs],
+  );
 
   const toggleTermState = useCallback((): void => {
     setTerms((prev: boolean) => !prev);
   }, []);
 
-  const onClickCreateButton = useCallback(async (): Promise<void> => {
+  const onClickCreateButton = async (): Promise<void> => {
     const validated = validateMatchPassword();
     if (!validated) {
       return;
     }
 
-    _saveWalletByPassword(password);
-
-    navigate(RoutePath.WebWalletAllSet);
-  }, [password]);
+    _saveWalletByPassword(password).then(() => {
+      navigate(RoutePath.WebWalletAllSet);
+    });
+  };
 
   const onKeyDownInput = useCallback(
     () => (e: React.KeyboardEvent<HTMLInputElement>): void => {

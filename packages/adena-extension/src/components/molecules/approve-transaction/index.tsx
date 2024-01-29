@@ -98,7 +98,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
 
       <div className='transaction-data-wrapper'>
-        <Button className='visible-button' onClick={(): void => onToggleTransactionData(!opened)}>
+        <Button hierarchy='custom' bgColor='transparent' className='visible-button' onClick={(): void => onToggleTransactionData(!opened)}>
           {opened ? (
             <>
               <>Hide Transaction Data</>
