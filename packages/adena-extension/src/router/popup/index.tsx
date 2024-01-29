@@ -55,6 +55,7 @@ import { Navigation } from './navigation';
 import LoadingMain from './loading-main';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
+import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
 
 export const PopupRouter = (): JSX.Element => {
   return (
@@ -105,7 +106,8 @@ export const PopupRouter = (): JSX.Element => {
           path={RoutePath.ApproveSignTransactionLoading}
           element={<ApproveSignTransactionLedgerLoading />}
         />
-
+        <Route path={RoutePath.ApproveSignFailed} element={<ApproveSignFailedScreen />} />
+        <Route path={RoutePath.AboutAdena} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />

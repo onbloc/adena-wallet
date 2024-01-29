@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Document, Account, isLedgerAccount } from 'adena-module';
+import { Document, Account, isLedgerAccount, isAirgapAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 
 import { ApproveTransaction } from '@components/molecules';
@@ -104,6 +104,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isAirgapAccount(currentAccount)) {
+        navigate(RoutePath.ApproveSignFailed);
+        return;
+      }
+
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();

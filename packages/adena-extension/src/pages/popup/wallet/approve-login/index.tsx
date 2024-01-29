@@ -16,6 +16,8 @@ import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import LoadingApproveTransaction from './loading-approve-transaction';
 import mixins from '@styles/mixins';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { isAirgapAccount } from 'adena-module';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -32,6 +34,7 @@ export const ApproveLogin = (): JSX.Element => {
   const { initWallet } = useWalletContext();
   const [, setState] = useRecoilState(WalletState.state);
   const { state, loadAccounts } = useLoadAccounts();
+  const { currentAccount } = useCurrentAccount();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<PasswordValidationError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -99,25 +102,40 @@ export const ApproveLogin = (): JSX.Element => {
   const redirect = (): void => {
     switch (requestData?.type as MessageKeyType | undefined) {
       case 'DO_CONTRACT':
+        if (currentAccount === null || isAirgapAccount(currentAccount)) {
+          navigate(RoutePath.ApproveSignFailed);
+          return;
+        }
         navigate(RoutePath.ApproveTransaction + location.search, { state: { requestData } });
-        break;
+        return;
+      case 'SIGN_AMINO':
+        if (currentAccount === null || isAirgapAccount(currentAccount)) {
+          navigate(RoutePath.ApproveSignFailed);
+          return;
+        }
+        navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
+        return;
+      case 'SIGN_TX':
+        if (currentAccount === null || isAirgapAccount(currentAccount)) {
+          navigate(RoutePath.ApproveSignFailed);
+          return;
+        }
+        navigate(RoutePath.ApproveSignTransaction + location.search, { state: { requestData } });
+        return;
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
-        break;
-      case 'SIGN_AMINO':
-        navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
-        break;
+        return;
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
-        break;
+        return;
       case 'SWITCH_NETWORK':
         navigate(RoutePath.ApproveChangingNetwork + location.search, { state: { requestData } });
-        break;
+        return;
       default:
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData),
         );
-        break;
+        return;
     }
   };
 
