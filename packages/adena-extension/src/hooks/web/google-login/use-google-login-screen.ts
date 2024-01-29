@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseGoogleLoginReturn = {
   googleLoginState: GoogleLoginStateType;
@@ -22,15 +23,13 @@ export type GoogleLoginStateType = 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
 const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { walletService } = useAdenaContext();
   const { navigate, params } = useAppNavigate<RoutePath.WebGoogleLogin>();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
 
   const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(
     params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT',
   );
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const stepInfo = useMemo(() => {
     const googleLoginStepNo: Record<GoogleLoginStateType, number> = ableToSkipQuestionnaire

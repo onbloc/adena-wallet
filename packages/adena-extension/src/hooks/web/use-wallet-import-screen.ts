@@ -3,6 +3,7 @@ import { AdenaWallet, EnglishMnemonic, PrivateKeyKeyring, SingleAccount } from '
 
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletImportReturn = {
   isValidForm: boolean;
@@ -24,6 +25,7 @@ export type WalletImportStateType = 'INIT' | 'SET_SEED_PHRASE';
 
 const useWalletImportScreen = (): UseWalletImportReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletImport>();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
 
   const [step, setStep] = useState<WalletImportStateType>(
     params?.doneQuestionnaire ? 'SET_SEED_PHRASE' : 'INIT',
@@ -51,9 +53,6 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   }, [inputValue, inputType]);
 
   const isValidForm = !!inputValue && !errMsg;
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const stepLength = ableToSkipQuestionnaire ? 3 : 4;
   const walletImportStepNo = {

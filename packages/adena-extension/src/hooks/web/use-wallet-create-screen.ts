@@ -5,6 +5,7 @@ import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletCreateReturn = {
   seeds: string;
@@ -23,6 +24,7 @@ export type WalletCreateStateType = 'INIT' | 'GET_SEED_PHRASE';
 
 const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletCreate>();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
 
@@ -31,9 +33,6 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
   );
 
   const seeds = useMemo(() => AdenaWallet.generateMnemonic(), []);
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const stepLength = ableToSkipQuestionnaire ? 3 : 4;
   const walletCreateStepNo = {

@@ -41,6 +41,7 @@ describe('serialized wallet migration V004', () => {
     expect(result.data.ACCOUNT_NAMES).toEqual({});
     expect(result.data.ESTABLISH_SITES).toEqual({});
     expect(result.data.ADDRESS_BOOK).toEqual([]);
+    expect(result.data.QUESTIONNAIRE_EXPIRED_DATE).toEqual(null);
   });
 
   it('up password success', async () => {

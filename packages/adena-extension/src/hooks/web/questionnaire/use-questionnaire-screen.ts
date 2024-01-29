@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { Question, RoutePath } from '@types';
 import QuestionData from '@resources/questions/questions.json';
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseQuestionnaireScreenReturn = {
   questionnaireState: QuestionnaireStateType;
@@ -38,6 +39,7 @@ export const questionnaireStep: Record<
 
 const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebQuestionnaire>();
+  const { doneQuestionnaire } = useQuestionnaire();
   const [questionnaireState, setQuestionnaireState] = useState<QuestionnaireStateType>('INIT');
   const [questionIndex, setQuestionIndex] = useState(1);
 
@@ -66,7 +68,9 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   }, [questions, questionIndex]);
 
   const completeQuestion = useCallback(() => {
-    navigate(callbackPath, { state: { doneQuestionnaire: true } });
+    doneQuestionnaire().then(() => {
+      navigate(callbackPath, { state: { doneQuestionnaire: true } });
+    });
   }, [callbackPath]);
 
   const backStep = useCallback(() => {

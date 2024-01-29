@@ -7,6 +7,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -26,15 +27,13 @@ export type WalletExportStateType = 'INIT' | 'CHECK_PASSWORD' | 'RESULT';
 const useWalletExportScreen = (): UseWalletExportReturn => {
   const { currentAccount } = useCurrentAccount();
   const { walletService } = useAdenaContext();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [exportType, setExportType] = useState<ExportType>('NONE');
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletExport>();
   const [walletExportState, setWalletExportState] = useState<WalletExportStateType>(
     params?.doneQuestionnaire ? 'CHECK_PASSWORD' : 'INIT',
   );
   const [exportData, setExportData] = useState<string | null>(null);
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const _initExportType = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();

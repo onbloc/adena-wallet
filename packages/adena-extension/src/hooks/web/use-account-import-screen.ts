@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useQuery } from '@tanstack/react-query';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useQuestionnaire from './use-questionnaire';
 
 export type UseAccountImportReturn = {
   isValidForm: boolean;
@@ -27,6 +28,7 @@ export type AccountImportStateType = 'INIT' | 'SET_PRIVATE_KEY';
 
 const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImportReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebAccountImport>();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
 
@@ -67,9 +69,6 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   );
 
   const isValidForm = !!privateKey && !!keyring && !errMsg;
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const stepLength = ableToSkipQuestionnaire ? 3 : 4;
   const accountImportStepNo = {

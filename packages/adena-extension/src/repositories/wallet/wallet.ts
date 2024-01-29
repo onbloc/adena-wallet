@@ -6,7 +6,7 @@ import {
   encryptSha256Password,
 } from '@common/utils/crypto-utils';
 
-type LocalValueType = 'SERIALIZED' | 'ENCRYPTED_STORED_PASSWORD';
+type LocalValueType = 'SERIALIZED' | 'ENCRYPTED_STORED_PASSWORD' | 'QUESTIONNAIRE_EXPIRED_DATE';
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -35,6 +35,7 @@ export class WalletRepository {
   public deleteSerializedWallet = async (): Promise<boolean> => {
     await this.localStorage.remove('SERIALIZED');
     await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
+    await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE');
     return true;
   };
 
@@ -91,5 +92,18 @@ export class WalletRepository {
 
   public updateStoragePassword = (password: string): void => {
     this.localStorage.updatePassword(password);
+  };
+
+  public getQuestionnaireExpiredDate = async (): Promise<number | null> => {
+    const expiredDateTime = await this.localStorage.get('QUESTIONNAIRE_EXPIRED_DATE');
+    console.log('expiredDateTime', expiredDateTime);
+    if (!expiredDateTime) {
+      return null;
+    }
+    return Number(expiredDateTime);
+  };
+
+  public updatedQuestionnaireExpiredDate = async (expiredDateTime: number): Promise<void> => {
+    await this.localStorage.set('QUESTIONNAIRE_EXPIRED_DATE', expiredDateTime);
   };
 }

@@ -30,6 +30,7 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
         NETWORKS: this.migrateNetworks(previous.NETWORKS),
         ACCOUNT_TOKEN_METAINFOS: this.migrateAccountTokenMetainfo(previous.ACCOUNT_TOKEN_METAINFOS),
         ESTABLISH_SITES: this.migrateEstablishSites(previous.ESTABLISH_SITES),
+        QUESTIONNAIRE_EXPIRED_DATE: null,
       },
     };
   }

@@ -14,6 +14,7 @@ export type StorageModelDataV005 = {
   ESTABLISH_SITES: EstablishSitesModelV005;
   ADDRESS_BOOK: AddressBookModelV005;
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV005;
+  QUESTIONNAIRE_EXPIRED_DATE: QuestionnaireExpiredDateModelV005;
 };
 
 export type NetworksModelV005 = {
@@ -37,6 +38,8 @@ export type CurrentChainIdModelV005 = string;
 export type CurrentNetworkIdModelV005 = string;
 
 export type SerializedModelV005 = string;
+
+export type QuestionnaireExpiredDateModelV005 = number | null;
 
 export type WalletModelV005 = {
   accounts: AccountDataModelV005[];

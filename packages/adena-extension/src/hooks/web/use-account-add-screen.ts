@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import useQuestionnaire from './use-questionnaire';
 
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
@@ -20,6 +21,7 @@ export type AccountAddStateType = 'INIT' | 'CREATE_ACCOUNT';
 
 const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebAccountAdd>();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { resetNetworkConnection } = useNetwork();
@@ -27,9 +29,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const [step, setStep] = useState<AccountAddStateType>(
     params?.doneQuestionnaire ? 'CREATE_ACCOUNT' : 'INIT',
   );
-
-  // TODO
-  const ableToSkipQuestionnaire = false;
 
   const stepLength = ableToSkipQuestionnaire ? 1 : 2;
 
