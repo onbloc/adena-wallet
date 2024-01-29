@@ -103,6 +103,12 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
     setRetryTime(0);
   }, [availableNext]);
 
+  const onClickBack = useCallback(() => {
+    setSelectedAnswers([]);
+    setRetryTime(0);
+    backStep()
+  }, [backStep]);
+
 
   useEffect(() => {
     function decreaseRetryTime(): void {
@@ -120,7 +126,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
       <WebMainHeader
         currentStep={1}
         stepLength={4}
-        onClickGoBack={backStep}
+        onClickGoBack={onClickBack}
       />
 
       <StyledMessageBox>
