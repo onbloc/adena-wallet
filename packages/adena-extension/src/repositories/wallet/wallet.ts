@@ -96,7 +96,6 @@ export class WalletRepository {
 
   public getQuestionnaireExpiredDate = async (): Promise<number | null> => {
     const expiredDateTime = await this.localStorage.get('QUESTIONNAIRE_EXPIRED_DATE');
-    console.log('expiredDateTime', expiredDateTime);
     if (!expiredDateTime) {
       return null;
     }
