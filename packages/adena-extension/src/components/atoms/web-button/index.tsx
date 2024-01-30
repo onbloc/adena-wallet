@@ -6,18 +6,18 @@ import IconRight from '@assets/web/chevron-right.svg';
 
 import { WebImg } from '../web-img';
 import { WebText } from '../web-text';
-import { Row } from '../base';
+import { Row, View } from '../base';
 
 type WebButtonProps = {
   size: 'full' | 'large' | 'small';
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
 } & (
-    | { text: string; rightIcon?: 'chevronRight' }
-    | {
+  | { text: string; rightIcon?: 'chevronRight' }
+  | {
       children: ReactNode;
     }
-  ) &
+) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
@@ -27,7 +27,7 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 24px')};
   display: flex;
   flex-direction: row;
-  width: ${({ size }): string => size === 'full' ? '100%' : 'auto'};
+  width: ${({ size }): string => (size === 'full' ? '100%' : 'auto')};
   justify-content: center;
   align-items: center;
 
@@ -96,17 +96,22 @@ const StyledButtonQuaternary = styled(StyledButtonBase)`
   border: 1px solid #212429;
 
   :hover {
-    color: #FFF;
+    color: #fff;
     background: rgba(255, 255, 255, 0.08);
   }
 
   :active {
-    color: #FFF;
+    color: #fff;
     background: rgba(255, 255, 255, 0.08);
   }
 `;
 
-export const WebButton = ({ figure, textType = 'title4', children, ...rest }: WebButtonProps): ReactElement => {
+export const WebButton = ({
+  figure,
+  textType = 'title4',
+  children,
+  ...rest
+}: WebButtonProps): ReactElement => {
   let StyledComponent;
   switch (figure) {
     case 'secondary':
@@ -127,9 +132,15 @@ export const WebButton = ({ figure, textType = 'title4', children, ...rest }: We
   return (
     <StyledComponent {...rest}>
       {'text' in rest ? (
-        <Row>
-          <WebText type={textType}>{rest.text}</WebText>
-          {rest.rightIcon === 'chevronRight' && <WebImg src={IconRight} size={24} />}
+        <Row style={{ alignItems: 'flex-end' }}>
+          <WebText type={textType} style={{ padding: '0 8px' }}>
+            {rest.text}
+          </WebText>
+          {rest.rightIcon === 'chevronRight' && (
+            <View style={{ margin: '0 -4px' }}>
+              <WebImg src={IconRight} size={24} />
+            </View>
+          )}
         </Row>
       ) : (
         children

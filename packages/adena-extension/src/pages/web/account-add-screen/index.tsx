@@ -10,13 +10,13 @@ import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
 const AccountAddScreen = (): ReactElement => {
   const useAccountAddScreenReturn = useAccountAddScreen();
-  const { step, onClickGoBack, stepLength, onClickNext } = useAccountAddScreenReturn;
+  const { step, onClickGoBack, onClickNext } = useAccountAddScreenReturn;
 
   return (
     <WebMain>
       {step === 'INIT' && (
         <>
-          <WebMainHeader stepLength={stepLength} onClickGoBack={onClickGoBack} currentStep={0} />
+          <WebMainHeader stepLength={0} onClickGoBack={onClickGoBack} />
           <SensitiveInfoStep
             desc='You are about to add a new private key derived from your existing seed phrase. Be sure to store it in a safe place.'
             onClickNext={onClickNext}

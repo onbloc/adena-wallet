@@ -8,6 +8,7 @@ import { Pressable, Row, View, WebImg } from '@components/atoms';
 const StyledContainer = styled(Row)`
   width: 100%;
   justify-content: space-between;
+  padding-bottom: 16px;
 `;
 
 const StyledDot = styled(View) <{ selected: boolean }>`
