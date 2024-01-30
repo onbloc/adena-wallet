@@ -19,6 +19,10 @@ const StyledDot = styled(View) <{ selected: boolean }>`
     selected ? theme.webPrimary._100 : 'rgba(0, 89, 255, 0.32)'};
 `;
 
+const StyledEmpty = styled(View)`
+  width: 24px;
+`;
+
 export type WebMainHeaderProps = {
   stepLength: number;
   onClickGoBack: () => void;
@@ -47,7 +51,7 @@ export const WebMainHeader = ({
           ))}
         </Row>
       )}
-      <View />
+      <StyledEmpty />
     </StyledContainer>
   );
 };

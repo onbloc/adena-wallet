@@ -8,6 +8,7 @@ import IconCheck from '@assets/web/web-check-circle.svg';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
+  height: 350px;
 `;
 
 const StyledMessageBox = styled(View)`

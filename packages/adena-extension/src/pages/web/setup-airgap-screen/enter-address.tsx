@@ -7,6 +7,7 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 
 const StyledContainer = styled(View)`
   width: 416px;
+  height: 350px;
   row-gap: 24px;
 `;
 
@@ -26,7 +27,7 @@ interface StyledInputProps {
   placeholder: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
-const StyledInput = styled(WebInput)<StyledInputProps>`
+const StyledInput = styled(WebInput) <StyledInputProps>`
   border: ${({ theme, error }): string => (error ? `1px solid ${theme.webError._200}` : '')};
   background-color: ${({ theme, error }): string => (error ? theme.webError._300 : '')};
 
@@ -79,6 +80,7 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
           type='text'
           name='address'
           placeholder='Account Address'
+          autoComplete='off'
           onChange={onChangeAddressInput}
         />
         {errorMessage && <WebErrorText text={errorMessage} />}
