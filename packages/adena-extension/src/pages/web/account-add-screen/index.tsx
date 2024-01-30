@@ -8,6 +8,8 @@ import GetMnemonicStep from './create-account-step';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
+const description = 'This will generate a seed phrase on your device. Only proceed if you \nunderstand how to safely store your seed phrase.';
+
 const AccountAddScreen = (): ReactElement => {
   const useAccountAddScreenReturn = useAccountAddScreen();
   const { step, onClickGoBack, onClickNext } = useAccountAddScreenReturn;
@@ -18,9 +20,9 @@ const AccountAddScreen = (): ReactElement => {
         <>
           <WebMainHeader stepLength={0} onClickGoBack={onClickGoBack} />
           <SensitiveInfoStep
-            desc='You are about to add a new private key derived from your existing seed phrase. Be sure to store it in a safe place.'
-            onClickNext={onClickNext}
+            desc={description}
             link={`${ADENA_DOCS_PAGE}/user-guide/sidebar-menu/add-account`}
+            onClickNext={onClickNext}
           />
         </>
       )}

@@ -36,7 +36,7 @@ export const SensitiveInfoStep = ({
       <View style={{ rowGap: 24, alignItems: 'flex-start' }}>
         <WebImg src={IconAlert} />
         <StyledMessageBox>
-          <WebText type='headline3'>Sensitive Information Ahead</WebText>
+          <WebText type='headline2'>Sensitive Information Ahead</WebText>
           <WebText type='body4' color={theme.webNeutral._500}>
             {desc}
           </WebText>
