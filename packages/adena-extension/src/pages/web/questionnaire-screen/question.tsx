@@ -6,6 +6,7 @@ import { Question } from '@types';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
 import IconInfo from '@assets/web/info.svg';
+import RollingNumber from '@components/atoms/rolling-number';
 
 const StyledContainer = styled(View)`
   width: 416px;
@@ -37,6 +38,12 @@ const StyledWarningTextWrapper = styled(Row)`
   align-items: center;
 `;
 
+const StyledWarningDescriptionWrapper = styled(Row)`
+  margin-left: 1px;
+  justify-content: flex-start;
+  align-items: center;
+`;
+
 interface QuestionnaireQuestionProps {
   question: Question | null;
   nextQuestion: () => void;
@@ -49,15 +56,26 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   backStep,
 }) => {
   const theme = useTheme();
-  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
   const [retryTime, setRetryTime] = useState(0);
 
-  const isWarning = useMemo(() => {
+  const selectedAnswer = useMemo(() => {
     if (!question) {
+      return null;
+    }
+    const selectedAnswer = question.answers.find((_, index) => selectedAnswerIndex === index);
+    if (!selectedAnswer) {
+      return null;
+    }
+    return selectedAnswer;
+  }, [question, selectedAnswerIndex])
+
+  const isWarning = useMemo(() => {
+    if (!selectedAnswer) {
       return false;
     }
-    return question.answers.findIndex((answer, index) => answer.correct === false && selectedAnswers.includes(index)) > 0;
-  }, [question, selectedAnswers])
+    return selectedAnswer.correct === false;
+  }, [selectedAnswer])
 
   const isRetry = useMemo(() => {
     return retryTime > 0;
@@ -67,9 +85,8 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
     if (!question) {
       return false;
     }
-    const correctAnswer = question.answers.find((answer, index) => answer.correct && selectedAnswers.includes(index));
-    return correctAnswer ? true : false;
-  }, [question, selectedAnswers]);
+    return selectedAnswer?.correct === true;
+  }, [question, selectedAnswer]);
 
   const questionTitle = useMemo(() => {
     if (!question) {
@@ -89,22 +106,20 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
     if (retryTime > 0) {
       return;
     }
-    if (!selectedAnswers.includes(index)) {
-      setSelectedAnswers([...selectedAnswers, index]);
-      setRetryTime(3);
-    }
-  }, [retryTime, selectedAnswers]);
+    setSelectedAnswerIndex(index);
+    setRetryTime(3);
+  }, [retryTime]);
 
   const onClickNextButton = useCallback(() => {
     if (availableNext) {
       nextQuestion();
     }
-    setSelectedAnswers([]);
+    setSelectedAnswerIndex(null);
     setRetryTime(0);
   }, [availableNext]);
 
   const onClickBack = useCallback(() => {
-    setSelectedAnswers([]);
+    setSelectedAnswerIndex(null);
     setRetryTime(0);
     backStep()
   }, [backStep]);
@@ -142,7 +157,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
             key={index}
             correct={answer.correct}
             answer={answer.answer}
-            selected={selectedAnswers.includes(index)}
+            selected={selectedAnswerIndex === index}
             onClick={(): void => selectAnswer(index)}
           />
         ))}
@@ -155,7 +170,12 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
             <WebText type='body6' color={theme.webWarning._100}>
               {isRetry ? 'Incorrect answer! Please try again in ' : 'Incorrect answer! Please try again.'}
             </WebText>
-            <WebText type='title6' color={theme.webWarning._100}>{isRetry ? `${retryTime} seconds.` : ''}</WebText>
+            {isRetry && (
+              <StyledWarningDescriptionWrapper>
+                <RollingNumber type='title6' height={16} color={theme.webWarning._100} value={retryTime} />
+                <WebText type='title6' color={theme.webWarning._100}> seconds.</WebText>
+              </StyledWarningDescriptionWrapper>
+            )}
           </StyledWarningTextWrapper>
         </StyledWarningBox>
       )}

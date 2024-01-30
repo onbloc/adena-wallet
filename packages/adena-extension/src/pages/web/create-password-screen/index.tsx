@@ -3,12 +3,14 @@ import styled, { useTheme } from 'styled-components';
 
 import {
   WebInput,
-  ErrorText,
   WebMain,
   View,
   WebText,
   Pressable,
   WebButton,
+  Row,
+  WebImg,
+  WebErrorText,
 } from '@components/atoms';
 import { TermsCheckbox } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -18,13 +20,32 @@ import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
+import IconConfirm from '@assets/web/confirm-check.svg';
+
+const StyledContainer = styled(View)`
+  height: 330px;
+  row-gap: 24px;
+  align-items: flex-start;
+`;
+
 const StyledMessageBox = styled(View)`
+  width: 100%;
   row-gap: 16px;
 `;
 
-const StyledInputBox = styled(View)`
+const StyledInputContainer = styled(View)`
   row-gap: 16px;
-  width: 384px;
+  width: 100%;
+`;
+
+const StyledInputBox = styled(View)`
+  row-gap: 12px;
+  width: 100%;
+`;
+
+const StyledInputWrapper = styled(Row)`
+  width: 416px;
+  gap: 12px;
 `;
 
 const CreatePasswordScreen = (): JSX.Element => {
@@ -39,61 +60,77 @@ const CreatePasswordScreen = (): JSX.Element => {
   }, [openLink]);
 
   return (
-    <WebMain>
+    <WebMain style={{ width: 552 }}>
       <WebMainHeader
         stepLength={params.stepLength}
         currentStep={params.stepLength - 1}
         onClickGoBack={goBack}
       />
 
-      <StyledMessageBox>
-        <WebText type='headline3'>Create a password</WebText>
-        <WebText type='body4' color={theme.webNeutral._500}>
-          This will be used to unlock your wallet.
-        </WebText>
-      </StyledMessageBox>
+      <StyledContainer>
+        <StyledMessageBox>
+          <WebText type='headline3'>Create a password</WebText>
+          <WebText type='body4' color={theme.webNeutral._500}>
+            This will be used to unlock your wallet.
+          </WebText>
+        </StyledMessageBox>
 
-      <StyledInputBox>
-        <WebInput
-          type='password'
-          name='password'
-          placeholder='Password'
-          onChange={passwordState.onChange}
-          onKeyDown={onKeyDown}
-          error={passwordState.error}
-          ref={passwordState.ref}
+        <StyledInputContainer>
+          <StyledInputBox>
+            <StyledInputWrapper>
+              <WebInput
+                type='password'
+                name='password'
+                placeholder='Password'
+                style={{ width: 384 }}
+                onChange={passwordState.onChange}
+                onKeyDown={onKeyDown}
+                error={passwordState.error}
+                ref={passwordState.ref}
+              />
+              {passwordState.confirm && (<WebImg src={IconConfirm} size={20} />)}
+            </StyledInputWrapper>
+            {passwordState.errorMessage && <WebErrorText text={passwordState.errorMessage} />}
+          </StyledInputBox>
+
+          <StyledInputBox>
+            <StyledInputWrapper>
+              <WebInput
+                type='password'
+                name='confirmPassword'
+                placeholder='Confirm Password'
+                style={{ width: 384 }}
+                onChange={confirmPasswordState.onChange}
+                onKeyDown={onKeyDown}
+                error={confirmPasswordState.error}
+              />
+              {confirmPasswordState.confirm && (<WebImg src={IconConfirm} size={20} />)}
+            </StyledInputWrapper>
+            {errorMessage && <WebErrorText text={errorMessage} />}
+          </StyledInputBox>
+        </StyledInputContainer>
+
+        <TermsCheckbox
+          checked={termsState.value}
+          onChange={termsState.onChange}
+          text='I agree to the&nbsp;'
+          tabIndex={3}
+        >
+          <Pressable onClick={moveAdenaTermsPage} tabIndex={4}>
+            Terms of Use.
+          </Pressable>
+        </TermsCheckbox>
+
+        <WebButton
+          figure='primary'
+          size='small'
+          disabled={buttonState.disabled}
+          onClick={buttonState.onClick}
+          tabIndex={5}
+          text='Save'
+          rightIcon='chevronRight'
         />
-        <WebInput
-          type='password'
-          name='confirmPassword'
-          placeholder='Confirm Password'
-          onChange={confirmPasswordState.onChange}
-          onKeyDown={onKeyDown}
-          error={confirmPasswordState.error}
-        />
-        {errorMessage && <ErrorText text={errorMessage} />}
-      </StyledInputBox>
-
-      <TermsCheckbox
-        checked={termsState.value}
-        onChange={termsState.onChange}
-        text='I agree to the&nbsp;'
-        tabIndex={3}
-      >
-        <Pressable onClick={moveAdenaTermsPage} tabIndex={4}>
-          Terms of Use.
-        </Pressable>
-      </TermsCheckbox>
-
-      <WebButton
-        figure='primary'
-        size='small'
-        disabled={buttonState.disabled}
-        onClick={buttonState.onClick}
-        tabIndex={5}
-        text='Save'
-        rightIcon='chevronRight'
-      />
+      </StyledContainer>
     </WebMain>
   );
 };

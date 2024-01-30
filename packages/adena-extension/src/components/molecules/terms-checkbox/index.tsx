@@ -29,7 +29,7 @@ const Wrapper = styled.div<{ margin?: string }>`
 const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   position: relative;
-  padding-left: 32px;
+  padding-left: 28px;
   cursor: pointer;
   &:before {
     ${({ checkboxPos }): CSSProp =>
@@ -54,6 +54,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
 `;
 
 const Input = styled.input`
+  display: none;
   &[type='checkbox'] {
     width: 0px;
     height: 0px;

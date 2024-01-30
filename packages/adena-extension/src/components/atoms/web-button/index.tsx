@@ -1,7 +1,7 @@
 import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 import styled from 'styled-components';
 
-import { WebFontType } from '@styles/theme';
+import { getTheme, WebFontType } from '@styles/theme';
 import IconRight from '@assets/web/chevron-right.svg';
 
 import { WebImg } from '../web-img';
@@ -13,18 +13,18 @@ type WebButtonProps = {
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
 } & (
-  | { text: string; rightIcon?: 'chevronRight' }
-  | {
+    | { text: string; rightIcon?: 'chevronRight' }
+    | {
       children: ReactNode;
     }
-) &
+  ) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   cursor: pointer;
   border: transparent;
   border-radius: 14px;
-  padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 24px')};
+  padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
   display: flex;
   flex-direction: row;
   width: ${({ size }): string => (size === 'full' ? '100%' : 'auto')};
@@ -37,10 +37,12 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
 `;
 
 const StyledButtonPrimary = styled(StyledButtonBase)`
+  color ${getTheme('webNeutral', '_100')};
   outline: 1px solid rgba(255, 255, 255, 0.4);
   background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
 
   :hover {
+    color ${getTheme('webNeutral', '_100')};
     outline: 2px solid rgba(255, 255, 255, 0.4);
     background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
     box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
@@ -48,6 +50,7 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
   }
 
   :active {
+    color ${getTheme('webNeutral', '_100')};
     outline: 2px solid rgba(255, 255, 255, 0.4);
     background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
     box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 0px 0px 3px rgba(0, 89, 255, 0.16),
@@ -56,31 +59,37 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
+  color: #ADCAFF;
   outline: 1px solid rgba(122, 169, 255, 0.24);
   background: rgba(0, 89, 255, 0.16);
 
   :hover {
+    color: #ADCAFF;
     outline: 2px solid rgba(122, 169, 255, 0.24);
     background: rgba(0, 89, 255, 0.2);
     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
   }
 
   :active {
+    color: #7AA9FF;
     outline: 2px solid rgba(122, 169, 255, 0.24);
     background: rgba(0, 89, 255, 0.2);
   }
 `;
 
 const StyledButtonTertiary = styled(StyledButtonBase)`
+  color ${getTheme('webNeutral', '_300')};
   outline: 1px solid rgba(188, 197, 214, 0.16);
   background: rgba(188, 197, 214, 0.04);
 
   :hover {
+    color ${getTheme('webNeutral', '_300')};
     outline: 2px solid rgba(188, 197, 214, 0.16);
     background: rgba(188, 197, 214, 0.06);
   }
 
   :active {
+    color ${getTheme('webNeutral', '_100')};
     outline: 1px solid rgba(188, 197, 214, 0.24);
     background: rgba(188, 197, 214, 0.04);
     box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.04),

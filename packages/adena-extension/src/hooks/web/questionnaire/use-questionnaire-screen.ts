@@ -38,7 +38,7 @@ export const questionnaireStep: Record<
 };
 
 const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
-  const { navigate, params } = useAppNavigate<RoutePath.WebQuestionnaire>();
+  const { navigate, goBack, params } = useAppNavigate<RoutePath.WebQuestionnaire>();
   const { doneQuestionnaire } = useQuestionnaire();
   const [questionnaireState, setQuestionnaireState] = useState<QuestionnaireStateType>('INIT');
   const [questionIndex, setQuestionIndex] = useState(1);
@@ -78,8 +78,12 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
       navigate(callbackPath, { state: { doneQuestionnaire: false } });
       return;
     }
-    if (questionnaireState === 'QUESTION' && questionIndex > 1) {
-      setQuestionIndex(questionIndex - 1);
+    if (questionnaireState === 'QUESTION') {
+      if (questionIndex > 1) {
+        setQuestionIndex(questionIndex - 1);
+      } else {
+        goBack();
+      }
       return;
     }
     setQuestionIndex(1);

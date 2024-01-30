@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
 
 export type UseSetupAirgapScreenReturn = {
   address: string;
@@ -45,6 +46,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const { navigate } = useAppNavigate();
   const { updateWallet } = useWalletContext();
   const { walletService } = useAdenaContext();
+  const { accounts } = useLoadAccounts();
   const [setupAirgapState, setSetupAirgapState] = useState<SetupAirgapStateType>('INIT');
   const [address, setAddress] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,9 +74,21 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     return false;
   }, [address]);
 
-  const confirmAddress = useCallback(() => {
+  const _existsAddress = useCallback(async () => {
+    return Promise.all(accounts.map((account) => account.getAddress('g'))).then((addresses) =>
+      addresses.includes(address),
+    );
+  }, [accounts, address]);
+
+  const confirmAddress = useCallback(async () => {
     if (!_validateAddress()) {
       const errorMessage = 'Invalid address';
+      setErrorMessage(errorMessage);
+      return;
+    }
+    const existAddress = await _existsAddress();
+    if (existAddress) {
+      const errorMessage = 'Address already synced';
       setErrorMessage(errorMessage);
       return;
     }

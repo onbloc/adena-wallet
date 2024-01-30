@@ -58,9 +58,9 @@ const AdvancedOptionScreen = (): ReactElement => {
           }}
           style={{ width: 176 }}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconCreate} size={24} />
-            <WebText type='title5'>Create New Wallet</WebText>
+            <WebText type='title5' color='inherit'>Create New Wallet</WebText>
           </View>
         </WebButton>
         <WebButton
@@ -75,9 +75,9 @@ const AdvancedOptionScreen = (): ReactElement => {
             }
           }}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconImport} size={24} />
-            <WebText type='title5'>Import Existing Wallet</WebText>
+            <WebText type='title5' color='inherit'>Import Existing Wallet</WebText>
           </View>
         </WebButton>
         <WebButton
@@ -88,9 +88,9 @@ const AdvancedOptionScreen = (): ReactElement => {
             navigate(RoutePath.WebGoogleLogin);
           }}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={IconGoogle} size={24} />
-            <WebText type='title5'>Sign In With Google</WebText>
+            <WebText type='title5' color='inherit'>Sign In With Google</WebText>
           </View>
         </WebButton>
       </Row>

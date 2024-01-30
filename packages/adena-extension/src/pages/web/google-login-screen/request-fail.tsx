@@ -39,7 +39,7 @@ const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({
           Login Failed
         </WebText>
         <WebText
-          type='body6'
+          type='body4'
           color={theme.webNeutral._500}
           textCenter
         >
@@ -49,10 +49,11 @@ const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({
         </WebText>
       </StyledMessageBox>
       <WebButton
-        figure='secondary'
+        figure='primary'
         size='small'
-        onClick={onClickRetry}
         text='Retry'
+        rightIcon='chevronRight'
+        onClick={onClickRetry}
       />
     </StyledContainer>
   );
