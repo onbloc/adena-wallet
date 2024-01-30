@@ -45,7 +45,7 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
           Waiting for Google Login
         </WebText>
         <WebText
-          type='body6'
+          type='body4'
           color={theme.webNeutral._500}
           textCenter
         >
@@ -55,7 +55,7 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
         </WebText>
       </StyledMessageBox>
       <WebButton
-        figure='secondary'
+        figure='tertiary'
         size='small'
         onClick={onClickCancel}
         text='Cancel'
