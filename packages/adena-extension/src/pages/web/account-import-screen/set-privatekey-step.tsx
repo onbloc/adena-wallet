@@ -22,7 +22,7 @@ const StyledWarnBox = styled(Row)`
   background: rgba(251, 191, 36, 0.08);
 `;
 
-const StyledItem = styled(Row)<{ error: boolean }>`
+const StyledItem = styled(Row) <{ error: boolean }>`
   position: relative;
   overflow: hidden;
   height: 40px;
@@ -66,7 +66,7 @@ const SetPrivateKeyStep = ({
         <StyledWarnBox>
           <WebImg src={IconWarning} size={20} />
           <WebText type='body6' color={theme.webWarning._100}>
-            Enter a seed phrase or your private key to import your existing wallet.
+            Enter a private key to import your existing wallet.
           </WebText>
         </StyledWarnBox>
       </StyledMessageBox>
@@ -75,6 +75,7 @@ const SetPrivateKeyStep = ({
           <StyledInput
             type='password'
             value={privateKey}
+            placeholder='Private Key'
             onChange={({ target: { value } }): void => {
               setPrivateKey(value);
             }}

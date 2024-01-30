@@ -11,11 +11,16 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
   const { step, onClickGoBack, stepLength, accountImportStepNo, onClickNext } =
     useAccountImportScreenReturn;
+
+  if (step === 'LOADING') {
+    return <WebLoadingAccounts />;
+  }
 
   return (
     <>
