@@ -1,18 +1,18 @@
-import React, { ReactElement } from 'react';
+import React, { CSSProperties, ReactElement } from 'react';
 import styled, { FlattenSimpleInterpolation } from 'styled-components';
 
-import { WebFontType, getTheme, webFonts } from '@styles/theme';
+import { WebFontType, webFonts } from '@styles/theme';
 
 type FormTextProps = {
   type: WebFontType;
   children: string | number;
-  color?: string;
+  color?: CSSProperties['color'];
   style?: React.CSSProperties;
   textCenter?: boolean;
 };
 
-const StyledContainer = styled.div<{ type: WebFontType }>`
-  color: ${getTheme('webNeutral', '_100')};
+const StyledContainer = styled.div<{ type: WebFontType, color?: CSSProperties['color']; }>`
+  color: ${({ color }): CSSProperties['color'] => color ? color : '#FAFCFF'};
   ${({ type }): FlattenSimpleInterpolation => webFonts[type]}
   white-space: pre-wrap;
 `;

@@ -56,9 +56,9 @@ const LandingScreen = (): ReactElement => {
           }}
           style={{ width: 204 }}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={hardWallet} size={24} />
-            <WebText type='title5'>Connect Hardware Wallet</WebText>
+            <WebText type='title5' color='inherit'>Connect Hardware Wallet</WebText>
           </View>
         </WebButton>
         <WebButton
@@ -67,9 +67,9 @@ const LandingScreen = (): ReactElement => {
           style={{ width: 204 }}
           onClick={moveSetupAirgapScreen}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={airgap} size={24} />
-            <WebText type='title5'>Set Up Airgap Account</WebText>
+            <WebText type='title5' color='inherit'>Set Up Airgap Account</WebText>
           </View>
         </WebButton>
         <WebButton
@@ -80,9 +80,9 @@ const LandingScreen = (): ReactElement => {
           }}
           style={{ width: 204 }}
         >
-          <View style={{ height: 74, justifyContent: 'space-between' }}>
+          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
             <WebImg src={thunder} size={24} />
-            <WebText type='title5'>Advanced Options</WebText>
+            <WebText type='title5' color='inherit'>Advanced Options</WebText>
           </View>
         </WebButton>
       </Row>
