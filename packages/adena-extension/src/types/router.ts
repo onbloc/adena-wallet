@@ -26,6 +26,7 @@ export enum RoutePath {
   Send = '/wallet/send',
   TokenDetails = '/wallet/token-details',
   ApproveLogin = '/approve/wallet/login',
+  ApproveSignFailed = '/approve/wallet/sign-failed',
   ApproveTransaction = '/approve/wallet/transaction',
   ApproveTransactionLoading = '/approve/wallet/transaction/loading',
   ApproveSign = '/approve/wallet/sign',
@@ -107,6 +108,7 @@ export type RouteParams = {
     tokenBalance: TokenBalanceType;
   };
   [RoutePath.ApproveLogin]: null;
+  [RoutePath.ApproveSignFailed]: null;
   [RoutePath.ApproveTransaction]: null;
   [RoutePath.ApproveTransactionLoading]: {
     document?: Document;

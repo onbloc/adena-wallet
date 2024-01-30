@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import BigNumber from 'bignumber.js';
-import { Account, isLedgerAccount, Document } from 'adena-module';
+import { Account, isLedgerAccount, Document, isAirgapAccount } from 'adena-module';
 import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
 
 import { ApproveTransaction } from '@components/molecules';
@@ -276,6 +276,10 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
+      if (isAirgapAccount(currentAccount)) {
+        navigate(RoutePath.ApproveSignFailed);
+        return;
+      }
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();

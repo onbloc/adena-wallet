@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Document, isLedgerAccount } from 'adena-module';
+import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
 
 import { ApproveTransaction } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -51,7 +51,6 @@ const ApproveSignContainer: React.FC = () => {
     undefined,
   );
   const { currentNetwork } = useNetwork();
-  const [currentAddress, setCurrentAddress] = useState<string>('');
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -103,16 +102,28 @@ const ApproveSignContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    if (currentAddress && requestData && gnoProvider) {
-      if (validate(currentAddress, requestData)) {
-        initFavicon();
-        initTransactionData();
+    if (currentAccount && requestData && gnoProvider) {
+      if (isAirgapAccount(currentAccount)) {
+        navigate(RoutePath.ApproveSignFailed);
+        return;
       }
+      validate(currentAccount, requestData).then((validated) => {
+        if (validated) {
+          initFavicon();
+          initTransactionData();
+        }
+      });
     }
-  }, [currentAddress, requestData, gnoProvider]);
+  }, [currentAccount, requestData, gnoProvider]);
 
-  const validate = (currentAddress: string, requestData: InjectionMessage): boolean => {
-    const validationMessage = validateInjectionData(currentAddress, requestData);
+  const validate = async (
+    currentAccount: Account,
+    requestData: InjectionMessage,
+  ): Promise<boolean> => {
+    const validationMessage = validateInjectionData(
+      await currentAccount.getAddress('g'),
+      requestData,
+    );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -219,14 +230,6 @@ const ApproveSignContainer: React.FC = () => {
       InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
     );
   }, [requestData]);
-
-  useEffect(() => {
-    if (!currentAccount || !currentNetwork) {
-      setCurrentAddress('');
-      return;
-    }
-    currentAccount.getAddress(currentNetwork.addressPrefix).then(setCurrentAddress);
-  }, [currentAccount, currentNetwork]);
 
   return (
     <ApproveTransaction

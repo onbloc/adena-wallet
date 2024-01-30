@@ -1,27 +1,28 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
+import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 import { Button, ButtonProps, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
 
 interface BottomFixedButtonProps {
   hierarchy?: ButtonProps['hierarchy'];
-  onClick: () => unknown;
   text?: string;
+  fill?: boolean;
+  onClick: () => unknown;
 }
 
 export const BottomFixedButton = ({
   hierarchy = 'dark',
-  onClick,
   text = 'Close',
+  fill = true,
+  onClick,
 }: BottomFixedButtonProps): JSX.Element => {
   const onClickButton = useCallback(() => {
     onClick();
   }, [onClick]);
 
   return (
-    <ButtonWrap>
+    <ButtonWrap fill={fill}>
       <Button fullWidth hierarchy={hierarchy} onClick={onClickButton}>
         <Text type='body1Bold'>{text}</Text>
       </Button>
@@ -29,7 +30,7 @@ export const BottomFixedButton = ({
   );
 };
 
-const ButtonWrap = styled.div`
+const ButtonWrap = styled.div<{ fill: boolean }>`
   ${mixins.flex({ direction: 'row' })};
   position: fixed;
   bottom: 0px;
@@ -37,7 +38,15 @@ const ButtonWrap = styled.div`
   width: 100%;
   height: 96px;
   padding: 0px 20px;
-  box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
-  background-color: ${getTheme('neutral', '_8')};
   z-index: 1;
+
+  ${({ fill, theme }): FlattenSimpleInterpolation =>
+    fill
+      ? css`
+        box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
+        background-color: ${theme.neutral._8};
+        `
+      : css`
+        background-color: transparent;
+      `}
 `;
