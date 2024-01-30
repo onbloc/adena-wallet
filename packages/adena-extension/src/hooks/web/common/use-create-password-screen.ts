@@ -14,12 +14,15 @@ import { useAdenaContext } from '@hooks/use-context';
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
     value: string;
+    confirm: boolean;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    errorMessage: string;
     error: boolean;
     ref: React.RefObject<HTMLInputElement>;
   };
   confirmPasswordState: {
     value: string;
+    confirm: boolean;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     error: boolean;
   };
@@ -48,10 +51,18 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const [isConfirmPasswordError, setIsConfirmPasswordError] = useState(false);
   const { password, confirmPassword } = inputs;
   const [errorMessage, setErrorMessage] = useState('');
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
 
   const disabledCreateButton = useMemo(() => {
     return !terms || !password || !confirmPassword;
   }, [terms, password, confirmPassword]);
+
+  const confirmPasswordLength = (password: string): boolean => {
+    if (password.length < 8 || password.length > 256) {
+      return false;
+    }
+    return true;
+  };
 
   const _validateConfirmPassword = (validationPassword?: boolean): boolean => {
     try {
@@ -82,7 +93,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       console.log(error);
       setIsPasswordError(true);
       if (error instanceof PasswordValidationError) {
-        setErrorMessage(error.message);
+        setPasswordErrorMessage(error.message);
       }
     }
     return false;
@@ -148,6 +159,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     setIsPasswordError(false);
     setIsConfirmPasswordError(false);
     setErrorMessage('');
+    setPasswordErrorMessage('');
   }, [password, confirmPassword]);
 
   useEffect(() => {
@@ -159,12 +171,15 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   return {
     passwordState: {
       value: password,
+      confirm: confirmPasswordLength(password),
       onChange: onChangePassword,
       error: isPasswordError,
+      errorMessage: passwordErrorMessage,
       ref: inputRef,
     },
     confirmPasswordState: {
       value: confirmPassword,
+      confirm: confirmPasswordLength(confirmPassword),
       onChange: onChangePassword,
       error: isConfirmPasswordError,
     },
