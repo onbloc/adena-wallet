@@ -48,9 +48,8 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
     }
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
-      tokenMetainfo.denom
-    }`;
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom
+      }`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
@@ -97,8 +96,13 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    const { signed } = await transactionService.createTransaction(wallet, document);
-    return transactionService.sendTransaction(wallet, currentAccount, signed);
+    const walletInstance = wallet.clone();
+    walletInstance.currentAccountId = currentAccount.id;
+    const { signed } = await transactionService.createTransaction(walletInstance, document);
+    return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch(e => {
+      console.error(e);
+      return null;
+    });
   }, [summaryInfo, currentAccount, currentNetwork]);
 
   const hasNetworkFee = useCallback(async () => {
@@ -131,8 +135,10 @@ const TransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      await createTransaction();
-      navigate(RoutePath.History);
+      const result = await createTransaction();
+      if (result) {
+        navigate(RoutePath.History);
+      }
     } catch (e) {
       if (!(e instanceof Error)) {
         return false;
