@@ -106,6 +106,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
 
     const clone = wallet.clone();
     clone.addAccount(account);
+    clone.addKeyring(addressKeyring);
 
     await changeCurrentAccount(account);
     await updateWallet(clone);
