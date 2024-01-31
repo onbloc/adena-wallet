@@ -14,7 +14,7 @@ export interface SideMenuProps {
   accounts: SideMenuAccountInfo[];
   changeAccount: (accountId: string) => void;
   openLink: (link: string) => void;
-  openWebLink: (link: string) => void;
+  openRegister: () => void;
   movePage: (link: string) => void;
   lock: () => void;
   close: () => void;

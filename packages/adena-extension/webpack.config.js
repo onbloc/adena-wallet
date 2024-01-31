@@ -142,6 +142,11 @@ const config = {
       filename: 'register.html',
     }),
     new HtmlWebPackPlugin({
+      template: './public/web.html',
+      chunks: ['web'],
+      filename: 'security.html',
+    }),
+    new HtmlWebPackPlugin({
       template: './public/popup.html',
       chunks: ['popup'],
       filename: 'popup.html',

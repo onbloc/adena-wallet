@@ -63,7 +63,7 @@ const getMenuMakerInfo = (
 
 export const SecurityPrivacy = (): JSX.Element => {
   const { navigate, goBack } = useAppNavigate();
-  const { openWebLink } = useLink();
+  const { openSecurity } = useLink();
   const { currentAccount } = useCurrentAccount();
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
@@ -78,7 +78,7 @@ export const SecurityPrivacy = (): JSX.Element => {
         'SEED_PHRASE' :
         'PRIVATE_KEY';
       AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType).then(() => {
-        openWebLink(RoutePath.WebWalletExport);
+        openSecurity();
       });
       return;
     }

@@ -43,7 +43,7 @@ export const Default: StoryObj<SideMenuProps> = {
       },
     ],
     openLink: action('openLink'),
-    openWebLink: action('openWebLink'),
+    openRegister: action('openRegister'),
     changeAccount: action('changeAccount'),
     movePage: action('movePage'),
     lock: action('lock'),

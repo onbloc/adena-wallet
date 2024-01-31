@@ -7,7 +7,7 @@ import useLink from '@hooks/use-link';
 
 export const WalletCreate = (): JSX.Element => {
   const { navigate } = useAppNavigate();
-  const { openWebLink } = useLink();
+  const { openRegister } = useLink();
 
   const { state } = useLoadAccounts();
 
@@ -17,7 +17,7 @@ export const WalletCreate = (): JSX.Element => {
         break;
       case 'CREATE':
       case 'FAIL':
-        openWebLink(RoutePath.Home);
+        openRegister();
         break;
       case 'LOADING':
         navigate(RoutePath.Wallet);
