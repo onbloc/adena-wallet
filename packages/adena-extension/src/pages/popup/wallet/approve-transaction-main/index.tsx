@@ -186,13 +186,15 @@ const ApproveTransactionContainer: React.FC = () => {
 
     try {
       setProcessType('PROCESSING');
-      const { signed } = await transactionService.createTransaction(wallet, document);
+      const walletInstance = wallet.clone();
+      walletInstance.currentAccountId = currentAccount.id;
+      const { signed } = await transactionService.createTransaction(walletInstance, document);
       const hash = transactionService.createHash(signed);
       const response = await new Promise<
         BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null
       >((resolve) => {
         transactionService
-          .sendTransaction(wallet, currentAccount, signed, true)
+          .sendTransaction(walletInstance, currentAccount, signed, true)
           .then(resolve)
           .catch((error: TM2Error | Error) => {
             resolve(error);
@@ -261,7 +263,7 @@ const ApproveTransactionContainer: React.FC = () => {
       });
       return;
     }
-    sendTransaction().finally(() => setProcessType('DONE'));
+    sendTransaction().finally(() => { setProcessType('DONE') });
   };
 
   useEffect(() => {
@@ -297,7 +299,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onResponseSendTransaction = useCallback(() => {
     if (response) {
-      // chrome.runtime.sendMessage(response);
+      chrome.runtime.sendMessage(response);
     }
   }, [response]);
 
