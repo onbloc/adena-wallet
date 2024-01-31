@@ -1,18 +1,22 @@
-import { WEB_BASE_PATH } from '@types';
+import { REGISTER_PATH, SECURITY_PATH } from '@types';
 
 export type UseLinkReturn = {
   openLink: (link: string) => void;
-  openWebLink: (link: string) => void;
+  openRegister: () => void;
+  openSecurity: () => void;
 };
 
 const useLink = (): UseLinkReturn => {
   const openLink = (link: string): void => {
     window.open(link, '_blank');
   };
-  const openWebLink = (link: string): void => {
-    window.open(WEB_BASE_PATH + link, '_blank');
+  const openRegister = (): void => {
+    window.open(REGISTER_PATH, '_blank');
   };
-  return { openLink, openWebLink };
+  const openSecurity = (): void => {
+    window.open(SECURITY_PATH, '_blank');
+  };
+  return { openLink, openRegister, openSecurity };
 };
 
 export default useLink;

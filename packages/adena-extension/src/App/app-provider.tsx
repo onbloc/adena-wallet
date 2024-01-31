@@ -1,5 +1,4 @@
 import React, { ReactElement, ReactNode, Suspense } from 'react';
-import { HashRouter } from 'react-router-dom';
 
 import { ThemeProvider } from 'styled-components';
 import theme from '@styles/theme';
@@ -18,7 +17,7 @@ const AppProvider = ({ children }: { children: ReactNode }): ReactElement => {
             <WalletProvider>
               <ThemeProvider theme={theme}>
                 <Suspense fallback={<div>Loading...</div>}>
-                  <HashRouter>{children}</HashRouter>
+                  {children}
                 </Suspense>
               </ThemeProvider>
             </WalletProvider>

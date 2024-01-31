@@ -19,7 +19,7 @@ describe('SideMenu Component', () => {
       openLink: () => {
         return;
       },
-      openWebLink: () => {
+      openRegister: () => {
         return;
       },
       movePage: () => {
