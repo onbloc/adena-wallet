@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import styled, { FlattenSimpleInterpolation, css, keyframes, useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
@@ -43,12 +43,38 @@ interface WalletExportResultProps {
   exportData: string | null;
 }
 
-const WalletExportResult: React.FC<WalletExportResultProps> = ({
-  exportType,
-  exportData,
-}) => {
+const fill = keyframes`
+  from {
+   width: 0;
+  }
+  to {
+   width: 100%;
+  }
+`;
+
+const StyledHoldButton = styled(WebButton)<{ pressed: boolean }>`
+  position: relative;
+  overflow: hidden;
+  ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>
+    onPress
+      ? css`
+          ::before {
+            content: '';
+            z-index: -1;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            height: 100%;
+            background-color: rgba(0, 89, 255, 0.32);
+            animation: ${fill} 3s forwards;
+          }
+        `
+      : undefined}
+`;
+const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
+  const [onPress, setOnPress] = useState(false);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -59,7 +85,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to reveal your seed phrase. Please carefully review the\nchecklist below.'
+      return 'You’re about to reveal your seed phrase. Please carefully review the\nchecklist below.';
     }
     return 'You’re about to reveal your private key. Please carefully review\nthe checklist below.';
   }, [exportType]);
@@ -84,10 +110,25 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
   }, [exportData]);
 
   const onClickDone = (): void => {
-    AdenaStorage.session().remove(WALLET_EXPORT_TYPE_STORAGE_KEY).then(() => {
-      window.close();
-    });
+    AdenaStorage.session()
+      .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
+      .then(() => {
+        window.close();
+      });
   };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (onPress) {
+      timer = setTimeout(() => {
+        setBlur(false);
+      }, 3000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onPress]);
 
   return (
     <StyledContainer>
@@ -96,8 +137,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
         <StyledWarnBox>
           <Row style={{ gap: 2, alignItems: 'center' }}>
             <WebImg src={IconWarning} size={20} />
-            <WebText type='title6' color={theme.webWarning._100}
-              style={{ height: 14 }}>
+            <WebText type='title6' color={theme.webWarning._100} style={{ height: 14 }}>
               Approach with caution!
             </WebText>
           </Row>
@@ -108,25 +148,25 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
       </StyledMessageBox>
 
       <StyledInputBox>
-        {exportType === 'SEED_PHRASE' && (
-          <WebSeedBox seeds={seeds} showBlur={blur} />
-        )}
+        {exportType === 'SEED_PHRASE' && <WebSeedBox seeds={seeds} showBlur={blur} />}
         {exportType === 'PRIVATE_KEY' && (
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
-        <Row style={{ gap: 12, justifyContent: 'center' }} >
-          <WebButton
+        <Row style={{ gap: 12, justifyContent: 'center' }}>
+          <StyledHoldButton
             figure='quaternary'
             size='small'
             onMouseDown={(): void => {
-              setBlur(false);
+              setOnPress(true);
             }}
             onMouseUp={(): void => {
+              setOnPress(false);
               setBlur(true);
             }}
             text='Hold to Reveal'
             textType='body6'
             style={{ borderRadius: 8 }}
+            pressed={onPress}
           />
           <WebButton
             figure='quaternary'
@@ -143,7 +183,9 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
         <TermsCheckbox
           id='term01'
           checked={true}
-          onChange={(): void => { return; }}
+          onChange={(): void => {
+            return;
+          }}
           text='Anyone with the phrase will have full control over my funds.'
           tabIndex={1}
           margin='0'
@@ -151,19 +193,16 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({
         <TermsCheckbox
           id='term02'
           checked={true}
-          onChange={(): void => { return; }}
+          onChange={(): void => {
+            return;
+          }}
           text='I will never share my seed phrase with anyone.'
           tabIndex={2}
           margin='0'
         />
       </StyledTermsBox>
 
-      <WebButton
-        figure='primary'
-        size='full'
-        onClick={onClickDone}
-        text='Done'
-      />
+      <WebButton figure='primary' size='full' onClick={onClickDone} text='Done' />
     </StyledContainer>
   );
 };
