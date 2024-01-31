@@ -1,11 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import {
-  RawBankSendMessage,
-  RawTx,
-  RawVmAddPackageMessage,
-  RawVmCallMessage,
-  strToSignedTx,
-} from 'adena-module';
+import { RawTx, strToSignedTx } from 'adena-module';
 import { Tx } from '@gnolang/tm2-js-client';
 
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
@@ -54,7 +48,7 @@ function makeTypeName(rawTx: RawTx): string {
 }
 
 function mapBankSendTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
-  const message = rawTx.msg[0] as RawBankSendMessage;
+  const message = rawTx.msg[0] as any;
   const amount = makeGnotAmountByRaw(message.amount);
   const amountStr = `${amount?.value} ${amount?.denom}`;
   const networkFee = makeGnotAmountByRaw(rawTx.fee.gas_fee);
@@ -70,7 +64,7 @@ function mapBankSendTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
 }
 
 function mapVmCallTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
-  const message = rawTx.msg[0] as RawVmCallMessage;
+  const message = rawTx.msg[0] as any;
   const networkFee = makeGnotAmountByRaw(rawTx.fee.gas_fee);
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
@@ -84,7 +78,7 @@ function mapVmCallTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
 }
 
 function mapVmAddPackageTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
-  const message = rawTx.msg[0] as RawVmAddPackageMessage;
+  const message = rawTx.msg[0] as any;
   const networkFee = makeGnotAmountByRaw(rawTx.fee.gas_fee);
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
@@ -169,7 +163,10 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
       .then((response) => {
         return Boolean(response?.hash);
       })
-      .catch(() => false);
+      .catch((e) => {
+        console.error(e);
+        return false;
+      });
 
     if (isSuccessBroadcasting) {
       navigate(RoutePath.Wallet);
