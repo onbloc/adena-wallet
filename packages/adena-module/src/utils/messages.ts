@@ -26,25 +26,25 @@ function encodeMessageValue(message: { type: string; value: any }) {
     case MsgEndpoint.MSG_ADD_PKG:
       const value = message.value;
       const msgAddPkg = MsgAddPackage.create(value);
-      return {
+      return Any.create({
         typeUrl: MsgEndpoint.MSG_ADD_PKG,
         value: MsgAddPackage.encode(msgAddPkg).finish(),
-      };
+      });
     case MsgEndpoint.MSG_CALL:
-      return {
+      return Any.create({
         typeUrl: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(message.value).finish(),
-      };
+      });
     case MsgEndpoint.MSG_SEND:
-      return {
+      return Any.create({
         typeUrl: MsgEndpoint.MSG_SEND,
-        value: MsgSend.encode(message.value).finish(),
-      };
+        value: MsgSend.encode(MsgSend.create(message.value)).finish(),
+      });
     default:
-      return {
+      return Any.create({
         typeUrl: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(message.value).finish(),
-      };
+        value: MsgCall.encode(MsgCall.create(message.value)).finish(),
+      });
   }
 }
 
@@ -178,15 +178,7 @@ export const strToSignedTx = (str: string): Tx | null => {
         gasWanted: sortedDocument.fee.gas_wanted,
         gasFee: sortedDocument.fee.gas_fee,
       }),
-      signatures: rawTx.signatures.map((signature: any) =>
-        TxSignature.fromJSON({
-          ...signature,
-          pubKey: {
-            ...signature.pub_key,
-            typeUrl: signature.pub_key['@type'],
-          },
-        }),
-      ),
+      signatures: rawTx.signatures.map(TxSignature.fromJSON),
       memo: sortedDocument.memo,
     };
   } catch (e) {
