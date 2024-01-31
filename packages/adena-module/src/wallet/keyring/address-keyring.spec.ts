@@ -296,7 +296,7 @@ describe('tx encode of address keyring', () => {
     const encodedTx = uint8ArrayToBase64(Tx.encode(signedTx).finish());
 
     expect(encodedTx).toBe(
-      'CoUBCgovdm0ubV9jYWxsEncKKGcxamc4bXR1dHU5a2hoZndjNG54bXVoY3BmdGYwcGFqZGhmdnNxZjUaFGduby5sYW5kL3IvZGVtby90b25nIghUcmFuc2ZlciooZzFrY2RkM24wZDQ3MmcycDVsOHN2eWc5dDB3cTZoNTg1N25xOTkyZioBMRINCIDRyggSBjF1Z25vdBp8CjgKEy90bS5QdWJLZXlTZWNwMjU2azESIQPhYTbbFx4y30iZNZQfBW4i+Jhj43OdCrfNSexCg5ydshJA6Jk3gs564wGTutNdODztNUlg88/WHmMPmJGRZHDuV00Mc9M5gGWBZDEpGysLsqzjMDxmsTu1PLtTYfTj0KphGQ==',
+      'CoUBCgovdm0ubV9jYWxsEncKKGcxamc4bXR1dHU5a2hoZndjNG54bXVoY3BmdGYwcGFqZGhmdnNxZjUaFGduby5sYW5kL3IvZGVtby90b25nIghUcmFuc2ZlciooZzFrY2RkM24wZDQ3MmcycDVsOHN2eWc5dDB3cTZoNTg1N25xOTkyZioBMRINCIDRyggSBjF1Z25vdBpCEkDomTeCznrjAZO60104PO01SWDzz9YeYw+YkZFkcO5XTQxz0zmAZYFkMSkbKwuyrOMwPGaxO7U8u1Nh9OPQqmEZ',
     );
   });
 });
