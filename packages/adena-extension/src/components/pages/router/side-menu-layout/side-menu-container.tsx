@@ -27,7 +27,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const { accountNames } = useAccountName();
-  const { accounts } = useLoadAccounts();
+  const { accounts, loadAccounts } = useLoadAccounts();
   const { accountNativeBalances } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
@@ -75,6 +75,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const lock = useCallback(async () => {
     setOpen(false);
     await walletService.lockWallet();
+    await loadAccounts();
     navigate(RoutePath.Login, { replace: true });
   }, [walletService, open, navigate]);
 
@@ -83,11 +84,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   }, [setOpen]);
 
   const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
-    ['sideMenuAccounts', locked, accountNames, accounts, accountNativeBalances, currentNetwork],
+    ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
     () => {
-      if (locked) {
-        return [];
-      }
       function mapBalance(
         accountNativeBalances: { [key in string]: TokenBalanceType },
         account: Account,
