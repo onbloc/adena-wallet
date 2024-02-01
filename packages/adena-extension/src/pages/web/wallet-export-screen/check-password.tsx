@@ -7,7 +7,8 @@ import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox } from '@components/molecules';
 
 const StyledContainer = styled(View)`
-  width: 416px;
+  width: 552px;
+  height: 344px;
   row-gap: 16px;
   align-items: flex-start;
 `;
@@ -67,9 +68,23 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to reveal your seed phrase. Please carefully review the\nchecklist below.'
+      return 'You’re about to export your private key. Please carefully review the checklist below.'
     }
-    return 'You’re about to reveal your private key. Please carefully review\nthe checklist below.';
+    return 'You’re about to reveal your seed phrase. Please carefully review the checklist below.';
+  }, [exportType]);
+
+  const term01Text = useMemo(() => {
+    if (exportType === 'PRIVATE_KEY') {
+      return 'Anyone with the private key will have full control over my funds.'
+    }
+    return 'Anyone with the phrase will have full control over my funds.';
+  }, [exportType]);
+
+  const term02Text = useMemo(() => {
+    if (exportType === 'PRIVATE_KEY') {
+      return 'I will never share my private key with anyone.'
+    }
+    return 'I will never share my seed phrase with anyone.';
   }, [exportType]);
 
   const availableCheckPassword = useMemo(() => {
@@ -128,7 +143,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
           id='term01'
           checked={checkedTerm01}
           onChange={(): void => setCheckedTerm01(!checkedTerm01)}
-          text='Anyone with the phrase will have full control over my funds.'
+          text={term01Text}
           tabIndex={1}
           margin='0'
         />
@@ -136,7 +151,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
           id='term02'
           checked={checkedTerm02}
           onChange={(): void => setCheckedTerm02(!checkedTerm02)}
-          text='I will never share my seed phrase with anyone.'
+          text={term02Text}
           tabIndex={2}
           margin='0'
         />

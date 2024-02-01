@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { Account } from 'adena-module';
 
-import { CopyIconButton, Pressable, Row, View, WebImg, WebText } from '@components/atoms';
+import { CopyIconButton, Pressable, Row, WebImg, WebText } from '@components/atoms';
 import { formatAddress } from '@common/utils/client-utils';
 import back from '@assets/web/chevron-left.svg';
 
@@ -13,6 +13,10 @@ const StyledContainer = styled(Row)`
 
 const StyledAccountRow = styled(Row)`
   gap: 8px;
+`;
+
+const StyledBlank = styled(Row)`
+  width: 24px;
 `;
 
 export type WebMainAccountHeaderProps = {
@@ -52,10 +56,10 @@ export const WebMainAccountHeader = ({
         <StyledAccountRow>
           <WebText type='title4'>{account.name}</WebText>
           <WebText type='body4' color={theme.webNeutral._600}>{addressStr}</WebText>
-          <CopyIconButton copyText={address} />
+          <CopyIconButton style={{ width: 20, height: 20 }} copyText={address} />
         </StyledAccountRow>
       )}
-      <View />
+      <StyledBlank />
     </StyledContainer >
   );
 };

@@ -6,9 +6,14 @@ import IconCopyCheck from '@assets/icon-copy-check';
 export interface CopyIconButtonProps {
   className?: string;
   copyText: string;
+  style?: React.CSSProperties;
 }
 
-export const CopyIconButton: React.FC<CopyIconButtonProps> = ({ className = '', copyText }) => {
+export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
+  className = '',
+  copyText,
+  style = {},
+}) => {
   const [checked, setChecked] = useState<boolean>(false);
 
   useEffect(() => {
@@ -29,7 +34,7 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({ className = '', 
   );
 
   return (
-    <CopyButtonWrapper className={className} checked={checked} onClick={onClickCopyButton}>
+    <CopyButtonWrapper className={className} style={style} checked={checked} onClick={onClickCopyButton}>
       {checked ? <IconCopyCheck /> : <IconCopy />}
     </CopyButtonWrapper>
   );
