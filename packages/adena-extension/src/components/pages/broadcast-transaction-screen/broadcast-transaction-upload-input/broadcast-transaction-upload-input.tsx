@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTheme } from 'styled-components';
 
-import { ErrorText, Text } from '@components/atoms';
+import { ErrorText, Text, WebImg } from '@components/atoms';
 import { StyledHiddenInput, StyledInputLabel, StyledWrapper } from './broadcast-transaction-upload-input.styles';
-import IconUpload from '@assets/upload.svg';
 import IconFile from '@assets/file.svg';
 import { Tx } from '@gnolang/tm2-js-client';
+import IconUpload from '@assets/icon-upload';
 
 export interface BroadcastTransactionUploadInputProps {
   transaction: Tx | null;
@@ -74,15 +74,15 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
       >
         {uploadState === 'NONE' && (
           <React.Fragment>
-            <img src={IconUpload} alt='upload icon' />
-            <Text type='body2Reg' color={theme.neutral._1}>
+            <IconUpload fill='inherit' />
+            <Text type='body2Reg' color='inherit'>
               {'Drag & drop a file or click to upload'}
             </Text>
           </React.Fragment>
         )}
         {uploadState === 'LOADING' && (
           <React.Fragment>
-            <img src={IconUpload} alt='upload icon' />
+            <IconUpload fill='inherit' />
             <Text type='body2Reg' color={theme.neutral.a}>
               {'Uploading file...'}
             </Text>
@@ -90,7 +90,7 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
         )}
         {uploadState === 'SUCCESS' && (
           <React.Fragment>
-            <img src={IconFile} alt='file icon' />
+            <WebImg src={IconFile} size={32} />
             <Text type='body2Reg' color={theme.neutral._1}>
               {fileName}
             </Text>
