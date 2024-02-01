@@ -20,7 +20,6 @@ const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({
       <Row style={{ alignItems: 'flex-start', gap: 8 }}>
         <WebImg src={IconInfo} size={20} />
         <WebText
-          style={{ maxWidth: 356 }}
           type='body6'
           color={theme.webWarning._100}
         >

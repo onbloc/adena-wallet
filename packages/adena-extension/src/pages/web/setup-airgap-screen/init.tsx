@@ -10,6 +10,7 @@ import useLink from '@hooks/use-link';
 import { ADENA_DOCS_PAGE, GNO_CLI_HELP_PAGE } from '@common/constants/resource.constant';
 
 const StyledContainer = styled(View)`
+  width: 552px;
   row-gap: 24px;
 `;
 
@@ -29,6 +30,10 @@ const StyledLinkWrapper = styled(Row)`
     color: #6c717a;
   }
 `;
+
+const description = `The air-gapped signing mechanism allows for offline transaction signing for maximum
+security. To send transactions, you must create a signed transaction file in your air-gapped
+device using the Gno CLI and transfer it to Adena for broadcasting.`;
 
 interface SetupAirgapInitProps {
   initSetup: () => void;
@@ -54,12 +59,12 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
         <WebText type='headline3'>Set Up Airgap Account</WebText>
         <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
           {
-            'You can import an account from your custom airgap\nsetup. To sign transactions, use the Gnoland CLI.'
+            'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.'
           }
         </WebText>
       </StyledMessageBox>
 
-      <WebWarningDescriptionBox description='The air-gapped signing mechanism allows for offline transaction signing for maximum security. To send transactions, you must create a signed transaction file in your air-gapped device using the Gno CLI and transfer it to Adena for broadcasting.' />
+      <WebWarningDescriptionBox description={description} />
 
       <StyledButtonWrapper>
         <WebButton

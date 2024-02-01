@@ -14,7 +14,7 @@ import SetupAirgapInit from './init';
 import SetupAirgapCompleteScreen from './complete';
 
 const StyledAirgapMain = styled(WebMain)`
-  width: 416px;
+  width: 552px;
 `;
 
 const SetupAirgapScreen: React.FC = () => {
@@ -40,6 +40,7 @@ const SetupAirgapScreen: React.FC = () => {
       navigate(RoutePath.Home);
       return;
     }
+    changeAddress('');
     setSetupAirgapState(backTo);
   }, [setupAirgapState]);
 

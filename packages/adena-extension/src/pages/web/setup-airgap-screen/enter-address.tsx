@@ -6,7 +6,7 @@ import { View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@compo
 import IconAirgap from '@assets/web/airgap-green.svg';
 
 const StyledContainer = styled(View)`
-  width: 416px;
+  width: 552px;
   height: 350px;
   row-gap: 24px;
 `;
@@ -17,7 +17,7 @@ const StyledMessageBox = styled(View)`
 
 const StyledInputBox = styled(View)`
   row-gap: 12px;
-  width: 384px;
+  width: 100%;
 `;
 
 interface StyledInputProps {
@@ -70,7 +70,7 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
       <StyledMessageBox>
         <WebText type='headline3'>Enter Your Address</WebText>
         <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
-          {'Enter the address that you will use to set up your \nairgapped account.'}
+          {'Enter the address that you will use to set up your airgapped account.'}
         </WebText>
       </StyledMessageBox>
 
