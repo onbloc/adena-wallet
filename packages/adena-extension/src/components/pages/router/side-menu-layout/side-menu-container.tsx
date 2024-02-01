@@ -83,8 +83,11 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   }, [setOpen]);
 
   const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
-    ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
+    ['sideMenuAccounts', locked, accountNames, accounts, accountNativeBalances, currentNetwork],
     () => {
+      if (locked) {
+        return [];
+      }
       function mapBalance(
         accountNativeBalances: { [key in string]: TokenBalanceType },
         account: Account,
