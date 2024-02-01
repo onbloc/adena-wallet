@@ -14,7 +14,7 @@ const WalletCreateScreen = (): ReactElement => {
     useWalletCreateScreenReturn;
 
   return (
-    <WebMain>
+    <WebMain spacing={272}>
       <WebMainHeader
         stepLength={stepLength}
         onClickGoBack={onClickGoBack}

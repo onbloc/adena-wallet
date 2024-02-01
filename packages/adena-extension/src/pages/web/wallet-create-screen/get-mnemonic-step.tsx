@@ -9,7 +9,7 @@ import { WebSeedBox } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   row-gap: 24px;
 `;
 
@@ -40,7 +40,7 @@ const fill = keyframes`
   }
 `;
 
-const StyledHoldButton = styled(StyledButton)<{ pressed: boolean }>`
+const StyledHoldButton = styled(StyledButton) <{ pressed: boolean }>`
   position: relative;
   overflow: hidden;
   ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>

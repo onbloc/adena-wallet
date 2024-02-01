@@ -6,7 +6,7 @@ import { View, WebText, WebButton, WebImg } from '@components/atoms';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
-  width: 552px;
+  width: 100%;
   align-items: center;
 `;
 

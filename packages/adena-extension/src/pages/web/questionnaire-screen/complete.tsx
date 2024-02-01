@@ -5,8 +5,15 @@ import Lottie from 'react-lottie';
 import { View, WebButton, WebText } from '@components/atoms';
 import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
 
+const StyledContainer = styled(View)`
+  width: 100%;
+  gap: 24px;
+  align-items: center;
+`;
+
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
+  margin-top: 16px;
 `;
 
 interface QuestionnaireCompleteProps {
@@ -19,7 +26,7 @@ const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({
   const theme = useTheme();
 
   return (
-    <React.Fragment>
+    <StyledContainer>
       <Lottie
         options={{
           animationData: LottieCompleteAQuestion,
@@ -40,7 +47,7 @@ const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({
         text='Next'
         rightIcon='chevronRight'
       />
-    </React.Fragment>
+    </StyledContainer>
   );
 };
 

@@ -6,7 +6,7 @@ import addGif from '@assets/web/account-added.gif';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
-  width: 552px;
+  width: 100%;
   align-items: center;
 `;
 
@@ -22,7 +22,7 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
   };
 
   return (
-    <WebMain>
+    <WebMain spacing={144}>
       <StyledContainer>
         <WebImg src={addGif} size={200} />
         <StyledMessageBox>

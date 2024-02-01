@@ -11,7 +11,7 @@ import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   row-gap: 16px;
   align-items: flex-start;
 `;

@@ -1,5 +1,5 @@
 import { ReactElement, useCallback } from 'react';
-import { useTheme } from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import Lottie from 'react-lottie';
 import { useQuery } from '@tanstack/react-query';
 
@@ -12,6 +12,12 @@ import hardWallet from '@assets/web/hard-wallet.svg';
 import airgap from '@assets/web/airgap.svg';
 import thunder from '@assets/web/thunder.svg';
 import { useAdenaContext } from '@hooks/use-context';
+
+const StyledAnimationWrapper = styled.div`
+  display: block;
+  height: 88px;
+  overflow: visible;
+`
 
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
@@ -29,15 +35,16 @@ const LandingScreen = (): ReactElement => {
   }, []);
 
   return (
-    <WebMain style={{ alignItems: 'flex-start' }}>
-      <View style={{ marginLeft: -100, marginTop: -200 }}>
+    <WebMain spacing={344}>
+      <StyledAnimationWrapper>
         <Lottie
+          style={{ marginTop: -320 }}
           options={{
             animationData: welcomeJson,
           }}
           height={320}
         />
-      </View>
+      </StyledAnimationWrapper>
       <View style={{ rowGap: 16 }}>
         <WebText type='headline1'>{existWallet ? 'Add Account' : 'Welcome to Adena'}</WebText>
         <WebText type='body2' color={theme.webNeutral._500}>

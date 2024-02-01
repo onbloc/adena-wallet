@@ -9,7 +9,7 @@ import IconInfo from '@assets/web/info.svg';
 import RollingNumber from '@components/atoms/rolling-number';
 
 const StyledContainer = styled(View)`
-  width: 416px;
+  width: 100%;
   row-gap: 24px;
 `;
 
@@ -92,7 +92,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
     if (!question) {
       return '';
     }
-    return question.question;
+    return `${question.index}. ${question.question}`;
   }, [question]);
 
   const answers = useMemo(() => {

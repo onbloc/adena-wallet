@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 
 import { WebMain } from '@components/atoms';
 import useQuestionnaireScreen from '@hooks/web/questionnaire/use-questionnaire-screen';
@@ -16,8 +16,15 @@ const QuestionnaireScreen = (): ReactElement => {
     backStep,
   } = useQuestionnaireScreen();
 
+  const topSpacing = useMemo(() => {
+    if (questionnaireState === 'INIT' || questionnaireState === 'COMPLETE') {
+      return 344;
+    }
+    return 272;
+  }, [questionnaireState])
+
   return (
-    <WebMain>
+    <WebMain spacing={topSpacing}>
       {questionnaireState === 'INIT' && (
         <QuestionnaireInitStep
           initQuestion={initQuestion}

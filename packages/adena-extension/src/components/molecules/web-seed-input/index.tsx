@@ -15,7 +15,7 @@ interface WebSeedInputProps {
 }
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   row-gap: 24px;
 `;
 
@@ -26,7 +26,7 @@ const StyledInputBox = styled(View)`
   gap: 12px;
 `;
 
-const StyledItem = styled(Row)<{ error: boolean }>`
+const StyledItem = styled(Row) <{ error: boolean }>`
   position: relative;
   overflow: hidden;
   height: 40px;
@@ -51,13 +51,13 @@ const StyledTypeMenu = styled(Row)`
   background: rgba(0, 0, 0, 0.2);
 `;
 
-const StyledTypeMenuItem = styled(Pressable)<{ selected: boolean }>`
+const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
   padding: 8px 12px;
   border-radius: 40px;
   background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
 
-const StyledNoText = styled(WebText)<{ error: boolean }>`
+const StyledNoText = styled(WebText) <{ error: boolean }>`
   ${mixins.flex()}
   background: ${({ error, theme }): string =>
     error ? 'rgba(224, 81, 112, 0.08)' : theme.webNeutral._800};

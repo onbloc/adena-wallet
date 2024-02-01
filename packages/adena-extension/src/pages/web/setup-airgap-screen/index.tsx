@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-import styled from 'styled-components';
 
 import { WebMain } from '@components/atoms';
 import useSetupAirgapScreen, {
@@ -12,10 +11,6 @@ import { RoutePath } from '@types';
 import SetupAirgapEnterAddress from './enter-address';
 import SetupAirgapInit from './init';
 import SetupAirgapCompleteScreen from './complete';
-
-const StyledAirgapMain = styled(WebMain)`
-  width: 552px;
-`;
 
 const SetupAirgapScreen: React.FC = () => {
   const {
@@ -45,7 +40,7 @@ const SetupAirgapScreen: React.FC = () => {
   }, [setupAirgapState]);
 
   return (
-    <StyledAirgapMain>
+    <WebMain spacing={272}>
       <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
       {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
       {setupAirgapState === 'ENTER_ADDRESS' && (
@@ -59,7 +54,7 @@ const SetupAirgapScreen: React.FC = () => {
       {setupAirgapState === 'COMPLETE' && (
         <SetupAirgapCompleteScreen address={address} addAccount={addAccount} />
       )}
-    </StyledAirgapMain>
+    </WebMain>
   );
 };
 

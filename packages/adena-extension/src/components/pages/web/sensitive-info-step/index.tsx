@@ -8,7 +8,7 @@ import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/at
 import useLink from '@hooks/use-link';
 
 const StyledContainer = styled(View)`
-  width: 540px;
+  width: 100%;
   height: 345px;
   row-gap: 40px;
   align-items: flex-start;

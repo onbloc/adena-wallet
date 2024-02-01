@@ -26,7 +26,7 @@ const AdvancedOptionScreen = (): ReactElement => {
   const { wallet } = useWalletContext();
 
   return (
-    <WebMain style={{ alignItems: 'flex-start' }}>
+    <WebMain spacing={272}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {

@@ -8,6 +8,7 @@ import { WebSeedInput } from '@components/molecules';
 import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   row-gap: 24px;
 `;
 
@@ -46,7 +47,7 @@ const SetMnemonicStep = ({
       <WebSeedInput
         onChange={({ type, value }): void => {
           setInputValue(value);
-          setInputType(type === 'pKey' ? 'pKey' : 'seed');
+          setInputType(type);
         }}
         errorMessage={errMsg}
       />

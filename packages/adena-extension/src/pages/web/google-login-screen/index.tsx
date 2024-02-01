@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -20,12 +20,19 @@ const GoogleLoginScreen: React.FC = () => {
     requestGoogleLogin,
   } = useGoogleLoginScreen();
 
+  const topSpacing = useMemo(() => {
+    if (googleLoginState === 'INIT') {
+      return 272;
+    }
+    return 344;
+  }, [googleLoginState]);
+
   const onClickGoBack = useCallback(() => {
     backStep();
   }, [backStep]);
 
   return (
-    <WebMain>
+    <WebMain spacing={topSpacing}>
       {googleLoginState === 'INIT' && (
         <>
           <WebMainHeader

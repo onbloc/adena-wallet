@@ -20,7 +20,7 @@ const StyledDot = styled(View) <{ selected: boolean }>`
 `;
 
 const StyledEmpty = styled(View)`
-  width: 24px;
+  width: 32px;
 `;
 
 export type WebMainHeaderProps = {

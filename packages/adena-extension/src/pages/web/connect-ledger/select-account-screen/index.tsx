@@ -25,7 +25,7 @@ const StyledAccountItem = styled(Row)`
   padding: 0 20px;
 `;
 
-const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
+const StyledLoadMore = styled(Row) <{ disabled: boolean }>`
   justify-content: center;
   padding: 8px 0;
 
@@ -74,7 +74,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   };
 
   return (
-    <WebMain>
+    <WebMain spacing={272}>
       <WebMainHeader
         stepLength={5}
         onClickGoBack={(): void => {

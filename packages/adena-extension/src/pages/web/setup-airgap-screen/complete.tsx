@@ -7,7 +7,7 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCheck from '@assets/web/web-check-circle.svg';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   row-gap: 24px;
   height: 350px;
 `;

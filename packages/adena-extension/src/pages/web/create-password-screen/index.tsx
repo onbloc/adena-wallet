@@ -23,6 +23,7 @@ import { RoutePath } from '@types';
 import IconConfirm from '@assets/web/confirm-check.svg';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   height: 330px;
   row-gap: 24px;
   align-items: flex-start;
@@ -34,17 +35,17 @@ const StyledMessageBox = styled(View)`
 `;
 
 const StyledInputContainer = styled(View)`
-  row-gap: 16px;
   width: 100%;
+  row-gap: 16px;
 `;
 
 const StyledInputBox = styled(View)`
-  row-gap: 12px;
   width: 100%;
+  row-gap: 12px;
 `;
 
 const StyledInputWrapper = styled(Row)`
-  width: 416px;
+  width: 100%;
   gap: 12px;
 `;
 
@@ -60,7 +61,7 @@ const CreatePasswordScreen = (): JSX.Element => {
   }, [openLink]);
 
   return (
-    <WebMain style={{ width: 552 }}>
+    <WebMain spacing={272}>
       <WebMainHeader
         stepLength={params.stepLength}
         currentStep={params.stepLength - 1}
@@ -82,7 +83,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='password'
                 placeholder='Password'
-                style={{ width: 384 }}
+                style={{ width: '100%', flexShrink: 0 }}
                 onChange={passwordState.onChange}
                 onKeyDown={onKeyDown}
                 error={passwordState.error}
@@ -99,12 +100,11 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='confirmPassword'
                 placeholder='Confirm Password'
-                style={{ width: 384 }}
+                style={{ width: '100%' }}
                 onChange={confirmPasswordState.onChange}
                 onKeyDown={onKeyDown}
                 error={confirmPasswordState.error}
               />
-              {confirmPasswordState.confirm && (<WebImg src={IconConfirm} size={20} />)}
             </StyledInputWrapper>
             {errorMessage && <WebErrorText text={errorMessage} />}
           </StyledInputBox>

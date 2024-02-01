@@ -6,6 +6,7 @@ import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
 import { View, WebImg, WebText } from '@components/atoms';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   row-gap: 24px;
   align-items: center;
 `;

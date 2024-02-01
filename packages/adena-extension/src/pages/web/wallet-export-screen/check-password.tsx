@@ -7,7 +7,7 @@ import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox } from '@components/molecules';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   height: 344px;
   row-gap: 16px;
   align-items: flex-start;
