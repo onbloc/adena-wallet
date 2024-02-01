@@ -102,7 +102,11 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       const web3AuthKeyring = await Web3AuthKeyring.fromPrivateKeyStr(privateKey);
       const account = await SingleAccount.createBy(web3AuthKeyring, clone.nextAccountName);
       clone.addAccount(account);
-      await changeCurrentAccount(account);
+      clone.addKeyring(web3AuthKeyring);
+      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      if (storedAccount) {
+        await changeCurrentAccount(storedAccount);
+      }
       await updateWallet(clone);
       navigate(RoutePath.WebAccountAddedComplete);
     },

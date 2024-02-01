@@ -14,18 +14,17 @@ export const WalletCreate = (): JSX.Element => {
   useEffect(() => {
     switch (state) {
       case 'NONE':
+      case 'LOADING':
         break;
       case 'CREATE':
       case 'FAIL':
         openRegister();
         break;
-      case 'LOADING':
-        navigate(RoutePath.Wallet);
-        break;
       case 'LOGIN':
         navigate(RoutePath.Login);
         break;
       default:
+        navigate(RoutePath.Wallet);
         break;
     }
   }, [state]);

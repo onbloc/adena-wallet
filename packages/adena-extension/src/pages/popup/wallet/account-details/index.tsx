@@ -6,7 +6,6 @@ import AccountDetails from '@components/pages/account-details/account-details';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useAccountName } from '@hooks/use-account-name';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
 import useLink from '@hooks/use-link';
 import { AdenaStorage } from '@common/storage';
@@ -20,7 +19,6 @@ const AccountDetailsContainer: React.FC = () => {
   const { accounts } = useLoadAccounts();
   const { currentNetwork } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
-  const { changeCurrentAccount } = useCurrentAccount();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState<string>('');
@@ -55,9 +53,6 @@ const AccountDetailsContainer: React.FC = () => {
   }, [address]);
 
   const moveExportPrivateKey = useCallback(async () => {
-    if (account) {
-      await changeCurrentAccount(account);
-    }
     const sessionStorage = AdenaStorage.session();
     await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
     openSecurity();

@@ -72,8 +72,13 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         const clone = wallet.clone();
         clone.addAccount(account);
         clone.addKeyring(keyring);
+        const storedAccount = clone.accounts.find(
+          (storedAccount) => storedAccount.id === account.id,
+        );
+        if (storedAccount) {
+          await changeCurrentAccount(storedAccount);
+        }
         await updateWallet(clone);
-        await changeCurrentAccount(account);
         navigate(RoutePath.WebAccountAddedComplete);
       } else {
         const createdWallet = await AdenaWallet.createByMnemonic(seeds);

@@ -52,7 +52,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   }, []);
 
   useEffect(() => {
-    if (wallet && networkMetainfos && tokenMetainfos) {
+    if (wallet && networkMetainfos.length > 0 && tokenMetainfos.length > 0) {
       setWalletStatus('FINISH');
     }
   }, [wallet, networkMetainfos, tokenMetainfos]);
@@ -75,6 +75,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     setWalletStatus('LOADING');
     try {
       const wallet = await walletService.loadWallet();
+      console.log(wallet);
+      const currentAccountId = await accountService.getCurrentAccountId();
+      wallet.currentAccountId = currentAccountId;
       setWallet(wallet);
       await initCurrentAccount(wallet);
     } catch (e) {

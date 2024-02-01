@@ -28,7 +28,7 @@ export const RemoveAccount = (): JSX.Element => {
     }
     setState('LOADING');
     await removeAccount(currentAccount);
-    navigate(RoutePath.Home);
+    navigate(RoutePath.Wallet);
   };
 
   return (

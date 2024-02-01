@@ -107,8 +107,10 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     const clone = wallet.clone();
     clone.addAccount(account);
     clone.addKeyring(addressKeyring);
-
-    await changeCurrentAccount(account);
+    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+    if (storedAccount) {
+      await changeCurrentAccount(storedAccount);
+    }
     await updateWallet(clone);
     navigate(RoutePath.WebAccountAddedComplete);
   }, [address, walletService]);
