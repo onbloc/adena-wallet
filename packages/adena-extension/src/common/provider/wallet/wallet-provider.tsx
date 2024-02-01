@@ -75,7 +75,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     setWalletStatus('LOADING');
     try {
       const wallet = await walletService.loadWallet();
-      console.log(wallet);
       const currentAccountId = await accountService.getCurrentAccountId();
       wallet.currentAccountId = currentAccountId;
       setWallet(wallet);
