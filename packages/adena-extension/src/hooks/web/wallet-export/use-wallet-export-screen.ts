@@ -14,8 +14,8 @@ export type UseWalletExportReturn = {
   exportType: ExportType;
   walletExportState: WalletExportStateType;
   exportData: string | null;
-  backStep: () => void;
   initWalletExport: () => void;
+  backStep: () => void;
   checkPassword: (password: string) => Promise<boolean>;
   moveExport: (password: string) => Promise<void>;
 };
@@ -23,6 +23,27 @@ export type UseWalletExportReturn = {
 export type ExportType = 'PRIVATE_KEY' | 'SEED_PHRASE' | 'NONE';
 
 export type WalletExportStateType = 'INIT' | 'CHECK_PASSWORD' | 'RESULT';
+
+export const walletExportStep: Record<
+  WalletExportStateType,
+  {
+    backTo: WalletExportStateType | null;
+    stepNo: number;
+  }
+> = {
+  INIT: {
+    backTo: null,
+    stepNo: 0,
+  },
+  CHECK_PASSWORD: {
+    backTo: 'INIT',
+    stepNo: 0,
+  },
+  RESULT: {
+    backTo: 'INIT',
+    stepNo: 1,
+  },
+};
 
 const useWalletExportScreen = (): UseWalletExportReturn => {
   const { currentAccount } = useCurrentAccount();
@@ -52,11 +73,10 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
   }, []);
 
   const backStep = useCallback(() => {
-    if (walletExportState === 'INIT') {
-      navigate(RoutePath.WebAdvancedOption);
-      return;
+    const backState = walletExportStep[walletExportState].backTo;
+    if (backState !== null) {
+      setWalletExportState(backState);
     }
-    setWalletExportState('CHECK_PASSWORD');
   }, [walletExportState]);
 
   const initWalletExport = useCallback(() => {

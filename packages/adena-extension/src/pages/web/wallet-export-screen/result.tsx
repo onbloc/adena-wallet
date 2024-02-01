@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styled, { FlattenSimpleInterpolation, css, keyframes, useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
+import IconCopy from '@assets/web/copy.svg';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox, WebSeedBox } from '@components/molecules';
@@ -10,7 +11,7 @@ import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 
 const StyledContainer = styled(View)`
-  width: 416px;
+  width: 552px;
   row-gap: 16px;
   align-items: flex-start;
 `;
@@ -30,7 +31,7 @@ const StyledWarnBox = styled(View)`
 
 const StyledInputBox = styled(View)`
   width: 100%;
-  gap: 12px;
+  gap: 16px;
 `;
 
 const StyledTermsBox = styled(View)`
@@ -52,8 +53,10 @@ const fill = keyframes`
   }
 `;
 
-const StyledHoldButton = styled(WebButton)<{ pressed: boolean }>`
+const StyledHoldButton = styled(WebButton) <{ pressed: boolean }>`
   position: relative;
+  height: 32px;
+  padding: 8px;
   overflow: hidden;
   ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>
     onPress
@@ -71,10 +74,20 @@ const StyledHoldButton = styled(WebButton)<{ pressed: boolean }>`
         `
       : undefined}
 `;
+
+const StyledCopyButton = styled(WebButton)`
+  height: 32px;
+  border-radius: 8px;
+  :hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+`;
+
 const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
   const [onPress, setOnPress] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -85,9 +98,9 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to reveal your seed phrase. Please carefully review the\nchecklist below.';
+      return 'Do not share your private key! Anyone with your private key will have full control of your wallet.';
     }
-    return 'You’re about to reveal your private key. Please carefully review\nthe checklist below.';
+    return 'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.';
   }, [exportType]);
 
   const seeds = useMemo((): string[] => {
@@ -104,10 +117,14 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
-  const copyData = useCallback(() => {
+  const onClickCopy = (): void => {
+    setCopied(true);
     const copied = exportData || '';
     navigator.clipboard.writeText(copied);
-  }, [exportData]);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   const onClickDone = (): void => {
     AdenaStorage.session()
@@ -152,7 +169,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         {exportType === 'PRIVATE_KEY' && (
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
-        <Row style={{ gap: 12, justifyContent: 'center' }}>
+        <Row style={{ gap: 16, justifyContent: 'center' }}>
           <StyledHoldButton
             figure='quaternary'
             size='small'
@@ -168,14 +185,17 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
             style={{ borderRadius: 8 }}
             pressed={onPress}
           />
-          <WebButton
-            figure='quaternary'
-            size='small'
-            onClick={copyData}
-            text='Copy'
-            textType='body6'
-            style={{ borderRadius: 8 }}
-          />
+
+          <StyledCopyButton figure='quaternary' size='small' onClick={onClickCopy}>
+            {copied ? (
+              <WebText type='title6' style={{ height: '1.1em' }}>Copied!</WebText>
+            ) : (
+              <Row style={{ columnGap: 4 }}>
+                <WebImg src={IconCopy} size={14} />
+                <WebText type='title6' style={{ height: '1.1em' }}>Copy</WebText>
+              </Row>
+            )}
+          </StyledCopyButton>
         </Row>
       </StyledInputBox>
 
@@ -189,6 +209,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           text='Anyone with the phrase will have full control over my funds.'
           tabIndex={1}
           margin='0'
+          color={theme.webNeutral._500}
         />
         <TermsCheckbox
           id='term02'
@@ -199,6 +220,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           text='I will never share my seed phrase with anyone.'
           tabIndex={2}
           margin='0'
+          color={theme.webNeutral._500}
         />
       </StyledTermsBox>
 

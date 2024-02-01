@@ -7,6 +7,7 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCheck from '@assets/web/web-check-circle.svg';
 
 const StyledContainer = styled(View)`
+  width: 552px;
   row-gap: 24px;
   height: 350px;
 `;
@@ -17,11 +18,11 @@ const StyledMessageBox = styled(View)`
 
 const StyledInputBox = styled(Row)`
   gap: 12px;
-  width: 416px;
+  width: calc(100% + 30px);
 `;
 
 const StyledInput = styled(WebInput)`
-  width: 384px;
+  width: 100%;
 `;
 
 const StyledButtonBox = styled(View)`
@@ -50,7 +51,7 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
         <WebText type='headline3'>Account Synced!</WebText>
         <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
           {
-            'Your account has been synced to Adena.\nConfirm your address below and click on Next to\ncontinue.'
+            'Your account has been synced to Adena.\nConfirm your address below and click on Next to continue.'
           }
         </WebText>
       </StyledMessageBox>

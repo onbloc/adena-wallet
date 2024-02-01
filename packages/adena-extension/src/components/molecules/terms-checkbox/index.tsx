@@ -4,7 +4,7 @@ import styled, { CSSProp } from 'styled-components';
 import checkOff from '@assets/check-off.svg';
 import checkOn from '@assets/check-on.svg';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import { fonts } from '@styles/theme';
 
 type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
@@ -17,6 +17,7 @@ interface TermsCheckboxProps {
   className?: string;
   margin?: string;
   id?: string;
+  color?: string;
 }
 
 const Wrapper = styled.div<{ margin?: string }>`
@@ -26,7 +27,7 @@ const Wrapper = styled.div<{ margin?: string }>`
   ${fonts.body2Reg};
 `;
 
-const Label = styled.label<{ checkboxPos: CheckboxPos }>`
+const Label = styled.label<{ checkboxPos: CheckboxPos, color?: string }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   position: relative;
   padding-left: 28px;
@@ -49,7 +50,7 @@ const Label = styled.label<{ checkboxPos: CheckboxPos }>`
   &,
   * {
     font: inherit;
-    color: ${getTheme('neutral', 'a')};
+      color: ${({ color, theme }): string => color ?? theme.neutral.a};
   }
 `;
 
@@ -75,9 +76,10 @@ export const TermsCheckbox = ({
   className = '',
   margin,
   id = '',
+  color,
 }: TermsCheckboxProps): JSX.Element => {
   return (
-    <Wrapper className={className} margin={margin}>
+    <Wrapper className={className} margin={margin} color={color}>
       <Input
         id={id ? id : 'terms'}
         type='checkbox'
@@ -85,7 +87,7 @@ export const TermsCheckbox = ({
         onChange={onChange}
         tabIndex={tabIndex}
       />
-      <Label htmlFor={id ? id : 'terms'} checkboxPos={checkboxPos}>
+      <Label htmlFor={id ? id : 'terms'} checkboxPos={checkboxPos} color={color}>
         {text && text}
         {children}
       </Label>

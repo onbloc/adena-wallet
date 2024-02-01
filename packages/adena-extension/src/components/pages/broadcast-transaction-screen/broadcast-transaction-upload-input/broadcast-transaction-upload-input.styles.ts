@@ -27,7 +27,21 @@ export const StyledInputLabel = styled.label`
   border-radius: 18px;
   border: 1px solid ${({ theme }): string => theme.neutral._7};
   background: ${({ theme }): string => theme.neutral._9};
+  color: ${({ theme }): string => theme.neutral.a};
+  transition: 0.2s;
   cursor: pointer;
+
+  .icon {
+    transition: 0.2s;
+    fill: ${({ theme }): string => theme.neutral.a};
+  }
+
+  &:hover {
+    color: ${({ theme }): string => theme.neutral._1};
+    .icon {
+      fill: ${({ theme }): string => theme.neutral._1};
+    }
+  }
 `;
 
 export const StyledHiddenInput = styled.input`

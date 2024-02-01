@@ -9,6 +9,7 @@ import useLink from '@hooks/use-link';
 
 const StyledContainer = styled(View)`
   width: 540px;
+  height: 345px;
   row-gap: 40px;
   align-items: flex-start;
 `;
