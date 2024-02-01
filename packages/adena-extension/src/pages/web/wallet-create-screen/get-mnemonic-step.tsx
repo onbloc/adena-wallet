@@ -1,5 +1,5 @@
-import { ReactElement, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import { ReactElement, useEffect, useState } from 'react';
+import styled, { FlattenSimpleInterpolation, css, keyframes, useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
 import IconCopy from '@assets/web/copy.svg';
@@ -9,6 +9,7 @@ import { WebSeedBox } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
 
 const StyledContainer = styled(View)`
+  width: 552px;
   row-gap: 24px;
 `;
 
@@ -25,9 +26,38 @@ const StyledWarnBox = styled(Row)`
 
 const StyledButton = styled(WebButton)`
   border-radius: 8px;
-  :active {
-    background-color: #2a2c31;
+  :hover {
+    background-color: rgba(255, 255, 255, 0.08);
   }
+`;
+
+const fill = keyframes`
+  from {
+   width: 0;
+  }
+  to {
+   width: 100%;
+  }
+`;
+
+const StyledHoldButton = styled(StyledButton)<{ pressed: boolean }>`
+  position: relative;
+  overflow: hidden;
+  ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>
+    onPress
+      ? css`
+          ::before {
+            content: '';
+            z-index: -1;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            height: 100%;
+            background-color: rgba(0, 89, 255, 0.32);
+            animation: ${fill} 3s forwards;
+          }
+        `
+      : undefined}
 `;
 
 const GetMnemonicStep = ({
@@ -38,9 +68,32 @@ const GetMnemonicStep = ({
   const { seeds, onClickNext } = useWalletCreateScreenReturn;
   const theme = useTheme();
   const [showBlur, setShowBlur] = useState(true);
+  const [onPress, setOnPress] = useState(false);
   const [ableToReveal, setAbleToReveal] = useState(false);
   const [agreeAbleToReveals, setAgreeAbleToReveals] = useState(false);
+  const [checkSavedMnemonic, setCheckSavedMnemonic] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const onClickCopy = (): void => {
+    setCopied(true);
+    navigator.clipboard.writeText(seeds);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (onPress) {
+      timer = setTimeout(() => {
+        setShowBlur(false);
+      }, 3000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onPress]);
 
   return (
     <StyledContainer>
@@ -56,36 +109,45 @@ const GetMnemonicStep = ({
       <WebSeedBox seeds={seeds.split(' ')} showBlur={showBlur} />
 
       {ableToReveal ? (
-        <Row style={{ justifyContent: 'center', columnGap: 12 }}>
-          <StyledButton
-            figure='tertiary'
-            size='small'
-            onMouseDown={(): void => {
-              setShowBlur(false);
-            }}
-            onMouseUp={(): void => {
-              setShowBlur(true);
-            }}
-            text='Hold to Reveal'
-          />
-          <StyledButton
-            figure='tertiary'
-            size='small'
-            onClick={(): void => {
-              navigator.clipboard.writeText(seeds);
-              setCopied(true);
-            }}
-          >
-            {copied ? (
-              <WebText type='title6'>Copied!</WebText>
-            ) : (
-              <Row style={{ columnGap: 4 }}>
-                <WebImg src={IconCopy} size={14} />
-                <WebText type='title6'>Copy</WebText>
-              </Row>
-            )}
-          </StyledButton>
-        </Row>
+        <>
+          <Row style={{ justifyContent: 'center', columnGap: 12 }}>
+            <StyledHoldButton
+              figure='tertiary'
+              size='small'
+              onMouseDown={(): void => {
+                setOnPress(true);
+              }}
+              onMouseUp={(): void => {
+                setOnPress(false);
+                setShowBlur(true);
+              }}
+              text='Hold to Reveal'
+              textType='body6'
+              pressed={onPress}
+            />
+            <StyledButton figure='tertiary' size='small' onClick={onClickCopy}>
+              {copied ? (
+                <WebText type='title6'>Copied!</WebText>
+              ) : (
+                <Row style={{ columnGap: 4 }}>
+                  <WebImg src={IconCopy} size={14} />
+                  <WebText type='title6'>Copy</WebText>
+                </Row>
+              )}
+            </StyledButton>
+          </Row>
+          <Row style={{ columnGap: 8, alignItems: 'center' }}>
+            <WebCheckBox
+              checked={checkSavedMnemonic}
+              onClick={(): void => {
+                setCheckSavedMnemonic(!checkSavedMnemonic);
+              }}
+            />
+            <WebText type='body5' color={theme.webNeutral._500}>
+              I have saved my seed phrase.
+            </WebText>
+          </Row>
+        </>
       ) : (
         <Row style={{ columnGap: 8, alignItems: 'center' }}>
           <WebCheckBox
@@ -105,7 +167,7 @@ const GetMnemonicStep = ({
           figure='primary'
           size='small'
           onClick={onClickNext}
-          disabled={!agreeAbleToReveals}
+          disabled={!checkSavedMnemonic}
           style={{ justifyContent: 'center' }}
           text='Next'
           rightIcon='chevronRight'

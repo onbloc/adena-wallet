@@ -69,7 +69,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
 
   const completeQuestion = useCallback(() => {
     doneQuestionnaire().then(() => {
-      navigate(callbackPath, { state: { doneQuestionnaire: true } });
+      navigate(callbackPath, { state: { doneQuestionnaire: true }, replace: true });
     });
   }, [callbackPath]);
 
