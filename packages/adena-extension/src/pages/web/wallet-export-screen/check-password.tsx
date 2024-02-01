@@ -146,6 +146,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
           text={term01Text}
           tabIndex={1}
           margin='0'
+          color={theme.webNeutral._500}
         />
         <TermsCheckbox
           id='term02'
@@ -154,6 +155,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
           text={term02Text}
           tabIndex={2}
           margin='0'
+          color={theme.webNeutral._500}
         />
       </StyledTermsBox>
 

@@ -31,7 +31,7 @@ const StyledWarnBox = styled(View)`
 
 const StyledInputBox = styled(View)`
   width: 100%;
-  gap: 12px;
+  gap: 16px;
 `;
 
 const StyledTermsBox = styled(View)`
@@ -98,9 +98,9 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to reveal your seed phrase. Please carefully review the\nchecklist below.';
+      return 'Do not share your private key! Anyone with your private key will have full control of your wallet.';
     }
-    return 'You’re about to reveal your private key. Please carefully review\nthe checklist below.';
+    return 'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.';
   }, [exportType]);
 
   const seeds = useMemo((): string[] => {
@@ -209,6 +209,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           text='Anyone with the phrase will have full control over my funds.'
           tabIndex={1}
           margin='0'
+          color={theme.webNeutral._500}
         />
         <TermsCheckbox
           id='term02'
@@ -219,6 +220,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           text='I will never share my seed phrase with anyone.'
           tabIndex={2}
           margin='0'
+          color={theme.webNeutral._500}
         />
       </StyledTermsBox>
 
