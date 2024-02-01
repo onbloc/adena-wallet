@@ -1,7 +1,7 @@
 import React from 'react';
 import styled, { CSSProp, css } from 'styled-components';
 
-import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
+import { Text, DefaultInput, ErrorText, Button, View } from '@components/atoms';
 import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
 import { useCreatePassword } from '@hooks/certify/use-create-password';
 import mixins from '@styles/mixins';
@@ -30,7 +30,18 @@ const defaultStyle = css`
 
 const Wrapper = styled.main<{ isPopup: boolean }>`
   ${({ isPopup }): CSSProp => (isPopup ? popupStyle : defaultStyle)};
+  height: 100%;
+  justify-content: space-between;
 `;
+
+const StyledContentWrapper = styled(View)`
+  width: 100%;
+  height: 100%;
+`
+
+const StyledBottomWrapper = styled(View)`
+  width: 100%;
+`
 
 const FormBox = styled.div`
   margin-top: 20px;
@@ -48,40 +59,45 @@ export const CreatePassword = (): JSX.Element => {
 
   return (
     <Wrapper isPopup={params.type !== 'SEED'}>
-      <TitleWithDesc title={text.title} desc={text.desc} />
-      <FormBox>
-        <DefaultInput
-          type='password'
-          name='pwd'
-          placeholder='Password'
-          onChange={pwdState.onChange}
-          onKeyDown={onKeyDown}
-          error={pwdState.error}
-          ref={pwdState.ref}
-        />
-        <DefaultInput
-          type='password'
-          name='confirmPwd'
-          placeholder='Confirm Password'
-          onChange={confirmPwdState.onChange}
-          onKeyDown={onKeyDown}
-          error={confirmPwdState.error}
-        />
-        {errorMessage && <ErrorText text={errorMessage} />}
-      </FormBox>
-      <TermsCheckbox
-        checked={termsState.value}
-        onChange={termsState.onChange}
-        text='I agree to the&nbsp;'
-        tabIndex={3}
-      >
-        <button className='terms-button' type='button' onClick={handleLinkClick} tabIndex={4}>
-          Terms of Use.
-        </button>
-      </TermsCheckbox>
-      <Button fullWidth disabled={buttonState.disabled} onClick={buttonState.onClick} tabIndex={5}>
-        <Text type='body1Bold'>Save</Text>
-      </Button>
+      <StyledContentWrapper>
+        <TitleWithDesc title={text.title} desc={text.desc} />
+        <FormBox>
+          <DefaultInput
+            type='password'
+            name='pwd'
+            placeholder='Password'
+            onChange={pwdState.onChange}
+            onKeyDown={onKeyDown}
+            error={pwdState.error}
+            ref={pwdState.ref}
+          />
+          <DefaultInput
+            type='password'
+            name='confirmPwd'
+            placeholder='Confirm Password'
+            onChange={confirmPwdState.onChange}
+            onKeyDown={onKeyDown}
+            error={confirmPwdState.error}
+          />
+          {errorMessage && <ErrorText text={errorMessage} />}
+        </FormBox>
+      </StyledContentWrapper>
+
+      <StyledBottomWrapper>
+        <TermsCheckbox
+          checked={termsState.value}
+          onChange={termsState.onChange}
+          text='I agree to the&nbsp;'
+          tabIndex={3}
+        >
+          <button className='terms-button' type='button' onClick={handleLinkClick} tabIndex={4}>
+            Terms of Use.
+          </button>
+        </TermsCheckbox>
+        <Button fullWidth disabled={buttonState.disabled} onClick={buttonState.onClick} tabIndex={5}>
+          <Text type='body1Bold'>Save</Text>
+        </Button>
+      </StyledBottomWrapper>
     </Wrapper>
   );
 };
