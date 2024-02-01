@@ -32,8 +32,6 @@ export const useCurrentAccount = (): {
       return false;
     }
     await accountService.changeCurrentAccount(changedAccount);
-    const clone = wallet.clone();
-    clone.currentAccountId = changedAccount.id;
     setCurrentAccount(changedAccount);
     dispatchChangedEvent(changedAccount);
     return true;

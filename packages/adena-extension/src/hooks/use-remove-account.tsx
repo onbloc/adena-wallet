@@ -25,8 +25,8 @@ export const useRemoveAccount = (): {
     clone.removeAccount(account);
     const nextAccount = clone.accounts[clone.accounts.length - 1];
     clone.currentAccountId = nextAccount.id;
-    await updateWallet(clone);
     await changeCurrentAccount(nextAccount);
+    await updateWallet(clone);
     return true;
   };
 
