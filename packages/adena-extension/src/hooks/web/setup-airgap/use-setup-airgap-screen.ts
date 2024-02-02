@@ -14,9 +14,14 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { waitForRun } from '@common/utils/timeout-utils';
+import { useWallet } from '@hooks/use-wallet';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseSetupAirgapScreenReturn = {
   address: string;
+  indicatorInfo: UseIndicatorStepReturn;
   errorMessage: string | null;
   changeAddress: (address: string) => void;
   setupAirgapState: SetupAirgapStateType;
@@ -28,29 +33,18 @@ export type UseSetupAirgapScreenReturn = {
 
 export type SetupAirgapStateType = 'INIT' | 'ENTER_ADDRESS' | 'LOADING' | 'COMPLETE';
 
-export const setupAirgapStep: Record<
-  SetupAirgapStateType,
-  {
-    backTo: SetupAirgapStateType | null;
-    stepNo: number;
-  }
-> = {
-  INIT: {
-    backTo: null,
-    stepNo: 0,
-  },
-  ENTER_ADDRESS: {
-    backTo: 'INIT',
-    stepNo: 1,
-  },
-  COMPLETE: {
-    backTo: 'ENTER_ADDRESS',
-    stepNo: 2,
-  },
-  LOADING: {
-    backTo: 'ENTER_ADDRESS',
-    stepNo: 2,
-  },
+export const setupAirgapStepBackTo: Record<SetupAirgapStateType, SetupAirgapStateType | null> = {
+  INIT: null,
+  ENTER_ADDRESS: 'INIT',
+  COMPLETE: 'ENTER_ADDRESS',
+  LOADING: 'ENTER_ADDRESS',
+};
+
+const setupAirgapStepNo = {
+  INIT: 0,
+  ENTER_ADDRESS: 1,
+  COMPLETE: 2,
+  LOADING: 2,
 };
 
 const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
@@ -63,6 +57,12 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [blockedEvent, setBlockedEvent] = useState<boolean>(false);
   const { changeCurrentAccount } = useCurrentAccount();
+  const { existWallet } = useWallet();
+
+  const indicatorInfo = useIndicatorStep<SetupAirgapStateType>({
+    stepMap: setupAirgapStepNo,
+    currentState: setupAirgapState,
+  });
 
   const initSetup = useCallback(() => {
     setSetupAirgapState('ENTER_ADDRESS');
@@ -133,27 +133,22 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     navigate(RoutePath.WebCreatePassword, {
       state: {
         serializedWallet,
-        stepLength: 4,
+        stepLength: indicatorInfo.stepLength,
       },
     });
-  }, [address, walletService]);
+  }, [address, walletService, indicatorInfo]);
 
   const addAccount = useCallback(async () => {
     if (blockedEvent) {
       return;
     }
     setBlockedEvent(true);
-    try {
-      const existWallet = await walletService.existsWallet();
-      if (existWallet) {
-        setSetupAirgapState('LOADING');
-        await waitForRun<void>(_addAddressAccount());
-        navigate(RoutePath.WebAccountAddedComplete);
-      } else {
-        await _createAddressAccount();
-      }
-    } catch (e) {
-      console.log(e);
+    if (existWallet) {
+      setSetupAirgapState('LOADING');
+      await waitForRun<void>(_addAddressAccount());
+      navigate(RoutePath.WebAccountAddedComplete);
+    } else {
+      await _createAddressAccount();
     }
     setBlockedEvent(false);
   }, [blockedEvent, walletService, _addAddressAccount, _createAddressAccount]);
@@ -162,6 +157,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     address,
     errorMessage,
     setupAirgapState,
+    indicatorInfo,
     setSetupAirgapState,
     initSetup,
     changeAddress,

@@ -49,7 +49,9 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
 
   return (
     <StyledContainer>
-      <WebImg src={IconAirgap} size={88} />
+      <View style={{ marginBottom: 8 }}>
+        <WebImg src={IconAirgap} size={88} />
+      </View>
 
       <WebTitleWithDescription
         title={{

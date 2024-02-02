@@ -7,6 +7,7 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
 import IconInfo from '@assets/web/info.svg';
 import RollingNumber from '@components/atoms/rolling-number';
+import { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -46,12 +47,14 @@ const StyledWarningDescriptionWrapper = styled(Row)`
 
 interface QuestionnaireQuestionProps {
   question: Question | null;
+  indicatorInfo: UseIndicatorStepReturn;
   nextQuestion: () => void;
   backStep: () => void;
 }
 
 const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   question,
+  indicatorInfo,
   nextQuestion,
   backStep,
 }) => {
@@ -139,8 +142,8 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   return (
     <StyledContainer>
       <WebMainHeader
-        currentStep={1}
-        stepLength={4}
+        currentStep={indicatorInfo.stepNo}
+        stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickBack}
       />
 

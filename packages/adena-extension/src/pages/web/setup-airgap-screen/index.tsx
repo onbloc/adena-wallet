@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 
 import { WebMain } from '@components/atoms';
 import useSetupAirgapScreen, {
-  setupAirgapStep,
+  setupAirgapStepBackTo,
 } from '@hooks/web/setup-airgap/use-setup-airgap-screen';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -15,6 +15,7 @@ import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
+    indicatorInfo,
     setupAirgapState,
     address,
     errorMessage,
@@ -26,12 +27,8 @@ const SetupAirgapScreen: React.FC = () => {
   } = useSetupAirgapScreen();
   const { navigate } = useAppNavigate();
 
-  const stopNo = useMemo(() => {
-    return setupAirgapStep[setupAirgapState].stepNo;
-  }, [setupAirgapState]);
-
   const onClickBack = useCallback(() => {
-    const backTo = setupAirgapStep[setupAirgapState].backTo;
+    const backTo = setupAirgapStepBackTo[setupAirgapState];
     if (backTo === null) {
       navigate(RoutePath.Home);
       return;
@@ -43,12 +40,14 @@ const SetupAirgapScreen: React.FC = () => {
   return (
     <WebMain spacing={272}>
       {setupAirgapState !== 'LOADING' && (
-        <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
+        <WebMainHeader
+          stepLength={indicatorInfo.stepLength}
+          onClickGoBack={onClickBack}
+          currentStep={indicatorInfo.stepNo}
+        />
       )}
 
-      {setupAirgapState === 'INIT' && (
-        <SetupAirgapInit initSetup={initSetup} />
-      )}
+      {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
       {setupAirgapState === 'ENTER_ADDRESS' && (
         <SetupAirgapEnterAddress
           address={address}
@@ -60,9 +59,7 @@ const SetupAirgapScreen: React.FC = () => {
       {setupAirgapState === 'COMPLETE' && (
         <SetupAirgapCompleteScreen address={address} addAccount={addAccount} />
       )}
-      {setupAirgapState === 'LOADING' && (
-        <WebLoadingAccounts spacing={344 - 272} />
-      )}
+      {setupAirgapState === 'LOADING' && <WebLoadingAccounts spacing={344 - 272} />}
     </WebMain>
   );
 };

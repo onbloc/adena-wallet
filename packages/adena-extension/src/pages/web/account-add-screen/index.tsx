@@ -13,7 +13,7 @@ const AccountAddScreen = (): ReactElement => {
   const { step, onClickGoBack, onClickNext } = useAccountAddScreenReturn;
 
   return (
-    <WebMain spacing={344}>
+    <WebMain spacing={272}>
       {step === 'INIT' && (
         <>
           <WebMainHeader stepLength={0} onClickGoBack={onClickGoBack} />

@@ -51,10 +51,17 @@ const StyledInputWrapper = styled(Row)`
 
 const CreatePasswordScreen = (): JSX.Element => {
   const { openLink } = useLink();
-  const { passwordState, confirmPasswordState, termsState, errorMessage, buttonState, onKeyDown } =
-    useCreatePasswordScreen();
+  const {
+    indicatorInfo,
+    passwordState,
+    confirmPasswordState,
+    termsState,
+    errorMessage,
+    buttonState,
+    onKeyDown,
+  } = useCreatePasswordScreen();
   const theme = useTheme();
-  const { goBack, params } = useAppNavigate<RoutePath.WebCreatePassword>();
+  const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
 
   const moveAdenaTermsPage = useCallback(() => {
     openLink(ADENA_TERMS_PAGE);
@@ -63,8 +70,8 @@ const CreatePasswordScreen = (): JSX.Element => {
   return (
     <WebMain spacing={272}>
       <WebMainHeader
-        stepLength={params.stepLength}
-        currentStep={params.stepLength - 1}
+        stepLength={indicatorInfo.stepLength}
+        currentStep={indicatorInfo.stepLength - 1}
         onClickGoBack={goBack}
       />
 

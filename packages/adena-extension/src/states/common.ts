@@ -32,3 +32,8 @@ export const historyState = atom<{ [key in string]: any }>({
   key: 'common/history-state',
   default: {},
 });
+
+export const webHeaderIndicatorLength = atom<number>({
+  key: 'common/webHeaderIndicatorLength',
+  default: 0,
+});

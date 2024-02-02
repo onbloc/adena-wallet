@@ -6,16 +6,15 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useQuestionnaire from './use-questionnaire';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseWalletCreateReturn = {
   seeds: string;
   step: WalletCreateStateType;
+  indicatorInfo: UseIndicatorStepReturn;
   setStep: React.Dispatch<React.SetStateAction<WalletCreateStateType>>;
-  walletCreateStepNo: {
-    INIT: number;
-    GET_SEED_PHRASE: number;
-  };
-  stepLength: number;
   onClickGoBack: () => void;
   onClickNext: () => void;
 };
@@ -32,13 +31,18 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     params?.doneQuestionnaire ? 'GET_SEED_PHRASE' : 'INIT',
   );
 
-  const seeds = useMemo(() => AdenaWallet.generateMnemonic(), []);
-
-  const stepLength = ableToSkipQuestionnaire ? 3 : 4;
   const walletCreateStepNo = {
     INIT: 0,
-    GET_SEED_PHRASE: ableToSkipQuestionnaire ? 1 : 2,
+    GET_SEED_PHRASE: 1,
   };
+
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: walletCreateStepNo,
+    currentState: step,
+    hasQuestionnaire: true,
+  });
+
+  const seeds = useMemo(() => AdenaWallet.generateMnemonic(), []);
 
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
@@ -85,19 +89,18 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         const serializedWallet = await createdWallet.serialize('');
 
         navigate(RoutePath.WebCreatePassword, {
-          state: { serializedWallet, stepLength },
+          state: { serializedWallet, stepLength: indicatorInfo.stepLength },
           replace: true,
         });
       }
     }
-  }, [step, ableToSkipQuestionnaire, wallet]);
+  }, [step, ableToSkipQuestionnaire, wallet, indicatorInfo]);
 
   return {
     seeds,
     step,
+    indicatorInfo,
     setStep,
-    walletCreateStepNo,
-    stepLength,
     onClickGoBack,
     onClickNext,
   };
