@@ -199,7 +199,8 @@ export class WalletService {
     if (!expiredDate) {
       return false;
     }
-    return dayjs(expiredDate).isBefore(new Date());
+    const currentTime = dayjs().unix();
+    return expiredDate > currentTime;
   };
 
   public updateQuestionnaireExpiredDate = async (): Promise<void> => {
