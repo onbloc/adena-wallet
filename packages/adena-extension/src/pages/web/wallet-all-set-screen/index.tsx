@@ -15,7 +15,7 @@ const StyledContainer = styled(Row)`
 
 const StyledLeft = styled(View)`
   row-gap: 24px;
-  width: 572px;
+  width: 604px;
   align-items: flex-start;
 `;
 
@@ -36,10 +36,26 @@ const StyledLinkBox = styled(View)`
 `;
 
 const StyledBtn = styled(WebButton)`
+  flex: 1;
   flex-direction: column;
   align-items: flex-start;
   row-gap: 12px;
   padding: 20px;
+  background-color: #16181c;
+`;
+
+const StyledBtnTitle = styled(WebText)`
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px; /* 133.333% */
+  letter-spacing: -0.3px;
+`;
+
+const StyledBtnInfo = styled(WebText)`
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px; /* 150% */
+  letter-spacing: -0.24px;
 `;
 
 const WalletAllSetScreen = (): JSX.Element => {
@@ -55,7 +71,7 @@ const WalletAllSetScreen = (): JSX.Element => {
       <StyledContainer>
         <StyledLeft>
           <StyledMessageBox>
-            <WebText type='headline3'>You’re All Set!</WebText>
+            <WebText type='display4'>You’re All Set!</WebText>
             <WebText type='body4' color={theme.webNeutral._500}>
               Click on the Start button to launch Adena
             </WebText>
@@ -75,12 +91,12 @@ const WalletAllSetScreen = (): JSX.Element => {
                 <StyledImgBox>
                   <WebImg src={IconGnoLand} size={27} />
                 </StyledImgBox>
-                <WebText type='body5' color={theme.webNeutral._500}>
+                <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                   Gno.land
-                </WebText>
-                <WebText type='title6' color={theme.webNeutral._200}>
+                </StyledBtnTitle>
+                <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
                   Visit the official website for the Gno.land project.
-                </WebText>
+                </StyledBtnInfo>
               </StyledBtn>
               <StyledBtn
                 figure='tertiary'
@@ -92,12 +108,12 @@ const WalletAllSetScreen = (): JSX.Element => {
                 <StyledImgBox>
                   <WebImg src={IconGnoSwap} size={27} />
                 </StyledImgBox>
-                <WebText type='body5' color={theme.webNeutral._500}>
+                <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                   Gnoswap
-                </WebText>
-                <WebText type='title6' color={theme.webNeutral._200}>
+                </StyledBtnTitle>
+                <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
                   Swap & earn in the most capital efficient DEX.
-                </WebText>
+                </StyledBtnInfo>
               </StyledBtn>
               <StyledBtn
                 figure='tertiary'
@@ -109,12 +125,12 @@ const WalletAllSetScreen = (): JSX.Element => {
                 <StyledImgBox>
                   <WebImg src={IconGnoScan} size={27} />
                 </StyledImgBox>
-                <WebText type='body5' color={theme.webNeutral._500}>
+                <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                   Gnoscan
-                </WebText>
-                <WebText type='title6' color={theme.webNeutral._200}>
+                </StyledBtnTitle>
+                <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
                   A simple & fast explorer for Gno.land networks.
-                </WebText>
+                </StyledBtnInfo>
               </StyledBtn>
             </Row>
           </StyledLinkBox>
