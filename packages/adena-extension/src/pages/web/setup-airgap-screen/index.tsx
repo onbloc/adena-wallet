@@ -11,6 +11,7 @@ import { RoutePath } from '@types';
 import SetupAirgapEnterAddress from './enter-address';
 import SetupAirgapInit from './init';
 import SetupAirgapCompleteScreen from './complete';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
@@ -41,7 +42,10 @@ const SetupAirgapScreen: React.FC = () => {
 
   return (
     <WebMain spacing={272}>
-      <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
+      {setupAirgapState !== 'LOADING' && (
+        <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
+      )}
+
       {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
       {setupAirgapState === 'ENTER_ADDRESS' && (
         <SetupAirgapEnterAddress
@@ -53,6 +57,9 @@ const SetupAirgapScreen: React.FC = () => {
       )}
       {setupAirgapState === 'COMPLETE' && (
         <SetupAirgapCompleteScreen address={address} addAccount={addAccount} />
+      )}
+      {setupAirgapState === 'LOADING' && (
+        <WebLoadingAccounts spacing={344 - 272} />
       )}
     </WebMain>
   );
