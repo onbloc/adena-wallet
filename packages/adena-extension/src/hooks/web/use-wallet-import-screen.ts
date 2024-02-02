@@ -5,7 +5,6 @@ import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useQuestionnaire from './use-questionnaire';
 import useIndicatorStep, {
-  IndicatorStepType,
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
@@ -62,13 +61,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   };
 
   const indicatorInfo = useIndicatorStep<string>({
-    stepMap: Object.keys(walletImportStepNo).reduce<IndicatorStepType>((accumulator, current) => {
-      const currentState = current as WalletImportStateType;
-      accumulator[current] = {
-        stepNo: walletImportStepNo[currentState],
-      };
-      return accumulator;
-    }, {}),
+    stepMap: walletImportStepNo,
     currentState: step,
     hasQuestionnaire: true,
   });

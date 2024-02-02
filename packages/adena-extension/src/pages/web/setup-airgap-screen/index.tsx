@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 
 import { WebMain } from '@components/atoms';
 import useSetupAirgapScreen, {
-  setupAirgapStep,
+  setupAirgapStepBackTo,
 } from '@hooks/web/setup-airgap/use-setup-airgap-screen';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -28,7 +28,7 @@ const SetupAirgapScreen: React.FC = () => {
   const { navigate } = useAppNavigate();
 
   const onClickBack = useCallback(() => {
-    const backTo = setupAirgapStep[setupAirgapState].backTo;
+    const backTo = setupAirgapStepBackTo[setupAirgapState];
     if (backTo === null) {
       navigate(RoutePath.Home);
       return;
@@ -40,12 +40,14 @@ const SetupAirgapScreen: React.FC = () => {
   return (
     <WebMain spacing={272}>
       {setupAirgapState !== 'LOADING' && (
-        <WebMainHeader stepLength={indicatorInfo.stepLength} onClickGoBack={onClickBack} currentStep={indicatorInfo.stepNo} />
+        <WebMainHeader
+          stepLength={indicatorInfo.stepLength}
+          onClickGoBack={onClickBack}
+          currentStep={indicatorInfo.stepNo}
+        />
       )}
 
-      {setupAirgapState === 'INIT' && (
-        <SetupAirgapInit initSetup={initSetup} />
-      )}
+      {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
       {setupAirgapState === 'ENTER_ADDRESS' && (
         <SetupAirgapEnterAddress
           address={address}
@@ -57,9 +59,7 @@ const SetupAirgapScreen: React.FC = () => {
       {setupAirgapState === 'COMPLETE' && (
         <SetupAirgapCompleteScreen address={address} addAccount={addAccount} />
       )}
-      {setupAirgapState === 'LOADING' && (
-        <WebLoadingAccounts spacing={344 - 272} />
-      )}
+      {setupAirgapState === 'LOADING' && <WebLoadingAccounts spacing={344 - 272} />}
     </WebMain>
   );
 };

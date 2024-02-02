@@ -7,7 +7,6 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useQuestionnaire from './use-questionnaire';
 import useIndicatorStep, {
-  IndicatorStepType,
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
@@ -38,13 +37,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
   };
 
   const indicatorInfo = useIndicatorStep<string>({
-    stepMap: Object.keys(walletCreateStepNo).reduce<IndicatorStepType>((accumulator, current) => {
-      const currentState = current as WalletCreateStateType;
-      accumulator[current] = {
-        stepNo: walletCreateStepNo[currentState],
-      };
-      return accumulator;
-    }, {}),
+    stepMap: walletCreateStepNo,
     currentState: step,
     hasQuestionnaire: true,
   });

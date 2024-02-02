@@ -8,7 +8,6 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import useQuestionnaire from '../use-questionnaire';
 import useIndicatorStep, {
-  IndicatorStepType,
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
@@ -41,13 +40,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   );
 
   const indicatorInfo = useIndicatorStep<string>({
-    stepMap: Object.keys(googleLoginStepNo).reduce<IndicatorStepType>((accumulator, current) => {
-      const currentState = current as GoogleLoginStateType;
-      accumulator[current] = {
-        stepNo: googleLoginStepNo[currentState],
-      };
-      return accumulator;
-    }, {}),
+    stepMap: googleLoginStepNo,
     currentState: googleLoginState,
     hasQuestionnaire: true,
   });

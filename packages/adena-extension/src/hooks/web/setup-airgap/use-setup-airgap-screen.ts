@@ -33,29 +33,18 @@ export type UseSetupAirgapScreenReturn = {
 
 export type SetupAirgapStateType = 'INIT' | 'ENTER_ADDRESS' | 'LOADING' | 'COMPLETE';
 
-export const setupAirgapStep: Record<
-  SetupAirgapStateType,
-  {
-    backTo: SetupAirgapStateType | null;
-    stepNo: number;
-  }
-> = {
-  INIT: {
-    backTo: null,
-    stepNo: 0,
-  },
-  ENTER_ADDRESS: {
-    backTo: 'INIT',
-    stepNo: 1,
-  },
-  COMPLETE: {
-    backTo: 'ENTER_ADDRESS',
-    stepNo: 2,
-  },
-  LOADING: {
-    backTo: 'ENTER_ADDRESS',
-    stepNo: 2,
-  },
+export const setupAirgapStepBackTo: Record<SetupAirgapStateType, SetupAirgapStateType | null> = {
+  INIT: null,
+  ENTER_ADDRESS: 'INIT',
+  COMPLETE: 'ENTER_ADDRESS',
+  LOADING: 'ENTER_ADDRESS',
+};
+
+const setupAirgapStepNo = {
+  INIT: 0,
+  ENTER_ADDRESS: 1,
+  COMPLETE: 2,
+  LOADING: 2,
 };
 
 const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
@@ -71,7 +60,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const { existWallet } = useWallet();
 
   const indicatorInfo = useIndicatorStep<SetupAirgapStateType>({
-    stepMap: setupAirgapStep,
+    stepMap: setupAirgapStepNo,
     currentState: setupAirgapState,
   });
 
