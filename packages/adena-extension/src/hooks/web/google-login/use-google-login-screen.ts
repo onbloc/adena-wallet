@@ -101,6 +101,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       const clone = wallet.clone();
       const web3AuthKeyring = await Web3AuthKeyring.fromPrivateKeyStr(privateKey);
       const account = await SingleAccount.createBy(web3AuthKeyring, clone.nextAccountName);
+      account.index = clone.lastAccountIndex + 1;
       clone.addAccount(account);
       clone.addKeyring(web3AuthKeyring);
       const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
