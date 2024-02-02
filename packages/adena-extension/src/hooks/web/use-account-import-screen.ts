@@ -1,11 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Wallet, PrivateKeyKeyring, SingleAccount, Account, Keyring } from 'adena-module';
+import {
+  Wallet,
+  PrivateKeyKeyring,
+  SingleAccount,
+  Account,
+  Keyring,
+  isAirgapAccount,
+} from 'adena-module';
 
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useQuestionnaire from './use-questionnaire';
+import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 
 export type UseAccountImportReturn = {
   isValidForm: boolean;
@@ -71,9 +79,10 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     }
 
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
-    const address = await account.getAddress('g');
+    const address = await account.getAddress(defaultAddressPrefix);
+    const checkAccounts = wallet.accounts.filter((account) => !isAirgapAccount(account));
     const storedAddresses = await Promise.all(
-      wallet.accounts.map((account) => account.getAddress('g')),
+      checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
     );
     const existAddress = storedAddresses.includes(address);
     if (existAddress) {

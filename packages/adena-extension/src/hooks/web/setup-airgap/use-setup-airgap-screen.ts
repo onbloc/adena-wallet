@@ -1,12 +1,19 @@
 import { useCallback, useState } from 'react';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { AirgapAccount, AddressKeyring, AdenaWallet, fromBech32 } from 'adena-module';
+import {
+  AirgapAccount,
+  AddressKeyring,
+  AdenaWallet,
+  fromBech32,
+  isSingleAccount,
+} from 'adena-module';
 
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseSetupAirgapScreenReturn = {
   address: string;
@@ -19,7 +26,7 @@ export type UseSetupAirgapScreenReturn = {
   addAccount: (password?: string) => Promise<void>;
 };
 
-export type SetupAirgapStateType = 'INIT' | 'ENTER_ADDRESS' | 'COMPLETE';
+export type SetupAirgapStateType = 'INIT' | 'ENTER_ADDRESS' | 'LOADING' | 'COMPLETE';
 
 export const setupAirgapStep: Record<
   SetupAirgapStateType,
@@ -37,6 +44,10 @@ export const setupAirgapStep: Record<
     stepNo: 1,
   },
   COMPLETE: {
+    backTo: 'ENTER_ADDRESS',
+    stepNo: 2,
+  },
+  LOADING: {
     backTo: 'ENTER_ADDRESS',
     stepNo: 2,
   },
@@ -75,9 +86,10 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address]);
 
   const _existsAddress = useCallback(async () => {
-    return Promise.all(accounts.map((account) => account.getAddress('g'))).then((addresses) =>
-      addresses.includes(address),
-    );
+    const checkAccounts = accounts.filter((account) => !isSingleAccount(account));
+    return Promise.all(
+      checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
+    ).then((addresses) => addresses.includes(address));
   }, [accounts, address]);
 
   const confirmAddress = useCallback(async () => {
@@ -113,7 +125,6 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       await changeCurrentAccount(storedAccount);
     }
     await updateWallet(clone);
-    navigate(RoutePath.WebAccountAddedComplete);
   }, [address, walletService]);
 
   const _createAddressAccount = useCallback(async () => {
@@ -135,7 +146,9 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     try {
       const existWallet = await walletService.existsWallet();
       if (existWallet) {
-        await _addAddressAccount();
+        setSetupAirgapState('LOADING');
+        await waitForRun<void>(_addAddressAccount());
+        navigate(RoutePath.WebAccountAddedComplete);
       } else {
         await _createAddressAccount();
       }

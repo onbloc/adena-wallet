@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
@@ -15,11 +15,17 @@ const StyledMessageBox = styled(View)`
   row-gap: 16px;
 `;
 
-const WebLoadingAccounts: React.FC = (): ReactElement => {
+interface WebLoadingAccountsProps {
+  spacing?: number;
+}
+
+const WebLoadingAccounts: React.FC<WebLoadingAccountsProps> = ({
+  spacing = 0,
+}) => {
   const theme = useTheme();
 
   return (
-    <StyledContainer>
+    <StyledContainer style={{ marginTop: `${spacing}px` }}>
       <WebImg src={AnimationLoadingAccount} height={120} />
       <StyledMessageBox>
         <WebText type='headline2' textCenter>
