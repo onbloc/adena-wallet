@@ -112,12 +112,12 @@ const EditCustomNetworkContainer: React.FC = () => {
     }
     setRPCUrlError('');
     setChainIdError('');
-    goBack;
+    goBack();
   }, [networks, name, rpcUrl, chainId, currentNetworkId, originNetwork]);
 
   const removeNetwork = useCallback(async () => {
     await deleteNetwork(currentNetworkId);
-    goBack;
+    goBack();
   }, [currentNetworkId]);
 
   return (

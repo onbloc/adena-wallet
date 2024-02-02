@@ -61,7 +61,7 @@ const AddCustomNetworkContainer: React.FC = () => {
       return;
     }
     await addNetwork(name, rpcUrl, chainId);
-    goBack;
+    goBack();
   }, [networks, name, rpcUrl, chainId]);
 
   return (
