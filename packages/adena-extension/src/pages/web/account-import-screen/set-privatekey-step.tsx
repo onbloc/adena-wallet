@@ -19,7 +19,6 @@ const StyledMessageBox = styled(View)`
 const StyledItem = styled(Row)<{ error: boolean }>`
   position: relative;
   overflow: hidden;
-  height: 80px;
   border-radius: 10px;
   background: ${({ error, theme }): string =>
     error ? theme.webError._300 : theme.webNeutral._900};
@@ -31,7 +30,7 @@ const StyledItem = styled(Row)<{ error: boolean }>`
       : '0px 0px 0px 3px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);'};
 `;
 
-const StyledInput = styled.textarea`
+const StyledTextarea = styled.textarea`
   ${webFonts.body5};
   color: ${getTheme('webNeutral', '_0')};
   padding: 16px;
@@ -43,11 +42,13 @@ const StyledInput = styled.textarea`
   outline: none;
   background: transparent;
   -webkit-text-security: disc;
+  resize: none;
 
   :focus-visible {
     background: transparent;
   }
 `;
+
 const SetPrivateKeyStep = ({
   useAccountImportScreenReturn,
 }: {
@@ -68,7 +69,7 @@ const SetPrivateKeyStep = ({
       </StyledMessageBox>
       <View style={{ rowGap: 12 }}>
         <StyledItem error={!!errMsg}>
-          <StyledInput
+          <StyledTextarea
             value={privateKey}
             placeholder='Private Key'
             onChange={({ target: { value } }): void => {

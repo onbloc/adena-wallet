@@ -12,7 +12,7 @@ export type UseWalletImportReturn = {
   isValidForm: boolean;
   extended: boolean;
   errMsg: string;
-  setInputValue: React.Dispatch<React.SetStateAction<string>>;
+  updateInputValue: (value: string) => void;
   setInputType: React.Dispatch<React.SetStateAction<'12seeds' | '24seeds' | 'pKey'>>;
   step: WalletImportStateType;
   setStep: React.Dispatch<React.SetStateAction<WalletImportStateType>>;
@@ -33,27 +33,25 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
 
   const [inputValue, setInputValue] = useState('');
   const [inputType, setInputType] = useState<'12seeds' | '24seeds' | 'pKey'>('12seeds');
-  const errMsg = useMemo(() => {
-    if (inputValue) {
-      const isSeed = inputType === '12seeds' || inputType === '24seeds';
-      if (isSeed && inputValue.trim().split(' ').length > 1) {
-        try {
-          new EnglishMnemonic(inputValue);
-        } catch {
-          return 'Invalid seed phrase';
-        }
-      } else if (inputType === 'pKey') {
-        const privateKey = inputValue.replace('0x', '');
-        const regExp = /[0-9A-Fa-f]{64}/g;
-        if (privateKey.length !== 64 || !privateKey.match(regExp)) {
-          return 'Invalid private key';
-        }
-      }
-    }
-    return '';
-  }, [inputValue, inputType]);
+  const [errMsg, setErrMsg] = useState('');
 
-  const isValidForm = !!inputValue && !errMsg;
+  const updateInputValue = useCallback((value: string) => {
+    setInputValue(value);
+    setErrMsg('');
+  }, []);
+
+  const isValidForm = useMemo(() => {
+    let validInput = false;
+    if (inputType === '12seeds') {
+      validInput = inputValue.split(' ').length === 12;
+    } else if (inputType === '24seeds') {
+      validInput = inputValue.split(' ').length === 24;
+    } else {
+      validInput = !!inputValue;
+    }
+
+    return validInput && !errMsg;
+  }, [inputValue, errMsg, inputType]);
 
   const walletImportStepNo = {
     INIT: 0,
@@ -92,14 +90,24 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     } else if (step === 'SET_SEED_PHRASE') {
       let serializedWallet;
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
-      const createdWallet = isSeed
-        ? await AdenaWallet.createByMnemonic(inputValue)
-        : new AdenaWallet();
+      let createdWallet = new AdenaWallet();
 
       if (isSeed) {
+        try {
+          new EnglishMnemonic(inputValue);
+        } catch {
+          setErrMsg('Invalid seed phrase');
+          return;
+        }
+        createdWallet = await AdenaWallet.createByMnemonic(inputValue);
         serializedWallet = await createdWallet.serialize('');
       } else {
-        const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(inputValue);
+        const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(inputValue).catch(() => null);
+        if (keyring === null) {
+          setErrMsg('Invalid private key');
+          return;
+        }
+
         const account = await SingleAccount.createBy(keyring, 'Account');
         createdWallet.currentAccountId = account.id;
         createdWallet.addAccount(account);
@@ -109,6 +117,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
 
       navigate(RoutePath.WebCreatePassword, {
         state: { serializedWallet, stepLength: indicatorInfo.stepLength },
+        replace: true,
       });
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
@@ -117,7 +126,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     extended,
     isValidForm,
     errMsg,
-    setInputValue,
+    updateInputValue,
     setInputType,
     step,
     setStep,
