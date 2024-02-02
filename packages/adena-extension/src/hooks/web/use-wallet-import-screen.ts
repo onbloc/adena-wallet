@@ -21,7 +21,7 @@ export type UseWalletImportReturn = {
   onClickNext: () => void;
 };
 
-export type WalletImportStateType = 'INIT' | 'SET_SEED_PHRASE';
+export type WalletImportStateType = 'INIT' | 'SET_SEED_PHRASE' | 'LOADING';
 
 const useWalletImportScreen = (): UseWalletImportReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletImport>();
@@ -56,6 +56,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const walletImportStepNo = {
     INIT: 0,
     SET_SEED_PHRASE: 1,
+    LOADING: 1,
   };
 
   const indicatorInfo = useIndicatorStep<string>({
@@ -88,7 +89,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         });
       }
     } else if (step === 'SET_SEED_PHRASE') {
-      let serializedWallet;
+      let serializedWallet = '';
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
       let createdWallet = new AdenaWallet();
 
@@ -99,6 +100,9 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
           setErrMsg('Invalid seed phrase');
           return;
         }
+
+        setStep('LOADING');
+
         createdWallet = await AdenaWallet.createByMnemonic(inputValue);
         serializedWallet = await createdWallet.serialize('');
       } else {
@@ -108,17 +112,21 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
           return;
         }
 
+        setStep('LOADING');
         const account = await SingleAccount.createBy(keyring, 'Account');
+
         createdWallet.currentAccountId = account.id;
         createdWallet.addAccount(account);
         createdWallet.addKeyring(keyring);
         serializedWallet = await createdWallet.serialize('');
       }
 
-      navigate(RoutePath.WebCreatePassword, {
-        state: { serializedWallet, stepLength: indicatorInfo.stepLength },
-        replace: true,
-      });
+      setTimeout(() => {
+        navigate(RoutePath.WebCreatePassword, {
+          state: { serializedWallet, stepLength: indicatorInfo.stepLength },
+          replace: true,
+        });
+      }, 1000);
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
 

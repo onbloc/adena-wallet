@@ -7,11 +7,19 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import GetMnemonicStep from './set-mnemonic-step';
 import useWalletImportScreen from '@hooks/web/use-wallet-import-screen';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const WalletImportScreen = (): ReactElement => {
   const useWalletImportScreenReturn = useWalletImportScreen();
-  const { extended, step, onClickGoBack, indicatorInfo, onClickNext } =
-    useWalletImportScreenReturn;
+  const { extended, step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
+
+  if (step === 'LOADING') {
+    return (
+      <WebMain spacing={344}>
+        <WebLoadingAccounts />
+      </WebMain>
+    );
+  }
 
   return (
     <WebMain spacing={extended ? 180 : 272}>
