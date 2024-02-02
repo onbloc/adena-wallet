@@ -46,7 +46,9 @@ const SetupAirgapScreen: React.FC = () => {
         <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
       )}
 
-      {setupAirgapState === 'INIT' && <SetupAirgapInit initSetup={initSetup} />}
+      {setupAirgapState === 'INIT' && (
+        <SetupAirgapInit initSetup={initSetup} />
+      )}
       {setupAirgapState === 'ENTER_ADDRESS' && (
         <SetupAirgapEnterAddress
           address={address}

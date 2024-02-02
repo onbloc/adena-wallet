@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
 import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
@@ -8,14 +8,11 @@ import IconLink from '@assets/web/link.svg';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import useLink from '@hooks/use-link';
 import { ADENA_DOCS_PAGE, GNO_CLI_HELP_PAGE } from '@common/constants/resource.constant';
+import WebTitleWithDescription from '@components/molecules/web-title-with-description';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
 `;
 
 const StyledButtonWrapper = styled(View)`
@@ -40,7 +37,6 @@ interface SetupAirgapInitProps {
 }
 
 const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
-  const theme = useTheme();
   const { openLink } = useLink();
 
   const moveGnoCliHelp = useCallback(() => {
@@ -53,16 +49,16 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
 
   return (
     <StyledContainer>
-      <WebImg src={IconAirgap} size={90} />
+      <WebImg src={IconAirgap} size={88} />
 
-      <StyledMessageBox>
-        <WebText type='headline3'>Set Up Airgap Account</WebText>
-        <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
-          {
-            'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.'
-          }
-        </WebText>
-      </StyledMessageBox>
+      <WebTitleWithDescription
+        title={{
+          text: 'Set Up Airgap Account',
+        }}
+        description={{
+          text: 'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.',
+        }}
+      />
 
       <WebWarningDescriptionBox description={description} />
 
@@ -78,7 +74,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
 
       <View style={{ gap: 8 }}>
         <Pressable onClick={moveGnoCliHelp}>
-          <StyledLinkWrapper onClick={moveGnoCliHelp}>
+          <StyledLinkWrapper>
             <WebText type='title6' color='#6C717A'>
               How to use the Gno CLI
             </WebText>

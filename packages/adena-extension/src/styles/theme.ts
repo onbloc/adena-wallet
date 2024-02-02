@@ -186,7 +186,6 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
     letter-spacing: -0.36px;
   `,
   body4: css`
-    font-family: Inter;
     font-size: 16px;
     font-weight: 400;
     line-height: 23px; // 24px makes a pixel issue in the chrome
@@ -409,10 +408,10 @@ const theme = {
   webWarning: WebWarning,
 };
 
-export const getTheme =
-  <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
-  ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
-    theme[val1][val2];
+export const getTheme = <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(
+  val1: T1,
+  val2: T2,
+) => ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] => theme[val1][val2];
 
 export default theme;
 
