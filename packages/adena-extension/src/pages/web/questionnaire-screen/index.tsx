@@ -8,6 +8,7 @@ import QuestionnaireComplete from './complete';
 
 const QuestionnaireScreen = (): ReactElement => {
   const {
+    indicatorInfo,
     questionnaireState,
     question,
     initQuestion,
@@ -33,6 +34,7 @@ const QuestionnaireScreen = (): ReactElement => {
       {questionnaireState === 'QUESTION' && (
         <QuestionnaireQuestion
           question={question}
+          indicatorInfo={indicatorInfo}
           nextQuestion={nextQuestion}
           backStep={backStep}
         />

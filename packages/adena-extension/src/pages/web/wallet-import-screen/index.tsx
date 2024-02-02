@@ -10,15 +10,15 @@ import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 
 const WalletImportScreen = (): ReactElement => {
   const useWalletImportScreenReturn = useWalletImportScreen();
-  const { extended, step, onClickGoBack, stepLength, walletImportStepNo, onClickNext } =
+  const { extended, step, onClickGoBack, indicatorInfo, onClickNext } =
     useWalletImportScreenReturn;
 
   return (
     <WebMain spacing={extended ? 180 : 272}>
       <WebMainHeader
-        stepLength={stepLength}
+        stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}
-        currentStep={walletImportStepNo[step]}
+        currentStep={indicatorInfo.stepNo}
       />
       {step === 'INIT' && (
         <SensitiveInfoStep

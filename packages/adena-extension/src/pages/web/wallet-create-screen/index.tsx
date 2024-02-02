@@ -10,15 +10,15 @@ import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 
 const WalletCreateScreen = (): ReactElement => {
   const useWalletCreateScreenReturn = useWalletCreateScreen();
-  const { step, onClickGoBack, stepLength, walletCreateStepNo, onClickNext } =
+  const { step, indicatorInfo, onClickGoBack, onClickNext } =
     useWalletCreateScreenReturn;
 
   return (
     <WebMain spacing={272}>
       <WebMainHeader
-        stepLength={stepLength}
+        stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}
-        currentStep={walletCreateStepNo[step]}
+        currentStep={indicatorInfo.stepNo}
       />
       {step === 'INIT' && (
         <SensitiveInfoStep

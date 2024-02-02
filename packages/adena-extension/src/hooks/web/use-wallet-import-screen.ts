@@ -4,6 +4,10 @@ import { AdenaWallet, EnglishMnemonic, PrivateKeyKeyring, SingleAccount } from '
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useQuestionnaire from './use-questionnaire';
+import useIndicatorStep, {
+  IndicatorStepType,
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseWalletImportReturn = {
   isValidForm: boolean;
@@ -13,11 +17,7 @@ export type UseWalletImportReturn = {
   setInputType: React.Dispatch<React.SetStateAction<'12seeds' | '24seeds' | 'pKey'>>;
   step: WalletImportStateType;
   setStep: React.Dispatch<React.SetStateAction<WalletImportStateType>>;
-  walletImportStepNo: {
-    INIT: number;
-    SET_SEED_PHRASE: number;
-  };
-  stepLength: number;
+  indicatorInfo: UseIndicatorStepReturn;
   onClickGoBack: () => void;
   onClickNext: () => void;
 };
@@ -56,11 +56,22 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
 
   const isValidForm = !!inputValue && !errMsg;
 
-  const stepLength = ableToSkipQuestionnaire ? 3 : 4;
   const walletImportStepNo = {
     INIT: 0,
-    SET_SEED_PHRASE: ableToSkipQuestionnaire ? 1 : 2,
+    SET_SEED_PHRASE: 1,
   };
+
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: Object.keys(walletImportStepNo).reduce<IndicatorStepType>((accumulator, current) => {
+      const currentState = current as WalletImportStateType;
+      accumulator[current] = {
+        stepNo: walletImportStepNo[currentState],
+      };
+      return accumulator;
+    }, {}),
+    currentState: step,
+    hasQuestionnaire: true,
+  });
 
   const extended = useMemo(() => {
     return inputType === '24seeds';
@@ -104,7 +115,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
       }
 
       navigate(RoutePath.WebCreatePassword, {
-        state: { serializedWallet, stepLength },
+        state: { serializedWallet, stepLength: indicatorInfo.stepLength },
       });
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
@@ -117,8 +128,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     setInputType,
     step,
     setStep,
-    walletImportStepNo,
-    stepLength,
+    indicatorInfo,
     onClickGoBack,
     onClickNext,
   };

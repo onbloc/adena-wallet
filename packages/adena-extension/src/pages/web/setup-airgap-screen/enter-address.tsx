@@ -62,7 +62,9 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
 
   return (
     <StyledContainer>
-      <WebImg src={IconAirgap} size={88} />
+      <View style={{ marginBottom: 8 }}>
+        <WebImg src={IconAirgap} size={88} />
+      </View>
 
       <WebTitleWithDescription
         title={{

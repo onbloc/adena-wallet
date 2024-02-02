@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 
 import { WebMain } from '@components/atoms';
 import useSetupAirgapScreen, {
@@ -15,6 +15,7 @@ import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
+    indicatorInfo,
     setupAirgapState,
     address,
     errorMessage,
@@ -25,10 +26,6 @@ const SetupAirgapScreen: React.FC = () => {
     addAccount,
   } = useSetupAirgapScreen();
   const { navigate } = useAppNavigate();
-
-  const stopNo = useMemo(() => {
-    return setupAirgapStep[setupAirgapState].stepNo;
-  }, [setupAirgapState]);
 
   const onClickBack = useCallback(() => {
     const backTo = setupAirgapStep[setupAirgapState].backTo;
@@ -43,7 +40,7 @@ const SetupAirgapScreen: React.FC = () => {
   return (
     <WebMain spacing={272}>
       {setupAirgapState !== 'LOADING' && (
-        <WebMainHeader stepLength={4} onClickGoBack={onClickBack} currentStep={stopNo} />
+        <WebMainHeader stepLength={indicatorInfo.stepLength} onClickGoBack={onClickBack} currentStep={indicatorInfo.stepNo} />
       )}
 
       {setupAirgapState === 'INIT' && (

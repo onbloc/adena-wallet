@@ -12,8 +12,7 @@ import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 const GoogleLoginScreen: React.FC = () => {
   const {
     googleLoginState,
-    stepLength,
-    googleLoginStepNo,
+    indicatorInfo,
     backStep,
     retry,
     initGoogleLogin,
@@ -36,8 +35,8 @@ const GoogleLoginScreen: React.FC = () => {
       {googleLoginState === 'INIT' && (
         <>
           <WebMainHeader
-            stepLength={stepLength}
-            currentStep={googleLoginStepNo[googleLoginState]}
+            stepLength={indicatorInfo.stepLength}
+            currentStep={indicatorInfo.stepNo}
             onClickGoBack={onClickGoBack}
           />
           <SensitiveInfoStep

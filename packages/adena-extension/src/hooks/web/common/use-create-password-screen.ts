@@ -10,6 +10,9 @@ import {
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
@@ -35,11 +38,13 @@ export type UseCreatePasswordScreenReturn = {
     onClick: () => void;
     disabled: boolean;
   };
+  indicatorInfo: UseIndicatorStepReturn;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 };
 
 export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const { walletService, accountService } = useAdenaContext();
+  const indicatorInfo = useIndicatorStep({});
   const { navigate, params } = useAppNavigate<RoutePath.WebCreatePassword>();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
@@ -169,6 +174,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   }, [inputRef]);
 
   return {
+    indicatorInfo,
     passwordState: {
       value: password,
       confirm: confirmPasswordLength(password),

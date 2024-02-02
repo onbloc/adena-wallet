@@ -4,8 +4,12 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { Question, RoutePath } from '@types';
 import QuestionData from '@resources/questions/questions.json';
 import useQuestionnaire from '../use-questionnaire';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseQuestionnaireScreenReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   questionnaireState: QuestionnaireStateType;
   question: Question | null;
   initQuestion: () => void;
@@ -42,6 +46,8 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const { doneQuestionnaire } = useQuestionnaire();
   const [questionnaireState, setQuestionnaireState] = useState<QuestionnaireStateType>('INIT');
   const [questionIndex, setQuestionIndex] = useState(1);
+
+  const indicatorInfo = useIndicatorStep({});
 
   const questions: Question[] = QuestionData;
   const { callbackPath } = params;
@@ -91,6 +97,10 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   }, [callbackPath, questionnaireState, questionIndex]);
 
   return {
+    indicatorInfo: {
+      stepNo: 1,
+      stepLength: indicatorInfo.stepLength,
+    },
     questionnaireState,
     question,
     initQuestion,

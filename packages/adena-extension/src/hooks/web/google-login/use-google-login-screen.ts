@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
 import { GoogleTorusSigner } from 'adena-torus-signin/src';
 
@@ -7,11 +7,14 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import useQuestionnaire from '../use-questionnaire';
+import useIndicatorStep, {
+  IndicatorStepType,
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseGoogleLoginReturn = {
   googleLoginState: GoogleLoginStateType;
-  googleLoginStepNo: Record<GoogleLoginStateType, number>;
-  stepLength: number;
+  indicatorInfo: UseIndicatorStepReturn;
   backStep: () => void;
   retry: () => void;
   initGoogleLogin: () => void;
@@ -19,6 +22,12 @@ export type UseGoogleLoginReturn = {
 };
 
 export type GoogleLoginStateType = 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
+
+const googleLoginStepNo: Record<GoogleLoginStateType, number> = {
+  INIT: 0,
+  REQUEST_LOGIN: 1,
+  FAILED: 1,
+};
 
 const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
   const { walletService } = useAdenaContext();
@@ -31,26 +40,17 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
     params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT',
   );
 
-  const stepInfo = useMemo(() => {
-    const googleLoginStepNo: Record<GoogleLoginStateType, number> = ableToSkipQuestionnaire
-      ? {
-          INIT: 0,
-          REQUEST_LOGIN: 1,
-          FAILED: 2,
-        }
-      : {
-          INIT: 0,
-          REQUEST_LOGIN: 2,
-          FAILED: 3,
-        };
-    const stepLength = ableToSkipQuestionnaire
-      ? Object.keys(googleLoginStepNo).length
-      : Object.keys(googleLoginStepNo).length + 1;
-    return {
-      stepLength,
-      googleLoginStepNo,
-    };
-  }, [ableToSkipQuestionnaire]);
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: Object.keys(googleLoginStepNo).reduce<IndicatorStepType>((accumulator, current) => {
+      const currentState = current as GoogleLoginStateType;
+      accumulator[current] = {
+        stepNo: googleLoginStepNo[currentState],
+      };
+      return accumulator;
+    }, {}),
+    currentState: googleLoginState,
+    hasQuestionnaire: true,
+  });
 
   const initGoogleLogin = useCallback(() => {
     if (ableToSkipQuestionnaire) {
@@ -121,7 +121,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       navigate(RoutePath.WebCreatePassword, {
         state: {
           serializedWallet,
-          stepLength: stepInfo.stepLength,
+          stepLength: indicatorInfo.stepLength,
         },
       });
     },
@@ -142,8 +142,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
 
   return {
     googleLoginState,
-    googleLoginStepNo: stepInfo.googleLoginStepNo,
-    stepLength: stepInfo.stepLength,
+    indicatorInfo,
     backStep,
     retry,
     initGoogleLogin,
