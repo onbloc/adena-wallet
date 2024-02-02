@@ -39,17 +39,23 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
   }
 
   .title {
-    display: inline-block;
+    display: flex;
     flex-shrink: 0;
     max-width: calc(100% - 140px);
     color: ${getTheme('neutral', '_1')};
     ${fonts.body2Reg};
 
     .name {
+      display: inline-block;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       margin-right: 3px;
+    }
+
+    .symbol {
+      display: inline-block;
+      width: fit-content;
     }
   }
 
