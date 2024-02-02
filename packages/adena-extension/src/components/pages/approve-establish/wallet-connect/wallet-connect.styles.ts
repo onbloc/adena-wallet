@@ -6,10 +6,12 @@ import { fonts, getTheme } from '@styles/theme';
 
 export const WalletConnectWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
+  width: 100vw;
   padding: 0 20px;
   align-self: center;
 
   .main-title {
+    max-width: 320px;
     text-overflow: ellipsis;
     margin-top: 24px;
     overflow: hidden;
