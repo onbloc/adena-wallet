@@ -6,7 +6,7 @@ import { View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@compo
 import IconAirgap from '@assets/web/airgap-green.svg';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   height: 350px;
   row-gap: 24px;
 `;

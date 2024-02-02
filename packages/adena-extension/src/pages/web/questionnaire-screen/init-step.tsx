@@ -5,8 +5,15 @@ import Lottie from 'react-lottie';
 import { View, WebButton, WebText } from '@components/atoms';
 import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
 
+const StyledContainer = styled(View)`
+  width: 100%;
+  gap: 24px;
+  align-items: center;
+`;
+
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
+  margin-top: 16px;
 `;
 
 interface QuestionnaireInitStepProps {
@@ -19,7 +26,7 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
   const theme = useTheme();
 
   return (
-    <React.Fragment>
+    <StyledContainer>
       <Lottie
         options={{
           animationData: LottieCompleteAQuestion,
@@ -27,7 +34,7 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
         height={120}
       />
       <StyledMessageBox>
-        <WebText type='headline2'>Complete a Questionnaire</WebText>
+        <WebText type='headline2' textCenter>Complete a Questionnaire</WebText>
         <WebText type='body4' color={theme.webNeutral._500} textCenter>
           {'Complete the following questionnaire to ensure that\nyou have sufficient understanding of wallet security.'}
         </WebText>
@@ -36,11 +43,12 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
       <WebButton
         figure='primary'
         size='small'
-        onClick={initQuestion}
         text='Next'
         rightIcon='chevronRight'
+        style={{ width: 'fit-content' }}
+        onClick={initQuestion}
       />
-    </React.Fragment>
+    </StyledContainer>
   );
 };
 

@@ -7,6 +7,7 @@ import { View, WebImg, WebText } from '@components/atoms';
 import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   row-gap: 24px;
   align-items: center;
 `;

@@ -6,6 +6,7 @@ import { View, WebButton, WebImg, WebText } from '@components/atoms';
 import AnimationLoginFailed from '@assets/web/login-failed.gif';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   row-gap: 24px;
   align-items: center;
 `;

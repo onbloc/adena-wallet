@@ -23,7 +23,7 @@ type WebButtonProps = {
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   cursor: pointer;
   border: transparent;
-  border-radius: 14px;
+  border-radius: ${({ size }): string => size === 'small' ? '12px' : '14px'};
   padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
   display: flex;
   flex-direction: row;
@@ -142,11 +142,11 @@ export const WebButton = ({
     <StyledComponent {...rest}>
       {'text' in rest ? (
         <Row style={{ alignItems: 'flex-end' }}>
-          <WebText type={textType} style={{ padding: '0 8px' }}>
+          <WebText type={textType} style={{ padding: '0 8px 0 16px' }}>
             {rest.text}
           </WebText>
           {rest.rightIcon === 'chevronRight' && (
-            <View style={{ margin: '0 -4px' }}>
+            <View style={{ margin: '0 4px 0 0' }}>
               <WebImg src={IconRight} size={24} />
             </View>
           )}

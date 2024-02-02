@@ -19,11 +19,15 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
     useAccountImportScreenReturn;
 
   if (step === 'LOADING') {
-    return <WebLoadingAccounts />;
+    return (
+      <WebMain spacing={344}>
+        <WebLoadingAccounts />
+      </WebMain>
+    );
   }
 
   return (
-    <>
+    <WebMain spacing={272}>
       <WebMainHeader
         stepLength={stepLength}
         onClickGoBack={onClickGoBack}
@@ -41,7 +45,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
       {step === 'SET_PRIVATE_KEY' && (
         <SetPrivateKeyStep useAccountImportScreenReturn={useAccountImportScreenReturn} />
       )}
-    </>
+    </WebMain>
   );
 };
 
@@ -49,24 +53,18 @@ const AccountImportScreen = (): ReactElement => {
   const { wallet } = useWalletContext();
   const { navigate } = useAppNavigate();
 
-  return (
-    <WebMain style={{ width: 520 }}>
-      {wallet ? (
-        <HasWallet wallet={wallet} />
-      ) : (
-        <>
-          <>
-            <WebMainHeader
-              stepLength={0}
-              onClickGoBack={(): void => {
-                navigate(RoutePath.WebAdvancedOption);
-              }}
-            />
-          </>
-        </>
-      )}
+  return wallet ? (
+    <HasWallet wallet={wallet} />
+  ) : (
+    <WebMain spacing={272}>
+      <WebMainHeader
+        stepLength={0}
+        onClickGoBack={(): void => {
+          navigate(RoutePath.WebAdvancedOption);
+        }}
+      />
     </WebMain>
-  );
+  )
 };
 
 export default AccountImportScreen;

@@ -7,9 +7,10 @@ import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletImportReturn = {
   isValidForm: boolean;
+  extended: boolean;
   errMsg: string;
   setInputValue: React.Dispatch<React.SetStateAction<string>>;
-  setInputType: React.Dispatch<React.SetStateAction<'seed' | 'pKey'>>;
+  setInputType: React.Dispatch<React.SetStateAction<'12seeds' | '24seeds' | 'pKey'>>;
   step: WalletImportStateType;
   setStep: React.Dispatch<React.SetStateAction<WalletImportStateType>>;
   walletImportStepNo: {
@@ -32,10 +33,11 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   );
 
   const [inputValue, setInputValue] = useState('');
-  const [inputType, setInputType] = useState<'seed' | 'pKey'>('seed');
+  const [inputType, setInputType] = useState<'12seeds' | '24seeds' | 'pKey'>('12seeds');
   const errMsg = useMemo(() => {
     if (inputValue) {
-      if (inputType === 'seed' && inputValue.trim().split(' ').length > 1) {
+      const isSeed = inputType === '12seeds' || inputType === '24seeds';
+      if (isSeed && inputValue.trim().split(' ').length > 1) {
         try {
           new EnglishMnemonic(inputValue);
         } catch {
@@ -60,6 +62,10 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
     SET_SEED_PHRASE: ableToSkipQuestionnaire ? 1 : 2,
   };
 
+  const extended = useMemo(() => {
+    return inputType === '24seeds';
+  }, [inputType]);
+
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
       navigate(RoutePath.WebAdvancedOption);
@@ -81,10 +87,12 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
       }
     } else if (step === 'SET_SEED_PHRASE') {
       let serializedWallet;
-      const createdWallet =
-        inputType === 'seed' ? await AdenaWallet.createByMnemonic(inputValue) : new AdenaWallet();
+      const isSeed = inputType === '12seeds' || inputType === '24seeds';
+      const createdWallet = isSeed
+        ? await AdenaWallet.createByMnemonic(inputValue)
+        : new AdenaWallet();
 
-      if (inputType === 'seed') {
+      if (isSeed) {
         serializedWallet = await createdWallet.serialize('');
       } else {
         const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(inputValue);
@@ -102,6 +110,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
 
   return {
+    extended,
     isValidForm,
     errMsg,
     setInputValue,

@@ -8,6 +8,7 @@ import { Row, View, WebButton, WebCheckBox, WebImg, WebInput, WebText } from '@c
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 
 const StyledContainer = styled(View)`
+  width: 100%;
   row-gap: 24px;
 `;
 

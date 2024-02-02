@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 
 import { WebMain } from '@components/atoms';
 
@@ -22,8 +22,15 @@ const ConnectLedgerScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const step = connectLedgerStep[connectState];
 
+  const topSpacing = useMemo(() => {
+    if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'FAILED') {
+      return 344;
+    }
+    return 272;
+  }, [connectState]);
+
   return (
-    <WebMain>
+    <WebMain spacing={topSpacing}>
       <WebMainHeader
         stepLength={5}
         onClickGoBack={(): void => {

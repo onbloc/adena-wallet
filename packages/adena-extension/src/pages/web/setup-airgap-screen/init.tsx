@@ -10,7 +10,7 @@ import useLink from '@hooks/use-link';
 import { ADENA_DOCS_PAGE, GNO_CLI_HELP_PAGE } from '@common/constants/resource.constant';
 
 const StyledContainer = styled(View)`
-  width: 552px;
+  width: 100%;
   row-gap: 24px;
 `;
 
