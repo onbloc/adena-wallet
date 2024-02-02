@@ -55,8 +55,8 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   };
 
   const isValidForm = useMemo(() => {
-    return !!privateKey || !errMsg;
-  }, [privateKey]);
+    return !!privateKey && !errMsg;
+  }, [privateKey, errMsg]);
 
   const changePrivateKey = useCallback((privateKey: string) => {
     setErrMsg('');
