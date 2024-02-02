@@ -32,6 +32,7 @@ export const Header = (): JSX.Element => {
   const ApproveLogin = useMatch(RoutePath.ApproveLogin);
   const approveSign = useMatch(RoutePath.ApproveSign);
   const approveTransaction = useMatch(RoutePath.ApproveTransaction);
+  const approveSignFailed = useMatch(RoutePath.ApproveSignFailed);
   const wallet = useMatch('/wallet/*');
   const nft = useMatch(RoutePath.Nft);
 
@@ -67,7 +68,7 @@ export const Header = (): JSX.Element => {
       }
       return <ProgressMenu progressLevel={'first'} />;
     }
-    if (approveEstablish || approveTransaction || approveSign) {
+    if (approveEstablish || approveTransaction || approveSign || approveSignFailed) {
       return <ApproveMenu />;
     }
     if (createPassword) {

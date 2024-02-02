@@ -5,7 +5,7 @@ import { getTheme } from '@styles/theme';
 import { Text, Button } from '@components/atoms';
 import mixins from '@styles/mixins';
 
-const CopyButton = styled(Button)<{ isClicked: boolean }>`
+const CopyButton = styled(Button) <{ isClicked: boolean }>`
   ${mixins.flex({ direction: 'row' })};
   height: 25px;
   border-radius: 12.5px;
@@ -27,6 +27,9 @@ export const Copy = ({
 
   const theme = useTheme();
   const handleButtonClick = useCallback(() => {
+    if (isClicked) {
+      return;
+    }
     setIsClicked((prev: boolean) => !prev);
     navigator.clipboard.writeText(copyStr);
   }, [isClicked, copyStr]);
@@ -42,7 +45,6 @@ export const Copy = ({
     <CopyButton
       isClicked={isClicked}
       onClick={handleButtonClick}
-      disabled={isClicked}
       tabIndex={tabIndex && tabIndex}
       bgColor={theme.neutral._7}
     >

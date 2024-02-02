@@ -1,18 +1,15 @@
 import React, { useCallback, useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
-import { View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
+import { View, WebButton, WebErrorText, WebImg, WebInput } from '@components/atoms';
 
 import IconAirgap from '@assets/web/airgap-green.svg';
+import WebTitleWithDescription from '@components/molecules/web-title-with-description';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 350px;
   row-gap: 24px;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
 `;
 
 const StyledInputBox = styled(View)`
@@ -53,7 +50,6 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
   changeAddress,
   confirmAddress,
 }) => {
-  const theme = useTheme();
 
   const disabledNextButton = useMemo(() => {
     return address === '' || errorMessage !== null;
@@ -66,13 +62,16 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
 
   return (
     <StyledContainer>
-      <WebImg src={IconAirgap} size={90} />
-      <StyledMessageBox>
-        <WebText type='headline3'>Enter Your Address</WebText>
-        <WebText type='body4' color={theme.webNeutral._500} style={{ whiteSpace: 'pre-line' }}>
-          {'Enter the address that you will use to set up your airgapped account.'}
-        </WebText>
-      </StyledMessageBox>
+      <WebImg src={IconAirgap} size={88} />
+
+      <WebTitleWithDescription
+        title={{
+          text: 'Enter Your Address',
+        }}
+        description={{
+          text: 'Enter the address that you will use to set up your airgapped account.',
+        }}
+      />
 
       <StyledInputBox>
         <StyledInput

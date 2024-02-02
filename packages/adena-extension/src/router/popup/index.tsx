@@ -107,7 +107,6 @@ export const PopupRouter = (): JSX.Element => {
           element={<ApproveSignTransactionLedgerLoading />}
         />
         <Route path={RoutePath.ApproveSignFailed} element={<ApproveSignFailedScreen />} />
-        <Route path={RoutePath.AboutAdena} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
