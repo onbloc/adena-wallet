@@ -17,13 +17,15 @@ const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
-      <WebImg src={IconLedger} size={64} />
-      <StyledMessageBox>
-        <WebText type='headline3'>Connect a Ledger Device</WebText>
-        <WebText type='body4' color={theme.webNeutral._500}>
-          Connect your ledger device to your computer and make sure it is unlocked.
-        </WebText>
-      </StyledMessageBox>
+      <View style={{ rowGap: 36 }}>
+        <WebImg src={IconLedger} size={88} />
+        <StyledMessageBox>
+          <WebText type='headline2'>Connect a Ledger Device</WebText>
+          <WebText type='body4' color={theme.webNeutral._500}>
+            {'Connect your ledger device to your computer and make sure it is\nunlocked.'}
+          </WebText>
+        </StyledMessageBox>
+      </View>
 
       <WebButton
         onClick={init}

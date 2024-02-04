@@ -1,6 +1,6 @@
 import styled, { useTheme } from 'styled-components';
 
-import openCosmosGif from '@assets/web/open-cosmos.gif';
+import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
 
 import { View, WebText, WebImg } from '@components/atoms';
 
@@ -18,9 +18,9 @@ const ConnectRequestWallet = (): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
-      <WebImg src={openCosmosGif} height={120} />
+      <WebImg src={AnimationLoadingAccount} height={120} />
       <StyledMessageBox>
-        <WebText type='headline3' textCenter>
+        <WebText type='headline2' textCenter>
           Loading Accounts
         </WebText>
         <WebText type='body4' color={theme.webNeutral._500} textCenter>

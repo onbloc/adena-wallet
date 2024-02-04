@@ -22,9 +22,11 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
   const theme = useTheme();
   return (
     <StyledContainer>
-      <WebImg src={IconFail} size={64} />
+      <View style={{ paddingBottom: 16 }}>
+        <WebImg src={IconFail} size={64} />
+      </View>
       <StyledMessageBox>
-        <WebText type='headline3' textCenter>
+        <WebText type='headline2' textCenter>
           Connection Failed
         </WebText>
         <WebText type='body4' color={theme.webNeutral._500} textCenter>
