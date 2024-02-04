@@ -13,21 +13,22 @@ type WebButtonProps = {
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
 } & (
-    | { text: string; rightIcon?: 'chevronRight' }
-    | {
+  | { text: string; rightIcon?: 'chevronRight' }
+  | {
       children: ReactNode;
     }
-  ) &
+) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   cursor: pointer;
   border: transparent;
-  border-radius: ${({ size }): string => size === 'small' ? '12px' : '14px'};
+  border-radius: ${({ size }): string => (size === 'small' ? '12px' : '14px')};
   padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
   display: flex;
   flex-direction: row;
   width: ${({ size }): string => (size === 'full' ? '100%' : 'auto')};
+  height: ${({ size }): string => (size === 'small' ? '44px' : 'auto')};
   justify-content: center;
   align-items: center;
 
@@ -59,19 +60,19 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
-  color: #ADCAFF;
+  color: #adcaff;
   outline: 1px solid rgba(122, 169, 255, 0.24);
   background: rgba(0, 89, 255, 0.16);
 
   :hover {
-    color: #ADCAFF;
+    color: #adcaff;
     outline: 2px solid rgba(122, 169, 255, 0.24);
     background: rgba(0, 89, 255, 0.2);
     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
   }
 
   :active {
-    color: #7AA9FF;
+    color: #7aa9ff;
     outline: 2px solid rgba(122, 169, 255, 0.24);
     background: rgba(0, 89, 255, 0.2);
   }

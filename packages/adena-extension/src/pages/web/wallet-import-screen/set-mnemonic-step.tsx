@@ -1,9 +1,7 @@
 import { ReactElement, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import IconWarning from '@assets/web/warning.svg';
-
-import { Row, View, WebButton, WebCheckBox, WebImg, WebText } from '@components/atoms';
+import { Row, View, WebButton, WebCheckBox, WebText } from '@components/atoms';
 import { WebSeedInput } from '@components/molecules';
 import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
 
@@ -16,19 +14,12 @@ const StyledMessageBox = styled(View)`
   row-gap: 16px;
 `;
 
-const StyledWarnBox = styled(Row)`
-  column-gap: 8px;
-  padding: 8px;
-  border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
-`;
-
 const SetMnemonicStep = ({
   useWalletImportScreenReturn,
 }: {
   useWalletImportScreenReturn: UseWalletImportReturn;
 }): ReactElement => {
-  const { setInputType, setInputValue, onClickNext, errMsg, isValidForm } =
+  const { setInputType, updateInputValue, onClickNext, errMsg, isValidForm } =
     useWalletImportScreenReturn;
   const theme = useTheme();
   const [agreeWarning, setAgreeWarning] = useState(false);
@@ -37,20 +28,19 @@ const SetMnemonicStep = ({
     <StyledContainer>
       <StyledMessageBox>
         <WebText type='headline3'>Import Existing Wallet</WebText>
-        <StyledWarnBox>
-          <WebImg src={IconWarning} size={20} />
-          <WebText type='body6' color={theme.webWarning._100}>
-            Enter a seed phrase or your private key to import your existing wallet.
-          </WebText>
-        </StyledWarnBox>
+        <WebText type='body4' color={theme.webNeutral._500}>
+          Enter a seed phrase or your private key to import your existing wallet.
+        </WebText>
       </StyledMessageBox>
-      <WebSeedInput
-        onChange={({ type, value }): void => {
-          setInputValue(value);
-          setInputType(type);
-        }}
-        errorMessage={errMsg}
-      />
+      <View style={{ paddingBottom: 8 }}>
+        <WebSeedInput
+          onChange={({ type, value }): void => {
+            updateInputValue(value);
+            setInputType(type);
+          }}
+          errorMessage={errMsg}
+        />
+      </View>
 
       <Row style={{ columnGap: 8, alignItems: 'center' }}>
         <WebCheckBox

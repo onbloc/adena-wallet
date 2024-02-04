@@ -34,8 +34,8 @@ export const SensitiveInfoStep = ({
 
   return (
     <StyledContainer>
-      <View style={{ rowGap: 24, alignItems: 'flex-start' }}>
-        <WebImg src={IconAlert} />
+      <View style={{ rowGap: 32, alignItems: 'flex-start' }}>
+        <WebImg src={IconAlert} size={88} />
         <StyledMessageBox>
           <WebText type='headline2'>Sensitive Information Ahead</WebText>
           <WebText type='body4' color={theme.webNeutral._500}>
@@ -49,6 +49,7 @@ export const SensitiveInfoStep = ({
         onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
+        style={{ width: 116 }}
       />
       <Pressable
         onClick={(): void => {

@@ -6,6 +6,7 @@ import IconAlert from '@assets/web/alert-circle.svg';
 
 import { Pressable, Row, View, WebImg, WebInput, WebText } from '../../atoms';
 import mixins from '@styles/mixins';
+import { getTheme, webFonts } from '@styles/theme';
 
 export type WebSeedInputType = '12seeds' | '24seeds' | 'pKey';
 
@@ -26,13 +27,10 @@ const StyledInputBox = styled(View)`
   gap: 12px;
 `;
 
-const StyledItem = styled(Row) <{ error: boolean }>`
+const StyledItem = styled(Row)<{ error: boolean }>`
   position: relative;
   overflow: hidden;
-  height: 40px;
   border-radius: 10px;
-  background: ${({ error, theme }): string =>
-    error ? theme.webError._300 : theme.webNeutral._900};
   border: 1px solid
     ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._600)};
   box-shadow: ${({ error }): string =>
@@ -51,16 +49,15 @@ const StyledTypeMenu = styled(Row)`
   background: rgba(0, 0, 0, 0.2);
 `;
 
-const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
+const StyledTypeMenuItem = styled(Pressable)<{ selected: boolean }>`
   padding: 8px 12px;
   border-radius: 40px;
   background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
 
-const StyledNoText = styled(WebText) <{ error: boolean }>`
+const StyledNoText = styled(WebText)<{ error: boolean }>`
   ${mixins.flex()}
-  background: ${({ error, theme }): string =>
-    error ? 'rgba(224, 81, 112, 0.08)' : theme.webNeutral._800};
+  background: ${({ error, theme }): string => (error ? '#2a161a' : theme.webInput._100)};
   border-right: 1px solid
     ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._800)};
   width: 40px;
@@ -68,13 +65,32 @@ const StyledNoText = styled(WebText) <{ error: boolean }>`
   align-items: center;
 `;
 
-const StyledInput = styled(WebInput)`
+const StyledInput = styled(WebInput)<{ error: boolean }>`
   flex: 1;
   width: 100%;
   border-radius: 0;
   border: none;
   outline: none;
+  background: ${({ error, theme }): string => (error ? theme.webError._300 : 'transparent')};
+
+  :focus-visible {
+    background: transparent;
+  }
+`;
+
+const StyledTextarea = styled.textarea`
+  ${webFonts.body5};
+  color: ${getTheme('webNeutral', '_0')};
+  padding: 16px;
+  flex: 1;
+  width: 100%;
+  height: 80px;
+  border-radius: 0;
+  border: none;
+  outline: none;
   background: transparent;
+  -webkit-text-security: disc;
+  resize: none;
 
   :focus-visible {
     background: transparent;
@@ -140,8 +156,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       <View style={{ rowGap: 12 }}>
         {type === 'pKey' ? (
           <StyledItem error={!!errorMessage}>
-            <StyledInput
-              type='password'
+            <StyledTextarea
               value={pKey}
               onChange={({ target: { value } }): void => {
                 onChange({ type, value });
