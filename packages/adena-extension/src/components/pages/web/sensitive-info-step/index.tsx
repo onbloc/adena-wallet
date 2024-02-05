@@ -6,16 +6,13 @@ import IconLink from '@assets/web/external-link.svg';
 
 import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import useLink from '@hooks/use-link';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 345px;
   row-gap: 40px;
   align-items: flex-start;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
 `;
 
 export type SensitiveInfoStepProps = {
@@ -36,12 +33,7 @@ export const SensitiveInfoStep = ({
     <StyledContainer>
       <View style={{ rowGap: 32, alignItems: 'flex-start' }}>
         <WebImg src={IconAlert} size={88} />
-        <StyledMessageBox>
-          <WebText type='headline2'>Sensitive Information Ahead</WebText>
-          <WebText type='body4' color={theme.webNeutral._500}>
-            {desc}
-          </WebText>
-        </StyledMessageBox>
+        <WebTitleWithDescription title='Sensitive Information Ahead' description={desc} />
       </View>
       <WebButton
         figure='primary'

@@ -1,8 +1,9 @@
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
 import openCosmosGif from '@assets/web/open-cosmos.gif';
 
-import { View, WebText, WebImg } from '@components/atoms';
+import { View, WebImg } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   row-gap: 40px;
@@ -10,23 +11,17 @@ const StyledContainer = styled(View)`
   align-items: center;
 `;
 
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
-`;
-
 const ConnectRequestWallet = (): JSX.Element => {
-  const theme = useTheme();
   return (
     <StyledContainer>
       <View style={{ paddingBottom: 16 }}>
         <WebImg src={openCosmosGif} height={120} />
       </View>
-      <StyledMessageBox>
-        <WebText type='headline2'>Open Cosmos App in Ledger</WebText>
-        <WebText type='body4' color={theme.webNeutral._500} textCenter>
-          Make sure the Cosmos App is opened in your ledger device.
-        </WebText>
-      </StyledMessageBox>
+      <WebTitleWithDescription
+        title='Open Cosmos App in Ledger'
+        description='Make sure the Cosmos App is opened in your ledger device.'
+        isCenter
+      />
     </StyledContainer>
   );
 };

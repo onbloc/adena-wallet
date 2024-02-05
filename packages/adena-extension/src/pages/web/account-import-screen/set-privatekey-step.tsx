@@ -6,14 +6,11 @@ import IconAlert from '@assets/web/alert-circle.svg';
 import { Row, View, WebButton, WebCheckBox, WebImg, WebText } from '@components/atoms';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { getTheme, webFonts } from '@styles/theme';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
 `;
 
 const StyledItem = styled(Row)<{ error: boolean }>`
@@ -61,12 +58,10 @@ const SetPrivateKeyStep = ({
 
   return (
     <StyledContainer>
-      <StyledMessageBox>
-        <WebText type='headline3'>Import Existing Wallet</WebText>
-        <WebText type='body4' color={theme.webNeutral._500}>
-          Enter a private key to import your existing wallet.
-        </WebText>
-      </StyledMessageBox>
+      <WebTitleWithDescription
+        title='Import Existing Wallet'
+        description='Enter a private key to import your existing wallet.'
+      />
       <View style={{ rowGap: 12 }}>
         <StyledItem error={!!errMsg}>
           <StyledTextarea

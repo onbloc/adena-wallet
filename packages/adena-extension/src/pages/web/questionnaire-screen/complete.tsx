@@ -1,9 +1,10 @@
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import Lottie from 'react-lottie';
 
-import { View, WebButton, WebText } from '@components/atoms';
+import { View, WebButton } from '@components/atoms';
 import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -11,34 +12,27 @@ const StyledContainer = styled(View)`
   align-items: center;
 `;
 
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
-  margin-top: 16px;
-`;
-
 interface QuestionnaireCompleteProps {
   completeQuestion: () => void;
 }
 
-const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({
-  completeQuestion,
-}) => {
-  const theme = useTheme();
-
+const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({ completeQuestion }) => {
   return (
     <StyledContainer>
-      <Lottie
-        options={{
-          animationData: LottieCompleteAQuestion,
-        }}
-        height={120}
+      <View style={{ marginBottom: 16 }}>
+        <Lottie
+          options={{
+            animationData: LottieCompleteAQuestion,
+          }}
+          height={120}
+        />
+      </View>
+
+      <WebTitleWithDescription
+        title='Questionnaire Complete'
+        description={'You have successfully passed the questionnaire.\nClick on Next to continue.'}
+        isCenter
       />
-      <StyledMessageBox>
-        <WebText type='headline2'>Questionnaire Complete</WebText>
-        <WebText type='body4' color={theme.webNeutral._500} textCenter>
-          {'You have successfully passed the questionnaire.\nClick on Next to continue.'}
-        </WebText>
-      </StyledMessageBox>
 
       <WebButton
         figure='primary'

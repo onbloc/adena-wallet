@@ -8,10 +8,7 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { useWalletContext } from '@hooks/use-context';
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
-`;
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledAccountBox = styled(View)`
   display: block;
@@ -87,12 +84,10 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         }}
         currentStep={4}
       />
-      <StyledMessageBox>
-        <WebText type='headline3'>Select Accounts</WebText>
-        <WebText type='body4' color={theme.webNeutral._500}>
-          Select all accounts you wish to add to Adena.
-        </WebText>
-      </StyledMessageBox>
+      <WebTitleWithDescription
+        title='Select Accounts'
+        description='Select all accounts you wish to add to Adena.'
+      />
       <View>
         <StyledAccountBox>
           {accountInfos.length > 0 ? (

@@ -25,7 +25,6 @@ const StyledWarnBox = styled(Row)`
   background: rgba(251, 191, 36, 0.08);
 `;
 
-
 const GetMnemonicStep = ({
   useWalletCreateScreenReturn,
 }: {

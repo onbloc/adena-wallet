@@ -1,9 +1,10 @@
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import Lottie from 'react-lottie';
 
-import { View, WebButton, WebText } from '@components/atoms';
+import { View, WebButton } from '@components/atoms';
 import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -11,35 +12,28 @@ const StyledContainer = styled(View)`
   align-items: center;
 `;
 
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
-  margin-top: 16px;
-`;
-
 interface QuestionnaireInitStepProps {
   initQuestion: () => void;
 }
 
-const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
-  initQuestion,
-}) => {
-  const theme = useTheme();
-
+const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({ initQuestion }) => {
   return (
     <StyledContainer>
-      <Lottie
-        options={{
-          animationData: LottieCompleteAQuestion,
-        }}
-        height={120}
+      <View style={{ marginBottom: 16 }}>
+        <Lottie
+          options={{
+            animationData: LottieCompleteAQuestion,
+          }}
+          height={120}
+        />
+      </View>
+      <WebTitleWithDescription
+        title='Complete a Questionnaire'
+        description={
+          'Complete the following questionnaire to ensure that\nyou have sufficient understanding of wallet security.'
+        }
+        isCenter
       />
-      <StyledMessageBox>
-        <WebText type='headline2' textCenter>Complete a Questionnaire</WebText>
-        <WebText type='body4' color={theme.webNeutral._500} textCenter>
-          {'Complete the following questionnaire to ensure that\nyou have sufficient understanding of wallet security.'}
-        </WebText>
-      </StyledMessageBox>
-
       <WebButton
         figure='primary'
         size='small'

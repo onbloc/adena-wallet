@@ -1,18 +1,17 @@
 import { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
 import {
   WebInput,
   WebMain,
   View,
-  WebText,
   Pressable,
   WebButton,
   Row,
   WebImg,
   WebErrorText,
 } from '@components/atoms';
-import { TermsCheckbox } from '@components/molecules';
+import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
 import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
@@ -27,11 +26,6 @@ const StyledContainer = styled(View)`
   height: 330px;
   row-gap: 24px;
   align-items: flex-start;
-`;
-
-const StyledMessageBox = styled(View)`
-  width: 100%;
-  row-gap: 16px;
 `;
 
 const StyledInputContainer = styled(View)`
@@ -60,7 +54,7 @@ const CreatePasswordScreen = (): JSX.Element => {
     buttonState,
     onKeyDown,
   } = useCreatePasswordScreen();
-  const theme = useTheme();
+
   const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
 
   const moveAdenaTermsPage = useCallback(() => {
@@ -76,12 +70,10 @@ const CreatePasswordScreen = (): JSX.Element => {
       />
 
       <StyledContainer>
-        <StyledMessageBox>
-          <WebText type='headline3'>Create a password</WebText>
-          <WebText type='body4' color={theme.webNeutral._500}>
-            This will be used to unlock your wallet.
-          </WebText>
-        </StyledMessageBox>
+        <WebTitleWithDescription
+          title='Create a Password'
+          description='This will be used to unlock your wallet.'
+        />
 
         <StyledInputContainer>
           <StyledInputBox>
@@ -96,7 +88,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 error={passwordState.error}
                 ref={passwordState.ref}
               />
-              {passwordState.confirm && (<WebImg src={IconConfirm} size={20} />)}
+              {passwordState.confirm && <WebImg src={IconConfirm} size={20} />}
             </StyledInputWrapper>
             {passwordState.errorMessage && <WebErrorText text={passwordState.errorMessage} />}
           </StyledInputBox>

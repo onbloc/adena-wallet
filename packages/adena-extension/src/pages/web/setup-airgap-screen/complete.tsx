@@ -2,10 +2,10 @@ import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
 import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
 
 import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCheck from '@assets/web/web-check-circle.svg';
-import WebTitleWithDescription from '@components/molecules/web-title-with-description';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -46,12 +46,10 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
       </View>
 
       <WebTitleWithDescription
-        title={{
-          text: 'Account synced!',
-        }}
-        description={{
-          text: 'Your account has been synced to Adena.\nConfirm your address below and click on Next to continue.',
-        }}
+        title='Account synced!'
+        description={
+          'Your account has been synced to Adena.\nConfirm your address below and click on Next to continue.'
+        }
       />
 
       <StyledInputBox>

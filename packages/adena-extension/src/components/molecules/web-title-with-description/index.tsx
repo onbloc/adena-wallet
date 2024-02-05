@@ -1,47 +1,32 @@
 import { View, WebText } from '@components/atoms';
-import { WebFontType } from '@styles/theme';
-import React, { useMemo } from 'react';
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
-  width: 100%;
-  row-gap: 16px;
+  row-gap: 10px;
 `;
 
-interface TextOption {
-  text: string;
-  fontType?: WebFontType;
-}
-
 export interface WebTitleWithDescriptionProps {
-  title: TextOption;
-  description: TextOption;
+  title: string;
+  description: string;
+  isCenter?: boolean;
 }
 
-const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = ({
+export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = ({
   title,
   description,
+  isCenter,
 }) => {
   const theme = useTheme();
 
-  const descriptionHeight = useMemo(() => {
-    return `${description.text.split('\n').length * 2 - 1}em`;
-  }, [description.text]);
-
   return (
-    <StyledContainer>
-      <WebText type={title.fontType ?? 'headline2'}>{title.text}</WebText>
-      <View style={{ height: descriptionHeight }}>
-        <WebText
-          style={{ marginTop: '-0.2em' }}
-          type={description.fontType ?? 'body4'}
-          color={theme.webNeutral._500}
-        >
-          {description.text}
-        </WebText>
-      </View>
+    <StyledContainer style={{ alignItems: isCenter ? 'center' : 'flex-start' }}>
+      <WebText type='headline2' textCenter={isCenter}>
+        {title}
+      </WebText>
+      <WebText type='body4' color={theme.webNeutral._500} textCenter={isCenter}>
+        {description}
+      </WebText>
     </StyledContainer>
   );
 };
-
-export default WebTitleWithDescription;
