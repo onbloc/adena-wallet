@@ -1,5 +1,5 @@
 import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
-import styled from 'styled-components';
+import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 import { getTheme, WebFontType } from '@styles/theme';
 import IconRight from '@assets/web/chevron-right.svg';
@@ -13,11 +13,11 @@ type WebButtonProps = {
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
 } & (
-  | { text: string; rightIcon?: 'chevronRight' }
-  | {
+    | { text: string; rightIcon?: 'chevronRight' }
+    | {
       children: ReactNode;
     }
-) &
+  ) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
@@ -33,70 +33,78 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   align-items: center;
 
   :disabled {
+    cursor: default;
     opacity: 0.4;
   }
 `;
 
 const StyledButtonPrimary = styled(StyledButtonBase)`
   color: ${getTheme('webNeutral', '_100')};
-  outline: 1px solid rgba(255, 255, 255, 0.4);
-  background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  background: linear-gradient(180deg, #0059FF 0%, #004BD6 100%);
 
-  :hover {
-    color: ${getTheme('webNeutral', '_100')};
-    outline: 2px solid rgba(255, 255, 255, 0.4);
-    background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
-    box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
-      0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  }
-
-  :active {
-    color: ${getTheme('webNeutral', '_100')};
-    outline: 2px solid rgba(255, 255, 255, 0.4);
-    background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
-    box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 0px 0px 3px rgba(0, 89, 255, 0.16),
-      0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  }
+  ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
+    :hover,
+    :active {
+      box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+    }
+  `: ''}
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
-  color: #adcaff;
-  outline: 1px solid rgba(122, 169, 255, 0.24);
+  color: #ADCAFF;
+  border: 1px solid rgba(122, 169, 255, 0.24);
   background: rgba(0, 89, 255, 0.16);
 
-  :hover {
-    color: #adcaff;
-    outline: 2px solid rgba(122, 169, 255, 0.24);
-    background: rgba(0, 89, 255, 0.2);
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  }
+  ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
+    :hover {
+      color: #ADCAFF;
+      border: 1px solid rgba(122, 169, 255, 0.24);
+      background: rgba(0, 89, 255, 0.20);
+      box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+    }
 
-  :active {
-    color: #7aa9ff;
-    outline: 2px solid rgba(122, 169, 255, 0.24);
-    background: rgba(0, 89, 255, 0.2);
+    :active {
+      color: #7AA9FF;
+      border: 1px solid rgba(122, 169, 255, 0.24);
+      background: rgba(0, 89, 255, 0.20);
+    }
+  `: ''}
+
+  :disabled {
+    color: #7AA9FF;
+    border: 1px solid rgba(122, 169, 255, 0.24);
+    opacity: 0.4;
+    background: rgba(0, 89, 255, 0.16);
   }
 `;
 
 const StyledButtonTertiary = styled(StyledButtonBase)`
   color: ${getTheme('webNeutral', '_300')};
-  outline: 1px solid rgba(188, 197, 214, 0.16);
+  border: 1px solid rgba(188, 197, 214, 0.24);
   background: rgba(188, 197, 214, 0.04);
 
-  :hover {
-    color: ${getTheme('webNeutral', '_300')};
-    outline: 2px solid rgba(188, 197, 214, 0.16);
-    background: rgba(188, 197, 214, 0.06);
+  svg * {
+    fill: ${getTheme('webNeutral', '_300')};
   }
 
-  :active {
-    color: ${getTheme('webNeutral', '_100')};
-    outline: 1px solid rgba(188, 197, 214, 0.24);
-    background: rgba(188, 197, 214, 0.04);
-    box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.04),
-      0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
-      0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-  }
+  ${({ disabled, theme }): FlattenSimpleInterpolation | string => !disabled ? css`
+    :hover {
+      border: 1px solid rgba(188, 197, 214, 0.24);
+      background: rgba(188, 197, 214, 0.06);
+      box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      svg * {
+        fill: ${theme.webNeutral._100};
+      }
+    }
+    :active {
+      color: ${theme.webNeutral._100};
+      box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      svg * {
+        fill: ${theme.webNeutral._100};
+      }
+    }
+  `: ''}
 `;
 
 const StyledButtonQuaternary = styled(StyledButtonBase)`
