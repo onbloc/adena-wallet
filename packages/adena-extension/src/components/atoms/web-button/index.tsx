@@ -147,15 +147,20 @@ export const WebButton = ({
       StyledComponent = StyledButtonPrimary;
   }
 
+  const isRightButton = 'text' in rest && rest.rightIcon === 'chevronRight';
+
   return (
     <StyledComponent {...rest}>
       {'text' in rest ? (
-        <Row style={{ alignItems: 'flex-end' }}>
-          <WebText type={textType} style={{ padding: '0 8px 0 16px' }}>
+        <Row style={{ gap: 4, alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          {isRightButton && (
+            <View style={{ width: 12 }} />
+          )}
+          <WebText type={textType}>
             {rest.text}
           </WebText>
-          {rest.rightIcon === 'chevronRight' && (
-            <View style={{ margin: '0 4px 0 0' }}>
+          {isRightButton && (
+            <View style={{ marginRight: 4 }}>
               <WebImg src={IconRight} size={24} />
             </View>
           )}
