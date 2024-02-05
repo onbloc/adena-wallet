@@ -14,6 +14,7 @@ import ConnectInit from './connect-init';
 import ConnectRequest from './connect-request';
 import ConnectFail from './connect-fail';
 import ConnectRequestWalletLoad from './connect-request-wallet-load';
+import { useWalletContext } from '@hooks/use-context';
 
 const ConnectLedgerScreen = (): ReactElement => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
@@ -21,7 +22,13 @@ const ConnectLedgerScreen = (): ReactElement => {
     useConnectLedgerScreenReturn;
   const { navigate } = useAppNavigate();
   const step = connectLedgerStep[connectState];
-
+  const { wallet } = useWalletContext();
+  const stepLength = useMemo(() => {
+    if (['INIT', 'REQUEST_WALLET', 'REQUEST_WALLET_LOAD'].includes(connectState)) {
+      return wallet ? 3 : 4;
+    }
+    return 0;
+  }, [connectState, wallet]);
   const topSpacing = useMemo(() => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'FAILED') {
       return 344;
@@ -32,7 +39,7 @@ const ConnectLedgerScreen = (): ReactElement => {
   return (
     <WebMain spacing={topSpacing}>
       <WebMainHeader
-        stepLength={5}
+        stepLength={stepLength}
         onClickGoBack={(): void => {
           if (step.stepNo === 0) {
             navigate(RoutePath.Home);

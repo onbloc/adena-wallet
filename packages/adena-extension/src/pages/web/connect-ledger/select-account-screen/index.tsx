@@ -7,6 +7,7 @@ import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import { useWalletContext } from '@hooks/use-context';
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
@@ -14,9 +15,12 @@ const StyledMessageBox = styled(View)`
 
 const StyledAccountBox = styled(View)`
   display: block;
-  width: 416px;
+  width: 552px;
   max-height: 266px;
   overflow-y: scroll;
+  background-color: #14161a;
+  border: 1px solid #1f2329;
+  border-radius: 12px;
 `;
 
 const StyledAccountItem = styled(Row)`
@@ -25,7 +29,7 @@ const StyledAccountItem = styled(Row)`
   padding: 0 20px;
 `;
 
-const StyledLoadMore = styled(Row) <{ disabled: boolean }>`
+const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
   justify-content: center;
   padding: 8px 0;
 
@@ -46,6 +50,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   } = useSelectAccountScreen();
   const theme = useTheme();
   const { navigate } = useAppNavigate();
+  const { wallet } = useWalletContext();
 
   const renderAccountInfo = (accountInfo: {
     index: number;
@@ -76,7 +81,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   return (
     <WebMain spacing={272}>
       <WebMainHeader
-        stepLength={5}
+        stepLength={wallet ? 3 : 4}
         onClickGoBack={(): void => {
           navigate(RoutePath.WebConnectLedger);
         }}

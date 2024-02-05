@@ -40,19 +40,19 @@ export const connectLedgerStep: Record<
   },
   REQUEST_WALLET: {
     backTo: 'REQUEST',
-    stepNo: 2,
+    stepNo: 1,
   },
   REQUEST_WALLET_LOAD: {
     backTo: 'REQUEST_WALLET',
-    stepNo: 3,
+    stepNo: 1,
   },
   FAILED: {
     backTo: 'REQUEST_WALLET_LOAD',
-    stepNo: 3,
+    stepNo: 1,
   },
   SUCCESS: {
     backTo: 'INIT',
-    stepNo: 3,
+    stepNo: 1,
   },
 };
 
