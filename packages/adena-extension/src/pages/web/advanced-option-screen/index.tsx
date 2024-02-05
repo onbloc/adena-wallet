@@ -1,20 +1,21 @@
-import { ReactElement } from 'react';
+import { ReactElement, useCallback } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import IconCreate from '@assets/web/create.svg';
-import IconImport from '@assets/web/import.svg';
-import IconGoogle from '@assets/web/google.svg';
 import IconThunder from '@assets/web/round-thunder.svg';
 import IconWarning from '@assets/web/warning.svg';
 
-import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
+import { Row, View, WebMain, WebText, WebImg } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import { useWalletContext } from '@hooks/use-context';
+import WebMainButton from '@components/atoms/web-main-button';
+import IconCreate from '@assets/web/icon-create';
+import IconImport from '@assets/web/icon-import';
+import IconGoogle from '@assets/web/icon-google';
 
 const StyledWarnBox = styled(Row)`
-  column-gap: 8px;
+  column-gap: 4px;
   padding: 8px;
   border-radius: 8px;
   background: rgba(251, 191, 36, 0.08);
@@ -25,6 +26,26 @@ const AdvancedOptionScreen = (): ReactElement => {
   const theme = useTheme();
   const { wallet } = useWalletContext();
 
+  const onClickNewWallet = useCallback(() => {
+    if (wallet && wallet.hasHDWallet()) {
+      navigate(RoutePath.WebAccountAdd);
+      return;
+    }
+    navigate(RoutePath.WebWalletCreate);
+  }, [wallet]);
+
+  const onClickImportExistingWallet = useCallback(() => {
+    if (wallet) {
+      navigate(RoutePath.WebAccountImport);
+      return;
+    }
+    navigate(RoutePath.WebWalletImport);
+  }, [wallet]);
+
+  const onClickSignInWithGoogle = useCallback(() => {
+    navigate(RoutePath.WebGoogleLogin);
+  }, []);
+
   return (
     <WebMain spacing={272}>
       <WebMainHeader
@@ -33,9 +54,9 @@ const AdvancedOptionScreen = (): ReactElement => {
           navigate(RoutePath.Home);
         }}
       />
-      <WebImg src={IconThunder} size={80} />
-      <View style={{ rowGap: 16 }}>
-        <WebText type='headline1'>Advanced Options</WebText>
+      <WebImg src={IconThunder} size={88} />
+      <View style={{ width: '100%', rowGap: 16, paddingTop: 8 }}>
+        <WebText type='headline2'>Advanced Options</WebText>
         <StyledWarnBox>
           <WebImg src={IconWarning} size={20} />
           <WebText type='body6' color={theme.webWarning._100}>
@@ -45,54 +66,25 @@ const AdvancedOptionScreen = (): ReactElement => {
         </StyledWarnBox>
       </View>
 
-      <Row style={{ columnGap: 12 }}>
-        <WebButton
+      <Row style={{ width: '100%', columnGap: 12 }}>
+        <WebMainButton
           figure='primary'
-          size='large'
-          onClick={(): void => {
-            if (wallet && wallet.hasHDWallet()) {
-              navigate(RoutePath.WebAccountAdd);
-            } else {
-              navigate(RoutePath.WebWalletCreate);
-            }
-          }}
-          style={{ width: 176 }}
-        >
-          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={IconCreate} size={24} />
-            <WebText type='title5' color='inherit'>Create New Wallet</WebText>
-          </View>
-        </WebButton>
-        <WebButton
+          iconElement={<IconCreate />}
+          text='Create New Wallet'
+          onClick={onClickNewWallet}
+        />
+        <WebMainButton
           figure='secondary'
-          size='large'
-          style={{ width: 176 }}
-          onClick={(): void => {
-            if (wallet) {
-              navigate(RoutePath.WebAccountImport);
-            } else {
-              navigate(RoutePath.WebWalletImport);
-            }
-          }}
-        >
-          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={IconImport} size={24} />
-            <WebText type='title5' color='inherit'>Import Existing Wallet</WebText>
-          </View>
-        </WebButton>
-        <WebButton
+          iconElement={<IconImport />}
+          text='Import Existing Wallet'
+          onClick={onClickImportExistingWallet}
+        />
+        <WebMainButton
           figure='tertiary'
-          size='large'
-          style={{ width: 176 }}
-          onClick={(): void => {
-            navigate(RoutePath.WebGoogleLogin);
-          }}
-        >
-          <View style={{ width: 144, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={IconGoogle} size={24} />
-            <WebText type='title5' color='inherit'>Sign In With Google</WebText>
-          </View>
-        </WebButton>
+          iconElement={<IconGoogle />}
+          text='Sign In With Google'
+          onClick={onClickSignInWithGoogle}
+        />
       </Row>
     </WebMain>
   );

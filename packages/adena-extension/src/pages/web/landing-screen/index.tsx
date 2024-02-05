@@ -3,15 +3,16 @@ import styled, { useTheme } from 'styled-components';
 import Lottie from 'react-lottie';
 import { useQuery } from '@tanstack/react-query';
 
-import { Row, View, WebButton, WebMain, WebText, WebImg } from '@components/atoms';
+import { Row, View, WebMain, WebText } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
 import welcomeJson from '@assets/web/lottie/welcome.json';
-import hardWallet from '@assets/web/hard-wallet.svg';
-import airgap from '@assets/web/airgap.svg';
-import thunder from '@assets/web/thunder.svg';
 import { useAdenaContext } from '@hooks/use-context';
+import WebMainButton from '@components/atoms/web-main-button';
+import IconHardwareWallet from '@assets/icon-hardware-wallet';
+import IconAirgap from '@assets/icon-airgap';
+import IconThunder from '@assets/icon-thunder';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -55,43 +56,31 @@ const LandingScreen = (): ReactElement => {
       </View>
 
       <Row style={{ columnGap: 12 }}>
-        <WebButton
+        <WebMainButton
           figure='primary'
-          size='large'
+          width={199}
+          iconElement={<IconHardwareWallet />}
+          text='Connect Hardware Wallet'
           onClick={(): void => {
             navigate(RoutePath.WebConnectLedger);
           }}
-          style={{ width: 204 }}
-        >
-          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={hardWallet} size={24} />
-            <WebText type='title5' color='inherit'>Connect Hardware Wallet</WebText>
-          </View>
-        </WebButton>
-        <WebButton
+        />
+        <WebMainButton
           figure='secondary'
-          size='large'
-          style={{ width: 204 }}
+          width={199}
+          iconElement={<IconAirgap />}
+          text='Set Up Airgap Account'
           onClick={moveSetupAirgapScreen}
-        >
-          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={airgap} size={24} />
-            <WebText type='title5' color='inherit'>Set Up Airgap Account</WebText>
-          </View>
-        </WebButton>
-        <WebButton
+        />
+        <WebMainButton
           figure='tertiary'
-          size='large'
+          width={199}
+          iconElement={<IconThunder />}
+          text='Advanced Options'
           onClick={(): void => {
             navigate(RoutePath.WebAdvancedOption);
           }}
-          style={{ width: 204 }}
-        >
-          <View style={{ width: 172, height: 74, justifyContent: 'space-between' }}>
-            <WebImg src={thunder} size={24} />
-            <WebText type='title5' color='inherit'>Advanced Options</WebText>
-          </View>
-        </WebButton>
+        />
       </Row>
     </WebMain>
   );

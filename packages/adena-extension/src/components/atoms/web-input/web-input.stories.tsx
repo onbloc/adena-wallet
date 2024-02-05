@@ -1,3 +1,4 @@
+import React from 'react';
 import { Meta, StoryObj } from '@storybook/react';
 import { WebInput } from '.';
 
@@ -8,4 +9,10 @@ export default {
 
 export const Default: StoryObj<typeof WebInput> = {
   args: {},
+  render: (args) => (
+    <WebInput
+      {...args}
+      placeholder='placeholder'
+    />
+  ),
 };

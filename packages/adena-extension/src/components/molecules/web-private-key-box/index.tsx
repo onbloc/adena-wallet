@@ -15,8 +15,8 @@ const StyledContainer = styled(View) <{ showBlur: boolean }>`
   border-radius: 10px;
   border: 1px solid
     ${({ showBlur, theme }): string => (showBlur ? theme.webNeutral._800 : theme.webNeutral._600)};
-  box-shadow: 0px 0px 0px 3px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.1),
-    0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  background: ${({ showBlur, theme }): string => showBlur ? theme.webNeutral._900 : theme.webInput._100};
+  box-shadow: 0px 0px 0px 3px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
 `;
 
 const StyledBlurScreen = styled(View)`

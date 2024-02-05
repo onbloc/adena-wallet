@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import styled, { FlattenSimpleInterpolation, css, keyframes, useTheme } from 'styled-components';
+import React, { useMemo, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
-import IconCopy from '@assets/web/copy.svg';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox, WebSeedBox } from '@components/molecules';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
 import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import { WebCopyButton } from '@components/atoms/web-copy-button';
+import { WebHoldButton } from '@components/atoms/web-hold-button';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -44,50 +45,9 @@ interface WalletExportResultProps {
   exportData: string | null;
 }
 
-const fill = keyframes`
-  from {
-   width: 0;
-  }
-  to {
-   width: 100%;
-  }
-`;
-
-const StyledHoldButton = styled(WebButton) <{ pressed: boolean }>`
-  position: relative;
-  height: 32px;
-  padding: 8px;
-  overflow: hidden;
-  ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>
-    onPress
-      ? css`
-          ::before {
-            content: '';
-            z-index: -1;
-            position: absolute;
-            top: 0px;
-            left: 0px;
-            height: 100%;
-            background-color: rgba(0, 89, 255, 0.32);
-            animation: ${fill} 3s forwards;
-          }
-        `
-      : undefined}
-`;
-
-const StyledCopyButton = styled(WebButton)`
-  height: 32px;
-  border-radius: 8px;
-  :hover {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-`;
-
 const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
-  const [onPress, setOnPress] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -117,15 +77,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
-  const onClickCopy = (): void => {
-    setCopied(true);
-    const copied = exportData || '';
-    navigator.clipboard.writeText(copied);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
-
   const onClickDone = (): void => {
     AdenaStorage.session()
       .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
@@ -133,19 +84,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         window.close();
       });
   };
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (onPress) {
-      timer = setTimeout(() => {
-        setBlur(false);
-      }, 3000);
-    }
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [onPress]);
 
   return (
     <StyledContainer>
@@ -170,32 +108,8 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
-          <StyledHoldButton
-            figure='quaternary'
-            size='small'
-            onMouseDown={(): void => {
-              setOnPress(true);
-            }}
-            onMouseUp={(): void => {
-              setOnPress(false);
-              setBlur(true);
-            }}
-            text='Hold to Reveal'
-            textType='body6'
-            style={{ borderRadius: 8 }}
-            pressed={onPress}
-          />
-
-          <StyledCopyButton figure='quaternary' size='small' onClick={onClickCopy}>
-            {copied ? (
-              <WebText type='title6' style={{ height: '1.1em' }}>Copied!</WebText>
-            ) : (
-              <Row style={{ columnGap: 4 }}>
-                <WebImg src={IconCopy} size={14} />
-                <WebText type='title6' style={{ height: '1.1em' }}>Copy</WebText>
-              </Row>
-            )}
-          </StyledCopyButton>
+          <WebHoldButton onFinishHold={(response): void => setBlur(!response)} />
+          <WebCopyButton width={80} copyText={exportData || ''} />
         </Row>
       </StyledInputBox>
 

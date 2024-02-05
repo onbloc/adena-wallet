@@ -1,12 +1,13 @@
-import { ReactElement, useEffect, useState } from 'react';
-import styled, { FlattenSimpleInterpolation, css, keyframes, useTheme } from 'styled-components';
+import { ReactElement, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
-import IconCopy from '@assets/web/copy.svg';
 
 import { Row, View, WebButton, WebCheckBox, WebImg, WebText } from '@components/atoms';
 import { WebSeedBox } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
+import { WebHoldButton } from '@components/atoms/web-hold-button';
+import { WebCopyButton } from '@components/atoms/web-copy-button';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -24,41 +25,6 @@ const StyledWarnBox = styled(Row)`
   background: rgba(251, 191, 36, 0.08);
 `;
 
-const StyledButton = styled(WebButton)`
-  border-radius: 8px;
-  :hover {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
-`;
-
-const fill = keyframes`
-  from {
-   width: 0;
-  }
-  to {
-   width: 100%;
-  }
-`;
-
-const StyledHoldButton = styled(StyledButton) <{ pressed: boolean }>`
-  position: relative;
-  overflow: hidden;
-  ${({ pressed: onPress }): FlattenSimpleInterpolation | undefined =>
-    onPress
-      ? css`
-          ::before {
-            content: '';
-            z-index: -1;
-            position: absolute;
-            top: 0px;
-            left: 0px;
-            height: 100%;
-            background-color: rgba(0, 89, 255, 0.32);
-            animation: ${fill} 3s forwards;
-          }
-        `
-      : undefined}
-`;
 
 const GetMnemonicStep = ({
   useWalletCreateScreenReturn,
@@ -68,32 +34,9 @@ const GetMnemonicStep = ({
   const { seeds, onClickNext } = useWalletCreateScreenReturn;
   const theme = useTheme();
   const [showBlur, setShowBlur] = useState(true);
-  const [onPress, setOnPress] = useState(false);
   const [ableToReveal, setAbleToReveal] = useState(false);
   const [agreeAbleToReveals, setAgreeAbleToReveals] = useState(false);
   const [checkSavedMnemonic, setCheckSavedMnemonic] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const onClickCopy = (): void => {
-    setCopied(true);
-    navigator.clipboard.writeText(seeds);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  };
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (onPress) {
-      timer = setTimeout(() => {
-        setShowBlur(false);
-      }, 3000);
-    }
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [onPress]);
 
   return (
     <StyledContainer>
@@ -111,30 +54,8 @@ const GetMnemonicStep = ({
       {ableToReveal ? (
         <>
           <Row style={{ justifyContent: 'center', columnGap: 12 }}>
-            <StyledHoldButton
-              figure='tertiary'
-              size='small'
-              onMouseDown={(): void => {
-                setOnPress(true);
-              }}
-              onMouseUp={(): void => {
-                setOnPress(false);
-                setShowBlur(true);
-              }}
-              text='Hold to Reveal'
-              textType='body6'
-              pressed={onPress}
-            />
-            <StyledButton figure='tertiary' size='small' onClick={onClickCopy}>
-              {copied ? (
-                <WebText type='title6'>Copied!</WebText>
-              ) : (
-                <Row style={{ columnGap: 4 }}>
-                  <WebImg src={IconCopy} size={14} />
-                  <WebText type='title6'>Copy</WebText>
-                </Row>
-              )}
-            </StyledButton>
+            <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
+            <WebCopyButton width={80} copyText={seeds} />
           </Row>
           <Row style={{ columnGap: 8, alignItems: 'center' }}>
             <WebCheckBox
