@@ -13,12 +13,14 @@ import WebMainButton from '@components/atoms/web-main-button';
 import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
 import IconGoogle from '@assets/web/icon-google';
+import { getTheme } from '@styles/theme';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 4px;
   padding: 8px;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid ${getTheme('webWarning', '_100')}0a;
+  background: ${getTheme('webWarning', '_100')}14;
 `;
 
 const AdvancedOptionScreen = (): ReactElement => {

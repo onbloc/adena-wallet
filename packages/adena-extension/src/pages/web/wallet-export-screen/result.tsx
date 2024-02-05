@@ -10,6 +10,7 @@ import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
+import { getTheme } from '@styles/theme';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -27,7 +28,8 @@ const StyledWarnBox = styled(View)`
   gap: 12px 8px;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid ${getTheme('webWarning', '_100')}0a;
+  background: ${getTheme('webWarning', '_100')}14;
 `;
 
 const StyledInputBox = styled(View)`

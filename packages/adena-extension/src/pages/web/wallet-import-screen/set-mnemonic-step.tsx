@@ -26,7 +26,7 @@ const SetMnemonicStep = ({
         title='Import Existing Wallet'
         description='Enter a seed phrase or your private key to import your existing wallet.'
       />
-      <View style={{ paddingBottom: 8 }}>
+      <View style={{ paddingBottom: 8, marginTop: -6 }}>
         <WebSeedInput
           onChange={({ type, value }): void => {
             updateInputValue(value);

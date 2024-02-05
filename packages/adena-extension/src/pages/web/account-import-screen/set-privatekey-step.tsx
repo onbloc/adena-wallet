@@ -62,7 +62,7 @@ const SetPrivateKeyStep = ({
         title='Import Existing Wallet'
         description='Enter a private key to import your existing wallet.'
       />
-      <View style={{ rowGap: 12 }}>
+      <View style={{ rowGap: 12, marginTop: -6, marginBottom: 12 }}>
         <StyledItem error={!!errMsg}>
           <StyledTextarea
             value={privateKey}
