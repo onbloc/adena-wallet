@@ -21,7 +21,7 @@ const StyledMessageBox = styled(View)`
 const StyledWarnBox = styled(View)`
   width: 100%;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 8px;
   border-radius: 8px;
   background: rgba(251, 191, 36, 0.08);
 `;
@@ -112,7 +112,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
   return (
     <StyledContainer>
       <StyledMessageBox>
-        <WebText type='headline3'>{title}</WebText>
+        <WebText type='headline2'>{title}</WebText>
         <StyledWarnBox>
           <Row style={{ gap: 2, alignItems: 'center' }}>
             <WebImg src={IconWarning} size={20} />

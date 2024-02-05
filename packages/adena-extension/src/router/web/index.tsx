@@ -70,6 +70,8 @@ export const WebRouter = (): JSX.Element => {
         <Header />
         <Routes>
           <Route path={RoutePath.Home} element={<WalletExportScreen />} />
+          <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
+          <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
         </Routes>
       </>
     );
