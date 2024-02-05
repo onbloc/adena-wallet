@@ -2,13 +2,13 @@ import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
 import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 
 import IconLink from '@assets/web/link.svg';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import useLink from '@hooks/use-link';
 import { ADENA_DOCS_PAGE, GNO_CLI_HELP_PAGE } from '@common/constants/resource.constant';
-import WebTitleWithDescription from '@components/molecules/web-title-with-description';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -54,12 +54,10 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
       </View>
 
       <WebTitleWithDescription
-        title={{
-          text: 'Set Up Airgap Account',
-        }}
-        description={{
-          text: 'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.',
-        }}
+        title='Set Up Airgap Account'
+        description={
+          'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.'
+        }
       />
 
       <WebWarningDescriptionBox description={description} />

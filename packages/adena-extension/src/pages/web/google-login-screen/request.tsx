@@ -1,19 +1,15 @@
 import React, { useCallback, useEffect } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
-import { View, WebButton, WebImg, WebText } from '@components/atoms';
+import { View, WebButton, WebImg } from '@components/atoms';
 
 import AnimationWaitForGoogleLogin from '@assets/web/waiting-for-google-login.gif';
+import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
   align-items: center;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
-  margin-top: 16px;
 `;
 
 interface GoogleLoginRequestProps {
@@ -25,8 +21,6 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
   requestGoogleLogin,
   backStep,
 }) => {
-  const theme = useTheme();
-
   const onClickCancel = useCallback(() => {
     backStep();
   }, [backStep]);
@@ -37,30 +31,16 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
 
   return (
     <StyledContainer>
-      <WebImg src={AnimationWaitForGoogleLogin} height={120} />
-      <StyledMessageBox>
-        <WebText
-          type='headline2'
-          textCenter
-        >
-          Waiting for Google Login
-        </WebText>
-        <WebText
-          type='body4'
-          color={theme.webNeutral._500}
-          textCenter
-        >
-          {
-            'Complete your login by signing in with a Google\naccount in your browser. '
-          }
-        </WebText>
-      </StyledMessageBox>
-      <WebButton
-        figure='tertiary'
-        size='small'
-        onClick={onClickCancel}
-        text='Cancel'
+      <View style={{ marginBottom: 16 }}>
+        <WebImg src={AnimationWaitForGoogleLogin} height={120} />
+      </View>
+      <WebTitleWithDescription
+        title='Waiting for Google Login'
+        description={'Complete your login by signing in with a Google\naccount in your browser. '}
+        isCenter
       />
+
+      <WebButton figure='tertiary' size='small' onClick={onClickCancel} text='Cancel' />
     </StyledContainer>
   );
 };

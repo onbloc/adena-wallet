@@ -2,16 +2,12 @@ import { ReactElement, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Row, View, WebButton, WebCheckBox, WebText } from '@components/atoms';
-import { WebSeedInput } from '@components/molecules';
+import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
 import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
-
-const StyledMessageBox = styled(View)`
-  row-gap: 16px;
 `;
 
 const SetMnemonicStep = ({
@@ -26,12 +22,10 @@ const SetMnemonicStep = ({
 
   return (
     <StyledContainer>
-      <StyledMessageBox>
-        <WebText type='headline3'>Import Existing Wallet</WebText>
-        <WebText type='body4' color={theme.webNeutral._500}>
-          Enter a seed phrase or your private key to import your existing wallet.
-        </WebText>
-      </StyledMessageBox>
+      <WebTitleWithDescription
+        title='Import Existing Wallet'
+        description='Enter a seed phrase or your private key to import your existing wallet.'
+      />
       <View style={{ paddingBottom: 8 }}>
         <WebSeedInput
           onChange={({ type, value }): void => {
