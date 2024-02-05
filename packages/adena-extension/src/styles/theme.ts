@@ -3,14 +3,14 @@ import { css, DefaultTheme, FlattenSimpleInterpolation } from 'styled-components
 enum WebNeutral {
   _0 = '#FFFFFF',
   _100 = '#FAFCFF',
-  _200 = '#D8DEEB',
-  _300 = '#C5CBD6',
-  _400 = '#B0B3B8',
-  _500 = '#8D9199',
-  _600 = '#71747A',
-  _700 = '#54575C',
-  _800 = '#383A3D',
-  _900 = '#1D1E1F',
+  _200 = '#CED8EB',
+  _300 = '#BCC5D6',
+  _400 = '#A2A9B8',
+  _500 = '#878D99',
+  _600 = '#6C717A',
+  _700 = '#51555C',
+  _800 = '#36383D',
+  _900 = '#101214',
 }
 
 enum WebPrimary {
@@ -28,17 +28,17 @@ enum WebInput {
 enum WebError {
   _100 = '#EB545E',
   _200 = '#5C2125',
-  _300 = '#1F1518',
+  _300 = '#1A1112',
 }
 
 enum WebSuccess {
-  _100 = '#10B981',
-  _200 = '#215C48',
-  _300 = '#151F1B',
+  _100 = '#11D695',
+  _200 = '#113D2F',
+  _300 = '#111A17',
 }
 
 enum WebWarning {
-  _100 = '#FBBF24',
+  _100 = '#FBC224',
 }
 
 enum Neutral {
@@ -114,7 +114,7 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
     font-size: 24px;
     font-weight: 600;
     line-height: 32px; /* 133.333% */
-    letter-spacing: -0.24px;
+    letter-spacing: -0.48px;
   `,
   title2: css`
     font-size: 20px;
@@ -126,13 +126,13 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
     font-size: 18px;
     font-weight: 600;
     line-height: 24px; /* 133.333% */
-    letter-spacing: -0.18px;
+    letter-spacing: -0.36px;
   `,
   title4: css`
     font-size: 16px;
     font-weight: 600;
-    line-height: 21px; // 22px makes a pixel issue in the chrome
-    letter-spacing: -0.16px;
+    line-height: 22px; /* 137.5% */
+    letter-spacing: -0.32px;
   `,
   title5: css`
     font-size: 14px;
@@ -188,8 +188,8 @@ export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
   body4: css`
     font-size: 16px;
     font-weight: 400;
-    line-height: 23px; // 24px makes a pixel issue in the chrome
-    letter-spacing: -0.16px;
+    line-height: 24px; /* 150% */
+    letter-spacing: -0.32px;
   `,
   body5: css`
     font-size: 14px;
