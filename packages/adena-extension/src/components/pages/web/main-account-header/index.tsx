@@ -54,9 +54,20 @@ export const WebMainAccountHeader = ({
       </Pressable>
       {account && (
         <StyledAccountRow>
-          <WebText type='title4'>{account.name}</WebText>
-          <WebText type='body4' color={theme.webNeutral._600}>{addressStr}</WebText>
-          <CopyIconButton style={{ width: 20, height: 20 }} copyText={address} />
+          <WebText
+            type='body4'
+            style={{ fontWeight: 600, height: 16 }}
+          >
+            {account.name}
+          </WebText>
+          <WebText
+            type='body4'
+            color={theme.webNeutral._600}
+            style={{ height: 16 }}
+          >
+            {addressStr}
+          </WebText>
+          <CopyIconButton size={20} copyText={address} />
         </StyledAccountRow>
       )}
       <StyledBlank />

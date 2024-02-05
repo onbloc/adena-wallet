@@ -7,12 +7,14 @@ export interface CopyIconButtonProps {
   className?: string;
   copyText: string;
   style?: React.CSSProperties;
+  size?: number
 }
 
 export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   className = '',
   copyText,
   style = {},
+  size = 16,
 }) => {
   const [checked, setChecked] = useState<boolean>(false);
 
@@ -34,7 +36,7 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   );
 
   return (
-    <CopyButtonWrapper className={className} style={style} checked={checked} onClick={onClickCopyButton}>
+    <CopyButtonWrapper className={className} style={style} size={size} checked={checked} onClick={onClickCopyButton}>
       {checked ? <IconCopyCheck /> : <IconCopy />}
     </CopyButtonWrapper>
   );

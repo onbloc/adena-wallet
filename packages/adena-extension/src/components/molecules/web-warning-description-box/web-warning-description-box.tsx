@@ -16,11 +16,12 @@ const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({
   const theme = useTheme();
 
   return (
-    <StyledContainer style={{ padding: '20px 12px 20px 16px' }}>
-      <Row style={{ alignItems: 'flex-start', gap: 8 }}>
+    <StyledContainer style={{ padding: '12px 8px' }}>
+      <Row style={{ alignItems: 'flex-start', gap: 4 }}>
         <WebImg src={IconInfo} size={20} />
         <WebText
           type='body6'
+          style={{ letterSpacing: '-0.24px', lineHeight: '20px' }}
           color={theme.webWarning._100}
         >
           {description}

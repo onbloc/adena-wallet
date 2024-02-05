@@ -16,7 +16,7 @@ const StyledContainer = styled(View)`
 `;
 
 export type SensitiveInfoStepProps = {
-  link?: string;
+  link: string;
   desc: string;
   onClickNext: () => void;
 };
@@ -45,8 +45,7 @@ export const SensitiveInfoStep = ({
       />
       <Pressable
         onClick={(): void => {
-          // TODO: link to docs
-          openLink(link || 'https://docs.adena.app/');
+          openLink(link);
         }}
       >
         <Row style={{ columnGap: 6 }}>

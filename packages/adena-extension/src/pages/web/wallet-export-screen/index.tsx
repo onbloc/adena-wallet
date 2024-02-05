@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import { WebMain } from '@components/atoms';
+import { View, WebMain } from '@components/atoms';
 import useWalletExportScreen from '@hooks/web/wallet-export/use-wallet-export-screen';
 import WalletExportCheckPassword from './check-password';
 import WalletExportResult from './result';
@@ -21,6 +21,13 @@ const WalletExportScreen: React.FC = () => {
     moveExport,
   } = useWalletExportScreen();
 
+  const spacing = useMemo(() => {
+    if (exportData && exportData.split(' ').length > 12) {
+      return 120;
+    }
+    return 272
+  }, [exportData])
+
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
       return 'You’re about to reveal your private key. Your private key is the only way to\nrecover your account. Be sure to store it in a safe place.';
@@ -29,21 +36,22 @@ const WalletExportScreen: React.FC = () => {
   }, [exportType]);
 
   return (
-    <WebMain>
-      {walletExportState === 'INIT' && (
-        <WebSecurityHeader
-          currentStep={0}
-          stepLength={2}
-          visibleBackButton={walletExportState !== 'INIT'}
-          onClickGoBack={backStep}
-        />
-      )}
-      {walletExportState !== 'INIT' && (
-        <WebMainAccountHeader
-          account={currentAccount}
-          onClickGoBack={backStep}
-        />
-      )}
+    <WebMain spacing={spacing}>
+      <View style={{ width: '100%', marginBottom: 16 }}>
+        {walletExportState === 'INIT' ? (
+          <WebSecurityHeader
+            currentStep={0}
+            stepLength={2}
+            visibleBackButton={walletExportState !== 'INIT'}
+            onClickGoBack={backStep}
+          />
+        ) : (
+          <WebMainAccountHeader
+            account={currentAccount}
+            onClickGoBack={backStep}
+          />
+        )}
+      </View>
 
       {walletExportState === 'INIT' && (
         <SensitiveInfoStep
