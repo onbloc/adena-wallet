@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import IconWarning from '@assets/web/warning.svg';
-import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
+import { Row, View, WebButton, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox, WebSeedBox } from '@components/molecules';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
@@ -25,8 +24,7 @@ const StyledMessageBox = styled(View)`
 
 const StyledWarnBox = styled(View)`
   width: 100%;
-  gap: 12px 8px;
-  padding: 12px;
+  padding: 8px;
   border-radius: 8px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
@@ -96,12 +94,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
         <StyledWarnBox>
-          <Row style={{ gap: 4, alignItems: 'center' }}>
-            <WebImg src={IconWarning} size={20} />
-            <WebText type='title6' color={theme.webWarning._100} style={{ height: 14 }}>
-              Approach with caution!
-            </WebText>
-          </Row>
           <WebText type='body6' color={theme.webWarning._100}>
             {warningMessage}
           </WebText>

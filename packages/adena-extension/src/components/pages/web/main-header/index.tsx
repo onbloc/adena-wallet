@@ -44,13 +44,15 @@ export const WebMainHeader = ({
       >
         <WebImg src={back} size={24} />
       </Pressable>
-      {stepLength > 0 && (
-        <Row style={{ columnGap: 8 }}>
-          {_.times(stepLength, (index) => (
-            <StyledDot key={index} selected={index === currentStep} />
-          ))}
-        </Row>
-      )}
+      <Row style={{ columnGap: 8 }}>
+        {stepLength > 1 && (
+          <React.Fragment>
+            {_.times(stepLength, (index) => (
+              <StyledDot key={index} selected={index === currentStep} />
+            ))}
+          </React.Fragment>
+        )}
+      </Row>
       <StyledEmpty />
     </StyledContainer>
   );
