@@ -38,19 +38,18 @@ const Lottie: React.FC<LottieProps> = ({
     if (!animationContainer.current) {
       return;
     }
-    const animationOptions: AnimationConfigWithData<'svg'> = {
+    const animationOptions: AnimationConfigWithData<'canvas'> = {
       container: animationContainer.current,
-      renderer: 'svg' as const,
+      renderer: 'canvas' as const,
       loop,
       autoplay,
       animationData,
       rendererSettings: {
         className: 'lottie-player',
-        preserveAspectRatio: 'xMidYMid slice',
       },
     };
 
-    const animation = LottieWeb.loadAnimation<'svg'>(animationOptions);
+    const animation = LottieWeb.loadAnimation<'canvas'>(animationOptions);
     setAnimationInstance(animation);
 
     return () => {
