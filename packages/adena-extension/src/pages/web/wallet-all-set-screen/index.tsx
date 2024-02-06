@@ -73,7 +73,7 @@ const WalletAllSetScreen = (): JSX.Element => {
           <StyledMessageBox>
             <WebText type='display4'>You’re All Set!</WebText>
             <WebText type='body4' color={theme.webNeutral._500}>
-              Click on the Start button to launch Adena
+              Click on the Start button to launch Adena.
             </WebText>
           </StyledMessageBox>
           <StyledLinkBox>

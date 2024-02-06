@@ -25,7 +25,7 @@ const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({ completeQ
           height={120}
         />
         <WebTitleWithDescription
-          title='Questionnaire Complete'
+          title='Questionnaire Complete!'
           description={'You have successfully passed the questionnaire.\nClick on Next to continue.'}
           isCenter
         />
