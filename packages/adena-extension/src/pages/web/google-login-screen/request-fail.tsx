@@ -32,6 +32,7 @@ const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({ retry }
           'Your sign-in attempt was unsuccessful. Please try\nagain with a valid Google account. '
         }
         isCenter
+        marginBottom={-6}
       />
       <WebButton
         figure='primary'
