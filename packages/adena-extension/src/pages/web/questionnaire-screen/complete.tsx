@@ -2,13 +2,13 @@ import React from 'react';
 import styled from 'styled-components';
 
 import { View, WebButton } from '@components/atoms';
-import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
+import LottieQuestionnaireComplete from '@assets/web/lottie/questionnaire-complete.json';
 import { WebTitleWithDescription } from '@components/molecules';
 import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
-  gap: 24px;
+  gap: 18px;
   align-items: center;
 `;
 
@@ -19,18 +19,17 @@ interface QuestionnaireCompleteProps {
 const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({ completeQuestion }) => {
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ width: '100%', alignItems: 'center', gap: 40 }}>
         <Lottie
-          animationData={LottieCompleteAQuestion}
-          style={{ height: 120 }}
+          animationData={LottieQuestionnaireComplete}
+          height={120}
+        />
+        <WebTitleWithDescription
+          title='Questionnaire Complete'
+          description={'You have successfully passed the questionnaire.\nClick on Next to continue.'}
+          isCenter
         />
       </View>
-
-      <WebTitleWithDescription
-        title='Questionnaire Complete'
-        description={'You have successfully passed the questionnaire.\nClick on Next to continue.'}
-        isCenter
-      />
 
       <WebButton
         figure='primary'
