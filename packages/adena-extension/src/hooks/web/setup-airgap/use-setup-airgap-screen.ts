@@ -5,7 +5,7 @@ import {
   AddressKeyring,
   AdenaWallet,
   fromBech32,
-  isSingleAccount,
+  isAirgapAccount,
 } from 'adena-module';
 
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -86,7 +86,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address]);
 
   const _existsAddress = useCallback(async () => {
-    const checkAccounts = accounts.filter((account) => !isSingleAccount(account));
+    const checkAccounts = accounts.filter((account) => isAirgapAccount(account));
     return Promise.all(
       checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
     ).then((addresses) => addresses.includes(address));
