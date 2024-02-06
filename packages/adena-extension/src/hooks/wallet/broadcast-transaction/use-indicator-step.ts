@@ -44,9 +44,17 @@ const useIndicatorStep = <T extends string>({
       if (!existWallet) {
         defaultStepLength = defaultStepLength + 1;
       }
-      const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
-      if (hasQuestionnaire && !ableToSkipQuestionnaire) {
-        defaultStepLength = defaultStepLength + 1;
+      if (hasQuestionnaire) {
+        if (!existWallet) {
+          defaultStepLength = defaultStepLength + 1;
+        } else {
+          const ableToSkipQuestionnaire = await walletService
+            .isSkipQuestionnaire()
+            .catch(() => false);
+          if (!ableToSkipQuestionnaire) {
+            defaultStepLength = defaultStepLength + 1;
+          }
+        }
       }
       return defaultStepLength;
     },

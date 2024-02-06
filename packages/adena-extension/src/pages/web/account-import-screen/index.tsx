@@ -15,7 +15,7 @@ import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
-  const { step, onClickGoBack, stepLength, accountImportStepNo, onClickNext } =
+  const { step, onClickGoBack, indicatorInfo, onClickNext } =
     useAccountImportScreenReturn;
 
   if (step === 'LOADING') {
@@ -29,9 +29,9 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   return (
     <WebMain spacing={272}>
       <WebMainHeader
-        stepLength={stepLength}
+        stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}
-        currentStep={accountImportStepNo[step]}
+        currentStep={indicatorInfo.stepNo}
       />
       {step === 'INIT' && (
         <SensitiveInfoStep

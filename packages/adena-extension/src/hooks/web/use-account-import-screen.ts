@@ -14,8 +14,12 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useQuestionnaire from './use-questionnaire';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseAccountImportReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   isValidForm: boolean;
   errMsg: string;
   privateKey: string;
@@ -53,6 +57,12 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     SET_PRIVATE_KEY: ableToSkipQuestionnaire ? 1 : 2,
     LOADING: ableToSkipQuestionnaire ? 1 : 2,
   };
+
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: accountImportStepNo,
+    currentState: step,
+    hasQuestionnaire: true,
+  });
 
   const isValidForm = useMemo(() => {
     return !!privateKey && !errMsg;
@@ -133,6 +143,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
   }, [step, privateKey, ableToSkipQuestionnaire, makePrivateKeyAccountAndKeyring]);
 
   return {
+    indicatorInfo,
     isValidForm,
     errMsg,
     privateKey,
