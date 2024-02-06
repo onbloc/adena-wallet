@@ -29,7 +29,7 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed
   display: flex;
   flex-direction: row;
   width: ${({ size }): string => (size === 'full' ? '100%' : 'auto')};
-  height: ${({ size }): string => (size === 'small' ? '44px' : 'auto')};
+  height: 44px;
   justify-content: center;
   align-items: center;
   ${({ fixed }): FlattenSimpleInterpolation | string => fixed ? css`flex-shrink: 0;` : ''};
@@ -107,6 +107,35 @@ const StyledButtonTertiary = styled(StyledButtonBase)`
   `: ''}
 `;
 
+const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
+  color: ${getTheme('webNeutral', '_300')};
+  padding: 8px 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(188, 197, 214, 0.16);
+  background: rgba(188, 197, 214, 0.08);
+
+  svg * {
+    fill: ${getTheme('webNeutral', '_300')};
+  }
+
+  ${({ disabled, theme }): FlattenSimpleInterpolation | string => !disabled ? css`
+    :hover {
+      color: ${theme.webNeutral._100};
+      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
+      svg * {
+        fill: ${theme.webNeutral._100};
+      }
+    }
+    :active {
+      color: ${theme.webNeutral._100};
+      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
+      svg * {
+        fill: ${theme.webNeutral._100};
+      }
+    }
+  `: ''}
+`;
+
 const StyledButtonQuaternary = styled(StyledButtonBase)`
   outline: 1px solid rgba(188, 197, 214, 0.16);
   background: rgba(188, 197, 214, 0.04);
@@ -137,7 +166,11 @@ export const WebButton = ({
       StyledComponent = StyledButtonSecondary;
       break;
     case 'tertiary':
-      StyledComponent = StyledButtonTertiary;
+      if (rest.size === 'small') {
+        StyledComponent = StyledButtonTertiarySmall;
+      } else {
+        StyledComponent = StyledButtonTertiary;
+      }
       break;
     case 'quaternary':
       StyledComponent = StyledButtonQuaternary;
@@ -159,7 +192,7 @@ export const WebButton = ({
           {isRightButton && (
             <View style={{ width: 12 }} />
           )}
-          <WebText type={textType}>
+          <WebText type={textType} color={'inherit'}>
             {rest.text}
           </WebText>
           {isRightButton && (

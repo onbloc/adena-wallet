@@ -22,7 +22,7 @@ const StyledAnswerBox = styled(View)`
 
 const StyledWarningBox = styled(Row)`
   width: 100%;
-  padding: 8px 12px;
+  padding: 12px 8px;
   justify-content: flex-start;
   align-items: flex-end;
   gap: 4px;
