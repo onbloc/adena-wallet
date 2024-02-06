@@ -4,8 +4,9 @@ import styled from 'styled-components';
 import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 
-import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCheck from '@assets/web/web-check-circle.svg';
+import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -42,7 +43,10 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
   return (
     <StyledContainer>
       <View style={{ marginBottom: 8 }}>
-        <WebImg src={IconAirgap} size={88} />
+        <Lottie
+          animationData={LottieAccountSynced}
+          height={88}
+        />
       </View>
 
       <WebTitleWithDescription
@@ -50,6 +54,7 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
         description={
           'Your account has been synced to Adena.\nConfirm your address below and click on Next to continue.'
         }
+        marginBottom={-6}
       />
 
       <StyledInputBox>

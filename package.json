@@ -21,7 +21,6 @@
     "@babel/core": "7.21.0",
     "@babel/runtime": "7.21.0",
     "@storybook/react": "^7.0.4",
-    "@types/react-lottie": "^1.2.10",
     "@yarnpkg/sdks": "3.0.0-rc.40",
     "babel-loader": "9.1.2",
     "eslint": "8.0.1",
@@ -41,8 +40,5 @@
       "prettier --write",
       "git add"
     ]
-  },
-  "dependencies": {
-    "react-lottie": "^1.2.4"
   }
 }

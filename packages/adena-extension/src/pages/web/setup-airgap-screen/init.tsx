@@ -58,6 +58,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
         description={
           'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gnoland CLI.'
         }
+        marginBottom={-6}
       />
 
       <WebWarningDescriptionBox description={description} />

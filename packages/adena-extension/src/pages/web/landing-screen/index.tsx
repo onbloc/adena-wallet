@@ -1,6 +1,5 @@
 import { ReactElement, useCallback } from 'react';
 import styled, { useTheme } from 'styled-components';
-import Lottie from 'react-lottie';
 import { useQuery } from '@tanstack/react-query';
 
 import { Row, View, WebMain, WebText } from '@components/atoms';
@@ -13,6 +12,7 @@ import WebMainButton from '@components/atoms/web-main-button';
 import IconHardwareWallet from '@assets/icon-hardware-wallet';
 import IconAirgap from '@assets/icon-airgap';
 import IconThunder from '@assets/icon-thunder';
+import Lottie from '@components/atoms/lottie';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -39,11 +39,9 @@ const LandingScreen = (): ReactElement => {
     <WebMain spacing={344}>
       <StyledAnimationWrapper>
         <Lottie
-          style={{ marginTop: -320 }}
-          options={{
-            animationData: welcomeJson,
-          }}
-          height={320}
+          style={{ height: 320, marginTop: -320 }}
+          speed={1}
+          animationData={welcomeJson}
         />
       </StyledAnimationWrapper>
       <View style={{ rowGap: 16 }}>
