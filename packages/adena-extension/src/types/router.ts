@@ -61,6 +61,7 @@ export enum RoutePath {
   ResetWallet = '/settings/security-privacy/reset-wallet',
 
   // web
+  WebNotFound = '/web/not-found',
   WebSelectHardWallet = '/web/select-hard-wallet',
   WebConnectLedger = '/web/connect-ledger',
   WebConnectLedgerSelectAccount = '/web/connect-ledger/select-account',
@@ -175,6 +176,8 @@ export type RouteParams = {
   [RoutePath.ResetWallet]: {
     from: 'forgot-password';
   } | null;
+
+  [RoutePath.WebNotFound]: null;
   [RoutePath.WebConnectLedger]: null;
   [RoutePath.WebConnectLedgerSelectAccount]: {
     accounts: string[];

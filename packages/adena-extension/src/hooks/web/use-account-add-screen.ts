@@ -52,21 +52,25 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   }, [step, ableToSkipQuestionnaire]);
 
   const addAccount = async (): Promise<void> => {
-    if (!wallet) {
-      return;
+    try {
+      if (!wallet) {
+        return;
+      }
+      resetNetworkConnection();
+      const account = await SeedAccount.createByWallet(wallet);
+      account.index = wallet.lastAccountIndex + 1;
+      account.name = `Account ${wallet.lastAccountIndex + 1}`;
+      const clone = wallet.clone();
+      clone.addAccount(account);
+      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      if (storedAccount) {
+        await changeCurrentAccount(storedAccount);
+      }
+      await updateWallet(clone);
+      navigate(RoutePath.WebAccountAddedComplete);
+    } catch (error) {
+      navigate(RoutePath.WebNotFound);
     }
-    resetNetworkConnection();
-    const account = await SeedAccount.createByWallet(wallet);
-    account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${wallet.lastAccountIndex + 1}`;
-    const clone = wallet.clone();
-    clone.addAccount(account);
-    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
-    if (storedAccount) {
-      await changeCurrentAccount(storedAccount);
-    }
-    await updateWallet(clone);
-    navigate(RoutePath.WebAccountAddedComplete);
   };
 
   return {

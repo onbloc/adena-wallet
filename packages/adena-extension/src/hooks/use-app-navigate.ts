@@ -47,7 +47,7 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   };
 
   const reload = (): void => {
-    baseNavigate(0);
+    window.location.reload();
   };
 
   return {

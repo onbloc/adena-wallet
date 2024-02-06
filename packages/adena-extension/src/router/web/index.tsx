@@ -21,6 +21,7 @@ import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 
 import Header from './Header';
+import NotFoundScreen from '@pages/web/404';
 
 export const WebRouter = (): JSX.Element => {
   const pathname = window?.location?.pathname || '';
@@ -64,6 +65,7 @@ export const WebRouter = (): JSX.Element => {
             element={<AccountAddedCompleteScreen />}
           />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -77,10 +79,16 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.Home} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
   }
 
-  return <></>;
+  return (
+    <>
+      <Header />
+      <Route path={'*'} element={<NotFoundScreen />} />
+    </>
+  );
 };
