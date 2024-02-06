@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
@@ -79,6 +79,10 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
+  const onFinishHold = useCallback((finished: boolean) => {
+    setBlur(!finished);
+  }, []);
+
   const onClickDone = (): void => {
     AdenaStorage.session()
       .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
@@ -110,7 +114,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
-          <WebHoldButton onFinishHold={(response): void => setBlur(!response)} />
+          <WebHoldButton onFinishHold={onFinishHold} />
           <WebCopyButton width={80} copyText={exportData || ''} />
         </Row>
       </StyledInputBox>

@@ -16,7 +16,7 @@ export interface WebMainButtonProps {
 const StyledContainer = styled(WebButton)`
   flex-direction: column;
   height: 104px;
-  padding: 12px 16px 16px;
+  padding: 12px 16px;
   align-items: flex-start;
   justify-content: space-between;
 `;
@@ -24,6 +24,7 @@ const StyledContainer = styled(WebButton)`
 const StyledImageWrapper = styled(View)`
   width: 24px;
   height: 24px;
+  justify-content: center;
 
   svg {
     width: 100%;

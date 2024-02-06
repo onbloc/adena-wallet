@@ -23,6 +23,11 @@ const StyledContainer = styled(Row) <{ clicked: boolean }>`
   cursor: pointer;
   user-select:none;
 
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
   svg * {
     stroke: ${({ theme }): string => theme.webNeutral._500};
   }
@@ -94,6 +99,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
         <WebText
           color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
           type='body6'
+          style={{ height: 14 }}
         >
           {buttonStr}
         </WebText>
@@ -105,6 +111,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
           <WebText
             color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
             type='body6'
+            style={{ height: 14 }}
           >
             {buttonStr}
           </WebText>
