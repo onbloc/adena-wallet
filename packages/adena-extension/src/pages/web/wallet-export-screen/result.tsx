@@ -23,11 +23,11 @@ const StyledMessageBox = styled(View)`
   row-gap: 12px;
 `;
 
-const StyledWarnBox = styled(Row)`
+const StyledWarnBox = styled(Row) <{ center: boolean }>`
   width: 100%;
-  padding: 8px;
+  padding: 12px 8px;
   border-radius: 8px;
-  align-items: center;
+  align-items: ${({ center }): string => center ? 'center' : 'flex-start'};
   gap: 4px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
@@ -110,7 +110,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     <StyledContainer>
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
-        <StyledWarnBox>
+        <StyledWarnBox center={exportType === 'SEED_PHRASE'}>
           <WebImg src={IconWarning} size={20} />
           <WebText type='body6' color={theme.webWarning._100}>
             {warningMessage}

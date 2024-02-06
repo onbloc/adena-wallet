@@ -32,13 +32,13 @@ const StyledMessageBox = styled(View)`
 
 const StyledImgBox = styled(View)`
   width: 40px;
-  height: 30px;
+  height: 36px;
   align-items: center;
   justify-content: center;
 `;
 
 const StyledLinkBox = styled(View)`
-  row-gap: 20px;
+  row-gap: 16px;
 `;
 
 const StyledBtn = styled(WebButton)`
@@ -46,24 +46,16 @@ const StyledBtn = styled(WebButton)`
   flex-direction: column;
   height: fit-content;
   align-items: flex-start;
-  row-gap: 12px;
-  padding: 20px;
+  row-gap: 8px;
+  padding: 20px 20px 16px 20px;
   background: #16181c;
   box-shadow: 0 0 0 1px #212429 inset;
 `;
 
 const StyledBtnTitle = styled(WebText)`
-  font-size: 15px;
-  font-weight: 400;
-  line-height: 20px; /* 133.333% */
-  letter-spacing: -0.3px;
 `;
 
 const StyledBtnInfo = styled(WebText)`
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 18px; /* 150% */
-  letter-spacing: -0.24px;
 `;
 
 const WalletAllSetScreen = (): JSX.Element => {
@@ -101,7 +93,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoLand} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%' }}>
+                  <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       Gno.land
                     </StyledBtnTitle>
@@ -120,7 +112,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoSwap} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%' }}>
+                  <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       Gnoswap
                     </StyledBtnTitle>
@@ -140,7 +132,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoScan} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%' }}>
+                  <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       Gnoscan
                     </StyledBtnTitle>
