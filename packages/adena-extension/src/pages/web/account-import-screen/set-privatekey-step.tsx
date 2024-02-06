@@ -13,7 +13,7 @@ const StyledContainer = styled(View)`
   row-gap: 24px;
 `;
 
-const StyledItem = styled(Row)<{ error: boolean }>`
+const StyledItem = styled(Row) <{ error: boolean }>`
   position: relative;
   overflow: hidden;
   border-radius: 10px;
@@ -98,7 +98,6 @@ const SetPrivateKeyStep = ({
         size='small'
         onClick={onClickNext}
         disabled={!agreeWarning || !isValidForm}
-        style={{ justifyContent: 'center' }}
         text='Next'
         rightIcon='chevronRight'
       />

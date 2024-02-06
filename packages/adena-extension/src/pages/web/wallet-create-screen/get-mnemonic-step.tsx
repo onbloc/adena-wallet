@@ -95,7 +95,6 @@ const GetMnemonicStep = ({
           size='small'
           onClick={onClickNext}
           disabled={!checkSavedMnemonic}
-          style={{ justifyContent: 'center' }}
           text='Next'
           rightIcon='chevronRight'
         />

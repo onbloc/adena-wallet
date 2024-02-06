@@ -110,7 +110,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
           </View>
           <WebText
             color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
-            type='body6'
+            type='title6'
             style={{ height: 14 }}
           >
             {buttonStr}
