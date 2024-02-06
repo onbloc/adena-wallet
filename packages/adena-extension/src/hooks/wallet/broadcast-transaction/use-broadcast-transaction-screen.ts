@@ -169,7 +169,7 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
       });
 
     if (isSuccessBroadcasting) {
-      navigate(RoutePath.Wallet);
+      navigate(RoutePath.History);
     } else {
       setBroadcastTransactionState('FAILED');
     }
