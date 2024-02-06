@@ -38,6 +38,7 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
         title='Waiting for Google Login'
         description={'Complete your login by signing in with a Google\naccount in your browser. '}
         isCenter
+        marginBottom={-6}
       />
 
       <WebButton figure='tertiary' size='small' onClick={onClickCancel} text='Cancel' />
