@@ -18,7 +18,7 @@ import Lottie from '@components/atoms/lottie';
 const StyledAnimationWrapper = styled.div`
   display: block;
   height: 88px;
-  padding-bottom: 4px;
+  margin-bottom: 4px;
   overflow: visible;
 `;
 
