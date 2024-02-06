@@ -59,8 +59,8 @@ const LandingScreen = (): ReactElement => {
         <React.Fragment>
           <StyledAnimationWrapper>
             <Lottie
-              style={{ height: 320, marginTop: -320 }}
               speed={1}
+              height={88}
               animationData={welcomeJson}
             />
           </StyledAnimationWrapper>

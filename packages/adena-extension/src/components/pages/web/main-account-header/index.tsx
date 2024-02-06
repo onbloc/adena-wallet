@@ -61,9 +61,9 @@ export const WebMainAccountHeader = ({
             {account.name}
           </WebText>
           <WebText
-            type='body4'
+            type='title4'
             color={theme.webNeutral._600}
-            style={{ height: 16 }}
+            style={{ height: 16, fontWeight: 400 }}
           >
             {addressStr}
           </WebText>

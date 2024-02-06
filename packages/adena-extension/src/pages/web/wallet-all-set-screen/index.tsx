@@ -67,7 +67,7 @@ const WalletAllSetScreen = (): JSX.Element => {
   };
 
   return (
-    <WebMain spacing={328}>
+    <WebMain spacing={null}>
       <StyledContainer>
         <StyledLeft>
           <StyledMessageBox>
