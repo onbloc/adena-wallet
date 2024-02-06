@@ -2,12 +2,12 @@ import React, { ReactElement, useCallback } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useQuery } from '@tanstack/react-query';
 
-import { Row, View, WebMain, WebText } from '@components/atoms';
+import { Row, View, WebImg, WebMain, WebText } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
 import welcomeJson from '@assets/web/lottie/welcome.json';
-import addAccountJson from '@assets/web/lottie/add-account.json';
+import AnimationAddAccount from '@assets/web/lottie/add-account.gif';
 import { useAdenaContext } from '@hooks/use-context';
 import WebMainButton from '@components/atoms/web-main-button';
 import IconHardwareWallet from '@assets/icon-hardware-wallet';
@@ -42,11 +42,17 @@ const LandingScreen = (): ReactElement => {
       {existWallet ? (
         <React.Fragment>
           <StyledAnimationWrapper>
-            <Lottie
-              speed={1}
-              height={88}
-              animationData={addAccountJson}
-            />
+            {/* TODO: Change to Lottie JSON
+              <Lottie
+                speed={1}
+                height={88}
+                animationData={AnimationAddAccount}
+                visibleSize={264}
+              /> 
+            */}
+            <View style={{ marginTop: -176 }}>
+              <WebImg src={AnimationAddAccount} height={264} />
+            </View>
           </StyledAnimationWrapper>
           <View style={{ rowGap: 16 }}>
             <WebText type='headline1' style={{ whiteSpace: 'nowrap' }}>{'Add Account'}</WebText>
@@ -62,6 +68,7 @@ const LandingScreen = (): ReactElement => {
               speed={1}
               height={88}
               animationData={welcomeJson}
+              visibleSize={264}
             />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 16 }}>

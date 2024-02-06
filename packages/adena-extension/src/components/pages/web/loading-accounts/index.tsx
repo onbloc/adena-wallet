@@ -1,10 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts-success.json';
 
-import { View, WebImg } from '@components/atoms';
+import { View } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -13,13 +14,12 @@ const StyledContainer = styled(View)`
 `;
 
 interface WebLoadingAccountsProps {
-  spacing?: number;
 }
 
-const WebLoadingAccounts: React.FC<WebLoadingAccountsProps> = ({ spacing = 0 }) => {
+const WebLoadingAccounts: React.FC<WebLoadingAccountsProps> = () => {
   return (
-    <StyledContainer style={{ marginTop: `${spacing}px` }}>
-      <WebImg src={AnimationLoadingAccount} height={120} />
+    <StyledContainer>
+      <Lottie animationData={AnimationLoadingAccount} height={120} />
       <WebTitleWithDescription
         title='Loading Accounts'
         description='We’re loading accounts. This will take a few seconds...'

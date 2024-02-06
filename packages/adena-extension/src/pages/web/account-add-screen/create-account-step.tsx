@@ -1,11 +1,12 @@
 import { ReactElement, useEffect } from 'react';
 import styled from 'styled-components';
 
-import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts-success.json';
 
-import { View, WebImg } from '@components/atoms';
+import { View } from '@components/atoms';
 import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -27,7 +28,7 @@ const CreateAccountStep = ({
   return (
     <StyledContainer>
       <View style={{ marginBottom: 16 }}>
-        <WebImg src={AnimationLoadingAccount} height={120} />
+        <Lottie animationData={AnimationLoadingAccount} height={120} />
       </View>
       <WebTitleWithDescription
         title='Loading Accounts'
