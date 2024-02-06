@@ -19,7 +19,8 @@ export const GlobalWebStyle = createGlobalStyle`
   }
   body {
     margin: 0;
-    background: radial-gradient(100% 100% at 50% 0%, rgba(16, 18, 20, 0.00) 48.83%, rgba(0, 89, 255, 0.24) 100%);
+    background: radial-gradient(100% 100% at 50% 100%, rgba(0, 89, 255, 0.24) 0%, rgba(0, 89, 255, 0.00) 100%), #0C0D0F;
+    overflow: auto;
   }
 `;
 
