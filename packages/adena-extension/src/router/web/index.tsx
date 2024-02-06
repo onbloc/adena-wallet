@@ -5,6 +5,7 @@ import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 
 import LandingScreen from '@pages/web/landing-screen';
+import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
 import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
@@ -43,6 +44,7 @@ export const WebRouter = (): JSX.Element => {
         <Header />
         <Routes>
           <Route path={RoutePath.Home} element={<LandingScreen />} />
+          <Route path={RoutePath.WebSelectHardWallet} element={<SelectHardWalletScreen />} />
           <Route path={RoutePath.WebConnectLedger} element={<ConnectLedgerScreen />} />
           <Route
             path={RoutePath.WebConnectLedgerSelectAccount}
@@ -57,7 +59,10 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.WebAccountImport} element={<AccountImportScreen />} />
           <Route path={RoutePath.WebWalletImport} element={<WalletImportScreen />} />
           <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
-          <Route path={RoutePath.WebAccountAddedComplete} element={<AccountAddedCompleteScreen />} />
+          <Route
+            path={RoutePath.WebAccountAddedComplete}
+            element={<AccountAddedCompleteScreen />}
+          />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
         </Routes>
       </>
