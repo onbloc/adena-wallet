@@ -32,6 +32,7 @@ const CreateAccountStep = ({
       <WebTitleWithDescription
         title='Loading Accounts'
         description='We’re loading accounts. This will take a few seconds...'
+        isCenter
       />
     </StyledContainer>
   );
