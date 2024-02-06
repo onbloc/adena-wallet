@@ -22,7 +22,7 @@ type WebButtonProps = {
 
 const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   cursor: pointer;
-  border: transparent;
+  border: none;
   border-radius: ${({ size }): string => (size === 'small' ? '12px' : '14px')};
   padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
   display: flex;
@@ -40,40 +40,39 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
 
 const StyledButtonPrimary = styled(StyledButtonBase)`
   color: ${getTheme('webNeutral', '_100')};
-  border: 1px solid rgba(255, 255, 255, 0.40);
   background: linear-gradient(180deg, #0059FF 0%, #004BD6 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
 
   ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
-    :hover,
+    :hover {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) inset, 0px 0px 24px 0px #0059FF52, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
+    }
     :active {
-      box-shadow: 0px 0px 24px 0px rgba(0, 89, 255, 0.32), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) inset, 0px 0px 24px 0px #0059FF52, 0px 0px 0px 3px #0059FF29, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
     }
   `: ''}
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
   color: #ADCAFF;
-  border: 1px solid rgba(122, 169, 255, 0.24);
   background: rgba(0, 89, 255, 0.16);
+  box-shadow: 0 0 0 1px rgba(122, 169, 255, 0.24) inset;
 
   ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
     :hover {
       color: #ADCAFF;
-      border: 1px solid rgba(122, 169, 255, 0.24);
-      background: rgba(0, 89, 255, 0.20);
-      box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      background: linear-gradient(180deg, rgba(0, 89, 255, 0.20) 0%, rgba(0, 89, 255, 0.00) 100%);
+      box-shadow: 0 0 0 2px rgba(122, 169, 255, 0.24) inset, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
     }
 
     :active {
       color: #7AA9FF;
-      border: 1px solid rgba(122, 169, 255, 0.24);
-      background: rgba(0, 89, 255, 0.20);
+      background: 0 0 0 2px rgba(122, 169, 255, 0.24) inset, linear-gradient(180deg, rgba(0, 89, 255, 0.20) 0%, rgba(0, 89, 255, 0.00) 100%);
     }
   `: ''}
 
   :disabled {
     color: #7AA9FF;
-    border: 1px solid rgba(122, 169, 255, 0.24);
     opacity: 0.4;
     background: rgba(0, 89, 255, 0.16);
   }
@@ -81,8 +80,8 @@ const StyledButtonSecondary = styled(StyledButtonBase)`
 
 const StyledButtonTertiary = styled(StyledButtonBase)`
   color: ${getTheme('webNeutral', '_300')};
-  border: 1px solid rgba(188, 197, 214, 0.24);
   background: rgba(188, 197, 214, 0.04);
+  box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.24) inset;
 
   svg * {
     fill: ${getTheme('webNeutral', '_300')};
@@ -90,16 +89,15 @@ const StyledButtonTertiary = styled(StyledButtonBase)`
 
   ${({ disabled, theme }): FlattenSimpleInterpolation | string => !disabled ? css`
     :hover {
-      border: 1px solid rgba(188, 197, 214, 0.24);
       background: rgba(188, 197, 214, 0.06);
-      box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 0 0 2px rgba(188, 197, 214, 0.24) inset, 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
       svg * {
         fill: ${theme.webNeutral._100};
       }
     }
     :active {
       color: ${theme.webNeutral._100};
-      box-shadow: 0px 0px 16px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.24) inset, 0px 0px 16px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
       svg * {
         fill: ${theme.webNeutral._100};
       }

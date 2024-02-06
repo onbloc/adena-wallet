@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useState } from 'react';
+import React, { ReactElement, useCallback, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
 
@@ -27,7 +27,7 @@ const StyledInputBox = styled(View)`
   gap: 12px;
 `;
 
-const StyledItem = styled(Row)<{ error: boolean }>`
+const StyledItem = styled(Row) <{ error: boolean }>`
   position: relative;
   overflow: hidden;
   border-radius: 10px;
@@ -49,13 +49,13 @@ const StyledTypeMenu = styled(Row)`
   background: rgba(0, 0, 0, 0.2);
 `;
 
-const StyledTypeMenuItem = styled(Pressable)<{ selected: boolean }>`
+const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
   padding: 8px 12px;
   border-radius: 40px;
   background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
 
-const StyledNoText = styled(WebText)<{ error: boolean }>`
+const StyledNoText = styled(WebText) <{ error: boolean }>`
   ${mixins.flex()}
   background: ${({ error, theme }): string => (error ? '#2a161a' : theme.webInput._100)};
   border-right: 1px solid
@@ -65,20 +65,22 @@ const StyledNoText = styled(WebText)<{ error: boolean }>`
   align-items: center;
 `;
 
-const StyledInput = styled(WebInput)<{ error: boolean }>`
+const StyledInput = styled(WebInput) <{ error: boolean }>`
   flex: 1;
   width: 100%;
+  height: 40px;
   border-radius: 0;
   border: none;
   outline: none;
-  background: ${({ error, theme }): string => (error ? theme.webError._300 : 'transparent')};
+  background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
+  box-shadow: none;
 
   :focus-visible {
-    background: transparent;
+    background:${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
   }
 `;
 
-const StyledTextarea = styled.textarea`
+const StyledTextarea = styled.textarea <{ error: boolean }>`
   ${webFonts.body5};
   color: ${getTheme('webNeutral', '_0')};
   padding: 16px;
@@ -88,12 +90,11 @@ const StyledTextarea = styled.textarea`
   border-radius: 0;
   border: none;
   outline: none;
-  background: transparent;
-  -webkit-text-security: disc;
+  background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
   resize: none;
 
   :focus-visible {
-    background: transparent;
+    background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
   }
 `;
 
@@ -158,6 +159,8 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
           <StyledItem error={!!errorMessage}>
             <StyledTextarea
               value={pKey}
+              placeholder='Private Key'
+              error={!!errorMessage}
               onChange={({ target: { value } }): void => {
                 onChange({ type, value });
                 setPKey(value);

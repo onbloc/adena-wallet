@@ -1,4 +1,4 @@
-import { ReactElement, useState } from 'react';
+import { ReactElement, useCallback, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
@@ -37,6 +37,10 @@ const GetMnemonicStep = ({
   const [agreeAbleToReveals, setAgreeAbleToReveals] = useState(false);
   const [checkSavedMnemonic, setCheckSavedMnemonic] = useState(false);
 
+  const onFinishHold = useCallback((finished: boolean) => {
+    setShowBlur(!finished);
+  }, []);
+
   return (
     <StyledContainer>
       <StyledMessageBox>
@@ -53,7 +57,8 @@ const GetMnemonicStep = ({
       {ableToReveal ? (
         <>
           <Row style={{ justifyContent: 'center', columnGap: 12 }}>
-            <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
+
+            <WebHoldButton onFinishHold={onFinishHold} />
             <WebCopyButton width={80} copyText={seeds} />
           </Row>
           <Row style={{ columnGap: 8, alignItems: 'center' }}>
