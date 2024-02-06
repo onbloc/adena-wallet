@@ -14,7 +14,6 @@ const config = {
     content: path.join(__dirname, './src/content.ts'),
     background: path.join(__dirname, './src/background.ts'),
     inject: path.join(__dirname, './src/inject.ts'),
-    install: path.join(__dirname, './src/install/install.js'),
   },
   output: { path: path.join(__dirname, '/dist'), filename: '[name].js' },
   module: {
@@ -42,14 +41,6 @@ const config = {
           },
         ],
         include: /\.module\.css$/,
-      },
-      {
-        test: /install.html$/,
-        loader: 'html-loader',
-        options: {
-          sources: false,
-        },
-        exclude: /node_modules/,
       },
       {
         test: /\.(png|jpe?g|svg|gif)$/,
@@ -123,14 +114,6 @@ const config = {
           to: './icons/[name].[ext]',
         },
         {
-          from: './src/install/assets/*',
-          to: './assets/[name].[ext]',
-        },
-        {
-          from: './src/install/css/*',
-          to: './css/[name].[ext]',
-        },
-        {
           from: './src/resources',
           to: './resources',
         },
@@ -150,11 +133,6 @@ const config = {
       template: './public/popup.html',
       chunks: ['popup'],
       filename: 'popup.html',
-    }),
-    new HtmlWebPackPlugin({
-      template: './src/install/install.html',
-      chunks: ['install'],
-      filename: 'install.html',
     }),
     new NodePolyfillPlugin(),
   ],
