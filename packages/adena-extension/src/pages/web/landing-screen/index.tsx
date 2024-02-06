@@ -53,26 +53,23 @@ const LandingScreen = (): ReactElement => {
         </WebText>
       </View>
 
-      <Row style={{ columnGap: 12 }}>
+      <Row style={{ width: '100%', columnGap: 12 }}>
         <WebMainButton
           figure='primary'
-          width={199}
           iconElement={<IconHardwareWallet />}
-          text='Connect Hardware Wallet'
+          text='Hardware Wallet'
           onClick={(): void => {
             navigate(RoutePath.WebConnectLedger);
           }}
         />
         <WebMainButton
           figure='secondary'
-          width={199}
           iconElement={<IconAirgap />}
-          text='Set Up Airgap Account'
+          text='Airgap Account'
           onClick={moveSetupAirgapScreen}
         />
         <WebMainButton
           figure='tertiary'
-          width={199}
           iconElement={<IconThunder />}
           text='Advanced Options'
           onClick={(): void => {

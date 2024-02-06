@@ -29,6 +29,7 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
         isCenter
       />
       <WebButton
+        fixed
         onClick={retry}
         figure='primary'
         size='small'

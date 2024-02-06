@@ -26,7 +26,7 @@ const StyledAccountItem = styled(Row)`
   padding: 0 20px;
 `;
 
-const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
+const StyledLoadMore = styled(Row) <{ disabled: boolean }>`
   justify-content: center;
   padding: 8px 0;
 
@@ -108,7 +108,6 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         size='small'
         disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}
-        style={{ width: '100%', alignItems: 'center' }}
         text='Next'
         rightIcon='chevronRight'
       />

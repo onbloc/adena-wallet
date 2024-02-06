@@ -37,7 +37,6 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({ initQuest
         size='small'
         text='Next'
         rightIcon='chevronRight'
-        style={{ width: 'fit-content' }}
         onClick={initQuestion}
       />
     </StyledContainer>

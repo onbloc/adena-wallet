@@ -129,7 +129,7 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
     >
       <WebText
         color={(mouseover || finish) ? theme.webNeutral._100 : theme.webNeutral._500}
-        type='body6'
+        type='title6'
         style={{ height: 14 }}
       >
         {text}

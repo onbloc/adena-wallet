@@ -12,6 +12,7 @@ type WebButtonProps = {
   size: 'full' | 'large' | 'small';
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
+  fixed?: boolean;
 } & (
     | { text: string; rightIcon?: 'chevronRight' }
     | {
@@ -20,7 +21,7 @@ type WebButtonProps = {
   ) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
-const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
+const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed?: boolean; }>`
   cursor: pointer;
   border: none;
   border-radius: ${({ size }): string => (size === 'small' ? '12px' : '14px')};
@@ -31,6 +32,7 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small' }>`
   height: ${({ size }): string => (size === 'small' ? '44px' : 'auto')};
   justify-content: center;
   align-items: center;
+  ${({ fixed }): FlattenSimpleInterpolation | string => fixed ? css`flex-shrink: 0;` : ''};
 
   :disabled {
     cursor: default;
@@ -126,6 +128,7 @@ export const WebButton = ({
   figure,
   textType = 'title4',
   children,
+  fixed,
   ...rest
 }: WebButtonProps): ReactElement => {
   let StyledComponent;
@@ -147,10 +150,12 @@ export const WebButton = ({
 
   const isRightButton = 'text' in rest && rest.rightIcon === 'chevronRight';
 
+  const isFixed = fixed || rest.size === 'small';
+
   return (
-    <StyledComponent {...rest}>
+    <StyledComponent fixed={isFixed} {...rest}>
       {'text' in rest ? (
-        <Row style={{ gap: 4, alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <Row style={{ gap: 4, alignItems: 'center', justifyContent: 'space-between' }}>
           {isRightButton && (
             <View style={{ width: 12 }} />
           )}

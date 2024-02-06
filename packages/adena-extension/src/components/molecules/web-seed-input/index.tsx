@@ -32,11 +32,11 @@ const StyledItem = styled(Row) <{ error: boolean }>`
   overflow: hidden;
   border-radius: 10px;
   border: 1px solid
-    ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._600)};
+    ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._800)};
   box-shadow: ${({ error }): string =>
     error
       ? '0px 0px 0px 3px rgba(235, 84, 94, 0.12), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);'
-      : '0px 0px 0px 3px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);'};
+      : ''};
 `;
 
 const StyledTypeMenu = styled(Row)`
@@ -57,7 +57,7 @@ const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
 
 const StyledNoText = styled(WebText) <{ error: boolean }>`
   ${mixins.flex()}
-  background: ${({ error, theme }): string => (error ? '#2a161a' : theme.webInput._100)};
+  background: ${({ error, theme }): string => (error ? '#E0517014' : theme.webInput._100)};
   border-right: 1px solid
     ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._800)};
   width: 40px;

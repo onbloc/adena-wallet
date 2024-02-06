@@ -190,7 +190,6 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
         figure='primary'
         size='small'
         text='Next'
-        style={{ width: 116 }}
         rightIcon='chevronRight'
         disabled={!availableNext}
         onClick={onClickNextButton}

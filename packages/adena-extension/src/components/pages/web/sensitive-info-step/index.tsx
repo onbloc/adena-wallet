@@ -41,7 +41,7 @@ export const SensitiveInfoStep = ({
         onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
-        style={{ width: 116, marginTop: -8 }}
+        style={{ marginTop: -8 }}
       />
       <Pressable
         onClick={(): void => {
