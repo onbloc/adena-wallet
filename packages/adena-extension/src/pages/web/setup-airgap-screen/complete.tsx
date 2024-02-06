@@ -50,7 +50,7 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
       </View>
 
       <WebTitleWithDescription
-        title='Account synced!'
+        title='Account Synced!'
         description={
           'Your account has been synced to Adena.\nConfirm your address below and click on Next to continue.'
         }
