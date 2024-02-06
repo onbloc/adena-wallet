@@ -118,7 +118,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
         <StyledWarnBox>
           <Row style={{ gap: 4, alignItems: 'center' }}>
             <WebImg src={IconWarning} size={20} />
-            <WebText type='title6' color={theme.webWarning._100} style={{ height: 14 }}>
+            <WebText type='title6' color={theme.webWarning._100}>
               Approach with caution!
             </WebText>
           </Row>

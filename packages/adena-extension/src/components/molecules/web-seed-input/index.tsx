@@ -4,9 +4,10 @@ import _ from 'lodash';
 
 import IconAlert from '@assets/web/alert-circle.svg';
 
-import { Pressable, Row, View, WebImg, WebInput, WebText } from '../../atoms';
-import mixins from '@styles/mixins';
-import { getTheme, webFonts } from '@styles/theme';
+import { Pressable, Row, View, WebImg, WebText } from '../../atoms';
+import { webFonts } from '@styles/theme';
+import { WebSeedInputItem } from '@components/atoms/web-seed-input-item';
+import { WebTextarea } from '@components/atoms/web-textarea';
 
 export type WebSeedInputType = '12seeds' | '24seeds' | 'pKey';
 
@@ -27,18 +28,6 @@ const StyledInputBox = styled(View)`
   gap: 12px;
 `;
 
-const StyledItem = styled(Row) <{ error: boolean }>`
-  position: relative;
-  overflow: hidden;
-  border-radius: 10px;
-  border: 1px solid
-    ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._800)};
-  box-shadow: ${({ error }): string =>
-    error
-      ? '0px 0px 0px 3px rgba(235, 84, 94, 0.12), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);'
-      : ''};
-`;
-
 const StyledTypeMenu = styled(Row)`
   align-self: center;
   padding: 4px;
@@ -55,47 +44,11 @@ const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
   background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
 
-const StyledNoText = styled(WebText) <{ error: boolean }>`
-  ${mixins.flex()}
-  background: ${({ error, theme }): string => (error ? '#E0517014' : theme.webInput._100)};
-  border-right: 1px solid
-    ${({ error, theme }): string => (error ? theme.webError._200 : theme.webNeutral._800)};
-  width: 40px;
-  height: 100%;
-  align-items: center;
-`;
 
-const StyledInput = styled(WebInput) <{ error: boolean }>`
-  flex: 1;
-  width: 100%;
-  height: 40px;
-  border-radius: 0;
-  border: none;
-  outline: none;
-  background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
-  box-shadow: none;
-
-  :focus-visible {
-    background:${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
-  }
-`;
-
-const StyledTextarea = styled.textarea <{ error: boolean }>`
+const StyledTextarea = styled(WebTextarea)`
   ${webFonts.body5};
-  color: ${getTheme('webNeutral', '_0')};
-  padding: 16px;
-  flex: 1;
   width: 100%;
   height: 80px;
-  border-radius: 0;
-  border: none;
-  outline: none;
-  background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
-  resize: none;
-
-  :focus-visible {
-    background: ${({ error, theme }): string => (error ? theme.webError._300 : theme.webNeutral._900)};
-  }
 `;
 
 export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): ReactElement => {
@@ -156,43 +109,34 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
 
       <View style={{ rowGap: 12 }}>
         {type === 'pKey' ? (
-          <StyledItem error={!!errorMessage}>
-            <StyledTextarea
-              value={pKey}
-              placeholder='Private Key'
-              error={!!errorMessage}
-              onChange={({ target: { value } }): void => {
-                onChange({ type, value });
-                setPKey(value);
-              }}
-            />
-          </StyledItem>
+          <StyledTextarea
+            value={pKey}
+            placeholder='Private Key'
+            error={!!errorMessage}
+            onChange={({ target: { value } }): void => {
+              onChange({ type, value });
+              setPKey(value);
+            }}
+          />
         ) : (
           <StyledInputBox>
             {_.times(type === '12seeds' ? 12 : 24, (index) => {
               return (
-                <StyledItem key={`seeds-${index}`} error={!!errorMessage}>
-                  <StyledNoText
-                    type='body4'
-                    color={errorMessage ? theme.webError._100 : theme.webNeutral._500}
-                    error={!!errorMessage}
-                  >
-                    {index + 1}
-                  </StyledNoText>
-                  <StyledInput
-                    type='password'
-                    value={wordList[index] || ''}
-                    onChange={({ target: { value } }): void => {
-                      if (index === 0 && value.split(' ').length > 1) {
-                        setWordList(value.split(' '));
-                        onChange({ type, value });
-                      } else {
-                        onChangeWord(index, value);
-                      }
-                    }}
-                    error={!!errorMessage}
-                  />
-                </StyledItem>
+                <WebSeedInputItem
+                  type='password'
+                  key={`seeds-${index}`}
+                  index={index + 1}
+                  value={wordList[index] || ''}
+                  error={!!errorMessage}
+                  onChange={(value: string): void => {
+                    if (index === 0 && value.split(' ').length > 1) {
+                      setWordList(value.split(' '));
+                      onChange({ type, value });
+                    } else {
+                      onChangeWord(index, value);
+                    }
+                  }}
+                />
               );
             })}
           </StyledInputBox>

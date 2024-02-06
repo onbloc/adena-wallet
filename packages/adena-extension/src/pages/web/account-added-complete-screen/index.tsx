@@ -6,7 +6,7 @@ import addGif from '@assets/web/account-added.gif';
 import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
-  row-gap: 24px;
+  row-gap: 18px;
   width: 100%;
   align-items: center;
 `;
@@ -17,9 +17,11 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
   };
 
   return (
-    <WebMain spacing={null}>
-      <StyledContainer>
+    <WebMain spacing={null} style={{ alignItems: 'center' }}>
+      <View style={{ paddingBottom: 16 }}>
         <WebImg src={addGif} size={200} />
+      </View>
+      <StyledContainer>
         <WebTitleWithDescription
           title='Account Added!'
           description={

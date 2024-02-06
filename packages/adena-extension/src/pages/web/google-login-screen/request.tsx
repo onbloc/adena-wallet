@@ -41,7 +41,12 @@ const GoogleLoginRequest: React.FC<GoogleLoginRequestProps> = ({
         marginBottom={-6}
       />
 
-      <WebButton figure='tertiary' size='small' onClick={onClickCancel} text='Cancel' />
+      <WebButton
+        figure='tertiary'
+        size='small'
+        onClick={onClickCancel}
+        text='Cancel'
+      />
     </StyledContainer>
   );
 };
