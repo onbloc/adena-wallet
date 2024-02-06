@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Row, View, WebButton, WebText } from '@components/atoms';
+import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox, WebSeedBox } from '@components/molecules';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
@@ -10,6 +10,7 @@ import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.consta
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
 import { getTheme } from '@styles/theme';
+import IconWarning from '@assets/web/warning.svg';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -22,10 +23,12 @@ const StyledMessageBox = styled(View)`
   row-gap: 12px;
 `;
 
-const StyledWarnBox = styled(View)`
+const StyledWarnBox = styled(Row)`
   width: 100%;
   padding: 8px;
   border-radius: 8px;
+  align-items: center;
+  gap: 4px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
 `;
@@ -77,6 +80,20 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
+  const term01Text = useMemo(() => {
+    if (exportType === 'SEED_PHRASE') {
+      return 'Anyone with the phrase will have full control over my funds.';
+    }
+    return 'Anyone with the private key will have full control over my funds.';
+  }, [exportType]);
+
+  const term02Text = useMemo(() => {
+    if (exportType === 'SEED_PHRASE') {
+      return 'I will never share my seed phrase with anyone.';
+    }
+    return 'I will never share my private key with anyone.';
+  }, [exportType]);
+
   const onFinishHold = useCallback((finished: boolean) => {
     setBlur(!finished);
   }, []);
@@ -94,6 +111,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
         <StyledWarnBox>
+          <WebImg src={IconWarning} size={20} />
           <WebText type='body6' color={theme.webWarning._100}>
             {warningMessage}
           </WebText>
@@ -118,7 +136,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           onChange={(): void => {
             return;
           }}
-          text='Anyone with the phrase will have full control over my funds.'
+          text={term01Text}
           tabIndex={1}
           margin='0'
           color={theme.webNeutral._500}
@@ -129,7 +147,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           onChange={(): void => {
             return;
           }}
-          text='I will never share my seed phrase with anyone.'
+          text={term02Text}
           tabIndex={2}
           margin='0'
           color={theme.webNeutral._500}
