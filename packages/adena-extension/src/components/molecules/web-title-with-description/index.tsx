@@ -1,5 +1,5 @@
 import { View, WebText } from '@components/atoms';
-import React from 'react';
+import React, { CSSProperties } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
@@ -10,17 +10,27 @@ export interface WebTitleWithDescriptionProps {
   title: string;
   description: string;
   isCenter?: boolean;
+  marginTop?: CSSProperties['marginTop'];
+  marginBottom?: CSSProperties['marginBottom'];
 }
 
 export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = ({
   title,
   description,
   isCenter,
+  marginTop = 0,
+  marginBottom = 0,
 }) => {
   const theme = useTheme();
 
   return (
-    <StyledContainer style={{ alignItems: isCenter ? 'center' : 'flex-start' }}>
+    <StyledContainer
+      style={{
+        alignItems: isCenter ? 'center' : 'flex-start',
+        marginTop,
+        marginBottom,
+      }}
+    >
       <WebText type='headline2' textCenter={isCenter}>
         {title}
       </WebText>

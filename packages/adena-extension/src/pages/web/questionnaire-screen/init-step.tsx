@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
-import Lottie from 'react-lottie';
 
 import { View, WebButton } from '@components/atoms';
 import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -21,10 +21,8 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({ initQuest
     <StyledContainer>
       <View style={{ marginBottom: 16 }}>
         <Lottie
-          options={{
-            animationData: LottieCompleteAQuestion,
-          }}
-          height={120}
+          animationData={LottieCompleteAQuestion}
+          style={{ height: 120 }}
         />
       </View>
       <WebTitleWithDescription
