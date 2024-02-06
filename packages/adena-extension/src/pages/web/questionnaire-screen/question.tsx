@@ -24,7 +24,7 @@ const StyledWarningBox = styled(Row)`
   width: 100%;
   padding: 12px 8px;
   justify-content: flex-start;
-  align-items: flex-end;
+  align-items: center;
   gap: 4px;
   border-radius: 12px;
   border: 1px solid rgba(251, 194, 36, 0.08);

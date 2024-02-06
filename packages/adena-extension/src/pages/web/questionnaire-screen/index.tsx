@@ -19,7 +19,7 @@ const QuestionnaireScreen = (): ReactElement => {
 
   const topSpacing = useMemo(() => {
     if (questionnaireState === 'INIT' || questionnaireState === 'COMPLETE') {
-      return 344;
+      return null;
     }
     return 272;
   }, [questionnaireState])

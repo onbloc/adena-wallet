@@ -49,7 +49,7 @@ const LandingScreen = (): ReactElement => {
             />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 16 }}>
-            <WebText type='headline1'>{'Add Account'}</WebText>
+            <WebText type='headline1' style={{ whiteSpace: 'nowrap' }}>{'Add Account'}</WebText>
             <WebText type='body2' color={theme.webNeutral._500}>
               {'Select a method to add a new account to Adena.'}
             </WebText>
@@ -65,7 +65,7 @@ const LandingScreen = (): ReactElement => {
             />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 16 }}>
-            <WebText type='headline1'>{'Welcome to Adena!'}</WebText>
+            <WebText type='headline1' style={{ whiteSpace: 'nowrap' }}>{'Welcome to Adena!'}</WebText>
             <WebText type='body2' color={theme.webNeutral._500}>
               {'The only wallet you need for Gnoland with unparalleled security.'}
             </WebText>
