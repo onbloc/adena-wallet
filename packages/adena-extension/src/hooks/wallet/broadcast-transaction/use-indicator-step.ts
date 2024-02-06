@@ -37,7 +37,7 @@ const useIndicatorStep = <T extends string>({
   }
 
   const { data: stepLength = 0 } = useQuery<number>(
-    ['stepLength', stepMap, walletService],
+    ['stepLength', hasQuestionnaire, stepMap, walletService],
     async () => {
       let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
       const existWallet = await walletService.existsWallet().catch(() => false);
@@ -45,7 +45,7 @@ const useIndicatorStep = <T extends string>({
         defaultStepLength = defaultStepLength + 1;
       }
       const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
-      if (!ableToSkipQuestionnaire) {
+      if (hasQuestionnaire && !ableToSkipQuestionnaire) {
         defaultStepLength = defaultStepLength + 1;
       }
       return defaultStepLength;
