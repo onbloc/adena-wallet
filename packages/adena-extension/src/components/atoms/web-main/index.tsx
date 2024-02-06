@@ -1,18 +1,29 @@
-import styled from 'styled-components';
+import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 import mixins from '@styles/mixins';
 import { WEB_CONTENT_WIDTH } from '@common/constants/ui.constant';
 
 interface WebMainProps {
   width?: React.CSSProperties['width'],
-  spacing?: number,
+  spacing?: number | null,
 }
 
 export const WebMain = styled.main<WebMainProps>`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })}
   width: ${({ width }): React.CSSProperties['width'] => width ?? `${WEB_CONTENT_WIDTH}px`};
-  height: calc(100vh - 80px);
   margin: 0 auto 0;
   row-gap: 24px;
-  padding-top: ${({ spacing }): string => spacing ? `${spacing - 80}px` : 'auto'};
+
+  ${({ spacing }): FlattenSimpleInterpolation => spacing ?
+    css`
+      height: calc(100vh - 80px);
+      padding-top: ${`${spacing - 80}px`};
+      justify-content: flex-start;
+    ` :
+    css`
+      height: 100vh;
+      margin-top: -80px;
+      justify-content: center;
+    `
+  }
 `;

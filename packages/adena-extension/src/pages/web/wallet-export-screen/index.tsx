@@ -24,7 +24,7 @@ const WalletExportScreen: React.FC = () => {
 
   const spacing = useMemo(() => {
     if (exportData && exportData.split(' ').length > 12) {
-      return 120;
+      return null;
     }
     return 272
   }, [exportData])

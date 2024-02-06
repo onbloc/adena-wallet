@@ -67,13 +67,13 @@ const WalletAllSetScreen = (): JSX.Element => {
   };
 
   return (
-    <WebMain spacing={328}>
+    <WebMain spacing={null}>
       <StyledContainer>
         <StyledLeft>
           <StyledMessageBox>
             <WebText type='display4'>You’re All Set!</WebText>
             <WebText type='body4' color={theme.webNeutral._500}>
-              Click on the Start button to launch Adena
+              Click on the Start button to launch Adena.
             </WebText>
           </StyledMessageBox>
           <StyledLinkBox>

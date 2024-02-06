@@ -55,15 +55,15 @@ export const WebMainAccountHeader = ({
       {account && (
         <StyledAccountRow>
           <WebText
-            type='body4'
-            style={{ fontWeight: 600, height: 16 }}
+            type='title4'
+            style={{ height: 16 }}
           >
             {account.name}
           </WebText>
           <WebText
-            type='body4'
+            type='title4'
             color={theme.webNeutral._600}
-            style={{ height: 16 }}
+            style={{ height: 16, fontWeight: 400 }}
           >
             {addressStr}
           </WebText>

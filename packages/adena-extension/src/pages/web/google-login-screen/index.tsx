@@ -23,7 +23,7 @@ const GoogleLoginScreen: React.FC = () => {
     if (googleLoginState === 'INIT') {
       return 272;
     }
-    return 344;
+    return null;
   }, [googleLoginState]);
 
   const onClickGoBack = useCallback(() => {

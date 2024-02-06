@@ -23,15 +23,17 @@ const ConnectLedgerScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const step = connectLedgerStep[connectState];
   const { wallet } = useWalletContext();
+
   const stepLength = useMemo(() => {
     if (['INIT', 'REQUEST_WALLET', 'REQUEST_WALLET_LOAD'].includes(connectState)) {
       return wallet ? 3 : 4;
     }
     return 0;
   }, [connectState, wallet]);
+
   const topSpacing = useMemo(() => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'FAILED') {
-      return 344;
+      return null;
     }
     return 272;
   }, [connectState]);

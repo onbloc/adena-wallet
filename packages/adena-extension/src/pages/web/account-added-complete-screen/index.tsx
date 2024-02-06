@@ -17,7 +17,7 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
   };
 
   return (
-    <WebMain spacing={144}>
+    <WebMain spacing={null}>
       <StyledContainer>
         <WebImg src={addGif} size={200} />
         <WebTitleWithDescription

@@ -15,14 +15,14 @@ const WalletImportScreen = (): ReactElement => {
 
   if (step === 'LOADING') {
     return (
-      <WebMain spacing={344}>
+      <WebMain spacing={null}>
         <WebLoadingAccounts />
       </WebMain>
     );
   }
 
   return (
-    <WebMain spacing={extended ? 180 : 272}>
+    <WebMain spacing={extended ? null : 272}>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}

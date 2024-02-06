@@ -8,7 +8,7 @@ import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
-  gap: 24px;
+  gap: 18px;
   align-items: center;
 `;
 
@@ -19,19 +19,19 @@ interface QuestionnaireInitStepProps {
 const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({ initQuestion }) => {
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{ width: '100%', alignItems: 'center', gap: 40 }}>
         <Lottie
           animationData={LottieCompleteAQuestion}
-          style={{ height: 120 }}
+          height={120}
+        />
+        <WebTitleWithDescription
+          title='Complete a Questionnaire'
+          description={
+            'Complete the following questionnaire to ensure that\nyou have sufficient understanding of wallet security.'
+          }
+          isCenter
         />
       </View>
-      <WebTitleWithDescription
-        title='Complete a Questionnaire'
-        description={
-          'Complete the following questionnaire to ensure that\nyou have sufficient understanding of wallet security.'
-        }
-        isCenter
-      />
       <WebButton
         figure='primary'
         size='small'

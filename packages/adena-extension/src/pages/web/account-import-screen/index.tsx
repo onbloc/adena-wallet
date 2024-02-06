@@ -20,7 +20,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
 
   if (step === 'LOADING') {
     return (
-      <WebMain spacing={344}>
+      <WebMain spacing={null}>
         <WebLoadingAccounts />
       </WebMain>
     );
