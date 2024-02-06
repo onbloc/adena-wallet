@@ -122,6 +122,7 @@ const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
     :hover {
       color: ${theme.webNeutral._100};
       box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
+      background: rgba(188, 197, 214, 0.08);
       svg * {
         fill: ${theme.webNeutral._100};
       }
