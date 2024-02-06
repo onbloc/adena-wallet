@@ -38,7 +38,7 @@ const LandingScreen = (): ReactElement => {
   }, []);
 
   return (
-    <WebMain spacing={344}>
+    <WebMain>
       {existWallet ? (
         <React.Fragment>
           <StyledAnimationWrapper>
