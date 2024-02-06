@@ -17,7 +17,7 @@ interface WebSeedInputProps {
 
 const StyledContainer = styled(View)`
   width: 100%;
-  row-gap: 24px;
+  row-gap: 16px;
 `;
 
 const StyledInputBox = styled(View)`

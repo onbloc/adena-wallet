@@ -8,6 +8,7 @@ import { WebSeedBox } from '@components/molecules';
 import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
+import { getTheme } from '@styles/theme';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -15,14 +16,15 @@ const StyledContainer = styled(View)`
 `;
 
 const StyledMessageBox = styled(View)`
-  row-gap: 16px;
+  row-gap: 12px;
 `;
 
 const StyledWarnBox = styled(Row)`
-  column-gap: 8px;
+  column-gap: 4px;
   padding: 8px;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid ${getTheme('webWarning', '_100')}0a;
+  background: ${getTheme('webWarning', '_100')}14;
 `;
 
 const GetMnemonicStep = ({

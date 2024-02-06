@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { AdenaWallet, EnglishMnemonic, PrivateKeyKeyring, SingleAccount } from 'adena-module';
+import _ from 'lodash';
 
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -43,9 +44,9 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const isValidForm = useMemo(() => {
     let validInput = false;
     if (inputType === '12seeds') {
-      validInput = inputValue.split(' ').length === 12;
+      validInput = inputValue.split(' ').length === 12 && _.every(inputValue.split(' '));
     } else if (inputType === '24seeds') {
-      validInput = inputValue.split(' ').length === 24;
+      validInput = inputValue.split(' ').length === 24 && _.every(inputValue.split(' '));
     } else {
       validInput = !!inputValue;
     }
