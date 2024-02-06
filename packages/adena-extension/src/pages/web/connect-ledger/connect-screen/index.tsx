@@ -42,7 +42,7 @@ const ConnectLedgerScreen = (): ReactElement => {
         stepLength={stepLength}
         onClickGoBack={(): void => {
           if (step.stepNo === 0) {
-            navigate(RoutePath.Home);
+            navigate(RoutePath.WebSelectHardWallet);
           } else {
             setConnectState(step.backTo);
           }

@@ -18,7 +18,7 @@ const StyledAnimationWrapper = styled.div`
   display: block;
   height: 88px;
   overflow: visible;
-`
+`;
 
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
@@ -59,7 +59,7 @@ const LandingScreen = (): ReactElement => {
           iconElement={<IconHardwareWallet />}
           text='Hardware Wallet'
           onClick={(): void => {
-            navigate(RoutePath.WebConnectLedger);
+            navigate(RoutePath.WebSelectHardWallet);
           }}
         />
         <WebMainButton

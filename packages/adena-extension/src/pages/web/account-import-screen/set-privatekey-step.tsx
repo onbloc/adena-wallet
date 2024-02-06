@@ -13,7 +13,7 @@ const StyledContainer = styled(View)`
   row-gap: 24px;
 `;
 
-const StyledItem = styled(Row) <{ error: boolean }>`
+const StyledItem = styled(Row)<{ error: boolean }>`
   position: relative;
   overflow: hidden;
   border-radius: 10px;
@@ -62,7 +62,7 @@ const SetPrivateKeyStep = ({
         title='Import Existing Wallet'
         description='Enter a private key to import your existing wallet.'
       />
-      <View style={{ rowGap: 12, marginTop: -6, marginBottom: 12 }}>
+      <View style={{ rowGap: 12, marginTop: -6, marginBottom: 8 }}>
         <StyledItem error={!!errMsg}>
           <StyledTextarea
             value={privateKey}
