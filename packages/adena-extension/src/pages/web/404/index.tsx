@@ -26,6 +26,7 @@ const StyledAbsoluteWrapper = styled(View)`
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  pointer-events: none;
 `;
 
 const StyledContainer = styled(View)`
