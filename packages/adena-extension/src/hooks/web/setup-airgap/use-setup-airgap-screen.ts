@@ -128,8 +128,11 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address, walletService]);
 
   const _createAddressAccount = useCallback(async () => {
-    const createdWallet = await AdenaWallet.createByAddress(address);
-    const serializedWallet = await createdWallet.serialize('');
+    const serializedWallet = await waitForRun<string>(async () => {
+      const createdWallet = await AdenaWallet.createByAddress(address);
+      const serializedWallet = await createdWallet.serialize('');
+      return serializedWallet;
+    });
     navigate(RoutePath.WebCreatePassword, {
       state: {
         serializedWallet,

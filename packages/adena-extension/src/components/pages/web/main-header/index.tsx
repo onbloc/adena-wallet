@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
 import back from '@assets/web/chevron-left.svg';
@@ -36,6 +36,10 @@ export const WebMainHeader = ({
 }: WebMainHeaderProps): ReactElement => {
   const theme = useTheme();
 
+  const isCurrentStep = useMemo(() => {
+    return currentStep && currentStep > -1;
+  }, [currentStep]);
+
   return (
     <StyledContainer>
       <Pressable
@@ -45,7 +49,7 @@ export const WebMainHeader = ({
         <WebImg src={back} size={24} />
       </Pressable>
       <Row style={{ columnGap: 8 }}>
-        {stepLength > 1 && (
+        {stepLength > 1 && isCurrentStep && (
           <React.Fragment>
             {_.times(stepLength, (index) => (
               <StyledDot key={index} selected={index === currentStep} />
