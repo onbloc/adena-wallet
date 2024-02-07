@@ -2,9 +2,7 @@ import { ReactElement, useMemo } from 'react';
 
 import { WebMain } from '@components/atoms';
 
-import useConnectLedgerScreen, {
-  connectLedgerStep,
-} from '@hooks/web/connect-ledger/use-connect-ledger-screen';
+import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -20,7 +18,6 @@ const ConnectLedgerScreen = (): ReactElement => {
   const { indicatorInfo, connectState, initWallet, requestPermission, setConnectState } =
     useConnectLedgerScreenReturn;
   const { navigate } = useAppNavigate();
-  const step = connectLedgerStep[connectState];
 
   const topSpacing = useMemo(() => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'NOT_PERMISSION') {
@@ -38,7 +35,7 @@ const ConnectLedgerScreen = (): ReactElement => {
             if (indicatorInfo.stepNo === 0) {
               navigate(RoutePath.WebSelectHardWallet);
             } else {
-              setConnectState(step.backTo);
+              setConnectState('INIT');
             }
           }}
           currentStep={connectState === 'REQUEST' ? -1 : indicatorInfo.stepNo}
