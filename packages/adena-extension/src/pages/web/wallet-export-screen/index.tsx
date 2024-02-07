@@ -23,11 +23,8 @@ const WalletExportScreen: React.FC = () => {
   } = useWalletExportScreen();
 
   const spacing = useMemo(() => {
-    if (exportData && exportData.split(' ').length > 12) {
-      return null;
-    }
-    return 272
-  }, [exportData])
+    return null;
+  }, [])
 
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
