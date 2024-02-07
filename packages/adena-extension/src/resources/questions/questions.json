@@ -22,16 +22,16 @@
     "question": "If someone claiming to be “Adena Support” asks you to share your seed phrase, how should you respond?",
     "answers": [
       {
+        "answer": "Ignore the request and end the conversation",
+        "correct": true
+      },
+      {
         "answer": "Share your phrase right away",
         "correct": false
       },
       {
         "answer": "Ask for the reason",
         "correct": false
-      },
-      {
-        "answer": "Ignore the request and end the conversation",
-        "correct": true
       }
     ]
   },
@@ -44,12 +44,12 @@
         "correct": false
       },
       {
-        "answer": "In a Memo App",
-        "correct": false
-      },
-      {
         "answer": "A Secure Offline Environment",
         "correct": true
+      },
+      {
+        "answer": "In a Memo App",
+        "correct": false
       }
     ]
   }
