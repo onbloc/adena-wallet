@@ -104,7 +104,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   };
 
   return (
-    <WebMain spacing={272}>
+    <WebMain>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={(): void => {
