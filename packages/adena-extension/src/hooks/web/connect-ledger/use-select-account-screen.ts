@@ -13,6 +13,9 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useQuery } from '@tanstack/react-query';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type AccountInfoType = {
   index: number;
@@ -23,6 +26,7 @@ export type AccountInfoType = {
 };
 
 export type useSelectAccountScreenReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   loadPath: boolean;
   accountInfos: AccountInfoType[];
   selectAccountAddresses: Array<string>;
@@ -44,6 +48,12 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   const walletAccounts = wallet?.accounts ?? [];
   const addressPrefix = currentNetwork.addressPrefix;
   const [accountInfos, setAccountInfos] = useState<AccountInfoType[]>([]);
+  const indicatorInfo = useIndicatorStep({
+    stepMap: {
+      SELECT: 2,
+    },
+    currentState: 'SELECT',
+  });
   const { data: walletAddressList = [] } = useQuery(
     ['walletAddressList', walletAccounts],
     async () =>
@@ -170,6 +180,7 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   }, [accounts, selectAccountAddresses, walletAddressList]);
 
   return {
+    indicatorInfo,
     loadPath,
     accountInfos,
     selectAccountAddresses,

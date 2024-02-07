@@ -1,9 +1,10 @@
 import styled from 'styled-components';
 
-import IconFail from '@assets/connect-fail-permission.svg';
+import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
 
-import { View, WebButton, WebImg } from '@components/atoms';
+import { View, WebButton } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -19,7 +20,10 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
   return (
     <StyledContainer>
       <View style={{ paddingBottom: 16 }}>
-        <WebImg src={IconFail} size={64} />
+        <Lottie
+          animationData={AnimationLoginFailed}
+          height={120}
+        />
       </View>
       <WebTitleWithDescription
         title='Connection Failed'
@@ -27,6 +31,7 @@ export const ConnectFail = ({ retry }: Props): JSX.Element => {
           'We couldn’t connect to your ledger device.\nPlease ensure that your device is unlocked.'
         }
         isCenter
+        marginBottom={-6}
       />
       <WebButton
         fixed

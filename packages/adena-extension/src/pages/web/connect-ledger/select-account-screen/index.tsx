@@ -1,34 +1,43 @@
-import styled, { useTheme } from 'styled-components';
+import styled, { keyframes, useTheme } from 'styled-components';
 
 import { WebMain, View, WebText, WebButton, Row, WebCheckBox, WebImg } from '@components/atoms';
 import { formatAddress } from '@common/utils/client-utils';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
+import IconLoadingCircle from '@assets/web/loading-circle.svg';
 import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-import { useWalletContext } from '@hooks/use-context';
 import { WebTitleWithDescription } from '@components/molecules';
+import IconLedger from '@assets/web/ledger.svg';
 
 const StyledAccountBox = styled(View)`
   display: block;
   width: 552px;
   max-height: 266px;
-  overflow-y: scroll;
+  overflow-y: auto;
   background-color: #14161a;
-  border: 1px solid #1f2329;
   border-radius: 12px;
+
+  ::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera*/
+  }
 `;
 
 const StyledAccountItem = styled(Row)`
   height: 48px;
   justify-content: space-between;
   padding: 0 20px;
+  border-bottom: 1px solid #1F2329;
+  :last-child {
+    border-bottom: 1px solid #14161a;
+  }
 `;
 
 const StyledLoadMore = styled(Row) <{ disabled: boolean }>`
   justify-content: center;
   padding: 8px 0;
+  gap: 4px;
 
   cursor: pointer;
   :disabled {
@@ -36,8 +45,28 @@ const StyledLoadMore = styled(Row) <{ disabled: boolean }>`
   }
 `;
 
+const KeyframeRotate = keyframes`
+  from {
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+`;
+
+const StyledLoadingWrapper = styled(View)`
+  justify-content: center;
+  align-items:center;
+  animation: ${KeyframeRotate} 1.5s infinite;
+`;
+
 const ConnectLedgerSelectAccount = (): JSX.Element => {
   const {
+    indicatorInfo,
     loadPath,
     accountInfos,
     selectAccountAddresses,
@@ -47,7 +76,6 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   } = useSelectAccountScreen();
   const theme = useTheme();
   const { navigate } = useAppNavigate();
-  const { wallet } = useWalletContext();
 
   const renderAccountInfo = (accountInfo: {
     index: number;
@@ -78,15 +106,20 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
   return (
     <WebMain spacing={272}>
       <WebMainHeader
-        stepLength={wallet ? 3 : 4}
+        stepLength={indicatorInfo.stepLength}
         onClickGoBack={(): void => {
           navigate(RoutePath.WebConnectLedger);
         }}
-        currentStep={4}
+        currentStep={indicatorInfo.stepNo}
       />
+      <View>
+        <WebImg src={IconLedger} size={88} />
+      </View>
       <WebTitleWithDescription
         title='Select Accounts'
         description='Select all accounts you wish to add to Adena.'
+        marginTop={12}
+        marginBottom={-6}
       />
       <View>
         <StyledAccountBox>
@@ -100,12 +133,17 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
           <WebText color={theme.webNeutral._500} type='body5'>
             {loadPath ? 'Loading' : 'Load more accounts'}
           </WebText>
-          {!loadPath && <WebImg src={IconArrowDown} />}
+          {!loadPath ?
+            <WebImg src={IconArrowDown} /> :
+            <StyledLoadingWrapper>
+              <WebImg src={IconLoadingCircle} />
+            </StyledLoadingWrapper>
+          }
         </StyledLoadMore>
       </View>
       <WebButton
         figure='primary'
-        size='small'
+        size='full'
         disabled={loadPath || selectAccountAddresses.length === 0}
         onClick={onClickNextButton}
         text='Next'

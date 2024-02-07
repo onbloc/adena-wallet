@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react';
 import { AdenaLedgerConnector, AdenaWallet, Wallet, Account, serializeAccount } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseConnectLedgerDeviceScreenReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   connectState: ConnectLedgerStateType;
   setConnectState: React.Dispatch<React.SetStateAction<ConnectLedgerStateType>>;
   initWallet: () => Promise<void>;
@@ -52,14 +56,28 @@ export const connectLedgerStep: Record<
   },
   SUCCESS: {
     backTo: 'INIT',
-    stepNo: 1,
+    stepNo: 2,
   },
+};
+
+export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
+  INIT: 0,
+  REQUEST: 1,
+  NOT_PERMISSION: 1,
+  REQUEST_WALLET: 1,
+  REQUEST_WALLET_LOAD: 1,
+  FAILED: 1,
+  SUCCESS: 2,
 };
 
 const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
   const { navigate } = useAppNavigate();
   const [connectState, setConnectState] = useState<ConnectLedgerStateType>('INIT');
   const [wallet, setWallet] = useState<Wallet>();
+  const indicatorInfo = useIndicatorStep({
+    currentState: connectState,
+    stepMap: connectLedgerStepNo,
+  });
 
   useEffect(() => {
     if (connectState === 'FAILED') {
@@ -146,6 +164,7 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
   };
 
   return {
+    indicatorInfo,
     connectState,
     setConnectState,
     initWallet,
