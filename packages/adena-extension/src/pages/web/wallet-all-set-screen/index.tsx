@@ -156,6 +156,7 @@ const WalletAllSetScreen = (): JSX.Element => {
         </StyledLeft>
         <Lottie
           width={416}
+          style={{ marginTop: -100 }}
           animationData={AnimationAllSet}
         />
       </StyledContainer>
