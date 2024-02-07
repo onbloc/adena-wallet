@@ -3,13 +3,13 @@ import styled, { useTheme } from 'styled-components';
 import IconGnoLand from '@assets/web/gnoland.svg';
 import IconGnoSwap from '@assets/web/gnoswap.svg';
 import IconGnoScan from '@assets/web/gnoscan.svg';
-import IconPin from '@assets/web/pin.svg';
 // import AnimationAllSet from '@assets/web/all-set.gif';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
 
 import { View, WebButton, WebMain, WebText, WebImg, Row } from '@components/atoms';
 import useLink from '@hooks/use-link';
 import Lottie from '@components/atoms/lottie';
+import IconPin from '@assets/web/pin.svg';
 
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
@@ -70,6 +70,18 @@ const StyledFixedWrapper = styled(Row)`
   background: #181B1F;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
   z-index: 3;
+`;
+
+const StyledPinIconWrapper = styled(View)`
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background: ${({ theme }): string => theme.webPrimary._100};
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.16);
 `;
 
 const WalletAllSetScreen = (): JSX.Element => {
@@ -177,10 +189,9 @@ const WalletAllSetScreen = (): JSX.Element => {
 
       <StyledFixedWrapper>
         <View style={{ paddingTop: 4 }}>
-          <WebImg
-            src={IconPin}
-            size={40}
-          />
+          <StyledPinIconWrapper>
+            <WebImg src={IconPin} size={24} />
+          </StyledPinIconWrapper>
         </View>
         <View style={{ width: 256, gap: 6 }}>
           <WebText type='title3' color={theme.webNeutral._100}>
