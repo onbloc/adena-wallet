@@ -41,7 +41,7 @@ const ConnectLedgerScreen = (): ReactElement => {
               setConnectState(step.backTo);
             }
           }}
-          currentStep={indicatorInfo.stepNo}
+          currentStep={connectState === 'REQUEST' ? -1 : indicatorInfo.stepNo}
         />
       )}
       {connectState === 'INIT' && <ConnectInit init={initWallet} />}
