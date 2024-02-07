@@ -58,7 +58,7 @@ const GetMnemonicStep = ({
 
       {ableToReveal ? (
         <>
-          <Row style={{ justifyContent: 'center', columnGap: 12 }}>
+          <Row style={{ justifyContent: 'center', columnGap: 12, marginTop: 4 }}>
 
             <WebHoldButton onFinishHold={onFinishHold} />
             <WebCopyButton width={80} copyText={seeds} />
