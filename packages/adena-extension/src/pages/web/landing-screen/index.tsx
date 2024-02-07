@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback } from 'react';
+import React, { ReactElement, useCallback, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useQuery } from '@tanstack/react-query';
 
@@ -33,6 +33,13 @@ const LandingScreen = (): ReactElement => {
     {},
   );
 
+  const animationMarginLeftSize = useMemo(() => {
+    if (existWallet) {
+      return -10;
+    }
+    return -50;
+  }, [existWallet]);
+
   const moveSetupAirgapScreen = useCallback(() => {
     navigate(RoutePath.WebSetupAirgap);
   }, []);
@@ -50,7 +57,7 @@ const LandingScreen = (): ReactElement => {
                 visibleSize={264}
               /> 
             */}
-            <View style={{ marginTop: -176 }}>
+            <View style={{ marginTop: -176, marginLeft: animationMarginLeftSize }}>
               <WebImg src={AnimationAddAccount} height={264} />
             </View>
           </StyledAnimationWrapper>
@@ -65,6 +72,7 @@ const LandingScreen = (): ReactElement => {
         <React.Fragment>
           <StyledAnimationWrapper>
             <Lottie
+              style={{ marginLeft: animationMarginLeftSize }}
               speed={1}
               height={88}
               animationData={welcomeJson}
