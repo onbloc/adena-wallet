@@ -18,7 +18,7 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
 
   return (
     <WebMain spacing={null} style={{ alignItems: 'center' }}>
-      <View style={{ paddingBottom: 16 }}>
+      <View style={{ paddingBottom: 16, marginTop: -80 }}>
         <WebImg src={addGif} size={200} />
       </View>
       <StyledContainer>
