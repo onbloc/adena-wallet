@@ -128,17 +128,9 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address, walletService]);
 
   const _createAddressAccount = useCallback(async () => {
-    const serializedWallet = await waitForRun<string>(async () => {
-      const createdWallet = await AdenaWallet.createByAddress(address);
-      const serializedWallet = await createdWallet.serialize('');
-      return serializedWallet;
-    });
-    navigate(RoutePath.WebCreatePassword, {
-      state: {
-        serializedWallet,
-        stepLength: indicatorInfo.stepLength,
-      },
-    });
+    const createdWallet = await AdenaWallet.createByAddress(address);
+    const serializedWallet = await createdWallet.serialize('');
+    return serializedWallet;
   }, [address, walletService, indicatorInfo]);
 
   const addAccount = useCallback(async () => {
@@ -151,7 +143,14 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
       await waitForRun<void>(_addAddressAccount);
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
-      await _createAddressAccount();
+      setSetupAirgapState('LOADING');
+      const serializedWallet = await waitForRun<string>(_createAddressAccount);
+      navigate(RoutePath.WebCreatePassword, {
+        state: {
+          serializedWallet,
+          stepLength: indicatorInfo.stepLength,
+        },
+      });
     }
     setBlockedEvent(false);
   }, [blockedEvent, walletService, _addAddressAccount, _createAddressAccount]);
