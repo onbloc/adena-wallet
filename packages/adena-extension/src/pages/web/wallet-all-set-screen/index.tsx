@@ -3,6 +3,7 @@ import styled, { useTheme } from 'styled-components';
 import IconGnoLand from '@assets/web/gnoland.svg';
 import IconGnoSwap from '@assets/web/gnoswap.svg';
 import IconGnoScan from '@assets/web/gnoscan.svg';
+import IconPin from '@assets/web/pin.svg';
 // import AnimationAllSet from '@assets/web/all-set.gif';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
 
@@ -56,6 +57,19 @@ const StyledBtnTitle = styled(WebText)`
 `;
 
 const StyledBtnInfo = styled(WebText)`
+`;
+
+const StyledFixedWrapper = styled(Row)`
+  position: fixed;
+  top: 80px;
+  right: 72px;
+  align-items: flex-start;
+  padding: 20px 24px 16px 24px;
+  gap: 16px;
+  border-radius: 24px;
+  background: #181B1F;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+  z-index: 3;
 `;
 
 const WalletAllSetScreen = (): JSX.Element => {
@@ -160,6 +174,23 @@ const WalletAllSetScreen = (): JSX.Element => {
           animationData={AnimationAllSet}
         />
       </StyledContainer>
+
+      <StyledFixedWrapper>
+        <View style={{ paddingTop: 4 }}>
+          <WebImg
+            src={IconPin}
+            size={40}
+          />
+        </View>
+        <View style={{ width: 256, gap: 6 }}>
+          <WebText type='title3' color={theme.webNeutral._100}>
+            {'Pin Adena for easy access'}
+          </WebText>
+          <WebText type='body5' color={theme.webNeutral._500}>
+            {'Click the ‘Extensions’ button\nLocate Adena then click the ‘Pin’ button'}
+          </WebText>
+        </View>
+      </StyledFixedWrapper>
     </WebMain>
   );
 };
