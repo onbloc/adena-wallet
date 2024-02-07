@@ -45,7 +45,9 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
       <View style={{ marginBottom: 8 }}>
         <Lottie
           animationData={LottieAccountSynced}
-          height={88}
+          height={104}
+          visibleSize={120}
+          style={{ marginLeft: -20, marginBottom: -16 }}
         />
       </View>
 
