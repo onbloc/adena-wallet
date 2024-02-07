@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { RoutePath } from '../../types/router';
 
@@ -17,7 +17,6 @@ import { RemoveAccount } from '@pages/popup/certify/remove-account';
 import { ResetWallet } from '@pages/popup/certify/reset-wallet';
 import ChangeNetwork from '@pages/popup/certify/change-network';
 
-import { WalletCreate } from '@pages/popup/wallet/wallet-create';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
 import { ApproveLogin } from '@pages/popup/wallet/approve-login';
 import { WalletSearch } from '@pages/popup/wallet/search';
@@ -56,13 +55,16 @@ import LoadingMain from './loading-main';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
+import { useInitWallet } from '@hooks/use-init-wallet';
 
 export const PopupRouter = (): JSX.Element => {
+  useInitWallet();
+
   return (
     <>
       <Header />
       <Routes>
-        <Route path={RoutePath.Home} element={<WalletCreate />} />
+        <Route path={RoutePath.Home} element={<Navigate replace to={RoutePath.Wallet} />} />
         <Route
           path={RoutePath.Wallet}
           element={
