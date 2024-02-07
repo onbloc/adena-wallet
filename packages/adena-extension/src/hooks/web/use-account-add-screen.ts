@@ -7,6 +7,7 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import useQuestionnaire from './use-questionnaire';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
@@ -52,9 +53,18 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   }, [step, ableToSkipQuestionnaire]);
 
   const addAccount = async (): Promise<void> => {
+    const succeed = await waitForRun<boolean>(_addAccount);
+    if (succeed) {
+      navigate(RoutePath.WebAccountAddedComplete);
+    } else {
+      navigate(RoutePath.WebNotFound);
+    }
+  };
+
+  const _addAccount = async (): Promise<boolean> => {
     try {
       if (!wallet) {
-        return;
+        return false;
       }
       resetNetworkConnection();
       const account = await SeedAccount.createByWallet(wallet);
@@ -67,9 +77,9 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
         await changeCurrentAccount(storedAccount);
       }
       await updateWallet(clone);
-      navigate(RoutePath.WebAccountAddedComplete);
+      return true;
     } catch (error) {
-      navigate(RoutePath.WebNotFound);
+      return false;
     }
   };
 

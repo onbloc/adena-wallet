@@ -8,6 +8,7 @@ import useQuestionnaire from './use-questionnaire';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseWalletImportReturn = {
   isValidForm: boolean;
@@ -90,7 +91,7 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
         });
       }
     } else if (step === 'SET_SEED_PHRASE') {
-      let serializedWallet = '';
+      let serializedWallet: string | null = '';
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
       let createdWallet = new AdenaWallet();
 
@@ -101,33 +102,38 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
           setErrMsg('Invalid seed phrase');
           return;
         }
-
         setStep('LOADING');
 
-        createdWallet = await AdenaWallet.createByMnemonic(inputValue);
-        serializedWallet = await createdWallet.serialize('');
+        serializedWallet = await waitForRun<string>(async () => {
+          createdWallet = await AdenaWallet.createByMnemonic(inputValue);
+          serializedWallet = await createdWallet.serialize('');
+          return serializedWallet;
+        }).catch(() => null);
       } else {
         const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(inputValue).catch(() => null);
         if (keyring === null) {
           setErrMsg('Invalid private key');
           return;
         }
-
         setStep('LOADING');
-        const account = await SingleAccount.createBy(keyring, 'Account');
+        serializedWallet = await waitForRun<string>(async () => {
+          const account = await SingleAccount.createBy(keyring, 'Account');
 
-        createdWallet.currentAccountId = account.id;
-        createdWallet.addAccount(account);
-        createdWallet.addKeyring(keyring);
-        serializedWallet = await createdWallet.serialize('');
+          createdWallet.currentAccountId = account.id;
+          createdWallet.addAccount(account);
+          createdWallet.addKeyring(keyring);
+          serializedWallet = await createdWallet.serialize('');
+          return serializedWallet;
+        }).catch(() => null);
       }
-
-      setTimeout(() => {
+      if (serializedWallet) {
         navigate(RoutePath.WebCreatePassword, {
           state: { serializedWallet, stepLength: indicatorInfo.stepLength },
           replace: true,
         });
-      }, 1000);
+      } else {
+        navigate(RoutePath.WebNotFound);
+      }
     }
   }, [step, inputType, inputValue, ableToSkipQuestionnaire]);
 

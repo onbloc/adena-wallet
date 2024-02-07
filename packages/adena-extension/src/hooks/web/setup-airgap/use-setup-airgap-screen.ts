@@ -145,7 +145,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     setBlockedEvent(true);
     if (existWallet) {
       setSetupAirgapState('LOADING');
-      await waitForRun<void>(_addAddressAccount());
+      await waitForRun<void>(_addAddressAccount);
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
       await _createAddressAccount();

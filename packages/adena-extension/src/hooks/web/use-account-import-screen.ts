@@ -17,6 +17,7 @@ import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseAccountImportReturn = {
   indicatorInfo: UseIndicatorStepReturn;
@@ -127,18 +128,21 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         return;
       }
       setStep('LOADING');
-      const { account, keyring } = result;
-      account.index = wallet.lastAccountIndex + 1;
-      account.name = `Account ${account.index}`;
-      const clone = wallet.clone();
-      clone.addAccount(account);
-      clone.addKeyring(keyring);
-      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
-      if (storedAccount) {
-        await changeCurrentAccount(storedAccount);
-      }
-      await updateWallet(clone);
-      navigate(RoutePath.WebAccountAddedComplete);
+      await waitForRun(async () => {
+        const { account, keyring } = result;
+        account.index = wallet.lastAccountIndex + 1;
+        account.name = `Account ${account.index}`;
+        const clone = wallet.clone();
+        clone.addAccount(account);
+        clone.addKeyring(keyring);
+        const storedAccount = clone.accounts.find(
+          (storedAccount) => storedAccount.id === account.id,
+        );
+        if (storedAccount) {
+          await changeCurrentAccount(storedAccount);
+        }
+        await updateWallet(clone);
+      }).then(() => navigate(RoutePath.WebAccountAddedComplete));
     }
   }, [step, privateKey, ableToSkipQuestionnaire, makePrivateKeyAccountAndKeyring]);
 

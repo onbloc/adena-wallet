@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import styled from 'styled-components';
 
-import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts-success.json';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
 
 import { View } from '@components/atoms';
 import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
