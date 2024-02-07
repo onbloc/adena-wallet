@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { RoutePath } from '@types';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+import useAppNavigate from './use-app-navigate';
+import useLink from './use-link';
+import { useLoadAccounts } from './use-load-accounts';
 
-export const WalletCreate = (): JSX.Element => {
+export const useInitWallet = (): void => {
   const { navigate } = useAppNavigate();
   const { openRegister } = useLink();
 
@@ -28,6 +28,4 @@ export const WalletCreate = (): JSX.Element => {
         break;
     }
   }, [state]);
-
-  return <React.Fragment />
-};
+}
