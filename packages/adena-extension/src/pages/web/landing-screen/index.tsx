@@ -27,7 +27,7 @@ const LandingScreen = (): ReactElement => {
   const { walletService } = useAdenaContext();
   const theme = useTheme();
 
-  const { data: existWallet } = useQuery(
+  const { data: existWallet, isLoading } = useQuery(
     ['existWallet', walletService],
     async () => walletService.existsWallet(),
     {},
@@ -43,6 +43,10 @@ const LandingScreen = (): ReactElement => {
   const moveSetupAirgapScreen = useCallback(() => {
     navigate(RoutePath.WebSetupAirgap);
   }, []);
+
+  if (isLoading) {
+    return <WebMain />;
+  }
 
   return (
     <WebMain>
