@@ -14,7 +14,7 @@ const StyledContainer = styled(View)`
 const ConnectRequestWallet = (): JSX.Element => {
   return (
     <StyledContainer>
-      <View style={{ paddingBottom: 16 }}>
+      <View>
         <WebImg src={openCosmosGif} height={120} />
       </View>
       <WebTitleWithDescription

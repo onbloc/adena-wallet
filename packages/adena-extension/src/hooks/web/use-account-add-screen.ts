@@ -7,6 +7,7 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import useQuestionnaire from './use-questionnaire';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
@@ -52,21 +53,34 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   }, [step, ableToSkipQuestionnaire]);
 
   const addAccount = async (): Promise<void> => {
-    if (!wallet) {
-      return;
+    const succeed = await waitForRun<boolean>(_addAccount);
+    if (succeed) {
+      navigate(RoutePath.WebAccountAddedComplete);
+    } else {
+      navigate(RoutePath.WebNotFound);
     }
-    resetNetworkConnection();
-    const account = await SeedAccount.createByWallet(wallet);
-    account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${wallet.lastAccountIndex + 1}`;
-    const clone = wallet.clone();
-    clone.addAccount(account);
-    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
-    if (storedAccount) {
-      await changeCurrentAccount(storedAccount);
+  };
+
+  const _addAccount = async (): Promise<boolean> => {
+    try {
+      if (!wallet) {
+        return false;
+      }
+      resetNetworkConnection();
+      const account = await SeedAccount.createByWallet(wallet);
+      account.index = wallet.lastAccountIndex + 1;
+      account.name = `Account ${wallet.lastAccountIndex + 1}`;
+      const clone = wallet.clone();
+      clone.addAccount(account);
+      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      if (storedAccount) {
+        await changeCurrentAccount(storedAccount);
+      }
+      await updateWallet(clone);
+      return true;
+    } catch (error) {
+      return false;
     }
-    await updateWallet(clone);
-    navigate(RoutePath.WebAccountAddedComplete);
   };
 
   return {

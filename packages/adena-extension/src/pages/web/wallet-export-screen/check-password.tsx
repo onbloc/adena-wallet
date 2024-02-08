@@ -5,6 +5,7 @@ import IconWarning from '@assets/web/warning.svg';
 import { Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox } from '@components/molecules';
+import { getTheme } from '@styles/theme';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -23,7 +24,8 @@ const StyledWarnBox = styled(View)`
   gap: 8px;
   padding: 12px 8px;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid ${getTheme('webWarning', '_100')}0a;
+  background: ${getTheme('webWarning', '_100')}14;
 `;
 
 const StyledInputBox = styled(View)`
@@ -68,21 +70,21 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to export your private key. Please carefully review the checklist below.'
+      return 'You’re about to export your private key. Please carefully review the checklist below.';
     }
     return 'You’re about to reveal your seed phrase. Please carefully review the checklist below.';
   }, [exportType]);
 
   const term01Text = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'Anyone with the private key will have full control over my funds.'
+      return 'Anyone with the private key will have full control over my funds.';
     }
     return 'Anyone with the phrase will have full control over my funds.';
   }, [exportType]);
 
   const term02Text = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'I will never share my private key with anyone.'
+      return 'I will never share my private key with anyone.';
     }
     return 'I will never share my seed phrase with anyone.';
   }, [exportType]);
@@ -101,11 +103,11 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
     if (!availableCheckPassword) {
       return;
     }
-    const checkedPassword = await checkPassword(password)
+    const checkedPassword = await checkPassword(password);
     if (checkedPassword) {
       moveExport(password);
     } else {
-      setErrorMessage('Invalid password')
+      setErrorMessage('Invalid password');
     }
   }, [availableCheckPassword, password, checkPassword, moveExport]);
 
@@ -114,13 +116,13 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
         <StyledWarnBox>
-          <Row style={{ gap: 2, alignItems: 'center' }}>
+          <Row style={{ gap: 4, alignItems: 'center' }}>
             <WebImg src={IconWarning} size={20} />
-            <WebText type='title6' color={theme.webWarning._100} style={{ height: 14 }}>
+            <WebText type='title6' color={theme.webWarning._100}>
               Approach with caution!
             </WebText>
           </Row>
-          <WebText type='body6' color={theme.webWarning._100}>
+          <WebText type='body6' color={theme.webWarning._100} style={{ paddingLeft: 4 }}>
             {warningMessage}
           </WebText>
         </StyledWarnBox>

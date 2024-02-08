@@ -20,7 +20,7 @@ const fill = keyframes`
   }
 `;
 
-const StyledContainer = styled(View) <{ pressed: boolean }>`
+const StyledContainer = styled(View) <{ pressed: boolean; finish: boolean; }>`
   position: relative;
   overflow: hidden;
   display: flex;
@@ -29,28 +29,32 @@ const StyledContainer = styled(View) <{ pressed: boolean }>`
   justify-content: center;
   align-items: center;
   border-radius: 8px;
-  border: 1px solid #212429;
   background: transparent;
   cursor: pointer;
   user-select:none;
+  box-shadow: 0 0 0 1px #212429 inset;
 
-  :hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  ${({ pressed }): FlattenSimpleInterpolation | string => pressed ? css`
-          ::before {
-            content: '';
-            z-index: -1;
-            position: absolute;
-            top: 0px;
-            left: 0px;
-            height: 100%;
-            background: rgba(0, 89, 255, 0.32);
-            border-radius: 8px;
-            animation: ${fill} 3s forwards; 
-          }
-  `: ''}
+  ${({ pressed, finish }): FlattenSimpleInterpolation => (pressed || finish) ? css`
+    box-shadow: 0 0 0 1px #1E3C71 inset, 0px 2px 16px 4px rgba(0, 89, 255, 0.24), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+    background: ${finish ? '#0059ff52' : 'transparent'};
+    ::before {
+      content: '';
+      z-index: -1;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      height: 100%;
+      background: ${finish ? 'transparent' : '#0059ff52'};
+      border-radius: 8px;
+      animation: ${fill} 3s forwards; 
+      box-shadow: ${finish ? 'none' : '0 0 0 1px #1E3C71 inset'};
+    }
+  `: css`
+    :hover {
+      background: #ffffff14;
+      box-shadow: 0 0 0 1px #ffffff14 inset;
+    }
+  `}
 `;
 
 export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
@@ -62,19 +66,23 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
   const theme = useTheme();
   const [pressed, setPressed] = useState(false);
   const [mouseover, setMouseover] = useState(false);
+  const [finish, setFinish] = useState(false);
 
   const endEvent = useCallback((): void => {
     setMouseover(false);
     if (pressed) {
       setPressed(false);
-      onFinishHold(false);
     }
   }, [pressed]);
 
   const onMouseDown = useCallback(() => {
+    if (finish) {
+      setFinish(false);
+      return;
+    }
     setMouseover(true);
     setPressed(true);
-  }, [endEvent]);
+  }, [finish, endEvent]);
 
   const onMouseOver = useCallback(() => {
     setMouseover(true);
@@ -88,12 +96,15 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
     endEvent();
   }, [endEvent]);
 
+  useEffect(() => {
+    onFinishHold(finish);
+  }, [finish]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (pressed) {
       timer = setTimeout(() => {
-        onFinishHold(true);
+        setFinish(true);
       }, 3000);
     }
 
@@ -109,6 +120,7 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
         height,
       }}
       pressed={pressed}
+      finish={finish}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       onMouseOver={onMouseOver}
@@ -116,8 +128,8 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
       onMouseOut={onMouseLeave}
     >
       <WebText
-        color={mouseover ? theme.webNeutral._100 : theme.webNeutral._500}
-        type='body6'
+        color={(mouseover || finish) ? theme.webNeutral._100 : theme.webNeutral._500}
+        type='title6'
       >
         {text}
       </WebText>

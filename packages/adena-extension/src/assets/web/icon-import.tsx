@@ -8,9 +8,9 @@ const IconImport = (): JSX.Element => (
     </g>
     <defs>
       <radialGradient id="paint0_radial_8004_880" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(11.9012 20) rotate(-90) scale(16)">
-        <stop stop-color="#70A2FF" />
-        <stop offset="0.3125" stop-color="#7AA9FF" />
-        <stop offset="1" stop-color="#85AFFF" />
+        <stop stopColor="#70A2FF" />
+        <stop offset="0.3125" stopColor="#7AA9FF" />
+        <stop offset="1" stopColor="#85AFFF" />
       </radialGradient>
     </defs>
   </svg>

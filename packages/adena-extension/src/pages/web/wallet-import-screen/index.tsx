@@ -11,18 +11,18 @@ import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const WalletImportScreen = (): ReactElement => {
   const useWalletImportScreenReturn = useWalletImportScreen();
-  const { extended, step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
+  const { step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
 
   if (step === 'LOADING') {
     return (
-      <WebMain spacing={344}>
+      <WebMain spacing={null}>
         <WebLoadingAccounts />
       </WebMain>
     );
   }
 
   return (
-    <WebMain spacing={extended ? 180 : 272}>
+    <WebMain>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}

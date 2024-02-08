@@ -31,6 +31,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { accountNativeBalances } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
+  const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -77,11 +78,11 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     await walletService.lockWallet();
     await loadAccounts();
     navigate(RoutePath.Login, { replace: true });
-  }, [walletService, open, navigate]);
+  }, [walletService, navigate]);
 
   const close = useCallback(async () => {
     setOpen(false);
-  }, [setOpen]);
+  }, []);
 
   const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
     ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
@@ -107,16 +108,19 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
         })),
       );
     },
-    {
-      enabled: !locked && accounts.length > 0 && !!currentNetwork,
-    },
   );
+
+  useEffect(() => {
+    if (sideMenuAccounts.length > 0) {
+      setLatestAccountInfos(sideMenuAccounts);
+    }
+  }, [sideMenuAccounts]);
 
   return (
     <SideMenu
       locked={locked}
       currentAccountId={currentAccountId}
-      accounts={sideMenuAccounts}
+      accounts={locked ? [] : latestAccountInfos}
       changeAccount={changeAccount}
       movePage={movePage}
       openLink={onOpenLink}

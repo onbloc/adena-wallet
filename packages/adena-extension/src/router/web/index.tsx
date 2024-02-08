@@ -5,6 +5,7 @@ import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 
 import LandingScreen from '@pages/web/landing-screen';
+import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
 import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
@@ -20,6 +21,7 @@ import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 
 import Header from './Header';
+import NotFoundScreen from '@pages/web/404';
 
 export const WebRouter = (): JSX.Element => {
   const pathname = window?.location?.pathname || '';
@@ -43,6 +45,7 @@ export const WebRouter = (): JSX.Element => {
         <Header />
         <Routes>
           <Route path={RoutePath.Home} element={<LandingScreen />} />
+          <Route path={RoutePath.WebSelectHardWallet} element={<SelectHardWalletScreen />} />
           <Route path={RoutePath.WebConnectLedger} element={<ConnectLedgerScreen />} />
           <Route
             path={RoutePath.WebConnectLedgerSelectAccount}
@@ -57,8 +60,12 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.WebAccountImport} element={<AccountImportScreen />} />
           <Route path={RoutePath.WebWalletImport} element={<WalletImportScreen />} />
           <Route path={RoutePath.WebWalletAllSet} element={<WalletAllSetScreen />} />
-          <Route path={RoutePath.WebAccountAddedComplete} element={<AccountAddedCompleteScreen />} />
+          <Route
+            path={RoutePath.WebAccountAddedComplete}
+            element={<AccountAddedCompleteScreen />}
+          />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -72,10 +79,16 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.Home} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
+          <Route path={'*'} element={<NotFoundScreen />} />
         </Routes>
       </>
     );
   }
 
-  return <></>;
+  return (
+    <>
+      <Header />
+      <Route path={'*'} element={<NotFoundScreen />} />
+    </>
+  );
 };

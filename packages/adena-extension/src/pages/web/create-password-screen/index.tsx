@@ -73,6 +73,7 @@ const CreatePasswordScreen = (): JSX.Element => {
         <WebTitleWithDescription
           title='Create a Password'
           description='This will be used to unlock your wallet.'
+          marginBottom={-6}
         />
 
         <StyledInputContainer>
@@ -114,6 +115,7 @@ const CreatePasswordScreen = (): JSX.Element => {
           onChange={termsState.onChange}
           text='I agree to the&nbsp;'
           tabIndex={3}
+          margin={'0'}
         >
           <Pressable onClick={moveAdenaTermsPage} tabIndex={4}>
             Terms of Use.

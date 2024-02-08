@@ -3,13 +3,13 @@ import { CommonError } from '@common/errors/common';
 export const DEFAULT_TIMEOUT = 1500 as const;
 
 export async function waitForRun<T = undefined>(
-  promise: Promise<T>,
+  promise: () => Promise<T>,
   milliseconds?: number,
 ): Promise<T> {
   milliseconds = milliseconds ?? DEFAULT_TIMEOUT;
   let timer: number | NodeJS.Timeout;
   const response = await Promise.all([
-    promise,
+    promise(),
     new Promise<'done'>((resolve) => {
       timer = setTimeout(() => resolve('done'), milliseconds);
     }),

@@ -24,7 +24,7 @@ interface StyledInputProps {
   placeholder: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
-const StyledInput = styled(WebInput)<StyledInputProps>`
+const StyledInput = styled(WebInput) <StyledInputProps>`
   border: ${({ theme, error }): string => (error ? `1px solid ${theme.webError._200}` : '')};
   background-color: ${({ theme, error }): string => (error ? theme.webError._300 : '')};
 
@@ -68,6 +68,7 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
       <WebTitleWithDescription
         title='Enter Your Address'
         description='Enter the address that you will use to set up your airgapped account.'
+        marginBottom={-6}
       />
 
       <StyledInputBox>

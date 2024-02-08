@@ -14,8 +14,13 @@ import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useQuestionnaire from './use-questionnaire';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseAccountImportReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   isValidForm: boolean;
   errMsg: string;
   privateKey: string;
@@ -53,6 +58,12 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     SET_PRIVATE_KEY: ableToSkipQuestionnaire ? 1 : 2,
     LOADING: ableToSkipQuestionnaire ? 1 : 2,
   };
+
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: accountImportStepNo,
+    currentState: step,
+    hasQuestionnaire: true,
+  });
 
   const isValidForm = useMemo(() => {
     return !!privateKey && !errMsg;
@@ -117,22 +128,26 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         return;
       }
       setStep('LOADING');
-      const { account, keyring } = result;
-      account.index = wallet.lastAccountIndex + 1;
-      account.name = `Account ${account.index}`;
-      const clone = wallet.clone();
-      clone.addAccount(account);
-      clone.addKeyring(keyring);
-      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
-      if (storedAccount) {
-        await changeCurrentAccount(storedAccount);
-      }
-      await updateWallet(clone);
-      navigate(RoutePath.WebAccountAddedComplete);
+      await waitForRun(async () => {
+        const { account, keyring } = result;
+        account.index = wallet.lastAccountIndex + 1;
+        account.name = `Account ${account.index}`;
+        const clone = wallet.clone();
+        clone.addAccount(account);
+        clone.addKeyring(keyring);
+        const storedAccount = clone.accounts.find(
+          (storedAccount) => storedAccount.id === account.id,
+        );
+        if (storedAccount) {
+          await changeCurrentAccount(storedAccount);
+        }
+        await updateWallet(clone);
+      }).then(() => navigate(RoutePath.WebAccountAddedComplete));
     }
   }, [step, privateKey, ableToSkipQuestionnaire, makePrivateKeyAccountAndKeyring]);
 
   return {
+    indicatorInfo,
     isValidForm,
     errMsg,
     privateKey,

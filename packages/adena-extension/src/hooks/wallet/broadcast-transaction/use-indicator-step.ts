@@ -1,9 +1,11 @@
-import { useWallet } from '@hooks/use-wallet';
-import useQuestionnaire from '@hooks/web/use-questionnaire';
-import { CommonState } from '@states';
-import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
+import _ from 'lodash';
+import { useQuery } from '@tanstack/react-query';
+
+import { useAdenaContext } from '@hooks/use-context';
+import useQuestionnaire from '@hooks/web/use-questionnaire';
+import { CommonState } from '@states';
 
 interface UseIndicatorStepProps<T extends string> {
   stepMap?: Record<T, number>;
@@ -21,7 +23,7 @@ const useIndicatorStep = <T extends string>({
   currentState,
   hasQuestionnaire = false,
 }: UseIndicatorStepProps<T>): UseIndicatorStepReturn => {
-  const { existWallet } = useWallet();
+  const { walletService } = useAdenaContext();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useRecoilState(
     CommonState.webHeaderIndicatorLength,
@@ -34,20 +36,33 @@ const useIndicatorStep = <T extends string>({
     };
   }
 
+  const { data: stepLength = 0 } = useQuery<number>(
+    ['stepLength', hasQuestionnaire, stepMap, walletService],
+    async () => {
+      let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
+      const existWallet = await walletService.existsWallet().catch(() => false);
+      if (!existWallet) {
+        defaultStepLength = defaultStepLength + 1;
+      }
+      if (hasQuestionnaire) {
+        if (!existWallet) {
+          defaultStepLength = defaultStepLength + 1;
+        } else {
+          const ableToSkipQuestionnaire = await walletService
+            .isSkipQuestionnaire()
+            .catch(() => false);
+          if (!ableToSkipQuestionnaire) {
+            defaultStepLength = defaultStepLength + 1;
+          }
+        }
+      }
+      return defaultStepLength;
+    },
+  );
+
   const existQuestionnaire = useMemo(() => {
     return hasQuestionnaire && !ableToSkipQuestionnaire;
   }, [hasQuestionnaire, ableToSkipQuestionnaire]);
-
-  const stepLength = useMemo(() => {
-    let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
-    if (!existWallet) {
-      defaultStepLength = defaultStepLength + 1;
-    }
-    if (existQuestionnaire) {
-      defaultStepLength = defaultStepLength + 1;
-    }
-    return defaultStepLength;
-  }, [stepMap, existWallet, existQuestionnaire]);
 
   const currentStepNo = useMemo(() => {
     if (!currentState) {

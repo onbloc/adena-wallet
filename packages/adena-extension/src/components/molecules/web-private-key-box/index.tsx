@@ -1,22 +1,20 @@
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
+import { WebTextarea } from '@components/atoms/web-textarea';
+import styled from 'styled-components';
 
-import { View, WebText } from '../../atoms';
+import { View } from '../../atoms';
 
 interface WebPrivateKeyBoxProps {
   privateKey: string;
   showBlur?: boolean;
+  readOnly?: boolean;
+  error?: boolean;
 }
 
 const StyledContainer = styled(View) <{ showBlur: boolean }>`
   position: relative;
   overflow: hidden;
-  height: 96px;
-  border-radius: 10px;
-  border: 1px solid
-    ${({ showBlur, theme }): string => (showBlur ? theme.webNeutral._800 : theme.webNeutral._600)};
-  background: ${({ showBlur, theme }): string => showBlur ? theme.webNeutral._900 : theme.webInput._100};
-  box-shadow: 0px 0px 0px 3px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+  height: 80px;
 `;
 
 const StyledBlurScreen = styled(View)`
@@ -29,18 +27,19 @@ const StyledBlurScreen = styled(View)`
   border-radius: 10px;
 `;
 
-export const WebPrivateKeyBox = ({ privateKey, showBlur = true }: WebPrivateKeyBoxProps): JSX.Element => {
-  const theme = useTheme();
+export const WebPrivateKeyBox = ({ privateKey, showBlur = true, readOnly = false, error = false }: WebPrivateKeyBoxProps): JSX.Element => {
 
   return (
     <StyledContainer showBlur={showBlur}>
-      <WebText
-        type='body5'
-        color={theme.webNeutral._100}
-        style={{ padding: 24, whiteSpace: 'normal', wordBreak: 'break-all' }}
-      >
-        {privateKey}
-      </WebText>
+      <WebTextarea
+        value={privateKey}
+        placeholder='Private Key'
+        readOnly={readOnly}
+        error={error}
+        style={{ height: '100%' }}
+        onChange={(): void => { return; }}
+        spellCheck={false}
+      />
       {showBlur && <StyledBlurScreen />}
     </StyledContainer>
   );

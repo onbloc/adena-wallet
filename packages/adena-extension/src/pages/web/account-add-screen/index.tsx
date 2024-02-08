@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -12,8 +12,15 @@ const AccountAddScreen = (): ReactElement => {
   const useAccountAddScreenReturn = useAccountAddScreen();
   const { step, onClickGoBack, onClickNext } = useAccountAddScreenReturn;
 
+  const topSpacing = useMemo(() => {
+    if (step === 'INIT') {
+      return 272;
+    }
+    return null;
+  }, [step]);
+
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={topSpacing}>
       {step === 'INIT' && (
         <>
           <WebMainHeader stepLength={0} onClickGoBack={onClickGoBack} />

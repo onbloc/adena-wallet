@@ -8,12 +8,16 @@ import { RoutePath } from '@types';
 import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import useQuestionnaire from '../use-questionnaire';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
   exportType: ExportType;
   walletExportState: WalletExportStateType;
   exportData: string | null;
+  indicatorInfo: UseIndicatorStepReturn;
   initWalletExport: () => void;
   backStep: () => void;
   checkPassword: (password: string) => Promise<boolean>;
@@ -41,8 +45,14 @@ export const walletExportStep: Record<
   },
   RESULT: {
     backTo: 'INIT',
-    stepNo: 1,
+    stepNo: 0,
   },
+};
+
+export const walletExportStepNo: Record<WalletExportStateType, number> = {
+  INIT: 0,
+  CHECK_PASSWORD: 0,
+  RESULT: 0,
 };
 
 const useWalletExportScreen = (): UseWalletExportReturn => {
@@ -55,6 +65,11 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     params?.doneQuestionnaire ? 'CHECK_PASSWORD' : 'INIT',
   );
   const [exportData, setExportData] = useState<string | null>(null);
+  const indicatorInfo = useIndicatorStep({
+    stepMap: walletExportStepNo,
+    currentState: walletExportState,
+    hasQuestionnaire: true,
+  });
 
   const _initExportType = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();
@@ -129,6 +144,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
   }, []);
 
   return {
+    indicatorInfo,
     currentAccount,
     exportType,
     walletExportState,

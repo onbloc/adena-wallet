@@ -1,7 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import IconWarning from '@assets/web/warning.svg';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox, WebSeedBox } from '@components/molecules';
@@ -10,6 +9,8 @@ import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
+import { getTheme } from '@styles/theme';
+import IconWarning from '@assets/web/warning.svg';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -22,12 +23,14 @@ const StyledMessageBox = styled(View)`
   row-gap: 12px;
 `;
 
-const StyledWarnBox = styled(View)`
+const StyledWarnBox = styled(Row) <{ center: boolean }>`
   width: 100%;
-  gap: 12px 8px;
-  padding: 12px;
+  padding: 12px 8px;
   border-radius: 8px;
-  background: rgba(251, 191, 36, 0.08);
+  align-items: ${({ center }): string => center ? 'center' : 'flex-start'};
+  gap: 4px;
+  border: 1px solid ${getTheme('webWarning', '_100')}0a;
+  background: ${getTheme('webWarning', '_100')}14;
 `;
 
 const StyledInputBox = styled(View)`
@@ -77,6 +80,24 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
+  const term01Text = useMemo(() => {
+    if (exportType === 'SEED_PHRASE') {
+      return 'Anyone with the phrase will have full control over my funds.';
+    }
+    return 'Anyone with the private key will have full control over my funds.';
+  }, [exportType]);
+
+  const term02Text = useMemo(() => {
+    if (exportType === 'SEED_PHRASE') {
+      return 'I will never share my seed phrase with anyone.';
+    }
+    return 'I will never share my private key with anyone.';
+  }, [exportType]);
+
+  const onFinishHold = useCallback((finished: boolean) => {
+    setBlur(!finished);
+  }, []);
+
   const onClickDone = (): void => {
     AdenaStorage.session()
       .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
@@ -89,13 +110,8 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     <StyledContainer>
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
-        <StyledWarnBox>
-          <Row style={{ gap: 4, alignItems: 'center' }}>
-            <WebImg src={IconWarning} size={20} />
-            <WebText type='title6' color={theme.webWarning._100} style={{ height: 14 }}>
-              Approach with caution!
-            </WebText>
-          </Row>
+        <StyledWarnBox center={exportType === 'SEED_PHRASE'}>
+          <WebImg src={IconWarning} size={20} />
           <WebText type='body6' color={theme.webWarning._100}>
             {warningMessage}
           </WebText>
@@ -108,7 +124,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
-          <WebHoldButton onFinishHold={(response): void => setBlur(!response)} />
+          <WebHoldButton onFinishHold={onFinishHold} />
           <WebCopyButton width={80} copyText={exportData || ''} />
         </Row>
       </StyledInputBox>
@@ -120,7 +136,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           onChange={(): void => {
             return;
           }}
-          text='Anyone with the phrase will have full control over my funds.'
+          text={term01Text}
           tabIndex={1}
           margin='0'
           color={theme.webNeutral._500}
@@ -131,7 +147,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           onChange={(): void => {
             return;
           }}
-          text='I will never share my seed phrase with anyone.'
+          text={term02Text}
           tabIndex={2}
           margin='0'
           color={theme.webNeutral._500}

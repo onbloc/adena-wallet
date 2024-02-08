@@ -5,7 +5,7 @@ import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 
 const StyledContainer = styled(View)`
-  row-gap: 24px;
+  row-gap: 18px;
   width: 100%;
   align-items: flex-start;
 `;
@@ -13,7 +13,7 @@ const StyledContainer = styled(View)`
 const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Element => {
   return (
     <StyledContainer>
-      <View style={{ rowGap: 36 }}>
+      <View style={{ rowGap: 32 }}>
         <WebImg src={IconLedger} size={88} />
         <WebTitleWithDescription
           title='Connect a Ledger Device'

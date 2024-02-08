@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 import { Text } from '@components/atoms';
-import IconLogo from '../../../../install/assets/logo-typeB.svg';
+import IconLogo from '@assets/logo-type-b.svg';
 import IconHelp from '@assets/help-fill.svg';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';

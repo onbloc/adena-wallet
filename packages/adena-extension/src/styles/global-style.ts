@@ -3,24 +3,6 @@ import { fonts } from './theme';
 import mixins from './mixins';
 
 export const GlobalWebStyle = createGlobalStyle`
-  @font-face {
-    font-family: 'Inter';
-    font-weight: 400;
-    src: url(../assets/fonts/Inter-Regular.ttf) format('ttf');
-  }
-
-  @font-face {
-    font-family: 'Inter';
-    font-weight: 500;
-    src: url(../assets/fonts/Inter-Medium.ttf) format('ttf');
-  }
-
-  @font-face {
-    font-family: 'Inter';
-    font-weight: 600;
-    src: url(../assets/fonts/Inter-SemiBold.ttf) format('ttf');
-  }
-
   * {
     font-family: Inter, sans-serif;
     box-sizing: border-box;
@@ -38,6 +20,7 @@ export const GlobalWebStyle = createGlobalStyle`
   body {
     margin: 0;
     background: radial-gradient(100% 100% at 50% 0%, rgba(16, 18, 20, 0.00) 48.83%, rgba(0, 89, 255, 0.24) 100%);
+    overflow: auto;
   }
 `;
 

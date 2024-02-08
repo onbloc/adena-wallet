@@ -11,6 +11,7 @@ import { WebMainAccountHeader } from '@components/pages/web/main-account-header'
 
 const WalletExportScreen: React.FC = () => {
   const {
+    indicatorInfo,
     currentAccount,
     exportType,
     walletExportState,
@@ -22,11 +23,8 @@ const WalletExportScreen: React.FC = () => {
   } = useWalletExportScreen();
 
   const spacing = useMemo(() => {
-    if (exportData && exportData.split(' ').length > 12) {
-      return 120;
-    }
-    return 272
-  }, [exportData])
+    return null;
+  }, [])
 
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -38,14 +36,15 @@ const WalletExportScreen: React.FC = () => {
   return (
     <WebMain spacing={spacing}>
       <View style={{ width: '100%', marginBottom: 16 }}>
-        {walletExportState === 'INIT' ? (
+        {walletExportState === 'INIT' && indicatorInfo.stepLength > 1 && (
           <WebSecurityHeader
             currentStep={0}
-            stepLength={2}
+            stepLength={indicatorInfo.stepLength}
             visibleBackButton={walletExportState !== 'INIT'}
             onClickGoBack={backStep}
           />
-        ) : (
+        )}
+        {walletExportState !== 'INIT' && (
           <WebMainAccountHeader
             account={currentAccount}
             onClickGoBack={backStep}

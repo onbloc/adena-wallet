@@ -48,39 +48,42 @@ const GetMnemonicStep = ({
           </WebText>
         </StyledWarnBox>
       </StyledMessageBox>
-      <WebSeedBox seeds={seeds.split(' ')} showBlur={showBlur} />
 
-      {ableToReveal ? (
-        <>
-          <Row style={{ justifyContent: 'center', columnGap: 12 }}>
-            <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
-            <WebCopyButton width={80} copyText={seeds} />
-          </Row>
-          <Row style={{ columnGap: 8, alignItems: 'center' }}>
+      <View style={{ width: '100%', gap: 16 }}>
+        <WebSeedBox seeds={seeds.split(' ')} showBlur={showBlur} />
+
+        {ableToReveal ? (
+          <>
+            <Row style={{ justifyContent: 'center', columnGap: 12 }}>
+              <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
+              <WebCopyButton width={80} copyText={seeds} />
+            </Row>
+            <Row style={{ columnGap: 8, alignItems: 'center', marginTop: 8 }}>
+              <WebCheckBox
+                checked={checkSavedMnemonic}
+                onClick={(): void => {
+                  setCheckSavedMnemonic(!checkSavedMnemonic);
+                }}
+              />
+              <WebText type='body5' color={theme.webNeutral._500}>
+                I have saved my seed phrase.
+              </WebText>
+            </Row>
+          </>
+        ) : (
+          <Row style={{ columnGap: 8, alignItems: 'center', marginTop: 8 }}>
             <WebCheckBox
-              checked={checkSavedMnemonic}
+              checked={agreeAbleToReveals}
               onClick={(): void => {
-                setCheckSavedMnemonic(!checkSavedMnemonic);
+                setAgreeAbleToReveals(!agreeAbleToReveals);
               }}
             />
             <WebText type='body5' color={theme.webNeutral._500}>
-              I have saved my seed phrase.
+              This phrase will only be stored on this device. Adena can’t recover it for you.
             </WebText>
           </Row>
-        </>
-      ) : (
-        <Row style={{ columnGap: 8, alignItems: 'center' }}>
-          <WebCheckBox
-            checked={agreeAbleToReveals}
-            onClick={(): void => {
-              setAgreeAbleToReveals(!agreeAbleToReveals);
-            }}
-          />
-          <WebText type='body5' color={theme.webNeutral._500}>
-            This phrase will only be stored on this device. Adena can’t recover it for you.
-          </WebText>
-        </Row>
-      )}
+        )}
+      </View>
 
       {ableToReveal ? (
         <WebButton

@@ -8,7 +8,7 @@ import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-
 import IconInfo from '@assets/web/info.svg';
 import RollingNumber from '@components/atoms/rolling-number';
 import { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { WebTitleWithDescription } from '@components/molecules';
+import { WebQuestion } from '@components/molecules/web-question';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -22,10 +22,10 @@ const StyledAnswerBox = styled(View)`
 
 const StyledWarningBox = styled(Row)`
   width: 100%;
-  padding: 12px;
+  padding: 12px 8px;
   justify-content: flex-start;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 4px;
   border-radius: 12px;
   border: 1px solid rgba(251, 194, 36, 0.08);
   background: rgba(251, 194, 36, 0.08);
@@ -146,7 +146,10 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
         onClickGoBack={onClickBack}
       />
 
-      <WebTitleWithDescription title='Security Questionnaire' description={questionTitle} />
+      <WebQuestion
+        title='Security Questionnaire'
+        question={questionTitle}
+      />
 
       <StyledAnswerBox>
         {answers.map((answer, index) => (
@@ -190,7 +193,6 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
         figure='primary'
         size='small'
         text='Next'
-        style={{ width: 116 }}
         rightIcon='chevronRight'
         disabled={!availableNext}
         onClick={onClickNextButton}

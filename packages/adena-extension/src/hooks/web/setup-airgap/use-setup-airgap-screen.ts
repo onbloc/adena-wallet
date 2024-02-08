@@ -5,7 +5,7 @@ import {
   AddressKeyring,
   AdenaWallet,
   fromBech32,
-  isSingleAccount,
+  isAirgapAccount,
 } from 'adena-module';
 
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -86,7 +86,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   }, [address]);
 
   const _existsAddress = useCallback(async () => {
-    const checkAccounts = accounts.filter((account) => !isSingleAccount(account));
+    const checkAccounts = accounts.filter((account) => isAirgapAccount(account));
     return Promise.all(
       checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
     ).then((addresses) => addresses.includes(address));
@@ -130,12 +130,7 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
   const _createAddressAccount = useCallback(async () => {
     const createdWallet = await AdenaWallet.createByAddress(address);
     const serializedWallet = await createdWallet.serialize('');
-    navigate(RoutePath.WebCreatePassword, {
-      state: {
-        serializedWallet,
-        stepLength: indicatorInfo.stepLength,
-      },
-    });
+    return serializedWallet;
   }, [address, walletService, indicatorInfo]);
 
   const addAccount = useCallback(async () => {
@@ -145,10 +140,17 @@ const useSetupAirgapScreen = (): UseSetupAirgapScreenReturn => {
     setBlockedEvent(true);
     if (existWallet) {
       setSetupAirgapState('LOADING');
-      await waitForRun<void>(_addAddressAccount());
+      await waitForRun<void>(_addAddressAccount);
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
-      await _createAddressAccount();
+      setSetupAirgapState('LOADING');
+      const serializedWallet = await waitForRun<string>(_createAddressAccount);
+      navigate(RoutePath.WebCreatePassword, {
+        state: {
+          serializedWallet,
+          stepLength: indicatorInfo.stepLength,
+        },
+      });
     }
     setBlockedEvent(false);
   }, [blockedEvent, walletService, _addAddressAccount, _createAddressAccount]);
