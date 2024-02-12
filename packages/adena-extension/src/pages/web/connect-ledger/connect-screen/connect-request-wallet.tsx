@@ -1,9 +1,10 @@
 import styled from 'styled-components';
 
-import openCosmosGif from '@assets/web/open-cosmos.gif';
+import AnimationOpenCosmosApp from '@assets/web/lottie/open-cosmos-app-in-your-ledger.json';
 
-import { View, WebImg } from '@components/atoms';
+import { View } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 40px;
@@ -15,7 +16,11 @@ const ConnectRequestWallet = (): JSX.Element => {
   return (
     <StyledContainer>
       <View>
-        <WebImg src={openCosmosGif} height={120} />
+        <Lottie
+          speed={1}
+          height={120}
+          animationData={AnimationOpenCosmosApp}
+        />
       </View>
       <WebTitleWithDescription
         title='Open Cosmos App in Ledger'

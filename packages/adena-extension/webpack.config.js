@@ -73,6 +73,7 @@ const config = {
       '@migrates': path.resolve(__dirname, 'src/migrates'),
       '@models': path.resolve(__dirname, 'src/models'),
       '@public': path.resolve(__dirname, 'public/'),
+      'lottie-web': path.resolve('libs/lottie_light.min.js'),
     },
   },
   plugins: [
