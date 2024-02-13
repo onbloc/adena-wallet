@@ -45,7 +45,6 @@ export const Navigation = (): JSX.Element => {
   const nft = useMatch(RoutePath.Nft);
   const history = useMatch(RoutePath.History);
   const tokenDetails = useMatch(RoutePath.TokenDetails);
-  const [state] = useRecoilState(WalletState.state);
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const { currentNetwork } = useNetwork();
@@ -90,9 +89,9 @@ export const Navigation = (): JSX.Element => {
             <div key={idx}>
               <button
                 onClick={(): void | null =>
-                  state === 'FINISH' ? navigate(item.routingAddress, { replace: true }) : null
+                  walletState === 'FINISH' ? navigate(item.routingAddress, { replace: true }) : null
                 }
-                disabled={state !== 'FINISH'}
+                disabled={walletState !== 'FINISH'}
               >
                 <Icon
                   name={item.iconName as IconName}
