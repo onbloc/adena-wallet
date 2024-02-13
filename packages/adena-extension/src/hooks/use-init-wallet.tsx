@@ -4,10 +4,12 @@ import { RoutePath } from '@types';
 import useAppNavigate from './use-app-navigate';
 import useLink from './use-link';
 import { useLoadAccounts } from './use-load-accounts';
+import { useMatch } from 'react-router-dom';
 
 export const useInitWallet = (): void => {
   const { navigate } = useAppNavigate();
   const { openRegister } = useLink();
+  const isApproveLoginPage = useMatch('/approve/*');
 
   const { state } = useLoadAccounts();
 
@@ -21,11 +23,15 @@ export const useInitWallet = (): void => {
         openRegister();
         break;
       case 'LOGIN':
-        navigate(RoutePath.Login);
+        if (!isApproveLoginPage) {
+          navigate(RoutePath.Login);
+        }
         break;
       default:
-        navigate(RoutePath.Wallet);
+        if (!isApproveLoginPage) {
+          navigate(RoutePath.Wallet);
+        }
         break;
     }
   }, [state]);
-}
+};
