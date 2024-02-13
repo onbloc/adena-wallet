@@ -40,33 +40,3 @@ export function hasPrivateKey(
   }
   return false;
 }
-
-export enum MsgEndpoint {
-  MSG_SEND = '/bank.MsgSend',
-  MSG_ADD_PKG = '/vm.m_addpkg',
-  MSG_CALL = '/vm.m_call',
-}
-
-export const decodeTxMessages = (messages: Any[]): any[] => {
-  return messages.map((m: Any) => {
-    switch (m.typeUrl) {
-      case MsgEndpoint.MSG_CALL:
-        return {
-          '@type': m.typeUrl,
-          ...MsgCall.decode(m.value),
-        };
-      case MsgEndpoint.MSG_SEND:
-        return {
-          '@type': m.typeUrl,
-          ...MsgSend.decode(m.value),
-        };
-      case MsgEndpoint.MSG_ADD_PKG:
-        return {
-          '@type': m.typeUrl,
-          ...MsgAddPackage.decode(m.value),
-        };
-      default:
-        throw new Error(`unsupported message type ${m.typeUrl}`);
-    }
-  });
-};

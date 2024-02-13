@@ -1,5 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import { RawTx, strToSignedTx } from 'adena-module';
+import {
+  RawTx,
+  strToSignedTx,
+  RawBankSendMessage,
+  RawVmCallMessage,
+  RawVmAddPackageMessage,
+  RawVmRunMessage,
+} from 'adena-module';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { Tx } from '@gnolang/tm2-js-client';
 
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
@@ -34,13 +42,13 @@ function makeTransactionInfo(
 function makeTypeName(rawTx: RawTx): string {
   const message = rawTx.msg[0];
   switch (message['@type']) {
-    case '/bank.MsgSend':
+    case MsgEndpoint.MSG_SEND:
       return 'Send';
-    case '/vm.m_call':
+    case MsgEndpoint.MSG_CALL:
       return 'Contract Interaction';
-    case '/vm.m_addpkg':
+    case MsgEndpoint.MSG_ADD_PKG:
       return 'Add Package';
-    case '/vm.m_run':
+    case MsgEndpoint.MSG_RUN:
       return 'Run Transaction';
     default:
       return 'Contract Interaction';
@@ -93,16 +101,56 @@ function mapVmAddPackageTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] 
 
 function mapTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
   const messages = rawTx.msg;
-  if (messages[0]['@type'] === '/bank.MsgSend') {
+  if (messages[0]['@type'] === MsgEndpoint.MSG_SEND) {
     return mapBankSendTransactionInfo(rawTx);
   }
-  if (messages[0]['@type'] === '/vm.m_addpkg') {
+  if (messages[0]['@type'] === MsgEndpoint.MSG_ADD_PKG) {
     return mapVmAddPackageTransactionInfo(rawTx);
   }
-  if (messages[0]['@type'] === '/vm.m_call') {
+  if (messages[0]['@type'] === MsgEndpoint.MSG_RUN) {
     return mapVmCallTransactionInfo(rawTx);
   }
   return mapVmCallTransactionInfo(rawTx);
+}
+
+function matchTransactionCaller(rawTx: RawTx, caller: string): boolean {
+  const messages = rawTx.msg;
+  const invalidedMatch = messages.some((message) => {
+    switch (message['@type']) {
+      case MsgEndpoint.MSG_SEND: {
+        const current = message as RawBankSendMessage;
+        if (!current?.from_address) {
+          return true;
+        }
+        return current.from_address !== caller;
+      }
+      case MsgEndpoint.MSG_CALL: {
+        const current = message as RawVmCallMessage;
+        if (!current?.caller) {
+          return true;
+        }
+        return current.caller !== caller;
+      }
+      case MsgEndpoint.MSG_ADD_PKG: {
+        const current = message as RawVmAddPackageMessage;
+        if (!current?.creator) {
+          return true;
+        }
+        return current.creator !== caller;
+      }
+      case MsgEndpoint.MSG_RUN: {
+        const current = message as RawVmRunMessage;
+        if (!current?.caller) {
+          return true;
+        }
+        return current.caller !== caller;
+      }
+      default: {
+        return true;
+      }
+    }
+  });
+  return !invalidedMatch;
 }
 
 export interface UseBroadcastTransactionScreenReturn {
@@ -117,7 +165,7 @@ export interface UseBroadcastTransactionScreenReturn {
 const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn => {
   const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
   const [broadcastTransactionState, setBroadcastTransactionState] = useState<
     BroadcastTransactionState
@@ -140,10 +188,17 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
   }, [rawTransaction]);
 
   const uploadTransaction = (text: string): boolean => {
+    if (!currentAddress) {
+      return false;
+    }
     try {
+      const rawTx = JSON.parse(text) as RawTx;
+      if (!matchTransactionCaller(rawTx, currentAddress)) {
+        return false;
+      }
       const transaction = strToSignedTx(text);
       setTransaction(transaction);
-      setRawTransaction(JSON.parse(text));
+      setRawTransaction(rawTx);
       return transaction !== null;
     } catch (error) {
       setTransaction(null);
