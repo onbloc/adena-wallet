@@ -107,7 +107,7 @@ function mapTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
   if (messages[0]['@type'] === MsgEndpoint.MSG_ADD_PKG) {
     return mapVmAddPackageTransactionInfo(rawTx);
   }
-  if (messages[0]['@type'] === MsgEndpoint.MSG_RUN) {
+  if (messages[0]['@type'] === MsgEndpoint.MSG_CALL) {
     return mapVmCallTransactionInfo(rawTx);
   }
   return mapVmCallTransactionInfo(rawTx);
