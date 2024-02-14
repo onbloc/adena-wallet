@@ -36,7 +36,6 @@ function createMemPackage(memPackage: RawMemPackage) {
 }
 
 function encodeMessageValue(message: { type: string; value: any }) {
-  console.log(message);
   switch (message.type) {
     case MsgEndpoint.MSG_ADD_PKG: {
       const value = message.value;
@@ -45,7 +44,6 @@ function encodeMessageValue(message: { type: string; value: any }) {
         deposit: value.deposit || null,
         package: value.package ? createMemPackage(value.package) : undefined,
       });
-      console.log('msgAddPackage', msgAddPackage);
       return Any.create({
         typeUrl: MsgEndpoint.MSG_ADD_PKG,
         value: MsgAddPackage.encode(msgAddPackage).finish(),
