@@ -1,9 +1,10 @@
 import styled from 'styled-components';
 
-import AnimationLoadingAccount from '@assets/web/loading-account-idle.gif';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
 
-import { View, WebImg } from '@components/atoms';
+import { View } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -15,7 +16,11 @@ const ConnectRequestWallet = (): JSX.Element => {
   return (
     <StyledContainer>
       <View style={{ paddingBottom: 16 }}>
-        <WebImg src={AnimationLoadingAccount} height={120} />
+        <Lottie
+          speed={1}
+          height={120}
+          animationData={AnimationLoadingAccount}
+        />
       </View>
       <WebTitleWithDescription
         title='Loading Accounts'

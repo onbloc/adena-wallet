@@ -3,7 +3,6 @@ import styled, { useTheme } from 'styled-components';
 import IconGnoLand from '@assets/web/gnoland.svg';
 import IconGnoSwap from '@assets/web/gnoswap.svg';
 import IconGnoScan from '@assets/web/gnoscan.svg';
-// import AnimationAllSet from '@assets/web/all-set.gif';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
 
 import { View, WebButton, WebMain, WebText, WebImg, Row } from '@components/atoms';

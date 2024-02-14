@@ -1,9 +1,10 @@
 import styled from 'styled-components';
 
-import { WebMain, View, WebButton, WebImg } from '@components/atoms';
+import { WebMain, View, WebButton } from '@components/atoms';
 
-import addGif from '@assets/web/account-added.gif';
+import AnimationAddAccount from '@assets/web/lottie/account-added.json';
 import { WebTitleWithDescription } from '@components/molecules';
+import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;
@@ -19,7 +20,11 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
   return (
     <WebMain spacing={null} style={{ alignItems: 'center' }}>
       <View style={{ paddingBottom: 16, marginTop: -80 }}>
-        <WebImg src={addGif} size={200} />
+        <Lottie
+          speed={1}
+          height={200}
+          animationData={AnimationAddAccount}
+        />
       </View>
       <StyledContainer>
         <WebTitleWithDescription
