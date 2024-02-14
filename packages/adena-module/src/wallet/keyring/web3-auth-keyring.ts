@@ -2,7 +2,7 @@ import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang
 import { v4 as uuidv4 } from 'uuid';
 
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { decodeTxMessages } from './keyring-util';
+import { decodeTxMessages } from '@gnolang/gno-js-client';
 import { Document, documentToTx } from './../..';
 import { hexToArray } from './../../utils/data';
 

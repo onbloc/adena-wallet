@@ -6,11 +6,11 @@ import {
   Provider,
   TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
+import { decodeTxMessages } from '@gnolang/gno-js-client';
 import { v4 as uuidv4 } from 'uuid';
 import { Bip39, EnglishMnemonic } from '../../crypto';
 import { Document, documentToTx } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { decodeTxMessages } from './keyring-util';
 
 export class HDWalletKeyring implements Keyring {
   public readonly id: string;
