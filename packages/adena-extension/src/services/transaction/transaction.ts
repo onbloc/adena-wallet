@@ -15,7 +15,6 @@ import {
 } from 'adena-module';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { WalletError } from '@common/errors';
 import { WalletService } from '..';
 
 interface EncodeTxSignature {
@@ -80,11 +79,8 @@ export class TransactionService {
     const [accountSequence, accountNumber] = await Promise.all([
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),
-    ]).catch(() => [null, null]);
+    ]).catch(() => [0, 0]);
     const gasAmount = await this.getGasAmount(gasFee);
-    if (accountSequence === null || accountNumber === null) {
-      throw new WalletError('NOT_FOUND_ACCOUNT');
-    }
     return {
       msgs: [...messages],
       fee: {
