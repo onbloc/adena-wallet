@@ -1,8 +1,7 @@
 import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { decodeTxMessages } from '@gnolang/gno-js-client';
-import { Document, documentToTx } from './../..';
+import { Document, documentToTx, decodeTxMessages } from './../..';
 
 export class PrivateKeyKeyring implements Keyring {
   public readonly id: string;

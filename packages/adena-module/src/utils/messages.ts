@@ -22,6 +22,48 @@ export interface Document {
   memo: string;
 }
 
+export const decodeTxMessages = (messages: Any[]): any[] => {
+  return messages.map((m: Any) => {
+    switch (m.typeUrl) {
+      case MsgEndpoint.MSG_CALL: {
+        const decodedMessage = MsgCall.decode(m.value);
+        const messageJson = MsgCall.toJSON(decodedMessage) as any;
+        return {
+          '@type': m.typeUrl,
+          ...messageJson,
+          send: messageJson?.send || '',
+        };
+      }
+      case MsgEndpoint.MSG_SEND: {
+        const decodedMessage = MsgSend.decode(m.value);
+        const messageJson = MsgSend.toJSON(decodedMessage) as object;
+        return {
+          '@type': m.typeUrl,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_ADD_PKG: {
+        const decodedMessage = MsgAddPackage.decode(m.value);
+        const messageJson = MsgAddPackage.toJSON(decodedMessage) as object;
+        return {
+          '@type': m.typeUrl,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_RUN: {
+        const decodedMessage = MsgRun.decode(m.value);
+        const messageJson = MsgRun.toJSON(decodedMessage) as object;
+        return {
+          '@type': m.typeUrl,
+          ...messageJson,
+        };
+      }
+      default:
+        throw new Error(`unsupported message type ${m.typeUrl}`);
+    }
+  });
+};
+
 function createMemPackage(memPackage: RawMemPackage) {
   return MemPackage.create({
     name: memPackage.Name,
@@ -50,15 +92,28 @@ function encodeMessageValue(message: { type: string; value: any }) {
       });
     }
     case MsgEndpoint.MSG_CALL: {
+      const args: string[] = message.value.args
+        ? message.value.args.length === 0
+          ? null
+          : message.value.args
+        : null;
+      const result = MsgCall.create({
+        args: args,
+        caller: message.value.caller,
+        func: message.value.func,
+        pkg_path: message.value.pkg_path,
+        send: message.value.send || '',
+      });
+      console.log('d', MsgCall.decode(MsgCall.encode(result).finish()));
       return Any.create({
         typeUrl: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish(),
+        value: MsgCall.encode(result).finish(),
       });
     }
     case MsgEndpoint.MSG_SEND: {
       return Any.create({
         typeUrl: MsgEndpoint.MSG_SEND,
-        value: MsgSend.encode(MsgSend.fromJSON(message.value)).finish(),
+        value: MsgSend.encode(MsgSend.create(message.value)).finish(),
       });
     }
     case MsgEndpoint.MSG_RUN: {
