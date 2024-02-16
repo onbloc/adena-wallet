@@ -3,8 +3,7 @@ import { Provider, TransactionEndpoint, Wallet as Tm2Wallet } from '@gnolang/tm2
 import { Keyring, KeyringData, KeyringType } from './keyring';
 import { generateHDPath, Tx } from '@gnolang/tm2-js-client';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { decodeTxMessages } from '@gnolang/gno-js-client';
-import { Document, documentToTx } from './../..';
+import { Document, documentToTx, decodeTxMessages } from './../..';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
