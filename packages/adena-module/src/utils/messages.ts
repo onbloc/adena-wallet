@@ -104,7 +104,6 @@ function encodeMessageValue(message: { type: string; value: any }) {
         pkg_path: message.value.pkg_path,
         send: message.value.send || '',
       });
-      console.log('d', MsgCall.decode(MsgCall.encode(result).finish()));
       return Any.create({
         typeUrl: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(result).finish(),

@@ -65,7 +65,6 @@ export class HDWalletKeyring implements Keyring {
 
   private async signByWallet(wallet: Tm2Wallet, document: Document) {
     const tx = documentToTx(document);
-    console.log(decodeTxMessages(tx.messages));
     const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
       signed: signedTx,
