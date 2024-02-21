@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom';
 import { Text, DefaultInput, Button } from '@components/atoms';
 import { fonts } from '@styles/theme';
 import { RoutePath } from '@types';
-import { validateWrongPasswordLength } from '@common/validation';
+import { validatePasswordComplexity } from '@common/validation';
 import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
@@ -73,7 +73,7 @@ export const Login = (): JSX.Element => {
 
   const login = async (): Promise<void> => {
     try {
-      if (validateWrongPasswordLength(password)) {
+      if (validatePasswordComplexity(password)) {
         const result = await walletService.equalsPassword(password);
         if (!result) {
           setValidateState(false);

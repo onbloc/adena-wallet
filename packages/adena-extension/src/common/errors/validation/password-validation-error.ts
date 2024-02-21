@@ -26,6 +26,11 @@ const ERROR_VALUE = {
     type: 'NOT_MATCH_CONFIRM_PASSWORD',
     message: 'Passwords do not match',
   },
+  PASSWORD_TOO_SIMPLE: {
+    status: 1004,
+    type: 'PASSWORD_TOO_SIMPLE',
+    message: 'Password is too simple.',
+  },
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;

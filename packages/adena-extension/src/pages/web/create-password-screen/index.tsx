@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import styled from 'styled-components';
+import { useCallback, useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 import {
   WebInput,
@@ -8,18 +8,18 @@ import {
   Pressable,
   WebButton,
   Row,
-  WebImg,
   WebErrorText,
+  WebText,
 } from '@components/atoms';
 import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
 import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
+import { EvaluatePasswordResult } from '@common/utils/password-utils';
 import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-
-import IconConfirm from '@assets/web/confirm-check.svg';
+import IconConfirmCheck from '@assets/icon-confirm-check';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -89,7 +89,9 @@ const CreatePasswordScreen = (): JSX.Element => {
                 error={passwordState.error}
                 ref={passwordState.ref}
               />
-              {passwordState.confirm && <WebImg src={IconConfirm} size={20} />}
+              {passwordState.evaluationResult?.valid && (
+                <EvaluationPasswordResultDescription {...passwordState.evaluationResult} />
+              )}
             </StyledInputWrapper>
             {passwordState.errorMessage && <WebErrorText text={passwordState.errorMessage} />}
           </StyledInputBox>
@@ -133,6 +135,33 @@ const CreatePasswordScreen = (): JSX.Element => {
         />
       </StyledContainer>
     </WebMain>
+  );
+};
+
+const EvaluationPasswordResultDescription = ({
+  complexity,
+}: EvaluatePasswordResult): JSX.Element => {
+  const theme = useTheme();
+
+  const complexityColor = useMemo(() => {
+    if (complexity === 'STRONG') return theme.webSuccess._100;
+    if (complexity === 'MEDIUM') return theme.webWarning._100;
+    return theme.webError._100;
+  }, [complexity]);
+
+  const complexityText = useMemo(() => {
+    if (complexity === 'STRONG') return 'Strong';
+    if (complexity === 'MEDIUM') return 'Medium';
+    return 'Week';
+  }, [complexity]);
+
+  return (
+    <Row style={{ gap: 6 }}>
+      <IconConfirmCheck fill={complexityColor} />
+      <WebText type='body5' color={complexityColor}>
+        {complexityText}
+      </WebText>
+    </Row>
   );
 };
 

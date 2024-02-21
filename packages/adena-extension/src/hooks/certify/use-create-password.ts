@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
-  validateWrongPasswordLength,
+  validatePasswordComplexity,
 } from '@common/validation';
 import { AdenaWallet } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { CreateAccountState, GoogleState, LedgerState, SeedState, RoutePath } from '@types';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 
 export type UseCreatePasswordReturn = {
   pwdState: {
     value: string;
+    evaluationResult: EvaluatePasswordResult | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     error: boolean;
     ref: React.RefObject<HTMLInputElement>;
@@ -48,6 +50,13 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const { pwd, confirmPwd } = inputs;
   const [errorMessage, setErrorMessage] = useState('');
   const [activated, setActivated] = useState(false);
+
+  const passwordEvaluationResult = useMemo(() => {
+    if (pwd.length > 0) {
+      return evaluatePassword(pwd);
+    }
+    return null;
+  }, [pwd]);
 
   useEffect(() => {
     setIsPwdError(false);
@@ -121,7 +130,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     const password = pwd;
     try {
       validateEmptyPassword(password);
-      validateWrongPasswordLength(password);
+      validatePasswordComplexity(password);
       return true;
     } catch (error) {
       console.log(error);
@@ -207,6 +216,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   return {
     pwdState: {
       value: pwd,
+      evaluationResult: passwordEvaluationResult,
       onChange: onChange,
       error: isPwdError,
       ref: inputRef,

@@ -5833,6 +5833,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/zxcvbn@npm:^4.4.4":
+  version: 4.4.4
+  resolution: "@types/zxcvbn@npm:4.4.4"
+  checksum: e7efc6ca5e5aa5764981d853c53c4fe7b9b36a187bde29a2465cc1028e385073b7ae1fed126c41e86a6b0cd96f6326d0e8aa3a506bd0dca8fb98803a166f2c20
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:^5.40.0, @typescript-eslint/eslint-plugin@npm:^5.5.0":
   version: 5.55.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.55.0"
@@ -6945,6 +6952,7 @@ __metadata:
     "@types/react": ^18.0.35
     "@types/react-dom": ^18.0.11
     "@types/styled-components": ^5.1.25
+    "@types/zxcvbn": ^4.4.4
     "@typescript-eslint/eslint-plugin": ^5.40.0
     "@typescript-eslint/parser": ^5.40.0
     "@vespaiach/axios-fetch-adapter": ^0.3.0
@@ -6994,6 +7002,7 @@ __metadata:
     webpack-cli: ^4.10.0
     webpack-dev-server: ^4.10.0
     webpack-merge: ^5.8.0
+    zxcvbn: ^4.4.2
   languageName: unknown
   linkType: soft
 
@@ -20023,5 +20032,12 @@ __metadata:
   version: 0.1.0
   resolution: "yocto-queue@npm:0.1.0"
   checksum: f77b3d8d00310def622123df93d4ee654fc6a0096182af8bd60679ddcdfb3474c56c6c7190817c84a2785648cdee9d721c0154eb45698c62176c322fb46fc700
+  languageName: node
+  linkType: hard
+
+"zxcvbn@npm:^4.4.2":
+  version: 4.4.2
+  resolution: "zxcvbn@npm:4.4.2"
+  checksum: 76ab32c066082ac73491b7cd7f93ad0595c59b6d45ae80a0745e9e1661237388beb2f0c2ba0ae3dc330ca3ecdb87edcb7a21e0c09137ab81d5b32e584cda1e5d
   languageName: node
   linkType: hard

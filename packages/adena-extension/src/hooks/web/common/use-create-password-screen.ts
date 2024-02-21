@@ -6,18 +6,19 @@ import { PasswordValidationError } from '@common/errors';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
-  validateWrongPasswordLength,
+  validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
     value: string;
-    confirm: boolean;
+    evaluationResult: EvaluatePasswordResult | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     errorMessage: string;
     error: boolean;
@@ -25,7 +26,7 @@ export type UseCreatePasswordScreenReturn = {
   };
   confirmPasswordState: {
     value: string;
-    confirm: boolean;
+    evaluationResult: EvaluatePasswordResult | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     error: boolean;
   };
@@ -62,12 +63,19 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     return !terms || !password || !confirmPassword;
   }, [terms, password, confirmPassword]);
 
-  const confirmPasswordLength = (password: string): boolean => {
-    if (password.length < 8 || password.length > 256) {
-      return false;
+  const passwordEvaluationResult = useMemo(() => {
+    if (password.length > 0) {
+      return evaluatePassword(password);
     }
-    return true;
-  };
+    return null;
+  }, [password]);
+
+  const confirmPasswordEvaluationResult = useMemo(() => {
+    if (confirmPassword.length > 0) {
+      return evaluatePassword(confirmPassword);
+    }
+    return null;
+  }, [confirmPassword]);
 
   const _validateConfirmPassword = (validationPassword?: boolean): boolean => {
     try {
@@ -92,7 +100,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   const _validateInputPassword = (): boolean => {
     try {
       validateEmptyPassword(password);
-      validateWrongPasswordLength(password);
+      validatePasswordComplexity(password);
       return true;
     } catch (error) {
       console.log(error);
@@ -177,7 +185,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     indicatorInfo,
     passwordState: {
       value: password,
-      confirm: confirmPasswordLength(password),
+      evaluationResult: passwordEvaluationResult,
       onChange: onChangePassword,
       error: isPasswordError,
       errorMessage: passwordErrorMessage,
@@ -185,7 +193,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     },
     confirmPasswordState: {
       value: confirmPassword,
-      confirm: confirmPasswordLength(confirmPassword),
+      evaluationResult: confirmPasswordEvaluationResult,
       onChange: onChangePassword,
       error: isConfirmPasswordError,
     },

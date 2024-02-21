@@ -1,4 +1,13 @@
 import { PasswordValidationError } from '@common/errors';
+import { evaluatePassword } from '@common/utils/password-utils';
+
+export const validatePasswordComplexity = (password: string): boolean => {
+  const valid = evaluatePassword(password).valid;
+  if (!valid) {
+    throw new PasswordValidationError('PASSWORD_TOO_SIMPLE');
+  }
+  return true;
+};
 
 export const validateInvalidPassword = (password: string, storedPassword: string): boolean => {
   if (password !== storedPassword) {
