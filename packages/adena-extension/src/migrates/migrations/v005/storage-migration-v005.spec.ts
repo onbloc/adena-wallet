@@ -40,7 +40,7 @@ describe('serialized wallet migration V004', () => {
     expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(result.data.ACCOUNT_NAMES).toEqual({});
     expect(result.data.ESTABLISH_SITES).toEqual({});
-    expect(result.data.ADDRESS_BOOK).toEqual([]);
+    expect(result.data.ADDRESS_BOOK).toEqual('');
     expect(result.data.QUESTIONNAIRE_EXPIRED_DATE).toEqual(null);
   });
 
@@ -63,7 +63,7 @@ describe('serialized wallet migration V004', () => {
     expect(result.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(result.data.ACCOUNT_NAMES).toEqual({});
     expect(result.data.ESTABLISH_SITES).toEqual({});
-    expect(result.data.ADDRESS_BOOK).toEqual([]);
+    expect(result.data.ADDRESS_BOOK).toEqual('');
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);
