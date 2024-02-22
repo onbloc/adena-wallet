@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: 'main'
+    schedule:
+      interval: weekly
+    ignore:
+      # ignore all patch upgrades
+      - dependency-name: 'axios'
+      - dependency-name: 'lottie-web'
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    pull-request-branch-name:
+      separator: '-'
+    reviewers:
+      - 'jinoosss'
