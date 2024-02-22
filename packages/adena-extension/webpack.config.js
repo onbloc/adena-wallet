@@ -112,7 +112,7 @@ const config = {
         },
         {
           from: './public/icon/*',
-          to: './icons/[name].[ext]',
+          to: './icons/[name][ext]',
         },
         {
           from: './src/resources',
