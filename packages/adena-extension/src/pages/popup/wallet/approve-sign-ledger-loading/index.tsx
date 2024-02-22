@@ -80,7 +80,7 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
     );
   };
 
-  return <ApproveLedgerLoading onClickCancel={onClickCancel} />;
+  return <ApproveLedgerLoading document={document || null} onClickCancel={onClickCancel} />;
 };
 
 export default ApproveSignLedgerLoadingContainer;

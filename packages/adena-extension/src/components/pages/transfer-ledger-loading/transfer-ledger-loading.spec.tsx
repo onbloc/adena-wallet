@@ -9,6 +9,7 @@ import TransferLedgerLoading, { TransferLedgerLoadingProps } from './transfer-le
 describe('TransferLedgerLoading Component', () => {
   it('TransferLedgerLoading render', () => {
     const args: TransferLedgerLoadingProps = {
+      document: null,
       onClickCancel: () => {
         return;
       },
