@@ -3,7 +3,7 @@ import styled, { useTheme } from 'styled-components';
 
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
-import { TermsCheckbox, WebSeedBox } from '@components/molecules';
+import { WebSeedBox } from '@components/molecules';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
 import { AdenaStorage } from '@common/storage';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
@@ -23,11 +23,11 @@ const StyledMessageBox = styled(View)`
   row-gap: 12px;
 `;
 
-const StyledWarnBox = styled(Row) <{ center: boolean }>`
+const StyledWarnBox = styled(Row)<{ center: boolean }>`
   width: 100%;
   padding: 12px 8px;
   border-radius: 8px;
-  align-items: ${({ center }): string => center ? 'center' : 'flex-start'};
+  align-items: ${({ center }): string => (center ? 'center' : 'flex-start')};
   gap: 4px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
@@ -36,11 +36,7 @@ const StyledWarnBox = styled(Row) <{ center: boolean }>`
 const StyledInputBox = styled(View)`
   width: 100%;
   gap: 16px;
-`;
-
-const StyledTermsBox = styled(View)`
-  gap: 16px;
-  padding: 8px 0;
+  margin-bottom: 8px;
 `;
 
 interface WalletExportResultProps {
@@ -80,20 +76,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
-  const term01Text = useMemo(() => {
-    if (exportType === 'SEED_PHRASE') {
-      return 'Anyone with the phrase will have full control over my funds.';
-    }
-    return 'Anyone with the private key will have full control over my funds.';
-  }, [exportType]);
-
-  const term02Text = useMemo(() => {
-    if (exportType === 'SEED_PHRASE') {
-      return 'I will never share my seed phrase with anyone.';
-    }
-    return 'I will never share my private key with anyone.';
-  }, [exportType]);
-
   const onFinishHold = useCallback((finished: boolean) => {
     setBlur(!finished);
   }, []);
@@ -128,31 +110,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
           <WebCopyButton width={80} copyText={exportData || ''} />
         </Row>
       </StyledInputBox>
-
-      <StyledTermsBox>
-        <TermsCheckbox
-          id='term01'
-          checked={true}
-          onChange={(): void => {
-            return;
-          }}
-          text={term01Text}
-          tabIndex={1}
-          margin='0'
-          color={theme.webNeutral._500}
-        />
-        <TermsCheckbox
-          id='term02'
-          checked={true}
-          onChange={(): void => {
-            return;
-          }}
-          text={term02Text}
-          tabIndex={2}
-          margin='0'
-          color={theme.webNeutral._500}
-        />
-      </StyledTermsBox>
 
       <WebButton figure='primary' size='full' onClick={onClickDone} text='Done' />
     </StyledContainer>
