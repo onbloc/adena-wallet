@@ -50,7 +50,10 @@ export class InjectCore {
 
   public accountService = new WalletAccountService(this.accountRepository);
 
-  public addressBookService = new WalletAddressBookService(this.addressBookRepository);
+  public addressBookService = new WalletAddressBookService(
+    this.walletRepository,
+    this.addressBookRepository,
+  );
 
   public establishService = new WalletEstablishService(this.establishRepository);
 

@@ -85,12 +85,7 @@ export type EstablishSitesModelV005 = {
   }[];
 };
 
-export type AddressBookModelV005 = {
-  id: string;
-  name: string;
-  address: string;
-  createdAt: string;
-}[];
+export type AddressBookModelV005 = string;
 
 export type AccountTokenMetainfoModelV005 = {
   [key in string]: {
