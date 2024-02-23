@@ -22,13 +22,10 @@ export function evaluatePassword(password: string): EvaluatePasswordResult {
     if (score > 1) {
       return 'MEDIUM';
     }
-    if (score > 0) {
-      return 'WEEK';
-    }
     return 'DISABLED';
   }
 
-  const valid = score > 0;
+  const valid = score > 1;
   const complexity = getComplexityByScore(score);
 
   return {
