@@ -31,7 +31,7 @@ export const WebMain = styled.main<WebMainProps>`
   ${({ responsiveSpacing }): FlattenSimpleInterpolation =>
     responsiveSpacing
       ? css`
-          @media (max-width: 850px) {
+          @media (max-height: 850px) {
             height: calc(100vh - 80px);
             padding-top: ${`${responsiveSpacing - 80}px`};
             justify-content: flex-start;
