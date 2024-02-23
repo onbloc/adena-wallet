@@ -8,20 +8,18 @@ import GoogleLoginRequest from './request';
 import GoogleLoginRequestFail from './request-fail';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const GoogleLoginScreen: React.FC = () => {
-  const {
-    googleLoginState,
-    indicatorInfo,
-    backStep,
-    retry,
-    initGoogleLogin,
-    requestGoogleLogin,
-  } = useGoogleLoginScreen();
+  const { googleLoginState, indicatorInfo, backStep, retry, initGoogleLogin, requestGoogleLogin } =
+    useGoogleLoginScreen();
 
   const topSpacing = useMemo(() => {
     if (googleLoginState === 'INIT') {
-      return 272;
+      return {
+        default: WEB_TOP_SPACING,
+        responsive: WEB_TOP_SPACING_RESPONSIVE,
+      };
     }
     return null;
   }, [googleLoginState]);
@@ -31,7 +29,10 @@ const GoogleLoginScreen: React.FC = () => {
   }, [backStep]);
 
   return (
-    <WebMain spacing={topSpacing}>
+    <WebMain
+      spacing={topSpacing?.default || null}
+      responsiveSpacing={topSpacing?.responsive || null}
+    >
       {googleLoginState === 'INIT' && (
         <>
           <WebMainHeader

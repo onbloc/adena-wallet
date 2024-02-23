@@ -20,6 +20,7 @@ import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import IconConfirmCheck from '@assets/icon-confirm-check';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -43,6 +44,13 @@ const StyledInputWrapper = styled(Row)`
   gap: 12px;
 `;
 
+const StyledLink = styled(Pressable)`
+  text-decoration: underline;
+  &:hover {
+    color: #0059ff;
+  }
+`;
+
 const CreatePasswordScreen = (): JSX.Element => {
   const { openLink } = useLink();
   const {
@@ -62,7 +70,7 @@ const CreatePasswordScreen = (): JSX.Element => {
   }, [openLink]);
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         currentStep={indicatorInfo.stepLength - 1}
@@ -119,9 +127,10 @@ const CreatePasswordScreen = (): JSX.Element => {
           tabIndex={3}
           margin={'0'}
         >
-          <Pressable onClick={moveAdenaTermsPage} tabIndex={4}>
-            Terms of Use.
-          </Pressable>
+          <StyledLink onClick={moveAdenaTermsPage} tabIndex={4}>
+            Terms of Use
+          </StyledLink>
+          .
         </TermsCheckbox>
 
         <WebButton

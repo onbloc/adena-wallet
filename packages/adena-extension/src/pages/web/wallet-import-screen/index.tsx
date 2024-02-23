@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WebMain } from '@components/atoms';
@@ -8,10 +8,11 @@ import GetMnemonicStep from './set-mnemonic-step';
 import useWalletImportScreen from '@hooks/web/use-wallet-import-screen';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const WalletImportScreen = (): ReactElement => {
   const useWalletImportScreenReturn = useWalletImportScreen();
-  const { step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
+  const { extended, step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
 
   if (step === 'LOADING') {
     return (
@@ -21,8 +22,21 @@ const WalletImportScreen = (): ReactElement => {
     );
   }
 
+  const topSpacing = useMemo(() => {
+    if (extended) {
+      return null;
+    }
+    return {
+      default: WEB_TOP_SPACING,
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
+    };
+  }, [extended]);
+
   return (
-    <WebMain>
+    <WebMain
+      spacing={topSpacing?.default || null}
+      responsiveSpacing={topSpacing?.responsive || null}
+    >
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}

@@ -5,8 +5,9 @@ export const TransferLedgerLoadingWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
   min-height: 444px;
+  padding-bottom: 120px;
 
   @keyframes rotate {
     from {
@@ -32,8 +33,9 @@ export const TransferLedgerLoadingWrapper = styled.div`
     text-align: center;
   }
 
-  .cancel-button {
-    position: absolute;
-    bottom: 0;
+  .data-wrapper {
+    ${mixins.flex({ justify: 'flex-start' })};
+    width: 100%;
+    margin-top: 20px;
   }
 `;

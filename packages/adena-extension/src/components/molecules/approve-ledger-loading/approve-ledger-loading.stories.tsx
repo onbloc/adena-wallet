@@ -9,6 +9,22 @@ export default {
 
 export const Default: StoryObj<ApproveLedgerLoadingProps> = {
   args: {
+    document: {
+      msgs: [],
+      fee: {
+        amount: [
+          {
+            amount: '1',
+            denom: 'ugnot',
+          },
+        ],
+        gas: '5000000',
+      },
+      chain_id: 'dev',
+      memo: '',
+      account_number: '0',
+      sequence: '1',
+    },
     onClickCancel: action('cancel'),
   },
 };

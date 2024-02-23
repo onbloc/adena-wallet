@@ -12,6 +12,7 @@ import ConnectInit from './connect-init';
 import ConnectRequest from './connect-request';
 import ConnectFail from './connect-fail';
 import ConnectRequestWalletLoad from './connect-request-wallet-load';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const ConnectLedgerScreen = (): ReactElement => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
@@ -23,11 +24,17 @@ const ConnectLedgerScreen = (): ReactElement => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'NOT_PERMISSION') {
       return null;
     }
-    return 272;
+    return {
+      default: WEB_TOP_SPACING,
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
+    };
   }, [connectState]);
 
   return (
-    <WebMain spacing={topSpacing}>
+    <WebMain
+      spacing={topSpacing?.default || null}
+      responsiveSpacing={topSpacing?.responsive || null}
+    >
       {topSpacing !== null && (
         <WebMainHeader
           stepLength={indicatorInfo.stepLength}

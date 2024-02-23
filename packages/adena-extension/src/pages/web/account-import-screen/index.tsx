@@ -12,11 +12,11 @@ import { RoutePath } from '@types';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
-  const { step, onClickGoBack, indicatorInfo, onClickNext } =
-    useAccountImportScreenReturn;
+  const { step, onClickGoBack, indicatorInfo, onClickNext } = useAccountImportScreenReturn;
 
   if (step === 'LOADING') {
     return (
@@ -27,7 +27,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
   }
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}
@@ -56,7 +56,7 @@ const AccountImportScreen = (): ReactElement => {
   return wallet ? (
     <HasWallet wallet={wallet} />
   ) : (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {
@@ -64,7 +64,7 @@ const AccountImportScreen = (): ReactElement => {
         }}
       />
     </WebMain>
-  )
+  );
 };
 
 export default AccountImportScreen;
