@@ -5,6 +5,7 @@ import useAppNavigate from './use-app-navigate';
 import useLink from './use-link';
 import { useLoadAccounts } from './use-load-accounts';
 import { useMatch } from 'react-router-dom';
+import { useAddressBook } from './use-address-book';
 
 export const useInitWallet = (): void => {
   const { navigate } = useAppNavigate();
@@ -12,6 +13,7 @@ export const useInitWallet = (): void => {
   const isApproveLoginPage = useMatch('/approve/*');
 
   const { state } = useLoadAccounts();
+  const { initAddressBook } = useAddressBook();
 
   useEffect(() => {
     switch (state) {
@@ -28,6 +30,7 @@ export const useInitWallet = (): void => {
         }
         break;
       default:
+        initAddressBook();
         if (!isApproveLoginPage) {
           navigate(RoutePath.Wallet);
         }

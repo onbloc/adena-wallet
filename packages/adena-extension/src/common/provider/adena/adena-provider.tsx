@@ -65,7 +65,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const accountService = new WalletAccountService(accountRepository);
 
-  const addressBookService = new WalletAddressBookService(addressBookRepository);
+  const addressBookService = new WalletAddressBookService(walletRepository, addressBookRepository);
 
   const establishService = new WalletEstablishService(establishRepository);
 

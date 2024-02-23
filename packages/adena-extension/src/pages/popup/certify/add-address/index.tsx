@@ -13,12 +13,12 @@ import {
   validateInvalidAddress,
 } from '@services/index';
 import { AddressBookValidationError } from '@common/errors/validation/address-book-validation-error';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
 import { AddressBookItem } from '@repositories/wallet';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import { useAddressBook } from '@hooks/use-address-book';
 
 const specialPatternCheck = /\W|\s/g;
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
@@ -26,8 +26,6 @@ const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 const AddAddress = (): JSX.Element => {
   const theme = useTheme();
   const { wallet } = useWalletContext();
-  const { addressBookService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
   const { params, goBack } = useAppNavigate<RoutePath.AddAddress>();
   const isAdd = params.status === 'add';
 
@@ -38,6 +36,7 @@ const AddAddress = (): JSX.Element => {
   const [addressError, setAddressError] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const { addAddressBookItem, editAddressBookItem, removeAddressBookItem } = useAddressBook();
 
   const onChangeAddress = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const patternCheck = e.target.value.replace(specialPatternCheck, '');
@@ -115,22 +114,20 @@ const AddAddress = (): JSX.Element => {
     }
   };
 
-  const addHandler = async (): Promise<void> =>
-    await addressBookService.addAddressBookItem({ name, address }).then(goBack);
+  const addHandler = async (): Promise<void> => {
+    addAddressBookItem(name, address);
+    goBack();
+  };
 
-  const editHandler = async (): Promise<void> =>
-    await addressBookService
-      .updateAddressBookItemById({
-        id: params.curr?.id || '',
-        name,
-        address,
-      })
-      .then(goBack);
+  const editHandler = async (): Promise<void> => {
+    editAddressBookItem(params.curr?.id || '', name, address);
+    goBack();
+  };
 
-  const removeHandler = async (): Promise<void> =>
-    await addressBookService
-      .removeAddressBookItemByAccountId(currentAccount?.id ?? '', params.curr?.id || '')
-      .then(goBack);
+  const removeHandler = async (): Promise<void> => {
+    removeAddressBookItem(params.curr?.id || '');
+    goBack();
+  };
 
   useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
 

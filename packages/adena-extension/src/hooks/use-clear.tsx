@@ -23,6 +23,7 @@ export const useClear = (): UseClearReturn => {
   const clearFailedNetwork = useResetRecoilState(CommonState.failedNetwork);
   const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
   const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
+  const clearAddressBook = useResetRecoilState(WalletState.addressBook);
 
   const clear = async (): Promise<boolean> => {
     setWalletState('CREATE');
@@ -33,6 +34,7 @@ export const useClear = (): UseClearReturn => {
     clearAccountTokenBalances();
     clearCurrentNetwork();
     clearFailedNetwork();
+    clearAddressBook();
     await walletService.clear();
     await accountService.clear();
     await addressBookService.clear();

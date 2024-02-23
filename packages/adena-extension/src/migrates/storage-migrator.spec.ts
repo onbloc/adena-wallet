@@ -79,7 +79,7 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.CURRENT_ACCOUNT_ID).toBe('');
     expect(migrated?.data.ACCOUNT_NAMES).toEqual({});
     expect(migrated?.data.ESTABLISH_SITES).toEqual({});
-    expect(migrated?.data.ADDRESS_BOOK).toHaveLength(1);
+    expect(migrated?.data.ADDRESS_BOOK).toBe('');
   });
 
   it('migrate with password success', async () => {
@@ -92,6 +92,6 @@ describe('StorageMigrator', () => {
     expect(migrated?.version).toBe(5);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
-    expect(migrated?.data.ADDRESS_BOOK).toHaveLength(1);
+    expect(migrated?.data.ADDRESS_BOOK).toBe('');
   });
 });

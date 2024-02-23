@@ -1,6 +1,7 @@
 import { StorageManager } from '@common/storage/storage-manager';
+import { decryptAES, encryptAES } from 'adena-module';
 
-type LocalValueType = 'ADDRESS_BOOK';
+type LocalValueType = 'ADDRESS_BOOK' | 'ENCRYPTED_STORED_PASSWORD';
 
 export interface AddressBookItem {
   id: string;
@@ -16,16 +17,28 @@ export class WalletAddressRepository {
     this.localStorage = localStorage;
   }
 
-  public getAddressBook = async (): Promise<AddressBookItem[]> => {
-    const addressBook = await this.localStorage.getToObject('ADDRESS_BOOK');
-    if (!Array.isArray(addressBook)) {
+  public getAddressBook = async (password: string): Promise<AddressBookItem[]> => {
+    const encryptedAddressBook = await this.localStorage.get('ADDRESS_BOOK');
+    if (!encryptedAddressBook) {
       return [];
     }
-    return addressBook as AddressBookItem[];
+    const addressBookRaw = await decryptAES(encryptedAddressBook, password);
+
+    try {
+      return JSON.parse(addressBookRaw) as AddressBookItem[];
+    } catch {
+      return [];
+    }
   };
 
-  public updateAddressBook = async (addressBook: AddressBookItem[]): Promise<void> => {
-    await this.localStorage.setByObject('ADDRESS_BOOK', addressBook);
+  public updateAddressBook = async (
+    addressBook: AddressBookItem[],
+    password: string,
+  ): Promise<void> => {
+    const addressBookRaw = JSON.stringify(addressBook);
+    const encryptedAddressBook = await encryptAES(addressBookRaw, password);
+
+    await this.localStorage.set('ADDRESS_BOOK', encryptedAddressBook);
   };
 
   public deleteAddress = async (): Promise<void> => {

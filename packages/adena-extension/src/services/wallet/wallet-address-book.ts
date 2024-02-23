@@ -1,15 +1,22 @@
-import { AddressBookItem, WalletAddressRepository } from '@repositories/wallet';
+import { AddressBookItem, WalletAddressRepository, WalletRepository } from '@repositories/wallet';
 import { v4 as uuidv4 } from 'uuid';
 
 export class WalletAddressBookService {
+  private walletRepository: WalletRepository;
+
   private walletAddressRepository: WalletAddressRepository;
 
-  constructor(walletAddressRepository: WalletAddressRepository) {
+  constructor(
+    walletRepository: WalletRepository,
+    walletAddressRepository: WalletAddressRepository,
+  ) {
+    this.walletRepository = walletRepository;
     this.walletAddressRepository = walletAddressRepository;
   }
 
   public getAddressBook = async (): Promise<AddressBookItem[]> => {
-    const addressBook = await this.walletAddressRepository.getAddressBook();
+    const password = await this.walletRepository.getWalletPassword();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password);
     return addressBook;
   };
 
@@ -17,16 +24,20 @@ export class WalletAddressBookService {
     name: string;
     address: string;
   }): Promise<void> => {
-    const addressBook = await this.walletAddressRepository.getAddressBook();
-    await this.walletAddressRepository.updateAddressBook([
-      ...addressBook,
-      {
-        id: uuidv4(),
-        name: addressBookItem.name,
-        address: addressBookItem.address,
-        createdAt: `${new Date().getTime()}`,
-      },
-    ]);
+    const password = await this.walletRepository.getWalletPassword();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password);
+    await this.walletAddressRepository.updateAddressBook(
+      [
+        ...addressBook,
+        {
+          id: uuidv4(),
+          name: addressBookItem.name,
+          address: addressBookItem.address,
+          createdAt: `${new Date().getTime()}`,
+        },
+      ],
+      password,
+    );
   };
 
   public updateAddressBookItemById = async (addressBookItem: {
@@ -34,7 +45,8 @@ export class WalletAddressBookService {
     name: string;
     address: string;
   }): Promise<void> => {
-    const addressBook = await this.walletAddressRepository.getAddressBook();
+    const password = await this.walletRepository.getWalletPassword();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password);
     const changedAddressBook = addressBook.map((item) => {
       if (item.id === addressBookItem.id) {
         return {
@@ -45,19 +57,20 @@ export class WalletAddressBookService {
       }
       return item;
     });
-    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password);
   };
 
   public removeAddressBookItemByAccountId = async (
     accountId: string,
     addressBookId: string,
   ): Promise<void> => {
-    const addressBook = await this.walletAddressRepository.getAddressBook();
+    const password = await this.walletRepository.getWalletPassword();
+    const addressBook = await this.walletAddressRepository.getAddressBook(password);
 
     const changedAddressBook = addressBook.filter(
       (item: AddressBookItem) => item.id !== addressBookId,
     );
-    await this.walletAddressRepository.updateAddressBook(changedAddressBook);
+    await this.walletAddressRepository.updateAddressBook(changedAddressBook, password);
   };
 
   public clear = async (): Promise<boolean> => {

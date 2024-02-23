@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Text, ListBox } from '@components/atoms';
@@ -6,35 +6,30 @@ import { CloseShadowButton } from '@components/molecules';
 import plus from '@assets/plus.svg';
 import { RoutePath } from '@types';
 import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { AddressBookItem } from '@repositories/wallet';
+import { useAddressBook } from '@hooks/use-address-book';
+import LoadingAddressBook from './loading-address-book';
 
 type navigateStatus = 'add' | 'edit';
 
 const AddressBook = (): JSX.Element => {
   const theme = useTheme();
-  const { addressBookService } = useAdenaContext();
   const { navigate, goBack } = useAppNavigate();
-  const [addressList, setAddressList] = useState<AddressBookItem[]>([]);
-  const { currentAccount } = useCurrentAccount();
+  const { loading, addressBook } = useAddressBook();
   const addAddressHandler = (status: navigateStatus, curr?: AddressBookItem): void =>
     navigate<RoutePath.AddAddress>(RoutePath.AddAddress, {
       state: {
         status,
-        addressList,
+        addressList: addressBook,
         curr,
       },
     });
 
-  useEffect(() => {
-    (async (): Promise<void> => {
-      const _addressList = await addressBookService.getAddressBook();
-      setAddressList(_addressList);
-    })();
-  }, [currentAccount]);
+  if (loading) {
+    return <LoadingAddressBook />;
+  }
 
   return (
     <Wrapper>
@@ -43,21 +38,21 @@ const AddressBook = (): JSX.Element => {
         <AddButton onClick={(): void => addAddressHandler('add')} />
       </TopSection>
       <>
-        {addressList.length > 0 ? (
-          addressList.map((v: any, i: number) => (
+        {addressBook.length > 0 ? (
+          addressBook.map((item, i) => (
             <ListBox
-              left={<Text type='body2Bold'>{formatNickname(v.name, 15)}</Text>}
+              left={<Text type='body2Bold'>{formatNickname(item.name, 15)}</Text>}
               center={null}
               right={
                 <Text type='body2Reg' color={theme.neutral.a} margin='0px 0px 0px auto'>
-                  {formatAddress(v.address)}
+                  {formatAddress(item.address)}
                 </Text>
               }
               cursor='pointer'
               hoverAction={true}
               key={i}
               padding={'0 17px'}
-              onClick={(): void => addAddressHandler('edit', v)}
+              onClick={(): void => addAddressHandler('edit', item)}
             />
           ))
         ) : (

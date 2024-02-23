@@ -3,6 +3,7 @@ import { Account, Wallet } from 'adena-module';
 
 import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
 import { StateType } from '@types';
+import { AddressBookItem } from '@repositories/wallet';
 
 interface TransactionHistoryState {
   address: string | null;
@@ -39,6 +40,19 @@ export const transactionHistory = atom<TransactionHistoryState>({
     address: null,
     currentPage: -1,
     isFinish: false,
+    items: [],
+  },
+});
+
+export const addressBook = atom<{
+  init: boolean;
+  loading: boolean;
+  items: AddressBookItem[];
+}>({
+  key: 'wallet/addressBook',
+  default: {
+    init: false,
+    loading: false,
     items: [],
   },
 });
