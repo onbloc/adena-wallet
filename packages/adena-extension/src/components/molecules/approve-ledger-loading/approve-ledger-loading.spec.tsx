@@ -9,6 +9,7 @@ import { ApproveLedgerLoading, ApproveLedgerLoadingProps } from '.';
 describe('ApproveLedgerLoading Component', () => {
   it('ApproveLedgerLoading render', () => {
     const args: ApproveLedgerLoadingProps = {
+      document: null,
       onClickCancel: () => {
         return;
       },

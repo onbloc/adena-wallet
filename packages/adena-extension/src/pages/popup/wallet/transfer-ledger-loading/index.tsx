@@ -84,7 +84,7 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
 
   return (
     <TransferLedgerLoadingLayout>
-      <TransferLedgerLoading onClickCancel={goBack} />
+      <TransferLedgerLoading document={document} onClickCancel={goBack} />
     </TransferLedgerLoadingLayout>
   );
 };

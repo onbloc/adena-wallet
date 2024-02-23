@@ -43,6 +43,13 @@ const StyledInputWrapper = styled(Row)`
   gap: 12px;
 `;
 
+const StyledLink = styled(Pressable)`
+  text-decoration: underline;
+  &:hover {
+    color: #0059ff;
+  }
+`;
+
 const CreatePasswordScreen = (): JSX.Element => {
   const { openLink } = useLink();
   const {
@@ -117,9 +124,10 @@ const CreatePasswordScreen = (): JSX.Element => {
           tabIndex={3}
           margin={'0'}
         >
-          <Pressable onClick={moveAdenaTermsPage} tabIndex={4}>
-            Terms of Use.
-          </Pressable>
+          <StyledLink onClick={moveAdenaTermsPage} tabIndex={4}>
+            Terms of Use
+          </StyledLink>
+          .
         </TermsCheckbox>
 
         <WebButton

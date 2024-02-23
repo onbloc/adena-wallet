@@ -51,7 +51,8 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
     }
     const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
 
-    const result = await transactionService.createTransactionWithLedger(ledgerConnector, currentAccount, document)
+    const result = await transactionService
+      .createTransactionWithLedger(ledgerConnector, currentAccount, document)
       .then(async ({ signed }) => {
         const encodedTransaction = transactionService.encodeTransaction(signed);
         chrome.runtime.sendMessage(
@@ -84,7 +85,7 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
     );
   };
 
-  return <ApproveLedgerLoading onClickCancel={onClickCancel} />;
+  return <ApproveLedgerLoading document={document || null} onClickCancel={onClickCancel} />;
 };
 
 export default ApproveSignTransactionLedgerLoadingContainer;

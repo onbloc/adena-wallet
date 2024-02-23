@@ -4,8 +4,8 @@ import mixins from '@styles/mixins';
 
 export const ApproveLedgerLoadingWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
-  height: calc(100vh - 48px);
-  padding: 50px 20px 24px;
+  height: auto;
+  padding: 50px 20px 120px;
   align-self: center;
 
   .icon {
@@ -14,5 +14,11 @@ export const ApproveLedgerLoadingWrapper = styled.div`
 
   div {
     text-align: center;
+  }
+
+  .data-wrapper {
+    ${mixins.flex({ justify: 'flex-start' })};
+    width: 100%;
+    margin-top: 20px;
   }
 `;
