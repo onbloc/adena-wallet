@@ -1,4 +1,4 @@
-import { ReactElement, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WebMain } from '@components/atoms';
@@ -10,17 +10,9 @@ import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
-const WalletImportScreen = (): ReactElement => {
+const WalletImportScreen: React.FC = () => {
   const useWalletImportScreenReturn = useWalletImportScreen();
   const { extended, step, onClickGoBack, indicatorInfo, onClickNext } = useWalletImportScreenReturn;
-
-  if (step === 'LOADING') {
-    return (
-      <WebMain spacing={null}>
-        <WebLoadingAccounts />
-      </WebMain>
-    );
-  }
 
   const topSpacing = useMemo(() => {
     if (extended) {
@@ -31,6 +23,14 @@ const WalletImportScreen = (): ReactElement => {
       responsive: WEB_TOP_SPACING_RESPONSIVE,
     };
   }, [extended]);
+
+  if (step === 'LOADING') {
+    return (
+      <WebMain spacing={null}>
+        <WebLoadingAccounts />
+      </WebMain>
+    );
+  }
 
   return (
     <WebMain
