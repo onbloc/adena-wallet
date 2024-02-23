@@ -7,6 +7,7 @@ import useAccountAddScreen from '@hooks/web/use-account-add-screen';
 import GetMnemonicStep from './create-account-step';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const AccountAddScreen = (): ReactElement => {
   const useAccountAddScreenReturn = useAccountAddScreen();
@@ -14,13 +15,19 @@ const AccountAddScreen = (): ReactElement => {
 
   const topSpacing = useMemo(() => {
     if (step === 'INIT') {
-      return 272;
+      return {
+        default: WEB_TOP_SPACING,
+        responsive: WEB_TOP_SPACING_RESPONSIVE,
+      };
     }
     return null;
   }, [step]);
 
   return (
-    <WebMain spacing={topSpacing}>
+    <WebMain
+      spacing={topSpacing?.default || null}
+      responsiveSpacing={topSpacing?.responsive || null}
+    >
       {step === 'INIT' && (
         <>
           <WebMainHeader stepLength={0} onClickGoBack={onClickGoBack} />

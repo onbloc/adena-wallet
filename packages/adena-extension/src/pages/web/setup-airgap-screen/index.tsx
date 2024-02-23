@@ -12,6 +12,7 @@ import SetupAirgapEnterAddress from './enter-address';
 import SetupAirgapInit from './init';
 import SetupAirgapCompleteScreen from './complete';
 import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
@@ -31,7 +32,10 @@ const SetupAirgapScreen: React.FC = () => {
     if (setupAirgapState === 'LOADING') {
       return null;
     }
-    return 272;
+    return {
+      default: WEB_TOP_SPACING,
+      responsive: WEB_TOP_SPACING_RESPONSIVE,
+    };
   }, [setupAirgapState]);
 
   const onClickBack = useCallback(() => {
@@ -45,7 +49,10 @@ const SetupAirgapScreen: React.FC = () => {
   }, [setupAirgapState]);
 
   return (
-    <WebMain spacing={topSpacing}>
+    <WebMain
+      spacing={topSpacing?.default || null}
+      responsiveSpacing={topSpacing?.responsive || null}
+    >
       {setupAirgapState !== 'LOADING' && (
         <WebMainHeader
           stepLength={indicatorInfo.stepLength}
