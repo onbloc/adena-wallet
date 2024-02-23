@@ -91,6 +91,7 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 24px;
+  padding-bottom: 72px;
   overflow-y: auto;
   & .explore-title {
     margin-bottom: 12px;
