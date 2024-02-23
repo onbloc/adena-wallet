@@ -7304,6 +7304,7 @@ __metadata:
     webpack-cli: ^5.1.4
     webpack-dev-server: ^5.0.2
     webpack-merge: ^5.10.0
+    zxcvbn: ^4.4.2
   languageName: unknown
   linkType: soft
 
@@ -20543,5 +20544,12 @@ __metadata:
   version: 1.0.0
   resolution: "yocto-queue@npm:1.0.0"
   checksum: 2cac84540f65c64ccc1683c267edce396b26b1e931aa429660aefac8fbe0188167b7aee815a3c22fa59a28a58d898d1a2b1825048f834d8d629f4c2a5d443801
+  languageName: node
+  linkType: hard
+
+"zxcvbn@npm:^4.4.2":
+  version: 4.4.2
+  resolution: "zxcvbn@npm:4.4.2"
+  checksum: 76ab32c066082ac73491b7cd7f93ad0595c59b6d45ae80a0745e9e1661237388beb2f0c2ba0ae3dc330ca3ecdb87edcb7a21e0c09137ab81d5b32e584cda1e5d
   languageName: node
   linkType: hard

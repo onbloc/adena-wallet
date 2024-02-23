@@ -8,6 +8,7 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import useLink from '@hooks/use-link';
+import { PasswordInput } from '@components/atoms/password-input';
 
 const text = {
   title: 'Create\na Password',
@@ -37,16 +38,16 @@ const Wrapper = styled.main<{ isPopup: boolean }>`
 const StyledContentWrapper = styled(View)`
   width: 100%;
   height: 100%;
-`
+`;
 
 const StyledBottomWrapper = styled(View)`
   width: 100%;
-`
+`;
 
 const FormBox = styled.div`
   margin-top: 20px;
-  input + input {
-    margin-top: 12px;
+  & > * {
+    margin-bottom: 12px;
   }
 `;
 
@@ -62,10 +63,11 @@ export const CreatePassword = (): JSX.Element => {
       <StyledContentWrapper>
         <TitleWithDesc title={text.title} desc={text.desc} />
         <FormBox>
-          <DefaultInput
+          <PasswordInput
             type='password'
             name='pwd'
             placeholder='Password'
+            evaluationResult={pwdState.evaluationResult}
             onChange={pwdState.onChange}
             onKeyDown={onKeyDown}
             error={pwdState.error}
@@ -94,7 +96,12 @@ export const CreatePassword = (): JSX.Element => {
             Terms of Use.
           </button>
         </TermsCheckbox>
-        <Button fullWidth disabled={buttonState.disabled} onClick={buttonState.onClick} tabIndex={5}>
+        <Button
+          fullWidth
+          disabled={buttonState.disabled}
+          onClick={buttonState.onClick}
+          tabIndex={5}
+        >
           <Text type='body1Bold'>Save</Text>
         </Button>
       </StyledBottomWrapper>

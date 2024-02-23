@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PasswordValidationError } from '@common/errors';
 import { useAdenaContext } from '@hooks/use-context';
 import {
   validateEqualsChangePassword,
   validateInvalidPassword,
   validateNotMatchConfirmPassword,
-  validateWrongPasswordLength,
+  validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
@@ -18,6 +19,7 @@ export type UseChangePasswordReturn = {
   };
   newPwdState: {
     value: string;
+    evaluationResult: EvaluatePasswordResult | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     error: boolean;
   };
@@ -53,6 +55,13 @@ export const useChangePassword = (): UseChangePasswordReturn => {
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
   const [savedPassword, setSavedPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const newPasswordEvaluationResult = useMemo(() => {
+    if (newPwd.length > 0) {
+      return evaluatePassword(newPwd);
+    }
+    return null;
+  }, [newPwd]);
 
   useEffect(() => {
     initSavedPassword();
@@ -110,7 +119,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
       }
     }
     try {
-      validateWrongPasswordLength(newPassword);
+      validatePasswordComplexity(newPassword);
       validateEqualsChangePassword(newPassword, currentPassword);
     } catch (error) {
       isValid = false;
@@ -161,6 +170,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     },
     newPwdState: {
       value: newPwd,
+      evaluationResult: newPasswordEvaluationResult,
       onChange: onChange,
       error: isNewPwdError,
     },

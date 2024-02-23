@@ -6,6 +6,7 @@ import { CancelAndConfirmButton } from '@components/molecules';
 
 import { useChangePassword } from '@hooks/certify/use-change-password';
 import mixins from '@styles/mixins';
+import { PasswordInput } from '@components/atoms/password-input';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -15,10 +16,12 @@ const Wrapper = styled.main`
 `;
 
 const FormBox = styled.div`
+  width: 100%;
   margin-top: 12px;
   margin-bottom: auto;
-  input + input {
-    margin-top: 12px;
+
+  & > * {
+    margin-bottom: 12px;
   }
 `;
 
@@ -39,13 +42,14 @@ export const ChangePassword = (): JSX.Element => {
           error={currPwdState.error}
           ref={currPwdState.ref}
         />
-        <DefaultInput
+        <PasswordInput
           type='password'
           name='newPwd'
           placeholder='New Password'
           onChange={newPwdState.onChange}
           onKeyDown={onKeyDown}
           error={newPwdState.error}
+          evaluationResult={newPwdState.evaluationResult}
         />
         <DefaultInput
           type='password'
