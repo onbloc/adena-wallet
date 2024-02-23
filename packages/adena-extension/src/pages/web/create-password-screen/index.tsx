@@ -20,6 +20,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
 import IconConfirm from '@assets/web/confirm-check.svg';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -62,7 +63,7 @@ const CreatePasswordScreen = (): JSX.Element => {
   }, [openLink]);
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         currentStep={indicatorInfo.stepLength - 1}

@@ -15,6 +15,7 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import useLink from '@hooks/use-link';
 import { HARDWARE_WALLET_LEARN_PAGE } from '@common/constants/resource.constant';
 import styled, { useTheme } from 'styled-components';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const StyledLinkWrapper = styled(Row)`
   gap: 6px;
@@ -35,7 +36,7 @@ const SelectHardWalletScreen = (): ReactElement => {
   }, [openLink]);
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {

@@ -7,14 +7,14 @@ import GetMnemonicStep from './get-mnemonic-step';
 import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const WalletCreateScreen = (): ReactElement => {
   const useWalletCreateScreenReturn = useWalletCreateScreen();
-  const { step, indicatorInfo, onClickGoBack, onClickNext } =
-    useWalletCreateScreenReturn;
+  const { step, indicatorInfo, onClickGoBack, onClickNext } = useWalletCreateScreenReturn;
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}

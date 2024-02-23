@@ -14,6 +14,7 @@ import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
 import IconGoogle from '@assets/web/icon-google';
 import { getTheme } from '@styles/theme';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 4px;
@@ -49,7 +50,7 @@ const AdvancedOptionScreen = (): ReactElement => {
   }, []);
 
   return (
-    <WebMain spacing={272}>
+    <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {
