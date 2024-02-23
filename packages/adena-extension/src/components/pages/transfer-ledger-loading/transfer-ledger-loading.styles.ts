@@ -7,7 +7,6 @@ export const TransferLedgerLoadingWrapper = styled.div`
   width: 100%;
   height: auto;
   min-height: 444px;
-  padding-bottom: 120px;
 
   @keyframes rotate {
     from {
