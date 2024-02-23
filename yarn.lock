@@ -5368,6 +5368,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@toruslabs/openlogin-jrpc@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "@toruslabs/openlogin-jrpc@npm:7.0.0"
+  dependencies:
+    "@metamask/rpc-errors": ^6.1.0
+    end-of-stream: ^1.4.4
+    events: ^3.3.0
+    fast-safe-stringify: ^2.1.1
+    once: ^1.4.0
+    pump: ^3.0.0
+    readable-stream: ^4.5.2
+  peerDependencies:
+    "@babel/runtime": 7.x
+  checksum: 4efa358176065375c22711940aee17120d4d2475bbbd7a9e2e4b24a49fb4d1903ed751966f12d956c7c4fee15a3bfb59ce4f682c1bf802fe7fcb309116e40e04
+  languageName: node
+  linkType: hard
+
 "@toruslabs/openlogin-session-manager@npm:^3.0.0":
   version: 3.0.0
   resolution: "@toruslabs/openlogin-session-manager@npm:3.0.0"
@@ -5393,6 +5410,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@toruslabs/openlogin-utils@npm:^7.0.4":
+  version: 7.0.4
+  resolution: "@toruslabs/openlogin-utils@npm:7.0.4"
+  dependencies:
+    "@toruslabs/constants": ^13.1.0
+    base64url: ^3.0.1
+    color: ^4.2.3
+  peerDependencies:
+    "@babel/runtime": 7.x
+  checksum: 88aada5274323cc352d88f8130e815a165a8c43985a4b24b304b395ec9276cfec2096f02f87557226c38e82915aa1d8bd82f2e555591583033df06c9fce3c151
+  languageName: node
+  linkType: hard
+
 "@toruslabs/openlogin@npm:^6.2.11":
   version: 6.2.11
   resolution: "@toruslabs/openlogin@npm:6.2.11"
@@ -5409,6 +5439,26 @@ __metadata:
   peerDependencies:
     "@babel/runtime": 7.x
   checksum: 7c3a4d82669cabf3d63a309fea70ccd224bdf675411e4b72d1e66e355d01d3e87ebf5f8df9b12cbcc55c06beb52a3b1cc262927737587822705a424f951b1364
+  languageName: node
+  linkType: hard
+
+"@toruslabs/openlogin@npm:^7.0.4":
+  version: 7.0.4
+  resolution: "@toruslabs/openlogin@npm:7.0.4"
+  dependencies:
+    "@toruslabs/constants": ^13.1.0
+    "@toruslabs/eccrypto": ^4.0.0
+    "@toruslabs/metadata-helpers": ^5.0.0
+    "@toruslabs/openlogin-session-manager": ^3.0.0
+    "@toruslabs/openlogin-utils": ^7.0.4
+    "@toruslabs/secure-pub-sub": ^0.0.1
+    bowser: ^2.11.0
+    events: ^3.3.0
+    loglevel: ^1.9.1
+    ts-custom-error: ^3.3.1
+  peerDependencies:
+    "@babel/runtime": 7.x
+  checksum: b900938f938c69be5a4d7d41947bf323ade2976f56474263543126306f9ca7972d0234966c5985329342ada04d1acc746fa4d1c22f3402728f7b2df99bca1e06
   languageName: node
   linkType: hard
 
@@ -6737,7 +6787,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@web3auth/base@npm:7.3.2, @web3auth/base@npm:^7.3.2":
+"@web3auth/base@npm:8.0.0":
+  version: 8.0.0
+  resolution: "@web3auth/base@npm:8.0.0"
+  dependencies:
+    "@toruslabs/http-helpers": ^6.0.0
+    "@toruslabs/openlogin": ^7.0.4
+    "@toruslabs/openlogin-jrpc": ^7.0.0
+    "@toruslabs/openlogin-utils": ^7.0.4
+    jwt-decode: ^4.0.0
+    loglevel: ^1.9.1
+    ts-custom-error: ^3.3.1
+  peerDependencies:
+    "@babel/runtime": ^7.x
+  checksum: bf9ff4de7d3f620bf311f315a756c62816cf126e2e28b9a1d90b19210c56feae4659657379bc55df07bc9ea72eb00d6c53a18d94e30de39c0c06df55dc59522f
+  languageName: node
+  linkType: hard
+
+"@web3auth/base@npm:^7.3.2":
   version: 7.3.2
   resolution: "@web3auth/base@npm:7.3.2"
   dependencies:
@@ -7369,7 +7436,7 @@ __metadata:
     "@typescript-eslint/parser": ^5.62.0
     "@walletconnect/client": ^1.8.0
     "@walletconnect/sign-client": ^2.11.2
-    "@web3auth/base": 7.3.2
+    "@web3auth/base": 8.0.0
     "@web3auth/base-provider": ^7.3.2
     "@web3auth/no-modal": ^7.3.2
     "@web3auth/openlogin-adapter": 7.3.2
@@ -8963,10 +9030,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"color-name@npm:~1.1.4":
+"color-name@npm:^1.0.0, color-name@npm:~1.1.4":
   version: 1.1.4
   resolution: "color-name@npm:1.1.4"
   checksum: b0445859521eb4021cd0fb0cc1a75cecf67fceecae89b63f62b201cca8d345baf8b952c966862a9d9a2632987d4f6581f0ec8d957dfacece86f0a7919316f610
+  languageName: node
+  linkType: hard
+
+"color-string@npm:^1.9.0":
+  version: 1.9.1
+  resolution: "color-string@npm:1.9.1"
+  dependencies:
+    color-name: ^1.0.0
+    simple-swizzle: ^0.2.2
+  checksum: c13fe7cff7885f603f49105827d621ce87f4571d78ba28ef4a3f1a104304748f620615e6bf065ecd2145d0d9dad83a3553f52bb25ede7239d18e9f81622f1cc5
+  languageName: node
+  linkType: hard
+
+"color@npm:^4.2.3":
+  version: 4.2.3
+  resolution: "color@npm:4.2.3"
+  dependencies:
+    color-convert: ^2.0.1
+    color-string: ^1.9.0
+  checksum: 0579629c02c631b426780038da929cca8e8d80a40158b09811a0112a107c62e10e4aad719843b791b1e658ab4e800558f2e87ca4522c8b32349d497ecb6adeb4
   languageName: node
   linkType: hard
 
@@ -12776,6 +12863,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-arrayish@npm:^0.3.1":
+  version: 0.3.2
+  resolution: "is-arrayish@npm:0.3.2"
+  checksum: 977e64f54d91c8f169b59afcd80ff19227e9f5c791fa28fa2e5bce355cbaf6c2c356711b734656e80c9dd4a854dd7efcf7894402f1031dfc5de5d620775b4d5f
+  languageName: node
+  linkType: hard
+
 "is-async-function@npm:^2.0.0":
   version: 2.0.0
   resolution: "is-async-function@npm:2.0.0"
@@ -14603,7 +14697,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loglevel@npm:^1.8.1":
+"loglevel@npm:^1.8.1, loglevel@npm:^1.9.1":
   version: 1.9.1
   resolution: "loglevel@npm:1.9.1"
   checksum: e1c8586108c4d566122e91f8a79c8df728920e3a714875affa5120566761a24077ec8ec9e5fc388b022e39fc411ec6e090cde1b5775871241b045139771eeb06
@@ -18029,6 +18123,15 @@ __metadata:
   version: 4.1.0
   resolution: "signal-exit@npm:4.1.0"
   checksum: 64c757b498cb8629ffa5f75485340594d2f8189e9b08700e69199069c8e3070fb3e255f7ab873c05dc0b3cec412aea7402e10a5990cb6a050bd33ba062a6c549
+  languageName: node
+  linkType: hard
+
+"simple-swizzle@npm:^0.2.2":
+  version: 0.2.2
+  resolution: "simple-swizzle@npm:0.2.2"
+  dependencies:
+    is-arrayish: ^0.3.1
+  checksum: a7f3f2ab5c76c4472d5c578df892e857323e452d9f392e1b5cf74b74db66e6294a1e1b8b390b519fa1b96b5b613f2a37db6cffef52c3f1f8f3c5ea64eb2d54c0
   languageName: node
   linkType: hard
 
