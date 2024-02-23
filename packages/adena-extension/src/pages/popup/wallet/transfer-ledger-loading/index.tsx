@@ -13,8 +13,7 @@ const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
-  padding: 24px 20px;
-  margin-bottom: 60px;
+  padding: 24px 20px 120px 20px;
 `;
 
 const TransferLedgerLoadingContainer = (): JSX.Element => {
