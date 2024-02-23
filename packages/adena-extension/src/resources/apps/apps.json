@@ -1,47 +1,83 @@
 [
   {
     "symbol": "GNOLAND",
-    "name": "GNO.LAND",
-    "description": "The official website of Gnoland",
+    "name": "Gno.land",
+    "description": "The official website of Gnoland.",
     "logo": "/resources/apps/images/gnoland.svg",
     "link": "https://gno.land",
     "display": true,
     "order": 1
   },
   {
-    "symbol": "GNOSCAN",
-    "name": "Gnoscan",
-    "description": "The first Gnoland blockchain explorer",
-    "logo": "/resources/apps/images/gnoscan.svg",
-    "link": "https://gnoscan.io",
+    "symbol": "PLAYGROUND",
+    "name": "Gno Playground",
+    "description": "Write, share, and deploy Gno code.",
+    "logo": "/resources/apps/images/playground.svg",
+    "link": "https://play.gno.land/",
     "display": true,
     "order": 2
   },
   {
-    "symbol": "GNOTOOLS",
-    "name": "Gnotools",
-    "description": "A frontend for Gnoland Boards",
-    "logo": "/resources/apps/images/gnotools.svg",
-    "link": "https://app.gno.tools",
+    "symbol": "GNODOCS",
+    "name": "Gno Official Docs",
+    "description": "The official Gno.land documentation.",
+    "logo": "/resources/apps/images/gnodocs.svg",
+    "link": "https://docs.gno.land/",
     "display": true,
     "order": 3
   },
   {
-    "symbol": "TERITORI",
-    "name": "Teritori",
-    "description": "A hub for web3 communities",
-    "logo": "/resources/apps/images/teritori.svg",
-    "link": "https://teritori.com",
+    "symbol": "GNOSWAP",
+    "name": "GnoSwap",
+    "description": "The One-stop Gnoland DeFi Platform.",
+    "logo": "/resources/apps/images/gnoswap.svg",
+    "link": "https://beta.gnoswap.io/",
     "display": true,
     "order": 4
   },
   {
-    "symbol": "GNOSPACE",
-    "name": "Gnoland Space",
-    "description": "A community-driven Gnoland wiki",
-    "logo": "/resources/apps/images/gnospace.svg",
-    "link": "https://gnoland.space",
+    "symbol": "GNOSCAN",
+    "name": "GnoScan",
+    "description": "Making Gno on-chain data intuitive.",
+    "logo": "/resources/apps/images/gnoscan.svg",
+    "link": "https://gnoscan.io",
     "display": true,
     "order": 5
+  },
+  {
+    "symbol": "GNOCHESS",
+    "name": "GnoChess",
+    "description": "A user-friendly chess game in Gno.",
+    "logo": "/resources/apps/images/gnochess.svg",
+    "link": "https://gnochess.com/",
+    "display": true,
+    "order": 6
+  },
+  {
+    "symbol": "GNOTOOLS",
+    "name": "GnoTools",
+    "description": "A frontend for Gnoland Boards",
+    "logo": "/resources/apps/images/gnotools.svg",
+    "link": "https://app.gno.tools",
+    "display": true,
+    "order": 7
+  },
+  {
+    "symbol": "TERITORI",
+    "name": "Teritori",
+    "description": "A hub for Web3 DAO communities.",
+    "logo": "/resources/apps/images/teritori.svg",
+    "link": "https://teritori.com",
+    "display": true,
+    "order": 8
+  },
+  {
+    "symbol": "FLIPPANDO",
+    "name": "Flippando",
+    "description": "An on-chain memory game in Gno.",
+    "logo": "/resources/apps/images/flippando.svg",
+    "link": "https://gno.flippando.xyz/flip",
+    "display": true,
+    "order": 9
   }
 ]
