@@ -9,7 +9,10 @@ import { useAccountName } from '@hooks/use-account-name';
 import { CommonFullContentLayout } from '@components/atoms';
 import useLink from '@hooks/use-link';
 import { AdenaStorage } from '@common/storage';
-import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import {
+  WALLET_EXPORT_ACCOUNT_ID,
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -55,6 +58,7 @@ const AccountDetailsContainer: React.FC = () => {
   const moveExportPrivateKey = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();
     await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'PRIVATE_KEY');
+    await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, accountId || '');
     openSecurity();
   }, [account]);
 

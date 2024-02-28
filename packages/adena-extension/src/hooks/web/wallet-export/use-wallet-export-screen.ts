@@ -2,15 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { Account } from 'adena-module';
 
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import { AdenaStorage } from '@common/storage';
-import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import {
+  WALLET_EXPORT_ACCOUNT_ID,
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
 import useQuestionnaire from '../use-questionnaire';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { useQuery } from '@tanstack/react-query';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -56,8 +60,9 @@ export const walletExportStepNo: Record<WalletExportStateType, number> = {
 };
 
 const useWalletExportScreen = (): UseWalletExportReturn => {
-  const { currentAccount } = useCurrentAccount();
+  const { wallet } = useWalletContext();
   const { walletService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [exportType, setExportType] = useState<ExportType>('NONE');
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletExport>();
@@ -65,24 +70,41 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     params?.doneQuestionnaire ? 'CHECK_PASSWORD' : 'INIT',
   );
   const [exportData, setExportData] = useState<string | null>(null);
+  const [exportAccountId, setExportAccountId] = useState<string | null>(null);
   const indicatorInfo = useIndicatorStep({
     stepMap: walletExportStepNo,
     currentState: walletExportState,
     hasQuestionnaire: true,
   });
 
+  const { data: account = null } = useQuery(
+    ['walletExportScreen/account', exportData, wallet, exportAccountId, currentAccount],
+    async () => {
+      if (exportData === 'SEED_PHRASE') {
+        return currentAccount;
+      }
+      return wallet?.accounts.find((account) => account.id === exportAccountId) || currentAccount;
+    },
+    {},
+  );
+
   const _initExportType = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();
     const exportType = await sessionStorage.get(WALLET_EXPORT_TYPE_STORAGE_KEY);
+    const exportAccountId = await sessionStorage.get(WALLET_EXPORT_ACCOUNT_ID);
+    console.log('???', exportType);
+    await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, '');
+    await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, '');
     switch (exportType) {
       case 'PRIVATE_KEY':
+        setExportAccountId(exportAccountId);
         setExportType('PRIVATE_KEY');
         break;
       case 'SEED_PHRASE':
         setExportType('SEED_PHRASE');
         break;
       default:
-        navigate(RoutePath.Home);
+        location.replace('/register.html');
         break;
     }
   }, []);
@@ -121,12 +143,12 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
   const moveExport = useCallback(
     async (password: string) => {
-      if (exportType === 'NONE' || !currentAccount) {
+      if (exportType === 'NONE' || !account) {
         return;
       }
       const wallet = await walletService.loadWalletWithPassword(password);
       const instance = wallet.clone();
-      instance.currentAccountId = currentAccount.id;
+      instance.currentAccountId = account.id;
       if (exportType === 'PRIVATE_KEY') {
         const privateKey = await instance.getPrivateKeyStr();
         setExportData(privateKey);
@@ -136,7 +158,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
       }
       setWalletExportState('RESULT');
     },
-    [exportType, currentAccount, walletService],
+    [exportType, account, walletService],
   );
 
   useEffect(() => {
@@ -145,7 +167,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
   return {
     indicatorInfo,
-    currentAccount,
+    currentAccount: account,
     exportType,
     walletExportState,
     exportData,
