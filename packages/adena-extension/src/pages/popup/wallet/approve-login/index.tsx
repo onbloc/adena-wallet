@@ -10,7 +10,7 @@ import { InjectionMessageInstance } from '@inject/message';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
-import { validateEmptyPassword, validatePasswordComplexity } from '@common/validation';
+import { validateEmptyPassword } from '@common/validation';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { WalletState } from '@states';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
@@ -81,7 +81,6 @@ export const ApproveLogin = (): JSX.Element => {
     let currentError = null;
     try {
       validateEmptyPassword(password);
-      validatePasswordComplexity(password);
       const equalPassword = await walletService.equalsPassword(password);
       if (equalPassword) {
         await walletService.updatePassword(password);
