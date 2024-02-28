@@ -11,7 +11,10 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { AdenaStorage } from '@common/storage';
-import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import {
+  WALLET_EXPORT_ACCOUNT_ID,
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
 
 type MenuType =
   | RoutePath.SettingChangePassword
@@ -25,41 +28,41 @@ const getMenuMakerInfo = (
   availRemove: boolean,
 ): {
   title: string;
-  navigatePath: MenuType
+  navigatePath: MenuType;
   mode: string;
   disabled: boolean;
 }[] => [
-    {
-      title: 'Change Password',
-      navigatePath: RoutePath.SettingChangePassword,
-      mode: 'DEFAULT',
-      disabled: false,
-    },
-    {
-      title: 'Reveal Seed Phrase',
-      navigatePath: 'EXPORT_SEED_PHRASE',
-      mode: 'DEFAULT',
-      disabled: !account || !isSeedAccount(account),
-    },
-    {
-      title: 'Export Private Key',
-      navigatePath: 'EXPORT_PRIVATE_KEY',
-      mode: 'DEFAULT',
-      disabled: !account || !hasPrivateKeyAccount(account),
-    },
-    {
-      title: 'Remove Account',
-      navigatePath: RoutePath.RemoveAccount,
-      mode: 'DANGER',
-      disabled: !availRemove,
-    },
-    {
-      title: 'Reset Wallet',
-      navigatePath: RoutePath.ResetWallet,
-      mode: 'DANGER',
-      disabled: false,
-    },
-  ];
+  {
+    title: 'Change Password',
+    navigatePath: RoutePath.SettingChangePassword,
+    mode: 'DEFAULT',
+    disabled: false,
+  },
+  {
+    title: 'Reveal Seed Phrase',
+    navigatePath: 'EXPORT_SEED_PHRASE',
+    mode: 'DEFAULT',
+    disabled: !account || !isSeedAccount(account),
+  },
+  {
+    title: 'Export Private Key',
+    navigatePath: 'EXPORT_PRIVATE_KEY',
+    mode: 'DEFAULT',
+    disabled: !account || !hasPrivateKeyAccount(account),
+  },
+  {
+    title: 'Remove Account',
+    navigatePath: RoutePath.RemoveAccount,
+    mode: 'DANGER',
+    disabled: !availRemove,
+  },
+  {
+    title: 'Reset Wallet',
+    navigatePath: RoutePath.ResetWallet,
+    mode: 'DANGER',
+    disabled: false,
+  },
+];
 
 export const SecurityPrivacy = (): JSX.Element => {
   const { navigate, goBack } = useAppNavigate();
@@ -68,22 +71,20 @@ export const SecurityPrivacy = (): JSX.Element => {
   const { availRemoveAccount } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
 
-  const onClickMenuItem = useCallback((navigatePath: MenuType) => {
-    if (
-      navigatePath === 'EXPORT_SEED_PHRASE' ||
-      navigatePath === 'EXPORT_PRIVATE_KEY'
-    ) {
-      const exportType = navigatePath ===
-        'EXPORT_SEED_PHRASE' ?
-        'SEED_PHRASE' :
-        'PRIVATE_KEY';
-      AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType).then(() => {
-        openSecurity();
-      });
-      return;
-    }
-    navigate(navigatePath);
-  }, [navigate])
+  const onClickMenuItem = useCallback(
+    (navigatePath: MenuType) => {
+      if (navigatePath === 'EXPORT_SEED_PHRASE' || navigatePath === 'EXPORT_PRIVATE_KEY') {
+        const exportType = navigatePath === 'EXPORT_SEED_PHRASE' ? 'SEED_PHRASE' : 'PRIVATE_KEY';
+        Promise.all([
+          AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType),
+          AdenaStorage.session().set(WALLET_EXPORT_ACCOUNT_ID, currentAccount?.id || ''),
+        ]).then(() => openSecurity());
+        return;
+      }
+      navigate(navigatePath);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     availRemoveAccount().then(setAvailRemove);
