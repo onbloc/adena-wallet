@@ -8,7 +8,10 @@ import WebWarningDescriptionBox from '@components/molecules/web-warning-descript
 import IconLink from '@assets/web/link.svg';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import useLink from '@hooks/use-link';
-import { ADENA_DOCS_PAGE, GNO_CLI_HELP_PAGE } from '@common/constants/resource.constant';
+import {
+  ADENA_SETUP_AIRGAP_HELP_PAGE,
+  GNO_CLI_HELP_PAGE,
+} from '@common/constants/resource.constant';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -44,7 +47,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
   }, [openLink]);
 
   const moveAirgapSignHelp = useCallback(() => {
-    openLink(ADENA_DOCS_PAGE);
+    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE);
   }, [openLink]);
 
   return (
