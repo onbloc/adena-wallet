@@ -1,6 +1,7 @@
-import { Any, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
 import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import { fromBase64 } from '../encoding';
 
 export interface Document {
   chain_id: string;
@@ -257,7 +258,22 @@ export const strToSignedTx = (str: string): Tx | null => {
         gasWanted: document.fee.gas_wanted,
         gasFee: document.fee.gas_fee,
       }),
-      signatures: rawTx.signatures.map(TxSignature.fromJSON),
+      signatures: document.signatures.map((signature) => {
+        const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
+        const wrappedPublicKeyValue: PubKeySecp256k1 = {
+          key: publicKeyBytes,
+        };
+        const publicKeyTypeUrl = signature?.pub_key['@type'] || '';
+        const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
+        const signatureBytes = fromBase64(signature?.signature || '');
+        return TxSignature.create({
+          pubKey: {
+            typeUrl: publicKeyTypeUrl,
+            value: encodedPublicKeyBytes,
+          },
+          signature: signatureBytes,
+        });
+      }),
       memo: document.memo,
     };
   } catch (e) {
