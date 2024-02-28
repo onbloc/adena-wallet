@@ -7,6 +7,7 @@ import questionCircle from '@assets/web/question-circle.svg';
 import mixins from '@styles/mixins';
 import { Pressable, Row, WebText, WebImg } from '@components/atoms';
 import useLink from '@hooks/use-link';
+import { ADENA_HELP_PAGE } from '@common/constants/resource.constant';
 
 const StyledContainer = styled.header`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })}
@@ -23,7 +24,7 @@ const Header = (): ReactElement => {
       <WebImg src={logo} />
       <Pressable
         onClick={(): void => {
-          openLink('https://docs.adena.app');
+          openLink(ADENA_HELP_PAGE);
         }}
       >
         <Row style={{ columnGap: 6 }}>
