@@ -35,6 +35,7 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
       'ESTABLISH_SITES',
       'ADDRESS_BOOK',
       'ACCOUNT_TOKEN_METAINFOS',
+      'QUESTIONNAIRE_EXPIRED_DATE',
     ];
     const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
     if (!hasKeys) {
@@ -58,13 +59,10 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
     if (typeof currentData.CURRENT_ACCOUNT_ID !== 'string') {
       return false;
     }
-    if (typeof currentData.ACCOUNT_NAMES !== 'object') {
+    if (currentData.ACCOUNT_NAMES && typeof currentData.ACCOUNT_NAMES !== 'object') {
       return false;
     }
-    if (typeof currentData.ESTABLISH_SITES !== 'object') {
-      return false;
-    }
-    if (typeof currentData.ADDRESS_BOOK !== 'object') {
+    if (currentData.ESTABLISH_SITES && typeof currentData.ESTABLISH_SITES !== 'object') {
       return false;
     }
     return true;
