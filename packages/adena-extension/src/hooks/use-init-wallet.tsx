@@ -27,9 +27,6 @@ export const useInitWallet = (): void => {
         break;
       default:
         initAddressBook();
-        if (!isApproveLoginPage) {
-          navigate(RoutePath.Wallet);
-        }
         break;
     }
   }, [state]);
