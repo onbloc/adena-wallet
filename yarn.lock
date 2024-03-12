@@ -2114,15 +2114,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/gno-js-client@npm:1.2.0":
-  version: 1.2.0
-  resolution: "@gnolang/gno-js-client@npm:1.2.0"
+"@gnolang/gno-js-client@npm:1.2.1":
+  version: 1.2.1
+  resolution: "@gnolang/gno-js-client@npm:1.2.1"
   dependencies:
     "@cosmjs/ledger-amino": ^0.32.0
     "@gnolang/tm2-js-client": ^1.1.6
     long: ^5.2.3
     protobufjs: ^7.2.3
-  checksum: fd1cc72df5370484fbfd2787d26db5347a0ce39751b3f8474ee474aca9aab75c5489e3d54c2271df0299afb71553676c3c3f98770c29b44278f28bd005f9c688
+  checksum: ba6117b92abb972888f058468d62f756335a17cf7a6cb29cd0fe09a1afc9f8a3534bff758482f6c6763d490d9006fe6f5c027cdefba342a0bea005270d15311a
   languageName: node
   linkType: hard
 
@@ -7241,7 +7241,7 @@ __metadata:
     "@babel/preset-env": ^7.23.9
     "@babel/preset-react": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
-    "@gnolang/gno-js-client": 1.2.0
+    "@gnolang/gno-js-client": 1.2.1
     "@gnolang/tm2-js-client": 1.1.6
     "@jest/globals": ^29.7.0
     "@storybook/addon-essentials": ^7.6.17
@@ -7325,7 +7325,7 @@ __metadata:
     "@babel/preset-flow": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
     "@cosmjs/ledger-amino": ^0.32.2
-    "@gnolang/gno-js-client": 1.2.0
+    "@gnolang/gno-js-client": 1.2.1
     "@gnolang/tm2-js-client": 1.1.6
     "@ledgerhq/hw-transport": ^6.30.4
     "@ledgerhq/hw-transport-mocker": ^6.28.4
