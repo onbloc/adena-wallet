@@ -80,7 +80,7 @@
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "adena-module": "*",
     "adena-torus-signin": "*",
-    "axios": "0.27.2",
+    "axios": "0.28.0",
     "bignumber.js": "^9.1.2",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.10",
