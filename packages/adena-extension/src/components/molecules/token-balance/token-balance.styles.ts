@@ -1,11 +1,12 @@
 import { FontsType, fonts } from '@styles/theme';
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 interface TokenBalanceWrapperProps {
   orientation: 'VERTICAL' | 'HORIZONTAL';
   fontColor: string;
   fontStyleKey: FontsType;
   minimumFontSize: string;
+  lineHeight?: string;
 }
 
 export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
@@ -24,7 +25,12 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
       display: contents;
       color: ${({ fontColor }): string => fontColor};
       ${({ fontStyleKey }): FlattenSimpleInterpolation => fonts[fontStyleKey]};
-      text-align: bottom;
+      ${({ lineHeight }): FlattenSimpleInterpolation =>
+        lineHeight
+          ? css`
+              line-height: ${lineHeight};
+            `
+          : css`sd`};
     }
   }
 `;

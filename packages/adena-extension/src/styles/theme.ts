@@ -56,6 +56,8 @@ enum Neutral {
 }
 
 enum Primary {
+  _1 = '#0059ff29',
+  _2 = '#ADCAFF',
   _3 = '#B0CCFF',
   _4 = '#78A7FF',
   _5 = '#377DFF',
@@ -355,6 +357,11 @@ export const fonts: FontsKeyType = {
     font-size: 10.5px;
     line-height: 18px;
   `,
+  bold13: css`
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 19.5px;
+  `,
   light13: css`
     font-weight: 400;
     font-size: 13px;
@@ -387,6 +394,7 @@ export type FontsType =
   | 'captionBold'
   | 'captionReg'
   | 'light1Reg'
+  | 'bold13'
   | 'light13'
   | 'light11';
 
