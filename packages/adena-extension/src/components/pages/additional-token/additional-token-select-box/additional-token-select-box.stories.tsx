@@ -50,7 +50,10 @@ const tokenInfos = [
 export const Default: StoryObj<AdditionalTokenSelectBoxProps> = {
   args: {
     selected: false,
-    selectedTitle: '',
+    selectedInfo: {
+      name: 'Gnoswap',
+      symbol: 'GNOS',
+    },
     opened: false,
     tokenInfos,
     keyword: '',
@@ -63,7 +66,10 @@ export const Default: StoryObj<AdditionalTokenSelectBoxProps> = {
 export const SelectedAndClosed: StoryObj<AdditionalTokenSelectBoxProps> = {
   args: {
     selected: true,
-    selectedTitle: 'Gnoswap (GNOS)',
+    selectedInfo: {
+      name: 'Gnoswap',
+      symbol: 'GNOS',
+    },
     opened: false,
     tokenInfos,
     keyword: '',
@@ -76,7 +82,10 @@ export const SelectedAndClosed: StoryObj<AdditionalTokenSelectBoxProps> = {
 export const SelectedAndOpened: StoryObj<AdditionalTokenSelectBoxProps> = {
   args: {
     selected: true,
-    selectedTitle: 'Gnoswap (GNOS)',
+    selectedInfo: {
+      name: 'Gnoswap',
+      symbol: 'GNOS',
+    },
     opened: true,
     tokenInfos,
     keyword: '',
@@ -89,7 +98,10 @@ export const SelectedAndOpened: StoryObj<AdditionalTokenSelectBoxProps> = {
 export const Opened: StoryObj<AdditionalTokenSelectBoxProps> = {
   args: {
     selected: false,
-    selectedTitle: '',
+    selectedInfo: {
+      name: 'Gnoswap',
+      symbol: 'GNOS',
+    },
     opened: true,
     tokenInfos,
     keyword: '',
@@ -102,7 +114,10 @@ export const Opened: StoryObj<AdditionalTokenSelectBoxProps> = {
 export const OpenedAndKeyword: StoryObj<AdditionalTokenSelectBoxProps> = {
   args: {
     selected: false,
-    selectedTitle: '',
+    selectedInfo: {
+      name: 'Gnoswap',
+      symbol: 'GNOS',
+    },
     opened: true,
     tokenInfos,
     keyword: 'Gno',

@@ -75,7 +75,10 @@ export interface AdditionalTokenSelectBoxProps {
   opened: boolean;
   keyword: string;
   selected: boolean;
-  selectedTitle: string;
+  selectedInfo: {
+    name: string;
+    symbol: string;
+  } | null;
   tokenInfos: TokenInfo[];
   onChangeKeyword: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
