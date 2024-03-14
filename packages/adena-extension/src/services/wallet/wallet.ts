@@ -16,7 +16,7 @@ export class WalletService {
   public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
       .getSerializedWallet()
-      .then(() => true)
+      .then((serializedWallet) => !!serializedWallet)
       .catch(() => false);
   };
 

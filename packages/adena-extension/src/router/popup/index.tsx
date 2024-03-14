@@ -55,13 +55,10 @@ import LoadingMain from './loading-main';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
-import { useInitWallet } from '@hooks/use-init-wallet';
 
 export const PopupRouter = (): JSX.Element => {
-  useInitWallet();
-
   return (
-    <>
+    <React.Fragment>
       <Header />
       <Routes>
         <Route path={RoutePath.Home} element={<Navigate replace to={RoutePath.Wallet} />} />
@@ -127,6 +124,6 @@ export const PopupRouter = (): JSX.Element => {
       </Routes>
       <Navigation />
       <LoadingMain />
-    </>
+    </React.Fragment>
   );
 };

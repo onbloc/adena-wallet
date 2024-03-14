@@ -1,5 +1,6 @@
 import { Storage } from '.';
 import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
+import { CommonError } from '@common/errors/common';
 
 type StorageKeyTypes =
   | 'NETWORKS'
@@ -42,6 +43,9 @@ export class ChromeLocalStorage implements Storage {
   private current: StorageModelLatest | null = null;
 
   constructor() {
+    if (!chrome.storage) {
+      throw new CommonError('FAILED_INITIALIZE_CHROME_API');
+    }
     this.storage = chrome.storage.local;
     this.migrator = new StorageMigrator(StorageMigrator.migrations(), this.storage);
   }

@@ -13,6 +13,10 @@ const ERROR_VALUE = {
     status: 400,
     type: 'FAILED_TO_RUN',
   },
+  FAILED_INITIALIZE_CHROME_API: {
+    status: 401,
+    type: 'FAILED_INITIALIZE_CHROME_API',
+  },
 };
 
 type ErrorType = keyof typeof ERROR_VALUE;
