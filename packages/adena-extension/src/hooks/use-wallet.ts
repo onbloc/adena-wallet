@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAdenaContext, useWalletContext } from './use-context';
+import { useAdenaContext } from './use-context';
 
 export interface UseWalletReturn {
-  existWallet: boolean;
+  existWallet: boolean | undefined;
+  isLoadingExistWallet: boolean;
 }
 
 export const useWallet = (): UseWalletReturn => {
-  const { wallet } = useWalletContext();
   const { walletService } = useAdenaContext();
 
-  const { data: existWallet = false } = useQuery(
-    ['wallet/existWallet', walletService, wallet],
+  const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
+    ['wallet/existWallet', walletService],
     async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
@@ -18,5 +18,5 @@ export const useWallet = (): UseWalletReturn => {
     {},
   );
 
-  return { existWallet };
+  return { existWallet, isLoadingExistWallet };
 };

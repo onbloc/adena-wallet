@@ -1,4 +1,5 @@
 import { BalanceState, CommonState, NetworkState, WalletState } from '@states';
+import { useQueryClient } from '@tanstack/react-query';
 import { useResetRecoilState, useSetRecoilState } from 'recoil';
 import { useAdenaContext } from './use-context';
 
@@ -15,6 +16,7 @@ export const useClear = (): UseClearReturn => {
     establishService,
     tokenService,
   } = useAdenaContext();
+  const queryClient = useQueryClient();
   const clearCurrentAccount = useResetRecoilState(WalletState.currentAccount);
   const setWalletState = useSetRecoilState(WalletState.state);
   const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
@@ -41,6 +43,7 @@ export const useClear = (): UseClearReturn => {
     await chainService.clear();
     await establishService.clear();
     await tokenService.clear();
+    queryClient.clear();
     return true;
   };
 

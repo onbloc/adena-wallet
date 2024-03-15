@@ -1,9 +1,13 @@
+import { CommonError } from '@common/errors/common';
 import { Storage } from '.';
 
 export class ChromeSessionStorage implements Storage {
   private storage: chrome.storage.SessionStorageArea;
 
   constructor() {
+    if (!chrome.storage) {
+      throw new CommonError('FAILED_INITIALIZE_CHROME_API');
+    }
     this.storage = chrome.storage.session;
   }
 

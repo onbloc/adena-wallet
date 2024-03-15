@@ -5,10 +5,22 @@ import AppProvider from './app-provider';
 import useApp from './use-app';
 import { GlobalPopupStyle } from '@styles/global-style';
 import { HashRouter } from 'react-router-dom';
+import { useInitWallet } from '@hooks/use-init-wallet';
+import { useWallet } from '@hooks/use-wallet';
+import useLink from '@hooks/use-link';
 
 const RunApp = (): ReactElement => {
   useApp();
-  return <PopupRouter />;
+  useInitWallet();
+  const { existWallet, isLoadingExistWallet } = useWallet();
+  const { openRegister } = useLink();
+
+  if (isLoadingExistWallet === false && existWallet === false) {
+    openRegister();
+    window.close();
+  }
+
+  return existWallet ? <PopupRouter /> : <></>;
 };
 
 const App = (): ReactElement => {

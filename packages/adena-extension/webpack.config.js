@@ -85,26 +85,11 @@ const config = {
           transform: (content, path) =>
             Buffer.from(
               JSON.stringify({
-                name: packageInfo.name,
-                version: packageInfo.version,
-                description: packageInfo.description,
                 icons: {
                   16: 'icons/icon16.png',
                   32: 'icons/icon32.png',
                   48: 'icons/icon48.png',
                   128: 'icons/icon128.png',
-                },
-                background: {
-                  service_worker: 'background.js',
-                },
-                content_scripts: [
-                  {
-                    matches: ['<all_urls>'],
-                    js: ['content.js'],
-                  },
-                ],
-                action: {
-                  default_popup: 'popup.html',
                 },
                 ...JSON.parse(content.toString()),
               }),
