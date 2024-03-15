@@ -37,9 +37,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
           selected={selected}
           keyword={keyword}
           tokenInfos={tokenInfos}
-          selectedTitle={
-            selectedTokenInfo ? `${selectedTokenInfo.name} (${selectedTokenInfo.symbol})` : ''
-          }
+          selectedInfo={selectedTokenInfo || null}
           onChangeKeyword={onChangeKeyword}
           onClickOpenButton={onClickOpenButton}
           onClickListItem={onClickListItem}

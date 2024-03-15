@@ -11,14 +11,6 @@ import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import { TokenInfo } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 
-function formatTokenSymbol(symbol: string): string {
-  const SYMBOL_TEXT_LENGTH = 5;
-  if (symbol.length > SYMBOL_TEXT_LENGTH) {
-    return `${symbol.substring(0, SYMBOL_TEXT_LENGTH)}...`;
-  }
-  return symbol;
-}
-
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
   const { tokenService } = useAdenaContext();
@@ -55,7 +47,7 @@ const ManageTokenAddedContainer: React.FC = () => {
             return {
               tokenId: token.tokenId,
               name: token.name,
-              symbol: formatTokenSymbol(token.symbol),
+              symbol: token.symbol,
               path: token.pkgPath,
               decimals: token.decimals,
               chainId: 'test3',

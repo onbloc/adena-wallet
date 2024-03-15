@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AdditionalTokenSelectBoxWrapper } from './additional-token-select-box.styles';
 import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
@@ -11,11 +11,30 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   keyword,
   tokenInfos,
   selected,
-  selectedTitle,
+  selectedInfo,
   onChangeKeyword,
   onClickOpenButton,
   onClickListItem,
 }) => {
+  const selectedTokenName = useMemo(() => {
+    const name = selectedInfo?.name;
+    if (!selected || !name) {
+      return '';
+    }
+    return name;
+  }, [selected, selectedInfo]);
+
+  const selectedTokenSymbol = useMemo(() => {
+    const symbol = selectedInfo?.symbol;
+    if (!selected || !symbol) {
+      return '';
+    }
+    if (symbol.length > 5) {
+      return `(${symbol.slice(0, 5)}...)`;
+    }
+    return `(${symbol})`;
+  }, [selected, selectedInfo]);
+
   return (
     <AdditionalTokenSelectBoxWrapper>
       <div
@@ -26,7 +45,15 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
           className={selected ? 'select-box selected' : 'select-box'}
           onClick={(): void => onClickOpenButton(!opened)}
         >
-          <span className='title'>{selected ? selectedTitle : 'Select a GRC20 Token'}</span>
+          {selected ? (
+            <span className='title'>
+              <span className='name'>{selectedTokenName}</span>
+              <span className='symbol'>{selectedTokenSymbol}</span>
+            </span>
+          ) : (
+            <span className='title'>Select a GRC20 Token</span>
+          )}
+
           <span className='icon-wrapper'>
             {opened ? (
               <img src={`${ArrowUpIcon}`} alt='select box opened icon' />

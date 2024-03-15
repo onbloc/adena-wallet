@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   AdditionalTokenSearchListItemWrapper,
   AdditionalTokenSearchListWrapper,
@@ -25,11 +25,19 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
   path,
   onClickListItem,
 }) => {
+  const formattedSymbol = useMemo(() => {
+    const SYMBOL_TEXT_LENGTH = 5;
+    if (symbol.length > SYMBOL_TEXT_LENGTH) {
+      return `${symbol.substring(0, SYMBOL_TEXT_LENGTH)}...`;
+    }
+    return symbol;
+  }, [symbol]);
+
   return (
     <AdditionalTokenSearchListItemWrapper onClick={(): void => onClickListItem(tokenId)}>
       <span className='title'>
         <span className='name'>{name}</span>
-        <span className='symbol'>{`(${symbol})`}</span>
+        <span className='symbol'>{`(${formattedSymbol})`}</span>
       </span>
       <span className='path'>{path}</span>
     </AdditionalTokenSearchListItemWrapper>

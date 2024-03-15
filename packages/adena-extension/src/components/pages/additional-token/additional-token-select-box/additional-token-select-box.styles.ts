@@ -36,21 +36,37 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
     user-select: none;
 
     .title {
-      width: 100%;
+      width: calc(100% - 20px);
       padding: 0 4px;
       ${fonts.body2Reg};
       color: ${getTheme('neutral', 'a')};
     }
 
     .icon-wrapper {
-      display: inline-flex;
+      display: flex;
       width: 20px;
       height: 20px;
     }
 
     &.selected {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+
       .title {
+        display: flex;
         color: ${getTheme('neutral', '_1')};
+
+        .name {
+          display: block;
+          text-overflow: ellipsis;
+          overflow: hidden;
+        }
+
+        .symbol {
+          display: flex;
+          padding-left: 2px;
+        }
       }
     }
   }

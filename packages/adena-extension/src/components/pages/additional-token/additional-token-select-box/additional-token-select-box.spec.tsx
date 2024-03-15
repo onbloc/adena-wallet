@@ -13,7 +13,7 @@ describe('AdditionalTokenSelectBox Component', () => {
       keyword: '',
       opened: false,
       selected: false,
-      selectedTitle: '',
+      selectedInfo: null,
       tokenInfos: [],
       onChangeKeyword: () => {
         return;
