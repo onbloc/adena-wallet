@@ -78,6 +78,15 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
     [type, wordList],
   );
 
+  const onChangeWebSeedInputByWords = useCallback(
+    (value: string) => {
+      const words = _getFilledWordList(type, value.split(' '));
+      setWordList(words);
+      onChange({ type, value: words.join(' ') });
+    },
+    [type],
+  );
+
   const TypeMenuItem = useCallback(
     ({ title, _type }: { title: string; _type: WebSeedInputType }): ReactElement => {
       const selected = type === _type;
@@ -130,8 +139,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
                   error={!!errorMessage}
                   onChange={(value: string): void => {
                     if (index === 0 && value.split(' ').length > 1) {
-                      setWordList(value.split(' '));
-                      onChange({ type, value });
+                      onChangeWebSeedInputByWords(value);
                     } else {
                       onChangeWord(index, value);
                     }
