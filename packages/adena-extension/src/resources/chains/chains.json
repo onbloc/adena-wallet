@@ -28,20 +28,6 @@
     "linkUrl": ""
   },
   {
-    "id": "staging",
-    "default": true,
-    "main": false,
-    "chainId": "test3",
-    "chainName": "GNO.LAND",
-    "networkId": "test3",
-    "networkName": "Staging",
-    "addressPrefix": "g",
-    "rpcUrl": "http://staging.gno.land:36657",
-    "gnoUrl": "https://staging.gno.land",
-    "apiUrl": "",
-    "linkUrl": ""
-  },
-  {
     "id": "dev",
     "default": true,
     "main": false,
