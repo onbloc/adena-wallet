@@ -8,10 +8,24 @@
     "networkId": "test3",
     "networkName": "Testnet 3",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test3.gno.land",
+    "rpcUrl": "https://rpc.test3.gno.land:443",
     "gnoUrl": "https://test3.gno.land",
     "apiUrl": "https://api.adena.app",
     "linkUrl": "https://gnoscan.io"
+  },
+  {
+    "id": "portal-loop",
+    "default": true,
+    "main": false,
+    "chainId": "portal-loop",
+    "chainName": "GNO.LAND",
+    "networkId": "portal-loop",
+    "networkName": "Portal Loop",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.gno.land:443",
+    "gnoUrl": "https://gno.land",
+    "apiUrl": "",
+    "linkUrl": ""
   },
   {
     "id": "dev",
