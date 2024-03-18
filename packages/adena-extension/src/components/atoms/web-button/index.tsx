@@ -9,19 +9,20 @@ import { WebText } from '../web-text';
 import { Row, View } from '../base';
 
 type WebButtonProps = {
+  buttonRef?: React.RefObject<HTMLButtonElement>;
   size: 'full' | 'large' | 'small';
   textType?: WebFontType;
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
   fixed?: boolean;
 } & (
-    | { text: string; rightIcon?: 'chevronRight' }
-    | {
+  | { text: string; rightIcon?: 'chevronRight' }
+  | {
       children: ReactNode;
     }
-  ) &
+) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
-const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed?: boolean; }>`
+const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed?: boolean }>`
   cursor: pointer;
   border: none;
   border-radius: ${({ size }): string => (size === 'small' ? '12px' : '14px')};
@@ -32,7 +33,12 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed
   height: 44px;
   justify-content: center;
   align-items: center;
-  ${({ fixed }): FlattenSimpleInterpolation | string => fixed ? css`flex-shrink: 0;` : ''};
+  ${({ fixed }): FlattenSimpleInterpolation | string =>
+    fixed
+      ? css`
+          flex-shrink: 0;
+        `
+      : ''};
 
   :disabled {
     cursor: default;
@@ -42,39 +48,59 @@ const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed
 
 const StyledButtonPrimary = styled(StyledButtonBase)`
   color: ${getTheme('webNeutral', '_100')};
-  background: linear-gradient(180deg, #0059FF 0%, #004BD6 100%);
+  background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
 
-  ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
-    :hover {
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) inset, 0px 0px 24px 0px #0059FF52, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
-    }
-    :active {
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) inset, 0px 0px 24px 0px #0059FF52, 0px 0px 0px 3px #0059FF29, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
-    }
-  `: ''}
+  ${({ disabled }): FlattenSimpleInterpolation | string =>
+    !disabled
+      ? css`
+          :hover {
+            box-shadow:
+              0 0 0 2px rgba(255, 255, 255, 0.4) inset,
+              0px 0px 24px 0px #0059ff52,
+              0px 1px 3px 0px #0000001a,
+              0px 1px 2px 0px #0000000f;
+          }
+          :active {
+            box-shadow:
+              0 0 0 2px rgba(255, 255, 255, 0.4) inset,
+              0px 0px 24px 0px #0059ff52,
+              0px 0px 0px 3px #0059ff29,
+              0px 1px 3px 0px #0000001a,
+              0px 1px 2px 0px #0000000f;
+          }
+        `
+      : ''}
 `;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
-  color: #ADCAFF;
+  color: #adcaff;
   background: rgba(0, 89, 255, 0.16);
   box-shadow: 0 0 0 1px rgba(122, 169, 255, 0.24) inset;
 
-  ${({ disabled }): FlattenSimpleInterpolation | string => !disabled ? css`
-    :hover {
-      color: #ADCAFF;
-      background: linear-gradient(180deg, rgba(0, 89, 255, 0.20) 0%, rgba(0, 89, 255, 0.00) 100%);
-      box-shadow: 0 0 0 2px rgba(122, 169, 255, 0.24) inset, 0px 1px 3px 0px #0000001A, 0px 1px 2px 0px #0000000F;
-    }
+  ${({ disabled }): FlattenSimpleInterpolation | string =>
+    !disabled
+      ? css`
+          :hover {
+            color: #adcaff;
+            background: linear-gradient(180deg, rgba(0, 89, 255, 0.2) 0%, rgba(0, 89, 255, 0) 100%);
+            box-shadow:
+              0 0 0 2px rgba(122, 169, 255, 0.24) inset,
+              0px 1px 3px 0px #0000001a,
+              0px 1px 2px 0px #0000000f;
+          }
 
-    :active {
-      color: #7AA9FF;
-      background: 0 0 0 2px rgba(122, 169, 255, 0.24) inset, linear-gradient(180deg, rgba(0, 89, 255, 0.20) 0%, rgba(0, 89, 255, 0.00) 100%);
-    }
-  `: ''}
+          :active {
+            color: #7aa9ff;
+            background:
+              0 0 0 2px rgba(122, 169, 255, 0.24) inset,
+              linear-gradient(180deg, rgba(0, 89, 255, 0.2) 0%, rgba(0, 89, 255, 0) 100%);
+          }
+        `
+      : ''}
 
   :disabled {
-    color: #7AA9FF;
+    color: #7aa9ff;
     opacity: 0.4;
     background: rgba(0, 89, 255, 0.16);
   }
@@ -89,22 +115,33 @@ const StyledButtonTertiary = styled(StyledButtonBase)`
     fill: ${getTheme('webNeutral', '_300')};
   }
 
-  ${({ disabled, theme }): FlattenSimpleInterpolation | string => !disabled ? css`
-    :hover {
-      background: rgba(188, 197, 214, 0.06);
-      box-shadow: 0 0 0 2px rgba(188, 197, 214, 0.24) inset, 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-      svg * {
-        fill: ${theme.webNeutral._100};
-      }
-    }
-    :active {
-      color: ${theme.webNeutral._100};
-      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.24) inset, 0px 0px 16px 0px rgba(255, 255, 255, 0.04), 0px 0px 0px 4px rgba(255, 255, 255, 0.04), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-      svg * {
-        fill: ${theme.webNeutral._100};
-      }
-    }
-  `: ''}
+  ${({ disabled, theme }): FlattenSimpleInterpolation | string =>
+    !disabled
+      ? css`
+          :hover {
+            background: rgba(188, 197, 214, 0.06);
+            box-shadow:
+              0 0 0 2px rgba(188, 197, 214, 0.24) inset,
+              0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+              0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+            svg * {
+              fill: ${theme.webNeutral._100};
+            }
+          }
+          :active {
+            color: ${theme.webNeutral._100};
+            box-shadow:
+              0 0 0 1px rgba(188, 197, 214, 0.24) inset,
+              0px 0px 16px 0px rgba(255, 255, 255, 0.04),
+              0px 0px 0px 4px rgba(255, 255, 255, 0.04),
+              0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+              0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+            svg * {
+              fill: ${theme.webNeutral._100};
+            }
+          }
+        `
+      : ''}
 `;
 
 const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
@@ -118,23 +155,26 @@ const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
     fill: ${getTheme('webNeutral', '_300')};
   }
 
-  ${({ disabled, theme }): FlattenSimpleInterpolation | string => !disabled ? css`
-    :hover {
-      color: ${theme.webNeutral._100};
-      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
-      background: rgba(188, 197, 214, 0.08);
-      svg * {
-        fill: ${theme.webNeutral._100};
-      }
-    }
-    :active {
-      color: ${theme.webNeutral._100};
-      box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
-      svg * {
-        fill: ${theme.webNeutral._100};
-      }
-    }
-  `: ''}
+  ${({ disabled, theme }): FlattenSimpleInterpolation | string =>
+    !disabled
+      ? css`
+          :hover {
+            color: ${theme.webNeutral._100};
+            box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
+            background: rgba(188, 197, 214, 0.08);
+            svg * {
+              fill: ${theme.webNeutral._100};
+            }
+          }
+          :active {
+            color: ${theme.webNeutral._100};
+            box-shadow: 0 0 0 1px rgba(188, 197, 214, 0.16) inset;
+            svg * {
+              fill: ${theme.webNeutral._100};
+            }
+          }
+        `
+      : ''}
 `;
 
 const StyledButtonQuaternary = styled(StyledButtonBase)`
@@ -154,13 +194,14 @@ const StyledButtonQuaternary = styled(StyledButtonBase)`
   }
 `;
 
-export const WebButton = ({
+export const WebButton: React.FC<WebButtonProps> = ({
+  buttonRef,
   figure,
   textType = 'title4',
   children,
   fixed,
   ...rest
-}: WebButtonProps): ReactElement => {
+}): ReactElement => {
   let StyledComponent;
   switch (figure) {
     case 'secondary':
@@ -187,12 +228,10 @@ export const WebButton = ({
   const isFixed = fixed || rest.size === 'small';
 
   return (
-    <StyledComponent fixed={isFixed} {...rest}>
+    <StyledComponent ref={buttonRef} fixed={isFixed} {...rest}>
       {'text' in rest ? (
         <Row style={{ gap: 4, alignItems: 'center', justifyContent: 'space-between' }}>
-          {isRightButton && (
-            <View style={{ width: 12 }} />
-          )}
+          {isRightButton && <View style={{ width: 12 }} />}
           <WebText type={textType} color={'inherit'}>
             {rest.text}
           </WebText>

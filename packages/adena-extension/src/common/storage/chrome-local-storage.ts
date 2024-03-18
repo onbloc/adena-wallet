@@ -13,7 +13,9 @@ type StorageKeyTypes =
   | 'ESTABLISH_SITES'
   | 'ADDRESS_BOOK'
   | 'ACCOUNT_TOKEN_METAINFOS'
-  | 'QUESTIONNAIRE_EXPIRED_DATE';
+  | 'QUESTIONNAIRE_EXPIRED_DATE'
+  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
 
 const StorageKeys: StorageKeyTypes[] = [
   'NETWORKS',
@@ -27,6 +29,8 @@ const StorageKeys: StorageKeyTypes[] = [
   'ADDRESS_BOOK',
   'ACCOUNT_TOKEN_METAINFOS',
   'QUESTIONNAIRE_EXPIRED_DATE',
+  'WALLET_CREATION_GUIDE_CONFIRM_DATE',
+  'ADD_ACCOUNT_GUIDE_CONFIRM_DATE',
 ];
 
 function isStorageKey(key: string): key is StorageKeyTypes {
