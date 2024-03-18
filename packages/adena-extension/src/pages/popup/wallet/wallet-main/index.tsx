@@ -15,10 +15,20 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { WalletState } from '@states';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useNetwork } from '@hooks/use-network';
+import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 
 const Wrapper = styled.main`
-  padding-top: 14px;
+  padding-top: 37px;
   text-align: center;
+
+  .network-label-wrapper {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    top: 0;
+    left: 0;
+  }
 
   .token-balance-wrapper {
     display: flex;
@@ -38,6 +48,7 @@ export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
+  const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
     useTokenBalance();
@@ -104,6 +115,9 @@ export const WalletMain = (): JSX.Element => {
 
   return (
     <Wrapper>
+      <div className='network-label-wrapper'>
+        <MainNetworkLabel networkName={currentNetwork.networkName} />
+      </div>
       <div className='token-balance-wrapper'>
         <MainTokenBalance
           amount={{

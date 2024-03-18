@@ -10,6 +10,7 @@ export interface TokenBalanceProps {
   fontColor?: string;
   fontStyleKey?: FontsType;
   minimumFontSize?: string;
+  lineHeight?: string;
 }
 
 export const TokenBalance: React.FC<TokenBalanceProps> = ({
@@ -19,6 +20,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
   fontColor = 'white',
   fontStyleKey = 'header6',
   minimumFontSize = '14px',
+  lineHeight,
 }) => {
   return (
     <TokenBalanceWrapper
@@ -26,12 +28,14 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
       fontColor={fontColor}
       fontStyleKey={fontStyleKey}
       minimumFontSize={minimumFontSize}
+      lineHeight={lineHeight}
     >
       <HighlightNumber
         value={value}
         fontColor={fontColor}
         fontStyleKey={fontStyleKey}
         minimumFontSize={minimumFontSize}
+        lineHeight={lineHeight}
       />
       <div className='denom-wrapper'>
         <span className='denom'>{denom}</span>
