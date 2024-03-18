@@ -92,7 +92,6 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     const sessionStorage = AdenaStorage.session();
     const exportType = await sessionStorage.get(WALLET_EXPORT_TYPE_STORAGE_KEY);
     const exportAccountId = await sessionStorage.get(WALLET_EXPORT_ACCOUNT_ID);
-    console.log('???', exportType);
     await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, '');
     await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, '');
     switch (exportType) {
