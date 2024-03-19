@@ -5,7 +5,6 @@ import WebHelpOverlay, {
 import { WalletCreationHelpOverlayItem } from './wallet-creation-help-overlay.styles';
 
 export interface WalletCreationHelpOverlayProps {
-  init: boolean;
   hardwareWalletButtonRef?: React.RefObject<HTMLButtonElement>;
   airgapAccountButtonRef?: React.RefObject<HTMLButtonElement>;
   advancedOptionButtonRef?: React.RefObject<HTMLButtonElement>;
@@ -13,7 +12,6 @@ export interface WalletCreationHelpOverlayProps {
 }
 
 const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
-  init,
   hardwareWalletButtonRef,
   airgapAccountButtonRef,
   advancedOptionButtonRef,
@@ -84,11 +82,11 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
 
   const helpItems = useMemo(() => {
     const items = [hardwareWalletHelpItem, airgapAccountHelpItem, advancedOptionHelpItem];
-    if (!init || items.includes(null)) {
+    if (items.includes(null)) {
       return [];
     }
     return items as OverlayItem[];
-  }, [init, hardwareWalletHelpItem, airgapAccountHelpItem, advancedOptionHelpItem]);
+  }, [hardwareWalletHelpItem, airgapAccountHelpItem, advancedOptionHelpItem]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -108,10 +106,6 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
         });
     }
   }, []);
-
-  if (!init) {
-    return <></>;
-  }
 
   return <WebHelpOverlay items={helpItems} onFinish={onFinish} />;
 };
