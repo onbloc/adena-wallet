@@ -9,3 +9,5 @@ export const RESPONSIVE_EXTENSION_WIDTH = 650 as const;
 // Popup Constants
 export const POPUP_WIDTH = 380 as const;
 export const POPUP_HEIGHT = 590 as const;
+
+export const WINDOW_EXPAND_SIZE = 650 as const;
