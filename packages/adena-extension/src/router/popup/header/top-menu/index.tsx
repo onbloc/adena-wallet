@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn, ExpandBtn } from '@components/atoms';
 
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -12,6 +13,7 @@ import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import mixins from '@styles/mixins';
+import { createPopupWindow } from '@common/utils/browser-utils';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -39,6 +41,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [, setUrl] = useState('');
   const { currentAccount, currentAddress } = useCurrentAccount();
   const toggleMenuHandler = (): void => setOpen(!open);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
@@ -88,6 +91,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
     let currentHostname = hostname;
     if (!hostname.includes('.')) {
@@ -109,6 +113,10 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     });
   };
 
+  const popupWindow = (): void => {
+    createPopupWindow(location.pathname, location.state);
+  };
+
   return !disabled ? (
     <Wrapper>
       <Header>
@@ -121,7 +129,8 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
             </Text>
           </Text>
         </CopyTooltip>
-        <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
+        <ExpandBtn type='button' onClick={popupWindow} />
+        {/* <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} /> */}
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />
     </Wrapper>

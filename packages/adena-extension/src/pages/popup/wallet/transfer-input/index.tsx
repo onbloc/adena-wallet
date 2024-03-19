@@ -13,6 +13,7 @@ import useHistoryData from '@hooks/use-history-data';
 import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useNetwork } from '@hooks/use-network';
 
 const TransferInputLayoutWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -39,19 +40,32 @@ interface HistoryData {
 
 const TransferInputContainer: React.FC = () => {
   const { navigate, params, goBack } = useAppNavigate<RoutePath.TransferInput>();
-  const [isTokenSearch, setIsTokenSearch] = useState(params.isTokenSearch === true);
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>(params.tokenBalance);
+  const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>(params?.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
-    setIsTokenSearch(params.isTokenSearch === true);
-    setTokenMetainfo(params.tokenBalance);
-    addressBookInput.updateAddressBook();
-    balanceInput.updateCurrentBalance();
-  }, [params, currentAccount]);
+    if (!params) {
+      chrome.storage.session
+        .get('state')
+        .then((value) => {
+          setIsTokenSearch(value.state.isTokenSearch === true);
+          setTokenMetainfo(value.state.tokenBalance);
+        })
+        .catch(console.log);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (currentAccount && tokenMetainfo) {
+      addressBookInput.updateAddressBook();
+      balanceInput.updateCurrentBalance();
+    }
+  }, [currentAccount, tokenMetainfo, currentNetwork.chainId]);
 
   useEffect(() => {
     const historyData = getHistoryData();
