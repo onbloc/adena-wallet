@@ -26,6 +26,7 @@ const ManageTokenSearchContainer: React.FC = () => {
   }, [tokenMetainfos, currentAccount]);
 
   useEffect(() => {
+    console.log(loaded, isClose);
     if (loaded && isClose) {
       goBack();
     }

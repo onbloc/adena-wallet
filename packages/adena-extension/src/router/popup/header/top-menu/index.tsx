@@ -14,6 +14,7 @@ import { useNetwork } from '@hooks/use-network';
 import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import mixins from '@styles/mixins';
 import { createPopupWindow } from '@common/utils/browser-utils';
+import useSessionParams from '@hooks/use-session-state';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -34,6 +35,7 @@ const Header = styled.div`
 
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const theme = useTheme();
+  const { isPopup } = useSessionParams();
   const { establishService } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
@@ -129,7 +131,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
             </Text>
           </Text>
         </CopyTooltip>
-        <ExpandBtn type='button' onClick={popupWindow} />
+        {isPopup ? <div /> : <ExpandBtn type='button' onClick={popupWindow} />}
         {/* <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} /> */}
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />

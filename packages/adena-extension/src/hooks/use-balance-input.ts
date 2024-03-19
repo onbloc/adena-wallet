@@ -49,8 +49,6 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       return false;
     }
     const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
-    console.log('currentAccount', currentAccount);
-    console.log('currentBalance', currentBalance);
     setCurrentBalance(currentBalance);
     if (currentBalance.type === 'gno-native') {
       const convertedBalance = convertDenom(

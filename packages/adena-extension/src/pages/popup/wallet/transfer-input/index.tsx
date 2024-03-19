@@ -14,11 +14,12 @@ import { TokenModel } from '@types';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
+import useSessionParams from '@hooks/use-session-state';
 
 const TransferInputLayoutWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
 `;
 
@@ -39,9 +40,14 @@ interface HistoryData {
 }
 
 const TransferInputContainer: React.FC = () => {
-  const { navigate, params, goBack } = useAppNavigate<RoutePath.TransferInput>();
+  const { navigate, goBack } = useAppNavigate<RoutePath.TransferInput>();
+  const {
+    isPopup,
+    params,
+    isLoading: isLoadingSessionState,
+  } = useSessionParams<RoutePath.TransferInput>();
   const [isTokenSearch, setIsTokenSearch] = useState(params?.isTokenSearch === true);
-  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel>(params?.tokenBalance);
+  const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
   const { currentAccount } = useCurrentAccount();
@@ -49,16 +55,14 @@ const TransferInputContainer: React.FC = () => {
   const { currentNetwork } = useNetwork();
 
   useEffect(() => {
-    if (!params) {
-      chrome.storage.session
-        .get('state')
-        .then((value) => {
-          setIsTokenSearch(value.state.isTokenSearch === true);
-          setTokenMetainfo(value.state.tokenBalance);
-        })
-        .catch(console.log);
+    if (isLoadingSessionState) {
+      return;
     }
-  }, [params]);
+    if (isPopup && params) {
+      setIsTokenSearch(params.isTokenSearch === true);
+      setTokenMetainfo(params.tokenBalance);
+    }
+  }, [isPopup, params, isLoadingSessionState]);
 
   useEffect(() => {
     if (currentAccount && tokenMetainfo) {
@@ -84,6 +88,9 @@ const TransferInputContainer: React.FC = () => {
   }, [getHistoryData()]);
 
   const saveHistoryData = (): void => {
+    if (!tokenMetainfo) {
+      return;
+    }
     setHistoryData({
       isTokenSearch,
       tokenMetainfo,
@@ -118,6 +125,9 @@ const TransferInputContainer: React.FC = () => {
     if (!isNext()) {
       return;
     }
+    if (!tokenMetainfo) {
+      return;
+    }
     const validAddress =
       addressBookInput.validateAddressBookInput() &&
       (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
@@ -139,20 +149,22 @@ const TransferInputContainer: React.FC = () => {
     }
   }, [addressBookInput, balanceInput, isNext()]);
 
+  if (isLoadingSessionState) {
+    return <></>;
+  }
+
   return (
     <TransferInputLayoutWrapper>
-      <div>
-        <TransferInput
-          hasBackButton={isTokenSearch}
-          tokenMetainfo={tokenMetainfo}
-          addressInput={addressBookInput}
-          balanceInput={balanceInput}
-          isNext={isNext()}
-          onClickBack={goBack}
-          onClickCancel={onClickCancel}
-          onClickNext={onClickNext}
-        />
-      </div>
+      <TransferInput
+        hasBackButton={isTokenSearch}
+        tokenMetainfo={tokenMetainfo}
+        addressInput={addressBookInput}
+        balanceInput={balanceInput}
+        isNext={isNext()}
+        onClickBack={goBack}
+        onClickCancel={onClickCancel}
+        onClickNext={onClickNext}
+      />
     </TransferInputLayoutWrapper>
   );
 };

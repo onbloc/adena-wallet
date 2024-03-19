@@ -44,9 +44,9 @@ export const GlobalPopupStyle = createGlobalStyle`
 
   #popup {
     ${mixins.flex({ align: 'normal', justify: 'normal' })};
-    width: 100%;
     position: relative;
-    
+    width: 100%;
+    height: 100%;
   };
 
   main {
