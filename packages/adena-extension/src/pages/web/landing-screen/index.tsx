@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useRef, useState } from 'react';
+import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useQuery } from '@tanstack/react-query';
 
@@ -26,7 +26,6 @@ const StyledAnimationWrapper = styled.div`
 const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
-  const [finishedGuide, setFinishedGuide] = useState(false);
   const theme = useTheme();
   const hardwareWalletButtonRef = useRef<HTMLButtonElement>(null);
   const airgapAccountButtonRef = useRef<HTMLButtonElement>(null);
@@ -38,10 +37,10 @@ const LandingScreen = (): ReactElement => {
     {},
   );
 
-  const { data: visibleGuide } = useQuery(
-    ['landingScreen/visibleGuide', existWallet, finishedGuide],
+  const { data: visibleGuide, refetch: refetchVisibleGuide } = useQuery(
+    ['landingScreen/visibleGuide', existWallet],
     async () => {
-      if (finishedGuide || existWallet === undefined) {
+      if (existWallet === undefined) {
         return false;
       }
       const isSkip = await walletService.isSkipWalletGuide(existWallet);
@@ -65,7 +64,7 @@ const LandingScreen = (): ReactElement => {
     if (existWallet === undefined) {
       return;
     }
-    walletService.updateWalletGuideConfirmDate(existWallet).finally(() => setFinishedGuide(true));
+    walletService.updateWalletGuideConfirmDate(existWallet).finally(refetchVisibleGuide);
   }, [walletService, existWallet]);
 
   if (isLoading) {
@@ -136,7 +135,6 @@ const LandingScreen = (): ReactElement => {
 
       {visibleGuide && (
         <WalletCreationHelpOverlay
-          init={visibleGuide}
           hardwareWalletButtonRef={hardwareWalletButtonRef}
           airgapAccountButtonRef={airgapAccountButtonRef}
           advancedOptionButtonRef={advancedOptionButtonRef}
