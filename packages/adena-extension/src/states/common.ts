@@ -1,3 +1,4 @@
+import { WindowSizeType } from '@types';
 import { atom } from 'recoil';
 
 interface HistoryPosition {
@@ -36,4 +37,9 @@ export const historyState = atom<{ [key in string]: any }>({
 export const webHeaderIndicatorLength = atom<number>({
   key: 'common/webHeaderIndicatorLength',
   default: 0,
+});
+
+export const windowSizeType = atom<WindowSizeType>({
+  key: 'common/windowSizeType',
+  default: 'DEFAULT',
 });

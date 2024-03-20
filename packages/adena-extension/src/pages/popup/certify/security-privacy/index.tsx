@@ -88,7 +88,7 @@ export const SecurityPrivacy = (): JSX.Element => {
 
   useEffect(() => {
     availRemoveAccount().then(setAvailRemove);
-  }, []);
+  }, [availRemoveAccount]);
 
   return (
     <Wrapper>

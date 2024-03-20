@@ -20,7 +20,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
 `;
 
@@ -48,8 +48,9 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
     }
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom
-      }`;
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
+      tokenMetainfo.denom
+    }`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
@@ -99,7 +100,7 @@ const TransferSummaryContainer: React.FC = () => {
     const walletInstance = wallet.clone();
     walletInstance.currentAccountId = currentAccount.id;
     const { signed } = await transactionService.createTransaction(walletInstance, document);
-    return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch(e => {
+    return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
       console.error(e);
       return null;
     });
@@ -166,19 +167,17 @@ const TransferSummaryContainer: React.FC = () => {
 
   return (
     <TransferSummaryLayout>
-      <div>
-        <TransferSummary
-          tokenMetainfo={summaryInfo.tokenMetainfo}
-          tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
-          toAddress={summaryInfo.toAddress}
-          transferBalance={getTransferBalance()}
-          isErrorNetworkFee={isErrorNetworkFee}
-          networkFee={summaryInfo.networkFee}
-          onClickBack={goBack}
-          onClickCancel={onClickCancel}
-          onClickSend={transfer}
-        />
-      </div>
+      <TransferSummary
+        tokenMetainfo={summaryInfo.tokenMetainfo}
+        tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
+        toAddress={summaryInfo.toAddress}
+        transferBalance={getTransferBalance()}
+        isErrorNetworkFee={isErrorNetworkFee}
+        networkFee={summaryInfo.networkFee}
+        onClickBack={goBack}
+        onClickCancel={onClickCancel}
+        onClickSend={transfer}
+      />
     </TransferSummaryLayout>
   );
 };

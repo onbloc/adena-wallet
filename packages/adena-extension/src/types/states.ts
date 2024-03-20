@@ -58,3 +58,5 @@ export interface GoogleState {
 }
 
 export type CreateAccountState = SeedState | LedgerState | GoogleState;
+
+export type WindowSizeType = 'EXPAND' | 'DEFAULT';

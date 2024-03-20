@@ -26,6 +26,8 @@ export const GlobalWebStyle = createGlobalStyle`
 
 export const GlobalPopupStyle = createGlobalStyle`
   html, body {
+    width: 100%;
+    height: 100%;
     min-width: 360px;
     min-height: 540px;
     width: 100%;
@@ -42,15 +44,17 @@ export const GlobalPopupStyle = createGlobalStyle`
 
   #popup {
     ${mixins.flex({ align: 'normal', justify: 'normal' })};
-    width: 100%;
     position: relative;
-    
+    width: 100%;
+    height: 100%;
   };
 
   main {
     position: relative;
     width: 100%;
-    max-width: 360px;
+    height: 100%;
+    min-width: 360px;
+    min-height: 540px;
     min-height: 492px;
     height: 100%;
     padding: 0px 20px 24px;

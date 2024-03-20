@@ -17,6 +17,8 @@ import { TabMenu } from './tab-menu';
 import { CloseTitleMenu } from './close-title-menu';
 
 const Wrapper = styled.header`
+  display: flex;
+  flex-shrink: 0;
   width: 100%;
   height: 48px;
   background-color: ${getTheme('neutral', '_8')};
@@ -51,7 +53,6 @@ export const Header = (): JSX.Element => {
   const resetWallet = useMatch(RoutePath.ResetWallet);
   const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
-
 
   const [walletState] = useRecoilState(WalletState.state);
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);

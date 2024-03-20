@@ -13,7 +13,7 @@ import BroadcastTransactionUploadResult from '@components/pages/broadcast-transa
 import IconHelp from '@assets/help.svg';
 
 const StyledWrapper = styled(View)`
-  width: 360px;
+  width: 100%;
   gap: 24px;
   padding: 24px 20px 120px;
 `;
@@ -86,7 +86,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
     return () => {
       window.removeEventListener('drop', blockEvent);
       window.removeEventListener('dragover', blockEvent);
-    }
+    };
   }, []);
 
   return (
@@ -137,7 +137,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
           onClick: onClickBroadcast,
         }}
       />
-    </CommonFullContentLayout >
+    </CommonFullContentLayout>
   );
 };
 

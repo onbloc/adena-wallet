@@ -10,7 +10,7 @@ import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { TokenModel } from '@types';
 
 export interface TransferInputProps {
-  tokenMetainfo: TokenModel;
+  tokenMetainfo?: TokenModel;
   addressInput: {
     opened: boolean;
     hasError: boolean;
@@ -57,17 +57,17 @@ const TransferInput: React.FC<TransferInputProps> = ({
     <TransferInputWrapper>
       {hasBackButton ? (
         <SubHeader
-          title={`Send ${tokenMetainfo.symbol}`}
+          title={`Send ${tokenMetainfo?.symbol || ''}`}
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
             onClick: onClickBack,
           }}
         />
       ) : (
-        <SubHeader title={`Send ${tokenMetainfo.symbol}`} />
+        <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
       )}
       <div className='logo-wrapper'>
-        <img className='logo' src={tokenMetainfo.image || UnknownTokenIcon} alt='token image' />
+        <img className='logo' src={tokenMetainfo?.image || UnknownTokenIcon} alt='token image' />
       </div>
       <div className='address-input-wrapper'>
         <AddressInput {...addressInput} />

@@ -19,5 +19,5 @@ export const ErrorContainer = ({ children }: Props): JSX.Element => {
     return failedNetwork[currentNetwork.id] === true;
   }, [failedNetwork, currentNetwork, currentAccount]);
 
-  return isError ? <ErrorNetwork /> : <div>{children}</div>;
+  return isError ? <ErrorNetwork /> : <React.Fragment>{children}</React.Fragment>;
 };

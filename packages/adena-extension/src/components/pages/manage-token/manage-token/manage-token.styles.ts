@@ -20,7 +20,7 @@ export const ManageTokenSearchWrapper = styled.div`
     display: flex;
     left: 0;
     bottom: 0;
-    width: 100vw;
+    width: 100%;
     height: 96px;
     padding: 24px 20px;
     box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);

@@ -25,7 +25,7 @@ export type UseBalanceInputHookReturn = {
   validateBalanceInput: () => boolean;
 };
 
-export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookReturn => {
+export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAccount } = useCurrentAccount();
@@ -43,6 +43,9 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
 
   const updateCurrentBalance = useCallback(async () => {
     if (!currentAccount) {
+      return false;
+    }
+    if (!tokenMetainfo) {
       return false;
     }
     const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
@@ -71,7 +74,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   }, []);
 
   const getDescription = useCallback(() => {
-    if (hasError) {
+    if (hasError || !tokenMetainfo) {
       return errorMessage;
     }
     return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
@@ -118,7 +121,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   return {
     hasError,
     amount,
-    denom: tokenMetainfo.symbol,
+    denom: tokenMetainfo?.symbol || '',
     description: getDescription(),
     networkFee,
     setAmount,

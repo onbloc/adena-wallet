@@ -10,6 +10,7 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useAccountName } from '@hooks/use-account-name';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useSessionParams from '@hooks/use-session-state';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
@@ -40,12 +41,11 @@ const CopyInputBox = styled.div`
 
 export const Deposit = (): JSX.Element => {
   const theme = useTheme();
-  const { navigate, params, goBack } = useAppNavigate<RoutePath.Deposit>();
+  const { navigate, goBack } = useAppNavigate<RoutePath.Deposit>();
+  const { params } = useSessionParams<RoutePath.Deposit>();
   const [displayAddr, setDisplayAddr] = useState('');
   const { currentAddress, currentAccount } = useCurrentAccount();
   const { accountNames } = useAccountName();
-  const type = params.type;
-  const tokenMetainfo = params.tokenMetainfo;
 
   useEffect(() => {
     if (currentAddress) {
@@ -54,16 +54,16 @@ export const Deposit = (): JSX.Element => {
   }, [currentAddress]);
 
   const closeButtonClick = useCallback(() => {
-    if (type === 'wallet') {
+    if (params?.type === 'wallet') {
       navigate(RoutePath.Wallet);
       return;
     }
     goBack();
-  }, [type]);
+  }, [params?.type]);
 
   return (
     <Wrapper>
-      <Text type='header4'>{`Deposit ${tokenMetainfo?.symbol || ''}`}</Text>
+      <Text type='header4'>{`Deposit ${params?.tokenMetainfo?.symbol || ''}`}</Text>
       <QRCodeBox>
         <QRCodeSVG value={currentAddress || ''} size={150} />
       </QRCodeBox>
