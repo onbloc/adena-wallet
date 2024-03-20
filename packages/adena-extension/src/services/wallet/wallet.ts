@@ -208,6 +208,21 @@ export class WalletService {
     await this.walletRepository.updatedQuestionnaireExpiredDate(expiredDateTime);
   };
 
+  public isSkipWalletGuide = async (hasWallet: boolean): Promise<boolean> => {
+    const confirmDate = hasWallet
+      ? await this.walletRepository.getAddAccountGuideConfirmDate()
+      : await this.walletRepository.getWalletCreationGuideConfirmDate();
+    return !!confirmDate;
+  };
+
+  public updateWalletGuideConfirmDate = async (hasWallet: boolean): Promise<void> => {
+    const confirmDate = dayjs().unix();
+    const updateGuideConfirmDate = hasWallet
+      ? this.walletRepository.updateAddAccountGuideConfirmDate.bind(this.walletRepository)
+      : this.walletRepository.updateWalletCreationGuideConfirmDate.bind(this.walletRepository);
+    await updateGuideConfirmDate(confirmDate);
+  };
+
   public clear = async (): Promise<boolean> => {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();

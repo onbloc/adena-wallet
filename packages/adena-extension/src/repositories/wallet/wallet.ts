@@ -6,7 +6,12 @@ import {
   encryptSha256Password,
 } from '@common/utils/crypto-utils';
 
-type LocalValueType = 'SERIALIZED' | 'ENCRYPTED_STORED_PASSWORD' | 'QUESTIONNAIRE_EXPIRED_DATE';
+type LocalValueType =
+  | 'SERIALIZED'
+  | 'ENCRYPTED_STORED_PASSWORD'
+  | 'QUESTIONNAIRE_EXPIRED_DATE'
+  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -104,5 +109,29 @@ export class WalletRepository {
 
   public updatedQuestionnaireExpiredDate = async (expiredDateTime: number): Promise<void> => {
     await this.localStorage.set('QUESTIONNAIRE_EXPIRED_DATE', expiredDateTime);
+  };
+
+  public getWalletCreationGuideConfirmDate = async (): Promise<number | null> => {
+    const confirmDate = await this.localStorage.get('WALLET_CREATION_GUIDE_CONFIRM_DATE');
+    if (!confirmDate) {
+      return null;
+    }
+    return Number(confirmDate);
+  };
+
+  public updateWalletCreationGuideConfirmDate = async (confirmDate: number): Promise<void> => {
+    await this.localStorage.set('WALLET_CREATION_GUIDE_CONFIRM_DATE', confirmDate);
+  };
+
+  public getAddAccountGuideConfirmDate = async (): Promise<number | null> => {
+    const confirmDate = await this.localStorage.get('ADD_ACCOUNT_GUIDE_CONFIRM_DATE');
+    if (!confirmDate) {
+      return null;
+    }
+    return Number(confirmDate);
+  };
+
+  public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
+    await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
   };
 }

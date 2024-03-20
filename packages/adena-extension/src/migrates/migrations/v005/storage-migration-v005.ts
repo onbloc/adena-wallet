@@ -19,6 +19,8 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
         ...previous,
         QUESTIONNAIRE_EXPIRED_DATE: null,
         ADDRESS_BOOK: this.migrateAddressBook(),
+        WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
+        ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
       },
     };
   }
