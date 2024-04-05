@@ -37,3 +37,8 @@ export const webHeaderIndicatorLength = atom<number>({
   key: 'common/webHeaderIndicatorLength',
   default: 0,
 });
+
+export const toastMessage = atom<string | null>({
+  key: 'common/toastMessage',
+  default: null,
+});

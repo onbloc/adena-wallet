@@ -55,6 +55,7 @@ import LoadingMain from './loading-main';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
+import ToastContainer from './toast-container';
 
 export const PopupRouter = (): JSX.Element => {
   return (
@@ -124,6 +125,7 @@ export const PopupRouter = (): JSX.Element => {
       </Routes>
       <Navigation />
       <LoadingMain />
+      <ToastContainer />
     </React.Fragment>
   );
 };
