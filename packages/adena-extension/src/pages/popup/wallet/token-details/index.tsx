@@ -26,6 +26,7 @@ import LoadingTokenDetails from './loading-token-details';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
+import useSessionParams from '@hooks/use-session-state';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -109,12 +110,12 @@ type TokenHistoriesType = {
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
   const { openLink } = useLink();
-  const { navigate, params } = useAppNavigate<RoutePath.TokenDetails>();
+  const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
+  const { params } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
   useNetwork();
-  const tokenBalance = params.tokenBalance;
-  const [balance] = useState(tokenBalance?.amount.value);
+  const tokenBalance = params?.tokenBalance;
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
@@ -126,7 +127,7 @@ export const TokenDetails = (): JSX.Element => {
     [
       'history/grc20-token-history',
       currentAddress,
-      isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
+      tokenBalance && isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
     ],
     ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
     {
@@ -187,18 +188,19 @@ export const TokenDetails = (): JSX.Element => {
       };
     }
     const size = 20;
-    const histories = isGRC20TokenModel(tokenBalance)
-      ? await transactionHistoryService.fetchGRC20TransactionHistory(
-        currentAddress,
-        tokenBalance.pkgPath,
-        pageParam,
-        size,
-      )
-      : await transactionHistoryService.fetchNativeTransactionHistory(
-        currentAddress,
-        pageParam,
-        size,
-      );
+    const histories =
+      tokenBalance && isGRC20TokenModel(tokenBalance)
+        ? await transactionHistoryService.fetchGRC20TransactionHistory(
+            currentAddress,
+            tokenBalance.pkgPath,
+            pageParam,
+            size,
+          )
+        : await transactionHistoryService.fetchNativeTransactionHistory(
+            currentAddress,
+            pageParam,
+            size,
+          );
     const txs = histories.txs.map((transaction) => {
       const { value, denom } = convertDenom(
         transaction.amount.value,
@@ -239,11 +241,15 @@ export const TokenDetails = (): JSX.Element => {
   );
 
   const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet);
-  const DepositButtonClick = (): void =>
+  const DepositButtonClick = (): void => {
+    if (!tokenBalance) {
+      return;
+    }
     navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
+  };
 
   const SendButtonClick = (): void => {
-    if (!currentAccount) {
+    if (!currentAccount || !tokenBalance) {
       return;
     }
     clearHistoryData(RoutePath.TransferInput);
@@ -264,7 +270,7 @@ export const TokenDetails = (): JSX.Element => {
   };
 
   const getTokenUri = (): string => {
-    if (isGRC20TokenModel(tokenBalance)) {
+    if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
       return `https://gnoscan.io/tokens/${tokenBalance.pkgPath}`;
     }
     return '';
@@ -275,7 +281,7 @@ export const TokenDetails = (): JSX.Element => {
       tooltipText: 'View on Gnoscan',
       onClick: () => openLink(getAccountDetailUri()),
     };
-    if (!isGRC20TokenModel(tokenBalance)) {
+    if (tokenBalance && !isGRC20TokenModel(tokenBalance)) {
       return [accountDetailItem];
     }
     const realmDetailItem = {
@@ -289,7 +295,7 @@ export const TokenDetails = (): JSX.Element => {
     <Wrapper>
       <HeaderWrap>
         <LeftArrowBtn onClick={handlePrevButtonClick} />
-        <Text type='header4'>{tokenBalance.name}</Text>
+        <Text type='header4'>{tokenBalance?.name}</Text>
         <EtcIcon className={etcClicked ? 'show-tooltip' : ''} onClick={etcButtonClick}>
           <img src={etc} alt='View on Gnoscan' />
           <StaticMultiTooltip bgColor={theme.neutral._7} posTop='28px' items={getTooltipItems()} />
@@ -298,7 +304,7 @@ export const TokenDetails = (): JSX.Element => {
 
       <div className='balance-wrapper'>
         <HighlightNumber
-          value={BigNumber(balance).toFormat()}
+          value={BigNumber(tokenBalance?.amount.value || 0).toFormat()}
           fontColor={theme.neutral._1}
           fontStyleKey={'header2'}
           minimumFontSize={'24px'}

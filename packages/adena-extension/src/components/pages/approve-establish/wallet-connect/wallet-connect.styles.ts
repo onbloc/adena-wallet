@@ -6,7 +6,7 @@ import { fonts, getTheme } from '@styles/theme';
 
 export const WalletConnectWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
-  width: 100vw;
+  width: 100%;
   padding: 0 20px;
   align-self: center;
 

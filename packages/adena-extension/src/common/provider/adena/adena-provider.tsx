@@ -19,6 +19,7 @@ import { ChainRepository } from '@repositories/common';
 import { TransactionHistoryService, TransactionService } from '@services/transaction';
 import { TokenRepository } from '@repositories/common/token';
 import { TransactionHistoryRepository } from '@repositories/transaction';
+import { useWindowSize } from '@hooks/use-window-size';
 
 export interface AdenaContextProps {
   walletService: WalletService;
@@ -72,6 +73,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   const transactionService = new TransactionService(walletService);
 
   const transactionHistoryService = new TransactionHistoryService(transactionHistoryRepository);
+
+  useWindowSize(true);
 
   return (
     <AdenaContext.Provider

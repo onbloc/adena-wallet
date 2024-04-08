@@ -10,10 +10,10 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 
 const content =
-  'Only proceed if you wish to remove all existing accounts and replace them with new ones. Make sure to back up your seed phrase and keys first.';
+  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
 const forgotPasswordContent =
-  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
+  'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
 
 export const ResetWallet = (): JSX.Element => {
   const theme = useTheme();
