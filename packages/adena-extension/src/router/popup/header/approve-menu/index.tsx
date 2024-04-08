@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
 import { getTheme } from '@styles/theme';
-import { Text, CopyTooltip, StatusDot } from '@components/atoms';
+import { Text, CopyTooltip, StatusDot, Row } from '@components/atoms';
 import {
   formatAddress,
   formatNickname,
@@ -14,17 +14,20 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import { useNetwork } from '@hooks/use-network';
-import mixins from '@styles/mixins';
 
-const Wrapper = styled.div`
+const StyledContainer = styled(Row)`
   width: 100%;
   height: 100%;
-  padding: 0px 20px 0px 12px;
+  padding: 0px 20px;
+  justify-content: center;
+  align-items: center;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
-  ${mixins.flex({ direction: 'row', justify: 'flex-end' })};
-  .t-approve {
-    ${mixins.positionCenter()}
-  }
+`;
+
+const StyledCenterWrapper = styled(Row)`
+  width: auto;
+  height: 100%;
+  gap: 8px;
 `;
 
 const ApproveMenu = (): JSX.Element => {
@@ -60,7 +63,7 @@ const ApproveMenu = (): JSX.Element => {
     if (!currentAccount) {
       return;
     }
-    const address = await getCurrentAddress(currentNetwork.addressPrefix) || '';
+    const address = (await getCurrentAddress(currentNetwork.addressPrefix)) || '';
     const currentAccountName = accountNames[currentAccount.id] || currentAccount.name;
     setAddress(address);
     setAccountName(currentAccountName);
@@ -86,9 +89,10 @@ const ApproveMenu = (): JSX.Element => {
   };
 
   return (
-    <Wrapper>
+    <StyledContainer>
       {address && (
-        <>
+        <StyledCenterWrapper>
+          <StatusDot status={isEstablished} tooltipText={getTooltipText()} />
           <CopyTooltip copyText={address} className='t-approve'>
             <Text type='body1Bold' display='inline-flex' style={{ whiteSpace: 'pre' }}>
               {formatNickname(accountName, 12)}
@@ -97,10 +101,9 @@ const ApproveMenu = (): JSX.Element => {
               </Text>
             </Text>
           </CopyTooltip>
-          <StatusDot status={isEstablished} tooltipText={getTooltipText()} />
-        </>
+        </StyledCenterWrapper>
       )}
-    </Wrapper>
+    </StyledContainer>
   );
 };
 

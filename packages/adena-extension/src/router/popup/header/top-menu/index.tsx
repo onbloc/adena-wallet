@@ -33,6 +33,22 @@ const Header = styled.div`
   }
 `;
 
+const StyledCenterWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  width: auto;
+  height: 100%;
+  gap: 8px;
+  & > img {
+    ${mixins.positionCenter()}
+  }
+`;
+
+const StyledRightWrapper = styled.div`
+  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  width: 15px;
+  height: 100%;
+`;
+
 export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const theme = useTheme();
   const { isPopup } = useSessionParams();
@@ -123,16 +139,20 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     <Wrapper>
       <Header>
         <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-        <CopyTooltip copyText={currentAddress || ''}>
-          <Text type='body1Bold' display='inline-flex'>
-            {formatNickname(currentAccountName, 12)}
-            <Text type='body1Reg' color={theme.neutral.a}>
-              {` (${formatAddress(currentAddress || '')})`}
+        <StyledCenterWrapper>
+          <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
+          <CopyTooltip copyText={currentAddress || ''}>
+            <Text type='body1Bold' display='inline-flex'>
+              {formatNickname(currentAccountName, 12)}
+              <Text type='body1Reg' color={theme.neutral.a}>
+                {` (${formatAddress(currentAddress || '')})`}
+              </Text>
             </Text>
-          </Text>
-        </CopyTooltip>
-        {isPopup ? <div /> : <ExpandBtn type='button' onClick={popupWindow} />}
-        {/* <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} /> */}
+          </CopyTooltip>
+        </StyledCenterWrapper>
+        <StyledRightWrapper>
+          {isPopup ? <div /> : <ExpandBtn type='button' onClick={popupWindow} />}
+        </StyledRightWrapper>
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />
     </Wrapper>
