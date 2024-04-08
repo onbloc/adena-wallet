@@ -22,15 +22,8 @@ export interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const {
-    walletService,
-    transactionService,
-    balanceService,
-    accountService,
-    chainService,
-    tokenService,
-    transactionHistoryService,
-  } = useAdenaContext();
+  const { walletService, balanceService, accountService, chainService, tokenService } =
+    useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -143,12 +136,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
     setCurrentNetwork(networkMetainfo);
     setGnoProvider(gnoProvider);
-
-    accountService.setGnoProvider(gnoProvider);
-    balanceService.setGnoProvider(gnoProvider);
-    transactionService.setGnoProvider(gnoProvider);
-    tokenService.setNetworkMetainfo(networkMetainfo);
-    transactionHistoryService.setNetworkMetainfo(networkMetainfo);
     return networkMetainfo;
   }
 

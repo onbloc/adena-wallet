@@ -4,6 +4,9 @@ import { useAdenaContext } from './use-context';
 export interface UseWalletReturn {
   existWallet: boolean | undefined;
   isLoadingExistWallet: boolean;
+
+  lockedWallet: boolean | undefined;
+  isLoadingLockedWallet: boolean;
 }
 
 export const useWallet = (): UseWalletReturn => {
@@ -18,5 +21,19 @@ export const useWallet = (): UseWalletReturn => {
     {},
   );
 
-  return { existWallet, isLoadingExistWallet };
+  const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
+    ['wallet/locked', walletService],
+    async () => {
+      const lockedWallet = await walletService.isLocked();
+      return lockedWallet;
+    },
+    {},
+  );
+
+  return {
+    existWallet,
+    isLoadingExistWallet,
+    lockedWallet,
+    isLoadingLockedWallet,
+  };
 };

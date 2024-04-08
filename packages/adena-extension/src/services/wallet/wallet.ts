@@ -120,6 +120,11 @@ export class WalletService {
     const serializedWallet = await wallet.serialize(password);
     await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
+    try {
+      chrome?.action?.setPopup({ popup: 'popup.html' });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   /**
@@ -226,6 +231,11 @@ export class WalletService {
   public clear = async (): Promise<boolean> => {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
+    try {
+      chrome?.action?.setPopup({ popup: '' });
+    } catch (e) {
+      console.error(e);
+    }
     return true;
   };
 }

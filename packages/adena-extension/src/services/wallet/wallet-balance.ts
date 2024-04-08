@@ -10,8 +10,9 @@ export class WalletBalanceService {
 
   private gnoProvider: GnoProvider | null = null;
 
-  constructor() {
+  constructor(gnoProvider?: GnoProvider | null) {
     this.tokenMetainfos = [];
+    this.gnoProvider = gnoProvider || null;
   }
 
   public getGnoProvider(): GnoProvider {

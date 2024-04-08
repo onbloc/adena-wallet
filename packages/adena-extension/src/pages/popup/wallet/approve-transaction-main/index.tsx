@@ -250,7 +250,7 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const onClickConfirm = (): void => {
-    if (!currentAccount) {
+    if (!currentAccount || isErrorNetworkFee) {
       return;
     }
 
@@ -263,7 +263,9 @@ const ApproveTransactionContainer: React.FC = () => {
       });
       return;
     }
-    sendTransaction().finally(() => { setProcessType('DONE') });
+    sendTransaction().finally(() => {
+      setProcessType('DONE');
+    });
   };
 
   useEffect(() => {
