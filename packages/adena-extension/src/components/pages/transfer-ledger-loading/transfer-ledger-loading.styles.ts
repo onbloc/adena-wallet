@@ -5,7 +5,7 @@ export const TransferLedgerLoadingWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
   width: 100%;
-  height: auto;
+  height: 100%;
   min-height: 444px;
 
   @keyframes rotate {

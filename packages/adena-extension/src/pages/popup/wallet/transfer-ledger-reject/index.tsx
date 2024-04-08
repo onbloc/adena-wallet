@@ -9,7 +9,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 const TransferLedgerRejectLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: auto;
+  height: 100%;
   padding: 24px 20px;
   margin-bottom: 60px;
 `;

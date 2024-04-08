@@ -131,12 +131,12 @@ export const WalletMain = (): JSX.Element => {
         state: { tokenBalance },
       });
     },
-    [tokens],
+    [navigate, tokens],
   );
 
   const onClickManageButton = useCallback(() => {
     navigate(RoutePath.ManageToken);
-  }, []);
+  }, [navigate]);
 
   return (
     <Wrapper>

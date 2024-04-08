@@ -21,6 +21,7 @@ import { TokenRepository } from '@repositories/common/token';
 import { TransactionHistoryRepository } from '@repositories/transaction';
 import { FaucetService } from '@services/faucet';
 import { FaucetRepository } from '@repositories/faucet/faucet';
+import { useWindowSize } from '@hooks/use-window-size';
 
 export interface AdenaContextProps {
   walletService: WalletService;
@@ -79,6 +80,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
 
   const faucetService = useMemo(() => new FaucetService(faucetRepository), [faucetRepository]);
+
+  useWindowSize(true);
 
   return (
     <AdenaContext.Provider

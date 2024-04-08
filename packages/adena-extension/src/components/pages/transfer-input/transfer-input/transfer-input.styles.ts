@@ -6,6 +6,7 @@ export const TransferInputWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
   width: 100%;
+  height: 100%;
   min-height: 444px;
   padding-top: 5px;
 
