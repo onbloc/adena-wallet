@@ -53,7 +53,7 @@ export const addEstablish = async (
   if (!isLocked) {
     const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
     if (isEstablished) {
-      sendResponse(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, message.key));
+      sendResponse(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, message.key));
       return true;
     }
   }
