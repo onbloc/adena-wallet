@@ -1,4 +1,4 @@
-import React, { createContext } from 'react';
+import React, { createContext, useMemo } from 'react';
 import axios from 'axios';
 import { AdenaStorage } from '@common/storage';
 import {
@@ -19,6 +19,8 @@ import { ChainRepository } from '@repositories/common';
 import { TransactionHistoryService, TransactionService } from '@services/transaction';
 import { TokenRepository } from '@repositories/common/token';
 import { TransactionHistoryRepository } from '@repositories/transaction';
+import { FaucetService } from '@services/faucet';
+import { FaucetRepository } from '@repositories/faucet/faucet';
 import { useWindowSize } from '@hooks/use-window-size';
 
 export interface AdenaContextProps {
@@ -31,6 +33,7 @@ export interface AdenaContextProps {
   tokenService: TokenService;
   transactionService: TransactionService;
   transactionHistoryService: TransactionHistoryService;
+  faucetService: FaucetService;
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
@@ -74,6 +77,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
 
   const transactionHistoryService = new TransactionHistoryService(transactionHistoryRepository);
 
+  const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
+
+  const faucetService = useMemo(() => new FaucetService(faucetRepository), [faucetRepository]);
+
   useWindowSize(true);
 
   return (
@@ -88,6 +95,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         tokenService,
         transactionService,
         transactionHistoryService,
+        faucetService,
       }}
     >
       {children}

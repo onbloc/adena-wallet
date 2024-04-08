@@ -39,6 +39,11 @@ export const webHeaderIndicatorLength = atom<number>({
   default: 0,
 });
 
+export const toastMessage = atom<string | null>({
+  key: 'common/toastMessage',
+  default: null,
+});
+
 export const windowSizeType = atom<WindowSizeType>({
   key: 'common/windowSizeType',
   default: 'DEFAULT',
