@@ -9,36 +9,39 @@ function existsWallet(): Promise<boolean> {
     .catch(() => false);
 }
 
+function setupPopup(existWallet: boolean): boolean {
+  const popupUri = existWallet ? 'popup.html' : '';
+  chrome.action.setPopup({ popup: popupUri });
+  return true;
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({
       url: chrome.runtime.getURL('/register.html'),
     });
   } else if (details.reason === 'update') {
-    existsWallet().then(() => {
-      chrome.action.setPopup({ popup: '/popup.html' });
+    existsWallet().then((existWallet) => {
+      setupPopup(existWallet);
     });
   }
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  existsWallet()
-    .then(async (exist) => {
-      if (!exist) {
-        await chrome.action.setPopup({ tabId: tab.id, popup: '/popup.html' });
-        chrome.tabs.create({
-          url: chrome.runtime.getURL('/register.html'),
-        });
-      } else {
-        await chrome.action.setPopup({ tabId: tab.id, popup: '' });
-      }
-    })
-    .catch(async () => {
-      await chrome.action.setPopup({ tabId: tab.id, popup: '' });
+chrome.tabs.onCreated.addListener(() => {
+  existsWallet().then((existWallet) => {
+    setupPopup(existWallet);
+  });
+});
+
+chrome.action.onClicked.addListener(async () => {
+  existsWallet().then((existWallet) => {
+    setupPopup(existWallet);
+    if (!existWallet) {
       chrome.tabs.create({
         url: chrome.runtime.getURL('/register.html'),
       });
-    });
+    }
+  });
 });
 
 chrome.runtime.onMessage.addListener(MessageHandler.createHandler);

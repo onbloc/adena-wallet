@@ -44,7 +44,7 @@ export const useTokenBalance = (): {
 
   useEffect(() => {
     balanceService.setTokenMetainfos(tokenMetainfos);
-  }, [tokenMetainfos]);
+  }, [tokenMetainfos, balanceService]);
 
   const filteredAccountBalances = useMemo(() => {
     return accountTokenBalances.filter((accountTokenBalance) =>

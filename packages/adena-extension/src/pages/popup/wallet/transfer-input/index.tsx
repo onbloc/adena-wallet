@@ -58,7 +58,7 @@ const TransferInputContainer: React.FC = () => {
     if (isLoadingSessionState) {
       return;
     }
-    if (isPopup && params) {
+    if (params) {
       setIsTokenSearch(params.isTokenSearch === true);
       setTokenMetainfo(params.tokenBalance);
     }

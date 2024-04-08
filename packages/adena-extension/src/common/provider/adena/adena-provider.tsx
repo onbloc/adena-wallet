@@ -22,6 +22,9 @@ import { TransactionHistoryRepository } from '@repositories/transaction';
 import { FaucetService } from '@services/faucet';
 import { FaucetRepository } from '@repositories/faucet/faucet';
 import { useWindowSize } from '@hooks/use-window-size';
+import { useRecoilValue } from 'recoil';
+import { NetworkState } from '@states';
+import { GnoProvider } from '../gno/gno-provider';
 
 export interface AdenaContextProps {
   walletService: WalletService;
@@ -39,43 +42,89 @@ export interface AdenaContextProps {
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
 export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
+  const currentNetwork = useRecoilValue(NetworkState.currentNetwork);
+
+  const gnoProvider: GnoProvider | null = useMemo(() => {
+    if (!currentNetwork) {
+      return null;
+    }
+    return new GnoProvider(currentNetwork.rpcUrl, currentNetwork.chainId);
+  }, [currentNetwork]);
+
   const axiosInstance = axios.create({ timeout: 5000 });
 
   const localStorage = AdenaStorage.local();
 
   const sessionStorage = AdenaStorage.session();
 
-  const walletRepository = new WalletRepository(localStorage, sessionStorage);
+  const walletRepository = useMemo(
+    () => new WalletRepository(localStorage, sessionStorage),
+    [localStorage, sessionStorage],
+  );
 
-  const accountRepository = new WalletAccountRepository(localStorage);
+  const accountRepository = useMemo(
+    () => new WalletAccountRepository(localStorage),
+    [localStorage],
+  );
 
-  const establishRepository = new WalletEstablishRepository(localStorage);
+  const establishRepository = useMemo(
+    () => new WalletEstablishRepository(localStorage),
+    [localStorage],
+  );
 
-  const addressBookRepository = new WalletAddressRepository(localStorage);
+  const addressBookRepository = useMemo(
+    () => new WalletAddressRepository(localStorage),
+    [localStorage],
+  );
 
-  const chainRepository = new ChainRepository(localStorage, axiosInstance);
+  const chainRepository = useMemo(
+    () => new ChainRepository(localStorage, axiosInstance),
+    [localStorage, axiosInstance],
+  );
 
-  const tokenRepository = new TokenRepository(localStorage, axiosInstance);
+  const tokenRepository = useMemo(
+    () => new TokenRepository(localStorage, axiosInstance, currentNetwork),
+    [localStorage, axiosInstance, currentNetwork],
+  );
 
-  const transactionHistoryRepository = new TransactionHistoryRepository(axiosInstance);
+  const transactionHistoryRepository = useMemo(() => {
+    return new TransactionHistoryRepository(axiosInstance, currentNetwork);
+  }, [axiosInstance, currentNetwork]);
 
-  const chainService = new ChainService(chainRepository);
+  const chainService = useMemo(() => new ChainService(chainRepository), [chainRepository]);
 
-  const tokenService = new TokenService(tokenRepository);
+  const tokenService = useMemo(() => new TokenService(tokenRepository), [tokenRepository]);
 
-  const walletService = new WalletService(walletRepository);
+  const walletService = useMemo(() => new WalletService(walletRepository), [walletRepository]);
 
-  const balanceService = new WalletBalanceService();
+  const balanceService: WalletBalanceService = useMemo(() => {
+    return new WalletBalanceService(gnoProvider);
+  }, [gnoProvider]);
 
-  const accountService = new WalletAccountService(accountRepository);
+  const accountService = useMemo(
+    () => new WalletAccountService(accountRepository, gnoProvider),
+    [accountRepository, gnoProvider],
+  );
 
-  const addressBookService = new WalletAddressBookService(walletRepository, addressBookRepository);
+  const addressBookService = useMemo(
+    () => new WalletAddressBookService(walletRepository, addressBookRepository),
+    [walletRepository, addressBookRepository],
+  );
 
-  const establishService = new WalletEstablishService(establishRepository);
+  const establishService = useMemo(
+    () => new WalletEstablishService(establishRepository),
+    [establishRepository],
+  );
 
-  const transactionService = new TransactionService(walletService);
+  const transactionService = useMemo(() => {
+    const transactionService = new TransactionService(walletService, gnoProvider);
+    return transactionService;
+  }, [walletService, gnoProvider]);
 
-  const transactionHistoryService = new TransactionHistoryService(transactionHistoryRepository);
+  const transactionHistoryService = useMemo(
+    () => new TransactionHistoryService(transactionHistoryRepository),
+    [transactionHistoryRepository],
+  );
 
   const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
 

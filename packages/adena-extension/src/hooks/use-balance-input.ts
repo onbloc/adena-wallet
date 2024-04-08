@@ -66,7 +66,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       setAvailAmountNumber(BigNumber(currentBalance.amount.value));
     }
     return true;
-  }, [wallet, balanceService, currentAccount]);
+  }, [wallet, balanceService, currentAccount, tokenMetainfo]);
 
   const clearError = useCallback(() => {
     setHasError(false);
@@ -80,7 +80,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
       tokenMetainfo.symbol
     }`;
-  }, [currentBalance, hasError, errorMessage]);
+  }, [currentBalance, hasError, errorMessage, tokenMetainfo]);
 
   const onChangeAmount = useCallback((amount: string) => {
     const charAtFirst = amount.charAt(0);
