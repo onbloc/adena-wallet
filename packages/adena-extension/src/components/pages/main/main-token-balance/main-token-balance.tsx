@@ -26,6 +26,7 @@ const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount }) => {
         fontStyleKey='header2'
         minimumFontSize='24px'
         lineHeight='39px'
+        maxWidth={200}
       />
     </MainTokenBalanceWrapper>
   );
