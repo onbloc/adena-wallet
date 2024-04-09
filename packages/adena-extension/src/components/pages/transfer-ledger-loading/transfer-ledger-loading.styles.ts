@@ -5,8 +5,8 @@ export const TransferLedgerLoadingWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 444px;
+  height: auto;
+  padding-bottom: 120px;
 
   @keyframes rotate {
     from {
@@ -22,6 +22,8 @@ export const TransferLedgerLoadingWrapper = styled.div`
   }
 
   .icon {
+    display: flex;
+    flex-shrink: 0;
     width: 100px;
     height: 100px;
     margin: 20px auto;
