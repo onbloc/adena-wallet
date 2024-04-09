@@ -14,7 +14,7 @@ import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
-  position: absolute;
+  position: fixed;
   width: 100%;
   height: 100%;
   padding: 78px 24px;
@@ -46,7 +46,7 @@ const LoadingMain = (): ReactElement => {
   const { currentNetwork } = useNetwork();
   const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
   const isApproveHardwarePath = useMatch(RoutePath.WebConnectLedger + '/*');
-  const { tokenBalances } = useTokenBalance();
+  const { currentBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
   const isPopupMatch = useMatch('/popup/*');
 
@@ -61,13 +61,13 @@ const LoadingMain = (): ReactElement => {
       if (failedNetwork[currentNetwork.id] === true) {
         return false;
       } else if (failedNetwork[currentNetwork.id] === false) {
-        if (tokenBalances.length > 0) {
+        if (currentBalances.length > 0) {
           return false;
         }
       }
     }
     return true;
-  }, [state, tokenBalances, failedNetwork, currentNetwork.rpcUrl, useMatch]);
+  }, [state, currentBalances, failedNetwork, currentNetwork.rpcUrl, useMatch]);
 
   return loading ? (
     <Wrapper>

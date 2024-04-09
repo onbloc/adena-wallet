@@ -1,5 +1,5 @@
 import { NavigateOptions, useLocation, useNavigate } from 'react-router-dom';
-import { RouteParams } from 'src/types/router';
+import { RouteParams, RoutePath } from '@types';
 
 type NavigateProps<key extends keyof RouteParams> = key extends unknown
   ? null extends RouteParams[key]
@@ -43,7 +43,11 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   };
 
   const goBack = (): void => {
-    baseNavigate(-1);
+    if (window?.history?.length > 1) {
+      baseNavigate(-1);
+    } else {
+      navigate(RoutePath.Home, {});
+    }
   };
 
   const reload = (): void => {

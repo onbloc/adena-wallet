@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import { View } from '../base';
 import { WebButton } from '../web-button';
 import { WebText } from '../web-text';
-
 export interface WebMainButtonProps {
+  buttonRef?: React.RefObject<HTMLButtonElement>;
   figure: 'primary' | 'secondary' | 'tertiary';
   text: string;
   width?: CSSProperties['width'];
@@ -32,6 +32,7 @@ const StyledImageWrapper = styled(View)`
 `;
 
 const WebMainButton: React.FC<WebMainButtonProps> = ({
+  buttonRef,
   iconElement,
   text,
   figure,
@@ -41,16 +42,17 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
 }) => {
   return (
     <StyledContainer
+      buttonRef={buttonRef}
       style={{ width }}
       figure={figure}
       size='large'
       disabled={disabled}
       onClick={onClick}
     >
-      <StyledImageWrapper>
-        {iconElement}
-      </StyledImageWrapper>
-      <WebText type='title5' color='inherit'>{text}</WebText>
+      <StyledImageWrapper>{iconElement}</StyledImageWrapper>
+      <WebText type='title5' color='inherit'>
+        {text}
+      </WebText>
     </StyledContainer>
   );
 };

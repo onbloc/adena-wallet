@@ -166,6 +166,8 @@ const Wrapper = styled.main`
   ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding-top: 30px;
+  overflow: auto;
+
   .status-icon {
     width: 60px;
     height: 60px;
@@ -187,6 +189,7 @@ const Wrapper = styled.main`
 
 const TokenBox = styled.div<{ color: string }>`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  flex-shrink: 0;
   width: 100%;
   height: 70px;
   background-color: ${getTheme('neutral', '_9')};
@@ -194,6 +197,7 @@ const TokenBox = styled.div<{ color: string }>`
   border-radius: 18px;
   padding: 0px 15px;
   margin: 18px 0px 8px;
+
   .tx-symbol {
     width: 30px;
     height: 30px;

@@ -11,10 +11,11 @@ export interface ApproveInjectionLoadingProps {
 }
 
 const INTERVAL_DURATION = 500;
+const TIMEOUT_DEFAULT = 0; // milliseconds
 
 export const ApproveInjectionLoading: React.FC<ApproveInjectionLoadingProps> = ({
   wait = 1000,
-  timeout = 5000,
+  timeout = TIMEOUT_DEFAULT,
   done,
   onResponse,
   onTimeout,
@@ -34,7 +35,7 @@ export const ApproveInjectionLoading: React.FC<ApproveInjectionLoadingProps> = (
       }
     }
 
-    if (tick > timeout) {
+    if (timeout !== 0 && tick > timeout) {
       onTimeout();
       clearInterval(interval);
       return;

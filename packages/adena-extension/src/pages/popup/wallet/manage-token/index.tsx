@@ -6,35 +6,26 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { RoutePath } from '@types';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import useAppNavigate from '@hooks/use-app-navigate';
 
 const ManageTokenSearchContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [loaded, setLoaded] = useState(false);
   const [isClose, setIsClose] = useState(false);
-  const { tokenMetainfos } = useTokenMetainfo();
   const { currentAccount } = useCurrentAccount();
-  const { tokenBalances, toggleDisplayOption, updateTokenBalanceInfos } = useTokenBalance();
+  const { currentBalances, toggleDisplayOption } = useTokenBalance();
 
   useEffect(() => {
-    if (currentAccount) {
-      updateTokenBalanceInfos(tokenMetainfos).then(() => setLoaded(true));
-    }
-  }, [tokenMetainfos, currentAccount]);
-
-  useEffect(() => {
-    if (loaded && isClose) {
+    if (isClose) {
       goBack();
     }
-  }, [loaded, isClose]);
+  }, [isClose]);
 
   const filterTokens = useCallback(
     (keyword: string) => {
       const comparedKeyword = keyword.toLowerCase();
-      const filteredTokens = tokenBalances
+      const filteredTokens = currentBalances
         .filter((token) => {
           if (comparedKeyword === '') return true;
           if (token.name.toLowerCase().includes(comparedKeyword)) return true;
@@ -53,7 +44,7 @@ const ManageTokenSearchContainer: React.FC = () => {
         });
       return filteredTokens;
     },
-    [tokenBalances],
+    [currentBalances],
   );
 
   const moveTokenAddedPage = useCallback(() => {
@@ -69,12 +60,12 @@ const ManageTokenSearchContainer: React.FC = () => {
       if (!currentAccount) {
         return;
       }
-      const changedToken = tokenBalances.find((token) => tokenId === token.tokenId);
+      const changedToken = currentBalances.find((token) => tokenId === token.tokenId);
       if (changedToken) {
         toggleDisplayOption(currentAccount, changedToken, activated);
       }
     },
-    [tokenBalances],
+    [currentBalances],
   );
 
   const onClickClose = useCallback(() => {

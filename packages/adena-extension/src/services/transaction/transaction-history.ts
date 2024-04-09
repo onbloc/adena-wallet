@@ -1,15 +1,11 @@
 import { TransactionHistoryRepository } from '@repositories/transaction';
-import { NetworkMetainfo, TransactionInfo } from '@types';
+import { TransactionInfo } from '@types';
 
 export class TransactionHistoryService {
   private transactionHisotyrRepository: TransactionHistoryRepository;
 
   constructor(transactionHisotyrRepository: TransactionHistoryRepository) {
     this.transactionHisotyrRepository = transactionHisotyrRepository;
-  }
-
-  public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
-    return this.transactionHisotyrRepository.setNetworkMetainfo(networkMetainfo);
   }
 
   public fetchAllTransactionHistory(

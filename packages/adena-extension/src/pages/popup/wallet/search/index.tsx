@@ -17,6 +17,7 @@ import { TokenBalanceType } from '@types';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useSessionState from '@hooks/use-session-state';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -73,9 +74,10 @@ const ButtonWrap = styled.div`
 `;
 
 export const WalletSearch = (): JSX.Element => {
-  const { navigate, params } = useAppNavigate<RoutePath.WalletSearch>();
+  const { navigate } = useAppNavigate<RoutePath.WalletSearch>();
+  const { params } = useSessionState<RoutePath.WalletSearch>();
 
-  const { displayTokenBalances } = useTokenBalance();
+  const { currentBalances } = useTokenBalance();
   const { clearHistoryData } = useHistoryData();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -89,7 +91,7 @@ export const WalletSearch = (): JSX.Element => {
   };
 
   const onClickItem = (tokenBalance: TokenBalanceType): void => {
-    params.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
+    params?.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
   };
 
   const moveTransferInput = (tokenBalance: TokenBalanceType): void => {
@@ -132,7 +134,7 @@ export const WalletSearch = (): JSX.Element => {
         {Boolean(searchText) && <InputResetBtn onClick={inputResetClick} type='button' />}
       </SearchBox>
       <DataListWrap>
-        {displayTokenBalances
+        {currentBalances
           .filter(
             (balance) =>
               searchTextFilter(balance.name ?? '', searchText) ||

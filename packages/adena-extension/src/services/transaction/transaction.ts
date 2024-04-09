@@ -30,9 +30,9 @@ export class TransactionService {
 
   private gnoProvider: GnoProvider | null;
 
-  constructor(walletService: WalletService) {
+  constructor(walletService: WalletService, gnoProvider: GnoProvider | null) {
     this.walletService = walletService;
-    this.gnoProvider = null;
+    this.gnoProvider = gnoProvider;
   }
 
   public getGnoProvider(): GnoProvider {

@@ -7,6 +7,8 @@ import { useNetwork } from './use-network';
 
 import { TokenState } from '@states';
 import { GRC20TokenModel, TokenModel } from '@types';
+import { Account } from 'adena-module';
+import { useMemo } from 'react';
 
 interface GRC20Token {
   tokenId: string;
@@ -19,7 +21,9 @@ interface GRC20Token {
 
 export type UseTokenMetainfoReturn = {
   tokenMetainfos: TokenModel[];
+  currentTokenMetainfos: TokenModel[];
   initTokenMetainfos: () => Promise<void>;
+  updateTokenMetainfos: (account: Account, tokenMetainfos: TokenModel[]) => Promise<void>;
   addTokenMetainfo: (tokenMetainfo: GRC20TokenModel) => Promise<boolean>;
   addGRC20TokenMetainfo: ({
     tokenId,
@@ -33,23 +37,66 @@ export type UseTokenMetainfoReturn = {
     denom: string,
     convertType?: 'COMMON' | 'MINIMAL',
   ) => { value: string; denom: string };
-  getTokenImage: (token: TokenModel) => string | null | undefined;
-  getTokenImageByDenom: (denom: string) => string | undefined;
-  getTokenImageByPkgPath: (pkgPath: string) => string | undefined;
+  getTokenImage: (token: TokenModel) => string | null;
+  getTokenImageByDenom: (denom: string) => string | null;
+  getTokenImageByPkgPath: (pkgPath: string) => string | null;
 };
+
+function makeTokenKeyByDenom(denom: string): string {
+  return `native-${denom.toLowerCase()}`;
+}
+
+function makeTokenKeyByPackagePath(packagePath: string): string {
+  return `grc20-${packagePath.toLowerCase()}`;
+}
+
+function makeTokenKey(token: TokenModel): string {
+  if (isNativeTokenModel(token)) {
+    return makeTokenKeyByDenom(token.denom);
+  }
+  if (isGRC20TokenModel(token)) {
+    return makeTokenKeyByPackagePath(token.pkgPath);
+  }
+  return `${token.symbol}`;
+}
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { balanceService, tokenService } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
+  const [tokenLogoMap, setTokenLogoMap] = useRecoilState(TokenState.tokenLogoMap);
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+
+  const currentTokenMetainfos = useMemo(() => {
+    return tokenMetainfos.filter(
+      (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
+    );
+  }, [tokenMetainfos, currentNetwork]);
 
   const initTokenMetainfos = async (): Promise<void> => {
     if (currentAccount) {
       await tokenService.initAccountTokenMetainfos(currentAccount.id);
       const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
       setTokenMetainfo([...tokenMetainfos]);
+
+      const tokenLogoMap = tokenMetainfos.reduce<Record<string, string | null>>(
+        (accum, current) => {
+          const key = makeTokenKey(current);
+          accum[key] = current.image || null;
+          return accum;
+        },
+        {},
+      );
+      setTokenLogoMap(tokenLogoMap);
     }
+  };
+
+  const updateTokenMetainfos = async (
+    account: Account,
+    tokenMetainfos: TokenModel[],
+  ): Promise<void> => {
+    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
+    setTokenMetainfo([...tokenMetainfos]);
   };
 
   const convertDenom = (
@@ -77,33 +124,19 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     };
   };
 
-  const getTokenImage = (token: TokenModel): string | null | undefined => {
-    if (isNativeTokenModel(token)) {
-      return getTokenImageByDenom(token.symbol);
-    }
-    if (isGRC20TokenModel(token)) {
-      return getTokenImageByPkgPath(token.pkgPath);
-    }
-    return null;
+  const getTokenImage = (token: TokenModel): string | null => {
+    const key = makeTokenKey(token);
+    return tokenLogoMap[key] || null;
   };
 
-  const getTokenImageByDenom = (denom: string): string | undefined => {
-    const image = tokenService
-      .getTokenMetainfos()
-      .find((info) => info.symbol.toUpperCase() === denom.toUpperCase())?.image;
-    if (image) {
-      return image;
-    }
-    return tokenService
-      .getTokenMetainfos()
-      .find((info) => isNativeTokenModel(info) && info.denom.toUpperCase() === denom.toUpperCase())
-      ?.image;
+  const getTokenImageByDenom = (denom: string): string | null => {
+    const key = makeTokenKeyByDenom(denom);
+    return tokenLogoMap[key] || null;
   };
 
-  const getTokenImageByPkgPath = (pkgPath: string): string | undefined => {
-    return tokenService
-      .getTokenMetainfos()
-      .find((info) => isGRC20TokenModel(info) && info.pkgPath === pkgPath)?.image;
+  const getTokenImageByPkgPath = (denom: string): string | null => {
+    const key = makeTokenKeyByPackagePath(denom);
+    return tokenLogoMap[key] || null;
   };
 
   const addTokenMetainfo = async (tokenMetainfo: GRC20TokenModel): Promise<boolean> => {
@@ -155,6 +188,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
   return {
     tokenMetainfos,
+    currentTokenMetainfos,
     initTokenMetainfos,
     addTokenMetainfo,
     addGRC20TokenMetainfo,
@@ -162,5 +196,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImage,
     getTokenImageByDenom,
     getTokenImageByPkgPath,
+    updateTokenMetainfos,
   };
 };

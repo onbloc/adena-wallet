@@ -8,9 +8,9 @@ export class TransactionHistoryRepository {
 
   private networkMetainfo: NetworkMetainfo | null;
 
-  constructor(axiosInstance: AxiosInstance) {
+  constructor(axiosInstance: AxiosInstance, networkMetainfo: NetworkMetainfo | null) {
     this.axiosInstance = axiosInstance;
-    this.networkMetainfo = null;
+    this.networkMetainfo = networkMetainfo;
   }
 
   private getAPIUrl(): string | null {

@@ -5,7 +5,6 @@ import BigNumber from 'bignumber.js';
 import { isAirgapAccount } from 'adena-module';
 
 import { RoutePath } from '@types';
-import { DoubleButton } from '@components/molecules';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList from '@components/pages/wallet-main/token-list/token-list';
@@ -17,23 +16,38 @@ import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
+import { Button, Row, Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { useFaucet } from '@hooks/use-faucet';
+import { useToast } from '@hooks/use-toast';
+import LoadingButton from '@components/atoms/loading-button/loading-button';
+import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
 
 const Wrapper = styled.main`
   padding-top: 37px;
   text-align: center;
+  overflow: auto;
 
   .network-label-wrapper {
-    position: absolute;
+    position: fixed;
     width: 100%;
     height: auto;
-    top: 0;
+    top: 48px;
     left: 0;
+    background-color: ${({ theme }): string => theme.neutral._8};
   }
 
   .token-balance-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .main-button-wrapper {
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    width: 100%;
+    gap: 10px;
+    margin: 14px 0px 30px;
   }
 
   .manage-token-button-wrapper {
@@ -44,14 +58,28 @@ const Wrapper = styled.main`
   }
 `;
 
+const StyledFaucetButtonContent = styled(Row)`
+  gap: 8px;
+`;
+
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
-    useTokenBalance();
+  const { mainTokenBalance, currentBalances } = useTokenBalance();
+  const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
+  const { show } = useToast();
+
+  const onClickFaucetButton = (): void => {
+    if (isFaucetLoading) {
+      return;
+    }
+    faucet().then((result) => {
+      show(result.message);
+    });
+  };
 
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
@@ -73,13 +101,7 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
-  useEffect(() => {
-    if (currentAccount) {
-      updateBalanceAmountByAccount(currentAccount);
-    }
-  }, [currentAccount]);
-
-  const tokens = displayTokenBalances
+  const tokens = currentBalances
     .filter((tokenBalance) => tokenBalance.display)
     .map((tokenBalance) => {
       return {
@@ -95,9 +117,7 @@ export const WalletMain = (): JSX.Element => {
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
-      const tokenBalance = displayTokenBalances.find(
-        (tokenBalance) => tokenBalance.tokenId === tokenId,
-      );
+      const tokenBalance = currentBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId);
       if (!tokenBalance) {
         window.alert('Token not found');
         return;
@@ -106,12 +126,12 @@ export const WalletMain = (): JSX.Element => {
         state: { tokenBalance },
       });
     },
-    [tokens],
+    [navigate, tokens],
   );
 
   const onClickManageButton = useCallback(() => {
     navigate(RoutePath.ManageToken);
-  }, []);
+  }, [navigate]);
 
   return (
     <Wrapper>
@@ -127,14 +147,28 @@ export const WalletMain = (): JSX.Element => {
         />
       </div>
 
-      <DoubleButton
-        margin='14px 0px 30px'
-        leftProps={{ onClick: onClickDepositButton, text: 'Deposit' }}
-        rightProps={{
-          onClick: onClickSendButton,
-          text: 'Send',
-        }}
-      />
+      <div className='main-button-wrapper'>
+        {supportedFaucet ? (
+          <LoadingButton
+            hierarchy='dark'
+            loading={isFaucetLoading}
+            fullWidth
+            onClick={onClickFaucetButton}
+          >
+            <StyledFaucetButtonContent>
+              <IconThunder />
+              <Text type={'body1Bold'}>Faucet</Text>
+            </StyledFaucetButtonContent>
+          </LoadingButton>
+        ) : (
+          <Button hierarchy='dark' fullWidth onClick={onClickDepositButton}>
+            <Text type={'body1Bold'}>Deposit</Text>
+          </Button>
+        )}
+        <Button fullWidth onClick={onClickSendButton}>
+          <Text type={'body1Bold'}>Send</Text>
+        </Button>
+      </div>
 
       <div className='token-list-wrapper'>
         <TokenList tokens={tokens} onClickTokenItem={onClickTokenListItem} />

@@ -5,13 +5,17 @@ import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/valida
 
 import { TokenBalanceType, TokenModel } from '@types';
 
+const GNOT_DENOM = 'ugnot' as const;
+const GNOT_DECIMALS = 6 as const;
+
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
 
   private gnoProvider: GnoProvider | null = null;
 
-  constructor() {
+  constructor(gnoProvider?: GnoProvider | null) {
     this.tokenMetainfos = [];
+    this.gnoProvider = gnoProvider || null;
   }
 
   public getGnoProvider(): GnoProvider {
@@ -27,6 +31,34 @@ export class WalletBalanceService {
 
   public setTokenMetainfos(tokenMetainfos: Array<TokenModel>): void {
     this.tokenMetainfos = tokenMetainfos;
+  }
+
+  public async getGnotTokenBalance(address: string): Promise<number | null> {
+    const gnoProvider = this.getGnoProvider();
+    return gnoProvider
+      .getBalance(address, GNOT_DENOM)
+      .then((result) => {
+        if (BigNumber(result).isInteger()) {
+          return BigNumber(result)
+            .shiftedBy(GNOT_DECIMALS * -1)
+            .toNumber();
+        }
+        return null;
+      })
+      .catch(() => null);
+  }
+
+  public async getGRC20TokenBalance(address: string, packagePath: string): Promise<number | null> {
+    const gnoProvider = this.getGnoProvider();
+    return gnoProvider
+      .getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
+      .then((result) => {
+        if (result === null || !BigNumber(result).isInteger()) {
+          return null;
+        }
+        return BigNumber(result).toNumber();
+      })
+      .catch(() => null);
   }
 
   public getTokenBalances = async (address: string): Promise<TokenBalanceType[]> => {
@@ -56,7 +88,7 @@ export class WalletBalanceService {
     return tokenBalances;
   };
 
-  public getGRC20TokenBalance = async (
+  public getGRC20TokenBalances = async (
     address: string,
     packagePath: string,
     symbol: string,

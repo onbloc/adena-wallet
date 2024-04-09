@@ -1,21 +1,21 @@
-import React from 'react';
+import React, { useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 import { Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import IconConnected from '../icon/icon-assets/icon-connected';
 
 interface StatusDotProps {
   status: boolean;
   tooltipText: string;
 }
 
-const Dot = styled.div<{ status: boolean }>`
+const StyledContainer = styled.div<{ status: boolean }>`
+  display: ${({ status }): string => (status ? 'flex' : 'none')};
   position: relative;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: ${({ status, theme }): string => (status ? theme.green._5 : theme.red._5)};
+  width: 15px;
+  height: 15px;
   cursor: pointer;
   &:hover > .static-tooltip {
     visibility: visible;
@@ -24,7 +24,8 @@ const Dot = styled.div<{ status: boolean }>`
   }
 `;
 
-const Tooltip = styled.div`
+const StyledTooltip = styled.div<{ descriptionSize: number }>`
+  position: fixed;
   ${mixins.flex({ direction: 'row' })};
   width: max-content;
   height: 25px;
@@ -33,18 +34,28 @@ const Tooltip = styled.div`
   padding: 0px 17px;
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 13px;
-  position: absolute;
-  right: 0px;
-  top: 20px;
+  top: 40px;
+  left: ${({ descriptionSize }): string => `calc(50% - ${descriptionSize / 2}px)`};
   transform: scale(0.6);
 `;
 
 export const StatusDot = ({ status, tooltipText }: StatusDotProps): JSX.Element => {
+  const descriptionContainer = useRef<HTMLDivElement>(null);
+
+  const descriptionSize = useMemo(() => {
+    return descriptionContainer.current?.clientWidth || 0;
+  }, [descriptionContainer.current?.clientWidth, tooltipText]);
+
   return (
-    <Dot status={status}>
-      <Tooltip className='static-tooltip'>
+    <StyledContainer status={status}>
+      <IconConnected />
+      <StyledTooltip
+        ref={descriptionContainer}
+        className='static-tooltip'
+        descriptionSize={descriptionSize}
+      >
         <Text type='body3Reg'>{tooltipText}</Text>
-      </Tooltip>
-    </Dot>
+      </StyledTooltip>
+    </StyledContainer>
   );
 };

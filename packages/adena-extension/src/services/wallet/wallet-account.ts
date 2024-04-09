@@ -20,9 +20,9 @@ export class WalletAccountService {
 
   private gnoProvider: GnoProvider | null;
 
-  constructor(walletAccountRepository: WalletAccountRepository) {
+  constructor(walletAccountRepository: WalletAccountRepository, gnoProvider: GnoProvider | null) {
     this.walletAccountRepository = walletAccountRepository;
-    this.gnoProvider = null;
+    this.gnoProvider = gnoProvider;
   }
 
   public getGnoProvider(): GnoProvider {
@@ -83,9 +83,11 @@ export class WalletAccountService {
     return this.walletAccountRepository.getAccountNames();
   };
 
-  public updateAccountNames = async (accountNames: {
-    [key in string]: string;
-  }): Promise<boolean> => {
+  public updateAccountNames = async (
+    accountNames: {
+      [key in string]: string;
+    },
+  ): Promise<boolean> => {
     return this.walletAccountRepository.updateAccountNames(accountNames);
   };
 

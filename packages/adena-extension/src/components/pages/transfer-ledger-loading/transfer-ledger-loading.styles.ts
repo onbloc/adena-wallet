@@ -6,7 +6,7 @@ export const TransferLedgerLoadingWrapper = styled.div`
   position: relative;
   width: 100%;
   height: auto;
-  min-height: 444px;
+  padding-bottom: 120px;
 
   @keyframes rotate {
     from {
@@ -22,6 +22,8 @@ export const TransferLedgerLoadingWrapper = styled.div`
   }
 
   .icon {
+    display: flex;
+    flex-shrink: 0;
     width: 100px;
     height: 100px;
     margin: 20px auto;

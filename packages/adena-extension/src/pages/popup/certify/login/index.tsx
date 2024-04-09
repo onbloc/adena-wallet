@@ -128,6 +128,6 @@ export const Login = (): JSX.Element => {
       </Button>
     </Wrapper>
   ) : (
-    <div></div>
+    <React.Fragment />
   );
 };

@@ -25,10 +25,10 @@ export type UseBalanceInputHookReturn = {
   validateBalanceInput: () => boolean;
 };
 
-export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookReturn => {
+export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAddress } = useCurrentAccount();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
@@ -42,10 +42,13 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   };
 
   const updateCurrentBalance = useCallback(async () => {
-    if (!currentAccount) {
+    if (!currentAddress) {
       return false;
     }
-    const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
+    if (!tokenMetainfo) {
+      return false;
+    }
+    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
     setCurrentBalance(currentBalance);
     if (currentBalance.type === 'gno-native') {
       const convertedBalance = convertDenom(
@@ -63,7 +66,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
       setAvailAmountNumber(BigNumber(currentBalance.amount.value));
     }
     return true;
-  }, [wallet, balanceService, currentAccount]);
+  }, [wallet, balanceService, currentAddress, tokenMetainfo]);
 
   const clearError = useCallback(() => {
     setHasError(false);
@@ -71,13 +74,13 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   }, []);
 
   const getDescription = useCallback(() => {
-    if (hasError) {
+    if (hasError || !tokenMetainfo) {
       return errorMessage;
     }
     return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
       tokenMetainfo.symbol
     }`;
-  }, [currentBalance, hasError, errorMessage]);
+  }, [currentBalance, hasError, errorMessage, tokenMetainfo]);
 
   const onChangeAmount = useCallback((amount: string) => {
     const charAtFirst = amount.charAt(0);
@@ -118,7 +121,7 @@ export const useBalanceInput = (tokenMetainfo: TokenModel): UseBalanceInputHookR
   return {
     hasError,
     amount,
-    denom: tokenMetainfo.symbol,
+    denom: tokenMetainfo?.symbol || '',
     description: getDescription(),
     networkFee,
     setAmount,

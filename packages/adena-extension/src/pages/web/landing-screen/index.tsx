@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
+import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { useQuery } from '@tanstack/react-query';
 
@@ -14,6 +14,7 @@ import IconHardwareWallet from '@assets/icon-hardware-wallet';
 import IconAirgap from '@assets/icon-airgap';
 import IconThunder from '@assets/icon-thunder';
 import Lottie from '@components/atoms/lottie';
+import WalletCreationHelpOverlay from '@components/pages/web/wallet-creation-help-overlay/wallet-creation-help-overlay';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -26,10 +27,25 @@ const LandingScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const { walletService } = useAdenaContext();
   const theme = useTheme();
+  const hardwareWalletButtonRef = useRef<HTMLButtonElement>(null);
+  const airgapAccountButtonRef = useRef<HTMLButtonElement>(null);
+  const advancedOptionButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: existWallet, isLoading } = useQuery(
     ['existWallet', walletService],
     async () => walletService.existsWallet(),
+    {},
+  );
+
+  const { data: visibleGuide, refetch: refetchVisibleGuide } = useQuery(
+    ['landingScreen/visibleGuide', existWallet],
+    async () => {
+      if (existWallet === undefined) {
+        return false;
+      }
+      const isSkip = await walletService.isSkipWalletGuide(existWallet);
+      return isSkip === false;
+    },
     {},
   );
 
@@ -44,6 +60,13 @@ const LandingScreen = (): ReactElement => {
     navigate(RoutePath.WebSetupAirgap);
   }, []);
 
+  const confirmWalletGuide = useCallback(() => {
+    if (existWallet === undefined) {
+      return;
+    }
+    walletService.updateWalletGuideConfirmDate(existWallet).finally(refetchVisibleGuide);
+  }, [walletService, existWallet]);
+
   if (isLoading) {
     return <WebMain />;
   }
@@ -53,12 +76,7 @@ const LandingScreen = (): ReactElement => {
       {existWallet ? (
         <React.Fragment>
           <StyledAnimationWrapper>
-            <Lottie
-              speed={1}
-              height={88}
-              animationData={AnimationAddAccount}
-              visibleSize={264}
-            />
+            <Lottie speed={1} height={88} animationData={AnimationAddAccount} visibleSize={264} />
           </StyledAnimationWrapper>
           <View style={{ rowGap: 16 }}>
             <WebText type='headline1'>{'Add Account'}</WebText>
@@ -89,6 +107,7 @@ const LandingScreen = (): ReactElement => {
 
       <Row style={{ width: '100%', columnGap: 12, marginTop: 8 }}>
         <WebMainButton
+          buttonRef={hardwareWalletButtonRef}
           figure='primary'
           iconElement={<IconHardwareWallet />}
           text='Hardware Wallet'
@@ -97,12 +116,14 @@ const LandingScreen = (): ReactElement => {
           }}
         />
         <WebMainButton
+          buttonRef={airgapAccountButtonRef}
           figure='secondary'
           iconElement={<IconAirgap />}
           text='Airgap Account'
           onClick={moveSetupAirgapScreen}
         />
         <WebMainButton
+          buttonRef={advancedOptionButtonRef}
           figure='tertiary'
           iconElement={<IconThunder />}
           text='Advanced Options'
@@ -111,6 +132,15 @@ const LandingScreen = (): ReactElement => {
           }}
         />
       </Row>
+
+      {visibleGuide && (
+        <WalletCreationHelpOverlay
+          hardwareWalletButtonRef={hardwareWalletButtonRef}
+          airgapAccountButtonRef={airgapAccountButtonRef}
+          advancedOptionButtonRef={advancedOptionButtonRef}
+          onFinish={confirmWalletGuide}
+        />
+      )}
     </WebMain>
   );
 };

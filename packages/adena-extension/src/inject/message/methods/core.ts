@@ -40,7 +40,7 @@ export class InjectCore {
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 
-  private tokenRepository = new TokenRepository(this.localStorage, this.axiosInstance);
+  private tokenRepository = new TokenRepository(this.localStorage, this.axiosInstance, null);
 
   public chainService = new ChainService(this.chainRepository);
 
@@ -48,7 +48,7 @@ export class InjectCore {
 
   public walletService = new WalletService(this.walletRepository);
 
-  public accountService = new WalletAccountService(this.accountRepository);
+  public accountService = new WalletAccountService(this.accountRepository, this.gnoProvider);
 
   public addressBookService = new WalletAddressBookService(
     this.walletRepository,
@@ -57,7 +57,7 @@ export class InjectCore {
 
   public establishService = new WalletEstablishService(this.establishRepository);
 
-  public transactionService = new TransactionService(this.walletService);
+  public transactionService = new TransactionService(this.walletService, this.gnoProvider);
 
   public async initGnoProvider(): Promise<boolean> {
     try {

@@ -120,6 +120,11 @@ export class WalletService {
     const serializedWallet = await wallet.serialize(password);
     await this.walletRepository.updateWalletPassword(password);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
+    try {
+      chrome?.action?.setPopup({ popup: 'popup.html' });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   /**
@@ -208,9 +213,29 @@ export class WalletService {
     await this.walletRepository.updatedQuestionnaireExpiredDate(expiredDateTime);
   };
 
+  public isSkipWalletGuide = async (hasWallet: boolean): Promise<boolean> => {
+    const confirmDate = hasWallet
+      ? await this.walletRepository.getAddAccountGuideConfirmDate()
+      : await this.walletRepository.getWalletCreationGuideConfirmDate();
+    return !!confirmDate;
+  };
+
+  public updateWalletGuideConfirmDate = async (hasWallet: boolean): Promise<void> => {
+    const confirmDate = dayjs().unix();
+    const updateGuideConfirmDate = hasWallet
+      ? this.walletRepository.updateAddAccountGuideConfirmDate.bind(this.walletRepository)
+      : this.walletRepository.updateWalletCreationGuideConfirmDate.bind(this.walletRepository);
+    await updateGuideConfirmDate(confirmDate);
+  };
+
   public clear = async (): Promise<boolean> => {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
+    try {
+      chrome?.action?.setPopup({ popup: '' });
+    } catch (e) {
+      console.error(e);
+    }
     return true;
   };
 }

@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from 'react';
+import { ReactElement, useCallback, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import IconThunder from '@assets/web/round-thunder.svg';
@@ -28,6 +28,9 @@ const AdvancedOptionScreen = (): ReactElement => {
   const { navigate } = useAppNavigate();
   const theme = useTheme();
   const { wallet } = useWalletContext();
+  const createWalletButtonRef = useRef<HTMLButtonElement>(null);
+  const importWalletButtonRef = useRef<HTMLButtonElement>(null);
+  const signInWithGoogleButtonRef = useRef<HTMLButtonElement>(null);
 
   const onClickNewWallet = useCallback(() => {
     if (wallet && wallet.hasHDWallet()) {
@@ -71,18 +74,21 @@ const AdvancedOptionScreen = (): ReactElement => {
 
       <Row style={{ width: '100%', columnGap: 12 }}>
         <WebMainButton
+          buttonRef={createWalletButtonRef}
           figure='primary'
           iconElement={<IconCreate />}
           text='Create New Wallet'
           onClick={onClickNewWallet}
         />
         <WebMainButton
+          buttonRef={importWalletButtonRef}
           figure='secondary'
           iconElement={<IconImport />}
           text='Import Existing Wallet'
           onClick={onClickImportExistingWallet}
         />
         <WebMainButton
+          buttonRef={signInWithGoogleButtonRef}
           figure='tertiary'
           iconElement={<IconGoogle />}
           text='Sign In With Google'

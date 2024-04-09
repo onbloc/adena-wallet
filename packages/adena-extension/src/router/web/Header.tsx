@@ -1,13 +1,13 @@
 import { ReactElement } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 
 import logo from '@assets/web/brand.svg';
-import questionCircle from '@assets/web/question-circle.svg';
 
 import mixins from '@styles/mixins';
 import { Pressable, Row, WebText, WebImg } from '@components/atoms';
 import useLink from '@hooks/use-link';
 import { ADENA_HELP_PAGE } from '@common/constants/resource.constant';
+import IconQuestion from '@components/atoms/icon/icon-assets/icon-question';
 
 const StyledContainer = styled.header`
   ${mixins.flex({ direction: 'row', justify: 'space-between' })}
@@ -15,25 +15,43 @@ const StyledContainer = styled.header`
   height: 80px;
 `;
 
+const StyedHelpButton = styled(Pressable)`
+  color: ${({ theme }): string => theme.webNeutral._600};
+  transition: 0.2s;
+
+  .icon-help path {
+    transition: 0.2s;
+  }
+
+  &:hover {
+    color: ${({ theme }): string => theme.webNeutral._100};
+
+    .icon-help path {
+      fill: ${({ theme }): string => theme.webNeutral._100};
+    }
+  }
+`;
+
+const StyedHoverText = styled(WebText)`
+  color: inherit;
+`;
+
 const Header = (): ReactElement => {
-  const theme = useTheme();
   const { openLink } = useLink();
 
   return (
     <StyledContainer>
       <WebImg src={logo} />
-      <Pressable
+      <StyedHelpButton
         onClick={(): void => {
           openLink(ADENA_HELP_PAGE);
         }}
       >
         <Row style={{ columnGap: 6 }}>
-          <WebImg src={questionCircle} />
-          <WebText type='title4' color={theme.webNeutral._600}>
-            Help
-          </WebText>
+          <IconQuestion className='icon-help' />
+          <StyedHoverText type='title4'>Help</StyedHoverText>
         </Row>
-      </Pressable>
+      </StyedHelpButton>
     </StyledContainer>
   );
 };

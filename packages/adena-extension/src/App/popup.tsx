@@ -12,7 +12,7 @@ import useLink from '@hooks/use-link';
 const RunApp = (): ReactElement => {
   useApp();
   useInitWallet();
-  const { existWallet, isLoadingExistWallet } = useWallet();
+  const { existWallet, isLoadingExistWallet, isLoadingLockedWallet } = useWallet();
   const { openRegister } = useLink();
 
   if (isLoadingExistWallet === false && existWallet === false) {
@@ -20,7 +20,11 @@ const RunApp = (): ReactElement => {
     window.close();
   }
 
-  return existWallet ? <PopupRouter /> : <></>;
+  if (isLoadingLockedWallet || !existWallet) {
+    return <></>;
+  }
+
+  return <PopupRouter />;
 };
 
 const App = (): ReactElement => {

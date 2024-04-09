@@ -15,6 +15,8 @@ export type StorageModelDataV005 = {
   ADDRESS_BOOK: AddressBookModelV005;
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV005;
   QUESTIONNAIRE_EXPIRED_DATE: QuestionnaireExpiredDateModelV005;
+  WALLET_CREATION_GUIDE_CONFIRM_DATE: WalletCreationGuideConfirmDateModelV005;
+  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: AddAccountGuideConfirmDateModelV005;
 };
 
 export type NetworksModelV005 = {
@@ -40,6 +42,10 @@ export type CurrentNetworkIdModelV005 = string;
 export type SerializedModelV005 = string;
 
 export type QuestionnaireExpiredDateModelV005 = number | null;
+
+export type WalletCreationGuideConfirmDateModelV005 = number | null;
+
+export type AddAccountGuideConfirmDateModelV005 = number | null;
 
 export type WalletModelV005 = {
   accounts: AccountDataModelV005[];

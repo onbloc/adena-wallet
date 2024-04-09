@@ -29,7 +29,7 @@
   },
   {
     "id": "dev",
-    "default": true,
+    "default": false,
     "main": false,
     "chainId": "dev",
     "chainName": "GNO.LAND",
@@ -57,7 +57,7 @@
   },
   {
     "id": "gnoswap",
-    "default": true,
+    "default": false,
     "main": false,
     "chainId": "beta.gnoswap",
     "chainName": "Gnoswap-Testnet",
