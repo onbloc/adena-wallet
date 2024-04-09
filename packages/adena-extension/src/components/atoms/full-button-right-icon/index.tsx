@@ -70,6 +70,7 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
   }
   ${defaultIconStyle};
   ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  flex-shrink: 0;
   width: 100%;
   height: 54px;
   padding: 0px 24px 0px 20px;
