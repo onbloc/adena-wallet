@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import AdditionalToken from '@components/pages/additional-token/additional-token';
 import { useAdenaContext } from '@hooks/use-context';
-import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@types';
@@ -15,7 +14,6 @@ const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
   const { tokenService } = useAdenaContext();
   const { tokenMetainfos, addGRC20TokenMetainfo } = useTokenMetainfo();
-  const { updateTokenBalanceInfos } = useTokenBalance();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -89,7 +87,6 @@ const ManageTokenAddedContainer: React.FC = () => {
       return;
     }
     await addGRC20TokenMetainfo(selectedTokenInfo);
-    await updateTokenBalanceInfos(tokenMetainfos);
     setFinished(true);
   }, [selected, selectedTokenInfo]);
 

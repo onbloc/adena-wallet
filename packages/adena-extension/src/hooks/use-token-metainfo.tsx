@@ -7,6 +7,8 @@ import { useNetwork } from './use-network';
 
 import { TokenState } from '@states';
 import { GRC20TokenModel, TokenModel } from '@types';
+import { Account } from 'adena-module';
+import { useMemo } from 'react';
 
 interface GRC20Token {
   tokenId: string;
@@ -19,7 +21,9 @@ interface GRC20Token {
 
 export type UseTokenMetainfoReturn = {
   tokenMetainfos: TokenModel[];
+  currentTokenMetainfos: TokenModel[];
   initTokenMetainfos: () => Promise<void>;
+  updateTokenMetainfos: (account: Account, tokenMetainfos: TokenModel[]) => Promise<void>;
   addTokenMetainfo: (tokenMetainfo: GRC20TokenModel) => Promise<boolean>;
   addGRC20TokenMetainfo: ({
     tokenId,
@@ -63,6 +67,12 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
 
+  const currentTokenMetainfos = useMemo(() => {
+    return tokenMetainfos.filter(
+      (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
+    );
+  }, [tokenMetainfos, currentNetwork]);
+
   const initTokenMetainfos = async (): Promise<void> => {
     if (currentAccount) {
       await tokenService.initAccountTokenMetainfos(currentAccount.id);
@@ -79,6 +89,14 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       );
       setTokenLogoMap(tokenLogoMap);
     }
+  };
+
+  const updateTokenMetainfos = async (
+    account: Account,
+    tokenMetainfos: TokenModel[],
+  ): Promise<void> => {
+    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
+    setTokenMetainfo([...tokenMetainfos]);
   };
 
   const convertDenom = (
@@ -170,6 +188,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
   return {
     tokenMetainfos,
+    currentTokenMetainfos,
     initTokenMetainfos,
     addTokenMetainfo,
     addGRC20TokenMetainfo,
@@ -177,5 +196,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImage,
     getTokenImageByDenom,
     getTokenImageByPkgPath,
+    updateTokenMetainfos,
   };
 };

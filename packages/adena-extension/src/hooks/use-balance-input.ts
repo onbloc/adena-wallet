@@ -28,7 +28,7 @@ export type UseBalanceInputHookReturn = {
 export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAddress } = useCurrentAccount();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
@@ -42,13 +42,13 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   };
 
   const updateCurrentBalance = useCallback(async () => {
-    if (!currentAccount) {
+    if (!currentAddress) {
       return false;
     }
     if (!tokenMetainfo) {
       return false;
     }
-    const currentBalance = await fetchBalanceBy(currentAccount, tokenMetainfo);
+    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
     setCurrentBalance(currentBalance);
     if (currentBalance.type === 'gno-native') {
       const convertedBalance = convertDenom(
@@ -66,7 +66,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       setAvailAmountNumber(BigNumber(currentBalance.amount.value));
     }
     return true;
-  }, [wallet, balanceService, currentAccount, tokenMetainfo]);
+  }, [wallet, balanceService, currentAddress, tokenMetainfo]);
 
   const clearError = useCallback(() => {
     setHasError(false);

@@ -77,7 +77,7 @@ export const WalletSearch = (): JSX.Element => {
   const { navigate } = useAppNavigate<RoutePath.WalletSearch>();
   const { params } = useSessionState<RoutePath.WalletSearch>();
 
-  const { displayTokenBalances } = useTokenBalance();
+  const { currentBalances } = useTokenBalance();
   const { clearHistoryData } = useHistoryData();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -134,7 +134,7 @@ export const WalletSearch = (): JSX.Element => {
         {Boolean(searchText) && <InputResetBtn onClick={inputResetClick} type='button' />}
       </SearchBox>
       <DataListWrap>
-        {displayTokenBalances
+        {currentBalances
           .filter(
             (balance) =>
               searchTextFilter(balance.name ?? '', searchText) ||

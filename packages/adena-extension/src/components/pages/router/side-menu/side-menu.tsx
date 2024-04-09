@@ -43,6 +43,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
 
   const onClickAddAccount = useCallback(() => {
     openRegister();
+    window.close();
   }, [openRegister]);
 
   const onClickRestoreWallet = useCallback(() => {
