@@ -60,6 +60,15 @@ export const existsPopups = async (): Promise<boolean> => {
   return windows.findIndex((window) => window.type === 'popup') > -1;
 };
 
+export const removePopups = async (): Promise<void> => {
+  const windows = await chrome.windows.getAll();
+  windows.forEach((window) => {
+    if (window.type === 'popup' && window.id) {
+      chrome.windows.remove(window.id);
+    }
+  });
+};
+
 export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
