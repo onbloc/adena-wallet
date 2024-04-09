@@ -197,6 +197,7 @@ const TokenBox = styled.div<{ color: string }>`
   border-radius: 18px;
   padding: 0px 15px;
   margin: 18px 0px 8px;
+
   .tx-symbol {
     width: 30px;
     height: 30px;

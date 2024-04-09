@@ -116,7 +116,7 @@ export const TokenDetails = (): JSX.Element => {
   const { currentAccount, currentAddress } = useCurrentAccount();
   useNetwork();
   const tokenBalance = params?.tokenBalance;
-  const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
+  const { tokenMetainfos, convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -136,6 +136,7 @@ export const TokenDetails = (): JSX.Element => {
         const from = allPosts.reduce((sum, { txs }) => sum + txs.length, 0);
         return lastPage.next ? from : undefined;
       },
+      enabled: tokenMetainfos.length > 0,
     },
   );
 
