@@ -87,7 +87,6 @@ const ManageTokenAddedContainer: React.FC = () => {
       return;
     }
     await addGRC20TokenMetainfo(selectedTokenInfo);
-    // await updateTokenBalanceInfos(tokenMetainfos);
     setFinished(true);
   }, [selected, selectedTokenInfo]);
 

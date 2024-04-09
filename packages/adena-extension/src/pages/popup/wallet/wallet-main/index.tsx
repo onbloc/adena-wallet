@@ -96,12 +96,6 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
-  // useEffect(() => {
-  //   if (currentAccount) {
-  //     updateBalanceAmountByAccount(currentAccount);
-  //   }
-  // }, [currentAccount]);
-
   const tokens = currentBalances
     .filter((tokenBalance) => tokenBalance.display)
     .map((tokenBalance) => {
