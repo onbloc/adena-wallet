@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Account } from 'adena-module';
 
-import { formatNickname, maxFractionDigits } from '@common/utils/client-utils';
+import { formatNickname } from '@common/utils/client-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
 import { useAccountName } from '@hooks/use-account-name';
 import { useAdenaContext } from '@hooks/use-context';
@@ -28,7 +28,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { currentNetwork } = useNetwork();
   const { accountNames } = useAccountName();
   const { accounts, loadAccounts } = useLoadAccounts();
-  const { accountNativeBalances } = useTokenBalance();
+  const { accountNativeBalanceMap } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
   const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
@@ -85,17 +85,17 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   }, []);
 
   const { data: sideMenuAccounts = [] } = useQuery<SideMenuAccountInfo[]>(
-    ['sideMenuAccounts', accountNames, accounts, accountNativeBalances, currentNetwork],
+    ['sideMenuAccounts', accountNames, accounts, accountNativeBalanceMap, currentNetwork],
     () => {
       function mapBalance(
-        accountNativeBalances: { [key in string]: TokenBalanceType },
+        accountNativeBalanceMap: Record<string, TokenBalanceType>,
         account: Account,
       ): string {
-        const amount = accountNativeBalances[account.id]?.amount;
+        const amount = accountNativeBalanceMap[account.id]?.amount;
         if (!amount) {
           return '-';
         }
-        return `${maxFractionDigits(amount.value, 6)} ${amount.denom}`;
+        return `${amount.value} ${amount.denom}`;
       }
 
       return Promise.all(
@@ -104,7 +104,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
           name: formatNickname(accountNames[account.id] || account.name, 10),
           address: await account.getAddress(currentNetwork.addressPrefix),
           type: account.type,
-          balance: mapBalance(accountNativeBalances, account),
+          balance: mapBalance(accountNativeBalanceMap, account),
         })),
       );
     },

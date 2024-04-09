@@ -25,13 +25,15 @@ import LoadingButton from '@components/atoms/loading-button/loading-button';
 const Wrapper = styled.main`
   padding-top: 37px;
   text-align: center;
+  overflow: auto;
 
   .network-label-wrapper {
-    position: absolute;
+    position: fixed;
     width: 100%;
     height: auto;
-    top: 0;
+    top: 48px;
     left: 0;
+    background-color: ${({ theme }): string => theme.neutral._8};
   }
 
   .token-balance-wrapper {
@@ -61,8 +63,7 @@ export const WalletMain = (): JSX.Element => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, displayTokenBalances, updateBalanceAmountByAccount } =
-    useTokenBalance();
+  const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
   const { show } = useToast();
 
@@ -72,9 +73,6 @@ export const WalletMain = (): JSX.Element => {
     }
     faucet().then((result) => {
       show(result.message);
-      if (result.success && currentAccount) {
-        updateBalanceAmountByAccount(currentAccount);
-      }
     });
   };
 
@@ -98,13 +96,13 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
-  useEffect(() => {
-    if (currentAccount) {
-      updateBalanceAmountByAccount(currentAccount);
-    }
-  }, [currentAccount]);
+  // useEffect(() => {
+  //   if (currentAccount) {
+  //     updateBalanceAmountByAccount(currentAccount);
+  //   }
+  // }, [currentAccount]);
 
-  const tokens = displayTokenBalances
+  const tokens = currentBalances
     .filter((tokenBalance) => tokenBalance.display)
     .map((tokenBalance) => {
       return {
@@ -120,9 +118,7 @@ export const WalletMain = (): JSX.Element => {
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
-      const tokenBalance = displayTokenBalances.find(
-        (tokenBalance) => tokenBalance.tokenId === tokenId,
-      );
+      const tokenBalance = currentBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId);
       if (!tokenBalance) {
         window.alert('Token not found');
         return;

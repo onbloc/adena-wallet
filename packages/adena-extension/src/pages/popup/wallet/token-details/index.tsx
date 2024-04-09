@@ -10,7 +10,6 @@ import etc from '@assets/etc.svg';
 import { RoutePath } from '@types';
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useTokenBalance } from '@hooks/use-token-balance';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { useAdenaContext } from '@hooks/use-context';
@@ -117,7 +116,6 @@ export const TokenDetails = (): JSX.Element => {
   useNetwork();
   const tokenBalance = params?.tokenBalance;
   const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
-  const { updateBalanceAmountByAccount } = useTokenBalance();
   const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
@@ -137,12 +135,6 @@ export const TokenDetails = (): JSX.Element => {
       },
     },
   );
-
-  useEffect(() => {
-    if (currentAccount) {
-      updateBalanceAmountByAccount(currentAccount);
-    }
-  }, [currentAccount]);
 
   useEffect(() => {
     if (currentAddress) {
