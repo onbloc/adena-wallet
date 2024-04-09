@@ -1,6 +1,6 @@
 import { HandlerMethod } from '.';
 import { InjectionMessage, InjectionMessageInstance } from './message';
-import { existsPopups } from './methods';
+import { existsPopups, removePopups } from './methods';
 import { InjectCore } from './methods/core';
 
 export class MessageHandler {
@@ -52,10 +52,7 @@ export class MessageHandler {
     }
     const isPopup = await existsPopups();
     if (isPopup) {
-      sendResponse(
-        InjectionMessageInstance.failure('UNRESOLVED_TRANSACTION_EXISTS', {}, message.key),
-      );
-      return true;
+      await removePopups();
     }
     switch (message.type) {
       case 'DO_CONTRACT':
