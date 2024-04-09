@@ -32,7 +32,7 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
   height: auto;
   text-align: center;
   justify-content: center;
-  column-gap: 3px;
+  column-gap: 9px;
 
   .denom-wrapper {
     display: inline-flex;
