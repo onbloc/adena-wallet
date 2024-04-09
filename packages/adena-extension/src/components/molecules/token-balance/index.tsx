@@ -11,6 +11,7 @@ export interface TokenBalanceProps {
   fontStyleKey?: FontsType;
   minimumFontSize?: string;
   lineHeight?: string;
+  maxWidth?: number;
 }
 
 export const TokenBalance: React.FC<TokenBalanceProps> = ({
@@ -21,6 +22,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
   fontStyleKey = 'header6',
   minimumFontSize = '14px',
   lineHeight,
+  maxWidth,
 }) => {
   return (
     <TokenBalanceWrapper
@@ -29,6 +31,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
       fontStyleKey={fontStyleKey}
       minimumFontSize={minimumFontSize}
       lineHeight={lineHeight}
+      maxWidth={maxWidth}
     >
       <HighlightNumber
         value={value}

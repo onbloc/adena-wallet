@@ -7,19 +7,35 @@ interface TokenBalanceWrapperProps {
   fontStyleKey: FontsType;
   minimumFontSize: string;
   lineHeight?: string;
+  maxWidth?: number;
 }
 
 export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
   display: flex;
   flex-direction: ${({ orientation }): 'column' | 'row' =>
     orientation === 'HORIZONTAL' ? 'row' : 'column'};
+  ${({ orientation, maxWidth }): FlattenSimpleInterpolation =>
+    orientation === 'HORIZONTAL'
+      ? css`
+          flex-direction: row;
+        `
+      : maxWidth
+      ? css`
+          flex-flow: row wrap;
+          max-width: ${maxWidth}px;
+        `
+      : css`
+          flex-direction: column;
+        `}
   align-items: center;
   width: fit-content;
   height: auto;
+  text-align: center;
+  justify-content: center;
+  column-gap: 3px;
 
   .denom-wrapper {
     display: inline-flex;
-    margin-left: ${({ orientation }): '3px' | '0' => (orientation === 'HORIZONTAL' ? '3px' : '0')};
 
     .denom {
       display: contents;
@@ -30,7 +46,7 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
           ? css`
               line-height: ${lineHeight};
             `
-          : css`sd`};
+          : css``};
     }
   }
 `;
