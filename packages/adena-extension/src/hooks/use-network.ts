@@ -7,7 +7,7 @@ import { useEvent } from './use-event';
 import { fetchHealth } from '@common/utils/fetch-utils';
 
 import { NetworkMetainfo } from '@types';
-import { CommonState, NetworkState, WalletState } from '@states';
+import { BalanceState, CommonState, NetworkState, WalletState } from '@states';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -46,6 +46,9 @@ export const useNetwork = (): NetworkResponse => {
   const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setState] = useRecoilState(WalletState.state);
   const resetNetworkConnection = useResetRecoilState(CommonState.failedNetwork);
+  const resetAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
+  const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances);
+  const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances);
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
@@ -78,8 +81,11 @@ export const useNetwork = (): NetworkResponse => {
         setCurrentNetwork(null);
         return false;
       }
-      setState('LOADING');
+      resetCurrentTokenBalances();
+      resetAccountTokenBalances();
+      resetAccountNativeBalances();
       resetNetworkConnection();
+      setState('LOADING');
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
       await chainService.updateCurrentNetworkId(id);
       await changeNetworkOfProvider(network);
