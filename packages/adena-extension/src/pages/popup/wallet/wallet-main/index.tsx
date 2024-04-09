@@ -16,11 +16,12 @@ import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
-import { Button, Text } from '@components/atoms';
+import { Button, Row, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { useFaucet } from '@hooks/use-faucet';
 import { useToast } from '@hooks/use-toast';
 import LoadingButton from '@components/atoms/loading-button/loading-button';
+import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
 
 const Wrapper = styled.main`
   padding-top: 37px;
@@ -55,6 +56,10 @@ const Wrapper = styled.main`
     align-items: center;
     justify-content: center;
   }
+`;
+
+const StyledFaucetButtonContent = styled(Row)`
+  gap: 8px;
 `;
 
 export const WalletMain = (): JSX.Element => {
@@ -150,7 +155,10 @@ export const WalletMain = (): JSX.Element => {
             fullWidth
             onClick={onClickFaucetButton}
           >
-            <Text type={'body1Bold'}>Faucet</Text>
+            <StyledFaucetButtonContent>
+              <IconThunder />
+              <Text type={'body1Bold'}>Faucet</Text>
+            </StyledFaucetButtonContent>
           </LoadingButton>
         ) : (
           <Button hierarchy='dark' fullWidth onClick={onClickDepositButton}>
