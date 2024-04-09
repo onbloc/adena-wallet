@@ -36,7 +36,7 @@ const HistoryContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
-  const { convertDenom, getTokenImageByDenom } = useTokenMetainfo();
+  const { tokenMetainfos, convertDenom, getTokenImageByDenom } = useTokenMetainfo();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const { saveScrollPosition } = useScrollHistory();
@@ -49,6 +49,7 @@ const HistoryContainer: React.FC = () => {
         const from = allPosts.reduce((sum, { txs }) => sum + txs.length, 0);
         return lastPage.next ? from : undefined;
       },
+      enabled: tokenMetainfos.length > 0,
     },
   );
 
