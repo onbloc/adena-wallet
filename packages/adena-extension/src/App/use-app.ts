@@ -5,7 +5,6 @@ import { useRecoilState } from 'recoil';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { useTokenBalance } from '@hooks/use-token-balance';
 import { useWalletContext } from '@hooks/use-context';
 import { useAccountName } from '@hooks/use-account-name';
 import useScrollHistory from '@hooks/use-scroll-history';
@@ -19,8 +18,7 @@ const useApp = (): void => {
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const { tokenMetainfos, initTokenMetainfos } = useTokenMetainfo();
-  const { updateTokenBalanceInfos } = useTokenBalance();
+  const { initTokenMetainfos } = useTokenMetainfo();
   const { pathname, key } = useLocation();
   const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const { scrollMove } = useScrollHistory();
@@ -38,13 +36,6 @@ const useApp = (): void => {
       initTokenMetainfos();
     }
   }, [currentAccount, currentNetwork]);
-
-  useEffect(() => {
-    if (tokenMetainfos.length === 0) {
-      return;
-    }
-    updateTokenBalanceInfos(tokenMetainfos);
-  }, [tokenMetainfos]);
 
   useEffect(() => {
     initAccountNames(wallet?.accounts ?? []);
