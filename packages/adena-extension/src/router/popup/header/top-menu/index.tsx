@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn, ExpandBtn } from '@components/atoms';
+import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
 
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -15,6 +14,7 @@ import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
 import mixins from '@styles/mixins';
 import { createPopupWindow } from '@common/utils/browser-utils';
 import useSessionParams from '@hooks/use-session-state';
+import { PopWindowButton } from '@components/atoms/pop-window-button';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -151,7 +151,7 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
           </CopyTooltip>
         </StyledCenterWrapper>
         <StyledRightWrapper>
-          {isPopup ? <div /> : <ExpandBtn type='button' onClick={popupWindow} />}
+          {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}
         </StyledRightWrapper>
       </Header>
       <SideMenuLayout open={open} setOpen={setOpen} />
