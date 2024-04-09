@@ -14,7 +14,7 @@ import mixins from '@styles/mixins';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
-  position: absolute;
+  position: fixed;
   width: 100%;
   height: 100%;
   padding: 78px 24px;
