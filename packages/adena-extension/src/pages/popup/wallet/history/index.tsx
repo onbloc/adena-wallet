@@ -19,9 +19,9 @@ import useAppNavigate from '@hooks/use-app-navigate';
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 48px - 60px);
   padding: 24px 20px;
-  margin-bottom: 60px;
+  overflow: auto;
 `;
 
 const StyledTitleWrapper = styled.div`
