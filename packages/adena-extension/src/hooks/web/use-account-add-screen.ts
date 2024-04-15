@@ -5,7 +5,6 @@ import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
 import useQuestionnaire from './use-questionnaire';
 import { waitForRun } from '@common/utils/timeout-utils';
 
@@ -24,7 +23,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
-  const { resetNetworkConnection } = useNetwork();
 
   const [step, setStep] = useState<AccountAddStateType>(
     params?.doneQuestionnaire ? 'CREATE_ACCOUNT' : 'INIT',
@@ -66,7 +64,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       if (!wallet) {
         return false;
       }
-      resetNetworkConnection();
       const account = await SeedAccount.createByWallet(wallet);
       account.index = wallet.lastAccountIndex + 1;
       account.name = `Account ${wallet.lastAccountIndex + 1}`;

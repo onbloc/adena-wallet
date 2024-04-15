@@ -4,7 +4,7 @@ import { useLocation, useMatch } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
 import { RoutePath } from '@types';
-import { CommonState, WalletState } from '@states';
+import { WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 import { getTheme } from '@styles/theme';
 
@@ -55,10 +55,9 @@ export const Header = (): JSX.Element => {
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
 
   const [walletState] = useRecoilState(WalletState.state);
-  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const { currentNetwork } = useNetwork();
+  const { failedNetwork } = useNetwork();
 
-  const loadingComplete = walletState === 'FINISH' || failedNetwork[currentNetwork.id];
+  const loadingComplete = walletState === 'FINISH' || failedNetwork !== null;
   const renderHeader = (): JSX.Element | undefined => {
     if (login || ApproveLogin) {
       return <HomeMenu entry={location.pathname as string} />;

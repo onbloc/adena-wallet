@@ -22,7 +22,6 @@ export const useClear = (): UseClearReturn => {
   const clearTransactionHistory = useResetRecoilState(WalletState.transactionHistory);
   const clearHistoryPosition = useResetRecoilState(CommonState.historyPosition);
   const clearCurrentNetwork = useResetRecoilState(NetworkState.currentNetwork);
-  const clearFailedNetwork = useResetRecoilState(CommonState.failedNetwork);
   const clearIsLoading = useResetRecoilState(BalanceState.isLoading);
   const clearAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
   const clearAddressBook = useResetRecoilState(WalletState.addressBook);
@@ -35,7 +34,6 @@ export const useClear = (): UseClearReturn => {
     clearIsLoading();
     clearAccountTokenBalances();
     clearCurrentNetwork();
-    clearFailedNetwork();
     clearAddressBook();
     await walletService.clear();
     await accountService.clear();

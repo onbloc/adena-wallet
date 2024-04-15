@@ -6,7 +6,7 @@ import { useMatch } from 'react-router-dom';
 import { Loading, SkeletonBoxStyle } from '@components/atoms';
 import { RoutePath } from '@types';
 import { useTokenBalance } from '@hooks/use-token-balance';
-import { CommonState, WalletState } from '@states';
+import { WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 import { GhostButtons } from '@components/molecules';
 import { getTheme } from '@styles/theme';
@@ -44,7 +44,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
 const LoadingMain = (): ReactElement => {
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
-  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
+  const { failedNetwork } = useNetwork();
   const isApproveHardwarePath = useMatch(RoutePath.WebConnectLedger + '/*');
   const { currentBalances } = useTokenBalance();
   const isNotMatch = useMatch('/approve/wallet/*');
@@ -58,16 +58,18 @@ const LoadingMain = (): ReactElement => {
       return false;
     }
     if (state === 'FINISH') {
-      if (failedNetwork[currentNetwork.id] === true) {
+      // If `failedNetwork` is null, it is loading.
+      if (failedNetwork) {
         return false;
-      } else if (failedNetwork[currentNetwork.id] === false) {
+      }
+      if (failedNetwork === false) {
         if (currentBalances.length > 0) {
           return false;
         }
       }
     }
     return true;
-  }, [state, currentBalances, failedNetwork, currentNetwork.rpcUrl, useMatch]);
+  }, [isPopupMatch, state, currentBalances, failedNetwork, currentNetwork.id, useMatch]);
 
   return loading ? (
     <Wrapper>

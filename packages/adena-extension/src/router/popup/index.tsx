@@ -56,8 +56,11 @@ import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
 import ToastContainer from './toast-container';
+import { useNetwork } from '@hooks/use-network';
 
 export const PopupRouter = (): JSX.Element => {
+  const { failedNetwork } = useNetwork();
+
   return (
     <React.Fragment>
       <Header />
@@ -66,7 +69,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route
           path={RoutePath.Wallet}
           element={
-            <ErrorContainer>
+            <ErrorContainer failedNetwork={failedNetwork}>
               <WalletMain />
             </ErrorContainer>
           }
