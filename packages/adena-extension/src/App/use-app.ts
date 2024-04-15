@@ -12,11 +12,10 @@ const useApp = (): void => {
   const { wallet } = useWalletContext();
   const { initAccountNames } = useAccountName();
   const { currentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, checkNetworkState } = useNetwork();
   const { initTokenMetainfos } = useTokenMetainfo();
   const { pathname, key } = useLocation();
   const { scrollMove } = useScrollHistory();
-  const { checkNetworkState } = useNetwork();
 
   useEffect(() => {
     checkNetworkState();

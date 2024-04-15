@@ -15,7 +15,7 @@ interface NetworkResponse {
   currentNetwork: NetworkMetainfo;
   modified: boolean;
   failedNetwork: boolean | null;
-  checkNetworkState: () => void;
+  checkNetworkState: () => Promise<void>;
   addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
   changeNetwork: (networkId: string) => Promise<boolean>;
   updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
@@ -50,7 +50,7 @@ export const useNetwork = (): NetworkResponse => {
   const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances);
   const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances);
 
-  const { data: failedNetwork = null, refetch: checkNetworkState } = useQuery<boolean | null>(
+  const { data: failedNetwork = null, refetch: refetchNetworkState } = useQuery<boolean | null>(
     ['network/failedNetwork', currentNetwork],
     () => {
       if (!currentNetwork) {
@@ -59,6 +59,10 @@ export const useNetwork = (): NetworkResponse => {
       return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
   );
+
+  const checkNetworkState = async (): Promise<void> => {
+    await refetchNetworkState();
+  };
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
