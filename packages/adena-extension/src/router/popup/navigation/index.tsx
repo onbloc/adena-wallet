@@ -5,7 +5,7 @@ import { useRecoilState } from 'recoil';
 
 import { RoutePath } from '@types';
 import { Icon, IconName } from '@components/atoms';
-import { CommonState, WalletState } from '@states';
+import { WalletState } from '@states';
 import { useNetwork } from '@hooks/use-network';
 import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
@@ -46,8 +46,7 @@ export const Navigation = (): JSX.Element => {
   const history = useMatch(RoutePath.History);
   const tokenDetails = useMatch(RoutePath.TokenDetails);
   const [walletState] = useRecoilState(WalletState.state);
-  const [failedNetwork] = useRecoilState(CommonState.failedNetwork);
-  const { currentNetwork } = useNetwork();
+  const { failedNetwork } = useNetwork();
 
   const navItems = [
     {
@@ -76,7 +75,7 @@ export const Navigation = (): JSX.Element => {
 
   const isRender = (): boolean => {
     if (wallet || tokenDetails || nft || explore || history) {
-      return loadingComplete || failedNetwork[currentNetwork.id] === false;
+      return loadingComplete || failedNetwork === false;
     }
     return false;
   };

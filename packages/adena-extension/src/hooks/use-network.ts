@@ -7,18 +7,20 @@ import { useEvent } from './use-event';
 import { fetchHealth } from '@common/utils/fetch-utils';
 
 import { NetworkMetainfo } from '@types';
-import { BalanceState, CommonState, NetworkState, WalletState } from '@states';
+import { BalanceState, NetworkState, WalletState } from '@states';
+import { useQuery } from '@tanstack/react-query';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
   currentNetwork: NetworkMetainfo;
   modified: boolean;
+  failedNetwork: boolean | null;
+  checkNetworkState: () => void;
   addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
   changeNetwork: (networkId: string) => Promise<boolean>;
   updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
   deleteNetwork: (networkId: string) => Promise<boolean>;
   setModified: (modified: boolean) => void;
-  resetNetworkConnection: () => void;
 }
 
 const DEFAULT_NETWORK: NetworkMetainfo = {
@@ -43,12 +45,20 @@ export const useNetwork = (): NetworkResponse => {
   const { chainService } = useAdenaContext();
   const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
   const [modified, setModified] = useRecoilState(NetworkState.modified);
-  const [failedNetwork, setFailedNetwork] = useRecoilState(CommonState.failedNetwork);
   const [, setState] = useRecoilState(WalletState.state);
-  const resetNetworkConnection = useResetRecoilState(CommonState.failedNetwork);
   const resetAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
   const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances);
   const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances);
+
+  const { data: failedNetwork = null, refetch: checkNetworkState } = useQuery<boolean | null>(
+    ['network/failedNetwork', currentNetwork],
+    () => {
+      if (!currentNetwork) {
+        return null;
+      }
+      return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
+    },
+  );
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string) => {
@@ -64,11 +74,6 @@ export const useNetwork = (): NetworkResponse => {
 
   const changeNetworkOfProvider = useCallback(
     async (network: NetworkMetainfo) => {
-      let currentHealthy = false;
-      await fetchHealth(network.rpcUrl).then(({ healthy }) => {
-        currentHealthy = healthy;
-      });
-      setFailedNetwork({ ...failedNetwork, [network.id]: !currentHealthy });
       const changedNetwork = await changeNetworkProvider(network);
       dispatchChangedEvent(changedNetwork);
     },
@@ -84,7 +89,6 @@ export const useNetwork = (): NetworkResponse => {
       resetCurrentTokenBalances();
       resetAccountTokenBalances();
       resetAccountNativeBalances();
-      resetNetworkConnection();
       setState('LOADING');
       const network = networkMetainfos.find((network) => network.id === id) ?? networkMetainfos[0];
       await chainService.updateCurrentNetworkId(id);
@@ -147,11 +151,12 @@ export const useNetwork = (): NetworkResponse => {
     currentNetwork: currentNetwork || DEFAULT_NETWORK,
     networks: networkMetainfos,
     modified,
+    failedNetwork,
+    checkNetworkState,
     changeNetwork,
     updateNetwork,
     addNetwork,
     deleteNetwork,
     setModified,
-    resetNetworkConnection,
   };
 };

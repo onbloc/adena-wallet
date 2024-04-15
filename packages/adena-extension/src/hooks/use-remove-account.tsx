@@ -1,7 +1,6 @@
 import { useWalletContext } from './use-context';
 import { Account } from 'adena-module';
 import { useCurrentAccount } from './use-current-account';
-import { useNetwork } from './use-network';
 
 export const useRemoveAccount = (): {
   availRemoveAccount: () => Promise<boolean>;
@@ -9,7 +8,6 @@ export const useRemoveAccount = (): {
 } => {
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
-  const { resetNetworkConnection } = useNetwork();
 
   const availRemoveAccount = async (): Promise<boolean> => {
     const accounts = wallet?.accounts ?? [];
@@ -20,7 +18,6 @@ export const useRemoveAccount = (): {
     if (!wallet) {
       return false;
     }
-    resetNetworkConnection();
     const clone = wallet.clone();
     clone.removeAccount(account);
     const nextAccount = clone.accounts[clone.accounts.length - 1];
