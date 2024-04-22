@@ -12,7 +12,7 @@
     "@walletconnect/sign-client": "^2.11.2",
     "@web3auth/base": "7.3.2",
     "@web3auth/base-provider": "^7.3.2",
-    "@web3auth/no-modal": "^7.3.2",
+    "@web3auth/no-modal": "^8.3.0",
     "@web3auth/openlogin-adapter": "7.3.2"
   },
   "devDependencies": {
