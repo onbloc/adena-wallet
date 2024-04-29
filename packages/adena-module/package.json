@@ -45,6 +45,7 @@
     "@cosmjs/ledger-amino": "^0.32.2",
     "@gnolang/gno-js-client": "1.2.1",
     "@gnolang/tm2-js-client": "1.1.6",
+    "@gnolang/tm2-js-client-legacy": "npm:@gnolang/tm2-js-client@1.1.7",
     "@ledgerhq/hw-transport": "^6.30.4",
     "@ledgerhq/hw-transport-mocker": "^6.28.4",
     "@ledgerhq/hw-transport-webhid": "^6.28.4",

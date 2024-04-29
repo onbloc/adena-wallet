@@ -1,8 +1,9 @@
 import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { Wallet as Tm2WalletLegacy } from '@gnolang/tm2-js-client-legacy';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Keyring, KeyringData, KeyringType } from './keyring';
-import { Document, documentToTx, decodeTxMessages } from './../..';
+import { Document, documentToTx, decodeTxMessages, useTm2Wallet } from './../..';
 import { hexToArray } from './../../utils/data';
 
 export class Web3AuthKeyring implements Keyring {
@@ -30,12 +31,12 @@ export class Web3AuthKeyring implements Keyring {
   }
 
   async sign(provider: Provider, document: Document) {
-    const wallet = await Tm2Wallet.fromPrivateKey(this.privateKey);
+    const wallet = await useTm2Wallet(document).fromPrivateKey(this.privateKey);
     wallet.connect(provider);
     return this.signByWallet(wallet, document);
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+  private async signByWallet(wallet: Tm2Wallet | Tm2WalletLegacy, document: Document) {
     const tx = documentToTx(document);
     const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
