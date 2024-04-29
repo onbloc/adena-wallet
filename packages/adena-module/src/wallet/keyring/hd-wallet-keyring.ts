@@ -6,9 +6,10 @@ import {
   Provider,
   TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
+import { Wallet as Tm2WalletLegacy } from '@gnolang/tm2-js-client-legacy';
 import { v4 as uuidv4 } from 'uuid';
 import { Bip39, EnglishMnemonic } from '../../crypto';
-import { decodeTxMessages, Document, documentToTx } from './../..';
+import { useTm2Wallet, decodeTxMessages, Document, documentToTx } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
 
 export class HDWalletKeyring implements Keyring {
@@ -58,12 +59,14 @@ export class HDWalletKeyring implements Keyring {
     signed: Tx;
     signature: TxSignature[];
   }> {
-    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    const wallet = await useTm2Wallet(document).fromMnemonic(this.mnemonic, {
+      accountIndex: hdPath,
+    });
     wallet.connect(provider);
     return this.signByWallet(wallet, document);
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+  private async signByWallet(wallet: Tm2Wallet | Tm2WalletLegacy, document: Document) {
     const tx = documentToTx(document);
     const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {

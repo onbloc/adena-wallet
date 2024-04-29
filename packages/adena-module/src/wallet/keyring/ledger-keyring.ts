@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Provider, TransactionEndpoint, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { Wallet as Tm2WalletLegacy } from '@gnolang/tm2-js-client-legacy';
 import { Keyring, KeyringData, KeyringType } from './keyring';
 import { generateHDPath, Tx } from '@gnolang/tm2-js-client';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { Document, documentToTx, decodeTxMessages } from './../..';
+import { Document, documentToTx, decodeTxMessages, useTm2Wallet } from './../..';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -38,14 +39,14 @@ export class LedgerKeyring implements Keyring {
     if (!this.connector) {
       throw new Error('Ledger connector does not found');
     }
-    const wallet = Tm2Wallet.fromLedger(this.connector, {
+    const wallet = await useTm2Wallet(document).fromLedger(this.connector, {
       accountIndex: hdPath,
     });
     wallet.connect(provider);
     return this.signByWallet(wallet, document);
   }
 
-  private async signByWallet(wallet: Tm2Wallet, document: Document) {
+  private async signByWallet(wallet: Tm2Wallet | Tm2WalletLegacy, document: Document) {
     const tx = documentToTx(document);
     const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
     return {
