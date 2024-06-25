@@ -90,13 +90,13 @@ export const validateTransactionMessageOfAddPkg = (message: { [key in string]: a
   }
 
   const packageValue = message.value.package;
-  if (typeof packageValue?.Name !== 'string') {
+  if (typeof packageValue?.Name !== 'string' && typeof packageValue?.name !== 'string') {
     return false;
   }
-  if (typeof packageValue?.Path !== 'string') {
+  if (typeof packageValue?.Path !== 'string' && typeof packageValue?.path !== 'string') {
     return false;
   }
-  if (!Array.isArray(packageValue?.Files)) {
+  if (!Array.isArray(packageValue?.Files) && !Array.isArray(packageValue?.files)) {
     return false;
   }
   return true;
@@ -123,13 +123,13 @@ export const validateTransactionMessageOfRun = (message: { [key in string]: any 
   }
 
   const packageValue = message.value.package;
-  if (typeof packageValue?.Name !== 'string') {
+  if (typeof packageValue?.Name !== 'string' && typeof packageValue?.name !== 'string') {
     return false;
   }
-  if (typeof packageValue?.Path !== 'string') {
+  if (typeof packageValue?.Path !== 'string' && typeof packageValue?.path !== 'string') {
     return false;
   }
-  if (!Array.isArray(packageValue?.Files)) {
+  if (!Array.isArray(packageValue?.Files) && !Array.isArray(packageValue?.files)) {
     return false;
   }
   return true;

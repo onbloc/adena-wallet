@@ -13,12 +13,12 @@ function makeDocument(body: string): Document {
           creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
           deposit: '1ugnot',
           package: {
-            Name: 'hello',
-            Path: 'gno.land/r/demo/hello',
-            Files: [
+            name: 'hello',
+            path: 'gno.land/r/demo/hello',
+            files: [
               {
-                Name: 'hello.gno',
-                Body: body,
+                name: 'hello.gno',
+                body: body,
               },
             ],
           },

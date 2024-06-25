@@ -1,5 +1,5 @@
-import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
-import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
+import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client-legacy';
+import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client-legacy';
 import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
 import { fromBase64 } from '../encoding';
 
@@ -67,12 +67,12 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
 
 function createMemPackage(memPackage: RawMemPackage) {
   return MemPackage.create({
-    name: memPackage.name,
-    path: memPackage.path,
-    files: memPackage.files.map((file: any) =>
+    name: memPackage.Name,
+    path: memPackage.Path,
+    files: memPackage.Files.map((file: any) =>
       MemFile.create({
-        name: file.name,
-        body: file.body,
+        name: file.Name,
+        body: file.Body,
       }),
     ),
   });
@@ -176,22 +176,36 @@ export interface RawVmAddPackageMessage {
   '@type': string;
   creator: string;
   deposit: string;
-  package: RawMemPackage;
+  package: {
+    Name: string;
+    Path: string;
+    Files: {
+      Name: string;
+      Body: string;
+    }[];
+  };
 }
 
 export interface RawVmRunMessage {
   '@type': string;
   caller: string;
   send: string;
-  package: RawMemPackage;
+  package: {
+    Name: string;
+    Path: string;
+    Files: {
+      Name: string;
+      Body: string;
+    }[];
+  };
 }
 
 export interface RawMemPackage {
-  name: string;
-  path: string;
-  files: {
-    name: string;
-    body: string;
+  Name: string;
+  Path: string;
+  Files: {
+    Name: string;
+    Body: string;
   }[];
 }
 

@@ -4,7 +4,7 @@ import { Wallet as Tm2WalletLegacy } from '@gnolang/tm2-js-client-legacy';
 import { Keyring, KeyringData, KeyringType } from './keyring';
 import { generateHDPath, Tx } from '@gnolang/tm2-js-client';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { Document, documentToTx, decodeTxMessages, useTm2Wallet } from './../..';
+import { Document, documentToTx, decodeTxMessages, useTm2Wallet, makeSignedTx } from './../..';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
@@ -47,8 +47,7 @@ export class LedgerKeyring implements Keyring {
   }
 
   private async signByWallet(wallet: Tm2Wallet | Tm2WalletLegacy, document: Document) {
-    const tx = documentToTx(document);
-    const signedTx = await wallet.signTransaction(tx, decodeTxMessages);
+    const signedTx = await makeSignedTx(wallet, document);
     return {
       signed: signedTx,
       signature: signedTx.signatures,
