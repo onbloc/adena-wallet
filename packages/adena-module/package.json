@@ -44,6 +44,7 @@
   "dependencies": {
     "@cosmjs/ledger-amino": "^0.32.2",
     "@gnolang/gno-js-client": "1.2.3",
+    "@gnolang/gno-js-client-legacy": "npm:@gnolang/gno-js-client@1.2.3",
     "@gnolang/tm2-js-client": "1.2.0",
     "@gnolang/tm2-js-client-legacy": "npm:@gnolang/tm2-js-client@1.1.7",
     "@ledgerhq/hw-transport": "^6.30.4",
