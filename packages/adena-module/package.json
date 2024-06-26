@@ -42,9 +42,10 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@cosmjs/ledger-amino": "^0.32.2",
-    "@gnolang/gno-js-client": "1.2.3",
-    "@gnolang/tm2-js-client": "1.2.0",
+    "@cosmjs/ledger-amino": "^0.32.4",
+    "@gnolang/gno-js-client": "1.3.0",
+    "@gnolang/gno-js-client-legacy": "npm:@gnolang/gno-js-client@1.2.3",
+    "@gnolang/tm2-js-client": "1.2.1",
     "@gnolang/tm2-js-client-legacy": "npm:@gnolang/tm2-js-client@1.1.7",
     "@ledgerhq/hw-transport": "^6.30.4",
     "@ledgerhq/hw-transport-mocker": "^6.28.4",
