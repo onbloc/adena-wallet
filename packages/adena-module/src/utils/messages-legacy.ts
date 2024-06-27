@@ -1,6 +1,6 @@
 import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client-legacy';
 import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client-legacy';
-import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client-legacy/bin/proto/gno/vm';
 import { fromBase64 } from '../encoding';
 
 export interface Document {
