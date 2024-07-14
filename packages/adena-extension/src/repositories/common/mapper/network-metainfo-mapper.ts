@@ -14,6 +14,7 @@ export interface ChainMetainfoItem {
   rpcUrl: string;
   gnoUrl: string;
   apiUrl: string;
+  indexerUrl: string;
   linkUrl: string;
 }
 

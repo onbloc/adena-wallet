@@ -18,6 +18,9 @@ import {
   TokenModel,
   NetworkMetainfo,
 } from '@types';
+import CHAIN_DATA from '@resources/chains/chains.json';
+import { makeAllRealmsQuery } from './token.queries';
+import { mapGRC20TokenModel } from './mapper/token-query.mapper';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
 
@@ -71,6 +74,29 @@ export class TokenRepository {
     this.networkMetainfo = networkMetainfo;
   }
 
+  private get networkId(): string {
+    if (!this.networkMetainfo) {
+      return CHAIN_DATA[0].chainId;
+    }
+
+    if (!CHAIN_DATA.map((chain) => chain.networkId).includes(this.networkMetainfo.networkId)) {
+      return CHAIN_DATA[0].chainId;
+    }
+
+    return this.networkMetainfo.networkId;
+  }
+
+  public get supported(): boolean {
+    return !!this.networkMetainfo?.apiUrl || !!this.networkMetainfo?.indexerUrl;
+  }
+
+  public get queryUrl(): string | null {
+    if (!this.networkMetainfo?.indexerUrl) {
+      return null;
+    }
+    return this.networkMetainfo.indexerUrl + '/graphql/query';
+  }
+
   public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
     this.networkMetainfo = networkMetainfo;
   }
@@ -86,8 +112,8 @@ export class TokenRepository {
     return Promise.all([
       this.fetchNativeTokenAssets(),
       this.fetchGRC20TokenAssets(),
-      this.fetchIBCNativeTokenAssets(),
-      this.fetchIBCTokenAssets(),
+      // this.fetchIBCNativeTokenAssets(),
+      // this.fetchIBCTokenAssets(),
     ]).then((data) => data.flat());
   };
 
@@ -119,11 +145,9 @@ export class TokenRepository {
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
     return accountTokenMetainfos[accountId] ?? [];
   };
@@ -132,11 +156,9 @@ export class TokenRepository {
     accountId: string,
     tokenMetainfos: TokenModel[],
   ): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -156,11 +178,9 @@ export class TokenRepository {
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
-    const accountTokenMetainfos = await this.localStorage.getToObject<
-      {
-        [key in string]: TokenModel[];
-      }
-    >('ACCOUNT_TOKEN_METAINFOS');
+    const accountTokenMetainfos = await this.localStorage.getToObject<{
+      [key in string]: TokenModel[];
+    }>('ACCOUNT_TOKEN_METAINFOS');
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
@@ -176,8 +196,27 @@ export class TokenRepository {
     return true;
   };
 
+  public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
+    if (!this.queryUrl) {
+      return [];
+    }
+
+    const allRealmsQuery = makeAllRealmsQuery();
+    return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
+      (result) =>
+        result?.data?.transactions
+          ? result?.data?.transactions
+              .flatMap((tx: any) => tx.messages)
+              .map((message: any) =>
+                mapGRC20TokenModel(this.networkMetainfo?.networkId || '', message),
+              )
+          : [],
+    );
+  };
+
   private fetchNativeTokenAssets = async (): Promise<NativeTokenModel[]> => {
-    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/gno-native/assets.json';
+    const requestUri =
+      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
       .then((response) =>
@@ -187,7 +226,7 @@ export class TokenRepository {
   };
 
   private fetchGRC20TokenAssets = async (): Promise<GRC20TokenModel[]> => {
-    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/grc20/assets.json';
+    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
       .then((response) =>
@@ -197,7 +236,8 @@ export class TokenRepository {
   };
 
   private fetchIBCNativeTokenAssets = async (): Promise<IBCNativeTokenModel[]> => {
-    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-native/assets.json';
+    const requestUri =
+      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCNativeTokenResponse>(requestUri)
       .then((response) =>
@@ -207,12 +247,36 @@ export class TokenRepository {
   };
 
   private fetchIBCTokenAssets = async (): Promise<IBCTokenModel[]> => {
-    const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + '/ibc-tokens/assets.json';
+    const requestUri =
+      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCTokenResponse>(requestUri)
       .then((response) =>
         TokenMapper.fromIBCTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
       )
       .catch(() => []);
+  };
+
+  private static postGraphQuery = <T = any>(
+    axiosInstance: AxiosInstance,
+    url: string,
+    query: string,
+    header?: { [key in string]: number } | null,
+  ): Promise<T | null> => {
+    return axiosInstance
+      .post<T>(
+        url,
+        {
+          query,
+        },
+        {
+          headers: header || {},
+        },
+      )
+      .then((response) => response.data)
+      .catch((e) => {
+        console.log(e);
+        return null;
+      });
   };
 }
