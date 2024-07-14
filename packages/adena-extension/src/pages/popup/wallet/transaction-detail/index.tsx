@@ -76,7 +76,7 @@ export const TransactionDetail = (): JSX.Element => {
       <DataBox>
         <DLWrap>
           <dt>Date</dt>
-          <dd>{getDateTimeText(transactionItem.date)}</dd>
+          <dd>{transactionItem.date ? getDateTimeText(transactionItem.date) : '-'}</dd>
         </DLWrap>
         <DLWrap>
           <dt>Type</dt>

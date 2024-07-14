@@ -9,6 +9,7 @@ import { fetchHealth } from '@common/utils/fetch-utils';
 import { NetworkMetainfo } from '@types';
 import { BalanceState, NetworkState, WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
+import CHAIN_DATA from '@resources/chains/chains.json';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -23,20 +24,7 @@ interface NetworkResponse {
   setModified: (modified: boolean) => void;
 }
 
-const DEFAULT_NETWORK: NetworkMetainfo = {
-  id: 'test3',
-  default: true,
-  main: true,
-  chainId: 'GNOLAND',
-  chainName: 'GNO.LAND',
-  networkId: 'test3',
-  networkName: 'Testnet 3',
-  addressPrefix: 'g',
-  rpcUrl: 'https://rpc.test3.gno.land',
-  gnoUrl: 'https://test3.gno.land',
-  apiUrl: 'https://api.adena.app',
-  linkUrl: 'https://gnoscan.io',
-};
+const DEFAULT_NETWORK: NetworkMetainfo = CHAIN_DATA[0];
 
 export const useNetwork = (): NetworkResponse => {
   const { dispatchEvent } = useEvent();

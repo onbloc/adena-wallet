@@ -8,7 +8,9 @@ import { useNetwork } from './use-network';
 import { TokenState } from '@states';
 import { GRC20TokenModel, TokenModel } from '@types';
 import { Account } from 'adena-module';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import BigNumber from 'bignumber.js';
+import { useGRC20Tokens } from './use-grc20-tokens';
 
 interface GRC20Token {
   tokenId: string;
@@ -21,7 +23,9 @@ interface GRC20Token {
 
 export type UseTokenMetainfoReturn = {
   tokenMetainfos: TokenModel[];
+  allTokenMetainfos: TokenModel[];
   currentTokenMetainfos: TokenModel[];
+  getTokenAmount: (amount: { value: string; denom: string }) => { value: string; denom: string };
   initTokenMetainfos: () => Promise<void>;
   updateTokenMetainfos: (account: Account, tokenMetainfos: TokenModel[]) => Promise<void>;
   addTokenMetainfo: (tokenMetainfo: GRC20TokenModel) => Promise<boolean>;
@@ -43,11 +47,11 @@ export type UseTokenMetainfoReturn = {
 };
 
 function makeTokenKeyByDenom(denom: string): string {
-  return `native-${denom.toLowerCase()}`;
+  return `${denom.toLowerCase()}`;
 }
 
 function makeTokenKeyByPackagePath(packagePath: string): string {
-  return `grc20-${packagePath.toLowerCase()}`;
+  return `${packagePath.toLowerCase()}`;
 }
 
 function makeTokenKey(token: TokenModel): string {
@@ -66,12 +70,40 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const [tokenLogoMap, setTokenLogoMap] = useRecoilState(TokenState.tokenLogoMap);
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const { data: grc20Tokens } = useGRC20Tokens();
+
+  const allTokenMetainfos = useMemo(() => {
+    if (!grc20Tokens || tokenMetainfos.length === 0) {
+      return tokenMetainfos;
+    }
+
+    const remainTokens = grc20Tokens.filter(
+      (token) =>
+        !!token &&
+        tokenMetainfos.findIndex(
+          (meta) => isGRC20TokenModel(meta) && meta?.pkgPath !== token?.pkgPath,
+        ),
+    );
+    return [...tokenMetainfos, ...remainTokens];
+  }, [tokenMetainfos, grc20Tokens]);
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
       (tokenMetainfo) => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
     );
   }, [tokenMetainfos, currentNetwork]);
+
+  const tokenMetaMap = useMemo(() => {
+    return allTokenMetainfos.reduce<{ [key in string]: TokenModel }>((acc, current) => {
+      if (isNativeTokenModel(current)) {
+        acc[current.denom] = current;
+      }
+      if (isGRC20TokenModel(current)) {
+        acc[current.pkgPath] = current;
+      }
+      return acc;
+    }, {});
+  }, [allTokenMetainfos]);
 
   const initTokenMetainfos = async (): Promise<void> => {
     if (currentAccount) {
@@ -123,6 +155,24 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       denom,
     };
   };
+
+  const getTokenAmount = useCallback(
+    (amount: { value: string; denom: string }) => {
+      const tokenMeta = tokenMetaMap[amount.denom];
+      if (!tokenMeta) {
+        return amount;
+      }
+      const value = BigNumber(amount.value)
+        .shiftedBy(tokenMeta.decimals * -1)
+        .toString();
+      const denom = tokenMeta.symbol;
+      return {
+        value,
+        denom,
+      };
+    },
+    [tokenMetaMap],
+  );
 
   const getTokenImage = (token: TokenModel): string | null => {
     const key = makeTokenKey(token);
@@ -188,7 +238,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
 
   return {
     tokenMetainfos,
+    allTokenMetainfos,
     currentTokenMetainfos,
+    getTokenAmount,
     initTokenMetainfos,
     addTokenMetainfo,
     addGRC20TokenMetainfo,

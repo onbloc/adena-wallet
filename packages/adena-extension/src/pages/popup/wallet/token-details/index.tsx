@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled, { useTheme } from 'styled-components';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { isAirgapAccount } from 'adena-module';
 
 import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
@@ -11,15 +10,10 @@ import { RoutePath } from '@types';
 import { getTheme } from '@styles/theme';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { useAdenaContext } from '@hooks/use-context';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { HighlightNumber } from '@components/atoms';
 import useScrollHistory from '@hooks/use-scroll-history';
-import { useNetwork } from '@hooks/use-network';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
-import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
 
 import LoadingTokenDetails from './loading-token-details';
 import mixins from '@styles/mixins';
@@ -27,6 +21,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -84,70 +79,27 @@ const EtcIcon = styled.div`
   }
 `;
 
-type TokenHistoriesType = {
-  hits: number;
-  next: boolean;
-  txs: {
-    logo: string;
-    amount: { value: string; denom: string };
-    hash: string;
-    type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
-    typeName?: string | undefined;
-    status: 'FAIL' | 'SUCCESS';
-    title: string;
-    description?: string | undefined;
-    extraInfo?: string | undefined;
-    valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
-    date: string;
-    from?: string | undefined;
-    to?: string | undefined;
-    originFrom?: string | undefined;
-    originTo?: string | undefined;
-    networkFee?: { value: string; denom: string } | undefined;
-  }[];
-};
-
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { saveScrollPosition } = useScrollHistory(scrollRef);
   const { openLink } = useLink();
   const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
   const { params } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
   const { currentAccount, currentAddress } = useCurrentAccount();
-  useNetwork();
   const tokenBalance = params?.tokenBalance;
-  const { tokenMetainfos, convertDenom, getTokenImageByDenom } = useTokenMetainfo();
-  const { transactionHistoryService } = useAdenaContext();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
-  const { saveScrollPosition } = useScrollHistory();
   const { clearHistoryData } = useHistoryData();
   const { currentBalances } = useTokenBalance();
 
-  const { status, isLoading, isFetching, data, refetch, fetchNextPage } = useInfiniteQuery(
-    [
-      'history/grc20-token-history',
-      currentAddress,
-      tokenBalance && isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
-    ],
-    ({ pageParam = 0 }) => fetchTokenHistories(pageParam),
-    {
-      getNextPageParam: (lastPage, allPosts) => {
-        const from = allPosts.reduce((sum, { txs }) => sum + txs.length, 0);
-        return lastPage.next ? from : undefined;
-      },
-      enabled: tokenMetainfos.length > 0,
-    },
-  );
+  const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
 
-  useEffect(() => {
-    if (currentAddress) {
-      const historyFetchTimer = setInterval(() => {
-        refetch({ refetchPage: (_, index) => index === 0 });
-      }, HISTORY_FETCH_INTERVAL_TIME);
-      return () => clearInterval(historyFetchTimer);
-    }
-  }, [currentAddress, refetch]);
+  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useTokenTransactions(
+    isNative,
+    tokenBalance && isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
+  );
 
   useEffect(() => {
     if (loadingNextFetch && !isLoading && !isFetching) {
@@ -161,78 +113,34 @@ export const TokenDetails = (): JSX.Element => {
     }
   }, [document.getElementsByTagName('body')]);
 
-  useEffect(() => {
-    bodyElement?.addEventListener('scroll', onScrollListener);
-    return () => bodyElement?.removeEventListener('scroll', onScrollListener);
-  }, [bodyElement]);
-
   const tokenAmount = useMemo((): string => {
     const balance = currentBalances.find((balance) => balance.tokenId === tokenBalance?.tokenId);
     return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0';
   }, [currentBalances, tokenBalance]);
 
+  const transactions = useMemo(() => {
+    return TransactionHistoryMapper.queryToDisplay(data || []);
+  }, [data]);
+
   const onScrollListener = (): void => {
-    if (bodyElement) {
-      const remain = bodyElement.offsetHeight - bodyElement.scrollTop;
+    if (bodyElement && scrollRef.current) {
+      const scrollHeight = scrollRef.current.clientHeight + scrollRef.current.scrollTop;
+      const remain = (scrollRef.current.lastElementChild?.clientHeight || 0) - scrollHeight;
       if (remain < 20) {
         setLoadingNextFetch(true);
       }
     }
   };
 
-  const fetchTokenHistories = async (pageParam: number): Promise<TokenHistoriesType> => {
-    if (!currentAddress) {
-      return {
-        hits: 0,
-        next: false,
-        txs: [],
-      };
-    }
-    const size = 20;
-    const histories =
-      tokenBalance && isGRC20TokenModel(tokenBalance)
-        ? await transactionHistoryService.fetchGRC20TransactionHistory(
-            currentAddress,
-            tokenBalance.pkgPath,
-            pageParam,
-            size,
-          )
-        : await transactionHistoryService.fetchNativeTransactionHistory(
-            currentAddress,
-            pageParam,
-            size,
-          );
-    const txs = histories.txs.map((transaction) => {
-      const { value, denom } = convertDenom(
-        transaction.amount.value,
-        transaction.amount.denom,
-        'COMMON',
-      );
-      return {
-        ...transaction,
-        logo: getTokenImageByDenom(transaction.amount.denom) || `${UnknownTokenIcon}`,
-        amount: {
-          value: BigNumber(value).toFormat(),
-          denom,
-        },
-      };
-    });
-    return {
-      hits: histories.hits,
-      next: histories.next,
-      txs: txs,
-    };
-  };
-
   const onClickItem = useCallback(
     (hash: string) => {
       const transactions =
-        TransactionHistoryMapper.queryToDisplay(data?.pages ?? []).flatMap(
+        TransactionHistoryMapper.queryToDisplay(data ?? []).flatMap(
           (group) => group.transactions,
         ) ?? [];
       const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
       if (transactionInfo) {
-        saveScrollPosition(bodyElement?.scrollTop);
+        saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {
           state: { transactionInfo },
         });
@@ -262,10 +170,6 @@ export const TokenDetails = (): JSX.Element => {
   };
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
-  const getTransactionInfoLists = useCallback(() => {
-    return TransactionHistoryMapper.queryToDisplay(data?.pages ?? []);
-  }, [data]);
-
   const getAccountDetailUri = (): string => {
     return `https://gnoscan.io/accounts/${currentAddress}`;
   };
@@ -293,7 +197,7 @@ export const TokenDetails = (): JSX.Element => {
   };
 
   return (
-    <Wrapper>
+    <Wrapper ref={scrollRef} onScroll={onScrollListener}>
       <HeaderWrap>
         <LeftArrowBtn onClick={handlePrevButtonClick} />
         <Text type='header4'>{tokenBalance?.name}</Text>
@@ -320,12 +224,12 @@ export const TokenDetails = (): JSX.Element => {
           text: 'Send',
         }}
       />
-      {isLoading ? (
+      {isLoading && isSupported ? (
         <LoadingTokenDetails />
-      ) : getTransactionInfoLists().length > 0 ? (
+      ) : transactions.length > 0 ? (
         <TransactionHistory
           status={status}
-          transactionInfoLists={getTransactionInfoLists()}
+          transactionInfoLists={isSupported ? transactions : []}
           onClickItem={onClickItem}
         />
       ) : (
