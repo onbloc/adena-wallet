@@ -56,37 +56,27 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
       return false;
     }
     if (!Array.isArray(currentData.NETWORKS)) {
-      throw new Error('currentData.NETWORKS' + currentData.NETWORKS);
       return false;
     }
     if (typeof currentData.CURRENT_CHAIN_ID !== 'string') {
-      throw new Error('currentData.CURRENT_CHAIN_ID' + currentData.CURRENT_CHAIN_ID);
       return false;
     }
     if (typeof currentData.CURRENT_NETWORK_ID !== 'string') {
-      throw new Error('currentData.CURRENT_NETWORK_ID' + currentData.CURRENT_NETWORK_ID);
       return false;
     }
     if (typeof currentData.SERIALIZED !== 'string') {
-      throw new Error('currentData.SERIALIZED' + currentData.SERIALIZED);
       return false;
     }
     if (typeof currentData.ENCRYPTED_STORED_PASSWORD !== 'string') {
-      throw new Error(
-        'currentData.ENCRYPTED_STORED_PASSWORD' + currentData.ENCRYPTED_STORED_PASSWORD,
-      );
       return false;
     }
     if (typeof currentData.CURRENT_ACCOUNT_ID !== 'string') {
-      throw new Error('currentData.CURRENT_ACCOUNT_ID' + currentData.CURRENT_ACCOUNT_ID);
       return false;
     }
     if (currentData.ACCOUNT_NAMES && typeof currentData.ACCOUNT_NAMES !== 'object') {
-      throw new Error('currentData.ACCOUNT_NAMES' + currentData.ACCOUNT_NAMES);
       return false;
     }
     if (currentData.ESTABLISH_SITES && typeof currentData.ESTABLISH_SITES !== 'object') {
-      throw new Error('currentData.ESTABLISH_SITES' + currentData.ESTABLISH_SITES);
       return false;
     }
     return true;
