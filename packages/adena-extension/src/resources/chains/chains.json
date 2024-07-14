@@ -1,16 +1,17 @@
 [
   {
-    "id": "test3",
+    "id": "test4",
     "default": true,
     "main": true,
-    "chainId": "test3",
+    "chainId": "test4",
     "chainName": "GNO.LAND",
-    "networkId": "test3",
-    "networkName": "Testnet 3",
+    "networkId": "test4",
+    "networkName": "Testnet 4",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test3.gno.land:443",
-    "gnoUrl": "https://test3.gno.land",
-    "apiUrl": "https://api.adena.app",
+    "rpcUrl": "https://rpc.test4.gno.land:443",
+    "indexerUrl": "https://test4.indexer.onbloc.xyz",
+    "gnoUrl": "https://test4.gno.land",
+    "apiUrl": "https://test4.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
@@ -23,8 +24,9 @@
     "networkName": "Portal Loop",
     "addressPrefix": "g",
     "rpcUrl": "https://rpc.gno.land:443",
+    "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
-    "apiUrl": "",
+    "apiUrl": "https://api.onbloc.xyz",
     "linkUrl": ""
   },
   {
@@ -37,8 +39,9 @@
     "networkName": "Local",
     "addressPrefix": "g",
     "rpcUrl": "http://127.0.0.1:26657",
+    "indexerUrl": "http://127.0.0.1:8546",
     "gnoUrl": "http://127.0.0.1:8888",
-    "apiUrl": "http://127.0.0.1:3333",
+    "apiUrl": "",
     "linkUrl": "http://127.0.0.1:3000"
   },
   {
@@ -51,6 +54,7 @@
     "networkName": "Gno-Teritori-Testnet",
     "addressPrefix": "g",
     "rpcUrl": "https://testnet.gno.teritori.com:26658",
+    "indexerUrl": "",
     "gnoUrl": "https://testnet.gno.teritori.com",
     "apiUrl": "",
     "linkUrl": ""
@@ -65,6 +69,7 @@
     "networkName": "Gnoswap-Testnet",
     "addressPrefix": "g",
     "rpcUrl": "https://beta.rpc.gnoswap.io",
+    "indexerUrl": "",
     "gnoUrl": "https://beta.rpc.gnoswap.io",
     "apiUrl": "",
     "linkUrl": ""

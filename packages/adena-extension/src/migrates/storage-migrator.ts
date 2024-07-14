@@ -9,6 +9,8 @@ import { StorageMigration004 } from './migrations/v004/storage-migration-v004';
 import { StorageModelV004 } from './migrations/v004/storage-model-v004';
 import { StorageModelV005 } from './migrations/v005/storage-model-v005';
 import { StorageMigration005 } from './migrations/v005/storage-migration-v005';
+import { StorageModelV006 } from './migrations/v006/storage-model-v006';
+import { StorageMigration006 } from './migrations/v006/storage-migration-v006';
 
 const LegacyStorageKeys = [
   'NETWORKS',
@@ -23,7 +25,7 @@ const LegacyStorageKeys = [
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 
-export type StorageModelLatest = StorageModelV005;
+export type StorageModelLatest = StorageModelV006;
 
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
@@ -74,7 +76,12 @@ export class StorageMigrator implements Migrator {
   async deserialize(
     data: string | undefined,
   ): Promise<
-    StorageModelV005 | StorageModelV004 | StorageModelV003 | StorageModelV002 | StorageModelV001
+    | StorageModelV006
+    | StorageModelV005
+    | StorageModelV004
+    | StorageModelV003
+    | StorageModelV002
+    | StorageModelV001
   > {
     let jsonData = null;
     if (data) {
@@ -88,6 +95,7 @@ export class StorageMigrator implements Migrator {
   }
 
   async getCurrent(): Promise<
+    | StorageModelV006
     | StorageModelV005
     | StorageModelV004
     | StorageModelV003
@@ -105,7 +113,7 @@ export class StorageMigrator implements Migrator {
     };
   }
 
-  async migrate(current: StorageModel): Promise<StorageModelV005 | null> {
+  async migrate(current: StorageModel): Promise<StorageModelV006 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -144,8 +152,16 @@ export class StorageMigrator implements Migrator {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
-    StorageModelV005 | StorageModelV004 | StorageModelV003 | StorageModelV002 | StorageModelV001
+    | StorageModelV006
+    | StorageModelV005
+    | StorageModelV004
+    | StorageModelV003
+    | StorageModelV002
+    | StorageModelV001
   > {
+    if (json?.version === 6) {
+      return json as StorageModelV006;
+    }
     if (json?.version === 5) {
       return json as StorageModelV005;
     }
@@ -191,6 +207,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration003(),
       new StorageMigration004(),
       new StorageMigration005(),
+      new StorageMigration006(),
     ];
   }
 }
