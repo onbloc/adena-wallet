@@ -36,13 +36,22 @@
     "order": 4
   },
   {
+    "symbol": "GNOSTUDIO",
+    "name": "Gno Studio Connect",
+    "description": "Realm interaction made simple.",
+    "logo": "/resources/apps/images/gnostudio.svg",
+    "link": "https://gno.studio/connect",
+    "display": true,
+    "order": 5
+  },
+  {
     "symbol": "GNOSCAN",
     "name": "GnoScan",
     "description": "Making Gno on-chain data intuitive.",
     "logo": "/resources/apps/images/gnoscan.svg",
     "link": "https://gnoscan.io",
     "display": true,
-    "order": 5
+    "order": 6
   },
   {
     "symbol": "GNOCHESS",
@@ -50,15 +59,6 @@
     "description": "A user-friendly chess game in Gno.",
     "logo": "/resources/apps/images/gnochess.svg",
     "link": "https://gnochess.com/",
-    "display": true,
-    "order": 6
-  },
-  {
-    "symbol": "GNOTOOLS",
-    "name": "GnoTools",
-    "description": "A frontend for Gnoland Boards",
-    "logo": "/resources/apps/images/gnotools.svg",
-    "link": "https://app.gno.tools",
     "display": true,
     "order": 7
   },
@@ -79,5 +79,14 @@
     "link": "https://gno.flippando.xyz/flip",
     "display": true,
     "order": 9
+  },
+  {
+    "symbol": "ZENTASKTIC",
+    "name": "ZenTasktic",
+    "description": "A project management solution in Gno.",
+    "logo": "/resources/apps/images/zentasktic.svg",
+    "link": "https://gno.zentasktic.com/",
+    "display": true,
+    "order": 10
   }
 ]
