@@ -94,6 +94,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
           text: 'Save',
           onClick: onClickSave,
         }}
+        filled
       />
     </AddCustomNetworkWrapper>
   );
