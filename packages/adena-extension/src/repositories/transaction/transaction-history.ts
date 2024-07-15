@@ -26,6 +26,7 @@ export class TransactionHistoryRepository {
   }
 
   public get supported(): boolean {
+    console.log(',this.networkMetainfo', this.networkMetainfo);
     return !!this.networkMetainfo?.apiUrl || !!this.networkMetainfo?.indexerUrl;
   }
 

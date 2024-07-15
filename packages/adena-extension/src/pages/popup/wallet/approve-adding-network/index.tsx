@@ -36,7 +36,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
 
   const onClickApprove = useCallback(async () => {
     setProcessing(true);
-    await addNetwork(chainName, rpcUrl, chainId);
+    await addNetwork(chainName, rpcUrl, chainId, '');
     setResponse(
       InjectionMessageInstance.success('ADD_NETWORK_SUCCESS', requestData?.data, requestData?.key),
     );

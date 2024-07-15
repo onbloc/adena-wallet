@@ -10,6 +10,7 @@ import { useCurrentAccount } from './use-current-account';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
+import { useGRC20Tokens } from './use-grc20-tokens';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
@@ -18,7 +19,12 @@ export const useTokenBalance = (): {
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
 } => {
-  const { currentTokenMetainfos: tokenMetainfos, updateTokenMetainfos } = useTokenMetainfo();
+  const { isFetched: isFetchedGRC20Tokens } = useGRC20Tokens();
+  const {
+    currentTokenMetainfos: tokenMetainfos,
+    updateTokenMetainfos,
+    getTokenAmount,
+  } = useTokenMetainfo();
   const { wallet } = useWalletContext();
   const { balanceService } = useAdenaContext();
   const { currentNetwork } = useNetwork();
@@ -48,7 +54,13 @@ export const useTokenBalance = (): {
   );
 
   const { data: accountNativeBalanceMap = {} } = useQuery<Record<string, TokenBalanceType>>(
-    ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, tokenMetainfos],
+    [
+      'accountNativeBalanceMap',
+      wallet?.accounts,
+      currentNetwork.chainId,
+      tokenMetainfos,
+      isFetchedGRC20Tokens,
+    ],
     () => {
       if (wallet === null || wallet.accounts === null || nativeToken == null) {
         return {};
@@ -67,7 +79,7 @@ export const useTokenBalance = (): {
         }, {}),
       );
     },
-    { refetchInterval: 5000, enabled: existWallet && !lockedWallet },
+    { refetchInterval: 5000, enabled: existWallet && !lockedWallet && isFetchedGRC20Tokens },
   );
 
   const currentBalances = useMemo((): TokenBalanceType[] => {
@@ -91,10 +103,12 @@ export const useTokenBalance = (): {
     if (nativeToken === null) {
       return null;
     }
-    const mainToken = currentBalances.find((balance) => balance.symbol === nativeToken.symbol);
+
+    const mainToken = currentBalances.find((balance) => balance.tokenId === nativeToken.tokenId);
     if (!mainToken?.amount) {
       return null;
     }
+
     return mainToken.amount;
   }, [currentBalances, nativeToken]);
 
@@ -119,15 +133,15 @@ export const useTokenBalance = (): {
     const balanceAmount = isNativeTokenModel(token)
       ? await balanceService.getGnotTokenBalance(address)
       : isGRC20TokenModel(token)
-      ? await balanceService.getGRC20TokenBalance(address, token.pkgPath)
-      : null;
+        ? await balanceService.getGRC20TokenBalance(address, token.pkgPath)
+        : null;
 
     return {
       ...token,
-      amount: {
+      amount: getTokenAmount({
         value: `${balanceAmount || 0}`,
-        denom: token.symbol,
-      },
+        denom: isGRC20TokenModel(token) ? token.pkgPath : token.symbol,
+      }),
     };
   }
 

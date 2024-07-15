@@ -63,7 +63,12 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         setAvailAmountNumber(BigNumber(0));
       }
     } else {
-      setAvailAmountNumber(BigNumber(currentBalance.amount.value));
+      const convertedBalanceAmount = BigNumber(currentBalance.amount.value);
+      if (convertedBalanceAmount.isGreaterThan(0)) {
+        setAvailAmountNumber(convertedBalanceAmount);
+      } else {
+        setAvailAmountNumber(BigNumber(0));
+      }
     }
     return true;
   }, [wallet, balanceService, currentAddress, tokenMetainfo]);
@@ -94,7 +99,11 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       charAtZeroCheck = `0${amount}`;
     }
     if (charAtZeroCheck.includes('.') && charAtZeroCheck.split('.')[1].length > 6) {
-      setAmount(Number(charAtZeroCheck).toFixed(6).toString());
+      setAmount(
+        Number(charAtZeroCheck)
+          .toFixed(tokenMetainfo?.decimals || 6)
+          .toString(),
+      );
     } else {
       setAmount(charAtZeroCheck);
     }
