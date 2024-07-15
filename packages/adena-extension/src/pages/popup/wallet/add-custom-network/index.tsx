@@ -33,14 +33,18 @@ const AddCustomNetworkContainer: React.FC = () => {
   const {
     name,
     rpcUrl,
+    indexerUrl,
     chainId,
     rpcUrlError,
+    indexerUrlError,
     chainIdError,
     changeName,
     changeRPCUrl,
+    changeIndexerUrl,
     changeChainId,
     setRPCUrlError,
     setChainIdError,
+    setIndexerUrlError,
   } = useCustomNetworkInput();
 
   const save = useCallback(async () => {
@@ -48,6 +52,10 @@ const AddCustomNetworkContainer: React.FC = () => {
     if (!isValidURL(rpcUrl)) {
       isValid = false;
       setRPCUrlError('Invalid URL');
+    }
+    if (!!indexerUrl && !isValidURL(rpcUrl)) {
+      isValid = false;
+      setIndexerUrlError('Invalid URL');
     }
     if (existsChainId(chainId, networks)) {
       isValid = false;
@@ -60,7 +68,7 @@ const AddCustomNetworkContainer: React.FC = () => {
     if (!isValid) {
       return;
     }
-    await addNetwork(name, rpcUrl, chainId);
+    await addNetwork(name, rpcUrl, chainId, indexerUrl);
     goBack();
   }, [networks, name, rpcUrl, chainId]);
 
@@ -69,11 +77,14 @@ const AddCustomNetworkContainer: React.FC = () => {
       <AddCustomNetwork
         name={name}
         rpcUrl={rpcUrl}
+        indexerUrl={indexerUrl}
         chainId={chainId}
         rpcUrlError={rpcUrlError}
+        indexerUrlError={indexerUrlError}
         chainIdError={chainIdError}
         changeName={changeName}
         changeRPCUrl={changeRPCUrl}
+        changeIndexerUrl={changeIndexerUrl}
         changeChainId={changeChainId}
         save={save}
         cancel={goBack}

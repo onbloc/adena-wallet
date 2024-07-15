@@ -17,7 +17,7 @@ export const Default: StoryObj<EditNetworkProps> = {
     changeName: action('onChangeName'),
     changeRPCUrl: action('onChangeRPCUrl'),
     changeChainId: action('onChangeChainId'),
-    removeNetwork: action('removeNetwork'),
+    clearNetwork: action('clearNetwork'),
     saveNetwork: action('saveNetwork'),
     moveBack: action('moveBack'),
   },

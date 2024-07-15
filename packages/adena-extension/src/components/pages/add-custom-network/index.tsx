@@ -9,10 +9,13 @@ export interface AddCustomNetworkProps {
   name: string;
   rpcUrl: string;
   rpcUrlError?: string;
+  indexerUrl: string;
+  indexerUrlError?: string;
   chainId: string;
   chainIdError?: string;
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
+  changeIndexerUrl: (indexerUrl: string) => void;
   changeChainId: (chainId: string) => void;
   save: () => void;
   cancel: () => void;
@@ -23,10 +26,13 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
   name,
   rpcUrl,
   rpcUrlError,
+  indexerUrl,
+  indexerUrlError,
   chainId,
   chainIdError,
   changeName,
   changeRPCUrl,
+  changeIndexerUrl,
   changeChainId,
   save,
   cancel,
@@ -67,11 +73,14 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <CustomNetworkInput
         name={name}
         rpcUrl={rpcUrl}
+        indexerUrl={indexerUrl}
         chainId={chainId}
         changeName={changeName}
         changeRPCUrl={changeRPCUrl}
+        indexerUrlError={indexerUrlError}
         changeChainId={changeChainId}
         rpcUrlError={rpcUrlError}
+        changeIndexerUrl={changeIndexerUrl}
         chainIdError={chainIdError}
       />
       <BottomFixedButtonGroup

@@ -68,7 +68,10 @@ const TransferSummaryContainer: React.FC = () => {
       send: '',
       pkgPath: tokenMetainfo.pkgPath,
       func: 'Transfer',
-      args: [toAddress, transferAmount.value],
+      args: [
+        toAddress,
+        `${Math.round(BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber())}`,
+      ],
     });
   }, [summaryInfo, currentAddress]);
 

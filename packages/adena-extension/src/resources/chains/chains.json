@@ -31,7 +31,7 @@
   },
   {
     "id": "dev",
-    "default": false,
+    "default": true,
     "main": false,
     "chainId": "dev",
     "chainName": "GNO.LAND",
@@ -39,7 +39,7 @@
     "networkName": "Local",
     "addressPrefix": "g",
     "rpcUrl": "http://127.0.0.1:26657",
-    "indexerUrl": "http://127.0.0.1:8546",
+    "indexerUrl": "",
     "gnoUrl": "http://127.0.0.1:8888",
     "apiUrl": "",
     "linkUrl": "http://127.0.0.1:3000"
@@ -56,21 +56,6 @@
     "rpcUrl": "https://testnet.gno.teritori.com:26658",
     "indexerUrl": "",
     "gnoUrl": "https://testnet.gno.teritori.com",
-    "apiUrl": "",
-    "linkUrl": ""
-  },
-  {
-    "id": "gnoswap",
-    "default": false,
-    "main": false,
-    "chainId": "beta.gnoswap",
-    "chainName": "Gnoswap-Testnet",
-    "networkId": "beta.gnoswap",
-    "networkName": "Gnoswap-Testnet",
-    "addressPrefix": "g",
-    "rpcUrl": "https://beta.rpc.gnoswap.io",
-    "indexerUrl": "",
-    "gnoUrl": "https://beta.rpc.gnoswap.io",
     "apiUrl": "",
     "linkUrl": ""
   }

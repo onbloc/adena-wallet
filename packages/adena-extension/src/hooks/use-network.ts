@@ -16,8 +16,9 @@ interface NetworkResponse {
   currentNetwork: NetworkMetainfo;
   modified: boolean;
   failedNetwork: boolean | null;
+  getDefaultNetworkInfo: (networkId: string) => NetworkMetainfo | null;
   checkNetworkState: () => Promise<void>;
-  addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
+  addNetwork: (name: string, rpcUrl: string, chainId: string, indexerUrl: string) => void;
   changeNetwork: (networkId: string) => Promise<boolean>;
   updateNetwork: (network: NetworkMetainfo) => Promise<boolean>;
   deleteNetwork: (networkId: string) => Promise<boolean>;
@@ -48,16 +49,26 @@ export const useNetwork = (): NetworkResponse => {
     },
   );
 
+  const getDefaultNetworkInfo = useCallback((networkId: string) => {
+    const network = CHAIN_DATA.find(
+      (current) => current.default && current.networkId === networkId,
+    );
+    if (!network) {
+      return null;
+    }
+    return network;
+  }, []);
+
   const checkNetworkState = async (): Promise<void> => {
     await refetchNetworkState();
   };
 
   const addNetwork = useCallback(
-    async (name: string, rpcUrl: string, chainId: string) => {
+    async (name: string, rpcUrl: string, chainId: string, indexerUrl: string) => {
       setModified(true);
       const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
       const parsedName = name.trim();
-      await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId);
+      await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId, indexerUrl);
       const networkMetainfos = await chainService.getNetworks();
       setNetworkMetainfos(networkMetainfos);
     },
@@ -144,6 +155,7 @@ export const useNetwork = (): NetworkResponse => {
     networks: networkMetainfos,
     modified,
     failedNetwork,
+    getDefaultNetworkInfo,
     checkNetworkState,
     changeNetwork,
     updateNetwork,

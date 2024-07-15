@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 import { useAdenaContext } from './use-context';
+import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
 import { useTokenMetainfo } from './use-token-metainfo';
 
@@ -19,6 +20,7 @@ export const useMakeTransactionsWithTime = (
   const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
   const { getTokenImageByDenom, getTokenAmount } = useTokenMetainfo();
+  const { isFetched: isFetchedTokens } = useGRC20Tokens();
 
   const { status, isLoading, isFetched, isFetching, data } = useQuery({
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, key || ''],
@@ -47,7 +49,7 @@ export const useMakeTransactionsWithTime = (
         }),
       );
     },
-    enabled: !!transactionHistoryService.supported && !!transactions,
+    enabled: !!transactionHistoryService.supported && !!transactions && isFetchedTokens,
     keepPreviousData: true,
   });
 

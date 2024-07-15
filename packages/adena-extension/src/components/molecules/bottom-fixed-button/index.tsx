@@ -22,7 +22,7 @@ export const BottomFixedButton = ({
   }, [onClick]);
 
   return (
-    <ButtonWrap fill={fill}>
+    <ButtonWrap fill={fill ? 'fill' : 'none'}>
       <Button fullWidth hierarchy={hierarchy} onClick={onClickButton}>
         <Text type='body1Bold'>{text}</Text>
       </Button>
@@ -30,7 +30,7 @@ export const BottomFixedButton = ({
   );
 };
 
-const ButtonWrap = styled.div<{ fill: boolean }>`
+const ButtonWrap = styled.div<{ fill: string }>`
   ${mixins.flex({ direction: 'row' })};
   position: fixed;
   bottom: 0px;
@@ -41,12 +41,12 @@ const ButtonWrap = styled.div<{ fill: boolean }>`
   z-index: 1;
 
   ${({ fill, theme }): FlattenSimpleInterpolation =>
-    fill
+    fill === 'fill'
       ? css`
-        box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
-        background-color: ${theme.neutral._8};
+          box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
+          background-color: ${theme.neutral._8};
         `
       : css`
-        background-color: transparent;
-      `}
+          background-color: transparent;
+        `}
 `;

@@ -12,11 +12,16 @@ describe('AddCustomNetwork Component', () => {
       name: '',
       rpcUrl: '',
       rpcUrlError: '',
+      indexerUrl: '',
+      indexerUrlError: '',
       chainId: '',
       changeName: () => {
         return;
       },
       changeRPCUrl: () => {
+        return;
+      },
+      changeIndexerUrl: () => {
         return;
       },
       changeChainId: () => {

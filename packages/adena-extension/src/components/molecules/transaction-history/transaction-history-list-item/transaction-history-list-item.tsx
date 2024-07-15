@@ -5,6 +5,7 @@ import FailedIcon from '@assets/failed.svg';
 import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
 import { TokenBalance } from '@components/molecules';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 
 export interface TransactionHistoryListItemProps {
   hash: string;
@@ -43,6 +44,9 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
     }
     if (type === 'MULTI_CONTRACT_CALL') {
       return `${ContractIcon}`;
+    }
+    if (!logo) {
+      return `${UnknownTokenIcon}`;
     }
     return `${logo}`;
   }, [type, logo]);

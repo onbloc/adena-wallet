@@ -119,14 +119,16 @@ export function mapVMTransaction(
   const firstMessage = tx.messages[0];
 
   if (tx.messages.length > 1) {
+    const isAddPackage = firstMessage.value?.__typename === 'MsgAddPackage';
+    const messageValue: any = firstMessage.value;
     return {
       hash: tx.hash,
       height: tx.block_height,
       logo: '',
       type: 'MULTI_CONTRACT_CALL',
       status: tx.success ? 'SUCCESS' : 'FAIL',
-      typeName: '',
-      title: '',
+      typeName: isAddPackage ? 'Add Package' : messageValue?.func || '',
+      title: isAddPackage ? 'AddPkg' : messageValue?.func || '',
       extraInfo: `+${tx.messages.length - 1}`,
       amount: {
         value: '',
