@@ -45,6 +45,21 @@
     "linkUrl": "http://127.0.0.1:3000"
   },
   {
+    "id": "gnoswap",
+    "default": false,
+    "main": false,
+    "chainId": "dev.gnoswap",
+    "chainName": "GnoSwap Dev",
+    "networkId": "dev.gnoswap",
+    "networkName": "GnoSwap Dev",
+    "addressPrefix": "g",
+    "rpcUrl": "https://dev.rpc.gnoswap.io",
+    "indexerUrl": "https://indexer-gnoswap.in.onbloc.xyz",
+    "gnoUrl": "https://gno.land",
+    "apiUrl": "",
+    "linkUrl": ""
+  },
+  {
     "id": "teritori",
     "default": false,
     "main": false,
