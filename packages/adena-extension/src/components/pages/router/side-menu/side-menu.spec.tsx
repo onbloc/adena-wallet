@@ -10,6 +10,8 @@ import { SideMenuProps } from '@types';
 describe('SideMenu Component', () => {
   it('SideMenu render', () => {
     const args: SideMenuProps = {
+      scannerQueryString: '',
+      scannerUrl: '',
       locked: false,
       currentAccountId: null,
       accounts: [],

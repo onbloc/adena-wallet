@@ -11,11 +11,10 @@ import IconLock from '@assets/icon-side-menu-lock.svg';
 import IconRestore from '@assets/restore.svg';
 import IconHelp from '@assets/help-fill.svg';
 import { SideMenuProps, RoutePath } from '@types';
-import { useNetwork } from '@hooks/use-network';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
 
 const SideMenu: React.FC<SideMenuProps> = ({
+  scannerUrl,
+  scannerQueryString,
   locked,
   currentAccountId,
   accounts,
@@ -26,13 +25,10 @@ const SideMenu: React.FC<SideMenuProps> = ({
   lock,
   close,
 }) => {
-  const { currentNetwork, scannerParameters } = useNetwork();
-
   const moveGnoscan = useCallback(
     (address: string) => {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
-      const openLinkUrl = scannerParameters
-        ? `${scannerUrl}/accounts/${address}?${makeQueryString(scannerParameters)}`
+      const openLinkUrl = scannerQueryString
+        ? `${scannerUrl}/accounts/${address}?${scannerQueryString}`
         : `${scannerUrl}/accounts/${address}`;
       openLink(openLinkUrl);
     },

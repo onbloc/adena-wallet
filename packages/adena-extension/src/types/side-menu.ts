@@ -9,6 +9,8 @@ export interface SideMenuAccountInfo {
 }
 
 export interface SideMenuProps {
+  scannerUrl: string;
+  scannerQueryString: string;
   locked: boolean;
   currentAccountId: string | null;
   accounts: SideMenuAccountInfo[];
