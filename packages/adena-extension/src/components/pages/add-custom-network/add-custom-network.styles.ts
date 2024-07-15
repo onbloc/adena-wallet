@@ -4,5 +4,5 @@ import styled from 'styled-components';
 export const AddCustomNetworkWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  padding: 24px 20px;
+  padding: 24px 20px 120px 20px;
 `;
