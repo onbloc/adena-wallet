@@ -12,6 +12,7 @@ export const Default: StoryObj<WebHelpOverlayProps> = {
   args: {
     items: [
       {
+        position: 'bottom',
         x: 5,
         y: 5,
         tooltipInfo: {
@@ -27,6 +28,7 @@ export const Default: StoryObj<WebHelpOverlayProps> = {
       {
         x: 15,
         y: 5,
+        position: 'bottom',
         tooltipInfo: {
           securityRate: 2,
           convenienceRate: 2,
@@ -40,6 +42,7 @@ export const Default: StoryObj<WebHelpOverlayProps> = {
       {
         x: 25,
         y: 5,
+        position: 'bottom',
         tooltipInfo: {
           securityRate: 2,
           convenienceRate: 2,

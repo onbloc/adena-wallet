@@ -12,6 +12,11 @@ export const WebHelpTooltipWrapper = styled(View)`
 export const WebHelpTooltipBoxArrowWrapper = styled(View)`
   position: relative;
   z-index: 5;
+
+  &.reverse img {
+    transform: rotate(180deg);
+    margin-top: -1px;
+  }
 `;
 
 export const WebHelpTooltipBoxWrapper = styled(View)`

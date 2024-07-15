@@ -11,6 +11,31 @@ export interface WalletCreationHelpOverlayProps {
   onFinish: () => void;
 }
 
+function getTooltipPositionY(
+  y: number,
+  height: number,
+  windowHeight: number,
+): {
+  position: 'top' | 'bottom';
+  height: number;
+} {
+  const positionY = y;
+  const boxHeight = height;
+  const tooltipHeight = 214;
+
+  if (windowHeight === 0 || y + boxHeight + tooltipHeight < windowHeight) {
+    return {
+      position: 'bottom',
+      height: positionY + boxHeight + 10,
+    };
+  }
+
+  return {
+    position: 'top',
+    height: positionY - tooltipHeight - 10,
+  };
+}
+
 const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   hardwareWalletButtonRef,
   airgapAccountButtonRef,
@@ -24,9 +49,11 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   const hardwareWalletHelpItem: OverlayItem | null = useMemo(() => {
     if (!hardwareWalletButtonRef?.current) return null;
     const { x, y, width, height } = hardwareWalletButtonRef.current.getBoundingClientRect();
+    const tooltipPositionInfo = getTooltipPositionY(y, height, windowSize.height);
     return {
       x: x + width / 2,
-      y: y + height + 10,
+      y: tooltipPositionInfo.height,
+      position: tooltipPositionInfo.position,
       tooltipInfo: {
         securityRate: 2,
         convenienceRate: 2,
@@ -44,9 +71,11 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   const airgapAccountHelpItem: OverlayItem | null = useMemo(() => {
     if (!airgapAccountButtonRef?.current) return null;
     const { x, y, width, height } = airgapAccountButtonRef.current.getBoundingClientRect();
+    const tooltipPositionInfo = getTooltipPositionY(y, height, windowSize.height);
     return {
       x: x + width / 2,
-      y: y + height + 10,
+      y: tooltipPositionInfo.height,
+      position: tooltipPositionInfo.position,
       tooltipInfo: {
         securityRate: 3,
         convenienceRate: 1,
@@ -64,9 +93,11 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
   const advancedOptionHelpItem: OverlayItem | null = useMemo(() => {
     if (!advancedOptionButtonRef?.current) return null;
     const { x, y, width, height } = advancedOptionButtonRef.current.getBoundingClientRect();
+    const tooltipPositionInfo = getTooltipPositionY(y, height, windowSize.height);
     return {
       x: x + width / 2,
-      y: y + height + 10,
+      y: tooltipPositionInfo.height,
+      position: tooltipPositionInfo.position,
       tooltipInfo: {
         securityRate: 1,
         convenienceRate: 3,

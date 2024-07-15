@@ -14,6 +14,7 @@ import _ from 'lodash';
 export interface WebHelpTooltipProps {
   securityRate: number;
   convenienceRate: number;
+  position: 'top' | 'bottom';
   confirm: () => void;
 }
 
@@ -21,13 +22,16 @@ const WebHelpTooltip: React.FC<PropsWithChildren<WebHelpTooltipProps>> = ({
   securityRate,
   convenienceRate,
   confirm,
+  position,
   children,
 }) => {
   return (
     <WebHelpTooltipWrapper>
-      <WebHelpTooltipBoxArrowWrapper>
-        <WebImg src={IconBoxArrow} width={23} height={12} />
-      </WebHelpTooltipBoxArrowWrapper>
+      {position === 'bottom' && (
+        <WebHelpTooltipBoxArrowWrapper>
+          <WebImg src={IconBoxArrow} width={23} height={12} />
+        </WebHelpTooltipBoxArrowWrapper>
+      )}
 
       <WebHelpTooltipBoxWrapper>
         <div className='content-wrapper'>{children}</div>
@@ -60,6 +64,12 @@ const WebHelpTooltip: React.FC<PropsWithChildren<WebHelpTooltipProps>> = ({
         </div>
         <WebButton figure='primary' size='full' text='I got it' onClick={confirm} />
       </WebHelpTooltipBoxWrapper>
+
+      {position === 'top' && (
+        <WebHelpTooltipBoxArrowWrapper className='reverse'>
+          <WebImg src={IconBoxArrow} width={23} height={12} />
+        </WebHelpTooltipBoxArrowWrapper>
+      )}
     </WebHelpTooltipWrapper>
   );
 };

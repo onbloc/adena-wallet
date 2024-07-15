@@ -5,6 +5,7 @@ import { WebHelpOverlayItemWrapper, WebHelpOverlayWrapper } from './web-help-ove
 export interface OverlayItem {
   x: number;
   y: number;
+  position: 'top' | 'bottom';
   tooltipInfo: {
     securityRate: number;
     convenienceRate: number;
@@ -42,6 +43,7 @@ const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({ items, onFinish }) => {
             <WebHelpTooltip
               securityRate={item.tooltipInfo.securityRate}
               convenienceRate={item.tooltipInfo.convenienceRate}
+              position={item.position}
               confirm={nextItem}
             >
               {item.tooltipInfo.content}
