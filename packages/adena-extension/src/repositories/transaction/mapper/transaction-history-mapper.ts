@@ -59,19 +59,8 @@ function isVmAddPkgType(func?: string): boolean {
 
 export class TransactionHistoryMapper {
   public static queryToDisplay(
-    data: {
-      next: boolean;
-      hits: number;
-      txs: TransactionInfo[];
-    }[],
+    transactions: TransactionInfo[],
   ): { title: string; transactions: TransactionInfo[] }[] {
-    const transactions =
-      data.flatMap((history) => {
-        if (Array.isArray(history)) {
-          return [];
-        }
-        return history.txs;
-      }) ?? [];
     const initValue: { title: string; transactions: TransactionInfo[] }[] = [];
 
     return transactions.reduce(

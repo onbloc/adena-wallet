@@ -122,8 +122,8 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   }, [walletService, gnoProvider]);
 
   const transactionHistoryService = useMemo(
-    () => new TransactionHistoryService(transactionHistoryRepository),
-    [transactionHistoryRepository],
+    () => new TransactionHistoryService(gnoProvider, transactionHistoryRepository),
+    [gnoProvider, transactionHistoryRepository],
   );
 
   const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);

@@ -5,6 +5,11 @@ interface HistoryPosition {
   position: number;
 }
 
+export const fetchedHistoryBlockHeight = atom<number | null>({
+  key: 'common/fetched-history-block-height',
+  default: null,
+});
+
 export const historyPosition = atom<HistoryPosition>({
   key: 'common/history-position',
   default: {

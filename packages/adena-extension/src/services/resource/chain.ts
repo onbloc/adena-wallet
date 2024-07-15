@@ -38,6 +38,7 @@ export class ChainService {
       networkName: name,
       addressPrefix: 'g',
       rpcUrl: rpcUrl,
+      indexerUrl: '',
       gnoUrl: rpcUrl,
       apiUrl: '',
       linkUrl: '',

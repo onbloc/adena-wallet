@@ -1,1 +1,1 @@
-export const HISTORY_FETCH_INTERVAL_TIME = 3 * 1000;
+export const HISTORY_FETCH_INTERVAL_TIME = 5_000 as const;

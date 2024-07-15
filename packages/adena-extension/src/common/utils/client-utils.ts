@@ -30,12 +30,13 @@ export function formatFullNickname(name: string, address: string): string {
 }
 
 export function getDateDiff(d: Date | string): number {
+  if (!d) {
+    return 0;
+  }
   return new Date().getDate() - new Date(d).getDate();
 }
 
-export function dateTimeFormatEn(
-  d: Date | string,
-): {
+export function dateTimeFormatEn(d: Date | string): {
   year: string;
   month: string;
   day: string;
@@ -386,6 +387,9 @@ export const dateToLocal = (utcDateStr: string): { value: string; offsetHours: n
 };
 
 export const getDateText = (date: string): string => {
+  if (!date) {
+    return 'Today';
+  }
   const currentDate = new Date(date);
   const today = dateTimeFormatEn(new Date());
   const result = dateTimeFormatEn(currentDate);

@@ -30,11 +30,10 @@ export class TokenService {
     return this.tokenMetaInfos;
   }
 
-  public async fetchGRC20Tokens(
-    keyword: string,
-    tokenInfos?: TokenModel[],
-  ): Promise<GRC20TokenModel[]> {
-    return this.tokenRepository.fetchGRC20TokensBy(keyword, tokenInfos);
+  public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
+    return this.tokenRepository
+      .fetchAllGRC20Tokens()
+      .then((tokens) => tokens.filter((token) => !!token));
   }
 
   public async getAppInfos(): Promise<AppInfoResponse[]> {

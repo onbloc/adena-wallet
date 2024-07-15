@@ -1,19 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import AdditionalToken from '@components/pages/additional-token/additional-token';
-import { useAdenaContext } from '@hooks/use-context';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { isGRC20TokenModel } from '@common/validation/validation-token';
 import { RoutePath } from '@types';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import { TokenInfo } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
-  const { tokenService } = useAdenaContext();
-  const { tokenMetainfos, addGRC20TokenMetainfo } = useTokenMetainfo();
+  const { addGRC20TokenMetainfo } = useTokenMetainfo();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -31,30 +28,29 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
   }, [finished]);
 
-  const { data: tokenInfos } = useQuery<TokenInfo[], Error>({
-    queryKey: ['search-grc20-tokens', keyword],
-    queryFn: () => {
-      const grc20TokenInfos = tokenMetainfos.filter(isGRC20TokenModel);
-      return tokenService.fetchGRC20Tokens(keyword, tokenMetainfos).then((tokens) => {
-        return tokens
-          .filter(
-            (token1) =>
-              grc20TokenInfos.findIndex((token2) => token1.pkgPath === token2.pkgPath) < 0,
-          )
-          .map((token) => {
-            return {
-              tokenId: token.tokenId,
-              name: token.name,
-              symbol: token.symbol,
-              path: token.pkgPath,
-              decimals: token.decimals,
-              chainId: 'test3',
-              pathInfo: token.pkgPath.replace('gno.land/', ''),
-            };
-          });
-      });
-    },
-  });
+  const { data: grc20Tokens } = useGRC20Tokens();
+
+  const tokenInfos: TokenInfo[] = useMemo(() => {
+    if (!grc20Tokens) {
+      return [];
+    }
+    return grc20Tokens
+      .filter(
+        (token) =>
+          token?.pkgPath.includes(keyword) ||
+          token?.symbol.includes(keyword) ||
+          token?.name.includes(keyword),
+      )
+      .map((token) => ({
+        tokenId: token?.tokenId,
+        name: token?.name,
+        symbol: token?.symbol,
+        path: token?.pkgPath,
+        decimals: token?.decimals,
+        chainId: token?.networkId,
+        pathInfo: token?.pkgPath.replace('gno.land/', ''),
+      }));
+  }, [grc20Tokens, keyword]);
 
   const closeSelectBox = (): void => {
     setOpened(false);
