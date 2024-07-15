@@ -14,6 +14,7 @@ import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 import useLink from '@hooks/use-link';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 
 interface DLProps {
   color?: string;
@@ -35,6 +36,9 @@ export const TransactionDetail = (): JSX.Element => {
     }
     if (transactionItem?.type === 'MULTI_CONTRACT_CALL') {
       return `${ContractIcon}`;
+    }
+    if (!transactionItem?.logo) {
+      return `${UnknownTokenIcon}`;
     }
     return `${transactionItem?.logo}`;
   }, [transactionItem]);
