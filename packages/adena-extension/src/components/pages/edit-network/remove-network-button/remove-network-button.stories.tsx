@@ -9,6 +9,6 @@ export default {
 
 export const Default: StoryObj<RemoveNetworkButtonProps> = {
   args: {
-    removeNetwork: action('removeNetwork'),
+    clearNetwork: action('clearNetwork'),
   },
 };

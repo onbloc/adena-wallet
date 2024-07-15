@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 
 import { NetworkListItemWrapper } from './network-list-item.styles';
 import IconCheck from '@assets/check-circle.svg';
-import IconLock from '@assets/icon-lock-small';
 import IconEdit from '@assets/icon-edit-small';
 
 import { NetworkMetainfo } from '@types';
@@ -17,7 +16,6 @@ export interface NetworkListItemProps {
 
 const NetworkListItem: React.FC<NetworkListItemProps> = ({
   selected,
-  locked,
   networkMetainfo,
   moveEditPage,
   changeNetwork,
@@ -26,12 +24,9 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      if (locked) {
-        return;
-      }
       moveEditPage(networkMetainfo.id);
     },
-    [locked, moveEditPage, networkMetainfo.id],
+    [moveEditPage, networkMetainfo.id],
   );
 
   const onClickItem = useCallback(() => {
@@ -44,7 +39,7 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
         <div className='name-wrapper'>
           <span className='name'>{networkMetainfo.networkName}</span>
           <div className='icon-wrapper' onClick={onClickEditButton}>
-            {locked ? <IconLock /> : <IconEdit className='icon-edit' />}
+            <IconEdit className='icon-edit' />
           </div>
         </div>
         <div className='description-wrapper'>

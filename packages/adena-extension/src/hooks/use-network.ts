@@ -16,6 +16,7 @@ interface NetworkResponse {
   currentNetwork: NetworkMetainfo;
   modified: boolean;
   failedNetwork: boolean | null;
+  getDefaultNetworkInfo: (networkId: string) => NetworkMetainfo | null;
   checkNetworkState: () => Promise<void>;
   addNetwork: (name: string, rpcUrl: string, chainId: string) => void;
   changeNetwork: (networkId: string) => Promise<boolean>;
@@ -47,6 +48,16 @@ export const useNetwork = (): NetworkResponse => {
       return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
   );
+
+  const getDefaultNetworkInfo = useCallback((networkId: string) => {
+    const network = CHAIN_DATA.find(
+      (current) => current.default && current.networkId === networkId,
+    );
+    if (!network) {
+      return null;
+    }
+    return network;
+  }, []);
 
   const checkNetworkState = async (): Promise<void> => {
     await refetchNetworkState();
@@ -144,6 +155,7 @@ export const useNetwork = (): NetworkResponse => {
     networks: networkMetainfos,
     modified,
     failedNetwork,
+    getDefaultNetworkInfo,
     checkNetworkState,
     changeNetwork,
     updateNetwork,

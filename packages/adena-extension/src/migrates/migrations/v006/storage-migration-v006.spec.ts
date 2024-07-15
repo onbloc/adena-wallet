@@ -33,7 +33,7 @@ describe('serialized wallet migration V006', () => {
 
     expect(result.version).toBe(6);
     expect(result.data).not.toBeNull();
-    expect(result.data.NETWORKS.length).toEqual(2);
+    expect(result.data.NETWORKS.length).toEqual(3);
     expect(result.data.CURRENT_CHAIN_ID).toBe('test4');
     expect(result.data.CURRENT_NETWORK_ID).toBe('test4');
     expect(result.data.SERIALIZED).toBe(
@@ -58,7 +58,7 @@ describe('serialized wallet migration V006', () => {
 
     expect(result.version).toBe(6);
     expect(result.data).not.toBeNull();
-    expect(result.data.NETWORKS.length).toEqual(2);
+    expect(result.data.NETWORKS.length).toEqual(3);
     expect(result.data.CURRENT_CHAIN_ID).toBe('test4');
     expect(result.data.CURRENT_NETWORK_ID).toBe('test4');
     expect(result.data.SERIALIZED).not.toBe('');

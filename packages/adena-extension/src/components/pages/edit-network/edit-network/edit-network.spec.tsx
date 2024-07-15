@@ -13,17 +13,23 @@ describe('EditNetwork Component', () => {
       rpcUrl: '',
       chainId: '',
       rpcUrlError: '',
+      indexerUrl: '',
+      indexerUrlError: '',
       savable: true,
+      editType: 'all',
       changeName: () => {
         return;
       },
       changeRPCUrl: () => {
         return;
       },
+      changeIndexerUrl: () => {
+        return;
+      },
       changeChainId: () => {
         return;
       },
-      removeNetwork: () => {
+      clearNetwork: () => {
         return;
       },
       saveNetwork: () => {

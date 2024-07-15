@@ -69,7 +69,7 @@ describe('StorageMigrator', () => {
     expect(migrated).not.toBeNull();
     expect(migrated?.version).toBe(6);
     expect(migrated?.data).not.toBeNull();
-    expect(migrated?.data.NETWORKS).toHaveLength(2);
+    expect(migrated?.data.NETWORKS).toHaveLength(3);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
     expect(migrated?.data.CURRENT_NETWORK_ID).toBe('');
     expect(migrated?.data.SERIALIZED).toBe(

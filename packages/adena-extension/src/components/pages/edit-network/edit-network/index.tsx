@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { SubHeader, CustomNetworkInput } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
@@ -11,13 +11,17 @@ export interface EditNetworkProps {
   name: string;
   rpcUrl: string;
   rpcUrlError?: string;
+  indexerUrl: string;
+  indexerUrlError?: string;
   chainIdError?: string;
   chainId: string;
   savable: boolean;
+  editType: 'rpc-only' | 'all-default' | 'all';
   changeName: (name: string) => void;
   changeRPCUrl: (rpcUrl: string) => void;
+  changeIndexerUrl: (indexerUrl: string) => void;
   changeChainId: (chainId: string) => void;
-  removeNetwork: () => void;
+  clearNetwork: () => void;
   saveNetwork: () => void;
   moveBack: () => void;
 }
@@ -25,17 +29,28 @@ export interface EditNetworkProps {
 const EditNetwork: React.FC<EditNetworkProps> = ({
   name,
   rpcUrl,
+  indexerUrl,
   chainId,
   rpcUrlError,
+  indexerUrlError,
   chainIdError,
   savable,
+  editType,
   changeName,
   changeRPCUrl,
+  changeIndexerUrl,
   changeChainId,
   moveBack,
   saveNetwork,
-  removeNetwork,
+  clearNetwork,
 }) => {
+  const clearButtonText = useMemo(() => {
+    if (editType === 'all') {
+      return 'Remove Network';
+    }
+    return 'Reset to Default';
+  }, [editType]);
+
   const onClickBack = useCallback(() => {
     moveBack();
   }, [moveBack]);
@@ -48,8 +63,8 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   }, [savable, saveNetwork]);
 
   const onClickRemoveButton = useCallback(() => {
-    removeNetwork();
-  }, [removeNetwork]);
+    clearNetwork();
+  }, [clearNetwork]);
 
   return (
     <EditNetworkWrapper>
@@ -65,15 +80,19 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
           <CustomNetworkInput
             name={name}
             rpcUrl={rpcUrl}
+            indexerUrl={indexerUrl}
             chainId={chainId}
             rpcUrlError={rpcUrlError}
+            indexerUrlError={indexerUrlError}
             chainIdError={chainIdError}
             changeName={changeName}
             changeRPCUrl={changeRPCUrl}
+            changeIndexerUrl={changeIndexerUrl}
             changeChainId={changeChainId}
+            editType={editType}
           />
         </div>
-        <RemoveNetworkButton removeNetwork={onClickRemoveButton} />
+        <RemoveNetworkButton text={clearButtonText} clearNetwork={onClickRemoveButton} />
       </div>
       <BottomFixedButtonGroup
         leftButton={{
