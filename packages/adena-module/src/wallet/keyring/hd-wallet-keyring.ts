@@ -6,7 +6,6 @@ import {
   Provider,
   TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
-import { Wallet as Tm2WalletLegacy } from '@gnolang/tm2-js-client-legacy';
 import { v4 as uuidv4 } from 'uuid';
 import { Bip39, EnglishMnemonic } from '../../crypto';
 import { useTm2Wallet, decodeTxMessages, Document, documentToTx, makeSignedTx } from './../..';
@@ -66,7 +65,7 @@ export class HDWalletKeyring implements Keyring {
     return this.signByWallet(wallet, document);
   }
 
-  private async signByWallet(wallet: Tm2Wallet | Tm2WalletLegacy, document: Document) {
+  private async signByWallet(wallet: Tm2Wallet, document: Document) {
     const signedTx = await makeSignedTx(wallet, document);
     return {
       signed: signedTx,
