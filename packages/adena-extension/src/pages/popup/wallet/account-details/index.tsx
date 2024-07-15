@@ -13,6 +13,8 @@ import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -20,7 +22,7 @@ const AccountDetailsContainer: React.FC = () => {
   const { openLink, openSecurity } = useLink();
   const { accountId } = useParams();
   const { accounts } = useLoadAccounts();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, scannerParameters } = useNetwork();
   const { accountNames, changeAccountName } = useAccountName();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
@@ -52,7 +54,11 @@ const AccountDetailsContainer: React.FC = () => {
   }, [name, originName, account]);
 
   const moveGnoscan = useCallback(() => {
-    openLink(`https://gnoscan.io/accounts/${address}`);
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const openLinkUrl = scannerParameters
+      ? `${scannerUrl}/accounts/${address}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/accounts/${address}`;
+    openLink(openLinkUrl);
   }, [address]);
 
   const moveExportPrivateKey = useCallback(async () => {

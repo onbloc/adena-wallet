@@ -17,3 +17,8 @@ export const convertTextToAmount = (text: string): { value: string; denom: strin
     return null;
   }
 };
+export const makeQueryString = (parameters: { [key in string]: string }): string => {
+  return Object.entries(parameters)
+    .map((entry) => `${entry[0]}=${entry[1]}`)
+    .join('&');
+};

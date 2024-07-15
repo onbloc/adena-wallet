@@ -27,7 +27,7 @@
     "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
     "apiUrl": "https://api.onbloc.xyz",
-    "linkUrl": ""
+    "linkUrl": "https://gnoscan.io"
   },
   {
     "id": "dev",
@@ -57,7 +57,7 @@
     "indexerUrl": "https://indexer-gnoswap.in.onbloc.xyz",
     "gnoUrl": "https://gno.land",
     "apiUrl": "",
-    "linkUrl": ""
+    "linkUrl": "https://gnoscan.io"
   },
   {
     "id": "teritori",
@@ -72,6 +72,6 @@
     "indexerUrl": "",
     "gnoUrl": "https://testnet.gno.teritori.com",
     "apiUrl": "",
-    "linkUrl": ""
+    "linkUrl": "https://gnoscan.io"
   }
 ]
