@@ -14,6 +14,8 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { SideMenuAccountInfo, TokenBalanceType, RoutePath } from '@types';
 import useLink from '@hooks/use-link';
 import { useQuery } from '@tanstack/react-query';
+import { makeQueryString } from '@common/utils/string-utils';
+import { SCANNER_URL } from '@common/constants/resource.constant';
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -25,7 +27,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { walletService } = useAdenaContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, scannerParameters } = useNetwork();
   const { accountNames } = useAccountName();
   const { accounts, loadAccounts } = useLoadAccounts();
   const { accountNativeBalanceMap } = useTokenBalance();
@@ -43,6 +45,17 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const currentAccountId = useMemo(() => {
     return currentAccount?.id || null;
   }, [currentAccount]);
+
+  const scannerUrl = useMemo(() => {
+    return currentNetwork.linkUrl || SCANNER_URL;
+  }, [currentNetwork]);
+
+  const scannerQueryString = useMemo(() => {
+    if (scannerParameters) {
+      return makeQueryString(scannerParameters);
+    }
+    return '';
+  }, [scannerParameters]);
 
   const movePage = useCallback(
     async (link: string) => {
@@ -118,6 +131,8 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
 
   return (
     <SideMenu
+      scannerUrl={scannerUrl}
+      scannerQueryString={scannerQueryString}
       locked={locked}
       currentAccountId={currentAccountId}
       accounts={locked ? [] : latestAccountInfos}
