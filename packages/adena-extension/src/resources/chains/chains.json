@@ -58,20 +58,5 @@
     "gnoUrl": "https://testnet.gno.teritori.com",
     "apiUrl": "",
     "linkUrl": ""
-  },
-  {
-    "id": "gnoswap",
-    "default": false,
-    "main": false,
-    "chainId": "beta.gnoswap",
-    "chainName": "Gnoswap-Testnet",
-    "networkId": "beta.gnoswap",
-    "networkName": "Gnoswap-Testnet",
-    "addressPrefix": "g",
-    "rpcUrl": "https://beta.rpc.gnoswap.io",
-    "indexerUrl": "",
-    "gnoUrl": "https://beta.rpc.gnoswap.io",
-    "apiUrl": "",
-    "linkUrl": ""
   }
 ]
