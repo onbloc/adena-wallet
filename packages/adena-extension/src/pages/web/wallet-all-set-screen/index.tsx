@@ -52,11 +52,9 @@ const StyledBtn = styled(WebButton)`
   box-shadow: 0 0 0 1px #212429 inset;
 `;
 
-const StyledBtnTitle = styled(WebText)`
-`;
+const StyledBtnTitle = styled(WebText)``;
 
-const StyledBtnInfo = styled(WebText)`
-`;
+const StyledBtnInfo = styled(WebText)``;
 
 const StyledFixedWrapper = styled(Row)`
   position: fixed;
@@ -66,7 +64,7 @@ const StyledFixedWrapper = styled(Row)`
   padding: 20px 24px 16px 24px;
   gap: 16px;
   border-radius: 24px;
-  background: #181B1F;
+  background: #181b1f;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
   z-index: 3;
 `;
@@ -107,7 +105,6 @@ const WalletAllSetScreen = (): JSX.Element => {
                 Explore the Gnoland Ecosystem
               </WebText>
               <Row style={{ columnGap: 24 }}>
-
                 <StyledBtn
                   figure='tertiary'
                   size='large'
@@ -179,11 +176,7 @@ const WalletAllSetScreen = (): JSX.Element => {
             />
           </View>
         </StyledLeft>
-        <Lottie
-          width={416}
-          style={{ marginTop: -100 }}
-          animationData={AnimationAllSet}
-        />
+        <Lottie width={416} style={{ marginTop: -100 }} animationData={AnimationAllSet} />
       </StyledContainer>
 
       <StyledFixedWrapper>
