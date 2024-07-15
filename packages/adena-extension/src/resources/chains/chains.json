@@ -27,7 +27,7 @@
     "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
     "apiUrl": "https://api.onbloc.xyz",
-    "linkUrl": ""
+    "linkUrl": "https://gnoscan.io"
   },
   {
     "id": "dev",
@@ -45,6 +45,21 @@
     "linkUrl": "http://127.0.0.1:3000"
   },
   {
+    "id": "gnoswap",
+    "default": false,
+    "main": false,
+    "chainId": "dev.gnoswap",
+    "chainName": "GnoSwap Dev",
+    "networkId": "dev.gnoswap",
+    "networkName": "GnoSwap Dev",
+    "addressPrefix": "g",
+    "rpcUrl": "https://dev.rpc.gnoswap.io",
+    "indexerUrl": "https://indexer-gnoswap.in.onbloc.xyz",
+    "gnoUrl": "https://gno.land",
+    "apiUrl": "",
+    "linkUrl": "https://gnoscan.io"
+  },
+  {
     "id": "teritori",
     "default": false,
     "main": false,
@@ -57,6 +72,6 @@
     "indexerUrl": "",
     "gnoUrl": "https://testnet.gno.teritori.com",
     "apiUrl": "",
-    "linkUrl": ""
+    "linkUrl": "https://gnoscan.io"
   }
 ]

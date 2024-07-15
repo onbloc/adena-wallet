@@ -22,6 +22,9 @@ import useLink from '@hooks/use-link';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
+import { useNetwork } from '@hooks/use-network';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -81,6 +84,7 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
+  const { currentNetwork, scannerParameters } = useNetwork();
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
   const { openLink } = useLink();
@@ -171,12 +175,18 @@ export const TokenDetails = (): JSX.Element => {
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
   const getAccountDetailUri = (): string => {
-    return `https://gnoscan.io/accounts/${currentAddress}`;
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    return scannerParameters
+      ? `${scannerUrl}/accounts/${currentAddress}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/accounts/${currentAddress}`;
   };
 
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
-      return `https://gnoscan.io/tokens/${tokenBalance.pkgPath}`;
+      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+      return scannerParameters
+        ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
+        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
     }
     return '';
   };

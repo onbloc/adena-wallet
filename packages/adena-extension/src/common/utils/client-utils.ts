@@ -304,34 +304,39 @@ export const createImageByURI = async (uri: string): Promise<string | null> => {
   return null;
 };
 
-export const createFaviconByHostname = async (hostname: string): Promise<string | null> => {
+export const createFaviconByHostname = async (baseUrl: string): Promise<string | null> => {
   try {
-    const faviconData = await fetchFavicon(hostname);
-    const encodeImageData =
-      'data:image/;base64,' + Buffer.from(faviconData, 'binary').toString('base64');
-    return encodeImageData;
+    const faviconData = await fetchFavicon(baseUrl);
+    return faviconData;
   } catch (e) {
     console.log(e);
   }
   return null;
 };
 
-const fetchFavicon = async (hostname: string): Promise<any> => {
+const fetchFavicon = async (baseUrl: string): Promise<any> => {
   let response = null;
 
-  response = await fetchArrayData(`https://${hostname}/apple-touch-icon.png`);
+  response = await fetchArrayData(`${baseUrl}/apple-touch-icon.png`);
   if (response?.data) {
-    return response.data;
+    return `${baseUrl}/apple-touch-icon.png`;
   }
 
-  response = await fetchArrayData(`https://${hostname}/favicon.ico`);
+  response = await fetchArrayData(`${baseUrl}/favicon.svg`);
   if (response?.data) {
-    return response.data;
+    return `${baseUrl}/favicon.svg`;
   }
 
-  response = await fetchArrayData(`https://www.google.com/s2/favicons?domain=${hostname}&sz=256`);
+  response = await fetchArrayData(`${baseUrl}/favicon.ico`);
   if (response?.data) {
-    return response.data;
+    return `${baseUrl}/favicon.ico`;
+  }
+
+  response = await fetchArrayData(
+    `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`,
+  );
+  if (response?.data) {
+    return `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`;
   }
 
   return null;

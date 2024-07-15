@@ -103,7 +103,7 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
             value={indexerUrl}
             autoComplete='off'
             onChange={onChangeIndexerUrl}
-            placeholder='Indexer URL'
+            placeholder='Indexer URL (Optional)'
             readOnly={readonlyIndexerUrl}
           />
         </div>

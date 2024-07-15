@@ -56,7 +56,7 @@ const ApproveEstablishContainer: React.FC = () => {
       setKey(key);
       setProtocol(protocol);
       setHostname(hostname);
-      updateFavicon(hostname);
+      updateFavicon(`${protocol}//${hostname}`);
       if (data) {
         const message = decodeParameter(data);
         setAppName(message?.data?.name ?? 'Unknown');

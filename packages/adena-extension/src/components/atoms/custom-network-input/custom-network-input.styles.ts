@@ -38,6 +38,10 @@ export const CustomNetworkInputWrapper = styled.div`
         ::placeholder {
           color: ${getTheme('neutral', 'a')};
         }
+
+        &:read-only {
+          color: ${getTheme('neutral', 'a')};
+        }
       }
     }
   }

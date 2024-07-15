@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
+import useLink from '@hooks/use-link';
 import { Text, CopyIconButton, Button } from '@components/atoms';
 import { TokenBalance } from '@components/molecules';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
@@ -13,7 +14,9 @@ import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
-import useLink from '@hooks/use-link';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 
 interface DLProps {
   color?: string;
@@ -22,7 +25,7 @@ interface DLProps {
 export const TransactionDetail = (): JSX.Element => {
   const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork, scannerParameters } = useNetwork();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
   const transactionItem = params.transactionInfo;
 
@@ -36,13 +39,18 @@ export const TransactionDetail = (): JSX.Element => {
     if (transactionItem?.type === 'MULTI_CONTRACT_CALL') {
       return `${ContractIcon}`;
     }
+    if (!transactionItem?.logo) {
+      return `${UnknownTokenIcon}`;
+    }
     return `${transactionItem?.logo}`;
   }, [transactionItem]);
 
   const handleLinkClick = (hash: string): void => {
-    openLink(
-      `${currentNetwork?.linkUrl ?? 'https://gnoscan.io'}/transactions/details?txhash=${hash}`,
-    );
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const openLinkUrl = scannerParameters
+      ? `${scannerUrl}/transactions/details?txhash=${hash}&${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/transactions/details?txhash=${hash}`;
+    openLink(openLinkUrl);
   };
 
   return transactionItem ? (

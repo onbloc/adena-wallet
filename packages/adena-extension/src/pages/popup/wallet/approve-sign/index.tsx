@@ -132,7 +132,9 @@ const ApproveSignContainer: React.FC = () => {
   };
 
   const initFavicon = async (): Promise<void> => {
-    const faviconData = await createFaviconByHostname(requestData?.hostname ?? '');
+    const faviconData = await createFaviconByHostname(
+      requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
+    );
     setFavicon(faviconData);
   };
 

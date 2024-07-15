@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRecoilState, useResetRecoilState } from 'recoil';
 
 import { useAdenaContext, useWalletContext } from './use-context';
@@ -16,6 +16,7 @@ interface NetworkResponse {
   currentNetwork: NetworkMetainfo;
   modified: boolean;
   failedNetwork: boolean | null;
+  scannerParameters: { [key in string]: string } | null;
   getDefaultNetworkInfo: (networkId: string) => NetworkMetainfo | null;
   checkNetworkState: () => Promise<void>;
   addNetwork: (name: string, rpcUrl: string, chainId: string, indexerUrl: string) => void;
@@ -48,6 +49,23 @@ export const useNetwork = (): NetworkResponse => {
       return fetchHealth(currentNetwork.rpcUrl).then(({ healthy }) => !healthy);
     },
   );
+
+  const scannerParameters: { [key in string]: string } | null = useMemo(() => {
+    if (!currentNetwork) {
+      return null;
+    }
+    const isCustomNetwork = ['test4', 'portal-loop'].includes(currentNetwork.networkId);
+    const networkParameters: { [key in string]: string } = isCustomNetwork
+      ? {
+          chainId: currentNetwork.networkId,
+        }
+      : {
+          type: 'custom',
+          rpcUrl: currentNetwork.rpcUrl || '',
+          indexerUrl: currentNetwork.indexerUrl || '',
+        };
+    return networkParameters;
+  }, [currentNetwork]);
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {
     const network = CHAIN_DATA.find(
@@ -155,6 +173,7 @@ export const useNetwork = (): NetworkResponse => {
     networks: networkMetainfos,
     modified,
     failedNetwork,
+    scannerParameters,
     getDefaultNetworkInfo,
     checkNetworkState,
     changeNetwork,
