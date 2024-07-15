@@ -108,7 +108,7 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
           return {
             ...providedNetwork,
             chainName: network.chainName,
-            networkName: network.chainName,
+            networkName: network.networkName,
             rpcUrl: network.rpcUrl,
           };
         }
