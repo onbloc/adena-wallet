@@ -52,3 +52,7 @@ export interface HistoryItemVmMAddPkg extends HistoryItem {
     }[];
   };
 }
+
+export interface HistoryItemVmMNoop extends HistoryItem {
+  caller: string;
+}

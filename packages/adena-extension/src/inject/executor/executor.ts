@@ -6,6 +6,7 @@ import {
   validateTransactionMessageOfBankSend,
   validateTransactionMessageOfRun,
   validateTransactionMessageOfVmCall,
+  validateTransactionMessageOfVmNoop,
 } from '@common/validation/validation-message';
 
 type Params = { [key in string]: any };
@@ -130,6 +131,11 @@ export class AdenaExecutor {
           break;
         case '/vm.m_run':
           if (!validateTransactionMessageOfRun(message)) {
+            return InjectionMessageInstance.failure('INVALID_FORMAT');
+          }
+          break;
+        case '/vm.m_noop':
+          if (!validateTransactionMessageOfVmNoop(message)) {
             return InjectionMessageInstance.failure('INVALID_FORMAT');
           }
           break;
