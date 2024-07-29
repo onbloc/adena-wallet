@@ -96,6 +96,10 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [document]);
 
   const isErrorNetworkFee = useMemo(() => {
+    //skip for case sign msg for sponsor service
+    if (document?.msgs[0].type === '/vm.m_noop') {
+      return false;
+    }
     return BigNumber(currentBalance).shiftedBy(-6).isLessThan(networkFee.amount);
   }, [currentBalance, networkFee]);
 
