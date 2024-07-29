@@ -63,6 +63,13 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public checkConnection = (name?: string): Promise<unknown> => {
+    const eventMessage = AdenaExecutor.createEventMessage('CHECK_CONNECTION', {
+      name: name ?? 'Unknown',
+    });
+    return this.sendEventMessage(eventMessage);
+  };
+
   public doContract = (params: RequestDoContractMessage): Promise<unknown> => {
     const result = this.validateContractMessage(params);
     if (result) {
@@ -139,7 +146,7 @@ export class AdenaExecutor {
     }
   };
 
-  private sendEventMessage = (eventMessage: InjectionMessage): Promise<unknown> => {
+  private sendEventMessage = async (eventMessage: InjectionMessage): Promise<unknown> => {
     this.listen();
     this.eventMessage = {
       ...eventMessage,

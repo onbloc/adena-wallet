@@ -5,6 +5,10 @@ const MESSAGE_TYPES = {
     code: 0,
     description: 'Establish Connection.',
   },
+  CHECK_CONNECTION: {
+    code: 0,
+    description: 'Check Connection status',
+  },
   DO_CONTRACT: {
     code: 0,
     description: 'Do Contract.',
@@ -193,6 +197,7 @@ export class InjectionMessageInstance {
 
   public getType = ():
     | 'ADD_ESTABLISH'
+    | 'CHECK_CONNECTION'
     | 'DO_CONTRACT'
     | 'GET_ACCOUNT'
     | 'SIGN_AMINO'
