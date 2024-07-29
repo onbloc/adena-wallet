@@ -19,6 +19,11 @@ const init = (): void => {
       const response = await executor.addEstablish(name);
       return response;
     },
+    async CheckConnection(name: string): Promise<unknown> {
+      const executor = new AdenaExecutor();
+      const response = await executor.checkConnection(name);
+      return response;
+    },
     async DoContract(message: RequestDoContractMessage): Promise<unknown> {
       const executor = new AdenaExecutor();
       const response = await executor.doContract(message);

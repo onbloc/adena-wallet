@@ -82,6 +82,9 @@ export class MessageHandler {
       case 'ADD_ESTABLISH':
         HandlerMethod.addEstablish(message, sendResponse);
         break;
+      case 'CHECK_CONNECTION':
+        HandlerMethod.checkEstablished(message, sendResponse);
+        break;
       case 'ADD_NETWORK':
         HandlerMethod.checkEstablished(message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
