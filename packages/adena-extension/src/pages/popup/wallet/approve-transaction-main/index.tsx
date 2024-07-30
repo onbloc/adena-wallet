@@ -95,9 +95,12 @@ const ApproveTransactionContainer: React.FC = () => {
     };
   }, [document]);
 
+  const isSponsorService = useMemo(() => {
+    return (document?.msgs?.length ?? 0) > 1 && document?.msgs[0].type === '/vm.m_noop';
+  }, [document]);
+
   const isErrorNetworkFee = useMemo(() => {
-    //skip for case sign msg for sponsor service
-    if (document?.msgs[0].type === '/vm.m_noop') {
+    if (isSponsorService) {
       return false;
     }
     return BigNumber(currentBalance).shiftedBy(-6).isLessThan(networkFee.amount);
