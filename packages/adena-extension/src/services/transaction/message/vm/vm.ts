@@ -61,3 +61,17 @@ export const createMessageOfVmRun = (info: {
     },
   };
 };
+
+export const createMessageOfVmNoop = (info: {
+  caller: string;
+}): {
+  type: string;
+  value: { caller: string;};
+} => {
+  return {
+    type: '/vm.m_noop',
+    value: {
+      caller: info.caller,
+    },
+  };
+};

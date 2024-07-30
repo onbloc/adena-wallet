@@ -134,3 +134,19 @@ export const validateTransactionMessageOfRun = (message: { [key in string]: any 
   }
   return true;
 };
+
+export const validateTransactionMessageOfVmNoop = (message: { [key in string]: any }): boolean => {
+  if (!message.type || !message.value) {
+    return false;
+  }
+  if (message.type !== '/vm.m_noop') {
+    return false;
+  }
+  if (typeof message.value !== 'object') {
+    return false;
+  }
+  if (Object.keys(message.value).indexOf('caller') === -1) {
+    return false;
+  }
+  return true;
+};

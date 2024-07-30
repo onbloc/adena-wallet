@@ -43,8 +43,8 @@
   },
   "dependencies": {
     "@cosmjs/ledger-amino": "^0.32.4",
-    "@gnolang/gno-js-client": "1.3.0",
-    "@gnolang/tm2-js-client": "1.2.1",
+    "@gnolang/gno-js-client": "git+https://github.com/VAR-META-Tech/gno-js-client.git#msg_noop",
+    "@gnolang/tm2-js-client": "git+https://github.com/VAR-META-Tech/tm2-js-client.git#msg_noop",
     "@ledgerhq/hw-transport": "^6.30.4",
     "@ledgerhq/hw-transport-mocker": "^6.28.4",
     "@ledgerhq/hw-transport-webhid": "^6.28.4",

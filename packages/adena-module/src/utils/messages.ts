@@ -1,5 +1,5 @@
 import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
-import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
+import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint, MsgNoop } from '@gnolang/gno-js-client';
 import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
 import { fromBase64 } from '../encoding';
 
@@ -54,6 +54,14 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
         const messageJson = MsgRun.toJSON(decodedMessage) as object;
+        return {
+          '@type': m.typeUrl,
+          ...messageJson,
+        };
+      }
+      case MsgEndpoint.MSG_NOOP: {
+        const decodedMessage = MsgNoop.decode(m.value);
+        const messageJson = MsgNoop.toJSON(decodedMessage) as any;
         return {
           '@type': m.typeUrl,
           ...messageJson,
@@ -126,6 +134,16 @@ function encodeMessageValue(message: { type: string; value: any }) {
       return Any.create({
         typeUrl: MsgEndpoint.MSG_RUN,
         value: MsgRun.encode(msgRun).finish(),
+      });
+    }
+    case MsgEndpoint.MSG_NOOP: {
+      const value = message.value;
+      const result = MsgNoop.create({
+        caller: value.caller,
+      });
+      return Any.create({
+        typeUrl: MsgEndpoint.MSG_NOOP,
+        value: MsgNoop.encode(result).finish(),
       });
     }
     default: {

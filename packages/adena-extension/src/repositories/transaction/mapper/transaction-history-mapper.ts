@@ -4,6 +4,7 @@ import {
   HistoryItemBankMsgSend,
   HistoryItemVmMAddPkg,
   HistoryItemVmMCall,
+  HistoryItemVmMNoop,
   TransactionHistoryResponse,
 } from '../response/transaction-history-response';
 
@@ -51,6 +52,10 @@ function isHistoryItemVmMCall(historyItem: HistoryItem): historyItem is HistoryI
 
 function isHistoryItemVmMAddPkg(historyItem: HistoryItem): historyItem is HistoryItemVmMAddPkg {
   return historyItem.type === '/vm.m_addpkg';
+}
+
+function isHistoryItemVmMNoop(historyItem: HistoryItem): historyItem is HistoryItemVmMNoop {
+  return historyItem.type === '/vm.m_noop';
 }
 
 function isVmAddPkgType(func?: string): boolean {
@@ -112,6 +117,9 @@ export class TransactionHistoryMapper {
     }
     if (isHistoryItemVmMAddPkg(historyItem)) {
       return TransactionHistoryMapper.mappedHistoryItemVmMAddPkg(historyItem);
+    }
+    if (isHistoryItemVmMNoop(historyItem)) {
+      return TransactionHistoryMapper.mappedHistoryItemVmMNoop(historyItem);
     }
     return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem);
   }
@@ -208,6 +216,29 @@ export class TransactionHistoryMapper {
       status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
       typeName: isVmAddPkgType(func) ? 'Add Package' : func ?? '',
       title: isVmAddPkgType(func) ? 'AddPkg' : func ?? '',
+      amount: {
+        value: `${transfer.amount || '0'}`,
+        denom: transfer.denom || 'GNOT',
+      },
+      valueType,
+      date: dateToLocal(date).value,
+      networkFee: {
+        value: `${fee.amount || '0'}`,
+        denom: `${fee.denom}`,
+      },
+    };
+  }
+
+  private static mappedHistoryItemVmMNoop(historyItem: HistoryItemVmMNoop): TransactionInfo {
+    const { hash, result, func, transfer, date, fee } = historyItem;
+    const valueType = result.status === 'Fail' ? 'BLUR' : func === 'Receive' ? 'ACTIVE' : 'DEFAULT';
+    return {
+      hash,
+      logo: '',
+      type: 'CONTRACT_CALL',
+      typeName: 'Msg for sponsor service',
+      status: result.status === 'Success' ? 'SUCCESS' : 'FAIL',
+      title: func ?? '',
       amount: {
         value: `${transfer.amount || '0'}`,
         denom: transfer.denom || 'GNOT',
