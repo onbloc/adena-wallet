@@ -20,6 +20,34 @@ function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE
   return 'DEFAULT';
 }
 
+export function mapTransactionEdgeByAddress(
+  transaction: TransactionResponse<any>,
+  address: string,
+): TransactionInfo {
+  if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
+    return mapVMTransaction(transaction);
+  }
+
+  const message = transaction.messages[0];
+  switch (message.typeUrl) {
+    case 'send':
+      // send native token
+      if (message.value.from_address === address) {
+        return mapSendTransactionByBankMsgSend(transaction);
+      }
+      // receive native token
+      return mapReceivedTransactionByBankMsgSend(transaction);
+    case 'exec':
+      // receive grc20 token
+      if (message.value.func === 'Transfer' && message.value.caller !== address) {
+        return mapReceivedTransactionByMsgCall(transaction);
+      }
+      return mapVMTransaction(transaction);
+    default:
+      return mapVMTransaction(transaction);
+  }
+}
+
 export function mapSendTransactionByBankMsgSend(
   tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {

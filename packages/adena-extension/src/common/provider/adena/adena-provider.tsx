@@ -51,7 +51,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new GnoProvider(currentNetwork.rpcUrl, currentNetwork.chainId);
   }, [currentNetwork]);
 
-  const axiosInstance = axios.create({ timeout: 5000 });
+  const axiosInstance = axios.create({ timeout: 20_000 });
 
   const localStorage = AdenaStorage.local();
 

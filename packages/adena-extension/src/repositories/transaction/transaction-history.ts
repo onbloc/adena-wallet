@@ -1,17 +1,23 @@
 import { AxiosInstance } from 'axios';
-import { NetworkMetainfo, TransactionInfo } from '@types';
+import { NetworkMetainfo, TransactionInfo, TransactionWithPageInfo } from '@types';
 import {
+  makeAccountTransactionsQuery,
+  makeBlockTimeLegacyQuery,
+  makeBlockTimeQuery,
   makeGRC20ReceivedTransactionsByAddressQuery,
   makeGRC20ReceivedTransactionsByAddressQueryByPackagePath,
   makeGRC20SendTransactionsByAddressQueryByPackagePath,
+  makeGRC20TransferTransactionsQuery,
   makeNativeTokenReceivedTransactionsByAddressQuery,
   makeNativeTokenSendTransactionsByAddressQuery,
+  makeNativeTransactionsQuery,
   makeVMTransactionsByAddressQuery,
 } from './transaction-history.queries';
 import {
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
   mapSendTransactionByBankMsgSend,
+  mapTransactionEdgeByAddress,
   mapVMTransaction,
 } from './mapper/transaction-history-query.mapper';
 
@@ -36,6 +42,138 @@ export class TransactionHistoryRepository {
     return this.networkMetainfo.indexerUrl + '/graphql/query';
   }
 
+  /**
+   * query a accounts's entire transaction history.
+   */
+  public async fetchTransactionHistoryWithCursorBy(
+    address: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.queryUrl) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const accountTransactionQuery = makeAccountTransactionsQuery(address, cursor, 20);
+    const response = await TransactionHistoryRepository.postGraphQuery(
+      this.axiosInstance,
+      this.queryUrl,
+      accountTransactionQuery,
+    ).then((response) => response?.data?.transactions || null);
+
+    if (!response) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const transactions = response?.edges?.map((edge: any) =>
+      mapTransactionEdgeByAddress(edge.transaction, address),
+    );
+
+    return {
+      hasNext: response?.pageInfo?.hasNext || false,
+      cursor: response?.pageInfo?.last || null,
+      transactions,
+    };
+  }
+
+  /**
+   * query a accounts's native token transfer transaction history.
+   */
+  public async fetchNativeTransactionHistoryWithCursorBy(
+    address: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.queryUrl) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const nativeTokenTransactionsQuery = makeNativeTransactionsQuery(address, cursor, 20);
+    const response = await TransactionHistoryRepository.postGraphQuery(
+      this.axiosInstance,
+      this.queryUrl,
+      nativeTokenTransactionsQuery,
+    ).then((response) => response?.data?.transactions || null);
+
+    if (!response) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const transactions = response?.edges?.map((edge: any) =>
+      mapTransactionEdgeByAddress(edge.transaction, address),
+    );
+
+    return {
+      hasNext: response?.pageInfo?.hasNext || false,
+      cursor: response?.pageInfo?.last || null,
+      transactions,
+    };
+  }
+
+  /**
+   * query a accounts's grc20 token transfer transaction history.
+   */
+  public async fetchGRC20TransactionHistoryWithCursorBy(
+    address: string,
+    packagePath: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.queryUrl) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const grc20TransferTransactionsQuery = makeGRC20TransferTransactionsQuery(
+      address,
+      packagePath,
+      cursor,
+      20,
+    );
+    const response = await TransactionHistoryRepository.postGraphQuery(
+      this.axiosInstance,
+      this.queryUrl,
+      grc20TransferTransactionsQuery,
+    ).then((response) => response?.data?.transactions || null);
+
+    if (!response) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const transactions = response?.edges?.map((edge: any) =>
+      mapTransactionEdgeByAddress(edge.transaction, address),
+    );
+
+    return {
+      hasNext: response?.pageInfo?.hasNext || false,
+      cursor: response?.pageInfo?.last || null,
+      transactions,
+    };
+  }
+
+  /**
+   * XXX: The fix is required after the indexer's pagination update.
+   */
   public async fetchAllTransactionHistoryBy(address: string): Promise<TransactionInfo[]> {
     if (!this.queryUrl) {
       return [];
@@ -85,6 +223,9 @@ export class TransactionHistoryRepository {
       .then((txs) => txs.sort((t1, t2) => Number(t2.height || 0) - Number(t1.height || 0)));
   }
 
+  /**
+   * XXX: The fix is required after the indexer's pagination update.
+   */
   public async fetchNativeTransactionHistoryBy(address: string): Promise<TransactionInfo[]> {
     if (!this.queryUrl) {
       return [];
@@ -116,6 +257,9 @@ export class TransactionHistoryRepository {
       .then((txs) => txs.sort((t1, t2) => Number(t2.height || 0) - Number(t1.height || 0)));
   }
 
+  /**
+   * XXX: The fix is required after the indexer's pagination update.
+   */
   public async fetchGRC20TransactionHistoryBy(
     address: string,
     packagePath: string,
@@ -154,12 +298,30 @@ export class TransactionHistoryRepository {
       .then((txs) => txs.sort((t1, t2) => Number(t2.height || 0) - Number(t1.height || 0)));
   }
 
-  private static makePageParams = (page: number, pageSize: number): { [key in string]: number } => {
-    return {
-      'X-PAGE': page,
-      'X-PAGE-SIZE': pageSize,
-    };
-  };
+  /**
+   * XXX: The fix is required after the indexer's pagination update.
+   */
+  public async fetchBlockTimeByHeight(height: number): Promise<string | null> {
+    if (!this.queryUrl) {
+      return null;
+    }
+
+    if (!this.networkMetainfo?.apiUrl) {
+      return TransactionHistoryRepository.postGraphQuery(
+        this.axiosInstance,
+        this.queryUrl,
+        makeBlockTimeLegacyQuery(height),
+      ).then((result) => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
+    }
+
+    return TransactionHistoryRepository.postGraphQuery(
+      this.axiosInstance,
+      this.queryUrl,
+      makeBlockTimeQuery(height),
+    ).then((result) =>
+      result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
+    );
+  }
 
   private static postGraphQuery = <T = any>(
     axiosInstance: AxiosInstance,

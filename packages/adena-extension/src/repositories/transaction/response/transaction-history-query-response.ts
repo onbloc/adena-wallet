@@ -13,6 +13,7 @@ export interface TransactionResponse<
     denom: string;
   };
   messages: {
+    typeUrl?: string;
     value: T;
   }[];
 }
