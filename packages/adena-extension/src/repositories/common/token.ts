@@ -1,7 +1,6 @@
 import { AxiosInstance } from 'axios';
 
 import { StorageManager } from '@common/storage/storage-manager';
-import { SearchGRC20TokenResponse } from './response/search-grc20-token-response';
 import {
   GRC20TokenResponse,
   IBCNativeTokenResponse,
@@ -18,9 +17,9 @@ import {
   TokenModel,
   NetworkMetainfo,
 } from '@types';
-import CHAIN_DATA from '@resources/chains/chains.json';
 import { makeAllRealmsQuery } from './token.queries';
 import { mapGRC20TokenModel } from './mapper/token-query.mapper';
+import { makeRPCRequest } from '@common/utils/fetch-utils';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
 
@@ -75,19 +74,18 @@ export class TokenRepository {
   }
 
   private get networkId(): string {
-    if (!this.networkMetainfo) {
-      return CHAIN_DATA[0].chainId;
-    }
-
-    if (!CHAIN_DATA.map((chain) => chain.networkId).includes(this.networkMetainfo.networkId)) {
-      return CHAIN_DATA[0].chainId;
-    }
-
-    return this.networkMetainfo.networkId;
+    return this.networkMetainfo?.networkId || '';
   }
 
   public get supported(): boolean {
     return !!this.networkMetainfo?.apiUrl || !!this.networkMetainfo?.indexerUrl;
+  }
+
+  public get apiUrl(): string | null {
+    if (!this.networkMetainfo?.apiUrl) {
+      return null;
+    }
+    return this.networkMetainfo.apiUrl + '/v1';
   }
 
   public get queryUrl(): string | null {
@@ -101,14 +99,11 @@ export class TokenRepository {
     this.networkMetainfo = networkMetainfo;
   }
 
-  private getAPIUrl(): string | null {
-    if (this.networkMetainfo === null || this.networkMetainfo.apiUrl === '') {
-      return null;
-    }
-    return `${this.networkMetainfo.apiUrl}/${this.networkMetainfo.networkId}`;
-  }
-
   public fetchTokenMetainfos = async (): Promise<TokenModel[]> => {
+    if (!this.networkId) {
+      return [];
+    }
+
     return Promise.all([
       this.fetchNativeTokenAssets(),
       this.fetchGRC20TokenAssets(),
@@ -120,28 +115,6 @@ export class TokenRepository {
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
     const apps = await fetch(TokenRepository.APP_INFO_URI);
     return apps.json();
-  };
-
-  public fetchGRC20TokensBy = async (
-    keyword: string,
-    tokenInfos?: TokenModel[],
-  ): Promise<GRC20TokenModel[]> => {
-    const apiUrl = this.getAPIUrl();
-    if (apiUrl === null) {
-      return [];
-    }
-    const body = {
-      keyword,
-    };
-    const response = await this.networkInstance.post<SearchGRC20TokenResponse>(
-      `${apiUrl}/search-grc20-tokens`,
-      body,
-    );
-    return TokenMapper.fromSearchTokensResponse(
-      this.networkMetainfo?.networkId || '',
-      response.data,
-      tokenInfos,
-    );
   };
 
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
@@ -197,6 +170,37 @@ export class TokenRepository {
   };
 
   public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
+    if (this.apiUrl) {
+      const tokens = await TokenRepository.postRPCRequest<{
+        result: {
+          name: string;
+          owner: string;
+          symbol: string;
+          packagePath: string;
+          decimals: number;
+        }[];
+      }>(
+        this.networkInstance,
+        this.apiUrl + '/gno',
+        makeRPCRequest({
+          method: 'getGRC20Tokens',
+        }),
+      ).then((data) => data?.result || []);
+
+      return tokens.map((token) => ({
+        main: false,
+        tokenId: token.packagePath,
+        pkgPath: token.packagePath,
+        networkId: this.networkId,
+        display: false,
+        type: 'grc20',
+        name: token.name,
+        symbol: token.symbol,
+        decimals: token.decimals,
+        image: '',
+      }));
+    }
+
     if (!this.queryUrl) {
       return [];
     }
@@ -219,19 +223,17 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromNativeTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
-      .catch(() => DEFAULT_TOKEN_METAINFOS);
+      .then((response) => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
+      .catch(() =>
+        DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId })),
+      );
   };
 
   private fetchGRC20TokenAssets = async (): Promise<GRC20TokenModel[]> => {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromGRC20TokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -240,9 +242,7 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCNativeTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromIBCNativeMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromIBCNativeMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -251,10 +251,22 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromIBCTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
+  };
+
+  private static postRPCRequest = <T = any>(
+    axiosInstance: AxiosInstance,
+    url: string,
+    data: any,
+  ): Promise<T | null> => {
+    return axiosInstance
+      .post<T>(url, data)
+      .then((response) => response.data)
+      .catch((e) => {
+        console.log(e);
+        return null;
+      });
   };
 
   private static postGraphQuery = <T = any>(

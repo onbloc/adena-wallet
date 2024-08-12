@@ -1,6 +1,6 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { TransactionHistoryRepository } from '@repositories/transaction';
-import { TransactionInfo } from '@types';
+import { TransactionInfo, TransactionWithPageInfo } from '@types';
 
 export class TransactionHistoryService {
   private transactionHistoryRepository: TransactionHistoryRepository;
@@ -20,6 +20,19 @@ export class TransactionHistoryService {
   }
 
   public async fetchBlockTime(height: number): Promise<string | null> {
+    if (this.supported) {
+      return this.transactionHistoryRepository
+        .fetchBlockTimeByHeight(height)
+        .then((time) => {
+          if (!time) {
+            return null;
+          }
+          this.blockTimeMap[height] = time;
+          return time;
+        })
+        .catch(() => null);
+    }
+
     if (!this.gnoProvider) {
       return null;
     }
@@ -36,6 +49,64 @@ export class TransactionHistoryService {
         return time;
       })
       .catch(() => null);
+  }
+
+  public async fetchAllTransactionHistoryPage(
+    address: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.transactionHistoryRepository.supported) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    const result = await this.transactionHistoryRepository.fetchTransactionHistoryWithCursorBy(
+      address,
+      cursor,
+    );
+
+    return result;
+  }
+
+  public async fetchNativeTransactionHistoryPage(
+    address: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.transactionHistoryRepository.supported) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    return this.transactionHistoryRepository.fetchNativeTransactionHistoryWithCursorBy(
+      address,
+      cursor,
+    );
+  }
+
+  public async fetchGRC20TransactionHistoryPage(
+    address: string,
+    packagePath: string,
+    cursor: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.transactionHistoryRepository.supported) {
+      return {
+        hasNext: false,
+        cursor: null,
+        transactions: [],
+      };
+    }
+
+    return this.transactionHistoryRepository.fetchGRC20TransactionHistoryWithCursorBy(
+      address,
+      packagePath,
+      cursor,
+    );
   }
 
   public async fetchAllTransactionHistory(address: string): Promise<TransactionInfo[]> {

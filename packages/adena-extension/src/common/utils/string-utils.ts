@@ -1,3 +1,6 @@
+import { fromBech32 } from 'adena-module';
+import { formatAddress } from './client-utils';
+
 export const convertTextToAmount = (text: string): { value: string; denom: string } | null => {
   try {
     const balance = text
@@ -17,8 +20,23 @@ export const convertTextToAmount = (text: string): { value: string; denom: strin
     return null;
   }
 };
+
 export const makeQueryString = (parameters: { [key in string]: string }): string => {
   return Object.entries(parameters)
     .map((entry) => `${entry[0]}=${entry[1]}`)
     .join('&');
+};
+
+export const makeDisplayPackagePath = (packagePath: string): string => {
+  const items = packagePath.split('/');
+  return items.map((item) => (isBech32Address(item) ? formatAddress(item, 4) : item)).join('/');
+};
+
+const isBech32Address = (str: string): boolean => {
+  try {
+    const { prefix } = fromBech32(str);
+    return !!prefix;
+  } catch {
+    return false;
+  }
 };

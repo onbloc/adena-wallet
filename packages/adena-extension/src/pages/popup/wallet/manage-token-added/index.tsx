@@ -7,10 +7,12 @@ import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import { TokenInfo } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
+import { useNetwork } from '@hooks/use-network';
 
 const ManageTokenAddedContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
-  const { addGRC20TokenMetainfo } = useTokenMetainfo();
+  const { tokenMetainfos, addGRC20TokenMetainfo } = useTokenMetainfo();
+  const { currentNetwork } = useNetwork();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -34,7 +36,17 @@ const ManageTokenAddedContainer: React.FC = () => {
     if (!grc20Tokens) {
       return [];
     }
+
     return grc20Tokens
+      .filter((token) => token.networkId === currentNetwork.networkId)
+      .filter(
+        (token) =>
+          !tokenMetainfos.find(
+            (tokenMetainfo) =>
+              tokenMetainfo.tokenId === token.tokenId &&
+              tokenMetainfo.networkId === token.networkId,
+          ),
+      )
       .filter(
         (token) =>
           token?.pkgPath.includes(keyword) ||
@@ -82,9 +94,10 @@ const ManageTokenAddedContainer: React.FC = () => {
     if (!selected || !selectedTokenInfo || finished) {
       return;
     }
+
     await addGRC20TokenMetainfo(selectedTokenInfo);
     setFinished(true);
-  }, [selected, selectedTokenInfo]);
+  }, [selected, selectedTokenInfo, finished]);
 
   return (
     <ManageTokenLayout>

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 
 import { TransactionHistory } from '@components/molecules';
@@ -11,6 +11,8 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
+import { useNetwork } from '@hooks/use-network';
+import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -35,15 +37,30 @@ const HistoryContainer: React.FC = () => {
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { saveScrollPosition } = useScrollHistory(scrollRef);
+  const { currentNetwork } = useNetwork();
 
-  const { isSupported, status, isLoading, isFetching, data, fetchNextPage, refetch } =
-    useTransactionHistory();
+  const isUsedApi = useMemo(() => {
+    return !!currentNetwork.apiUrl;
+  }, [currentNetwork]);
+
+  const pageTransactionHistoryQuery = useTransactionHistoryPage({ enabled: isUsedApi });
+  const commonTransactionHistoryQuery = useTransactionHistory({ enabled: !isUsedApi });
+
+  const transactionHistoryQuery = useMemo(() => {
+    if (isUsedApi) {
+      return pageTransactionHistoryQuery;
+    }
+    return commonTransactionHistoryQuery;
+  }, [isUsedApi, commonTransactionHistoryQuery, pageTransactionHistoryQuery]);
+
+  const { isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch } =
+    transactionHistoryQuery;
 
   useEffect(() => {
-    if (loadingNextFetch && !isLoading && !isFetching) {
+    if (loadingNextFetch && !isLoading && !isFetching && hasNextPage) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, isLoading, isFetching]);
+  }, [loadingNextFetch, isLoading, isFetching, hasNextPage]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {

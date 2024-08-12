@@ -1,3 +1,9 @@
+export interface TransactionWithPageInfo {
+  hasNext: boolean;
+  cursor: string | null;
+  transactions: TransactionInfo[];
+}
+
 export interface TransactionInfo {
   hash: string;
   height?: number;

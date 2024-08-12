@@ -25,6 +25,7 @@ import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-tran
 import { useNetwork } from '@hooks/use-network';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
+import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -100,10 +101,30 @@ export const TokenDetails = (): JSX.Element => {
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
 
-  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useTokenTransactions(
-    isNative,
-    tokenBalance && isGRC20TokenModel(tokenBalance) ? tokenBalance.pkgPath : '',
-  );
+  const tokenPath = useMemo(() => {
+    if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
+      return '';
+    }
+    return tokenBalance.pkgPath;
+  }, [tokenBalance]);
+
+  const isUsedApi = useMemo(() => {
+    return !!currentNetwork.apiUrl;
+  }, [currentNetwork]);
+
+  const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, {
+    enabled: isUsedApi,
+  });
+  const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, {
+    enabled: !isUsedApi,
+  });
+
+  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
+    if (isUsedApi) {
+      return pageTransactionHistoryQuery;
+    }
+    return commonTransactionHistoryQuery;
+  }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery]);
 
   useEffect(() => {
     if (loadingNextFetch && !isLoading && !isFetching) {

@@ -43,9 +43,12 @@ const ChangeNetworkContainer: React.FC = () => {
     if (networkId === currentNetwork?.id) {
       return;
     }
-    await changeNetwork(networkId);
-    await initTokenMetainfos();
-    navigate(RoutePath.Wallet);
+
+    if (networkId) {
+      await changeNetwork(networkId);
+      await initTokenMetainfos();
+      navigate(RoutePath.Wallet);
+    }
   };
 
   return (

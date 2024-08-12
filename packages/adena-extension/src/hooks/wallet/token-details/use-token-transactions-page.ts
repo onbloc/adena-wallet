@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { RefetchOptions, useQuery } from '@tanstack/react-query';
+import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 
-export const useTokenTransactions = (
+export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
   tokenPath: string,
   { enabled }: { enabled: boolean },
@@ -27,18 +27,34 @@ export const useTokenTransactions = (
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
   const { tokenMetainfos } = useTokenMetainfo();
-  const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useState<number | null>(null);
 
-  const { data: allTransactions, refetch } = useQuery(
-    ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
-    () => {
+  const {
+    data: allTransactions,
+    refetch,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(
+    [
+      'token-details/page/history',
+      currentNetwork.networkId,
+      `${isNative}`,
+      currentAddress,
+      tokenPath,
+    ],
+    (context: any) => {
       if (isNative === undefined) {
         return null;
       }
 
+      const cursor = context.pageParam || null;
+
       return isNative
-        ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '')
-        : transactionHistoryService.fetchGRC20TransactionHistory(currentAddress || '', tokenPath);
+        ? transactionHistoryService.fetchNativeTransactionHistoryPage(currentAddress || '', cursor)
+        : transactionHistoryService.fetchGRC20TransactionHistoryPage(
+            currentAddress || '',
+            tokenPath,
+            cursor,
+          );
     },
     {
       enabled:
@@ -49,41 +65,18 @@ export const useTokenTransactions = (
     },
   );
 
-  const blockIndex = useMemo(() => {
-    if (!allTransactions) {
-      return null;
-    }
-    if (!fetchedHistoryBlockHeight) {
-      return allTransactions.length < 20 ? allTransactions.length : 20;
-    }
-    return fetchedHistoryBlockHeight;
-  }, [allTransactions, fetchedHistoryBlockHeight]);
-
   const transactions = useMemo(() => {
     if (!allTransactions) {
       return null;
     }
 
-    if (blockIndex === null) {
-      return null;
-    }
-
-    return allTransactions.slice(0, blockIndex || 0);
-  }, [allTransactions, blockIndex]);
+    return allTransactions.pages.flatMap((page) => page?.transactions || []);
+  }, [allTransactions]);
 
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `token-details/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
+    `token-details/page/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
     transactions,
   );
-
-  const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = allTransactions?.length || 0;
-    const endIndex = blockIndex || 20;
-    const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
-
-    await setFetchedHistoryBlockHeight(nextBlockIndex);
-    return true;
-  };
 
   const refetchTransactions = (options?: RefetchOptions): void => {
     refetch(options);
@@ -96,8 +89,11 @@ export const useTokenTransactions = (
     status,
     isLoading,
     isFetching,
-    hasNextPage: allTransactions?.length !== blockIndex,
-    fetchNextPage,
+    fetchNextPage: () =>
+      fetchNextPage()
+        .then(() => true)
+        .catch(() => false),
+    hasNextPage: hasNextPage !== false,
     refetch: refetchTransactions,
   };
 };

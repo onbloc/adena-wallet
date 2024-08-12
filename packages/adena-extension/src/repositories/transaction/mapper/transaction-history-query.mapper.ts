@@ -20,10 +20,54 @@ function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE
   return 'DEFAULT';
 }
 
+function getDefaultMessage<T = any>(
+  messages: {
+    value: any;
+  }[],
+): T {
+  return messages.sort((m1, m2) => {
+    if (m1.value?.func === 'Approve') {
+      return 1;
+    }
+    if (m2.value?.func === 'Approve') {
+      return -1;
+    }
+    return 0;
+  })[0] as T;
+}
+
+export function mapTransactionEdgeByAddress(
+  transaction: TransactionResponse<any>,
+  address: string,
+): TransactionInfo {
+  if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
+    return mapVMTransaction(transaction);
+  }
+
+  const message = transaction.messages[0];
+  switch (message.typeUrl) {
+    case 'send':
+      // send native token
+      if (message.value.from_address === address) {
+        return mapSendTransactionByBankMsgSend(transaction);
+      }
+      // receive native token
+      return mapReceivedTransactionByBankMsgSend(transaction);
+    case 'exec':
+      // receive grc20 token
+      if (message.value.func === 'Transfer' && message.value.caller !== address) {
+        return mapReceivedTransactionByMsgCall(transaction);
+      }
+      return mapVMTransaction(transaction);
+    default:
+      return mapVMTransaction(transaction);
+  }
+}
+
 export function mapSendTransactionByBankMsgSend(
   tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
-  const firstMessage = tx.messages[0];
+  const firstMessage = getDefaultMessage(tx.messages);
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -54,7 +98,7 @@ export function mapSendTransactionByBankMsgSend(
 export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
 ): TransactionInfo {
-  const firstMessage = tx.messages?.[0];
+  const firstMessage = getDefaultMessage(tx.messages);
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -85,7 +129,7 @@ export function mapReceivedTransactionByMsgCall(
 export function mapReceivedTransactionByBankMsgSend(
   tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
-  const firstMessage = tx.messages[0];
+  const firstMessage = getDefaultMessage(tx.messages);
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -116,7 +160,7 @@ export function mapReceivedTransactionByBankMsgSend(
 export function mapVMTransaction(
   tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
 ): TransactionInfo {
-  const firstMessage = tx.messages[0];
+  const firstMessage = getDefaultMessage(tx.messages);
 
   if (tx.messages.length > 1) {
     const isAddPackage = firstMessage.value?.__typename === 'MsgAddPackage';
