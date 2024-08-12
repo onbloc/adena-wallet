@@ -4,6 +4,7 @@ import {
   AdditionalTokenSearchListWrapper,
 } from './additional-token-search-list.styles';
 import { TokenInfo } from '@types';
+import { makeDisplayPackagePath } from '@common/utils/string-utils';
 
 export interface AdditionalTokenSearchListProps {
   tokenInfos: TokenInfo[];
@@ -33,13 +34,17 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
     return symbol;
   }, [symbol]);
 
+  const formattedPath = useMemo(() => {
+    return makeDisplayPackagePath(path || '');
+  }, [path]);
+
   return (
     <AdditionalTokenSearchListItemWrapper onClick={(): void => onClickListItem(tokenId)}>
       <span className='title'>
         <span className='name'>{name}</span>
         <span className='symbol'>{`(${formattedSymbol})`}</span>
       </span>
-      <span className='path'>{path}</span>
+      <span className='path'>{formattedPath}</span>
     </AdditionalTokenSearchListItemWrapper>
   );
 };

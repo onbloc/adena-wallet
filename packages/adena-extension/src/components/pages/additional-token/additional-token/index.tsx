@@ -5,6 +5,7 @@ import AdditionalTokenInfo from '@components/pages/additional-token/additional-t
 import { SubHeader } from '@components/atoms';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
 import { AdditionalTokenProps } from '@types';
+import { makeDisplayPackagePath } from '@common/utils/string-utils';
 
 const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   opened,
@@ -46,7 +47,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
       <div className='info-wrapper'>
         <AdditionalTokenInfo
           symbol={selectedTokenInfo?.symbol || ''}
-          path={selectedTokenInfo?.pathInfo || ''}
+          path={makeDisplayPackagePath(selectedTokenInfo?.pathInfo || '')}
           decimals={selectedTokenInfo ? `${selectedTokenInfo.decimals}` : ''}
         />
       </div>
