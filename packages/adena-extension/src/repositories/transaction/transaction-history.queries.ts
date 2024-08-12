@@ -547,10 +547,8 @@ export const makeBlockTimeLegacyQuery = (blockHeight: number): string => `
     from_height: ${blockHeight}
     to_height: ${blockHeight + 1}
   }) {
-    hash
     height
-    num_txs
-    total_txs
+    time
   }
 }
 `;
