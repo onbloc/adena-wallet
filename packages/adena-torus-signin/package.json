@@ -19,7 +19,7 @@
     "@babel/core": "^7.23.9",
     "@babel/preset-env": "^7.23.9",
     "@babel/preset-flow": "^7.23.3",
-    "@babel/preset-typescript": "^7.23.3",
+    "@babel/preset-typescript": "^7.24.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/jest": "^29.5.12",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
