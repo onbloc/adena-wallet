@@ -95,7 +95,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     if (currentAccount) {
       setCurrentAccount(currentAccount);
       await accountService.changeCurrentAccount(currentAccount);
-      initTokenMetainfos(currentAccount.id);
+      await initTokenMetainfos(currentAccount.id);
     }
     return true;
   }
