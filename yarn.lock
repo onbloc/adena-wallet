@@ -7381,7 +7381,7 @@ __metadata:
     eslint-plugin-react-hooks: ^4.6.0
     eslint-plugin-storybook: ^0.8.0
     file-loader: ^6.2.0
-    html-loader: ^5.0.0
+    html-loader: ^5.1.0
     html-webpack-plugin: ^5.6.0
     jest: ^29.7.0
     jest-environment-jsdom: ^29.7.0
@@ -12420,15 +12420,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"html-loader@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "html-loader@npm:5.0.0"
+"html-loader@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "html-loader@npm:5.1.0"
   dependencies:
     html-minifier-terser: ^7.2.0
     parse5: ^7.1.2
   peerDependencies:
     webpack: ^5.0.0
-  checksum: 9259579b924250d0259f93c51af6cbc000d6a33d91b6da8819f143a691d40785fb36ff2b4a2bc41bbd31c6e87628d04570c147e1d8b1457d6d9730dbc173b6cd
+  checksum: d2557af690c64ec9884401f9e07dff538773ec65f62dcba3d8e5ce7a0224d7d5e9422dc73b50946ce035a1eab969289570a05b943fba1ac5201bf087fa91f43f
   languageName: node
   linkType: hard
 

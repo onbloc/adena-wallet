@@ -84,7 +84,7 @@
     "bignumber.js": "^9.1.2",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.10",
-    "html-loader": "^5.0.0",
+    "html-loader": "^5.1.0",
     "lottie-web": "5.10.2",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "qrcode.react": "^3.1.0",
