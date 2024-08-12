@@ -199,7 +199,13 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     };
 
     const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    if (tokenMetainfos.find((item) => item.tokenId === changedTokenMetainfo.tokenId)) {
+    if (
+      tokenMetainfos.find(
+        (item) =>
+          item.tokenId === changedTokenMetainfo.tokenId &&
+          item.networkId === changedTokenMetainfo.networkId,
+      )
+    ) {
       return false;
     }
 
