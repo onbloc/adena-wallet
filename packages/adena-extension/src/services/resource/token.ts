@@ -25,6 +25,7 @@ export class TokenService {
     if (this.tokenMetaInfos.length > 0) {
       return this.tokenMetaInfos;
     }
+
     const tokenMetaInfos = await this.tokenRepository.fetchTokenMetainfos();
     this.tokenMetaInfos = tokenMetaInfos;
     return this.tokenMetaInfos;

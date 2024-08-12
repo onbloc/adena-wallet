@@ -17,7 +17,6 @@ import {
   TokenModel,
   NetworkMetainfo,
 } from '@types';
-import CHAIN_DATA from '@resources/chains/chains.json';
 import { makeAllRealmsQuery } from './token.queries';
 import { mapGRC20TokenModel } from './mapper/token-query.mapper';
 import { makeRPCRequest } from '@common/utils/fetch-utils';
@@ -75,15 +74,7 @@ export class TokenRepository {
   }
 
   private get networkId(): string {
-    if (!this.networkMetainfo) {
-      return CHAIN_DATA[0].chainId;
-    }
-
-    if (!CHAIN_DATA.map((chain) => chain.networkId).includes(this.networkMetainfo.networkId)) {
-      return CHAIN_DATA[0].chainId;
-    }
-
-    return this.networkMetainfo.networkId;
+    return this.networkMetainfo?.networkId || '';
   }
 
   public get supported(): boolean {
@@ -109,6 +100,10 @@ export class TokenRepository {
   }
 
   public fetchTokenMetainfos = async (): Promise<TokenModel[]> => {
+    if (!this.networkId) {
+      return [];
+    }
+
     return Promise.all([
       this.fetchNativeTokenAssets(),
       this.fetchGRC20TokenAssets(),
@@ -228,19 +223,17 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromNativeTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
-      .catch(() => DEFAULT_TOKEN_METAINFOS);
+      .then((response) => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
+      .catch(() =>
+        DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId })),
+      );
   };
 
   private fetchGRC20TokenAssets = async (): Promise<GRC20TokenModel[]> => {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromGRC20TokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -249,9 +242,7 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCNativeTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromIBCNativeMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromIBCNativeMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -260,9 +251,7 @@ export class TokenRepository {
       TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCTokenResponse>(requestUri)
-      .then((response) =>
-        TokenMapper.fromIBCTokenMetainfos(DEFAULT_TOKEN_NETWORK_ID, response.data),
-      )
+      .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 

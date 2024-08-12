@@ -40,7 +40,7 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: TokenMapper.IMAGE_BASE_URI + image,
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
       };
     });
   }
@@ -63,7 +63,7 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: TokenMapper.IMAGE_BASE_URI + image,
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
       };
     });
   }
@@ -86,7 +86,7 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: TokenMapper.IMAGE_BASE_URI + image,
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
       };
     });
   }
