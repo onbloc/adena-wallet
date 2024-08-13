@@ -34,7 +34,7 @@
     "libsodium-wrappers-sumo": "^0.7.13",
     "lodash.merge": "^4.6.2",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.2.5",
+    "prettier": "^3.3.3",
     "rimraf": "^5.0.5",
     "rollup": "^4.12.0",
     "rollup-plugin-node-builtins": "^2.1.2",
