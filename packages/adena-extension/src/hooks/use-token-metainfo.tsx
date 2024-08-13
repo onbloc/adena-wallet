@@ -25,6 +25,7 @@ export type UseTokenMetainfoReturn = {
   tokenMetainfos: TokenModel[];
   allTokenMetainfos: TokenModel[];
   currentTokenMetainfos: TokenModel[];
+  tokenLogoMap: Record<string, string | null>;
   getTokenAmount: (amount: { value: string; denom: string }) => { value: string; denom: string };
   initTokenMetainfos: () => Promise<void>;
   updateTokenMetainfos: (account: Account, tokenMetainfos: TokenModel[]) => Promise<void>;
@@ -67,7 +68,6 @@ function makeTokenKey(token: TokenModel): string {
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { balanceService, tokenService } = useAdenaContext();
   const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
-  const [tokenLogoMap, setTokenLogoMap] = useRecoilState(TokenState.tokenLogoMap);
   const { currentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const { data: grc20Tokens } = useGRC20Tokens();
@@ -105,21 +105,19 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }, {});
   }, [allTokenMetainfos]);
 
+  const tokenLogoMap = useMemo(() => {
+    return currentTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
+      const key = makeTokenKey(current);
+      accum[key] = current.image || null;
+      return accum;
+    }, {});
+  }, [currentTokenMetainfos]);
+
   const initTokenMetainfos = async (): Promise<void> => {
     if (currentAccount) {
       await tokenService.initAccountTokenMetainfos(currentAccount.id);
       const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
       setTokenMetainfo([...tokenMetainfos]);
-
-      const tokenLogoMap = tokenMetainfos.reduce<Record<string, string | null>>(
-        (accum, current) => {
-          const key = makeTokenKey(current);
-          accum[key] = current.image || null;
-          return accum;
-        },
-        {},
-      );
-      setTokenLogoMap(tokenLogoMap);
     }
   };
 
@@ -174,20 +172,30 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     [tokenMetaMap],
   );
 
-  const getTokenImage = (token: TokenModel): string | null => {
-    const key = makeTokenKey(token);
-    return tokenLogoMap[key] || null;
-  };
+  const getTokenImage = useCallback(
+    (token: TokenModel): string | null => {
+      const key = makeTokenKey(token);
+      return tokenLogoMap[key] || null;
+    },
+    [tokenLogoMap],
+  );
 
-  const getTokenImageByDenom = (denom: string): string | null => {
-    const key = makeTokenKeyByDenom(denom);
-    return tokenLogoMap[key] || null;
-  };
+  const getTokenImageByDenom = useCallback(
+    (denom: string): string | null => {
+      const key = makeTokenKeyByDenom(denom);
+      console.log(key, tokenLogoMap);
+      return tokenLogoMap[key] || null;
+    },
+    [tokenLogoMap],
+  );
 
-  const getTokenImageByPkgPath = (denom: string): string | null => {
-    const key = makeTokenKeyByPackagePath(denom);
-    return tokenLogoMap[key] || null;
-  };
+  const getTokenImageByPkgPath = useCallback(
+    (packagePath: string): string | null => {
+      const key = makeTokenKeyByPackagePath(packagePath);
+      return tokenLogoMap[key] || null;
+    },
+    [tokenLogoMap],
+  );
 
   const addTokenMetainfo = async (tokenMetainfo: GRC20TokenModel): Promise<boolean> => {
     if (!currentAccount) {
@@ -236,13 +244,14 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       type: 'grc20',
       name,
       decimals,
-      image: '',
+      image: getTokenImageByPkgPath(path) || '',
       display: true,
     };
     return addTokenMetainfo(tokenMetainfo);
   };
 
   return {
+    tokenLogoMap,
     tokenMetainfos,
     allTokenMetainfos,
     currentTokenMetainfos,
