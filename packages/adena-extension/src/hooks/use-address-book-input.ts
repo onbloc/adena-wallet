@@ -6,6 +6,7 @@ import { formatAddress, formatNickname } from '@common/utils/client-utils';
 import { useNetwork } from './use-network';
 import { addressValidationCheck } from '@common/utils/client-utils';
 import { useAccountName } from './use-account-name';
+import useDNSResolver from './use-dns';
 
 export type UseAddressBookInputHookReturn = {
   opened: boolean;
@@ -53,6 +54,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
       description: string;
     }[]
   >([]);
+  const { resolveDomainToAddress, result } = useDNSResolver();
 
   const updateAddressBook = async (): Promise<void> => {
     const addressBooks = await addressBookService.getAddressBook();
@@ -111,6 +113,18 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
     return address;
   }, [selected, selectedAddressBook, address]);
 
+  useEffect(() => {
+    const resolveAddress = async () => {
+      if (address.endsWith('.gno')) {
+        console.log(address)
+        await resolveDomainToAddress(address);
+        console.log(result?.address)
+        setAddress(result?.address || address)
+      }
+    };
+    resolveAddress();
+  }, [resolveDomainToAddress, getResultAddress, address, result]);
+
   const onClickInputIcon = useCallback(
     (selected: boolean) => {
       if (selected === false) {
@@ -127,7 +141,7 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
 
   const onChangeAddress = useCallback(
     (address: string) => {
-      const regex = /^[a-zA-Z0-9]*$/;
+      const regex = /^[a-zA-Z0-9.]*$/;
       if (!regex.test(address)) {
         return;
       }

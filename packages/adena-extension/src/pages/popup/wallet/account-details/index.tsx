@@ -15,6 +15,7 @@ import {
 } from '@common/constants/storage.constant';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
+import useDNSResolver from '@hooks/use-dns';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -27,6 +28,13 @@ const AccountDetailsContainer: React.FC = () => {
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState<string>('');
+  const { resolveAddressToDomain, result } = useDNSResolver();
+
+  useEffect(() => {
+    if (address) {
+      resolveAddressToDomain(address);
+    }
+  }, [address, resolveAddressToDomain]);
 
   const account = useMemo(() => {
     return accounts.find((current) => current.id === accountId);
@@ -94,6 +102,7 @@ const AccountDetailsContainer: React.FC = () => {
       <AccountDetails
         originName={originName}
         name={name}
+        dns={result?.domain}
         address={address}
         hasPrivateKey={hasPrivateKey}
         moveGnoscan={moveGnoscan}

@@ -13,6 +13,7 @@ export const Default: StoryObj<AccountDetailsProps> = {
     originName: '',
     name: '',
     address: '',
+    dns: '',
     moveGnoscan: () => action('moveGnoscan'),
     moveExportPrivateKey: () => action('moveExportPrivateKey'),
     setName: () => action('setName'),

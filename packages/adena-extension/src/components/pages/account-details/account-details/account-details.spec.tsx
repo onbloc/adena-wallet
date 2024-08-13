@@ -13,6 +13,7 @@ describe('AccountDetails Component', () => {
       originName: '',
       name: '',
       address: '',
+      dns: '',
       moveGnoscan: () => {
         return;
       },

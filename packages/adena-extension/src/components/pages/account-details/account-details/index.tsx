@@ -9,6 +9,7 @@ export interface AccountDetailsProps {
   originName: string;
   name: string;
   address: string;
+  dns: string | undefined;
   moveGnoscan: () => void;
   moveExportPrivateKey: () => void;
   setName: (name: string) => void;
@@ -20,6 +21,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   originName,
   name,
   address,
+  dns,
   setName,
   reset,
   moveGnoscan,
@@ -49,6 +51,10 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
         <div className='qrcode-address-wrapper'>
           <span className='address'>{address}</span>
           <CopyIconButton copyText={address} />
+        </div>
+        <div className='qrcode-gno-name-wrapper'>
+          <span className='gno-name'>{dns}</span>
+          <CopyIconButton copyText={dns || ''} />
         </div>
       </div>
 

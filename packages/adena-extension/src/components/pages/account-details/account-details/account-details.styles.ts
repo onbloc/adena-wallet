@@ -25,7 +25,7 @@ export const AccountDetailsWrapper = styled.div`
       border-radius: 8px;
     }
 
-    .qrcode-address-wrapper {
+    .qrcode-address-wrapper , .qrcode-gno-name-wrapper {
       ${mixins.flex({ direction: 'row', justify: 'space-between' })};
       width: 100%;
       height: 42px;
@@ -34,7 +34,7 @@ export const AccountDetailsWrapper = styled.div`
       padding: 12px 18px 12px 16px;
       border-radius: 18px;
 
-      .address {
+      .address, .gno-name {
         display: block;
         width: 100%;
         margin-right: 8px;

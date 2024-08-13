@@ -15,6 +15,7 @@ import mixins from '@styles/mixins';
 import { createPopupWindow } from '@common/utils/browser-utils';
 import useSessionParams from '@hooks/use-session-state';
 import { PopWindowButton } from '@components/atoms/pop-window-button';
+import useDNSResolver from '@hooks/use-dns';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -65,6 +66,13 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
   const [currentAccountName, setCurrentAccountName] = useState('');
   const { accountNames } = useAccountName();
   const { currentNetwork } = useNetwork();
+  const { resolveAddressToDomain, result } = useDNSResolver();
+
+  useEffect(() => {
+    if (currentAddress) {
+      resolveAddressToDomain(currentAddress);
+    }
+  }, [currentAddress, resolveAddressToDomain]);
 
   useEffect(() => {
     initAccountInfo();
@@ -141,14 +149,21 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
         <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
         <StyledCenterWrapper>
           <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
-          <CopyTooltip copyText={currentAddress || ''}>
-            <Text type='body1Bold' display='inline-flex'>
-              {formatNickname(currentAccountName, 12)}
-              <Text type='body1Reg' color={theme.neutral.a}>
-                {` (${formatAddress(currentAddress || '')})`}
+          <div>
+            <CopyTooltip copyText={currentAddress || ''}>
+              <Text type='body1Bold' display='inline-flex'>
+                {formatNickname(currentAccountName, 12)}
+                <Text type='body1Reg' color={theme.neutral.a}>
+                  {` (${formatAddress(currentAddress || '')})`}
+                </Text>
               </Text>
-            </Text>
-          </CopyTooltip>
+            </CopyTooltip>
+            <CopyTooltip copyText={result?.domain || ''}>
+              <Text type='body1Reg' >
+                {`${formatAddress(result?.domain || '')}`}
+              </Text>
+            </CopyTooltip>
+          </div>
         </StyledCenterWrapper>
         <StyledRightWrapper>
           {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}

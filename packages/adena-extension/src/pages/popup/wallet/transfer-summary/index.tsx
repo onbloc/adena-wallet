@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
 import styled from 'styled-components';
 
@@ -16,6 +16,7 @@ import { useNetwork } from '@hooks/use-network';
 
 import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useDNSResolver from '@hooks/use-dns';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -35,6 +36,7 @@ const TransferSummaryContainer: React.FC = () => {
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
 
+
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
     return {
@@ -48,9 +50,8 @@ const TransferSummaryContainer: React.FC = () => {
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
     }
-    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
-      tokenMetainfo.denom
-    }`;
+    const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${tokenMetainfo.denom
+      }`;
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,

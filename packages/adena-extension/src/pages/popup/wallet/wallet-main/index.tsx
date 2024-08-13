@@ -32,7 +32,7 @@ const Wrapper = styled.main`
     position: fixed;
     width: 100%;
     height: auto;
-    top: 48px;
+    top: 70px;
     left: 0;
     background-color: ${({ theme }): string => theme.neutral._8};
   }
