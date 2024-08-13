@@ -4,9 +4,8 @@ import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
-type XOR<T, U> = T | U extends Record<string, unknown>
-  ? (Without<T, U> & U) | (Without<U, T> & T)
-  : T | U;
+type XOR<T, U> =
+  T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
 
 type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom';
 
@@ -95,8 +94,17 @@ export type ButtonProps = XOR<
   }
 >;
 
-export const Button = (props: ButtonProps): JSX.Element => {
-  return <ButtonWrapper {...props}>{props.children}</ButtonWrapper>;
+export const Button = ({
+  disabled = false,
+  hierarchy = 'primary',
+  height = '48px',
+  ...props
+}: ButtonProps): JSX.Element => {
+  return (
+    <ButtonWrapper disabled={disabled} hierarchy={hierarchy} height={height} {...props}>
+      {props.children}
+    </ButtonWrapper>
+  );
 };
 
 const ButtonWrapper = styled.button<ButtonProps>`
@@ -127,9 +135,3 @@ const ButtonWrapper = styled.button<ButtonProps>`
   color: ${getTheme('neutral', '_1')};
   background-color: ${({ bgColor }): string | undefined => bgColor};
 `;
-
-Button.defaultProps = {
-  disabled: false,
-  hierarchy: 'primary',
-  height: '48px',
-};
