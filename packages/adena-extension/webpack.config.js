@@ -121,6 +121,9 @@ const config = {
       filename: 'popup.html',
     }),
     new NodePolyfillPlugin(),
+    new ProvidePlugin({
+      process: 'process/browser.js',
+    }),
   ],
 };
 
