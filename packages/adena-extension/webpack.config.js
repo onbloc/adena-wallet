@@ -5,6 +5,7 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 const CopyWebPackPlugin = require('copy-webpack-plugin');
 const CleanWebPackPlugin = require('clean-webpack-plugin').CleanWebpackPlugin;
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
+const { ProvidePlugin } = require('webpack');
 
 const config = {
   devtool: 'cheap-module-source-map',
