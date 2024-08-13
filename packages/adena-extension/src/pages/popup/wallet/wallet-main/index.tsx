@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { useRecoilState } from 'recoil';
 import BigNumber from 'bignumber.js';
@@ -22,6 +22,7 @@ import { useFaucet } from '@hooks/use-faucet';
 import { useToast } from '@hooks/use-toast';
 import LoadingButton from '@components/atoms/loading-button/loading-button';
 import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
 const Wrapper = styled.main`
   padding-top: 37px;
@@ -69,6 +70,7 @@ export const WalletMain = (): JSX.Element => {
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, currentBalances } = useTokenBalance();
+  const { getTokenImage } = useTokenMetainfo();
   const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
   const { show } = useToast();
 
@@ -101,19 +103,21 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
-  const tokens = currentBalances
-    .filter((tokenBalance) => tokenBalance.display)
-    .map((tokenBalance) => {
-      return {
-        tokenId: tokenBalance.tokenId,
-        logo: tokenBalance.image || `${UnknownTokenIcon}`,
-        name: tokenBalance.name,
-        balanceAmount: {
-          value: BigNumber(tokenBalance.amount.value).toFormat(),
-          denom: tokenBalance.amount.denom,
-        },
-      };
-    });
+  const tokens = useMemo(() => {
+    return currentBalances
+      .filter((tokenBalance) => tokenBalance.display)
+      .map((tokenBalance) => {
+        return {
+          tokenId: tokenBalance.tokenId,
+          logo: getTokenImage(tokenBalance) || `${UnknownTokenIcon}`,
+          name: tokenBalance.name,
+          balanceAmount: {
+            value: BigNumber(tokenBalance.amount.value).toFormat(),
+            denom: tokenBalance.amount.denom,
+          },
+        };
+      });
+  }, [currentBalances, getTokenImage]);
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
