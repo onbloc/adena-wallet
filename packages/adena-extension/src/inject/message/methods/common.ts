@@ -72,6 +72,7 @@ export const removePopups = async (): Promise<void> => {
 export const checkEstablished = async (
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
+  sendSuccessResponse = false,
 ): Promise<boolean> => {
   const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
@@ -88,7 +89,9 @@ export const checkEstablished = async (
     sendResponse(InjectionMessageInstance.failure('NOT_CONNECTED', {}, requestData.key));
     return false;
   }
-  sendResponse(InjectionMessageInstance.success('ALREADY_CONNECTED', {}, requestData.key))
+  if (sendSuccessResponse) {
+    sendResponse(InjectionMessageInstance.success('ALREADY_CONNECTED', {}, requestData.key))
+  }
   return true;
 };
 
