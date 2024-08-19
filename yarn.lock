@@ -59,7 +59,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:7.23.9, @babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.16.0, @babel/core@npm:^7.18.9, @babel/core@npm:^7.21.3, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.2, @babel/core@npm:^7.23.9":
+"@babel/core@npm:7.25.2, @babel/core@npm:^7.25.2":
+  version: 7.25.2
+  resolution: "@babel/core@npm:7.25.2"
+  dependencies:
+    "@ampproject/remapping": ^2.2.0
+    "@babel/code-frame": ^7.24.7
+    "@babel/generator": ^7.25.0
+    "@babel/helper-compilation-targets": ^7.25.2
+    "@babel/helper-module-transforms": ^7.25.2
+    "@babel/helpers": ^7.25.0
+    "@babel/parser": ^7.25.0
+    "@babel/template": ^7.25.0
+    "@babel/traverse": ^7.25.2
+    "@babel/types": ^7.25.2
+    convert-source-map: ^2.0.0
+    debug: ^4.1.0
+    gensync: ^1.0.0-beta.2
+    json5: ^2.2.3
+    semver: ^6.3.1
+  checksum: 9a1ef604a7eb62195f70f9370cec45472a08114e3934e3eaaedee8fd754edf0730e62347c7b4b5e67d743ce57b5bb8cf3b92459482ca94d06e06246ef021390a
+  languageName: node
+  linkType: hard
+
+"@babel/core@npm:^7.11.6, @babel/core@npm:^7.12.3, @babel/core@npm:^7.16.0, @babel/core@npm:^7.18.9, @babel/core@npm:^7.21.3, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.2, @babel/core@npm:^7.23.9":
   version: 7.23.9
   resolution: "@babel/core@npm:7.23.9"
   dependencies:
@@ -205,7 +228,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/helper-module-transforms@npm:^7.23.3, @babel/helper-module-transforms@npm:^7.24.7, @babel/helper-module-transforms@npm:^7.24.8, @babel/helper-module-transforms@npm:^7.25.0":
+"@babel/helper-module-transforms@npm:^7.23.3, @babel/helper-module-transforms@npm:^7.24.7, @babel/helper-module-transforms@npm:^7.24.8, @babel/helper-module-transforms@npm:^7.25.0, @babel/helper-module-transforms@npm:^7.25.2":
   version: 7.25.2
   resolution: "@babel/helper-module-transforms@npm:7.25.2"
   dependencies:
@@ -313,7 +336,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/helpers@npm:^7.23.9":
+"@babel/helpers@npm:^7.23.9, @babel/helpers@npm:^7.25.0":
   version: 7.25.0
   resolution: "@babel/helpers@npm:7.25.0"
   dependencies:
@@ -7520,7 +7543,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-extension@workspace:packages/adena-extension"
   dependencies:
-    "@babel/core": ^7.23.9
+    "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.23.9
     "@babel/preset-react": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
@@ -7604,7 +7627,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-module@workspace:packages/adena-module"
   dependencies:
-    "@babel/core": ^7.23.9
+    "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.23.9
     "@babel/preset-flow": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
@@ -7651,7 +7674,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-torus-signin@workspace:packages/adena-torus-signin"
   dependencies:
-    "@babel/core": ^7.23.9
+    "@babel/core": ^7.25.2
     "@babel/preset-env": ^7.23.9
     "@babel/preset-flow": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
@@ -7684,7 +7707,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-wallet@workspace:."
   dependencies:
-    "@babel/core": 7.23.9
+    "@babel/core": 7.25.2
     "@babel/runtime": 7.23.9
     "@lavamoat/allow-scripts": ^3.0.3
     "@lavamoat/preinstall-always-fail": ^2.0.0
