@@ -51,7 +51,7 @@ describe('TransferInput Component', () => {
           return;
         },
       },
-      isNext: true,
+      isNext: Promise.resolve(true),
       hasBackButton: true,
       onClickBack: () => {
         return;

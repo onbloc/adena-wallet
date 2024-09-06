@@ -29,7 +29,7 @@ export const GlobalPopupStyle = createGlobalStyle`
     width: 100%;
     height: 100%;
     min-width: 360px;
-    min-height: 540px;
+    min-height: 566px;
     width: 100%;
     height: 100%;
     padding: 0;
@@ -54,7 +54,7 @@ export const GlobalPopupStyle = createGlobalStyle`
     width: 100%;
     height: 100%;
     min-width: 360px;
-    min-height: 540px;
+    min-height: 566px;
     min-height: 492px;
     height: 100%;
     padding: 0px 20px 24px;

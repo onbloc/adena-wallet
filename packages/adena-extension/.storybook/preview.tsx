@@ -10,7 +10,7 @@ const extensionViewport = {
   name: 'Adena Extension',
   styles: {
     width: '360px',
-    height: '540px',
+    height: '566px',
   },
 };
 

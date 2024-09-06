@@ -103,11 +103,11 @@ const TransferInputContainer: React.FC = () => {
     });
   };
 
-  const isNext = useCallback(() => {
+  const isNext = useCallback(async () => {
     if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
       return false;
     }
-    if (addressBookInput.resultAddress === '') {
+    if (await addressBookInput.resultAddress === '') {
       return false;
     }
     return true;
@@ -129,7 +129,7 @@ const TransferInputContainer: React.FC = () => {
       return;
     }
     const validAddress =
-      addressBookInput.validateAddressBookInput() &&
+      await addressBookInput.validateAddressBookInput() &&
       (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
@@ -138,7 +138,7 @@ const TransferInputContainer: React.FC = () => {
         state: {
           isTokenSearch,
           tokenMetainfo,
-          toAddress: addressBookInput.resultAddress,
+          toAddress: await addressBookInput.resultAddress,
           transferAmount: {
             value: balanceInput.amount,
             denom: balanceInput.denom,

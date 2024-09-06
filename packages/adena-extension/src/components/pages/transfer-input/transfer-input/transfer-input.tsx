@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { SubHeader } from '@components/atoms';
 import { TransferInputWrapper } from './transfer-input.styles';
@@ -36,7 +36,7 @@ export interface TransferInputProps {
     onChangeAmount: (value: string) => void;
     onClickMax: () => void;
   };
-  isNext: boolean;
+  isNext: Promise<boolean>;
   hasBackButton: boolean;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -53,6 +53,17 @@ const TransferInput: React.FC<TransferInputProps> = ({
   onClickCancel,
   onClickNext,
 }) => {
+
+  const [canNext, setCanNext] = useState(false);
+
+  useEffect(() => {
+    const checkNext = async () => {
+      const result = await isNext;
+      setCanNext(result);
+    };
+    checkNext();
+  }, [isNext]);
+
   return (
     <TransferInputWrapper>
       {hasBackButton ? (
@@ -77,7 +88,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
       </div>
       <div className='button-group'>
         <button onClick={onClickCancel}>Cancel</button>
-        <button className={isNext ? 'next' : 'next disabled'} onClick={onClickNext}>
+        <button className={canNext ? 'next' : 'next disabled'} onClick={onClickNext}>
           Next
         </button>
       </div>
