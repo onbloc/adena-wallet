@@ -22,7 +22,7 @@ function useDNSResolver(): DNSResolverHook {
         try {
             if (!gnoProvider) throw new Error('gnoProvider is not available');
 
-            const response = await gnoProvider.evaluateExpression("gno.land/r/demo/domain/resolver", `Resolve("${domain}")`);
+            const response = await gnoProvider.evaluateExpression("gno.land/r/varmeta/demo/v1/domain/resolver", `Resolve("${domain}")`);
             const address = response?.split('"')[1] || '';
 
             if (!address) throw new Error('Failed to resolve address');
@@ -42,7 +42,7 @@ function useDNSResolver(): DNSResolverHook {
         try {
             if (!gnoProvider) throw new Error('gnoProvider is not available');
 
-            const response = await gnoProvider.evaluateExpression("gno.land/r/demo/domain/resolver", `GetDomainName("${address}")`);
+            const response = await gnoProvider.evaluateExpression("gno.land/r/varmeta/demo/v1/domain/resolver", `GetDomainName("${address}")`);
             const domain = response?.split('"')[1] || '';
 
             if (!domain) throw new Error('Failed to resolve domain');
