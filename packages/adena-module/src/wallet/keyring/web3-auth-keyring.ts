@@ -1,9 +1,9 @@
 import { Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Keyring, KeyringData, KeyringType } from './keyring';
-import { Document, documentToTx, decodeTxMessages, useTm2Wallet, makeSignedTx } from './../..';
+import { Document, makeSignedTx, useTm2Wallet } from './../..';
 import { hexToArray } from './../../utils/data';
+import { Keyring, KeyringData, KeyringType } from './keyring';
 
 export class Web3AuthKeyring implements Keyring {
   public readonly id: string;

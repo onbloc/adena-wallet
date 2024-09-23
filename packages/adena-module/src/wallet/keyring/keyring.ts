@@ -5,6 +5,7 @@ import {
   Tx,
   TxSignature,
 } from '@gnolang/tm2-js-client';
+
 import { Document } from './../..';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';

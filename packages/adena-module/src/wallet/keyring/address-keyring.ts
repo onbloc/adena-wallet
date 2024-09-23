@@ -6,8 +6,9 @@ import {
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
-import { Keyring, KeyringData, KeyringType } from './keyring';
+
 import { Document, fromBech32 } from '../..';
+import { Keyring, KeyringData, KeyringType } from './keyring';
 
 export class AddressKeyring implements Keyring {
   public readonly id: string;
