@@ -7,7 +7,7 @@ const mnemonic =
 describe('create wallet by mnemonic', () => {
   it('create success', async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const walletMnemonic = wallet.mnemonic;
+    const walletMnemonic = wallet.getMnemonic();
 
     expect(walletMnemonic).toBe(mnemonic);
   });

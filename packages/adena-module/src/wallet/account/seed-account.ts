@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { Wallet } from '../wallet';
-import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
+
 import { publicKeyToAddress } from '../../utils/address';
+import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring';
+import { Wallet } from '../wallet';
+import { Account, AccountInfo } from './account';
 
 export class SeedAccount implements Account {
   public readonly id;
@@ -60,7 +61,7 @@ export class SeedAccount implements Account {
     };
   }
 
-  public static async createBy(keyring: Keyring, name: string, hdPath: number) {
+  public static async createBy(keyring: Keyring, name: string, hdPath: number, index = 1) {
     if (!isHDWalletKeyring(keyring)) {
       throw new Error('Invalid account type');
     }
@@ -69,7 +70,7 @@ export class SeedAccount implements Account {
     const { id: keyringId, type: type } = keyring;
     return new SeedAccount({
       keyringId,
-      index: 1,
+      index,
       type,
       publicKey: Array.from(publicKey),
       name,
@@ -78,10 +79,11 @@ export class SeedAccount implements Account {
   }
 
   public static async createByWallet(wallet: Wallet) {
-    if (!wallet.hdWalletKeyring) {
-      throw new Error('HD Wallet does not exist');
+    if (!wallet.currentKeyring || !isHDWalletKeyring(wallet.currentKeyring)) {
+      throw new Error('The current keyring is not an HD Wallet Keyring');
     }
-    return this.createBy(wallet.hdWalletKeyring, wallet.nextAccountName, wallet.nextHDPath);
+    const hdPath = wallet.getNextHDPathBy(wallet.currentKeyring);
+    return this.createBy(wallet.currentKeyring, wallet.nextAccountName, hdPath);
   }
 
   public static fromData(accountInfo: AccountInfo) {

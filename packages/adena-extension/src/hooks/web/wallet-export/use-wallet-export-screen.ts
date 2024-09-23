@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Account } from 'adena-module';
+import { useCallback, useEffect, useState } from 'react';
 
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
-import { AdenaStorage } from '@common/storage';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
-import useQuestionnaire from '../use-questionnaire';
+import { AdenaStorage } from '@common/storage';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useQuery } from '@tanstack/react-query';
+import { RoutePath } from '@types';
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -152,7 +152,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         const privateKey = await instance.getPrivateKeyStr();
         setExportData(privateKey);
       } else {
-        const seedPhrase = instance.mnemonic;
+        const seedPhrase = instance.getMnemonic();
         setExportData(seedPhrase);
       }
       setWalletExportState('RESULT');
