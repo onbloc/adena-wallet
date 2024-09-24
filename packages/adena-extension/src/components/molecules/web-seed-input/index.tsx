@@ -1,18 +1,18 @@
-import React, { ReactElement, useCallback, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
 import _ from 'lodash';
+import { ReactElement, useCallback, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 import IconAlert from '@assets/web/alert-circle.svg';
-
-import { Pressable, Row, View, WebImg, WebText } from '../../atoms';
-import { webFonts } from '@styles/theme';
 import { WebSeedInputItem } from '@components/atoms/web-seed-input-item';
 import { WebTextarea } from '@components/atoms/web-textarea';
+import { webFonts } from '@styles/theme';
+import { ImportWalletType } from '@types';
 
-export type WebSeedInputType = '12seeds' | '24seeds' | 'pKey';
+import { Pressable, Row, View, WebImg, WebText } from '../../atoms';
+import { makeFilledSeedPhrase } from './web-seed-input.utils';
 
 interface WebSeedInputProps {
-  onChange: (props: { type: WebSeedInputType; value: string }) => void;
+  onChange: (props: { type: ImportWalletType; value: string }) => void;
   errorMessage?: string;
 }
 
@@ -38,12 +38,11 @@ const StyledTypeMenu = styled(Row)`
   background: rgba(0, 0, 0, 0.2);
 `;
 
-const StyledTypeMenuItem = styled(Pressable) <{ selected: boolean }>`
+const StyledTypeMenuItem = styled(Pressable)<{ selected: boolean }>`
   padding: 8px 12px;
   border-radius: 40px;
   background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
-
 
 const StyledTextarea = styled(WebTextarea)`
   ${webFonts.body5};
@@ -54,15 +53,14 @@ const StyledTextarea = styled(WebTextarea)`
 export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): ReactElement => {
   const theme = useTheme();
 
-  const [type, setType] = useState<WebSeedInputType>('12seeds');
+  const [type, setType] = useState<ImportWalletType>('12seeds');
   const [wordList, setWordList] = useState<string[]>([]);
   const [pKey, setPKey] = useState('');
 
   const _getFilledWordList = useCallback(
-    (_type: WebSeedInputType, _wordList: string[]): string[] => {
-      const targetLength = _type === '12seeds' ? 12 : 24;
-      const filledArray = _.fill(Array(targetLength), '');
-      return [..._wordList].concat(filledArray.slice(_wordList.length)).slice(0, targetLength);
+    (_type: ImportWalletType, _wordList: string[]): string[] => {
+      const length = _type === '12seeds' ? 12 : 24;
+      return makeFilledSeedPhrase(_wordList, length);
     },
     [],
   );
@@ -88,7 +86,7 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
   );
 
   const TypeMenuItem = useCallback(
-    ({ title, _type }: { title: string; _type: WebSeedInputType }): ReactElement => {
+    ({ title, _type }: { title: string; _type: ImportWalletType }): ReactElement => {
       const selected = type === _type;
       return (
         <StyledTypeMenuItem

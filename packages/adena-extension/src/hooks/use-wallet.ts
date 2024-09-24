@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAdenaContext } from './use-context';
+import { useMemo } from 'react';
+import { useAdenaContext, useWalletContext } from './use-context';
 
 export interface UseWalletReturn {
+  hasHDWallet: boolean;
   existWallet: boolean | undefined;
   isLoadingExistWallet: boolean;
 
@@ -11,6 +13,14 @@ export interface UseWalletReturn {
 
 export const useWallet = (): UseWalletReturn => {
   const { walletService } = useAdenaContext();
+  const { wallet } = useWalletContext();
+
+  const hasHDWallet = useMemo(() => {
+    if (!wallet) {
+      return false;
+    }
+    return wallet.hasHDWallet();
+  }, [wallet]);
 
   const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
     ['wallet/existWallet', walletService],
@@ -31,6 +41,7 @@ export const useWallet = (): UseWalletReturn => {
   );
 
   return {
+    hasHDWallet,
     existWallet,
     isLoadingExistWallet,
     lockedWallet,

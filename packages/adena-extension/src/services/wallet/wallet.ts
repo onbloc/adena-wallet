@@ -1,10 +1,10 @@
-import dayjs from 'dayjs';
 import { AdenaWallet, Wallet } from 'adena-module';
+import dayjs from 'dayjs';
 
-import { WalletError } from '@common/errors/wallet/wallet-error';
-import { WalletRepository } from '@repositories/wallet';
-import { encryptSha256Password } from '@common/utils/crypto-utils';
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
+import { WalletError } from '@common/errors/wallet/wallet-error';
+import { encryptSha256Password } from '@common/utils/crypto-utils';
+import { WalletRepository } from '@repositories/wallet';
 
 export class WalletService {
   private walletRepository: WalletRepository;

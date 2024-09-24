@@ -8,7 +8,7 @@ import {
 } from '@gnolang/tm2-js-client';
 
 import { Bip39, Random } from '../crypto';
-import { arrayToHex, hexToArray } from '../utils';
+import { arrayContentEquals, arrayToHex, hexToArray } from '../utils';
 import { Document } from './..';
 import {
   Account,
@@ -53,6 +53,7 @@ export interface Wallet {
   getNextHDPathBy: (keyring: Keyring) => number;
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
+  hasKeyring: (keyring: Keyring) => boolean;
   hasPrivateKey: (privateKey: Uint8Array) => boolean;
   sign: (
     provider: Provider,
@@ -164,6 +165,30 @@ export class AdenaWallet implements Wallet {
 
   hasHDWallet() {
     return !!this._keyrings.find(isHDWalletKeyring);
+  }
+
+  hasKeyring(keyring: Keyring) {
+    if (isPrivateKeyKeyring(keyring)) {
+      return this._keyrings.some((k) => {
+        if (!isPrivateKeyKeyring(k)) {
+          return false;
+        }
+        return arrayContentEquals(keyring.privateKey, k.privateKey);
+      });
+    }
+
+    if (isHDWalletKeyring(keyring)) {
+      return this._keyrings.some((k) => {
+        if (!isHDWalletKeyring(k)) {
+          return false;
+        }
+        return keyring.mnemonic === k.mnemonic;
+      });
+    }
+
+    return this._keyrings.some((k) => {
+      return keyring.id === k.id;
+    });
   }
 
   hasPrivateKey(privateKey: Uint8Array) {

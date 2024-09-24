@@ -1,20 +1,19 @@
 import { ReactElement, useCallback, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 
+import IconCreate from '@assets/web/icon-create';
+import IconGoogle from '@assets/web/icon-google';
+import IconImport from '@assets/web/icon-import';
 import IconThunder from '@assets/web/round-thunder.svg';
 import IconWarning from '@assets/web/warning.svg';
-
-import { Row, View, WebMain, WebText, WebImg } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import { useWalletContext } from '@hooks/use-context';
-import WebMainButton from '@components/atoms/web-main-button';
-import IconCreate from '@assets/web/icon-create';
-import IconImport from '@assets/web/icon-import';
-import IconGoogle from '@assets/web/icon-google';
-import { getTheme } from '@styles/theme';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { Row, View, WebImg, WebMain, WebText } from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useWalletContext } from '@hooks/use-context';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 4px;
