@@ -1,14 +1,15 @@
 import {
   generateKeyPair,
-  Wallet as Tm2Wallet,
-  Tx,
-  TxSignature,
   Provider,
   TransactionEndpoint,
+  Tx,
+  TxSignature,
+  Wallet as Tm2Wallet,
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
+
 import { Bip39, EnglishMnemonic } from '../../crypto';
-import { useTm2Wallet, decodeTxMessages, Document, documentToTx, makeSignedTx } from './../..';
+import { Document, makeSignedTx, useTm2Wallet } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
 
 export class HDWalletKeyring implements Keyring {

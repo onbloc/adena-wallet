@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useState } from 'react';
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
+import { useCallback, useMemo, useState } from 'react';
 
-import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import useQuestionnaire from './use-questionnaire';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import { RoutePath } from '@types';
+import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletCreateReturn = {
   seeds: string;

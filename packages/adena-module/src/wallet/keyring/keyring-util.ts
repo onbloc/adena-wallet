@@ -1,11 +1,12 @@
+import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+
+import { decodeTxMessages, Document, documentToTx } from './../../utils/messages';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { Keyring } from './keyring';
 import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
-import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
-import { Document, documentToTx, decodeTxMessages } from './../../utils/messages';
 
 export function isHDWalletKeyring(keyring: Keyring): keyring is HDWalletKeyring {
   return keyring.type === 'HD_WALLET';

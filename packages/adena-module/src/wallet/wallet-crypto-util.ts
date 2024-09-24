@@ -1,6 +1,7 @@
+import CryptoJS from 'crypto-js';
+
 import { Argon2id, isArgon2idOptions } from '../crypto';
 import { toAscii, toHex } from '../encoding';
-import CryptoJS from 'crypto-js';
 
 interface KdfConfiguration {
   /**

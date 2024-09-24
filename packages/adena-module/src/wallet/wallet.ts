@@ -1,13 +1,29 @@
 import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
+  Provider,
+  Tx,
+  TxSignature,
+} from '@gnolang/tm2-js-client';
+
+import { Bip39, Random } from '../crypto';
+import { arrayToHex, hexToArray } from '../utils';
+import { Document } from './..';
+import {
   Account,
   AccountInfo,
+  AirgapAccount,
+  hasHDPath,
+  isLedgerAccount,
+  isSeedAccount,
   LedgerAccount,
   makeAccount,
   SeedAccount,
   SingleAccount,
 } from './account';
 import {
+  AddressKeyring,
   hasPrivateKey,
   HDWalletKeyring,
   isHDWalletKeyring,
@@ -19,36 +35,22 @@ import {
   Web3AuthKeyring,
 } from './keyring';
 import { decryptAES, encryptAES } from './wallet-crypto-util';
-import { hasHDPath, isLedgerAccount, isSeedAccount } from './account/account-util';
-import { Bip39, Random } from '../crypto';
-import { arrayToHex, hexToArray } from '../utils/data';
-import {
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  Provider,
-  Tx,
-  TxSignature,
-} from '@gnolang/tm2-js-client';
-import { Document } from './..';
-import { AddressKeyring } from './keyring/address-keyring';
-import { AirgapAccount } from './account/airgap-account';
 
 export interface Wallet {
   accounts: Account[];
   keyrings: Keyring[];
   currentAccount: Account;
   currentKeyring: Keyring;
-  hdWalletKeyring: HDWalletKeyring | undefined;
   nextAccountName: string;
   nextLedgerAccountName: string;
-  nextHDPath: number;
-  mnemonic: string;
   lastAccountIndex: number;
   lastLedgerAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
   getPrivateKeyStr(): Promise<string>;
+  getMnemonic: () => string;
+  getNextHDPathBy: (keyring: Keyring) => number;
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
   hasPrivateKey: (privateKey: Uint8Array) => boolean;
@@ -130,10 +132,6 @@ export class AdenaWallet implements Wallet {
     return currentKeyring;
   }
 
-  get hdWalletKeyring() {
-    return this._keyrings.find(isHDWalletKeyring);
-  }
-
   get nextAccountName() {
     const nextIndex = this.lastAccountIndex + 1;
     return `Account ${nextIndex}`;
@@ -144,33 +142,8 @@ export class AdenaWallet implements Wallet {
     return `Ledger ${nextIndex}`;
   }
 
-  get nextHDPath() {
-    const seedAccounts = this.accounts.filter(isSeedAccount);
-    if (seedAccounts.length === 0) {
-      return 0;
-    }
-
-    const lastHdPath = seedAccounts.reduce((account1, account2) =>
-      account1.hdPath > account2.hdPath ? account1 : account2,
-    ).hdPath;
-
-    for (let index = 0; index < lastHdPath; index += 1) {
-      if (!seedAccounts.find((account) => account.hdPath === index)) {
-        return index;
-      }
-    }
-    return lastHdPath + 1;
-  }
-
   set currentAccountId(currentAccountId: string) {
     this._currentAccountId = currentAccountId;
-  }
-
-  get mnemonic() {
-    if (!isHDWalletKeyring(this.currentKeyring)) {
-      throw new Error('Mnemonic words not found');
-    }
-    return this.currentKeyring.mnemonic;
   }
 
   get lastAccountIndex() {
@@ -190,7 +163,7 @@ export class AdenaWallet implements Wallet {
   }
 
   hasHDWallet() {
-    return this.hdWalletKeyring ? true : false;
+    return !!this._keyrings.find(isHDWalletKeyring);
   }
 
   hasPrivateKey(privateKey: Uint8Array) {
@@ -203,6 +176,37 @@ export class AdenaWallet implements Wallet {
   async getPrivateKeyStr() {
     const privateKey = await this.getPrivateKey();
     return arrayToHex(privateKey);
+  }
+
+  getMnemonic() {
+    if (!isHDWalletKeyring(this.currentKeyring)) {
+      throw new Error('Mnemonic words not found');
+    }
+    return this.currentKeyring.mnemonic;
+  }
+
+  getNextHDPathBy(keyring: Keyring) {
+    if (!isHDWalletKeyring(keyring)) {
+      throw new Error('The current keyring is not an HD Wallet Keyring');
+    }
+
+    const seedAccounts = this.accounts
+      .filter((account) => account.keyringId === keyring.id)
+      .filter(isSeedAccount);
+    if (seedAccounts.length === 0) {
+      return 0;
+    }
+
+    const lastHdPath = seedAccounts.reduce((account1, account2) =>
+      account1.hdPath > account2.hdPath ? account1 : account2,
+    ).hdPath;
+
+    for (let index = 0; index < lastHdPath; index += 1) {
+      if (!seedAccounts.find((account) => account.hdPath === index)) {
+        return index;
+      }
+    }
+    return lastHdPath + 1;
   }
 
   addAccount(account: Account) {

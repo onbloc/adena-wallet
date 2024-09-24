@@ -1,12 +1,12 @@
+import { isHDWalletKeyring, SeedAccount } from 'adena-module';
 import { useCallback, useState } from 'react';
-import { SeedAccount } from 'adena-module';
 
-import { RoutePath } from '@types';
+import { waitForRun } from '@common/utils/timeout-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
-import { waitForRun } from '@common/utils/timeout-utils';
 
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
@@ -64,11 +64,20 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
       if (!wallet) {
         return false;
       }
-      const account = await SeedAccount.createByWallet(wallet);
-      account.index = wallet.lastAccountIndex + 1;
-      account.name = `Account ${wallet.lastAccountIndex + 1}`;
+
+      const hdWalletKeyring = wallet.keyrings.find(isHDWalletKeyring);
+      if (!hdWalletKeyring) {
+        return false;
+      }
+
+      const name = `Account ${wallet.lastAccountIndex + 1}`;
+      const hdPath = wallet.getNextHDPathBy(hdWalletKeyring);
+      const index = wallet.lastAccountIndex + 1;
+      const account = await SeedAccount.createBy(hdWalletKeyring, name, hdPath, index);
+
       const clone = wallet.clone();
       clone.addAccount(account);
+
       const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);

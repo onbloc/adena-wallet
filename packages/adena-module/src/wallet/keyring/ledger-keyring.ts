@@ -1,9 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Provider, TransactionEndpoint, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
-import { Keyring, KeyringData, KeyringType } from './keyring';
-import { generateHDPath, Tx } from '@gnolang/tm2-js-client';
 import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { Document, useTm2Wallet, makeSignedTx } from './../..';
+import {
+  generateHDPath,
+  Provider,
+  TransactionEndpoint,
+  Tx,
+  Wallet as Tm2Wallet,
+} from '@gnolang/tm2-js-client';
+import { v4 as uuidv4 } from 'uuid';
+
+import { Document, makeSignedTx, useTm2Wallet } from './../..';
+import { Keyring, KeyringData, KeyringType } from './keyring';
 
 export class LedgerKeyring implements Keyring {
   public readonly id: string;
