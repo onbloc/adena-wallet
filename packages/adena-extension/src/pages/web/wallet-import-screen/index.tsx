@@ -4,11 +4,11 @@ import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
 
-import GetMnemonicStep from './set-mnemonic-step';
-import useWalletImportScreen from '@hooks/web/use-wallet-import-screen';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
-import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import useWalletImportScreen from '@hooks/web/use-wallet-import-screen';
+import GetMnemonicStep from './set-mnemonic-step';
 
 const WalletImportScreen: React.FC = () => {
   const useWalletImportScreenReturn = useWalletImportScreen();
