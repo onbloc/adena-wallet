@@ -1,5 +1,5 @@
 import { isHDWalletKeyring, SeedAccount } from 'adena-module';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { waitForRun } from '@common/utils/timeout-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -8,15 +8,22 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
 
+interface KeyringInfo {
+  index: number;
+  keyringId: string;
+  accountCount: number;
+}
+
 export type UseAccountAddScreenReturn = {
   step: AccountAddStateType;
+  keyringInfos: KeyringInfo[];
   setStep: React.Dispatch<React.SetStateAction<AccountAddStateType>>;
+  addAccount: (keyringId?: string) => Promise<void>;
   onClickGoBack: () => void;
   onClickNext: () => void;
-  addAccount: () => Promise<void>;
 };
 
-export type AccountAddStateType = 'INIT' | 'CREATE_ACCOUNT';
+export type AccountAddStateType = 'INIT' | 'SELECT_SEED_PHRASE' | 'CREATE_ACCOUNT';
 
 const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebAccountAdd>();
@@ -24,34 +31,79 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
 
+  const keyringInfos = useMemo(() => {
+    if (!wallet) {
+      return [];
+    }
+
+    const accounts = wallet.accounts;
+
+    return wallet.keyrings.filter(isHDWalletKeyring).map((keyring, index) => ({
+      index,
+      keyringId: keyring.id,
+      accountCount: accounts.filter((account) => account.keyringId === keyring.id).length,
+    }));
+  }, [wallet]);
+
+  const hasMultiSeedPhrase = useMemo(() => {
+    if (!wallet) {
+      return false;
+    }
+    return wallet.keyrings.filter(isHDWalletKeyring).length > 1;
+  }, [wallet]);
+
   const [step, setStep] = useState<AccountAddStateType>(
-    params?.doneQuestionnaire ? 'CREATE_ACCOUNT' : 'INIT',
+    params?.doneQuestionnaire
+      ? hasMultiSeedPhrase
+        ? 'CREATE_ACCOUNT'
+        : 'SELECT_SEED_PHRASE'
+      : 'INIT',
   );
 
   const onClickGoBack = useCallback(() => {
-    if (step === 'INIT') {
-      navigate(RoutePath.WebAdvancedOption);
-    } else if (step === 'CREATE_ACCOUNT') {
-      setStep('INIT');
+    switch (step) {
+      case 'INIT':
+        navigate(RoutePath.WebAdvancedOption);
+        break;
+      case 'SELECT_SEED_PHRASE':
+      case 'CREATE_ACCOUNT':
+        setStep('INIT');
+        break;
+      default:
+        break;
     }
   }, [step]);
 
   const onClickNext = useCallback(async () => {
     if (step === 'INIT') {
-      if (ableToSkipQuestionnaire) {
-        setStep('CREATE_ACCOUNT');
-      } else {
+      if (!ableToSkipQuestionnaire) {
         navigate(RoutePath.WebQuestionnaire, {
           state: {
             callbackPath: RoutePath.WebAccountAdd,
           },
         });
+        return;
       }
+
+      if (hasMultiSeedPhrase) {
+        setStep('SELECT_SEED_PHRASE');
+        return;
+      }
+
+      setStep('CREATE_ACCOUNT');
+    } else if (step === 'SELECT_SEED_PHRASE') {
+      setStep('CREATE_ACCOUNT');
     }
   }, [step, ableToSkipQuestionnaire]);
 
-  const addAccount = async (): Promise<void> => {
-    const succeed = await waitForRun<boolean>(_addAccount);
+  const addAccount = async (keyringId?: string): Promise<void> => {
+    const currentKeyringId = keyringId || wallet?.keyrings.find(isHDWalletKeyring)?.id;
+    if (!currentKeyringId) {
+      navigate(RoutePath.WebNotFound);
+      return;
+    }
+
+    const succeed = await waitForRun<boolean>(async () => _addAccount(currentKeyringId));
     if (succeed) {
       navigate(RoutePath.WebAccountAddedComplete);
     } else {
@@ -59,20 +111,25 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     }
   };
 
-  const _addAccount = async (): Promise<boolean> => {
+  const _addAccount = async (keyringId: string): Promise<boolean> => {
     try {
       if (!wallet) {
         return false;
       }
 
-      const hdWalletKeyring = wallet.keyrings.find(isHDWalletKeyring);
+      const hdWalletKeyring = wallet.keyrings.find(
+        (keyring) => keyring.id === keyringId && isHDWalletKeyring(keyring),
+      );
       if (!hdWalletKeyring) {
         return false;
       }
 
-      const name = `Account ${wallet.lastAccountIndex + 1}`;
+      const isMainHDWalletKeyring = wallet.defaultHDWalletKeyring?.id === keyringId;
+      const index = isMainHDWalletKeyring
+        ? wallet.lastAccountIndex + 1
+        : wallet.getLastAccountIndexBy(hdWalletKeyring) + 1;
+      const name = `Account ${index}`;
       const hdPath = wallet.getNextHDPathBy(hdWalletKeyring);
-      const index = wallet.lastAccountIndex + 1;
       const account = await SeedAccount.createBy(hdWalletKeyring, name, hdPath, index);
 
       const clone = wallet.clone();
@@ -91,6 +148,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
 
   return {
     step,
+    keyringInfos,
     setStep,
     onClickGoBack,
     onClickNext,

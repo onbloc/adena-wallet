@@ -4,6 +4,7 @@ import {
   HDWalletKeyring,
   isAirgapAccount,
   isHDWalletKeyring,
+  isSeedAccount,
   Keyring,
   PrivateKeyKeyring,
   SeedAccount,
@@ -259,8 +260,14 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     keyring: Keyring,
     account: Account,
   ): Promise<AdenaWallet> => {
-    account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${account.index}`;
+    const isDefaultAccountIndex =
+      !isSeedAccount(account) || wallet.defaultHDWalletKeyring?.id === keyring.id;
+    const index = isDefaultAccountIndex
+      ? wallet.lastAccountIndex + 1
+      : wallet.getLastAccountIndexBy(keyring) + 1;
+
+    account.index = index;
+    account.name = `Account ${index}`;
     account.keyringId = keyring.id;
 
     const clone = wallet.clone();

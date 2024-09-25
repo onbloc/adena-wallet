@@ -1,12 +1,12 @@
-import { ReactElement, useEffect } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
 
 import { View } from '@components/atoms';
-import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
-import { WebTitleWithDescription } from '@components/molecules';
 import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
+import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -15,15 +15,22 @@ const StyledContainer = styled(View)`
 `;
 
 const CreateAccountStep = ({
+  selectedKeyringId,
   useAccountAddScreenReturn,
 }: {
+  selectedKeyringId?: string;
   useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement => {
   const { addAccount } = useAccountAddScreenReturn;
+  const [executed, setExecuted] = useState(false);
 
   useEffect(() => {
-    addAccount();
-  }, []);
+    if (executed) {
+      return;
+    }
+    setExecuted(true);
+    addAccount(selectedKeyringId);
+  }, [selectedKeyringId]);
 
   return (
     <StyledContainer>

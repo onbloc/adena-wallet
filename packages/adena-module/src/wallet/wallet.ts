@@ -41,6 +41,7 @@ export interface Wallet {
   keyrings: Keyring[];
   currentAccount: Account;
   currentKeyring: Keyring;
+  defaultHDWalletKeyring: HDWalletKeyring | null;
   nextAccountName: string;
   nextLedgerAccountName: string;
   lastAccountIndex: number;
@@ -51,6 +52,7 @@ export interface Wallet {
   getPrivateKeyStr(): Promise<string>;
   getMnemonic: () => string;
   getNextHDPathBy: (keyring: Keyring) => number;
+  getLastAccountIndexBy: (keyring: Keyring) => number;
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
   hasKeyring: (keyring: Keyring) => boolean;
@@ -147,15 +149,29 @@ export class AdenaWallet implements Wallet {
     this._currentAccountId = currentAccountId;
   }
 
+  get defaultHDWalletKeyring() {
+    return this._keyrings.filter(isHDWalletKeyring).find((_, index) => index === 0) || null;
+  }
+
   get lastAccountIndex() {
     const indices = this.accounts
       .filter((account) => !isLedgerAccount(account))
+      .filter((account) =>
+        isSeedAccount(account) ? account.keyringId === this.defaultHDWalletKeyring?.id : true,
+      )
       .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
   get lastLedgerAccountIndex() {
     const indices = this.accounts.filter(isLedgerAccount).map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
+  getLastAccountIndexBy(keyring: Keyring) {
+    const indices = this.accounts
+      .filter((account) => account.keyringId === keyring.id)
+      .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
