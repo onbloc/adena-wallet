@@ -1,7 +1,8 @@
 import { ReactElement, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 
-import { View, WebButton } from '@components/atoms';
+import IconSelectAccount from '@assets/web/select-account.svg';
+import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import SelectSeedPhraseBox from '@components/molecules/select-seed-phrase-box/select-seed-phrase-box';
 import { WebMainHeader } from '@components/pages/web/main-header';
@@ -52,6 +53,9 @@ const SelectSeedPhraseStep = ({
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={onClickGoBack}
       />
+      <View>
+        <WebImg src={IconSelectAccount} size={88} />
+      </View>
       <WebTitleWithDescription
         title='Select Seed Phrase'
         description='Select the seed phrase to which you want to add a new account.'
