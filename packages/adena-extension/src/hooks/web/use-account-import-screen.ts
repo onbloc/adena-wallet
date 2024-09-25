@@ -87,7 +87,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const accountImportStepNoOfMultiHDWallet = {
     INIT: 0,
-    SET_SEED_PHRASE: ableToSkipQuestionnaire ? 1 : 2,
+    SET_MNEMONIC: ableToSkipQuestionnaire ? 1 : 2,
     LOADING: ableToSkipQuestionnaire ? 1 : 2,
     SELECT_ACCOUNT: ableToSkipQuestionnaire ? 2 : 3,
   };
@@ -259,8 +259,12 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     keyring: Keyring,
     account: Account,
   ): Promise<AdenaWallet> => {
-    account.index = wallet.lastAccountIndex + 1;
-    account.name = `Account ${account.index}`;
+    const index = wallet.getNextAccountIndexBy(keyring);
+    const accountNumber = wallet.getNextAccountNumberBy(keyring);
+    const name = `Account ${accountNumber}`;
+
+    account.index = index;
+    account.name = name;
     account.keyringId = keyring.id;
 
     const clone = wallet.clone();

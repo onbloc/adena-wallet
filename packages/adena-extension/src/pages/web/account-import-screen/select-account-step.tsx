@@ -1,14 +1,15 @@
+import { arrayContentEquals } from 'adena-module';
 import { useMemo } from 'react';
 import styled from 'styled-components';
 
-import { View, WebButton } from '@components/atoms';
+import IconSelectAccount from '@assets/web/select-account.svg';
+import { View, WebButton, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import { AccountInfo } from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
 import { useQuery } from '@tanstack/react-query';
-import { arrayContentEquals } from 'adena-module';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -74,6 +75,9 @@ const SelectAccountStep = ({
 
   return (
     <StyledContainer>
+      <View>
+        <WebImg src={IconSelectAccount} size={88} />
+      </View>
       <WebTitleWithDescription
         title='Select Accounts'
         description='Select all accounts you wish to add to Adena.'

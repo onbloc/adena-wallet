@@ -27,6 +27,7 @@ import {
   hasPrivateKey,
   HDWalletKeyring,
   isHDWalletKeyring,
+  isLedgerKeyring,
   isPrivateKeyKeyring,
   Keyring,
   KeyringData,
@@ -41,6 +42,7 @@ export interface Wallet {
   keyrings: Keyring[];
   currentAccount: Account;
   currentKeyring: Keyring;
+  defaultHDWalletKeyring: HDWalletKeyring | null;
   nextAccountName: string;
   nextLedgerAccountName: string;
   lastAccountIndex: number;
@@ -51,6 +53,9 @@ export interface Wallet {
   getPrivateKeyStr(): Promise<string>;
   getMnemonic: () => string;
   getNextHDPathBy: (keyring: Keyring) => number;
+  getNextAccountIndexBy: (keyring: Keyring) => number;
+  getNextAccountNumberBy: (keyring: Keyring) => number;
+  getLastAccountIndexBy: (keyring: Keyring) => number;
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
   hasKeyring: (keyring: Keyring) => boolean;
@@ -147,6 +152,10 @@ export class AdenaWallet implements Wallet {
     this._currentAccountId = currentAccountId;
   }
 
+  get defaultHDWalletKeyring() {
+    return this._keyrings.filter(isHDWalletKeyring).find((_, index) => index === 0) || null;
+  }
+
   get lastAccountIndex() {
     const indices = this.accounts
       .filter((account) => !isLedgerAccount(account))
@@ -208,6 +217,25 @@ export class AdenaWallet implements Wallet {
       throw new Error('Mnemonic words not found');
     }
     return this.currentKeyring.mnemonic;
+  }
+
+  getLastAccountIndexBy(keyring: Keyring) {
+    const indices = this.accounts
+      .filter((account) => account.keyringId === keyring.id)
+      .map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
+  getNextAccountIndexBy(keyring: Keyring) {
+    if (isLedgerKeyring(keyring)) {
+      return this.lastLedgerAccountIndex + 1;
+    }
+
+    return this.lastAccountIndex + 1;
+  }
+
+  getNextAccountNumberBy(keyring: Keyring) {
+    return this.getNextAccountIndexBy(keyring);
   }
 
   getNextHDPathBy(keyring: Keyring) {

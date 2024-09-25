@@ -1,17 +1,20 @@
-import { ReactElement, useMemo } from 'react';
+import { ReactElement, useMemo, useState } from 'react';
 
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
 import useAccountAddScreen from '@hooks/web/use-account-add-screen';
 
-import GetMnemonicStep from './create-account-step';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import CreateAccountStep from './create-account-step';
+import SelectSeedPhraseStep from './select-seed-phrase-step';
 
 const AccountAddScreen = (): ReactElement => {
   const useAccountAddScreenReturn = useAccountAddScreen();
   const { step, onClickGoBack, onClickNext } = useAccountAddScreenReturn;
+
+  const [selectedKeyringId, setSelectedKeyringId] = useState<string>();
 
   const topSpacing = useMemo(() => {
     if (step === 'INIT') {
@@ -39,8 +42,19 @@ const AccountAddScreen = (): ReactElement => {
         </>
       )}
 
+      {step === 'SELECT_SEED_PHRASE' && (
+        <SelectSeedPhraseStep
+          selectedKeyringId={selectedKeyringId}
+          setSelectedKeyringId={setSelectedKeyringId}
+          useAccountAddScreenReturn={useAccountAddScreenReturn}
+        />
+      )}
+
       {step === 'CREATE_ACCOUNT' && (
-        <GetMnemonicStep useAccountAddScreenReturn={useAccountAddScreenReturn} />
+        <CreateAccountStep
+          selectedKeyringId={selectedKeyringId}
+          useAccountAddScreenReturn={useAccountAddScreenReturn}
+        />
       )}
     </WebMain>
   );
