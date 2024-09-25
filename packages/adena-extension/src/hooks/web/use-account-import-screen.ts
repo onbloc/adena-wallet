@@ -88,7 +88,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const accountImportStepNoOfMultiHDWallet = {
     INIT: 0,
-    SET_SEED_PHRASE: ableToSkipQuestionnaire ? 1 : 2,
+    SET_MNEMONIC: ableToSkipQuestionnaire ? 1 : 2,
     LOADING: ableToSkipQuestionnaire ? 1 : 2,
     SELECT_ACCOUNT: ableToSkipQuestionnaire ? 2 : 3,
   };

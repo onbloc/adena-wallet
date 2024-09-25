@@ -5,6 +5,9 @@ import { waitForRun } from '@common/utils/timeout-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
 
@@ -15,6 +18,7 @@ interface KeyringInfo {
 }
 
 export type UseAccountAddScreenReturn = {
+  indicatorInfo: UseIndicatorStepReturn;
   step: AccountAddStateType;
   keyringInfos: KeyringInfo[];
   setStep: React.Dispatch<React.SetStateAction<AccountAddStateType>>;
@@ -31,20 +35,6 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
 
-  const keyringInfos = useMemo(() => {
-    if (!wallet) {
-      return [];
-    }
-
-    const accounts = wallet.accounts;
-
-    return wallet.keyrings.filter(isHDWalletKeyring).map((keyring, index) => ({
-      index,
-      keyringId: keyring.id,
-      accountCount: accounts.filter((account) => account.keyringId === keyring.id).length,
-    }));
-  }, [wallet]);
-
   const hasMultiSeedPhrase = useMemo(() => {
     if (!wallet) {
       return false;
@@ -59,6 +49,36 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
         : 'SELECT_SEED_PHRASE'
       : 'INIT',
   );
+
+  const accountAddStepNo = hasMultiSeedPhrase
+    ? {
+        INIT: 0,
+        SELECT_SEED_PHRASE: 1,
+      }
+    : {
+        INIT: 0,
+        SELECT_SEED_PHRASE: 0,
+      };
+
+  const indicatorInfo = useIndicatorStep<string>({
+    stepMap: accountAddStepNo,
+    currentState: step,
+    hasQuestionnaire: true,
+  });
+
+  const keyringInfos = useMemo(() => {
+    if (!wallet) {
+      return [];
+    }
+
+    const accounts = wallet.accounts;
+
+    return wallet.keyrings.filter(isHDWalletKeyring).map((keyring, index) => ({
+      index,
+      keyringId: keyring.id,
+      accountCount: accounts.filter((account) => account.keyringId === keyring.id).length,
+    }));
+  }, [wallet]);
 
   const onClickGoBack = useCallback(() => {
     switch (step) {
@@ -147,6 +167,7 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
   };
 
   return {
+    indicatorInfo,
     step,
     keyringInfos,
     setStep,

@@ -49,8 +49,8 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
     >
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
-        onClickGoBack={onClickGoBack}
         currentStep={indicatorInfo.stepNo}
+        onClickGoBack={onClickGoBack}
       />
       {step === 'INIT' && (
         <SensitiveInfoStep

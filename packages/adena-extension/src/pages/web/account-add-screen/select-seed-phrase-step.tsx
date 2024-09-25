@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { View, WebButton } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import SelectSeedPhraseBox from '@components/molecules/select-seed-phrase-box/select-seed-phrase-box';
+import { WebMainHeader } from '@components/pages/web/main-header';
 import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
 
 const StyledContainer = styled(View)`
@@ -20,7 +21,7 @@ const SelectSeedPhraseStep = ({
   setSelectedKeyringId: (keyringId?: string) => void;
   useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement => {
-  const { keyringInfos, onClickNext } = useAccountAddScreenReturn;
+  const { indicatorInfo, keyringInfos, onClickNext, onClickGoBack } = useAccountAddScreenReturn;
 
   const seedPhraseInfos = useMemo(() => {
     return keyringInfos.map((keyringInfo) => ({
@@ -33,16 +34,24 @@ const SelectSeedPhraseStep = ({
     return !selectedKeyringId;
   }, [selectedKeyringId]);
 
-  const select = useCallback((keyringId: string) => {
-    if (selectedKeyringId === keyringId) {
-      setSelectedKeyringId(undefined);
-      return;
-    }
-    setSelectedKeyringId(keyringId);
-  }, []);
+  const select = useCallback(
+    (keyringId: string) => {
+      if (selectedKeyringId === keyringId) {
+        setSelectedKeyringId('');
+        return;
+      }
+      setSelectedKeyringId(keyringId);
+    },
+    [selectedKeyringId],
+  );
 
   return (
     <StyledContainer>
+      <WebMainHeader
+        currentStep={indicatorInfo.stepNo}
+        stepLength={indicatorInfo.stepLength}
+        onClickGoBack={onClickGoBack}
+      />
       <WebTitleWithDescription
         title='Select Seed Phrase'
         description='Select the seed phrase to which you want to add a new account.'
