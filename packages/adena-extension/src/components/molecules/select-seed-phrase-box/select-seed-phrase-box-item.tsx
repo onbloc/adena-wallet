@@ -1,6 +1,8 @@
-import { Row, WebCheckBox, WebText } from '@components/atoms';
 import React, { useMemo } from 'react';
 import { useTheme } from 'styled-components';
+
+import { Row, WebCheckBox, WebText } from '@components/atoms';
+
 import { StyledSelectSeedPhraseBoxItem } from './select-seed-phrase-box-item.styles';
 import { SeedPhraseInfo } from './select-seed-phrase-box.types';
 

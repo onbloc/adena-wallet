@@ -1,9 +1,11 @@
 import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+
 import { GlobalWebStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
+
 import SelectSeedPhraseBox, { SelectSeedPhraseBoxProps } from './select-seed-phrase-box';
 
 describe('SelectSeedPhraseBox Component', () => {
