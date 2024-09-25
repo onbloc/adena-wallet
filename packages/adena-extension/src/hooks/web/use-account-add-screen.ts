@@ -144,12 +144,11 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
         return false;
       }
 
-      const isMainHDWalletKeyring = wallet.defaultHDWalletKeyring?.id === keyringId;
-      const index = isMainHDWalletKeyring
-        ? wallet.lastAccountIndex + 1
-        : wallet.getLastAccountIndexBy(hdWalletKeyring) + 1;
-      const name = `Account ${index}`;
+      const index = wallet.getNextAccountIndexBy(hdWalletKeyring);
       const hdPath = wallet.getNextHDPathBy(hdWalletKeyring);
+      const accountNumber = wallet.getNextAccountNumberBy(hdWalletKeyring);
+      const name = `Account ${accountNumber}`;
+
       const account = await SeedAccount.createBy(hdWalletKeyring, name, hdPath, index);
 
       const clone = wallet.clone();

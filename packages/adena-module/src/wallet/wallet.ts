@@ -27,6 +27,7 @@ import {
   hasPrivateKey,
   HDWalletKeyring,
   isHDWalletKeyring,
+  isLedgerKeyring,
   isPrivateKeyKeyring,
   Keyring,
   KeyringData,
@@ -52,6 +53,8 @@ export interface Wallet {
   getPrivateKeyStr(): Promise<string>;
   getMnemonic: () => string;
   getNextHDPathBy: (keyring: Keyring) => number;
+  getNextAccountIndexBy: (keyring: Keyring) => number;
+  getNextAccountNumberBy: (keyring: Keyring) => number;
   getLastAccountIndexBy: (keyring: Keyring) => number;
   isEmpty: () => boolean;
   hasHDWallet: () => boolean;
@@ -156,22 +159,12 @@ export class AdenaWallet implements Wallet {
   get lastAccountIndex() {
     const indices = this.accounts
       .filter((account) => !isLedgerAccount(account))
-      .filter((account) =>
-        isSeedAccount(account) ? account.keyringId === this.defaultHDWalletKeyring?.id : true,
-      )
       .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
   get lastLedgerAccountIndex() {
     const indices = this.accounts.filter(isLedgerAccount).map((account) => account.index);
-    return Math.max(0, ...indices);
-  }
-
-  getLastAccountIndexBy(keyring: Keyring) {
-    const indices = this.accounts
-      .filter((account) => account.keyringId === keyring.id)
-      .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
@@ -224,6 +217,25 @@ export class AdenaWallet implements Wallet {
       throw new Error('Mnemonic words not found');
     }
     return this.currentKeyring.mnemonic;
+  }
+
+  getLastAccountIndexBy(keyring: Keyring) {
+    const indices = this.accounts
+      .filter((account) => account.keyringId === keyring.id)
+      .map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
+  getNextAccountIndexBy(keyring: Keyring) {
+    if (isLedgerKeyring(keyring)) {
+      return this.lastLedgerAccountIndex + 1;
+    }
+
+    return this.lastAccountIndex + 1;
+  }
+
+  getNextAccountNumberBy(keyring: Keyring) {
+    return this.getNextAccountIndexBy(keyring);
   }
 
   getNextHDPathBy(keyring: Keyring) {
