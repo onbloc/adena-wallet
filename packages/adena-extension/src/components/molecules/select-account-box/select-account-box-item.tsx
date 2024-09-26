@@ -1,4 +1,3 @@
-import { formatAddress } from '@common/utils/client-utils';
 import { Row, WebCheckBox, WebText } from '@components/atoms';
 import React from 'react';
 import { useTheme } from 'styled-components';
@@ -15,7 +14,7 @@ const SelectAccountBoxItem: React.FC<{
   return (
     <StyledSelectAccountBoxItem key={index}>
       <Row style={{ columnGap: 8 }}>
-        <WebText type='body5'>{formatAddress(address)}</WebText>
+        <WebText type='body5'>{address}</WebText>
         <WebText type='body5' color={theme.webNeutral._700}>{`m/44'/118'/0'/0/${hdPath}`}</WebText>
       </Row>
       {stored ? (

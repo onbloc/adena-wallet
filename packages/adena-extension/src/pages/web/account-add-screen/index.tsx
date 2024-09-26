@@ -5,7 +5,7 @@ import { WebMainHeader } from '@components/pages/web/main-header';
 import useAccountAddScreen from '@hooks/web/use-account-add-screen';
 
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { WEB_TOP_SPACING } from '@common/constants/ui.constant';
 import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import CreateAccountStep from './create-account-step';
 import SelectSeedPhraseStep from './select-seed-phrase-step';
@@ -20,7 +20,7 @@ const AccountAddScreen = (): ReactElement => {
     if (step === 'INIT') {
       return {
         default: WEB_TOP_SPACING,
-        responsive: WEB_TOP_SPACING_RESPONSIVE,
+        responsive: WEB_TOP_SPACING,
       };
     }
     return null;

@@ -221,9 +221,11 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     }
   }, [
     step,
+    wallet,
     inputType,
     inputValue,
     selectedAddresses,
+    loadedAccounts,
     ableToSkipQuestionnaire,
     makePrivateKeyAccountAndKeyring,
   ]);

@@ -30,7 +30,7 @@ export type UseAccountAddScreenReturn = {
 export type AccountAddStateType = 'INIT' | 'SELECT_SEED_PHRASE' | 'CREATE_ACCOUNT';
 
 const useAccountAddScreen = (): UseAccountAddScreenReturn => {
-  const { navigate, params } = useAppNavigate<RoutePath.WebAccountAdd>();
+  const { navigate } = useAppNavigate<RoutePath.WebAccountAdd>();
   const { ableToSkipQuestionnaire } = useQuestionnaire();
   const { wallet, updateWallet } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
@@ -42,13 +42,19 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
     return wallet.keyrings.filter(isHDWalletKeyring).length > 1;
   }, [wallet]);
 
-  const [step, setStep] = useState<AccountAddStateType>(
-    params?.doneQuestionnaire
-      ? hasMultiSeedPhrase
-        ? 'CREATE_ACCOUNT'
-        : 'SELECT_SEED_PHRASE'
-      : 'INIT',
-  );
+  const getInitializeStep = (): AccountAddStateType => {
+    if (!wallet) {
+      return 'INIT';
+    }
+
+    if (hasMultiSeedPhrase) {
+      return 'SELECT_SEED_PHRASE';
+    }
+
+    return 'CREATE_ACCOUNT';
+  };
+
+  const [step, setStep] = useState<AccountAddStateType>(getInitializeStep());
 
   const accountAddStepNo = hasMultiSeedPhrase
     ? {
@@ -87,6 +93,10 @@ const useAccountAddScreen = (): UseAccountAddScreenReturn => {
         break;
       case 'SELECT_SEED_PHRASE':
       case 'CREATE_ACCOUNT':
+        if (wallet) {
+          navigate(RoutePath.WebAdvancedOption);
+          break;
+        }
         setStep('INIT');
         break;
       default:
