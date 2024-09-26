@@ -32,7 +32,7 @@ const SelectAccountStep = ({
   } = useAccountImportScreenReturn;
 
   const { data: accountInfos = [] } = useQuery<AccountInfo[]>(
-    ['accountImportSelectAccounts', loadedAccounts.length],
+    ['accountImportSelectAccounts', loadedAccounts],
     async () => {
       const accountInfos: AccountInfo[] = [];
       for (const account of loadedAccounts) {

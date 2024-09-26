@@ -243,8 +243,9 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const loadAccountsByKeyring = async (keyring: Keyring): Promise<void> => {
     setIsLoadingAccounts(true);
+    const filteredAccounts = loadedAccounts.filter((account) => account.keyringId === keyring.id);
     await waitForRun(async () => {
-      const startIndex = loadedAccounts.length;
+      const startIndex = filteredAccounts.length;
       const range = Array.from({ length: 5 }, (_, index) => index + startIndex);
 
       const accounts: Account[] = [];
@@ -255,8 +256,9 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
       return accounts;
     }).then((accounts) => {
+      const currentAccounts = [...filteredAccounts, ...accounts];
       setIsLoadingAccounts(false);
-      setLoadedAccounts([...loadedAccounts, ...accounts]);
+      setLoadedAccounts(currentAccounts);
     });
   };
 
