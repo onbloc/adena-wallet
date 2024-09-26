@@ -21,6 +21,10 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
     useAccountImportScreenReturn;
 
   const extended = useMemo(() => {
+    if (step === 'SELECT_ACCOUNT') {
+      return true;
+    }
+
     return inputType === '24seeds';
   }, [inputType]);
 
