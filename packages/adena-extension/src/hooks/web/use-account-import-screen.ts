@@ -255,8 +255,11 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
       return accounts;
     }).then((accounts) => {
+      const currentAccounts = [...loadedAccounts, ...accounts].filter(
+        (account) => account.keyringId === keyring.id,
+      );
       setIsLoadingAccounts(false);
-      setLoadedAccounts([...loadedAccounts, ...accounts]);
+      setLoadedAccounts(currentAccounts);
     });
   };
 
