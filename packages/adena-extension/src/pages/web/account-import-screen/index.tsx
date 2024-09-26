@@ -26,7 +26,7 @@ const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement => {
     }
 
     return inputType === '24seeds';
-  }, [inputType]);
+  }, [step, inputType]);
 
   const topSpacing = useMemo(() => {
     if (extended) {
