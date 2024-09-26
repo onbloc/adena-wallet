@@ -166,6 +166,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const onClickNext = useCallback(async () => {
     if (step === 'INIT') {
+      setErrMsg('');
       if (ableToSkipQuestionnaire) {
         setStep('SET_MNEMONIC');
       } else {
@@ -190,11 +191,14 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         }).then(() => navigate(RoutePath.WebAccountAddedComplete));
         return;
       } else {
+        const keyring = await HDWalletKeyring.fromMnemonic(inputValue).catch(() => null);
+        if (!keyring) {
+          setErrMsg('Invalid seed phrase');
+          return;
+        }
+
         setStep('LOADING');
-
         await waitForRun(async () => {
-          const keyring = await HDWalletKeyring.fromMnemonic(inputValue);
-
           setGeneratedKeyring(keyring);
           await loadAccountsByKeyring(keyring);
         }).then(() => {
