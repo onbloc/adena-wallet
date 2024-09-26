@@ -1,16 +1,16 @@
+import { Tx } from '@gnolang/tm2-js-client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { Tx } from '@gnolang/tm2-js-client';
 
+import IconHelp from '@assets/help.svg';
+import { ADENA_SETUP_AIRGAP_HELP_PAGE } from '@common/constants/resource.constant';
 import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
-import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
 import BroadcastTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-transaction-upload-input';
 import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
-import IconHelp from '@assets/help.svg';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
 
 const StyledWrapper = styled(View)`
   width: 100%;
@@ -72,8 +72,8 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
   }, [goBack]);
 
   const onClickHelp = useCallback(() => {
-    openLink(ADENA_DOCS_PAGE);
-  }, [broadcast]);
+    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE);
+  }, []);
 
   const blockEvent = (event: DragEvent): void => {
     event.preventDefault();
