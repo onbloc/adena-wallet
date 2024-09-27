@@ -1,21 +1,26 @@
+import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Document, Account, isLedgerAccount, isAirgapAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
 
-import { ApproveTransaction } from '@components/molecules';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { RoutePath } from '@types';
-import { validateInjectionData } from '@inject/message/methods';
-import { useNetwork } from '@hooks/use-network';
+import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { validateInjectionData } from '@inject/message/methods';
+import { RoutePath } from '@types';
 
 function mappedTransactionData(document: Document): {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,7 +167,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('SIGN_REJECTED', requestData?.data, requestData?.key),
+          InjectionMessageInstance.failure(
+            WalletResponseRejectType.SIGN_REJECTED,
+            requestData?.data,
+            requestData?.key,
+          ),
         );
       }
     }
@@ -171,7 +180,13 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const signTransaction = async (): Promise<boolean> => {
     if (!document || !currentAccount || !wallet) {
-      setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          {},
+          requestData?.key,
+        ),
+      );
       return false;
     }
 
@@ -180,7 +195,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
       const { signed } = await transactionService.createTransaction(wallet, document);
       const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(
-        InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.SIGN_SUCCESS,
+          { encodedTransaction },
+          requestData?.key,
+        ),
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -189,10 +208,20 @@ const ApproveSignTransactionContainer: React.FC = () => {
           return false;
         }
         setResponse(
-          InjectionMessageInstance.failure('SIGN_FAILED', { error: { message } }, requestData?.key),
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.SIGN_FAILED,
+            { error: { message } },
+            requestData?.key,
+          ),
         );
       }
-      setResponse(InjectionMessageInstance.failure('SIGN_FAILED', {}, requestData?.key));
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.SIGN_FAILED,
+          {},
+          requestData?.key,
+        ),
+      );
     }
     return false;
   };
@@ -219,7 +248,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.SIGN_REJECTED,
+        {},
+        requestData?.key,
+      ),
     );
   };
 
@@ -231,7 +264,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const onTimeoutSignTransaction = useCallback(() => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.NETWORK_TIMEOUT,
+        {},
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

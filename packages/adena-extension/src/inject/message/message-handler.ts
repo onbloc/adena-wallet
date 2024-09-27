@@ -1,3 +1,4 @@
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { HandlerMethod } from '.';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups, removePopups } from './methods';
@@ -47,7 +48,9 @@ export class MessageHandler {
       existsWallet = false;
     }
     if (!existsWallet) {
-      sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, message.key));
+      sendResponse(
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, message.key),
+      );
       return;
     }
     const isPopup = await existsPopups();
@@ -72,7 +75,7 @@ export class MessageHandler {
           .catch(() => {
             sendResponse(
               InjectionMessageInstance.failure(
-                'UNRESOLVED_TRANSACTION_EXISTS',
+                WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
                 message,
                 message.key,
               ),
@@ -98,7 +101,11 @@ export class MessageHandler {
           })
           .catch(() => {
             sendResponse(
-              InjectionMessageInstance.failure('UNEXPECTED_ERROR', message, message.key),
+              InjectionMessageInstance.failure(
+                WalletResponseFailureType.UNEXPECTED_ERROR,
+                message,
+                message.key,
+              ),
             );
           });
         break;

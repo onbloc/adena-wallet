@@ -1,23 +1,24 @@
+import { WalletResponseFailureType, WalletResponseType } from '@adena-wallet/sdk';
+import { isAirgapAccount } from 'adena-module';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
+import styled from 'styled-components';
 
-import { Text, DefaultInput, ErrorText, Button } from '@components/atoms';
-import { Title } from '@pages/popup/certify/login';
-import { RoutePath } from '@types';
-import { InjectionMessageInstance } from '@inject/message';
-import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import { MessageKeyType } from '@inject/message';
 import { PasswordValidationError } from '@common/errors';
+import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { validateEmptyPassword } from '@common/validation';
+import { Button, DefaultInput, ErrorText, Text } from '@components/atoms';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { WalletState } from '@states';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import LoadingApproveTransaction from './loading-approve-transaction';
-import mixins from '@styles/mixins';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { isAirgapAccount } from 'adena-module';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { InjectionMessageInstance } from '@inject/message';
+import { Title } from '@pages/popup/certify/login';
+import { WalletState } from '@states';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
+
+import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
@@ -56,7 +57,9 @@ export const ApproveLogin = (): JSX.Element => {
         break;
       case 'CREATE':
       case 'FAIL':
-        chrome.runtime.sendMessage(InjectionMessageInstance.failure('NO_ACCOUNT', requestData));
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, requestData),
+        );
         break;
       default:
         break;
@@ -99,7 +102,7 @@ export const ApproveLogin = (): JSX.Element => {
   };
 
   const redirect = (): void => {
-    switch (requestData?.type as MessageKeyType | undefined) {
+    switch (requestData?.type as WalletResponseType | undefined) {
       case 'DO_CONTRACT':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
           navigate(RoutePath.ApproveSignFailed);
@@ -132,7 +135,7 @@ export const ApproveLogin = (): JSX.Element => {
         return;
       default:
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.failure('UNEXPECTED_ERROR', requestData),
+          InjectionMessageInstance.failure(WalletResponseFailureType.UNEXPECTED_ERROR, requestData),
         );
         return;
     }

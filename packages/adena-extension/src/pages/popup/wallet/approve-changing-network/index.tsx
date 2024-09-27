@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
+import { CommonFullContentLayout } from '@components/atoms';
 import ApproveChangingNetwork from '@components/pages/approve-changing-network/approve-changing-network/approve-changing-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { CommonFullContentLayout } from '@components/atoms';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -42,14 +47,18 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     );
     if (!network) {
       setResponse(
-        InjectionMessageInstance.failure('UNADDED_NETWORK', requestData?.data, requestData?.key),
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNADDED_NETWORK,
+          requestData?.data,
+          requestData?.key,
+        ),
       );
       return;
     }
     await changeNetwork(network.id);
     setResponse(
       InjectionMessageInstance.success(
-        'SWITCH_NETWORK_SUCCESS',
+        WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS,
         requestData?.data,
         requestData?.key,
       ),
@@ -65,14 +74,18 @@ const ApproveChangingNetworkContainer: React.FC = () => {
 
   const onTimeout = (): void => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.NETWORK_TIMEOUT,
+        {},
+        requestData?.key,
+      ),
     );
   };
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
-        'SWITCH_NETWORK_REJECTED',
+        WalletResponseRejectType.SWITCH_NETWORK_REJECTED,
         requestData?.data,
         requestData?.key,
       ),

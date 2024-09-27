@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
+import { CommonFullContentLayout } from '@components/atoms';
 import ApproveAddingNetwork from '@components/pages/approve-adding-network/approve-adding-network/approve-adding-network';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { CommonFullContentLayout } from '@components/atoms';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
@@ -38,7 +43,11 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     setProcessing(true);
     await addNetwork(chainName, rpcUrl, chainId, '');
     setResponse(
-      InjectionMessageInstance.success('ADD_NETWORK_SUCCESS', requestData?.data, requestData?.key),
+      InjectionMessageInstance.success(
+        WalletResponseSuccessType.ADD_NETWORK_SUCCESS,
+        requestData?.data,
+        requestData?.key,
+      ),
     );
     setDone(true);
   }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
@@ -51,13 +60,21 @@ const ApproveAddingNetworkContainer: React.FC = () => {
 
   const onTimeout = (): void => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.NETWORK_TIMEOUT,
+        {},
+        requestData?.key,
+      ),
     );
   };
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('ADD_NETWORK_REJECTED', requestData?.data, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.ADD_NETWORK_REJECTED,
+        requestData?.data,
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

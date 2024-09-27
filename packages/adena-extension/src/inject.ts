@@ -1,10 +1,19 @@
-import { EVENT_KEYS } from '@common/constants/event-key.constant';
-import {
-  AdenaExecutor,
-  RequestAddedNetworkMessage,
-  RequestDoContractMessage,
-} from './inject/executor/executor';
+import { WalletResponse } from '@adena-wallet/sdk';
 import manifest from '@public/manifest.json';
+
+import { EVENT_KEYS } from '@common/constants/event-key.constant';
+
+import { AdenaExecutor } from './inject/executor/executor';
+import {
+  AddEstablishResponse,
+  AddNetworkParams,
+  AddNetworkResponse,
+  DoContractResponse,
+  GetAccountResponse,
+  SignTxResponse,
+  SwitchNetworkResponse,
+  TransactionParams,
+} from './inject/types';
 
 function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) => void): void {
   event.stopImmediatePropagation();
@@ -14,37 +23,37 @@ function callbackCustomEvent<T>(event: CustomEvent<T>, callback: (message: T) =>
 const init = (): void => {
   const adena = {
     version: manifest.version,
-    async AddEstablish(name: string): Promise<unknown> {
+    async AddEstablish(name: string): Promise<AddEstablishResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.addEstablish(name);
       return response;
     },
-    async DoContract(message: RequestDoContractMessage): Promise<unknown> {
+    async DoContract(message: TransactionParams): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.doContract(message);
       return response;
     },
-    async GetAccount(): Promise<unknown> {
+    async GetAccount(): Promise<GetAccountResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.getAccount();
       return response;
     },
-    async Sign(message: RequestDoContractMessage): Promise<unknown> {
+    async Sign(message: TransactionParams): Promise<WalletResponse<unknown>> {
       const executor = new AdenaExecutor();
       const response = await executor.signAmino(message);
       return response;
     },
-    async SignTx(message: RequestDoContractMessage): Promise<unknown> {
+    async SignTx(message: TransactionParams): Promise<SignTxResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.signTx(message);
       return response;
     },
-    async AddNetwork(chain: RequestAddedNetworkMessage): Promise<unknown> {
+    async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.addNetwork(chain);
       return response;
     },
-    async SwitchNetwork(chainId: string): Promise<unknown> {
+    async SwitchNetwork(chainId: string): Promise<SwitchNetworkResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.switchNetwork(chainId);
       return response;

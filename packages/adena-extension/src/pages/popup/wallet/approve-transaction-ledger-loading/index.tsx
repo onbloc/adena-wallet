@@ -1,13 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { isLedgerAccount, AdenaLedgerConnector } from 'adena-module';
 import { TM2Error } from '@gnolang/tm2-js-client';
+import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import React, { useEffect, useState } from 'react';
 
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
-import { InjectionMessageInstance } from '@inject/message';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import { InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
@@ -62,7 +67,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         if (!response) {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
-              'TRANSACTION_FAILED',
+              WalletResponseFailureType.TRANSACTION_FAILED,
               {
                 hash,
                 error: null,
@@ -75,7 +80,7 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         if (response instanceof TM2Error || response instanceof Error) {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
-              'TRANSACTION_FAILED',
+              WalletResponseFailureType.TRANSACTION_FAILED,
               {
                 hash,
                 error: response,
@@ -87,7 +92,11 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         }
 
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
+          InjectionMessageInstance.success(
+            WalletResponseSuccessType.TRANSACTION_SUCCESS,
+            response,
+            requestData?.key,
+          ),
         );
         return true;
       })
@@ -97,7 +106,11 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         }
         if (error.message === 'Transaction signing request was rejected by the user') {
           chrome.runtime.sendMessage(
-            InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
+            InjectionMessageInstance.failure(
+              WalletResponseRejectType.TRANSACTION_REJECTED,
+              {},
+              requestData?.key,
+            ),
           );
         }
         return false;
@@ -111,7 +124,11 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
       return;
     }
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.TRANSACTION_REJECTED,
+        {},
+        requestData.key,
+      ),
     );
   };
 
