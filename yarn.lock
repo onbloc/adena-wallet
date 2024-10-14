@@ -7718,7 +7718,7 @@ __metadata:
     styled-components: ^5.3.11
     ts-jest: ^29.1.2
     ts-loader: ^9.5.1
-    typescript: ^4.9.5
+    typescript: ^5.6.3
     url-loader: ^4.1.1
     uuidv4: ^6.2.13
     webpack: ^5.90.3
@@ -7772,7 +7772,7 @@ __metadata:
     rollup-plugin-dotenv: ^0.5.0
     rollup-plugin-node-builtins: ^2.1.2
     rollup-plugin-typescript2: ^0.36.0
-    typescript: ^4.9.5
+    typescript: ^5.6.3
   languageName: unknown
   linkType: soft
 
@@ -7805,7 +7805,7 @@ __metadata:
     rollup-plugin-node-builtins: ^2.1.2
     rollup-plugin-polyfill-node: ^0.13.0
     rollup-plugin-typescript2: ^0.36.0
-    typescript: ^4.9.5
+    typescript: ^5.6.3
   languageName: unknown
   linkType: soft
 
@@ -7827,7 +7827,7 @@ __metadata:
     lint-staged: ^15.2.2
     prettier: 3.2.5
     tsconfig-paths-webpack-plugin: ^4.1.0
-    typescript: 4.9.5
+    typescript: 5.6.3
   languageName: unknown
   linkType: soft
 
@@ -20022,23 +20022,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:4.9.5, typescript@npm:^4.9.5":
-  version: 4.9.5
-  resolution: "typescript@npm:4.9.5"
+"typescript@npm:5.6.3, typescript@npm:^5.6.3":
+  version: 5.6.3
+  resolution: "typescript@npm:5.6.3"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: ee000bc26848147ad423b581bd250075662a354d84f0e06eb76d3b892328d8d4440b7487b5a83e851b12b255f55d71835b008a66cbf8f255a11e4400159237db
+  checksum: ba302f8822777ebefb28b554105f3e074466b671e7444ec6b75dadc008a62f46f373d9e57ceced1c433756d06c8b7dc569a7eefdf3a9573122a49205ff99021a
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@4.9.5#~builtin<compat/typescript>, typescript@patch:typescript@^4.9.5#~builtin<compat/typescript>":
-  version: 4.9.5
-  resolution: "typescript@patch:typescript@npm%3A4.9.5#~builtin<compat/typescript>::version=4.9.5&hash=23ec76"
+"typescript@patch:typescript@5.6.3#~builtin<compat/typescript>, typescript@patch:typescript@^5.6.3#~builtin<compat/typescript>":
+  version: 5.6.3
+  resolution: "typescript@patch:typescript@npm%3A5.6.3#~builtin<compat/typescript>::version=5.6.3&hash=1f5320"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: ab417a2f398380c90a6cf5a5f74badd17866adf57f1165617d6a551f059c3ba0a3e4da0d147b3ac5681db9ac76a303c5876394b13b3de75fdd5b1eaa06181c9d
+  checksum: ade87bce2363ee963eed0e4ca8a312ea02c81873ebd53609bc3f6dc0a57f6e61ad7e3fb8cbb7f7ab8b5081cbee801b023f7c4823ee70b1c447eae050e6c7622b
   languageName: node
   linkType: hard
 
