@@ -1,3 +1,5 @@
+import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
+
 export interface TokenModel {
   main: boolean;
   tokenId: string;
@@ -59,11 +61,17 @@ export interface TokenInfo {
 
 export interface AdditionalTokenProps {
   opened: boolean;
+  addingType: AddingType;
   selected: boolean;
   keyword: string;
+  manualTokenPath: string;
   tokenInfos: TokenInfo[];
-  selectedTokenInfo?: TokenInfo;
+  selectedTokenInfo: TokenInfo | null;
+  isLoadingManualGRC20Token: boolean;
+  isErrorManualGRC20Token: boolean;
+  selectAddingType: (type: AddingType) => void;
   onChangeKeyword: (keyword: string) => void;
+  onChangeManualTokenPath: (keyword: string) => void;
   onClickOpenButton: (opened: boolean) => void;
   onClickListItem: (tokenId: string) => void;
   onClickBack: () => void;

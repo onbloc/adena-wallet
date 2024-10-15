@@ -1,25 +1,27 @@
 import { AxiosInstance } from 'axios';
 
 import { StorageManager } from '@common/storage/storage-manager';
+import { TokenMapper } from './mapper/token-mapper';
 import {
   GRC20TokenResponse,
   IBCNativeTokenResponse,
   IBCTokenResponse,
   NativeTokenResponse,
 } from './response/token-asset-response';
-import { TokenMapper } from './mapper/token-mapper';
 
+import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { makeRPCRequest } from '@common/utils/fetch-utils';
+import { parseGRC20ByABCIRender } from '@common/utils/parse-utils';
 import {
-  NativeTokenModel,
   GRC20TokenModel,
   IBCNativeTokenModel,
   IBCTokenModel,
-  TokenModel,
+  NativeTokenModel,
   NetworkMetainfo,
+  TokenModel,
 } from '@types';
-import { makeAllRealmsQuery } from './token.queries';
 import { mapGRC20TokenModel } from './mapper/token-query.mapper';
-import { makeRPCRequest } from '@common/utils/fetch-utils';
+import { makeAllRealmsQuery } from './token.queries';
 
 type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
 
@@ -63,14 +65,18 @@ export class TokenRepository {
 
   private networkMetainfo: NetworkMetainfo | null;
 
+  private gnoProvider: GnoProvider | null = null;
+
   constructor(
     localStorage: StorageManager,
     networkInstance: AxiosInstance,
     networkMetainfo: NetworkMetainfo | null,
+    gnoProvider: GnoProvider | null,
   ) {
     this.localStorage = localStorage;
     this.networkInstance = networkInstance;
     this.networkMetainfo = networkMetainfo;
+    this.gnoProvider = gnoProvider;
   }
 
   private get networkId(): string {
@@ -168,6 +174,29 @@ export class TokenRepository {
     await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', {});
     return true;
   };
+
+  public async fetchGRC20TokenByPackagePath(packagePath: string): Promise<GRC20TokenModel> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
+      .getRenderOutput(packagePath, '')
+      .then(parseGRC20ByABCIRender);
+
+    return {
+      main: false,
+      tokenId: packagePath,
+      pkgPath: packagePath,
+      networkId: this.networkId,
+      display: false,
+      type: 'grc20',
+      name: tokenName,
+      symbol: tokenSymbol,
+      decimals: tokenDecimals,
+      image: '',
+    };
+  }
 
   public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
     if (this.apiUrl) {
