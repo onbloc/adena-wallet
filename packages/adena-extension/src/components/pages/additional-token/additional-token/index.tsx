@@ -20,7 +20,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   tokenInfos,
   selectedTokenInfo,
   isLoadingManualGRC20Token,
-  isErrorManualGRC20Token,
+  errorManualGRC20Token,
   selectAddingType,
   onChangeKeyword,
   onChangeManualTokenPath,
@@ -43,12 +43,16 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   }, [addingType, isLoadingManualGRC20Token]);
 
   const tokenPathInputErrorMessage = useMemo(() => {
-    if (!isErrorManualGRC20Token) {
+    if (!errorManualGRC20Token) {
       return null;
     }
 
-    return 'Invalid realm path';
-  }, [isErrorManualGRC20Token]);
+    return errorManualGRC20Token.message;
+  }, [errorManualGRC20Token]);
+
+  const enabledAddButton = useMemo(() => {
+    return selectedTokenInfo && !errorManualGRC20Token;
+  }, [selectedTokenInfo, errorManualGRC20Token]);
 
   return (
     <AdditionalTokenWrapper>
@@ -100,7 +104,10 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
         <button className='cancel-button' onClick={onClickCancel}>
           Cancel
         </button>
-        <button className={selected ? 'add-button' : 'add-button disabled'} onClick={onClickAdd}>
+        <button
+          className={enabledAddButton ? 'add-button' : 'add-button disabled'}
+          onClick={onClickAdd}
+        >
           Add
         </button>
       </div>

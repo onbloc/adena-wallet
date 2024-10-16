@@ -1,3 +1,4 @@
+import { BaseError } from '@common/errors';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
 
 export interface TokenModel {
@@ -68,7 +69,7 @@ export interface AdditionalTokenProps {
   tokenInfos: TokenInfo[];
   selectedTokenInfo: TokenInfo | null;
   isLoadingManualGRC20Token: boolean;
-  isErrorManualGRC20Token: boolean;
+  errorManualGRC20Token: BaseError | null;
   selectAddingType: (type: AddingType) => void;
   onChangeKeyword: (keyword: string) => void;
   onChangeManualTokenPath: (keyword: string) => void;

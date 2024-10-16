@@ -20,7 +20,7 @@ describe('AdditionalToken Component', () => {
       selectedTokenInfo: null,
       tokenInfos: [],
       isLoadingManualGRC20Token: false,
-      isErrorManualGRC20Token: false,
+      errorManualGRC20Token: null,
       selectAddingType: () => {
         return;
       },
