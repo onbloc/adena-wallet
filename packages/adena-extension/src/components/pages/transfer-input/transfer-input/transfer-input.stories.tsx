@@ -1,6 +1,6 @@
-import TransferInput, { type TransferInputProps } from './transfer-input';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import TransferInput, { type TransferInputProps } from './transfer-input';
 
 export default {
   title: 'components/transfer/TransferInput',
@@ -40,6 +40,10 @@ export const Default: StoryObj<TransferInputProps> = {
       onClickInputIcon: action('click input icon'),
       onChangeAddress: action('change address'),
       onClickAddressBook: action('click address book'),
+    },
+    memoInput: {
+      memo: '',
+      onChangeMemo: action('onChangeMemo'),
     },
     isNext: true,
     hasBackButton: true,

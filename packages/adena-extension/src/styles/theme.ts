@@ -73,6 +73,7 @@ enum Red {
   _5 = '#EF2D21',
   _6 = '#D6160A',
   _7 = '#BB0B00',
+  _8 = '#FB923C',
   a = '#E7323B',
   b = '#B62E29',
 }
@@ -416,10 +417,10 @@ const theme = {
   webWarning: WebWarning,
 };
 
-export const getTheme = <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(
-  val1: T1,
-  val2: T2,
-) => ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] => theme[val1][val2];
+export const getTheme =
+  <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
+  ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
+    theme[val1][val2];
 
 export default theme;
 

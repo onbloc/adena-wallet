@@ -1,27 +1,18 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import styled from 'styled-components';
+import React, { useCallback, useEffect, useState } from 'react';
 
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
-import { RoutePath } from '@types';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { isNativeTokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
+import { RoutePath } from '@types';
 
-import { TokenModel } from '@types';
-import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
-
-const TransferInputLayoutWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
-  width: 100%;
-  height: 100%;
-  padding: 24px 20px;
-`;
+import { TokenModel } from '@types';
 
 interface HistoryData {
   isTokenSearch: boolean;
@@ -50,6 +41,7 @@ const TransferInputContainer: React.FC = () => {
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
+  const [memo, setMemo] = useState('');
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
@@ -86,6 +78,10 @@ const TransferInputContainer: React.FC = () => {
       balanceInput.onChangeAmount(historyData.balanceAmount);
     }
   }, [getHistoryData()]);
+
+  const onChangeMemo = useCallback((memo: string) => {
+    setMemo(memo);
+  }, []);
 
   const saveHistoryData = (): void => {
     if (!tokenMetainfo) {
@@ -154,18 +150,17 @@ const TransferInputContainer: React.FC = () => {
   }
 
   return (
-    <TransferInputLayoutWrapper>
-      <TransferInput
-        hasBackButton={isTokenSearch}
-        tokenMetainfo={tokenMetainfo}
-        addressInput={addressBookInput}
-        balanceInput={balanceInput}
-        isNext={isNext()}
-        onClickBack={goBack}
-        onClickCancel={onClickCancel}
-        onClickNext={onClickNext}
-      />
-    </TransferInputLayoutWrapper>
+    <TransferInput
+      hasBackButton={isTokenSearch}
+      tokenMetainfo={tokenMetainfo}
+      addressInput={addressBookInput}
+      balanceInput={balanceInput}
+      memoInput={{ memo, onChangeMemo }}
+      isNext={isNext()}
+      onClickBack={goBack}
+      onClickCancel={onClickCancel}
+      onClickNext={onClickNext}
+    />
   );
 };
 

@@ -1,13 +1,15 @@
 import React from 'react';
 
-import { SubHeader } from '@components/atoms';
-import { TransferInputWrapper } from './transfer-input.styles';
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { SubHeader } from '@components/atoms';
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import { TransferInputWrapper } from './transfer-input.styles';
 
+import { BottomFixedButtonGroup } from '@components/molecules';
 import { TokenModel } from '@types';
+import MemoInput from '../memo-input/memo-input';
 
 export interface TransferInputProps {
   tokenMetainfo?: TokenModel;
@@ -36,6 +38,10 @@ export interface TransferInputProps {
     onChangeAmount: (value: string) => void;
     onClickMax: () => void;
   };
+  memoInput: {
+    memo: string;
+    onChangeMemo: (memo: string) => void;
+  };
   isNext: boolean;
   hasBackButton: boolean;
   onClickBack: () => void;
@@ -47,6 +53,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
   tokenMetainfo,
   addressInput,
   balanceInput,
+  memoInput,
   hasBackButton,
   isNext,
   onClickBack,
@@ -75,12 +82,23 @@ const TransferInput: React.FC<TransferInputProps> = ({
       <div className='balance-input-wrapper'>
         <BalanceInput {...balanceInput} />
       </div>
-      <div className='button-group'>
-        <button onClick={onClickCancel}>Cancel</button>
-        <button className={isNext ? 'next' : 'next disabled'} onClick={onClickNext}>
-          Next
-        </button>
+      <div className='memo-input-wrapper'>
+        <MemoInput {...memoInput} />
       </div>
+
+      <BottomFixedButtonGroup
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel,
+        }}
+        rightButton={{
+          text: 'Next',
+          onClick: onClickNext,
+          disabled: !isNext,
+          primary: true,
+        }}
+        filled
+      />
     </TransferInputWrapper>
   );
 };
