@@ -1,3 +1,4 @@
+import { TRANSACTION_MESSAGE_SEND_OF_REGISTER } from '@common/constants/tx.constant';
 import { createMessageOfVmCall } from './vm';
 
 export const createMessageOfVmRegister = (info: {
@@ -11,7 +12,7 @@ export const createMessageOfVmRegister = (info: {
   value: { caller: string; send: string; pkg_path: string; func: string; args: string[] };
 } => {
   const invitor = info.invitor ?? '';
-  const send = info.send ?? '200000000ugnot';
+  const send = info.send ?? TRANSACTION_MESSAGE_SEND_OF_REGISTER;
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/users',
