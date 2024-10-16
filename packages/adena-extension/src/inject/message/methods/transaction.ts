@@ -1,3 +1,4 @@
+import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
 import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
@@ -21,7 +22,7 @@ export const signAmino = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveSign,
     requestData,
-    InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,
   );
 };
@@ -44,7 +45,7 @@ export const signTransaction = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveSignTransaction,
     requestData,
-    InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,
   );
 };
@@ -67,7 +68,11 @@ export const doContract = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveTransaction,
     requestData,
-    InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData.key),
+    InjectionMessageInstance.failure(
+      WalletResponseRejectType.TRANSACTION_REJECTED,
+      {},
+      requestData.key,
+    ),
     sendResponse,
   );
 };
@@ -77,16 +82,32 @@ export const validateInjectionData = (
   requestData: InjectionMessage,
 ): InjectionMessage | null => {
   if (!address) {
-    return InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key);
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.NO_ACCOUNT,
+      {},
+      requestData.key,
+    );
   }
   if (!validateInjectionAddress(address)) {
-    return InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key);
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.NO_ACCOUNT,
+      {},
+      requestData.key,
+    );
   }
   if (!validateInjectionTransactionType(requestData)) {
-    return InjectionMessageInstance.failure('UNSUPPORTED_TYPE', {}, requestData?.key);
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.UNSUPPORTED_TYPE,
+      {},
+      requestData?.key,
+    );
   }
   if (!validateInjectionTransactionMessage(address, requestData)) {
-    return InjectionMessageInstance.failure('ACCOUNT_MISMATCH', {}, requestData?.key);
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.ACCOUNT_MISMATCH,
+      {},
+      requestData?.key,
+    );
   }
   return null;
 };

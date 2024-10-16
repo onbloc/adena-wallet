@@ -1,24 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
+import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import BigNumber from 'bignumber.js';
-import { Account, isLedgerAccount, Document, isAirgapAccount } from 'adena-module';
-import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
 
-import { ApproveTransaction } from '@components/molecules';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { RoutePath } from '@types';
-import { validateInjectionData } from '@inject/message/methods';
-import { useNetwork } from '@hooks/use-network';
+import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { validateInjectionData } from '@inject/message/methods';
+import { RoutePath } from '@types';
 
 function mappedTransactionData(document: Document): {
   messages: readonly any[];
@@ -47,7 +52,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
     const { healthy } = await fetchHealth(rpcUrl);
     if (healthy === false) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestKey),
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey),
       );
       return;
     }
@@ -167,7 +172,7 @@ const ApproveTransactionContainer: React.FC = () => {
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
-            'TRANSACTION_FAILED',
+            WalletResponseFailureType.TRANSACTION_FAILED,
             { error: { message: error?.message } },
             requestData?.key,
           ),
@@ -182,7 +187,13 @@ const ApproveTransactionContainer: React.FC = () => {
       return false;
     }
     if (!document || !currentNetwork || !currentAccount || !wallet) {
-      setResponse(InjectionMessageInstance.failure('UNEXPECTED_ERROR', {}, requestData?.key));
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          {},
+          requestData?.key,
+        ),
+      );
       return false;
     }
 
@@ -207,7 +218,7 @@ const ApproveTransactionContainer: React.FC = () => {
       if (!response) {
         setResponse(
           InjectionMessageInstance.failure(
-            'TRANSACTION_FAILED',
+            WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
               error: null,
@@ -220,10 +231,13 @@ const ApproveTransactionContainer: React.FC = () => {
       if (response instanceof TM2Error || response instanceof Error) {
         setResponse(
           InjectionMessageInstance.failure(
-            'TRANSACTION_FAILED',
+            WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: response,
+              error: {
+                message: response.message,
+                stack: response.stack,
+              },
             },
             requestData?.key,
           ),
@@ -232,7 +246,11 @@ const ApproveTransactionContainer: React.FC = () => {
       }
 
       setResponse(
-        InjectionMessageInstance.success('TRANSACTION_SUCCESS', response, requestData?.key),
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.TRANSACTION_SUCCESS,
+          response,
+          requestData?.key,
+        ),
       );
       return true;
     } catch (e) {
@@ -242,7 +260,13 @@ const ApproveTransactionContainer: React.FC = () => {
           return false;
         }
       }
-      setResponse(InjectionMessageInstance.failure('TRANSACTION_FAILED', {}, requestData?.key));
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.TRANSACTION_FAILED,
+          {},
+          requestData?.key,
+        ),
+      );
     }
     return false;
   };
@@ -297,7 +321,11 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [currentAccount, requestData, gnoProvider]);
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('TRANSACTION_REJECTED', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.TRANSACTION_REJECTED,
+        {},
+        requestData?.key,
+      ),
     );
   };
 
@@ -309,7 +337,11 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const onTimeoutSendTransaction = useCallback(() => {
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, requestData?.key),
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.NETWORK_TIMEOUT,
+        {},
+        requestData?.key,
+      ),
     );
   }, [requestData]);
 

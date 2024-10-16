@@ -1,3 +1,8 @@
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { getSiteName } from '@common/utils/client-utils';
 import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
@@ -13,14 +18,22 @@ export const getAccount = async (
 
     const isLocked = await core.walletService.isLocked();
     if (isLocked) {
-      sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.WALLET_LOCKED,
+          {},
+          requestData.key,
+        ),
+      );
       return;
     }
 
     const currentAccountAddress = await core.getCurrentAddress();
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
-      sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
+      sendResponse(
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+      );
       return;
     }
 
@@ -31,13 +44,15 @@ export const getAccount = async (
     );
     sendResponse(
       InjectionMessageInstance.success(
-        'GET_ACCOUNT',
+        WalletResponseSuccessType.GET_ACCOUNT_SUCCESS,
         { ...accountInfo, chainId: network.chainId },
         requestData.key,
       ),
     );
   } catch (error) {
-    sendResponse(InjectionMessageInstance.failure('NO_ACCOUNT', {}, requestData.key));
+    sendResponse(
+      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+    );
   }
 };
 
@@ -53,7 +68,13 @@ export const addEstablish = async (
   if (!isLocked) {
     const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
     if (isEstablished) {
-      sendResponse(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, message.key));
+      sendResponse(
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.CONNECTION_SUCCESS,
+          {},
+          message.key,
+        ),
+      );
       return true;
     }
   }
@@ -61,7 +82,7 @@ export const addEstablish = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveEstablish,
     message,
-    InjectionMessageInstance.failure('CONNECTION_REJECTED', {}, message.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.CONNECTION_REJECTED, {}, message.key),
     sendResponse,
   );
   return true;
