@@ -7,12 +7,16 @@ export const parseGRC20ByABCIRender = (
   totalSupply: bigint;
   knownAccounts: bigint;
 } => {
+  if (!response) {
+    throw new Error('failed parse grc20 token render');
+  }
+
   const regex =
     /#\s(?<tokenName>.+)\s\(\$(?<tokenSymbol>.+)\)\s*\* \*\*Decimals\*\*: (?<tokenDecimals>\d+)\s*\* \*\*Total supply\*\*: (?<totalSupply>\d+)\s*\* \*\*Known accounts\*\*: (?<knownAccounts>\d+)/;
 
   const match = response.match(regex);
 
-  if (!match || !match.groups) {
+  if (!match || !match?.groups) {
     throw new Error('failed parse grc20 token render');
   }
 
@@ -58,5 +62,36 @@ export const parseReamPathItemsByPath = (
     type,
     namespace,
     remainPath: remainPathItems.join('/'),
+  };
+};
+
+export const parseGRC20ByFileContents = (
+  contents: string,
+): {
+  tokenName: string;
+  tokenSymbol: string;
+  tokenDecimals: number;
+} | null => {
+  const newBankerRegex = /grc20\.NewBanker\(([^)]+)\)/;
+  const match = contents.match(newBankerRegex);
+  const matchLine = match?.[1] || null;
+
+  if (!matchLine) {
+    return null;
+  }
+
+  const args = matchLine.split(',').map((arg) => arg.trim());
+  if (args.length < 3) {
+    return null;
+  }
+
+  const tokenName = args[0].startsWith('"') ? args[0].slice(1, -1) : args[0];
+  const tokenSymbol = args[1].startsWith('"') ? args[1].slice(1, -1) : args[1];
+  const tokenDecimals = isNaN(Number(args[2])) ? 0 : Number(args[2]);
+
+  return {
+    tokenName,
+    tokenSymbol,
+    tokenDecimals,
   };
 };

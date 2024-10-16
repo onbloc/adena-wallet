@@ -11,7 +11,7 @@ import {
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { makeRPCRequest } from '@common/utils/fetch-utils';
-import { parseGRC20ByABCIRender } from '@common/utils/parse-utils';
+import { parseGRC20ByABCIRender, parseGRC20ByFileContents } from '@common/utils/parse-utils';
 import {
   GRC20TokenModel,
   IBCNativeTokenModel,
@@ -180,22 +180,28 @@ export class TokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
-      .getRenderOutput(packagePath, '')
-      .then(parseGRC20ByABCIRender);
+    const fileContents = await this.gnoProvider.getFileContent(packagePath).catch(() => null);
+    const fileNames = fileContents?.split('\n') || [];
 
-    return {
-      main: false,
-      tokenId: packagePath,
-      pkgPath: packagePath,
-      networkId: this.networkId,
-      display: false,
-      type: 'grc20',
-      name: tokenName,
-      symbol: tokenSymbol,
-      decimals: tokenDecimals,
-      image: '',
-    };
+    if (fileContents === null || fileNames.length === 0) {
+      throw new Error('Not available realm');
+    }
+
+    const renderTokenInfo = await this.fetchGRC20TokenInfoQueryRender(packagePath).catch(
+      () => null,
+    );
+    if (renderTokenInfo) {
+      return renderTokenInfo;
+    }
+
+    const fileTokenInfo = await this.fetchGRC20TokenInfoQueryFiles(packagePath, fileNames).catch(
+      () => null,
+    );
+    if (fileTokenInfo) {
+      return fileTokenInfo;
+    }
+
+    throw new Error('Realm is not GRC20');
   }
 
   public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
@@ -283,6 +289,67 @@ export class TokenRepository {
       .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
+
+  private async fetchGRC20TokenInfoQueryRender(
+    packagePath: string,
+  ): Promise<GRC20TokenModel | null> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
+      .getRenderOutput(packagePath, '')
+      .then(parseGRC20ByABCIRender);
+
+    return {
+      main: false,
+      tokenId: packagePath,
+      pkgPath: packagePath,
+      networkId: this.networkId,
+      display: false,
+      type: 'grc20',
+      name: tokenName,
+      symbol: tokenSymbol,
+      decimals: tokenDecimals,
+      image: '',
+    };
+  }
+
+  private async fetchGRC20TokenInfoQueryFiles(
+    packagePath: string,
+    fileNames: string[],
+  ): Promise<GRC20TokenModel | null> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    for (const fileName of fileNames) {
+      const filePath = [packagePath, fileName].join('/');
+      const contents = await this.gnoProvider.getFileContent(filePath).catch(() => null);
+      if (!contents) {
+        continue;
+      }
+
+      const tokenInfo = parseGRC20ByFileContents(contents);
+
+      if (tokenInfo) {
+        return {
+          main: false,
+          tokenId: packagePath,
+          pkgPath: packagePath,
+          networkId: this.networkId,
+          display: false,
+          type: 'grc20',
+          name: tokenInfo.tokenName,
+          symbol: tokenInfo.tokenSymbol,
+          decimals: tokenInfo.tokenDecimals,
+          image: '',
+        };
+      }
+    }
+
+    return null;
+  }
 
   private static postRPCRequest = <T = any>(
     axiosInstance: AxiosInstance,

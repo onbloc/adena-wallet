@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { TokenValidationError } from '@common/errors';
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
+import { isGRC20TokenModel } from '@common/validation';
 import AdditionalToken from '@components/pages/additional-token/additional-token';
 import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useDebounce } from '@hooks/use-debounce';
 import { useGRC20Token } from '@hooks/use-grc20-token';
 import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
 import { useNetwork } from '@hooks/use-network';
@@ -23,50 +26,63 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
   const [manualTokenPath, setManualTokenPath] = useState('');
 
-  useEffect(() => {
-    document.body.addEventListener('click', closeSelectBox);
-    return () => document.body.removeEventListener('click', closeSelectBox);
-  }, [document.body]);
-
-  useEffect(() => {
-    if (finished) {
-      goBack();
-    }
-  }, [finished]);
-
   const { data: grc20Tokens } = useGRC20Tokens();
 
+  const {
+    debouncedValue: debouncedManualTokenPath,
+    setDebouncedValue: setDebouncedManualTokenPath,
+    isLoading: isLoadingDebounce,
+  } = useDebounce(manualTokenPath, 500);
   const { data: manualGRC20Token, isFetching: isFetchingManualGRC20Token } =
-    useGRC20Token(manualTokenPath);
+    useGRC20Token(debouncedManualTokenPath);
 
-  const isValidManualGRC20TokenPath = useMemo(() => {
+  const isValidManualGRC20Token = useMemo(() => {
+    if (manualTokenPath === '') {
+      return true;
+    }
+
     try {
       parseReamPathItemsByPath(manualTokenPath);
+      return true;
     } catch {
       return false;
     }
-    return true;
   }, [manualTokenPath]);
 
-  const isLoadingManualGRC20Token = useMemo(() => {
-    if (!isValidManualGRC20TokenPath) {
-      return false;
-    }
-
-    return isFetchingManualGRC20Token;
-  }, [isValidManualGRC20TokenPath, isFetchingManualGRC20Token]);
-
-  const isErrorManualGRC20Token = useMemo(() => {
+  const errorManualGRC20Token = useMemo(() => {
     if (manualTokenPath === '') {
+      return null;
+    }
+
+    if (!isValidManualGRC20Token || !manualGRC20Token) {
+      return new TokenValidationError('INVALID_REALM_PATH');
+    }
+
+    const isRegistered = tokenMetainfos.some((tokenMetaInfo) => {
+      if (tokenMetaInfo.tokenId === manualTokenPath) {
+        return true;
+      }
+
+      if (isGRC20TokenModel(tokenMetaInfo)) {
+        return tokenMetaInfo.pkgPath === manualTokenPath;
+      }
+
+      return false;
+    });
+    if (isRegistered) {
+      return new TokenValidationError('ALREADY_ADDED');
+    }
+
+    return null;
+  }, [tokenMetainfos, isLoadingDebounce, manualGRC20Token, manualTokenPath]);
+
+  const isLoadingManualGRC20Token = useMemo(() => {
+    if (!isValidManualGRC20Token) {
       return false;
     }
 
-    if (isLoadingManualGRC20Token) {
-      return false;
-    }
-
-    return manualGRC20Token === null;
-  }, [isLoadingManualGRC20Token, manualTokenPath, manualGRC20Token]);
+    return isLoadingDebounce || isFetchingManualGRC20Token;
+  }, [isValidManualGRC20Token, isLoadingDebounce, isFetchingManualGRC20Token]);
 
   const tokenInfos: TokenInfo[] = useMemo(() => {
     if (!grc20Tokens) {
@@ -120,6 +136,7 @@ const ManageTokenAddedContainer: React.FC = () => {
     setAddingType(addingType);
     setKeyword('');
     setManualTokenPath('');
+    setDebouncedManualTokenPath('');
     setSelectedTokenInfo(null);
     setOpened(false);
     setSelected(false);
@@ -144,6 +161,10 @@ const ManageTokenAddedContainer: React.FC = () => {
   }, []);
 
   const onClickAdd = useCallback(async () => {
+    if (errorManualGRC20Token) {
+      return;
+    }
+
     if (!selected || !selectedTokenInfo || finished) {
       return;
     }
@@ -151,6 +172,17 @@ const ManageTokenAddedContainer: React.FC = () => {
     await addGRC20TokenMetainfo(selectedTokenInfo);
     setFinished(true);
   }, [selected, selectedTokenInfo, finished]);
+
+  useEffect(() => {
+    document.body.addEventListener('click', closeSelectBox);
+    return () => document.body.removeEventListener('click', closeSelectBox);
+  }, [document.body]);
+
+  useEffect(() => {
+    if (finished) {
+      goBack();
+    }
+  }, [finished]);
 
   useEffect(() => {
     if (addingType === AddingType.SEARCH) {
@@ -189,7 +221,7 @@ const ManageTokenAddedContainer: React.FC = () => {
         tokenInfos={tokenInfos ?? []}
         manualTokenPath={manualTokenPath}
         isLoadingManualGRC20Token={isLoadingManualGRC20Token}
-        isErrorManualGRC20Token={isErrorManualGRC20Token}
+        errorManualGRC20Token={errorManualGRC20Token}
         selectedTokenInfo={selectedTokenInfo}
         selectAddingType={selectAddingType}
         onChangeKeyword={onChangeKeyword}
