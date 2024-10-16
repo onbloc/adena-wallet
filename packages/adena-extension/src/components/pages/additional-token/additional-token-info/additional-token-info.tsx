@@ -1,8 +1,8 @@
-import { Loading } from '@components/atoms';
 import React from 'react';
 import {
   AdditionalTokenInfoItemWrapper,
   AdditionalTokenInfoWrapper,
+  TokenInfoValueLoadingBox,
 } from './additional-token-info.styles';
 
 export interface AdditionalTokenInfoProps {
@@ -27,11 +27,7 @@ const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
     <AdditionalTokenInfoItemWrapper>
       <span className='title'>{title}:</span>
 
-      {isLoading ? (
-        <Loading.Round width='40px' height='10px' radius='24px' />
-      ) : (
-        <span className='value'>{value}</span>
-      )}
+      {isLoading ? <TokenInfoValueLoadingBox /> : <span className='value'>{value}</span>}
     </AdditionalTokenInfoItemWrapper>
   );
 };
