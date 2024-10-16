@@ -1,7 +1,8 @@
+import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
+import { NetworkMetainfo, RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
-import { NetworkMetainfo, RoutePath } from '@types';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;
@@ -22,11 +23,23 @@ export const addNetwork = async (
     const chainName = data?.chainName || '';
     const rpcUrl = data?.rpcUrl || '';
     if (chainId === '' || chainName === '' || rpcUrl === '') {
-      sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.INVALID_FORMAT,
+          {},
+          requestData.key,
+        ),
+      );
       return;
     }
     if (rpcUrl.match(/\s/g)) {
-      sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.INVALID_FORMAT,
+          {},
+          requestData.key,
+        ),
+      );
       return;
     }
     const networks = await core.chainService.getNetworks();
@@ -37,18 +50,34 @@ export const addNetwork = async (
           current.deleted !== true,
       ) > -1;
     if (existNetwork) {
-      sendResponse(InjectionMessageInstance.failure('NETWORK_ALREADY_EXISTS', {}, requestData.key));
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.NETWORK_ALREADY_EXISTS,
+          {},
+          requestData.key,
+        ),
+      );
       return;
     }
 
     HandlerMethod.createPopup(
       RoutePath.ApproveAddingNetwork,
       requestData,
-      InjectionMessageInstance.failure('ADD_NETWORK_REJECTED', {}, requestData.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.ADD_NETWORK_REJECTED,
+        {},
+        requestData.key,
+      ),
       sendResponse,
     );
   } else {
-    sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
+    sendResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.WALLET_LOCKED,
+        {},
+        requestData.key,
+      ),
+    );
   }
 };
 
@@ -59,19 +88,31 @@ export const switchNetwork = async (
   const core = new InjectCore();
   const locked = await core.walletService.isLocked();
   if (locked) {
-    sendResponse(InjectionMessageInstance.failure('WALLET_LOCKED', {}, requestData.key));
+    sendResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.WALLET_LOCKED,
+        {},
+        requestData.key,
+      ),
+    );
     return;
   }
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
-    sendResponse(InjectionMessageInstance.failure('INVALID_FORMAT', {}, requestData.key));
+    sendResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.INVALID_FORMAT,
+        {},
+        requestData.key,
+      ),
+    );
     return;
   }
   const currentNetwork = await core.chainService.getCurrentNetwork();
   if (currentNetwork.networkId === chainId) {
     sendResponse(
       InjectionMessageInstance.failure(
-        'REDUNDANT_CHANGE_REQUEST',
+        WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST,
         requestData?.data,
         requestData?.key,
       ),
@@ -82,14 +123,24 @@ export const switchNetwork = async (
   const existNetwork =
     networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
   if (!existNetwork) {
-    sendResponse(InjectionMessageInstance.failure('UNADDED_NETWORK', {}, requestData.key));
+    sendResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.UNADDED_NETWORK,
+        {},
+        requestData.key,
+      ),
+    );
     return;
   }
 
   HandlerMethod.createPopup(
     RoutePath.ApproveChangingNetwork,
     requestData,
-    InjectionMessageInstance.failure('SWITCH_NETWORK_REJECTED', {}, requestData.key),
+    InjectionMessageInstance.failure(
+      WalletResponseRejectType.SWITCH_NETWORK_REJECTED,
+      {},
+      requestData.key,
+    ),
     sendResponse,
   );
 };

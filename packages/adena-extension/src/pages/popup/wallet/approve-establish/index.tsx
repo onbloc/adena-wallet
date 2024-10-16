@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import WalletConnect from '@components/pages/approve-establish/wallet-connect/wallet-connect';
+import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   createFaviconByHostname,
@@ -8,12 +7,14 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { useLocation, useNavigate } from 'react-router-dom';
+import WalletConnect from '@components/pages/approve-establish/wallet-connect/wallet-connect';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { RoutePath } from '@types';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ApproveEstablishContainer: React.FC = () => {
   const normalNavigate = useNavigate();
@@ -76,7 +77,9 @@ const ApproveEstablishContainer: React.FC = () => {
     const isEstablished = await establishService.isEstablishedBy(accountId, siteName);
     setLoading(false);
     if (isEstablished) {
-      chrome.runtime.sendMessage(InjectionMessageInstance.failure('ALREADY_CONNECTED', {}, key));
+      chrome.runtime.sendMessage(
+        InjectionMessageInstance.failure(WalletResponseFailureType.ALREADY_CONNECTED, {}, key),
+      );
       return;
     }
   };
@@ -90,8 +93,9 @@ const ApproveEstablishContainer: React.FC = () => {
     setProcessing(true);
     const { url, healthy } = await checkHealth(currentNetwork.rpcUrl);
     if (!healthy || url !== currentNetwork.rpcUrl) {
-      setResponse(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
-      chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
+      setResponse(
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
+      );
       return;
     }
 
@@ -104,7 +108,9 @@ const ApproveEstablishContainer: React.FC = () => {
       appName,
       favicon,
     });
-    setResponse(InjectionMessageInstance.success('CONNECTION_SUCCESS', {}, key));
+    setResponse(
+      InjectionMessageInstance.success(WalletResponseSuccessType.CONNECTION_SUCCESS, {}, key),
+    );
     setDone(true);
   };
 
@@ -115,7 +121,9 @@ const ApproveEstablishContainer: React.FC = () => {
   }, [done, response]);
 
   const onTimeout = (): void => {
-    chrome.runtime.sendMessage(InjectionMessageInstance.failure('NETWORK_TIMEOUT', {}, key));
+    chrome.runtime.sendMessage(
+      InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, key),
+    );
   };
 
   const checkHealth = async (rpcUrl: string): Promise<{ url: string; healthy: boolean }> => {

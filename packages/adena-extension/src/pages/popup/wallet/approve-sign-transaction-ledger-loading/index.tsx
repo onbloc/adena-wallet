@@ -1,11 +1,12 @@
+import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
 
+import { WalletResponseRejectType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import { ApproveLedgerLoading } from '@components/molecules';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 
 interface ApproveSignTransactionLedgerLoadingState {
   requestData?: InjectionMessage;
@@ -56,14 +57,22 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
       .then(async ({ signed }) => {
         const encodedTransaction = transactionService.encodeTransaction(signed);
         chrome.runtime.sendMessage(
-          InjectionMessageInstance.success('SIGN_TX', { encodedTransaction }, requestData?.key),
+          InjectionMessageInstance.success(
+            WalletResponseSuccessType.SIGN_SUCCESS,
+            { encodedTransaction },
+            requestData?.key,
+          ),
         );
         return true;
       })
       .catch((error: Error) => {
         if (error.message === 'Transaction signing request was rejected by the user') {
           chrome.runtime.sendMessage(
-            InjectionMessageInstance.failure('SIGN_REJECTED', {}, requestData?.key),
+            InjectionMessageInstance.failure(
+              WalletResponseRejectType.SIGN_REJECTED,
+              {},
+              requestData?.key,
+            ),
           );
           return true;
         }
@@ -81,7 +90,11 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
       return;
     }
     chrome.runtime.sendMessage(
-      InjectionMessageInstance.failure('SIGN_REJECTED', requestData.data, requestData.key),
+      InjectionMessageInstance.failure(
+        WalletResponseRejectType.SIGN_REJECTED,
+        requestData.data,
+        requestData.key,
+      ),
     );
   };
 
