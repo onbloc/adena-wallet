@@ -1,12 +1,18 @@
-import React, { createContext, useMemo } from 'react';
-import axios from 'axios';
 import { AdenaStorage } from '@common/storage';
+import { useWindowSize } from '@hooks/use-window-size';
+import { ChainRepository } from '@repositories/common';
+import { TokenRepository } from '@repositories/common/token';
+import { FaucetRepository } from '@repositories/faucet/faucet';
+import { TransactionHistoryRepository } from '@repositories/transaction';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
+import { FaucetService } from '@services/faucet';
+import { ChainService, TokenService } from '@services/resource';
+import { TransactionHistoryService, TransactionService } from '@services/transaction';
 import {
   WalletAccountService,
   WalletAddressBookService,
@@ -14,16 +20,10 @@ import {
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
-import { ChainService, TokenService } from '@services/resource';
-import { ChainRepository } from '@repositories/common';
-import { TransactionHistoryService, TransactionService } from '@services/transaction';
-import { TokenRepository } from '@repositories/common/token';
-import { TransactionHistoryRepository } from '@repositories/transaction';
-import { FaucetService } from '@services/faucet';
-import { FaucetRepository } from '@repositories/faucet/faucet';
-import { useWindowSize } from '@hooks/use-window-size';
-import { useRecoilValue } from 'recoil';
 import { NetworkState } from '@states';
+import axios from 'axios';
+import React, { createContext, useMemo } from 'react';
+import { useRecoilValue } from 'recoil';
 import { GnoProvider } from '../gno/gno-provider';
 
 export interface AdenaContextProps {
@@ -83,7 +83,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const tokenRepository = useMemo(
-    () => new TokenRepository(localStorage, axiosInstance, currentNetwork),
+    () => new TokenRepository(localStorage, axiosInstance, currentNetwork, gnoProvider),
     [localStorage, axiosInstance, currentNetwork],
   );
 

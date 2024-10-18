@@ -1,14 +1,14 @@
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
-  BlockInfo,
-  base64ToUint8Array,
-  newRequest,
   ABCIEndpoint,
   ABCIResponse,
-  RPCResponse,
-  parseABCI,
+  base64ToUint8Array,
+  BlockInfo,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  newRequest,
+  parseABCI,
+  RPCResponse,
   TransactionEndpoint,
 } from '@gnolang/tm2-js-client';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';

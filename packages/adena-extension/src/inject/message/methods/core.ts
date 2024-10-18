@@ -1,5 +1,5 @@
-import axios from 'axios';
 import { Account } from 'adena-module';
+import axios from 'axios';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { AdenaStorage } from '@common/storage';
@@ -40,7 +40,12 @@ export class InjectCore {
 
   private chainRepository = new ChainRepository(this.localStorage, this.axiosInstance);
 
-  private tokenRepository = new TokenRepository(this.localStorage, this.axiosInstance, null);
+  private tokenRepository = new TokenRepository(
+    this.localStorage,
+    this.axiosInstance,
+    null,
+    this.gnoProvider,
+  );
 
   public chainService = new ChainService(this.chainRepository);
 
