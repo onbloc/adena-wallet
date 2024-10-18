@@ -19,6 +19,10 @@ export const MemoInputWrapper = styled.div`
     border-radius: 30px;
     width: 100%;
     resize: none;
+
+    &.error {
+      border-color: ${getTheme('red', '_5')};
+    }
   }
 
   .warning-wrapper {
@@ -39,5 +43,13 @@ export const MemoInputWrapper = styled.div`
       ${fonts.body2Reg};
       color: ${getTheme('red', '_8')};
     }
+  }
+
+  .error-message {
+    position: relative;
+    margin-top: -10px;
+    padding: 0 16px;
+    ${fonts.captionReg};
+    color: ${getTheme('red', '_5')};
   }
 `;

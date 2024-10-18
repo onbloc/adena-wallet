@@ -7,6 +7,7 @@ import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
 import { TransferInputWrapper } from './transfer-input.styles';
 
+import { BaseError } from '@common/errors';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import { TokenModel } from '@types';
 import MemoInput from '../memo-input/memo-input';
@@ -40,6 +41,7 @@ export interface TransferInputProps {
   };
   memoInput: {
     memo: string;
+    memoError?: BaseError | null;
     onChangeMemo: (memo: string) => void;
   };
   isNext: boolean;
