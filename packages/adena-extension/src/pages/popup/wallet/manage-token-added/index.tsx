@@ -54,7 +54,12 @@ const ManageTokenAddedContainer: React.FC = () => {
       return null;
     }
 
-    if (!isValidManualGRC20Token || !manualGRC20Token) {
+    if (!isValidManualGRC20Token) {
+      return new TokenValidationError('INVALID_REALM_PATH');
+    }
+
+    const isLoading = isLoadingDebounce || isLoadingManualGRC20Token;
+    if (!isLoading && manualGRC20Token === null) {
       return new TokenValidationError('INVALID_REALM_PATH');
     }
 
