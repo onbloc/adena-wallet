@@ -49,6 +49,14 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
   }, [manualTokenPath]);
 
+  const isLoadingManualGRC20Token = useMemo(() => {
+    if (!isValidManualGRC20Token) {
+      return false;
+    }
+
+    return isLoadingDebounce || isFetchingManualGRC20Token;
+  }, [isValidManualGRC20Token, isLoadingDebounce, isFetchingManualGRC20Token]);
+
   const errorManualGRC20Token = useMemo(() => {
     if (manualTokenPath === '') {
       return null;
@@ -58,8 +66,11 @@ const ManageTokenAddedContainer: React.FC = () => {
       return new TokenValidationError('INVALID_REALM_PATH');
     }
 
-    const isLoading = isLoadingDebounce || isLoadingManualGRC20Token;
-    if (!isLoading && manualGRC20Token === null) {
+    if (isLoadingManualGRC20Token) {
+      return null;
+    }
+
+    if (manualGRC20Token === null) {
       return new TokenValidationError('INVALID_REALM_PATH');
     }
 
@@ -74,20 +85,13 @@ const ManageTokenAddedContainer: React.FC = () => {
 
       return false;
     });
+
     if (isRegistered) {
       return new TokenValidationError('ALREADY_ADDED');
     }
 
     return null;
-  }, [tokenMetainfos, isLoadingDebounce, manualGRC20Token, manualTokenPath]);
-
-  const isLoadingManualGRC20Token = useMemo(() => {
-    if (!isValidManualGRC20Token) {
-      return false;
-    }
-
-    return isLoadingDebounce || isFetchingManualGRC20Token;
-  }, [isValidManualGRC20Token, isLoadingDebounce, isFetchingManualGRC20Token]);
+  }, [tokenMetainfos, isLoadingManualGRC20Token, manualGRC20Token, manualTokenPath]);
 
   const tokenInfos: TokenInfo[] = useMemo(() => {
     if (!grc20Tokens) {
