@@ -4625,7 +4625,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/blocks@npm:7.6.20, @storybook/blocks@npm:^7.6.17":
+"@storybook/blocks@npm:7.6.20":
   version: 7.6.20
   resolution: "@storybook/blocks@npm:7.6.20"
   dependencies:
@@ -4656,6 +4656,37 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
   checksum: 328e35d0507241239a563f4a6096725cbda0ffc39829850d74b1855671b54a474de13960be717c63e0a5441522083dfd4fb93e26c4d120ed617e329ef7c67363
+  languageName: node
+  linkType: hard
+
+"@storybook/blocks@npm:^8.3.6":
+  version: 8.3.6
+  resolution: "@storybook/blocks@npm:8.3.6"
+  dependencies:
+    "@storybook/csf": ^0.1.11
+    "@storybook/global": ^5.0.0
+    "@storybook/icons": ^1.2.10
+    "@types/lodash": ^4.14.167
+    color-convert: ^2.0.1
+    dequal: ^2.0.2
+    lodash: ^4.17.21
+    markdown-to-jsx: ^7.4.5
+    memoizerific: ^1.11.3
+    polished: ^4.2.2
+    react-colorful: ^5.1.2
+    telejson: ^7.2.0
+    ts-dedent: ^2.0.0
+    util-deprecate: ^1.0.2
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    storybook: ^8.3.6
+  peerDependenciesMeta:
+    react:
+      optional: true
+    react-dom:
+      optional: true
+  checksum: 17b929a9b3ce585740dcd282a085ecdfc35f11393979f5eabbe8cdde9838eb6faa5e0738e20fc3e67f701092b626cbf53298ff68d5d5d370dca0a36a4a823e56
   languageName: node
   linkType: hard
 
@@ -4996,7 +5027,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/csf@npm:^0.1.2":
+"@storybook/csf@npm:^0.1.11, @storybook/csf@npm:^0.1.2":
   version: 0.1.11
   resolution: "@storybook/csf@npm:0.1.11"
   dependencies:
@@ -5031,6 +5062,16 @@ __metadata:
   version: 5.0.0
   resolution: "@storybook/global@npm:5.0.0"
   checksum: ede0ad35ec411fe31c61150dbd118fef344d1d0e72bf5d3502368e35cf68126f6b7ae4a0ab5e2ffe2f0baa3b4286f03ad069ba3e098e1725449ef08b7e154ba8
+  languageName: node
+  linkType: hard
+
+"@storybook/icons@npm:^1.2.10":
+  version: 1.2.12
+  resolution: "@storybook/icons@npm:1.2.12"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: a4c87cbfadfa1369680c4acc9d5ef90b9ff23e2ad603b6c0aba0dafe89780e5643c567160eb0544fe33f3b9f157adda2621ae45b4036ac001139a34926e00102
   languageName: node
   linkType: hard
 
@@ -7889,7 +7930,7 @@ __metadata:
     "@storybook/addon-essentials": ^7.6.17
     "@storybook/addon-interactions": ^7.6.17
     "@storybook/addon-links": ^7.6.17
-    "@storybook/blocks": ^7.6.17
+    "@storybook/blocks": ^8.3.6
     "@storybook/react": ^7.6.17
     "@storybook/react-webpack5": ^7.6.17
     "@storybook/testing-library": ^0.2.2
@@ -15613,7 +15654,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"markdown-to-jsx@npm:^7.1.8":
+"markdown-to-jsx@npm:^7.1.8, markdown-to-jsx@npm:^7.4.5":
   version: 7.5.0
   resolution: "markdown-to-jsx@npm:7.5.0"
   peerDependencies:
