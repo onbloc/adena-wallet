@@ -14,6 +14,7 @@ import { calculateByteSize } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
+import { useTransferInfo } from '@hooks/use-transfer-info';
 import { TokenModel } from '@types';
 
 interface HistoryData {
@@ -45,10 +46,11 @@ const TransferInputContainer: React.FC = () => {
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
-  const [memo, setMemo] = useState('');
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
+  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
+  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
 
   const memoError = useMemo(() => {
     const size = calculateByteSize(memo);
@@ -143,6 +145,7 @@ const TransferInputContainer: React.FC = () => {
     if (currentAccount && tokenMetainfo) {
       addressBookInput.updateAddressBook();
       balanceInput.updateCurrentBalance();
+      clearMemorizedTransferInfo();
     }
   }, [currentAccount, tokenMetainfo, currentNetwork.chainId]);
 

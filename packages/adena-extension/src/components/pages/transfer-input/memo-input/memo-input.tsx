@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import IconWarning from '@assets/warning-info.svg';
 import { BaseError } from '@common/errors';
@@ -40,6 +40,10 @@ const MemoInput: React.FC<MemoInputProps> = ({ memo, memoError, onChangeMemo }) 
     onChangeMemo(memo);
     handleResizeHeight();
   };
+
+  useEffect(() => {
+    handleResizeHeight();
+  }, []);
 
   return (
     <MemoInputWrapper>

@@ -7,7 +7,7 @@ export const TransferSummaryAddressWrapper = styled.div`
   width: 100%;
   height: auto;
   padding: 20px;
-  gap: 20px;
+  gap: 12px;
   ${fonts.body2Reg};
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;

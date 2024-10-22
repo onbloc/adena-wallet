@@ -11,6 +11,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useTransferInfo } from '@hooks/use-transfer-info';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
@@ -30,6 +31,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
 
@@ -159,6 +161,11 @@ const TransferSummaryContainer: React.FC = () => {
     return true;
   }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
 
+  const onClickBack = useCallback(() => {
+    setMemorizedTransferInfo(summaryInfo);
+    goBack();
+  }, [summaryInfo]);
+
   const onClickCancel = useCallback(() => {
     if (summaryInfo.isTokenSearch === true) {
       navigate(RoutePath.Wallet);
@@ -177,7 +184,7 @@ const TransferSummaryContainer: React.FC = () => {
         isErrorNetworkFee={isErrorNetworkFee}
         networkFee={summaryInfo.networkFee}
         memo={summaryInfo.memo}
-        onClickBack={goBack}
+        onClickBack={onClickBack}
         onClickCancel={onClickCancel}
         onClickSend={transfer}
       />
