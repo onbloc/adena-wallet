@@ -149,6 +149,7 @@ export type RouteParams = {
       value: string;
       denom: string;
     };
+    memo: string;
   };
   [RoutePath.TransferLedgerLoading]: {
     document: Document;

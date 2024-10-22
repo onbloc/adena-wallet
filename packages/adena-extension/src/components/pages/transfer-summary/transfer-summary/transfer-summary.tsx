@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { SubHeader } from '@components/atoms';
 
-import { TransferSummaryWrapper } from './transfer-summary.styles';
-import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
-import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
-import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-summary-network-fee';
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
+import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
+import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
+import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-summary-network-fee';
+import { TransferSummaryWrapper } from './transfer-summary.styles';
 
-import { TokenModel, Amount } from '@types';
+import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { Amount, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
@@ -20,6 +21,7 @@ export interface TransferSummaryProps {
     value: string;
     denom: string;
   };
+  memo: string;
   isErrorNetworkFee?: boolean;
   onClickBack: () => void;
   onClickCancel: () => void;
@@ -32,11 +34,22 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   transferBalance,
   toAddress,
   networkFee,
+  memo,
   isErrorNetworkFee,
   onClickBack,
   onClickCancel,
   onClickSend,
 }) => {
+  const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
+
+  const errorMessage = useMemo(() => {
+    if (!isErrorNetworkFee) {
+      return '';
+    }
+
+    return insufficientNetworkFeeError.message;
+  }, [isErrorNetworkFee]);
+
   return (
     <TransferSummaryWrapper>
       <div className='sub-header-wrapper'>
@@ -48,6 +61,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           title={`Sending ${tokenMetainfo.symbol}`}
         />
       </div>
+
       <div className='info-wrapper'>
         <TransferSummaryBalance
           tokenImage={tokenImage}
@@ -59,7 +73,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           <img src={`${ArrowDownIcon}`} alt='direction-icon' />
         </div>
 
-        <TransferSummaryAddress toAddress={toAddress} />
+        <TransferSummaryAddress toAddress={toAddress} memo={memo} />
       </div>
 
       <div className='network-fee-wrapper'>
@@ -68,7 +82,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           value={networkFee.value}
           denom={networkFee.denom}
         />
-        {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
+        {isErrorNetworkFee && <span className='error-message'>{errorMessage}</span>}
       </div>
 
       <div className='button-group'>

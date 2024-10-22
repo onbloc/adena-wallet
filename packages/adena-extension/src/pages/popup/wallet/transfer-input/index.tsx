@@ -123,6 +123,7 @@ const TransferInputContainer: React.FC = () => {
             denom: balanceInput.denom,
           },
           networkFee: balanceInput.networkFee,
+          memo,
         },
       });
     }

@@ -1,6 +1,6 @@
+import { TokenBalance } from '@components/molecules';
 import React from 'react';
 import { TransferSummaryBalanceWrapper } from './transfer-summary-balance.styles';
-import { TokenBalance } from '@components/molecules';
 
 export interface TransferSummaryBalanceProps {
   tokenImage: string;

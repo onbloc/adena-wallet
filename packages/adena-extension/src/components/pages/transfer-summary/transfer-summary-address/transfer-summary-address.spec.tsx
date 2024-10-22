@@ -10,6 +10,7 @@ describe('TransferSummaryAddress Component', () => {
   it('TransferSummaryAddress render', () => {
     const args: TransferSummaryAddressProps = {
       toAddress: '',
+      memo: '',
     };
 
     render(

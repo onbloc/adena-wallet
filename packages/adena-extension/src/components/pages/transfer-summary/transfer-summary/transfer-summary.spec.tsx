@@ -30,6 +30,7 @@ describe('TransferSummary Component', () => {
         value: '0.0048',
         denom: 'GNOT',
       },
+      memo: '',
       onClickBack: () => {
         return;
       },
