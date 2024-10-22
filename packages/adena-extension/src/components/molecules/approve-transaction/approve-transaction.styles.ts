@@ -110,6 +110,10 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
         color: ${getTheme('neutral', 'a')};
       }
     }
+
+    &.editable {
+      border: 1px solid ${getTheme('neutral', '_7')};
+    }
   }
 
   .fee-amount-wrapper {
@@ -119,7 +123,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     padding: 10px 18px;
     margin-bottom: 8px;
     background-color: ${getTheme('neutral', '_9')};
-    border: 1px solid ${getTheme('neutral', '_8')};
+    border: 1px solid ${getTheme('neutral', '_7')};
     ${fonts.body2Reg};
     ${({ isErrorNetworkFee, theme }): string | false =>
       isErrorNetworkFee && `border-color: ${theme.red._5};`}

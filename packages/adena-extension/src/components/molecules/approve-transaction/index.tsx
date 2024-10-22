@@ -109,7 +109,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         </div>
       ))}
 
-      <div className='memo-wrapper row'>
+      <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
         {hasMemo ? (
           <span className={'value'}>{memo}</span>
