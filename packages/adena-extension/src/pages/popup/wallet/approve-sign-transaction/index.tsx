@@ -22,14 +22,16 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
 import { RoutePath } from '@types';
 
-function mappedTransactionData(document: Document): {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface TransactionData {
   messages: readonly any[];
-  contracts: { type: string; function: any; value: any }[];
+  contracts: { type: string; function: string; value: any }[];
   gasWanted: string;
   gasFee: string;
+  memo: string;
   document: Document;
-} {
+}
+
+function mappedTransactionData(document: Document): TransactionData {
   return {
     messages: document.msgs,
     contracts: document.msgs.map((message) => {
@@ -41,6 +43,7 @@ function mappedTransactionData(document: Document): {
     }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
+    memo: `${document.memo || ''}`,
     document,
   };
 }
@@ -53,9 +56,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
-    undefined,
-  );
+  const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
@@ -65,10 +66,18 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [document, setDocument] = useState<Document>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
+  const [memo, setMemo] = useState('');
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
   const done = useMemo(() => processType === 'DONE', [processType]);
+
+  const hasMemo = useMemo(() => {
+    if (!requestData?.data?.memo) {
+      return false;
+    }
+    return true;
+  }, [requestData?.data?.memo]);
 
   const networkFee = useMemo(() => {
     if (!document || document.fee.amount.length === 0) {
@@ -161,6 +170,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       setDocument(document);
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
+      setMemo(document.memo);
       return true;
     } catch (e) {
       console.error(e);
@@ -176,6 +186,18 @@ const ApproveSignTransactionContainer: React.FC = () => {
       }
     }
     return false;
+  };
+
+  const changeMemo = (memo: string): void => {
+    setMemo(memo);
+    if (document) {
+      setDocument((prev): Document | undefined => {
+        if (!prev) {
+          return undefined;
+        }
+        return { ...document, memo };
+      });
+    }
   };
 
   const signTransaction = async (): Promise<boolean> => {
@@ -276,12 +298,15 @@ const ApproveSignTransactionContainer: React.FC = () => {
     <ApproveTransaction
       title='Sign Transaction'
       domain={hostname}
-      contracts={transactionData?.contracts}
+      contracts={transactionData?.contracts || []}
+      memo={memo}
+      hasMemo={hasMemo}
       loading={transactionData === undefined}
       processing={processing}
       done={done}
       logo={favicon}
       networkFee={networkFee}
+      changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
       onResponse={onResponseSignTransaction}
