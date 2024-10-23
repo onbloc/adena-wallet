@@ -1,21 +1,20 @@
-import React, { useCallback, useState } from 'react';
+import { isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
+import React, { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { isLedgerAccount } from 'adena-module';
-
-import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
-import { useNavigate } from 'react-router-dom';
-import { RoutePath } from '@types';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { TransactionMessage } from '@services/index';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { useNetwork } from '@hooks/use-network';
-
+import { useTransferInfo } from '@hooks/use-transfer-info';
+import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -32,6 +31,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
 
@@ -90,6 +90,7 @@ const TransferSummaryContainer: React.FC = () => {
       [message],
       GAS_WANTED,
       networkFeeAmount,
+      summaryInfo.memo,
     );
     return document;
   }, [summaryInfo, currentAccount]);
@@ -160,6 +161,11 @@ const TransferSummaryContainer: React.FC = () => {
     return true;
   }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
 
+  const onClickBack = useCallback(() => {
+    setMemorizedTransferInfo(summaryInfo);
+    goBack();
+  }, [summaryInfo]);
+
   const onClickCancel = useCallback(() => {
     if (summaryInfo.isTokenSearch === true) {
       navigate(RoutePath.Wallet);
@@ -177,7 +183,8 @@ const TransferSummaryContainer: React.FC = () => {
         transferBalance={getTransferBalance()}
         isErrorNetworkFee={isErrorNetworkFee}
         networkFee={summaryInfo.networkFee}
-        onClickBack={goBack}
+        memo={summaryInfo.memo}
+        onClickBack={onClickBack}
         onClickCancel={onClickCancel}
         onClickSend={transfer}
       />

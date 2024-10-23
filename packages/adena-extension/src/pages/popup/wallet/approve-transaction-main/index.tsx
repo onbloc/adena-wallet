@@ -25,13 +25,16 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
 import { RoutePath } from '@types';
 
-function mappedTransactionData(document: Document): {
+interface TransactionData {
   messages: readonly any[];
-  contracts: { type: string; function: any; value: any }[];
+  contracts: { type: string; function: string; value: any }[];
   gasWanted: string;
   gasFee: string;
+  memo: string;
   document: Document;
-} {
+}
+
+function mappedTransactionData(document: Document): TransactionData {
   return {
     messages: document.msgs,
     contracts: document.msgs.map((message: any) => {
@@ -43,6 +46,7 @@ function mappedTransactionData(document: Document): {
     }),
     gasWanted: document.fee.gas,
     gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
+    memo: `${document.memo || ''}`,
     document,
   };
 }
@@ -67,9 +71,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { gnoProvider } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount, getCurrentAddress } = useCurrentAccount();
-  const [transactionData, setTransactionData] = useState<{ [key in string]: any } | undefined>(
-    undefined,
-  );
+  const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -80,10 +82,18 @@ const ApproveTransactionContainer: React.FC = () => {
   const [currentBalance, setCurrentBalance] = useState(0);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
+  const [memo, setMemo] = useState('');
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
   const done = useMemo(() => processType === 'DONE', [processType]);
+
+  const hasMemo = useMemo(() => {
+    if (!requestData?.data?.memo) {
+      return false;
+    }
+    return true;
+  }, [requestData?.data?.memo]);
 
   const networkFee = useMemo(() => {
     if (!document || document.fee.amount.length === 0) {
@@ -163,6 +173,7 @@ const ApproveTransactionContainer: React.FC = () => {
       setDocument(document);
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
+      setMemo(document.memo);
       return true;
     } catch (e) {
       const error: any = e;
@@ -180,6 +191,18 @@ const ApproveTransactionContainer: React.FC = () => {
       }
     }
     return false;
+  };
+
+  const changeMemo = (memo: string): void => {
+    setMemo(memo);
+    if (document) {
+      setDocument((prev): Document | undefined => {
+        if (!prev) {
+          return undefined;
+        }
+        return { ...document, memo };
+      });
+    }
   };
 
   const sendTransaction = async (): Promise<boolean> => {
@@ -319,6 +342,7 @@ const ApproveTransactionContainer: React.FC = () => {
       });
     }
   }, [currentAccount, requestData, gnoProvider]);
+
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
@@ -349,13 +373,16 @@ const ApproveTransactionContainer: React.FC = () => {
     <ApproveTransaction
       title='Approve Transaction'
       domain={hostname}
-      contracts={transactionData?.contracts}
+      contracts={transactionData?.contracts || []}
+      memo={memo}
+      hasMemo={hasMemo}
       loading={transactionData === undefined}
       processing={processing}
       done={done}
       logo={favicon}
       isErrorNetworkFee={isErrorNetworkFee}
       networkFee={networkFee}
+      changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
       onResponse={onResponseSendTransaction}

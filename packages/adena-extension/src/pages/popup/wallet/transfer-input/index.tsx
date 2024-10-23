@@ -1,27 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
-import styled from 'styled-components';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { isNativeTokenModel } from '@common/validation/validation-token';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
-import { RoutePath } from '@types';
 import { useAddressBookInput } from '@hooks/use-address-book-input';
 import { useBalanceInput } from '@hooks/use-balance-input';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { isNativeTokenModel } from '@common/validation/validation-token';
 import useHistoryData from '@hooks/use-history-data';
+import { RoutePath } from '@types';
 
-import { TokenModel } from '@types';
-import mixins from '@styles/mixins';
+import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { calculateByteSize } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
-
-const TransferInputLayoutWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
-  width: 100%;
-  height: 100%;
-  padding: 24px 20px;
-`;
+import { useTransferInfo } from '@hooks/use-transfer-info';
+import { TokenModel } from '@types';
 
 interface HistoryData {
   isTokenSearch: boolean;
@@ -39,6 +33,8 @@ interface HistoryData {
   };
 }
 
+const MEMO_MAX_BYTES = 65_536; // 2 ** 16
+
 const TransferInputContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate<RoutePath.TransferInput>();
   const {
@@ -53,39 +49,21 @@ const TransferInputContainer: React.FC = () => {
   const { currentAccount } = useCurrentAccount();
   const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
   const { currentNetwork } = useNetwork();
+  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
+  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
 
-  useEffect(() => {
-    if (isLoadingSessionState) {
-      return;
+  const memoError = useMemo(() => {
+    const size = calculateByteSize(memo);
+    if (size < MEMO_MAX_BYTES) {
+      return null;
     }
-    if (params) {
-      setIsTokenSearch(params.isTokenSearch === true);
-      setTokenMetainfo(params.tokenBalance);
-    }
-  }, [isPopup, params, isLoadingSessionState]);
 
-  useEffect(() => {
-    if (currentAccount && tokenMetainfo) {
-      addressBookInput.updateAddressBook();
-      balanceInput.updateCurrentBalance();
-    }
-  }, [currentAccount, tokenMetainfo, currentNetwork.chainId]);
+    return new TransactionValidationError('MEMO_TOO_LARGE_ERROR');
+  }, [memo]);
 
-  useEffect(() => {
-    const historyData = getHistoryData();
-    if (historyData) {
-      setIsTokenSearch(historyData.isTokenSearch);
-      setTokenMetainfo(tokenMetainfo);
-      addressBookInput.setSelected(historyData.addressInput.selected);
-      if (historyData.addressInput.selectedAddressBook) {
-        addressBookInput.setSelectedAddressBook(historyData.addressInput.selectedAddressBook);
-      }
-      if (historyData.addressInput.address) {
-        addressBookInput.setAddress(historyData.addressInput.address);
-      }
-      balanceInput.onChangeAmount(historyData.balanceAmount);
-    }
-  }, [getHistoryData()]);
+  const onChangeMemo = useCallback((memo: string) => {
+    setMemo(memo);
+  }, []);
 
   const saveHistoryData = (): void => {
     if (!tokenMetainfo) {
@@ -103,15 +81,18 @@ const TransferInputContainer: React.FC = () => {
     });
   };
 
-  const isNext = useCallback(() => {
+  const isNext = useMemo(() => {
     if (balanceInput.amount === '' || BigNumber(balanceInput.amount).isLessThanOrEqualTo(0)) {
       return false;
     }
     if (addressBookInput.resultAddress === '') {
       return false;
     }
+    if (memoError !== null) {
+      return false;
+    }
     return true;
-  }, [addressBookInput, balanceInput]);
+  }, [addressBookInput, balanceInput, memoError]);
 
   const onClickCancel = useCallback(() => {
     if (isTokenSearch) {
@@ -122,7 +103,7 @@ const TransferInputContainer: React.FC = () => {
   }, [isTokenSearch]);
 
   const onClickNext = useCallback(async () => {
-    if (!isNext()) {
+    if (!isNext) {
       return;
     }
     if (!tokenMetainfo) {
@@ -144,28 +125,62 @@ const TransferInputContainer: React.FC = () => {
             denom: balanceInput.denom,
           },
           networkFee: balanceInput.networkFee,
+          memo,
         },
       });
     }
-  }, [addressBookInput, balanceInput, isNext()]);
+  }, [addressBookInput, balanceInput, isNext]);
+
+  useEffect(() => {
+    if (isLoadingSessionState) {
+      return;
+    }
+    if (params) {
+      setIsTokenSearch(params.isTokenSearch === true);
+      setTokenMetainfo(params.tokenBalance);
+    }
+  }, [isPopup, params, isLoadingSessionState]);
+
+  useEffect(() => {
+    if (currentAccount && tokenMetainfo) {
+      addressBookInput.updateAddressBook();
+      balanceInput.updateCurrentBalance();
+      clearMemorizedTransferInfo();
+    }
+  }, [currentAccount, tokenMetainfo, currentNetwork.chainId]);
+
+  useEffect(() => {
+    const historyData = getHistoryData();
+    if (historyData) {
+      setIsTokenSearch(historyData.isTokenSearch);
+      setTokenMetainfo(tokenMetainfo);
+      addressBookInput.setSelected(historyData.addressInput.selected);
+      if (historyData.addressInput.selectedAddressBook) {
+        addressBookInput.setSelectedAddressBook(historyData.addressInput.selectedAddressBook);
+      }
+      if (historyData.addressInput.address) {
+        addressBookInput.setAddress(historyData.addressInput.address);
+      }
+      balanceInput.onChangeAmount(historyData.balanceAmount);
+    }
+  }, [getHistoryData()]);
 
   if (isLoadingSessionState) {
     return <></>;
   }
 
   return (
-    <TransferInputLayoutWrapper>
-      <TransferInput
-        hasBackButton={isTokenSearch}
-        tokenMetainfo={tokenMetainfo}
-        addressInput={addressBookInput}
-        balanceInput={balanceInput}
-        isNext={isNext()}
-        onClickBack={goBack}
-        onClickCancel={onClickCancel}
-        onClickNext={onClickNext}
-      />
-    </TransferInputLayoutWrapper>
+    <TransferInput
+      hasBackButton={isTokenSearch}
+      tokenMetainfo={tokenMetainfo}
+      addressInput={addressBookInput}
+      balanceInput={balanceInput}
+      memoInput={{ memo, onChangeMemo, memoError }}
+      isNext={isNext}
+      onClickBack={goBack}
+      onClickCancel={onClickCancel}
+      onClickNext={onClickNext}
+    />
   );
 };
 

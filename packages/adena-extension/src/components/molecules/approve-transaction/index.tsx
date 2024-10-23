@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 
-import { Text, Button } from '@components/atoms';
+import { Button, Text } from '@components/atoms';
 import {
-  BottomFixedButtonGroup,
   ApproveInjectionLoading,
   ApproveLoading,
+  BottomFixedButtonGroup,
 } from '@components/molecules';
 
-import DefaultFavicon from '@assets/favicon-default.svg';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
+import DefaultFavicon from '@assets/favicon-default.svg';
 import { ApproveTransactionWrapper } from './approve-transaction.styles';
 
 export interface ApproveTransactionProps {
@@ -22,6 +22,8 @@ export interface ApproveTransactionProps {
     function: string;
     value: string;
   }[];
+  memo: string;
+  hasMemo: boolean;
   isErrorNetworkFee?: boolean;
   networkFee: {
     amount: string;
@@ -31,6 +33,7 @@ export interface ApproveTransactionProps {
   opened: boolean;
   processing: boolean;
   done: boolean;
+  changeMemo: (memo: string) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
   onTimeout: () => void;
@@ -44,18 +47,33 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   logo,
   domain,
   contracts,
+  memo,
+  hasMemo,
   isErrorNetworkFee,
   networkFee,
   transactionData,
   opened,
   processing,
   done,
+  changeMemo,
   onToggleTransactionData,
   onResponse,
   onTimeout,
   onClickConfirm,
   onClickCancel,
 }) => {
+  const onChangeMemo = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (hasMemo) {
+        return;
+      }
+
+      const value = e.target.value;
+      changeMemo(value);
+    },
+    [hasMemo, changeMemo],
+  );
+
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
   }
@@ -91,6 +109,22 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         </div>
       ))}
 
+      <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
+        <span className='key'>Memo:</span>
+        {hasMemo ? (
+          <span className={'value'}>{memo}</span>
+        ) : (
+          <input
+            type='text'
+            className={'value'}
+            value={memo}
+            onChange={onChangeMemo}
+            autoComplete='off'
+            placeholder='(Optional)'
+          />
+        )}
+      </div>
+
       <div className='fee-amount-wrapper row'>
         <span className='key'>Network Fee:</span>
         <span className='value'>{`${networkFee.amount} ${networkFee.denom}`}</span>
@@ -98,7 +132,12 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
 
       <div className='transaction-data-wrapper'>
-        <Button hierarchy='custom' bgColor='transparent' className='visible-button' onClick={(): void => onToggleTransactionData(!opened)}>
+        <Button
+          hierarchy='custom'
+          bgColor='transparent'
+          className='visible-button'
+          onClick={(): void => onToggleTransactionData(!opened)}
+        >
           {opened ? (
             <>
               <>Hide Transaction Data</>

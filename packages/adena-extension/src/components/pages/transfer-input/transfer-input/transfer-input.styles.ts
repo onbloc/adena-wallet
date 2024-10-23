@@ -1,19 +1,19 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 444px;
-  padding-top: 5px;
+  width: 100%;
+  height: auto;
+  padding: 24px 20px 96px;
 
   .logo-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-top: 5px;
     margin: 30px 0;
     .logo {
       width: 100px;
@@ -28,45 +28,11 @@ export const TransferInputWrapper = styled.div`
 
   .balance-input-wrapper {
     display: flex;
-    height: 100%;
+    margin-bottom: 12px;
   }
 
-  .button-group {
-    position: absolute;
+  .memo-input-wrapper {
     display: flex;
-    width: 100%;
-    bottom: 0;
-    justify-content: space-between;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${fonts.body1Bold};
-      background-color: ${getTheme('neutral', '_5')};
-      transition: 0.2s;
-
-      :hover {
-        background-color: ${getTheme('neutral', '_6')};
-      }
-
-      &:last-child {
-        margin-left: 10px;
-      }
-
-      &.next {
-        background-color: ${getTheme('primary', '_6')};
-
-        :hover {
-          background-color: ${getTheme('primary', '_7')};
-        }
-
-        &.disabled {
-          color: ${getTheme('neutral', '_5')};
-          background-color: ${getTheme('primary', '_9')};
-          cursor: default;
-        }
-      }
-    }
+    padding-bottom: 20px;
   }
 `;

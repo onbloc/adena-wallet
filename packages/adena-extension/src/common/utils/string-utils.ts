@@ -40,3 +40,9 @@ const isBech32Address = (str: string): boolean => {
     return false;
   }
 };
+
+export function calculateByteSize(str: string): number {
+  const encoder = new TextEncoder();
+  const encodedStr = encoder.encode(str);
+  return encodedStr.length;
+}
