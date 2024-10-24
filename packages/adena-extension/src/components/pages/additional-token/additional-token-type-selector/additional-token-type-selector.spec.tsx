@@ -5,22 +5,25 @@ import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import AdditionalTokenInfo, { AdditionalTokenInfoProps } from './additional-token-info';
+import AdditionalTokenTypeSelector, {
+  AddingType,
+  AdditionalTokenTypeSelectorProps,
+} from './additional-token-type-selector';
 
-describe('AdditionalTokenInfo Component', () => {
-  it('AdditionalTokenInfo render', () => {
-    const args: AdditionalTokenInfoProps = {
-      isLoading: false,
-      symbol: 'GNOT',
-      path: 'gno.land/gnot',
-      decimals: '6',
+describe('AdditionalTokenTypeSelector Component', () => {
+  it('AdditionalTokenTypeSelector render', () => {
+    const args: AdditionalTokenTypeSelectorProps = {
+      setType: () => {
+        return;
+      },
+      type: AddingType.MANUAL,
     };
 
     render(
       <RecoilRoot>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
-          <AdditionalTokenInfo {...args} />
+          <AdditionalTokenTypeSelector {...args} />
         </ThemeProvider>
       </RecoilRoot>,
     );
