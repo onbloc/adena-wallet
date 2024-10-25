@@ -1,7 +1,8 @@
+import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import { AppInfoResponse, TokenRepository } from '@repositories/common';
 
-import { GRC20TokenModel, TokenModel, AccountTokenBalance, NetworkMetainfo } from '@types';
+import { AccountTokenBalance, GRC20TokenModel, NetworkMetainfo, TokenModel } from '@types';
 
 export class TokenService {
   private tokenRepository: TokenRepository;
@@ -35,6 +36,21 @@ export class TokenService {
     return this.tokenRepository
       .fetchAllGRC20Tokens()
       .then((tokens) => tokens.filter((token) => !!token));
+  }
+
+  public async fetchGRC20Token(tokenPath: string): Promise<GRC20TokenModel | null> {
+    if (!tokenPath) {
+      return null;
+    }
+
+    // validate realm path
+    try {
+      parseReamPathItemsByPath(tokenPath);
+    } catch {
+      return null;
+    }
+
+    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
   }
 
   public async getAppInfos(): Promise<AppInfoResponse[]> {

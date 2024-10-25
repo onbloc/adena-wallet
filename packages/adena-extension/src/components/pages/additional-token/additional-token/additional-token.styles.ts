@@ -14,6 +14,12 @@ export const AdditionalTokenWrapper = styled.div`
     margin-bottom: 24px;
   }
 
+  .type-selector-wrapper {
+    display: flex;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
   .select-box-wrapper {
     display: flex;
     margin-bottom: 12px;
