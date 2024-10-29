@@ -1,31 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import BigNumber from 'bignumber.js';
-import styled, { useTheme } from 'styled-components';
 import { isAirgapAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
-import { Text, StaticMultiTooltip, LeftArrowBtn } from '@components/atoms';
-import { TransactionHistory, DoubleButton } from '@components/molecules';
 import etc from '@assets/etc.svg';
-import { RoutePath } from '@types';
-import { getTheme } from '@styles/theme';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import { HighlightNumber } from '@components/atoms';
-import useScrollHistory from '@hooks/use-scroll-history';
 import { isGRC20TokenModel } from '@common/validation/validation-token';
+import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
+import { DoubleButton, TransactionHistory } from '@components/molecules';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
+import useScrollHistory from '@hooks/use-scroll-history';
+import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 
-import LoadingTokenDetails from './loading-token-details';
-import mixins from '@styles/mixins';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
-import { useNetwork } from '@hooks/use-network';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
 import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
+import mixins from '@styles/mixins';
+import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { Text } from '@components/atoms';
 import { LoadingNft } from '@components/molecules';
-import { getTheme } from '@styles/theme';
+import NFTHeader from '@components/pages/nft/nft-header/nft-header';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -28,7 +29,7 @@ export const Nft = (): JSX.Element => {
 
   return (
     <Wrapper>
-      <Text type='header4'>NFTs</Text>
+      <NFTHeader />
       {state === 'FINISH' ? (
         data.length > 0 ? (
           data.map(() => <></>)
