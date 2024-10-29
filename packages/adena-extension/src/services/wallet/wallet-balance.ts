@@ -100,16 +100,20 @@ export class WalletBalanceService {
     if (!balance) {
       return [];
     }
+
     const balanceAmount = {
       value: balance,
       denom: symbol.toUpperCase(),
     };
+
     const tokenBalance = this.tokenMetainfos.find(
       (tokenMetainfo) => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
     );
+
     if (tokenBalance) {
       return [this.createTokenBalance(balanceAmount, tokenBalance)];
     }
+
     return [];
   };
 
