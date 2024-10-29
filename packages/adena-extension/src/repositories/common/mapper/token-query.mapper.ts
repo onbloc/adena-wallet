@@ -1,4 +1,5 @@
-import { GRC20TokenModel } from '@types';
+import { parseGRC721File } from '@common/utils/parse-utils';
+import { GRC20TokenModel, GRC721CollectionModel } from '@types';
 
 export const GRC20_FUNCTIONS = [
   'TotalSupply',
@@ -8,6 +9,34 @@ export const GRC20_FUNCTIONS = [
   'Approve',
   'TransferFrom',
 ];
+
+export function mapGRC721CollectionModel(
+  networkId: string,
+  message: any,
+): GRC721CollectionModel | null {
+  const packageInfo = message?.value?.package;
+  if (!packageInfo) {
+    return null;
+  }
+  const packagePath = packageInfo.path;
+
+  for (const file of packageInfo.files) {
+    const tokenInfo = parseGRC721File(file.body);
+    if (tokenInfo) {
+      return {
+        tokenId: packagePath,
+        networkId: networkId,
+        display: false,
+        type: 'grc721',
+        packagePath,
+        name: tokenInfo.name,
+        symbol: tokenInfo.symbol,
+      };
+    }
+  }
+
+  return null;
+}
 
 export function mapGRC20TokenModel(networkId: string, message: any): GRC20TokenModel | null {
   const packageInfo = message?.value?.package;

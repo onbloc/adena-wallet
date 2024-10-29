@@ -1,6 +1,7 @@
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { AppInfoResponse, TokenRepository } from '@repositories/common';
+import { TokenRepository } from '@repositories/common';
+import { AppInfoResponse } from '@repositories/common/response';
 
 import { AccountTokenBalance, GRC20TokenModel, NetworkMetainfo, TokenModel } from '@types';
 

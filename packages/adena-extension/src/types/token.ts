@@ -103,3 +103,46 @@ export interface MainToken {
     denom: string;
   };
 }
+
+export interface GRC721CollectionModel {
+  tokenId: string;
+  networkId: string;
+  display: boolean;
+  type: 'grc721';
+  packagePath: string;
+  name: string;
+  symbol: string;
+}
+
+export interface GRC721Model {
+  tokenId: string;
+  main: boolean;
+  networkId: string;
+  display: boolean;
+  type: 'grc721';
+  packagePath: string;
+  name: string;
+  symbol: string;
+  metadata: GRC721MetadataModel | null;
+}
+
+export interface GRC721PinnedTokenModel {
+  packagePath: string;
+  tokenId: string;
+}
+
+export interface GRC721MetadataModel {
+  name: string;
+  image: string;
+  imageData: string;
+  externalUrl: string;
+  description: string;
+  backgroundColor: string;
+  animationUrl: string;
+  youtubeUrl: string;
+  attributes: {
+    displayType: string;
+    traitType: string;
+    value: string;
+  }[];
+}

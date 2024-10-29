@@ -11,19 +11,33 @@ import {
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { makeRPCRequest } from '@common/utils/fetch-utils';
-import { parseGRC20ByABCIRender, parseGRC20ByFileContents } from '@common/utils/parse-utils';
+import {
+  parseGRC20ByABCIRender,
+  parseGRC20ByFileContents,
+  parseGRC721FileContents,
+} from '@common/utils/parse-utils';
 import {
   GRC20TokenModel,
+  GRC721CollectionModel,
+  GRC721Model,
+  GRC721PinnedTokenModel,
   IBCNativeTokenModel,
   IBCTokenModel,
   NativeTokenModel,
   NetworkMetainfo,
   TokenModel,
 } from '@types';
-import { mapGRC20TokenModel } from './mapper/token-query.mapper';
+import BigNumber from 'bignumber.js';
+import { mapGRC20TokenModel, mapGRC721CollectionModel } from './mapper/token-query.mapper';
+import { AppInfoResponse } from './response';
 import { makeAllRealmsQuery } from './token.queries';
+import { ITokenRepository } from './types';
 
-type LocalValueType = 'ACCOUNT_TOKEN_METAINFOS';
+enum LocalValueType {
+  AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
+  AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
+  AccountGRC721PinnedTokenIds = 'ACCOUNT_GRC721_PINNED_TOKEN_IDS',
+}
 
 const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
 
@@ -43,17 +57,7 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   },
 ];
 
-export interface AppInfoResponse {
-  symbol: string;
-  name: string;
-  description: string;
-  logo: string;
-  link: string;
-  display: boolean;
-  order: number;
-}
-
-export class TokenRepository {
+export class TokenRepository implements ITokenRepository {
   private static GNO_TOKEN_RESOURCE_URI =
     'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
@@ -126,7 +130,7 @@ export class TokenRepository {
   public getAccountTokenMetainfos = async (accountId: string): Promise<TokenModel[]> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<{
       [key in string]: TokenModel[];
-    }>('ACCOUNT_TOKEN_METAINFOS');
+    }>(LocalValueType.AccountTokenMetainfos);
 
     return accountTokenMetainfos[accountId] ?? [];
   };
@@ -137,7 +141,7 @@ export class TokenRepository {
   ): Promise<boolean> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<{
       [key in string]: TokenModel[];
-    }>('ACCOUNT_TOKEN_METAINFOS');
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const isUnique = function (token0: TokenModel, token1: TokenModel): boolean {
       return token0.tokenId === token1.tokenId && token0.networkId === token1.networkId;
@@ -152,26 +156,32 @@ export class TokenRepository {
       [accountId]: filteredTokenMetainfos,
     };
 
-    await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', changedAccountTokenMetainfos);
+    await this.localStorage.setByObject(
+      LocalValueType.AccountTokenMetainfos,
+      changedAccountTokenMetainfos,
+    );
     return true;
   };
 
   public deleteTokenMetainfos = async (accountId: string): Promise<boolean> => {
     const accountTokenMetainfos = await this.localStorage.getToObject<{
       [key in string]: TokenModel[];
-    }>('ACCOUNT_TOKEN_METAINFOS');
+    }>(LocalValueType.AccountTokenMetainfos);
 
     const changedAccountTokenMetainfos = {
       ...accountTokenMetainfos,
       [accountId]: [],
     };
 
-    await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', changedAccountTokenMetainfos);
+    await this.localStorage.setByObject(
+      LocalValueType.AccountTokenMetainfos,
+      changedAccountTokenMetainfos,
+    );
     return true;
   };
 
   public deleteAllTokenMetainfo = async (): Promise<boolean> => {
-    await this.localStorage.setByObject('ACCOUNT_TOKEN_METAINFOS', {});
+    await this.localStorage.setByObject(LocalValueType.AccountTokenMetainfos, {});
     return true;
   };
 
@@ -252,6 +262,177 @@ export class TokenRepository {
           : [],
     );
   };
+
+  public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
+    if (this.apiUrl) {
+      const tokens = await TokenRepository.postRPCRequest<{
+        result: {
+          name: string;
+          symbol: string;
+          packagePath: string;
+        }[];
+      }>(
+        this.networkInstance,
+        this.apiUrl + '/gno',
+        makeRPCRequest({
+          method: 'getGRC721Tokens',
+        }),
+      ).then((data) => data?.result || []);
+
+      return tokens.map((token) => ({
+        tokenId: token.packagePath,
+        networkId: this.networkId,
+        display: false,
+        type: 'grc721',
+        packagePath: token.packagePath,
+        name: token.name,
+        symbol: token.symbol,
+      }));
+    }
+
+    if (!this.queryUrl) {
+      return [];
+    }
+
+    const allRealmsQuery = makeAllRealmsQuery();
+    return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
+      (result) =>
+        result?.data?.transactions
+          ? result?.data?.transactions
+              .flatMap((tx: any) => tx.messages)
+              .map((message: any) =>
+                mapGRC721CollectionModel(this.networkMetainfo?.networkId || '', message),
+              )
+          : [],
+    );
+  }
+
+  public async fetchGRC721CollectionByPackagePath(
+    packagePath: string,
+  ): Promise<GRC721CollectionModel> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const fileContents = await this.gnoProvider.getFileContent(packagePath).catch(() => null);
+    const fileNames = fileContents?.split('\n') || [];
+
+    if (fileContents === null || fileNames.length === 0) {
+      throw new Error('Not available realm');
+    }
+
+    const fileTokenInfo = await this.fetchGRC721CollectionQueryFiles(packagePath, fileNames).catch(
+      () => null,
+    );
+    if (fileTokenInfo) {
+      return fileTokenInfo;
+    }
+
+    throw new Error('Realm is not GRC721');
+  }
+
+  public async fetchGRC721TokenUriBy(packagePath: string, tokenId: string): Promise<string> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'TokenURI', [
+      tokenId,
+    ]);
+
+    if (!response) {
+      throw new Error('not found token uri');
+    }
+
+    return response;
+  }
+
+  public async fetchGRC721BalanceBy(packagePath: string, address: string): Promise<number> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
+      address,
+    ]);
+
+    if (!response || !BigNumber(response).isNaN()) {
+      throw new Error('not found token uri');
+    }
+
+    return BigNumber(response).toNumber();
+  }
+
+  public async fetchGRC721TokensBy(): Promise<GRC721Model[]> {
+    return [];
+  }
+
+  public async getAccountGRC721CollectionsByAccountId(
+    accountId: string,
+  ): Promise<GRC721CollectionModel[]> {
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
+      [key in string]: GRC721CollectionModel[];
+    }>(LocalValueType.AccountGRC721Collections);
+
+    if (!accountGRC721CollectionsMap[accountId]) {
+      return [];
+    }
+
+    return accountGRC721CollectionsMap[accountId];
+  }
+
+  public async saveAccountGRC721CollectionsBy(
+    accountId: string,
+    collections: GRC721CollectionModel[],
+  ): Promise<boolean> {
+    const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
+      [key in string]: GRC721CollectionModel[];
+    }>(LocalValueType.AccountGRC721Collections);
+
+    accountGRC721CollectionsMap[accountId] = collections;
+
+    await this.localStorage.setByObject(
+      LocalValueType.AccountGRC721Collections,
+      accountGRC721CollectionsMap,
+    );
+
+    return true;
+  }
+
+  public async getAccountGRC721PinnedByAccountId(
+    accountId: string,
+  ): Promise<GRC721PinnedTokenModel[]> {
+    const accountGRC721PinnedTokenIdsMap = await this.localStorage.getToObject<{
+      [key in string]: GRC721PinnedTokenModel[];
+    }>(LocalValueType.AccountGRC721PinnedTokenIds);
+
+    if (!accountGRC721PinnedTokenIdsMap[accountId]) {
+      return [];
+    }
+
+    return accountGRC721PinnedTokenIdsMap[accountId];
+  }
+
+  public async saveAccountGRC721PinnedBy(
+    accountId: string,
+    grc721tokens: GRC721Model[],
+  ): Promise<boolean> {
+    const accountGRC721PinnedTokenIdsMap = await this.localStorage.getToObject<{
+      [key in string]: GRC721PinnedTokenModel[];
+    }>(LocalValueType.AccountGRC721PinnedTokenIds);
+
+    accountGRC721PinnedTokenIdsMap[accountId] = grc721tokens.map((token) => ({
+      tokenId: token.tokenId,
+      packagePath: token.packagePath,
+    }));
+
+    await this.localStorage.setByObject(
+      LocalValueType.AccountGRC721PinnedTokenIds,
+      accountGRC721PinnedTokenIdsMap,
+    );
+
+    return true;
+  }
 
   private fetchNativeTokenAssets = async (): Promise<NativeTokenModel[]> => {
     const requestUri =
@@ -344,6 +525,39 @@ export class TokenRepository {
           symbol: tokenInfo.tokenSymbol,
           decimals: tokenInfo.tokenDecimals,
           image: '',
+        };
+      }
+    }
+
+    return null;
+  }
+
+  private async fetchGRC721CollectionQueryFiles(
+    packagePath: string,
+    fileNames: string[],
+  ): Promise<GRC721CollectionModel | null> {
+    if (!this.gnoProvider) {
+      throw new Error('Gno provider not initialized.');
+    }
+
+    for (const fileName of fileNames) {
+      const filePath = [packagePath, fileName].join('/');
+      const contents = await this.gnoProvider.getFileContent(filePath).catch(() => null);
+      if (!contents) {
+        continue;
+      }
+
+      const tokenInfo = parseGRC721FileContents(contents);
+
+      if (tokenInfo) {
+        return {
+          tokenId: packagePath,
+          packagePath: packagePath,
+          networkId: this.networkId,
+          display: false,
+          type: 'grc721',
+          name: tokenInfo.name,
+          symbol: tokenInfo.symbol,
         };
       }
     }
