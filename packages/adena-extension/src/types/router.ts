@@ -1,6 +1,13 @@
 import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
-import { CreateAccountState, TokenBalanceType, TokenModel, TransactionInfo } from '@types';
+import {
+  CreateAccountState,
+  GRC721CollectionModel,
+  GRC721Model,
+  TokenBalanceType,
+  TokenModel,
+  TransactionInfo,
+} from '@types';
 import { Document } from 'adena-module';
 
 export const REGISTER_PATH = 'register.html' as const;
@@ -10,6 +17,8 @@ export enum RoutePath {
   Home = '/',
   Login = '/login',
   Nft = '/nft',
+  NftCollection = '/nft/collection',
+  NftCollectionAsset = '/nft/collection/assets',
   Staking = '/staking',
   Explore = '/explore',
   History = '/history',
@@ -39,7 +48,9 @@ export enum RoutePath {
   ApproveAddingNetwork = '/approve/wallet/network/add',
   AccountDetails = '/wallet/accounts/:accountId',
   ManageToken = '/wallet/manage-token',
+  ManageNft = '/wallet/manage-nft',
   ManageTokenAdded = '/wallet/manage-token/added',
+  NftTransferInput = '/wallet/nft-transfer-input',
   TransferInput = '/wallet/transfer-input',
   TransferSummary = '/wallet/transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
@@ -83,6 +94,12 @@ export type RouteParams = {
   [RoutePath.Home]: null;
   [RoutePath.Login]: null;
   [RoutePath.Nft]: null;
+  [RoutePath.NftCollection]: {
+    collection: GRC721CollectionModel;
+  };
+  [RoutePath.NftCollectionAsset]: {
+    collectionAsset: GRC721Model;
+  };
   [RoutePath.Staking]: null;
   [RoutePath.Explore]: null;
   [RoutePath.History]: null;
@@ -133,6 +150,10 @@ export type RouteParams = {
   [RoutePath.AccountDetails]: null;
   [RoutePath.ManageToken]: null;
   [RoutePath.ManageTokenAdded]: null;
+  [RoutePath.ManageNft]: null;
+  [RoutePath.NftTransferInput]: {
+    collectionAsset: GRC721Model;
+  };
   [RoutePath.TransferInput]: {
     tokenBalance: TokenBalanceType;
     isTokenSearch?: boolean;

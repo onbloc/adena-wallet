@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+import { useCallback, useMemo } from 'react';
 import { useMatch, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import styled from 'styled-components';
 
-import { RoutePath } from '@types';
 import { Icon, IconName } from '@components/atoms';
-import { WalletState } from '@states';
+import { useWalletContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
-import { getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import React from 'react';
 
 const Wrapper = styled.nav`
   width: 100%;
@@ -39,68 +39,93 @@ const Wrapper = styled.nav`
 
 export const Navigation = (): JSX.Element => {
   const navigate = useNavigate();
-  const [loading] = useState(false);
-  const wallet = useMatch(RoutePath.Wallet);
-  const explore = useMatch(RoutePath.Explore);
-  const nft = useMatch(RoutePath.Nft);
-  const history = useMatch(RoutePath.History);
-  const tokenDetails = useMatch(RoutePath.TokenDetails);
-  const [walletState] = useRecoilState(WalletState.state);
+  const matchedWallet = useMatch(RoutePath.Wallet);
+  const matchedExplore = useMatch(RoutePath.Explore);
+  const matchedNft = useMatch(RoutePath.Nft + '/*');
+  const matchedHistory = useMatch(RoutePath.History);
+  const matchedTokenDetails = useMatch(RoutePath.TokenDetails);
   const { failedNetwork } = useNetwork();
 
-  const navItems = [
-    {
-      iconName: 'iconWallet',
-      currAddress: wallet || tokenDetails,
-      routingAddress: RoutePath.Wallet,
-    },
-    {
-      iconName: 'iconGallery',
-      currAddress: nft,
-      routingAddress: RoutePath.Nft,
-    },
-    {
-      iconName: 'iconSearch',
-      currAddress: explore,
-      routingAddress: RoutePath.Explore,
-    },
-    {
-      iconName: 'iconClock',
-      currAddress: history,
-      routingAddress: RoutePath.History,
-    },
-  ];
+  const { walletStatus } = useWalletContext();
 
-  const loadingComplete = walletState === 'FINISH';
+  const isActiveWallet = walletStatus === 'FINISH';
 
-  const isRender = (): boolean => {
-    if (wallet || tokenDetails || nft || explore || history) {
-      return loadingComplete || failedNetwork === false;
+  const navigationItems = useMemo(
+    () => [
+      {
+        iconName: 'iconWallet',
+        active: !!matchedWallet || !!matchedTokenDetails,
+        routingAddress: RoutePath.Wallet,
+      },
+      {
+        iconName: 'iconGallery',
+        active: !!matchedNft,
+        routingAddress: RoutePath.Nft,
+      },
+      {
+        iconName: 'iconSearch',
+        active: !!matchedExplore,
+        routingAddress: RoutePath.Explore,
+      },
+      {
+        iconName: 'iconClock',
+        active: !!matchedHistory,
+        routingAddress: RoutePath.History,
+      },
+    ],
+    [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails],
+  );
+
+  const visibleNavigation = useMemo(() => {
+    if (!isActiveWallet) {
+      return false;
     }
-    return false;
-  };
+
+    if (failedNetwork || failedNetwork === undefined) {
+      return false;
+    }
+
+    return (
+      !!matchedWallet ||
+      !!matchedExplore ||
+      !!matchedNft ||
+      !!matchedHistory ||
+      !!matchedTokenDetails
+    );
+  }, [
+    matchedWallet,
+    matchedExplore,
+    matchedNft,
+    matchedHistory,
+    matchedTokenDetails,
+    isActiveWallet,
+    failedNetwork,
+  ]);
+
+  const onClickNavigationItem = useCallback(
+    (item: { iconName: string; active: boolean; routingAddress: RoutePath }) => {
+      if (!isActiveWallet) {
+        return;
+      }
+
+      navigate(item.routingAddress, { replace: true });
+    },
+    [isActiveWallet],
+  );
+
+  if (!visibleNavigation) {
+    return <React.Fragment />;
+  }
 
   return (
-    <>
-      {isRender() && (
-        <Wrapper>
-          {navItems.map((item, idx) => (
-            <div key={idx}>
-              <button
-                onClick={(): void | null =>
-                  walletState === 'FINISH' ? navigate(item.routingAddress, { replace: true }) : null
-                }
-                disabled={walletState !== 'FINISH'}
-              >
-                <Icon
-                  name={item.iconName as IconName}
-                  className={item.currAddress && !loading ? 'active' : ''}
-                />
-              </button>
-            </div>
-          ))}
-        </Wrapper>
-      )}
-    </>
+    <Wrapper>
+      {navigationItems.map((item, idx) => (
+        <div key={idx}>
+          <button onClick={(): void => onClickNavigationItem(item)} disabled={!isActiveWallet}>
+            <Icon name={item.iconName as IconName} className={item.active ? 'active' : ''} />
+          </button>
+        </div>
+      ))}
+    </Wrapper>
   );
 };
