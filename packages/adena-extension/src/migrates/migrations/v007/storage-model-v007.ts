@@ -18,7 +18,7 @@ export type StorageModelDataV007 = {
   WALLET_CREATION_GUIDE_CONFIRM_DATE: WalletCreationGuideConfirmDateModelV007;
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: AddAccountGuideConfirmDateModelV007;
   ACCOUNT_GRC721_COLLECTIONS: AccountGRC721CollectionsV007;
-  ACCOUNT_GRC721_PINNED_TOKEN_IDS: AccountGRC721PinnedTokenIdsV007;
+  ACCOUNT_GRC721_PINNED_PACKAGES: AccountGRC721PinnedPackagesV007;
 };
 
 export type NetworksModelV007 = {
@@ -132,9 +132,6 @@ export type AccountGRC721CollectionsV007 = {
   };
 };
 
-export type AccountGRC721PinnedTokenIdsV007 = {
-  [key in string]: {
-    packagePath: string;
-    tokenId: string;
-  };
+export type AccountGRC721PinnedPackagesV007 = {
+  [key in string]: string[];
 };

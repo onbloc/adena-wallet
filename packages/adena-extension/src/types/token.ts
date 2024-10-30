@@ -112,23 +112,20 @@ export interface GRC721CollectionModel {
   packagePath: string;
   name: string;
   symbol: string;
+  isTokenUri: boolean;
+  isMetadata: boolean;
 }
 
 export interface GRC721Model {
   tokenId: string;
-  main: boolean;
   networkId: string;
-  display: boolean;
   type: 'grc721';
   packagePath: string;
   name: string;
   symbol: string;
+  isTokenUri: boolean;
+  isMetadata: boolean;
   metadata: GRC721MetadataModel | null;
-}
-
-export interface GRC721PinnedTokenModel {
-  packagePath: string;
-  tokenId: string;
 }
 
 export interface GRC721MetadataModel {

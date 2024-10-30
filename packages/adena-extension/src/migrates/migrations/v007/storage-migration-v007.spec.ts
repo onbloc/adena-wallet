@@ -32,7 +32,7 @@ describe('serialized wallet migration V007', () => {
     const result = await migration.up(mockData);
 
     expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_TOKEN_IDS).toEqual({});
+    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
   });
 
   it('up password success', async () => {
@@ -47,7 +47,7 @@ describe('serialized wallet migration V007', () => {
     expect(result.version).toBe(7);
     expect(result.data).not.toBeNull();
     expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_TOKEN_IDS).toEqual({});
+    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);

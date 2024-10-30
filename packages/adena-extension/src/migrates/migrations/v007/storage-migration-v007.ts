@@ -18,7 +18,7 @@ export class StorageMigration007 implements Migration<StorageModelDataV007> {
       data: {
         ...previous,
         ACCOUNT_GRC721_COLLECTIONS: {},
-        ACCOUNT_GRC721_PINNED_TOKEN_IDS: {},
+        ACCOUNT_GRC721_PINNED_PACKAGES: {},
       },
     };
   }
