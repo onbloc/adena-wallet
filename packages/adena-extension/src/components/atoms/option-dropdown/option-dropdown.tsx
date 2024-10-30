@@ -51,7 +51,7 @@ const OptionDropdown: React.FC<OptionDropdownProps> = ({ buttonNode, options, ho
       <div className='button-wrapper'>{buttonNode}</div>
 
       {opened && (
-        <div className={opened ? 'dropdown-wrapper active' : 'dropdown-wrapper'}>
+        <div className={opened ? 'dropdown-static-wrapper active' : 'dropdown-static-wrapper'}>
           {options.map((option, index) => (
             <OptionDropdownItem
               key={index}

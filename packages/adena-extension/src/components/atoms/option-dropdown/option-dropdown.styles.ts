@@ -15,15 +15,20 @@ export const OptionDropdownWrapper = styled(View)<{ position: 'left' | 'right' }
     border-radius: 24px;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
 
-    :hover,
-    &.active {
-      cursor: pointer;
+    :hover {
       background-color: ${getTheme('neutral', '_7')};
     }
   }
 
-  .dropdown-wrapper {
+  &.opened {
+    .button-wrapper {
+      background-color: ${getTheme('neutral', '_7')};
+    }
+  }
+
+  .dropdown-static-wrapper {
     ${mixins.flex()}
     position: absolute;
     min-width: 146px;
@@ -38,7 +43,7 @@ export const OptionDropdownWrapper = styled(View)<{ position: 'left' | 'right' }
       position === 'left'
         ? css`
             left: -122px;
-            bottom: -62px;
+            top: 100%;
           `
         : ''}
   }
