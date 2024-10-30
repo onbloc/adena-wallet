@@ -168,6 +168,8 @@ interface GRC721Meta {
   variableName: string;
   name: string;
   symbol: string;
+  isTokenUri: boolean;
+  isMetadata: boolean;
 }
 
 function parseGRC721NewFunctions(code: string): GRC721Meta | null {
@@ -188,6 +190,8 @@ function parseGRC721NewFunctions(code: string): GRC721Meta | null {
       variableName,
       name,
       symbol,
+      isTokenUri: false,
+      isMetadata: false,
     };
   }
 
@@ -217,9 +221,22 @@ export function parseGRC721FileContents(contents: string): GRC721Meta | null {
     GetApproved: 'GetApproved(tid TokenID) (std.Address, error)',
     IsApprovedForAll: 'IsApprovedForAll(owner, operator std.Address) bool',
   });
+
   if (!interfaceCheck.implementsInterface) {
     return null;
   }
 
-  return grc721Meta;
+  const tokenUriCheck = checkInterfaceImplementation(contents, grc721Meta.variableName, {
+    TokenUri: 'TokenURI(tid TokenID) (string, error)',
+  });
+
+  const metadataCheck = checkInterfaceImplementation(contents, grc721Meta.variableName, {
+    TokenMetadata: 'TokenMetadata(tid TokenID) (Metadata, error)',
+  });
+
+  return {
+    ...grc721Meta,
+    isTokenUri: tokenUriCheck.implementsInterface,
+    isMetadata: metadataCheck.implementsInterface,
+  };
 }
