@@ -1,4 +1,4 @@
-import IconEtc from '@assets/icon-etc';
+import IconEtc from '@assets/etc.svg';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
 import { Text } from '@components/atoms';
@@ -12,13 +12,13 @@ const NFTHeader: React.FC<NFTHeaderProps> = () => {
   const dropdownOptions = useMemo(
     () => [
       {
-        text: 'View on Gnoscan',
-        icon: <IconLink />,
-        onClick: () => console.log('View on Gnoscan'),
+        text: 'Deposit NFT',
+        icon: <IconQRCode />,
+        onClick: () => console.log('Deposit NFT'),
       },
       {
         text: 'View on Gnoscan',
-        icon: <IconQRCode />,
+        icon: <IconLink />,
         onClick: () => console.log('View on Gnoscan'),
       },
     ],
@@ -28,7 +28,11 @@ const NFTHeader: React.FC<NFTHeaderProps> = () => {
   return (
     <NFTHeaderWrapper>
       <Text type='header4'>NFTs</Text>
-      <OptionDropdown buttonNode={<IconEtc />} options={dropdownOptions} hover />
+      <OptionDropdown
+        buttonNode={<img src={IconEtc} alt='icon-etc' />}
+        options={dropdownOptions}
+        hover
+      />
     </NFTHeaderWrapper>
   );
 };

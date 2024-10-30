@@ -1,22 +1,23 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import NFTHeader, { NFTHeaderProps } from './nft-header';
+import ManageCollectionsButton, { ManageCollectionsButtonProps } from './manage-collections-button';
 
-describe('NFTHeader Component', () => {
-  it('NFTHeader render', () => {
-    const args: NFTHeaderProps = {
-      grc721Tokens: [],
+describe('ManageCollectionsButton Component', () => {
+  it('ManageCollectionsButton render', () => {
+    const args: ManageCollectionsButtonProps = {
+      onClick: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
-          <NFTHeader {...args} />
+          <ManageCollectionsButton {...args} />
         </ThemeProvider>
       </RecoilRoot>,
     );
