@@ -20,7 +20,6 @@ import {
   GRC20TokenModel,
   GRC721CollectionModel,
   GRC721Model,
-  GRC721PinnedTokenModel,
   IBCNativeTokenModel,
   IBCTokenModel,
   NativeTokenModel,
@@ -36,7 +35,7 @@ import { ITokenRepository } from './types';
 enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
   AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
-  AccountGRC721PinnedTokenIds = 'ACCOUNT_GRC721_PINNED_TOKEN_IDS',
+  AccountGRC721PinnedPackages = 'ACCOUNT_GRC721_PINNED_PACKAGES',
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
@@ -270,6 +269,8 @@ export class TokenRepository implements ITokenRepository {
           name: string;
           symbol: string;
           packagePath: string;
+          isMetadata?: boolean;
+          isTokenUri?: boolean;
         }[];
       }>(
         this.networkInstance,
@@ -287,6 +288,8 @@ export class TokenRepository implements ITokenRepository {
         packagePath: token.packagePath,
         name: token.name,
         symbol: token.symbol,
+        isMetadata: !!token.isMetadata,
+        isTokenUri: !!token.isTokenUri,
       }));
     }
 
@@ -399,36 +402,31 @@ export class TokenRepository implements ITokenRepository {
     return true;
   }
 
-  public async getAccountGRC721PinnedByAccountId(
-    accountId: string,
-  ): Promise<GRC721PinnedTokenModel[]> {
-    const accountGRC721PinnedTokenIdsMap = await this.localStorage.getToObject<{
-      [key in string]: GRC721PinnedTokenModel[];
-    }>(LocalValueType.AccountGRC721PinnedTokenIds);
+  public async getAccountGRC721PinnedPackagesByAccountId(accountId: string): Promise<string[]> {
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
+      [key in string]: string[];
+    }>(LocalValueType.AccountGRC721PinnedPackages);
 
-    if (!accountGRC721PinnedTokenIdsMap[accountId]) {
+    if (!accountGRC721PinnedPackagesMap[accountId]) {
       return [];
     }
 
-    return accountGRC721PinnedTokenIdsMap[accountId];
+    return accountGRC721PinnedPackagesMap[accountId];
   }
 
-  public async saveAccountGRC721PinnedBy(
+  public async saveAccountGRC721PinnedPackagesBy(
     accountId: string,
-    grc721tokens: GRC721Model[],
+    packagePaths: string[],
   ): Promise<boolean> {
-    const accountGRC721PinnedTokenIdsMap = await this.localStorage.getToObject<{
-      [key in string]: GRC721PinnedTokenModel[];
-    }>(LocalValueType.AccountGRC721PinnedTokenIds);
+    const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
+      [key in string]: string[];
+    }>(LocalValueType.AccountGRC721PinnedPackages);
 
-    accountGRC721PinnedTokenIdsMap[accountId] = grc721tokens.map((token) => ({
-      tokenId: token.tokenId,
-      packagePath: token.packagePath,
-    }));
+    accountGRC721PinnedPackagesMap[accountId] = [...new Set(packagePaths)];
 
     await this.localStorage.setByObject(
-      LocalValueType.AccountGRC721PinnedTokenIds,
-      accountGRC721PinnedTokenIdsMap,
+      LocalValueType.AccountGRC721PinnedPackages,
+      accountGRC721PinnedPackagesMap,
     );
 
     return true;
@@ -558,6 +556,8 @@ export class TokenRepository implements ITokenRepository {
           type: 'grc721',
           name: tokenInfo.name,
           symbol: tokenInfo.symbol,
+          isMetadata: tokenInfo.isMetadata,
+          isTokenUri: tokenInfo.isTokenUri,
         };
       }
     }

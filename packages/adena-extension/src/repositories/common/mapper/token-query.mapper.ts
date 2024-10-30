@@ -1,4 +1,4 @@
-import { parseGRC721File } from '@common/utils/parse-utils';
+import { parseGRC721FileContents } from '@common/utils/parse-utils';
 import { GRC20TokenModel, GRC721CollectionModel } from '@types';
 
 export const GRC20_FUNCTIONS = [
@@ -21,7 +21,7 @@ export function mapGRC721CollectionModel(
   const packagePath = packageInfo.path;
 
   for (const file of packageInfo.files) {
-    const tokenInfo = parseGRC721File(file.body);
+    const tokenInfo = parseGRC721FileContents(file.body);
     if (tokenInfo) {
       return {
         tokenId: packagePath,
@@ -31,6 +31,8 @@ export function mapGRC721CollectionModel(
         packagePath,
         name: tokenInfo.name,
         symbol: tokenInfo.symbol,
+        isMetadata: tokenInfo.isMetadata,
+        isTokenUri: tokenInfo.isTokenUri,
       };
     }
   }

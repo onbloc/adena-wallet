@@ -2,7 +2,6 @@ import {
   GRC20TokenModel,
   GRC721CollectionModel,
   GRC721Model,
-  GRC721PinnedTokenModel,
   NetworkMetainfo,
   TokenModel,
 } from '@types';
@@ -17,6 +16,7 @@ export interface ITokenRepository extends IGRC721TokenRepository {
   fetchTokenMetainfos: () => Promise<TokenModel[]>;
   fetchAppInfos: () => Promise<AppInfoResponse[]>;
   fetchAllGRC20Tokens: () => Promise<GRC20TokenModel[]>;
+  fetchGRC20TokenByPackagePath: (packagePath: string) => Promise<GRC20TokenModel>;
 
   getAccountTokenMetainfos: (accountId: string) => Promise<TokenModel[]>;
   updateTokenMetainfos: (accountId: string, tokenMetainfos: TokenModel[]) => Promise<boolean>;
@@ -36,6 +36,9 @@ export interface IGRC721TokenRepository {
     accountId: string,
     collections: GRC721CollectionModel[],
   ) => Promise<boolean>;
-  getAccountGRC721PinnedByAccountId: (accountId: string) => Promise<GRC721PinnedTokenModel[]>;
-  saveAccountGRC721PinnedBy: (accountId: string, grc721tokens: GRC721Model[]) => Promise<boolean>;
+  getAccountGRC721PinnedPackagesByAccountId: (accountId: string) => Promise<string[]>;
+  saveAccountGRC721PinnedPackagesBy: (
+    accountId: string,
+    packagePaths: string[],
+  ) => Promise<boolean>;
 }
