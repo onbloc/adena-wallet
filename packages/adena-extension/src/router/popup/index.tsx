@@ -55,6 +55,7 @@ import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
 import ManageNFT from '@pages/popup/wallet/manage-nft';
 import NFTTransferInput from '@pages/popup/wallet/nft-transfer-input';
+import NFTTransferSummary from '@pages/popup/wallet/nft-transfer-summary';
 import { NftCollection } from '@pages/popup/wallet/nft/collection';
 import { NftCollectionAsset } from '@pages/popup/wallet/nft/collection-asset';
 import { Header } from './header';
@@ -99,6 +100,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
         <Route path={RoutePath.TransferInput} element={<TransferInput />} />
         <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />
+        <Route path={RoutePath.NftTransferSummary} element={<NFTTransferSummary />} />
         <Route path={RoutePath.NftTransferInput} element={<NFTTransferInput />} />
         <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
         <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />

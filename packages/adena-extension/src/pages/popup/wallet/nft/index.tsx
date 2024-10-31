@@ -25,25 +25,31 @@ const Wrapper = styled.main`
 export const Nft = (): JSX.Element => {
   const { navigate } = useAppNavigate();
 
-  const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections();
+  const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({
+    refetchOnMount: true,
+  });
   const {
     data: pinnedCollections,
     isFetched: isFetchedPinnedCollections,
     refetch: refetchPinnedCollection,
-  } = useGetGRC721PinnedCollections();
+  } = useGetGRC721PinnedCollections({
+    refetchOnMount: true,
+  });
 
   const { pinCollection, unpinCollection } = useNFTCollectionHandler();
 
   const pin = useCallback(
     async (packagePath: string) => {
-      await pinCollection(packagePath).then(() => refetchPinnedCollection);
+      await pinCollection(packagePath);
+      await refetchPinnedCollection();
     },
     [pinCollection],
   );
 
   const unpin = useCallback(
     async (packagePath: string) => {
-      await unpinCollection(packagePath).then(() => refetchPinnedCollection);
+      await unpinCollection(packagePath);
+      await refetchPinnedCollection();
     },
     [unpinCollection],
   );

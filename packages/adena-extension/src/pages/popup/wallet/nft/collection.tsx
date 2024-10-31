@@ -25,15 +25,16 @@ export const NftCollection = (): JSX.Element => {
   const { openScannerLink } = useLink();
   const { params, navigate, goBack } = useAppNavigate<RoutePath.NftCollection>();
 
+  const { data: grc721Tokens, isFetched: isFetchedGRC721Tokens } = useGetGRC721Tokens(
+    params.collection,
+    {
+      refetchOnMount: true,
+    },
+  );
+
   const title = useMemo(() => {
     return params.collection.name;
   }, [params.collection]);
-
-  const packagePath = useMemo(() => {
-    return params.collection.packagePath;
-  }, [params.collection]);
-
-  const { data: grc721Tokens, isFetched: isFetchedGRC721Tokens } = useGetGRC721Tokens(packagePath);
 
   const moveBack = useCallback(() => {
     goBack();

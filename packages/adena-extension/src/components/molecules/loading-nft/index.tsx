@@ -23,8 +23,8 @@ const ListBoxWrap = styled.div`
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
   width: 100%;
+  aspect-ratio: 1;
   flex: 1;
-  height: 152px;
   padding: 10px;
 `;
 

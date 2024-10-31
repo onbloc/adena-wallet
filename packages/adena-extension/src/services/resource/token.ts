@@ -7,6 +7,7 @@ import {
   AccountTokenBalance,
   GRC20TokenModel,
   GRC721CollectionModel,
+  GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
   TokenModel,
@@ -183,6 +184,13 @@ export class TokenService {
 
   public async fetchGRC721TokenUri(packagePath: string, tokenId: string): Promise<string> {
     return this.tokenRepository.fetchGRC721TokenUriBy(packagePath, tokenId);
+  }
+
+  public async fetchGRC721TokenMetadata(
+    packagePath: string,
+    tokenId: string,
+  ): Promise<GRC721MetadataModel> {
+    return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId);
   }
 
   public async fetchGRC721Balance(packagePath: string, address: string): Promise<number> {

@@ -53,6 +53,7 @@ export enum RoutePath {
   NftTransferInput = '/wallet/nft-transfer-input',
   TransferInput = '/wallet/transfer-input',
   TransferSummary = '/wallet/transfer-summary',
+  NftTransferSummary = '/wallet/nft-transfer-summary',
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
@@ -166,6 +167,15 @@ export type RouteParams = {
       value: string;
       denom: string;
     };
+    networkFee: {
+      value: string;
+      denom: string;
+    };
+    memo: string;
+  };
+  [RoutePath.NftTransferSummary]: {
+    grc721Token: GRC721Model;
+    toAddress: string;
     networkFee: {
       value: string;
       denom: string;
