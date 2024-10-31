@@ -17,8 +17,6 @@ export const useGetGRC721PinnedCollections = (
 
       return tokenService.getAccountGRC721PinnedPackages(currentAccount.id).catch(() => []);
     },
-    staleTime: Infinity,
-    keepPreviousData: true,
     ...options,
   });
 };

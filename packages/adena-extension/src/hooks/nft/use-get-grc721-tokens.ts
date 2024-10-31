@@ -1,61 +1,35 @@
+import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721Model } from '@types';
+import { GRC721CollectionModel, GRC721Model } from '@types';
 
 export const useGetGRC721Tokens = (
-  packagePath: string,
+  collection: GRC721CollectionModel | null,
   options?: UseQueryOptions<GRC721Model[] | null, Error>,
 ): UseQueryResult<GRC721Model[] | null> => {
-  // const { tokenService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { tokenService } = useAdenaContext();
+  const { currentAddress } = useCurrentAccount();
 
   return useQuery<GRC721Model[] | null, Error>({
-    queryKey: ['nft/useGetGRC721Tokens', currentAccount?.id || '', packagePath],
-    queryFn: () => {
-      if (!currentAccount) {
+    queryKey: ['nft/useGetGRC721Tokens', currentAddress || '', collection?.packagePath],
+    queryFn: async () => {
+      if (!currentAddress || !collection) {
         return null;
       }
 
-      return [
-        {
-          display: true,
-          name: 'Gnopunks',
-          networkId: '',
-          packagePath: 'package path',
-          symbol: '',
-          tokenId: '0',
-          type: 'grc721',
-          isMetadata: false,
-          isTokenUri: false,
-          metadata: null,
-        },
-        {
-          display: true,
-          name: 'Gnopunks11',
-          networkId: '',
-          packagePath: 'package path',
-          symbol: '',
-          tokenId: '0',
-          type: 'grc721',
-          isMetadata: false,
-          isTokenUri: false,
-          metadata: null,
-        },
-        {
-          display: true,
-          name: 'Gnopunks22',
-          networkId: '',
-          packagePath: 'package path',
-          symbol: '',
-          tokenId: '0',
-          type: 'grc721',
-          isMetadata: false,
-          isTokenUri: false,
-          metadata: null,
-        },
-      ];
+      const tokens = await tokenService
+        .fetchGRC721Tokens(collection.packagePath, currentAddress)
+        .catch(() => []);
 
-      // return tokenService.getAccountGRC721Collections(currentAccount.id).catch(() => []);
+      return tokens
+        .map((token) => ({
+          ...token,
+          name: collection.name,
+          symbol: collection.symbol,
+          isTokenUri: collection.isTokenUri,
+          isMetadata: collection.isMetadata,
+        }))
+        .reverse();
     },
     staleTime: Infinity,
     keepPreviousData: true,

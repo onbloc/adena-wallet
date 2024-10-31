@@ -4,7 +4,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 interface UseNFTCollectionHandlerReturn {
   pinCollection: (packagePath: string) => Promise<boolean>;
   unpinCollection: (packagePath: string) => Promise<boolean>;
-  visibleCollection: (packagePath: string) => Promise<boolean>;
+  showCollection: (packagePath: string) => Promise<boolean>;
   hideCollection: (packagePath: string) => Promise<boolean>;
 }
 
@@ -36,7 +36,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     );
   };
 
-  const visibleCollection = async (packagePath: string): Promise<boolean> => {
+  const showCollection = async (packagePath: string): Promise<boolean> => {
     if (!currentAccount) {
       return false;
     }
@@ -74,5 +74,5 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     return tokenService.saveAccountGRC721Collections(currentAccount.id, changedCollections);
   };
 
-  return { pinCollection, unpinCollection, visibleCollection, hideCollection };
+  return { pinCollection, unpinCollection, showCollection, hideCollection };
 };

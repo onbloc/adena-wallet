@@ -1,6 +1,7 @@
 import {
   GRC20TokenModel,
   GRC721CollectionModel,
+  GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
   TokenModel,
@@ -28,6 +29,10 @@ export interface IGRC721TokenRepository {
   fetchGRC721Collections: () => Promise<GRC721CollectionModel[]>;
   fetchGRC721CollectionByPackagePath: (packagePath: string) => Promise<GRC721CollectionModel>;
   fetchGRC721TokenUriBy: (packagePath: string, address: string) => Promise<string>;
+  fetchGRC721TokenMetadataBy: (
+    packagePath: string,
+    address: string,
+  ) => Promise<GRC721MetadataModel>;
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
   fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;
 
