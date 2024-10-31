@@ -58,7 +58,29 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
     return collections?.filter((collection) => collection.display).length === 0;
   }, [collections]);
 
-  const includePinnedCollections = useCallback(
+  const sortedCollections = useMemo(() => {
+    if (!Array.isArray(collections)) {
+      return collections;
+    }
+
+    if (!Array.isArray(pinnedCollections)) {
+      return null;
+    }
+
+    const pinned = pinnedCollections
+      .map((packagePath) =>
+        collections.find((collection) => collection.packagePath === packagePath),
+      )
+      .filter((collection) => !!collection) as GRC721CollectionModel[];
+
+    const unpinned = collections.filter(
+      (collection) => !pinnedCollections.includes(collection.packagePath),
+    );
+
+    return [...pinned, ...unpinned];
+  }, [pinnedCollections, collections]);
+
+  const exitsPinnedCollections = useCallback(
     (collection: GRC721CollectionModel) => {
       if (!pinnedCollections) {
         return false;
@@ -97,17 +119,17 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
 
   return (
     <NFTCollectionsWrapper>
-      {collections?.map((collection, index) => (
+      {sortedCollections?.map((collection, index) => (
         <NFTCollectionCard
           key={index}
           grc721Collection={collection}
-          pin={(): void => {
+          pin={(collection: GRC721CollectionModel): void => {
             pin(collection.packagePath);
           }}
-          unpin={(): void => {
+          unpin={(collection: GRC721CollectionModel): void => {
             unpin(collection.packagePath);
           }}
-          pinned={includePinnedCollections(collection)}
+          exitsPinnedCollections={exitsPinnedCollections}
           queryGRC721Balance={queryGRC721Balance}
           queryGRC721TokenUri={queryGRC721TokenUri}
           moveCollectionPage={moveCollectionPage}

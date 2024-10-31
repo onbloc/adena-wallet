@@ -8,7 +8,7 @@ import { NFTCollectionCardWrapper } from './nft-collection-card.styles';
 
 export interface NFTCollectionCardProps {
   grc721Collection: GRC721CollectionModel;
-  pinned: boolean;
+  exitsPinnedCollections: (collection: GRC721CollectionModel) => boolean;
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
@@ -18,14 +18,14 @@ export interface NFTCollectionCardProps {
     packagePath: string,
     options?: UseQueryOptions<number | null, Error>,
   ) => UseQueryResult<number | null>;
-  pin: () => void;
-  unpin: () => void;
+  pin: (collection: GRC721CollectionModel) => void;
+  unpin: (collection: GRC721CollectionModel) => void;
   moveCollectionPage: (collection: GRC721CollectionModel) => void;
 }
 
 const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
   grc721Collection,
-  pinned,
+  exitsPinnedCollections,
   pin,
   unpin,
   queryGRC721TokenUri,
@@ -62,18 +62,22 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     return BigNumber(balance).toFormat();
   }, [balance]);
 
+  const pinned = useMemo(() => {
+    return exitsPinnedCollections(grc721Collection);
+  }, [grc721Collection, exitsPinnedCollections]);
+
   const onClickPin = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
       if (pinned) {
-        unpin();
+        unpin(grc721Collection);
         return;
       }
 
-      pin();
+      pin(grc721Collection);
     },
-    [pinned],
+    [pinned, pin, unpin],
   );
 
   const onClickCard = useCallback(() => {
