@@ -5,7 +5,7 @@ import styled from 'styled-components';
 export const ManageCollectionsButtonWrapper = styled.div`
   ${mixins.flex({ direction: 'row' })};
   flex-shrink: 0;
-  width: 156px;
+  width: auto;
   height: 24px;
   cursor: pointer;
   transition: 0.2s;

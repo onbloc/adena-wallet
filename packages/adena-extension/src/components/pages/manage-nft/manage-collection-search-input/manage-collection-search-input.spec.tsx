@@ -4,12 +4,15 @@ import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import ManageCollectionsButton, { ManageCollectionsButtonProps } from './manage-collections-button';
+import ManageCollectionSearchInput, {
+  ManageCollectionSearchInputProps,
+} from './manage-collection-search-input';
 
-describe('ManageCollectionsButton Component', () => {
-  it('ManageCollectionsButton render', () => {
-    const args: ManageCollectionsButtonProps = {
-      onClick: () => {
+describe('ManageCollectionSearchInput Component', () => {
+  it('ManageCollectionSearchInput render', () => {
+    const args: ManageCollectionSearchInputProps = {
+      keyword: 'as',
+      onChangeKeyword: () => {
         return;
       },
     };
@@ -18,7 +21,7 @@ describe('ManageCollectionsButton Component', () => {
       <RecoilRoot>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
-          <ManageCollectionsButton {...args} />
+          <ManageCollectionSearchInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
     );

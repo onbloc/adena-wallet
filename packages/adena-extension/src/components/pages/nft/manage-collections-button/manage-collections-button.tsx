@@ -10,7 +10,7 @@ const ManageCollectionsButton: React.FC<ManageCollectionsButtonProps> = ({ onCli
   return (
     <ManageCollectionsButtonWrapper onClick={onClick}>
       <img className='icon' src={MainManageTokensFilterIcon} alt={'mange token filter icon'} />
-      <span className='title'>{'Manage Tokens'}</span>
+      <span className='title'>{'Manage Collectables'}</span>
     </ManageCollectionsButtonWrapper>
   );
 };
