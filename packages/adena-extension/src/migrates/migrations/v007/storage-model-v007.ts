@@ -129,6 +129,9 @@ export type AccountGRC721CollectionsV007 = {
     packagePath: string;
     name: string;
     symbol: string;
+    image: string | null;
+    isTokenUri: boolean;
+    isMetadata: boolean;
   };
 };
 
