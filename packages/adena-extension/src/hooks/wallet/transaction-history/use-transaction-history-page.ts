@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';

@@ -1,5 +1,12 @@
-import { AxiosInstance } from 'axios';
 import { NetworkMetainfo, TransactionInfo, TransactionWithPageInfo } from '@types';
+import { AxiosInstance } from 'axios';
+import {
+  mapReceivedTransactionByBankMsgSend,
+  mapReceivedTransactionByMsgCall,
+  mapSendTransactionByBankMsgSend,
+  mapTransactionEdgeByAddress,
+  mapVMTransaction,
+} from './mapper/transaction-history-query.mapper';
 import {
   makeAccountTransactionsQuery,
   makeBlockTimeLegacyQuery,
@@ -13,13 +20,6 @@ import {
   makeNativeTransactionsQuery,
   makeVMTransactionsByAddressQuery,
 } from './transaction-history.queries';
-import {
-  mapReceivedTransactionByBankMsgSend,
-  mapReceivedTransactionByMsgCall,
-  mapSendTransactionByBankMsgSend,
-  mapTransactionEdgeByAddress,
-  mapVMTransaction,
-} from './mapper/transaction-history-query.mapper';
 
 export class TransactionHistoryRepository {
   private axiosInstance: AxiosInstance;

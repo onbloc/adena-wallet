@@ -1,16 +1,16 @@
+import AddPackageIcon from '@assets/addpkg.svg';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ContractIcon from '@assets/contract.svg';
+import FailedIcon from '@assets/failed.svg';
+import SuccessIcon from '@assets/success.svg';
+import { TokenBalance } from '@components/molecules';
 import React, { useCallback } from 'react';
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
-import SuccessIcon from '@assets/success.svg';
-import FailedIcon from '@assets/failed.svg';
-import ContractIcon from '@assets/contract.svg';
-import AddPackageIcon from '@assets/addpkg.svg';
-import { TokenBalance } from '@components/molecules';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 
 export interface TransactionHistoryListItemProps {
   hash: string;
   logo?: string;
-  type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
+  type: 'TRANSFER' | 'TRANSFER_GRC721' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
   status: 'SUCCESS' | 'FAIL';
   title: string;
   description?: string;
@@ -83,6 +83,8 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
       <div className={`value-wrapper ${getValueTypeClassName()}`}>
         {type === 'MULTI_CONTRACT_CALL' ? (
           <span className='value more'>More</span>
+        ) : type === 'TRANSFER_GRC721' ? (
+          <span className='value grc721'>{`${amount.denom} #${amount.value}`}</span>
         ) : (
           <TokenBalance
             value={amount.value}

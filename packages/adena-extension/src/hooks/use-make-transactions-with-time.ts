@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
+import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
 import { useAdenaContext } from './use-context';
 import { useGRC20Tokens } from './use-grc20-tokens';
 import { useNetwork } from './use-network';
@@ -21,11 +22,13 @@ export const useMakeTransactionsWithTime = (
   const { transactionHistoryService } = useAdenaContext();
   const { getTokenImageByDenom, getTokenAmount } = useTokenMetainfo();
   const { isFetched: isFetchedTokens } = useGRC20Tokens();
+  const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections } =
+    useGetAllGRC721Collections();
 
   const { status, isLoading, isFetched, isFetching, data } = useQuery({
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, key || ''],
     queryFn: () => {
-      if (!transactions) {
+      if (!transactions || !grc721Collections) {
         return null;
       }
 
@@ -34,6 +37,27 @@ export const useMakeTransactionsWithTime = (
           const time = await transactionHistoryService.fetchBlockTime(
             Number(transaction.height || 1),
           );
+          if (transaction.type === 'TRANSFER_GRC721') {
+            const amount = transaction.amount;
+            const collection = grc721Collections.find(
+              (collection) => collection.packagePath === amount.denom,
+            );
+            return {
+              ...transaction,
+              amount: {
+                ...amount,
+                denom: collection?.symbol || amount.denom,
+              },
+              networkFee: getTokenAmount(
+                transaction.networkFee || {
+                  value: '0',
+                  denom: 'GNOT',
+                },
+              ),
+              logo: collection?.image || '',
+              date: time || '',
+            };
+          }
           return {
             ...transaction,
             amount: getTokenAmount(transaction.amount),
@@ -49,7 +73,11 @@ export const useMakeTransactionsWithTime = (
         }),
       );
     },
-    enabled: !!transactionHistoryService.supported && !!transactions && isFetchedTokens,
+    enabled:
+      !!transactionHistoryService.supported &&
+      !!transactions &&
+      isFetchedTokens &&
+      isFetchedGRC721Collections,
     keepPreviousData: true,
   });
 
