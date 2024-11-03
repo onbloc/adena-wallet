@@ -122,7 +122,9 @@ export type RouteParams = {
   };
   [RoutePath.Deposit]: {
     type: 'token' | 'wallet';
-    tokenMetainfo: TokenBalanceType;
+    token: {
+      symbol: string;
+    };
   };
   [RoutePath.Send]: null;
   [RoutePath.TokenDetails]: {

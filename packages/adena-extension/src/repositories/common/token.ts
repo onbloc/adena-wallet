@@ -289,6 +289,7 @@ export class TokenRepository implements ITokenRepository {
         packagePath: token.packagePath,
         name: token.name,
         symbol: token.symbol,
+        image: null,
         isMetadata: !!token.isMetadata,
         isTokenUri: !!token.isTokenUri,
       }));
@@ -384,7 +385,7 @@ export class TokenRepository implements ITokenRepository {
       address,
     ]);
 
-    if (!response || !BigNumber(response).isNaN()) {
+    if (!response || BigNumber(response).isNaN()) {
       throw new Error('not found token uri');
     }
 
@@ -644,6 +645,7 @@ export class TokenRepository implements ITokenRepository {
           type: 'grc721',
           name: tokenInfo.name,
           symbol: tokenInfo.symbol,
+          image: null,
           isMetadata: tokenInfo.isMetadata,
           isTokenUri: tokenInfo.isTokenUri,
         };

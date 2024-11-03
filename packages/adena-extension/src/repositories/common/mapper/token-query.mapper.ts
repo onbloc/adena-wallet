@@ -31,6 +31,7 @@ export function mapGRC721CollectionModel(
         packagePath,
         name: tokenInfo.name,
         symbol: tokenInfo.symbol,
+        image: null,
         isMetadata: tokenInfo.isMetadata,
         isTokenUri: tokenInfo.isTokenUri,
       };

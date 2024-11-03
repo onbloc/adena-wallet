@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
 import NFTHeader from '@components/pages/nft/nft-header/nft-header';
 import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
@@ -8,6 +9,8 @@ import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
 import { useGetGRC721PinnedCollections } from '@hooks/nft/use-get-grc721-pinned-collections';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { GRC721CollectionModel, RoutePath } from '@types';
@@ -16,14 +19,18 @@ import { useCallback } from 'react';
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
   width: 100%;
-  height: 100%;
+  height: auto;
+  flex-shrink: 0;
   padding-top: 24px;
+  padding-bottom: 96px;
   gap: 8px;
   background-color: ${getTheme('neutral', '_8')};
 `;
 
 export const Nft = (): JSX.Element => {
+  const { currentAddress } = useCurrentAccount();
   const { navigate } = useAppNavigate();
+  const { openScannerLink } = useLink();
 
   const { data: collections, isFetched: isFetchedCollections } = useGetGRC721Collections({
     refetchOnMount: true,
@@ -54,6 +61,22 @@ export const Nft = (): JSX.Element => {
     [unpinCollection],
   );
 
+  const openGnoscan = useCallback(() => {
+    if (!currentAddress) {
+      return;
+    }
+    openScannerLink('/accounts/' + currentAddress);
+  }, [currentAddress, openScannerLink]);
+
+  const moveDepositPage = useCallback(() => {
+    navigate(RoutePath.Deposit, {
+      state: {
+        token: GNOT_TOKEN,
+        type: 'token',
+      },
+    });
+  }, [navigate]);
+
   const moveCollectionPage = useCallback(
     (collection: GRC721CollectionModel) => {
       navigate(RoutePath.NftCollection, { state: { collection } });
@@ -67,7 +90,7 @@ export const Nft = (): JSX.Element => {
 
   return (
     <Wrapper>
-      <NFTHeader />
+      <NFTHeader openGnoscan={openGnoscan} moveDepositPage={moveDepositPage} />
       <NFTCollections
         collections={collections}
         isFetchedCollections={isFetchedCollections}

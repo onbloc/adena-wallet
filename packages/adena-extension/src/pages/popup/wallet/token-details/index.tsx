@@ -178,7 +178,7 @@ export const TokenDetails = (): JSX.Element => {
     if (!tokenBalance) {
       return;
     }
-    navigate(RoutePath.Deposit, { state: { type: 'token', tokenMetainfo: tokenBalance } });
+    navigate(RoutePath.Deposit, { state: { type: 'token', token: tokenBalance } });
   };
 
   const SendButtonClick = (): void => {

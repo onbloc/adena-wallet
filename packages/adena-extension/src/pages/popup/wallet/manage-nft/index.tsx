@@ -1,20 +1,22 @@
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ManageCollections from '@components/pages/manage-nft/manage-collections/manage-collections';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
-import ManageTokenSearch from '@components/pages/manage-token/manage-token';
+import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
+import { useGetGRC721Balance } from '@hooks/nft/use-get-grc721-balance';
+import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
+import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { RoutePath } from '@types';
+import { ManageGRC721Info } from '@types';
 
 const ManageNFTContainer: React.FC = () => {
-  const { navigate, goBack } = useAppNavigate();
+  const { goBack } = useAppNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isClose, setIsClose] = useState(false);
-  const { currentAccount } = useCurrentAccount();
-  const { currentBalances, toggleDisplayOption } = useTokenBalance();
+  const { data: collections, refetch: refetchCollections } = useGetGRC721Collections({
+    refetchOnMount: true,
+  });
+  const { showCollection, hideCollection } = useNFTCollectionHandler();
 
   useEffect(() => {
     if (isClose) {
@@ -22,50 +24,43 @@ const ManageNFTContainer: React.FC = () => {
     }
   }, [isClose]);
 
-  const filterTokens = useCallback(
-    (keyword: string) => {
-      const comparedKeyword = keyword.toLowerCase();
-      const filteredTokens = currentBalances
-        .filter((token) => {
-          if (comparedKeyword === '') return true;
-          if (token.name.toLowerCase().includes(comparedKeyword)) return true;
-          if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
-          return false;
-        })
-        .map((metainfo) => {
-          return {
-            ...metainfo,
-            balanceAmount: {
-              value: BigNumber(metainfo.amount.value).toFormat(),
-              denom: metainfo.amount.denom,
-            },
-            logo: metainfo.image || `${UnknownTokenIcon}`,
-          };
-        });
-      return filteredTokens;
-    },
-    [currentBalances],
-  );
+  const filteredCollections: ManageGRC721Info[] = useMemo(() => {
+    if (!collections) {
+      return [];
+    }
 
-  const moveTokenAddedPage = useCallback(() => {
-    navigate(RoutePath.ManageTokenAdded);
-  }, [navigate]);
+    const comparedKeyword = searchKeyword.toLowerCase();
+    const filteredCollections = collections
+      .filter((collection) => {
+        if (comparedKeyword === '') return true;
+        if (collection.name.toLowerCase().includes(comparedKeyword)) return true;
+        if (collection.symbol.toLowerCase().includes(comparedKeyword)) return true;
+        return false;
+      })
+      .map((collection) => {
+        return {
+          ...collection,
+          type: 'grc721' as const,
+          balance: '0',
+          logo: collection.isTokenUri ? collection.packagePath : '',
+        };
+      });
+    return filteredCollections;
+  }, [searchKeyword, collections]);
 
   const onChangeKeyword = useCallback((keyword: string) => {
     setSearchKeyword(keyword);
   }, []);
 
   const onToggleActiveItem = useCallback(
-    (tokenId: string, activated: boolean) => {
-      if (!currentAccount) {
-        return;
-      }
-      const changedToken = currentBalances.find((token) => tokenId === token.tokenId);
-      if (changedToken) {
-        toggleDisplayOption(currentAccount, changedToken, activated);
+    (packagePath: string, activated: boolean) => {
+      if (activated) {
+        showCollection(packagePath).then(() => refetchCollections());
+      } else {
+        hideCollection(packagePath).then(() => refetchCollections());
       }
     },
-    [currentBalances],
+    [showCollection, hideCollection],
   );
 
   const onClickClose = useCallback(() => {
@@ -74,10 +69,11 @@ const ManageNFTContainer: React.FC = () => {
 
   return (
     <ManageTokenLayout>
-      <ManageTokenSearch
+      <ManageCollections
         keyword={searchKeyword}
-        tokens={filterTokens(searchKeyword)}
-        onClickAdded={moveTokenAddedPage}
+        collections={filteredCollections}
+        queryGRC721Balance={useGetGRC721Balance}
+        queryGRC721TokenUri={useGetGRC721TokenUri}
         onClickClose={onClickClose}
         onChangeKeyword={onChangeKeyword}
         onToggleActiveItem={onToggleActiveItem}

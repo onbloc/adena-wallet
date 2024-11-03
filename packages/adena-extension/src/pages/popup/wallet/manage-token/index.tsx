@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import BigNumber from 'bignumber.js';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import ManageTokenSearch from '@components/pages/manage-token/manage-token';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { RoutePath } from '@types';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import ManageTokenSearch from '@components/pages/manage-token/manage-token';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import { ManageTokenInfo, RoutePath } from '@types';
 
 const ManageTokenSearchContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
@@ -22,30 +22,28 @@ const ManageTokenSearchContainer: React.FC = () => {
     }
   }, [isClose]);
 
-  const filterTokens = useCallback(
-    (keyword: string) => {
-      const comparedKeyword = keyword.toLowerCase();
-      const filteredTokens = currentBalances
-        .filter((token) => {
-          if (comparedKeyword === '') return true;
-          if (token.name.toLowerCase().includes(comparedKeyword)) return true;
-          if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
-          return false;
-        })
-        .map((metainfo) => {
-          return {
-            ...metainfo,
-            balanceAmount: {
-              value: BigNumber(metainfo.amount.value).toFormat(),
-              denom: metainfo.amount.denom,
-            },
-            logo: metainfo.image || `${UnknownTokenIcon}`,
-          };
-        });
-      return filteredTokens;
-    },
-    [currentBalances],
-  );
+  const filteredTokens: ManageTokenInfo[] = useMemo(() => {
+    const comparedKeyword = searchKeyword.toLowerCase();
+    const filteredTokens = currentBalances
+      .filter((token) => {
+        if (comparedKeyword === '') return true;
+        if (token.name.toLowerCase().includes(comparedKeyword)) return true;
+        if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
+        return false;
+      })
+      .map((metainfo) => {
+        return {
+          ...metainfo,
+          type: 'token' as const,
+          balance: {
+            value: BigNumber(metainfo.amount.value).toFormat(),
+            denom: metainfo.amount.denom,
+          },
+          logo: metainfo.image || `${UnknownTokenIcon}`,
+        };
+      });
+    return filteredTokens;
+  }, [searchKeyword, currentBalances]);
 
   const moveTokenAddedPage = useCallback(() => {
     navigate(RoutePath.ManageTokenAdded);
@@ -76,7 +74,7 @@ const ManageTokenSearchContainer: React.FC = () => {
     <ManageTokenLayout>
       <ManageTokenSearch
         keyword={searchKeyword}
-        tokens={filterTokens(searchKeyword)}
+        tokens={filteredTokens}
         onClickAdded={moveTokenAddedPage}
         onClickClose={onClickClose}
         onChangeKeyword={onChangeKeyword}

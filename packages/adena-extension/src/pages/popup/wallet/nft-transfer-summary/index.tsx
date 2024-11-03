@@ -18,8 +18,8 @@ import { GRC721Model, RoutePath } from '@types';
 const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
-  height: 100%;
-  padding: 24px 20px;
+  height: auto;
+  padding: 24px 20px 116px;
 `;
 
 const NFTTransferSummaryContainer: React.FC = () => {

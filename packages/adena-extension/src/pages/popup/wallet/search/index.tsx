@@ -1,23 +1,22 @@
-import React, { useState, useRef } from 'react';
-import styled from 'styled-components';
 import BigNumber from 'bignumber.js';
+import React, { useRef, useState } from 'react';
+import styled from 'styled-components';
 
-import search from '@assets/search.svg';
 import cancel from '@assets/cancel-dark.svg';
-import { Text, DefaultInput, Button } from '@components/atoms';
-import { TokenBalance } from '@components/molecules';
-import { RoutePath } from '@types';
-import { searchTextFilter } from '@common/utils/client-utils';
-import { ListBox, ListHierarchy } from '@components/atoms';
-import { useTokenBalance } from '@hooks/use-token-balance';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import search from '@assets/search.svg';
+import { searchTextFilter } from '@common/utils/client-utils';
+import { Button, DefaultInput, ListBox, ListHierarchy, Text } from '@components/atoms';
+import { TokenBalance } from '@components/molecules';
 import useHistoryData from '@hooks/use-history-data';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import { RoutePath } from '@types';
 
-import { TokenBalanceType } from '@types';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useSessionState from '@hooks/use-session-state';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { TokenBalanceType } from '@types';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -108,7 +107,7 @@ export const WalletSearch = (): JSX.Element => {
     navigate(RoutePath.Deposit, {
       state: {
         type: 'wallet',
-        tokenMetainfo: tokenBalance,
+        token: tokenBalance,
       },
     });
   };

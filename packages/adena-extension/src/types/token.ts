@@ -39,15 +39,24 @@ export interface IBCTokenModel extends TokenModel {
 
 export interface ManageTokenInfo {
   tokenId: string;
+  type: 'token';
   logo: string;
-  symbol: string;
   name: string;
   display?: boolean;
   main?: boolean;
-  balanceAmount: {
+  balance: {
     value: string;
     denom: string;
   };
+}
+
+export interface ManageGRC721Info {
+  tokenId: string;
+  packagePath: string;
+  type: 'grc721';
+  isTokenUri: boolean;
+  name: string;
+  display?: boolean;
 }
 
 export interface TokenInfo {
@@ -112,6 +121,7 @@ export interface GRC721CollectionModel {
   packagePath: string;
   name: string;
   symbol: string;
+  image: string | null;
   isTokenUri: boolean;
   isMetadata: boolean;
 }
