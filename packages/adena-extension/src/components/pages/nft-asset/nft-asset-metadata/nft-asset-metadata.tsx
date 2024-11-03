@@ -1,6 +1,6 @@
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GRC721MetadataModel, GRC721Model } from '@types';
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { NFTAssetMetadataWrapper } from './nft-asset-metadata.styles';
 
 export interface NFTAssetMetadataProps {
@@ -30,10 +30,6 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({ asset, queryGRC721T
     return isFetchedTokenMetadata && !!tokenMetadata;
   }, [asset, tokenMetadata, isFetchedTokenMetadata]);
 
-  useEffect(() => {
-    console.log(tokenMetadata);
-  }, [tokenMetadata]);
-
   if (!isFetchedTokenMetadataWithEnabled) {
     return <React.Fragment />;
   }
@@ -50,52 +46,10 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({ asset, queryGRC721T
 
         <div className='attribute-wrapper'>
           {tokenMetadata?.attributes.map((trait, index) => (
-            <>
-              <div key={index} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 1} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 2} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 3} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 4} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 5} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 7} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 6} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 8} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 9} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-              <div key={index + 10} className='trait-wrapper'>
-                <span className='trait-type'>{trait.traitType}</span>
-                <span className='trait-value'>{trait.value}</span>
-              </div>
-            </>
+            <div key={index} className='trait-wrapper'>
+              <span className='trait-type'>{trait.traitType}</span>
+              <span className='trait-value'>{trait.value}</span>
+            </div>
           ))}
         </div>
       </div>

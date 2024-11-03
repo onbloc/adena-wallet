@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { SubHeader } from '@components/atoms';
@@ -59,20 +59,24 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
   onClickCancel,
   onClickNext,
 }) => {
+  const title = useMemo(() => {
+    return `Send ${grc721Token.name} #${grc721Token.tokenId}`;
+  }, [grc721Token]);
+
   return (
     <NFTTransferInputWrapper>
       {hasBackButton ? (
         <SubHeader
-          title={`Send ${grc721Token.symbol || ''}`}
+          title={title}
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
             onClick: onClickBack,
           }}
         />
       ) : (
-        <SubHeader title={`Send ${grc721Token.symbol || ''}`} />
+        <SubHeader title={title} />
       )}
-      <div className='logo-wrapper'>
+      <div className='asset-card-wrapper'>
         <NFTAssetImageCard asset={grc721Token} queryGRC721TokenUri={queryGRC721TokenUri} />
       </div>
 

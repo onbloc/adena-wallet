@@ -52,7 +52,7 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
 
   const tokenName = useMemo(() => {
     return `${grc721Collection.name}`;
-  }, [grc721Collection.name, grc721Collection.tokenId]);
+  }, [grc721Collection.name]);
 
   const balanceStr = useMemo(() => {
     if (balance === undefined || balance === null) {

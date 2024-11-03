@@ -9,7 +9,12 @@ import NFTHeader, { NFTHeaderProps } from './nft-header';
 describe('NFTHeader Component', () => {
   it('NFTHeader render', () => {
     const args: NFTHeaderProps = {
-      grc721Tokens: [],
+      moveDepositPage: () => {
+        return;
+      },
+      openGnoscan: () => {
+        return;
+      },
     };
 
     render(

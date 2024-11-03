@@ -111,7 +111,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
 
   if (isEmptyDisplayCollections) {
     return (
-      <NFTCollectionsWrapper>
+      <NFTCollectionsWrapper className='non-items'>
         <ManageCollectionsButton onClick={onClickManageCollectionsButton} />
       </NFTCollectionsWrapper>
     );
@@ -119,22 +119,28 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
 
   return (
     <NFTCollectionsWrapper>
-      {sortedCollections?.map((collection, index) => (
-        <NFTCollectionCard
-          key={index}
-          grc721Collection={collection}
-          pin={(collection: GRC721CollectionModel): void => {
-            pin(collection.packagePath);
-          }}
-          unpin={(collection: GRC721CollectionModel): void => {
-            unpin(collection.packagePath);
-          }}
-          exitsPinnedCollections={exitsPinnedCollections}
-          queryGRC721Balance={queryGRC721Balance}
-          queryGRC721TokenUri={queryGRC721TokenUri}
-          moveCollectionPage={moveCollectionPage}
-        />
-      ))}
+      <div className='collection-wrapper'>
+        {sortedCollections?.map((collection, index) => (
+          <NFTCollectionCard
+            key={index}
+            grc721Collection={collection}
+            pin={(collection: GRC721CollectionModel): void => {
+              pin(collection.packagePath);
+            }}
+            unpin={(collection: GRC721CollectionModel): void => {
+              unpin(collection.packagePath);
+            }}
+            exitsPinnedCollections={exitsPinnedCollections}
+            queryGRC721Balance={queryGRC721Balance}
+            queryGRC721TokenUri={queryGRC721TokenUri}
+            moveCollectionPage={moveCollectionPage}
+          />
+        ))}
+      </div>
+
+      <div className='manage-collection-button-wrapper'>
+        <ManageCollectionsButton onClick={onClickManageCollectionsButton} />
+      </div>
     </NFTCollectionsWrapper>
   );
 };

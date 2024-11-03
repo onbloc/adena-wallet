@@ -6,23 +6,26 @@ import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
 import React, { useMemo } from 'react';
 import { NFTHeaderWrapper } from './nft-header.styles';
 
-export interface NFTHeaderProps {}
+export interface NFTHeaderProps {
+  openGnoscan: () => void;
+  moveDepositPage: () => void;
+}
 
-const NFTHeader: React.FC<NFTHeaderProps> = () => {
+const NFTHeader: React.FC<NFTHeaderProps> = ({ openGnoscan, moveDepositPage }) => {
   const dropdownOptions = useMemo(
     () => [
       {
         text: 'Deposit NFT',
         icon: <IconQRCode />,
-        onClick: () => console.log('Deposit NFT'),
+        onClick: moveDepositPage,
       },
       {
         text: 'View on Gnoscan',
         icon: <IconLink />,
-        onClick: () => console.log('View on Gnoscan'),
+        onClick: openGnoscan,
       },
     ],
-    [],
+    [openGnoscan, moveDepositPage],
   );
 
   return (

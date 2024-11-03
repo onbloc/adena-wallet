@@ -1,3 +1,4 @@
+import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { UseQueryResult } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ describe('NFTCollectionCard Component', () => {
         networkId: '',
         packagePath: '',
         symbol: '',
+        image: null,
         tokenId: '',
         type: 'grc721',
         isMetadata: true,

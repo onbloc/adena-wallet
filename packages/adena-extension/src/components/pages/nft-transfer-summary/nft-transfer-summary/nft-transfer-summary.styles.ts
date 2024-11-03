@@ -7,7 +7,6 @@ export const NFTTransferSummaryWrapper = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
-  padding-top: 5px;
   min-height: 444px;
   align-items: center;
 
@@ -18,6 +17,11 @@ export const NFTTransferSummaryWrapper = styled.div`
   .info-wrapper {
     width: 100%;
     margin-top: 25px;
+
+    .asset-card-wrapper {
+      width: 100px;
+      margin: 0 auto;
+    }
   }
 
   .direction-icon-wrapper {

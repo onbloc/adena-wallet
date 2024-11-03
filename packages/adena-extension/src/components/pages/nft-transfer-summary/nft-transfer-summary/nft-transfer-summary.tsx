@@ -7,6 +7,7 @@ import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import { NFTTransferSummaryWrapper } from './nft-transfer-summary.styles';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { BottomFixedButtonGroup } from '@components/molecules';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
 import TransferSummaryNetworkFee from '@components/pages/transfer-summary/transfer-summary-network-fee/transfer-summary-network-fee';
@@ -90,14 +91,18 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
         {isErrorNetworkFee && <span className='error-message'>{errorMessage}</span>}
       </div>
 
-      <div className='button-group'>
-        <button className='cancel' onClick={onClickCancel}>
-          Cancel
-        </button>
-        <button className='send' onClick={onClickSend}>
-          Send
-        </button>
-      </div>
+      <BottomFixedButtonGroup
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel,
+        }}
+        rightButton={{
+          text: 'Send',
+          onClick: onClickSend,
+          primary: true,
+        }}
+        filled
+      />
     </NFTTransferSummaryWrapper>
   );
 };
