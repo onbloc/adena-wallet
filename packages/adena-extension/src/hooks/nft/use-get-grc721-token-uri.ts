@@ -11,7 +11,6 @@ export const useGetGRC721TokenUri = (
   return useQuery<string | null, Error>({
     queryKey: ['nft/useGetGRC721TokenUri', packagePath, tokenId],
     queryFn: () => tokenService.fetchGRC721TokenUri(packagePath, tokenId).catch(() => null),
-    staleTime: Infinity,
     ...options,
   });
 };
