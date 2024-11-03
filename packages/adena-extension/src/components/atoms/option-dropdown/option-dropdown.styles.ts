@@ -66,7 +66,6 @@ export const OptionDropdownItemWrapper = styled(Row)`
 
   & > .title {
     width: 100%;
-    height: 18px;
     ${fonts.body3Reg}
   }
 
