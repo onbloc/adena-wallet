@@ -140,10 +140,8 @@ const TransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      const result = await createTransaction();
-      if (result) {
-        navigate(RoutePath.History);
-      }
+      createTransaction();
+      navigate(RoutePath.History);
     } catch (e) {
       if (!(e instanceof Error)) {
         return false;
