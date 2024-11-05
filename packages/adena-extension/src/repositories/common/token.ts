@@ -332,7 +332,9 @@ export class TokenRepository implements ITokenRepository {
           method: 'getUserTransferPackages',
           params: [address],
         }),
-      ).then((data) => data?.result || []);
+      )
+        .then((data) => data?.result || [])
+        .then((packages) => [...new Set(packages)]);
 
       return packages;
     }
