@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 
-import { GNOT_TOKEN } from '@common/constants/token.constant';
 import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
 import NFTHeader from '@components/pages/nft/nft-header/nft-header';
 import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
@@ -8,13 +7,14 @@ import { useGetGRC721Balance } from '@hooks/nft/use-get-grc721-balance';
 import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
 import { useGetGRC721PinnedCollections } from '@hooks/nft/use-get-grc721-pinned-collections';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import { useIsLoadingNFT } from '@hooks/nft/use-is-loading-nft';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { GRC721CollectionModel, RoutePath } from '@types';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -23,7 +23,7 @@ const Wrapper = styled.main`
   flex-shrink: 0;
   padding-top: 24px;
   padding-bottom: 96px;
-  gap: 8px;
+  gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
 `;
 
@@ -44,6 +44,12 @@ export const Nft = (): JSX.Element => {
   });
 
   const { pinCollection, unpinCollection } = useNFTCollectionHandler();
+
+  const fetchingCount = useIsLoadingNFT();
+
+  const isFinishFetchedCollections = useMemo(() => {
+    return fetchingCount === 0 && isFetchedCollections;
+  }, [fetchingCount, isFetchedCollections]);
 
   const pin = useCallback(
     async (packagePath: string) => {
@@ -71,7 +77,9 @@ export const Nft = (): JSX.Element => {
   const moveDepositPage = useCallback(() => {
     navigate(RoutePath.Deposit, {
       state: {
-        token: GNOT_TOKEN,
+        token: {
+          symbol: 'NFT',
+        },
         type: 'token',
       },
     });
@@ -93,7 +101,7 @@ export const Nft = (): JSX.Element => {
       <NFTHeader openGnoscan={openGnoscan} moveDepositPage={moveDepositPage} />
       <NFTCollections
         collections={collections}
-        isFetchedCollections={isFetchedCollections}
+        isFetchedCollections={isFinishFetchedCollections}
         pinnedCollections={pinnedCollections}
         isFetchedPinnedCollections={isFetchedPinnedCollections}
         pin={pin}

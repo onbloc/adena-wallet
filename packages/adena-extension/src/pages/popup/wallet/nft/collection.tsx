@@ -6,6 +6,7 @@ import NFTCollectionAssets from '@components/pages/nft-collection/nft-collection
 import NFTCollectionHeader from '@components/pages/nft-collection/nft-collection-header/nft-collection-header';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import { useGetGRC721Tokens } from '@hooks/nft/use-get-grc721-tokens';
+import { useIsLoadingNFT } from '@hooks/nft/use-is-loading-nft';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
@@ -17,7 +18,7 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 24px;
-  gap: 8px;
+  gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
 `;
 
@@ -31,6 +32,12 @@ export const NftCollection = (): JSX.Element => {
       refetchOnMount: true,
     },
   );
+
+  const fetchingCount = useIsLoadingNFT();
+
+  const isFinishFetchedGRC721Tokens = useMemo(() => {
+    return fetchingCount === 0 && isFetchedGRC721Tokens;
+  }, [fetchingCount, isFetchedGRC721Tokens]);
 
   const title = useMemo(() => {
     return params.collection.name;
@@ -64,7 +71,7 @@ export const NftCollection = (): JSX.Element => {
       />
       <NFTCollectionAssets
         tokens={grc721Tokens}
-        isFetchedTokens={isFetchedGRC721Tokens}
+        isFetchedTokens={isFinishFetchedGRC721Tokens}
         moveAssetPage={moveCollectionAssetPage}
         queryGRC721TokenUri={useGetGRC721TokenUri}
       />

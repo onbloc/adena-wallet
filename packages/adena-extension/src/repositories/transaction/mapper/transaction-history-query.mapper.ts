@@ -102,12 +102,12 @@ export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
-  if (firstMessage.value.func === 'TransferFrom') {
+  if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
     return {
       hash: tx.hash,
       height: tx.block_height,
       logo: firstMessage.value.pkg_path || '',
-      type: tx.messages.length === 1 ? 'TRANSFER_GRC721' : 'MULTI_CONTRACT_CALL',
+      type: 'TRANSFER_GRC721',
       status: tx.success ? 'SUCCESS' : 'FAIL',
       typeName: 'Receive',
       title: 'Receive',
@@ -117,7 +117,7 @@ export function mapReceivedTransactionByMsgCall(
         value: firstMessage.value.args?.[2] || '0',
         denom: firstMessage.value.pkg_path || '',
       },
-      to: formatAddress(firstMessage.value.caller || '', 4),
+      to: formatAddress(firstMessage.value.args?.[1] || '', 4),
       from: formatAddress(firstMessage.value.args?.[0] || '', 4),
       originTo: firstMessage.value.caller || '',
       originFrom: firstMessage.value.args?.[0] || '',
@@ -250,11 +250,11 @@ export function mapVMTransaction(
     const isTransfer = messageValue.func === 'Transfer';
     const isTransferGRC721 = messageValue.func === 'TransferFrom';
 
-    const fromAddress = messageValue.caller || '';
-    const toAddress = messageValue.args?.[0] || '';
-    const sendAmount = messageValue.args?.[1] || '0';
-
     if (isTransfer) {
+      const fromAddress = messageValue.caller || '';
+      const toAddress = messageValue.args?.[0] || '';
+      const sendAmount = messageValue.args?.[1] || '0';
+
       return {
         hash: tx.hash,
         height: tx.block_height,
@@ -282,6 +282,9 @@ export function mapVMTransaction(
     }
 
     if (isTransferGRC721) {
+      const fromAddress = messageValue.args?.[0] || '';
+      const toAddress = messageValue.args?.[1] || '';
+
       return {
         hash: tx.hash,
         height: tx.block_height,
