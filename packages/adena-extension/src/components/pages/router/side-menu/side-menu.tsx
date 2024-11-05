@@ -1,24 +1,26 @@
 import React, { useCallback } from 'react';
 
-import { SideMenuWrapper } from './side-menu.styles';
+import IconHelp from '@assets/help-fill.svg';
+import IconAdd from '@assets/icon-add';
+import IconLock from '@assets/icon-side-menu-lock.svg';
+import IconSetting from '@assets/icon-side-menu-setting.svg';
 import LogoAdena from '@assets/logo-withIcon.svg';
+import IconRestore from '@assets/restore.svg';
 import { Icon } from '@components/atoms';
 import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
 import SideMenuLink from '@components/pages/router/side-menu-link/side-menu-link';
-import IconAdd from '@assets/icon-add';
-import IconSetting from '@assets/icon-side-menu-setting.svg';
-import IconLock from '@assets/icon-side-menu-lock.svg';
-import IconRestore from '@assets/restore.svg';
-import IconHelp from '@assets/help-fill.svg';
-import { SideMenuProps, RoutePath } from '@types';
+import { RoutePath, SideMenuProps } from '@types';
+import { SideMenuWrapper } from './side-menu.styles';
 
 const SideMenu: React.FC<SideMenuProps> = ({
   scannerUrl,
   scannerQueryString,
   locked,
   currentAccountId,
+  focusedAccountId,
   accounts,
   movePage,
+  focusAccountId,
   openLink,
   openRegister,
   changeAccount,
@@ -80,7 +82,9 @@ const SideMenu: React.FC<SideMenuProps> = ({
         <SideMenuAccountList
           currentAccountId={currentAccountId}
           accounts={accounts}
+          focusedAccountId={focusedAccountId}
           changeAccount={changeAccount}
+          focusAccountId={focusAccountId}
           moveGnoscan={moveGnoscan}
           moveAccountDetail={moveAccountDetail}
         />

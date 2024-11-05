@@ -1,20 +1,22 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Portal, CopyIconButton } from '@components/atoms';
-import { SideMenuAccountItemProps } from '@types';
 import IconEtc from '@assets/icon-etc';
-import IconQRCode from '@assets/icon-qrcode';
 import IconLink from '@assets/icon-link';
+import IconQRCode from '@assets/icon-qrcode';
+import { CopyIconButton, Portal } from '@components/atoms';
+import { SideMenuAccountItemProps } from '@types';
 
 import {
-  SideMenuAccountItemWrapper,
   SideMenuAccountItemMoreInfoWrapper,
+  SideMenuAccountItemWrapper,
 } from './side-menu-account-item.styles';
 
 const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   selected,
   account,
+  focusedAccountId,
   changeAccount,
+  focusAccountId,
   moveGnoscan,
   moveAccountDetail,
 }) => {
@@ -42,16 +44,12 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
     }
   }, [type]);
 
-  const onMouseOut = useCallback(() => {
-    setOpenedMoreInfo(false);
-  }, [setOpenedMoreInfo]);
-
   const onClickItem = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
       changeAccount(accountId);
-      setOpenedMoreInfo(false);
+      focusAccountId(null);
     },
     [changeAccount, account],
   );
@@ -63,21 +61,43 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
       const { x, y } = event.currentTarget.getBoundingClientRect();
       setPositionX(x);
       setPositionY(y);
-      setOpenedMoreInfo(!openedMoreInfo);
+      focusAccountId(accountId);
     },
     [openedMoreInfo],
   );
 
+  useEffect(() => {
+    if (!accountId) {
+      return;
+    }
+
+    const opened = accountId === focusedAccountId;
+    setOpenedMoreInfo(opened);
+  }, [accountId, focusedAccountId]);
+
+  useEffect(() => {
+    if (accountId !== focusedAccountId) {
+      return;
+    }
+
+    const closeModal = (): void => {
+      focusAccountId(null);
+    };
+
+    window.addEventListener('click', closeModal);
+    return () => window.removeEventListener('click', closeModal);
+  }, [accountId, focusedAccountId, focusAccountId]);
+
   return (
-    <SideMenuAccountItemWrapper
-      className={selected ? 'selected' : ''}
-      onClick={onClickItem}
-      onMouseLeave={onMouseOut}
-    >
+    <SideMenuAccountItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
       <div className='info-wrapper'>
         <div className='address-wrapper'>
           <span className='name'>{displayName}</span>
-          <CopyIconButton className='copy-button' copyText={address} />
+          <CopyIconButton
+            className='copy-button'
+            copyText={address}
+            onClick={(): void => focusAccountId(null)}
+          />
           {label !== null && <span className='label'>{label}</span>}
         </div>
         <div className='balance-wrapper'>

@@ -1,14 +1,16 @@
 import React from 'react';
 
-import { SideMenuAccountListWrapper } from './side-menu-account-list.styles';
-import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
 import { SideMenuAccountListProps } from '@types';
+import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
+import { SideMenuAccountListWrapper } from './side-menu-account-list.styles';
 
 const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   currentAccountId,
   accounts,
+  focusedAccountId,
   changeAccount,
   moveGnoscan,
+  focusAccountId,
   moveAccountDetail,
 }) => {
   return (
@@ -18,7 +20,9 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
           key={index}
           selected={account.accountId === currentAccountId}
           account={account}
+          focusedAccountId={focusedAccountId}
           changeAccount={changeAccount}
+          focusAccountId={focusAccountId}
           moveGnoscan={moveGnoscan}
           moveAccountDetail={moveAccountDetail}
         />
