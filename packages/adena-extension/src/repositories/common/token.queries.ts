@@ -79,3 +79,48 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
   }
 }
 `;
+
+export const makeAllTransferEventsQueryBy = (address: string): string => `
+{
+  transactions(
+    filter: {
+      success: true
+      events: {
+        type: "Transfer"
+        attrs: [{
+          key: "to"
+          value: "${address}"
+        }]
+      }
+    }
+    ascending: false
+    after: null
+  ) {
+    pageInfo {
+      last
+      hasNext
+    }
+    edges {
+      cursor
+      transaction {
+        hash
+        index
+        success
+        block_height
+        response {
+          events {
+            ...on GnoEvent {
+              type
+              pkg_path
+              func
+              attrs {
+                key
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`;

@@ -30,12 +30,14 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       currentNetwork.chainId,
     );
 
-    const addedCollections = collections.filter(
-      (c1) =>
-        !storedCollections.find(
-          (c2) => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
-        ),
-    );
+    const addedCollections = collections
+      .map((collection) => ({ ...collection, display: true }))
+      .filter(
+        (c1) =>
+          !storedCollections.find(
+            (c2) => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
+          ),
+      );
 
     return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [
       ...storedCollections,

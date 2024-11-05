@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 
+import { CommonFullContentLayout } from '@components/atoms';
 import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RoutePath } from '@types';
-import { CommonFullContentLayout } from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
 
 const ChangeNetworkContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();

@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { useAccountName } from '@hooks/use-account-name';
+import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { useWalletContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
 import useScrollHistory from '@hooks/use-scroll-history';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 
 const useApp = (): void => {
   const { wallet } = useWalletContext();
@@ -27,7 +27,7 @@ const useApp = (): void => {
 
   useEffect(() => {
     if (currentAccount && currentNetwork) {
-      initTokenMetainfos();
+      initTokenMetainfos(true);
     }
   }, [currentAccount, currentNetwork]);
 
