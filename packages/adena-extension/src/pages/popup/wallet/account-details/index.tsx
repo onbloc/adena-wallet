@@ -1,20 +1,20 @@
+import { hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { hasPrivateKeyAccount } from 'adena-module';
 
-import AccountDetails from '@components/pages/account-details/account-details';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { useNetwork } from '@hooks/use-network';
-import { useAccountName } from '@hooks/use-account-name';
-import { CommonFullContentLayout } from '@components/atoms';
-import useLink from '@hooks/use-link';
-import { AdenaStorage } from '@common/storage';
+import { SCANNER_URL } from '@common/constants/resource.constant';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
-import { SCANNER_URL } from '@common/constants/resource.constant';
+import { AdenaStorage } from '@common/storage';
 import { makeQueryString } from '@common/utils/string-utils';
+import { CommonFullContentLayout } from '@components/atoms';
+import AccountDetails from '@components/pages/account-details/account-details';
+import { useAccountName } from '@hooks/use-account-name';
+import useLink from '@hooks/use-link';
+import { useLoadAccounts } from '@hooks/use-load-accounts';
+import { useNetwork } from '@hooks/use-network';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
@@ -31,6 +31,13 @@ const AccountDetailsContainer: React.FC = () => {
   const account = useMemo(() => {
     return accounts.find((current) => current.id === accountId);
   }, [accounts]);
+
+  const hasSeedPhrase = useMemo(() => {
+    if (!account) {
+      return false;
+    }
+    return isSeedAccount(account);
+  }, []);
 
   const hasPrivateKey = useMemo(() => {
     if (!account) {
@@ -60,6 +67,13 @@ const AccountDetailsContainer: React.FC = () => {
       : `${scannerUrl}/accounts/${address}`;
     openLink(openLinkUrl);
   }, [address]);
+
+  const moveRevealSeedPhrase = useCallback(async () => {
+    const sessionStorage = AdenaStorage.session();
+    await sessionStorage.set(WALLET_EXPORT_TYPE_STORAGE_KEY, 'SEED_PHRASE');
+    await sessionStorage.set(WALLET_EXPORT_ACCOUNT_ID, accountId || '');
+    openSecurity();
+  }, [account]);
 
   const moveExportPrivateKey = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();
@@ -96,7 +110,9 @@ const AccountDetailsContainer: React.FC = () => {
         name={name}
         address={address}
         hasPrivateKey={hasPrivateKey}
+        hasSeedPhrase={hasSeedPhrase}
         moveGnoscan={moveGnoscan}
+        moveRevealSeedPhrase={moveRevealSeedPhrase}
         moveExportPrivateKey={moveExportPrivateKey}
         setName={changeName}
         reset={reset}

@@ -10,10 +10,14 @@ describe('AccountDetails Component', () => {
   it('AccountDetails render', () => {
     const args: AccountDetailsProps = {
       hasPrivateKey: true,
+      hasSeedPhrase: true,
       originName: '',
       name: '',
       address: '',
       moveGnoscan: () => {
+        return;
+      },
+      moveRevealSeedPhrase: () => {
         return;
       },
       moveExportPrivateKey: () => {
