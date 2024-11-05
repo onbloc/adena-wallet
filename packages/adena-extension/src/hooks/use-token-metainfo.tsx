@@ -220,7 +220,6 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const getTokenImageByDenom = useCallback(
     (denom: string): string | null => {
       const key = makeTokenKeyByDenom(denom);
-      console.log(key, tokenLogoMap);
       return tokenLogoMap[key] || null;
     },
     [tokenLogoMap],
