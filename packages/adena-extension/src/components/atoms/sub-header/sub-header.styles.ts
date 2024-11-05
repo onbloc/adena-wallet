@@ -37,6 +37,11 @@ export const SubHeaderWrapper = styled.div`
   }
 
   .title-wrapper {
+    max-width: calc(100% - 48px - 32px);
+    text-overflow: ellipsis;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
     ${fonts.header4}
   }
 `;
