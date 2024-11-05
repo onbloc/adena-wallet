@@ -113,7 +113,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
         if (!amount) {
           return '-';
         }
-        return `${amount.value} ${amount.denom}`;
+        return `${amount.value}`;
       }
 
       return Promise.all(

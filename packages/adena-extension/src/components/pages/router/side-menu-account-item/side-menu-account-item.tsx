@@ -6,6 +6,9 @@ import IconQRCode from '@assets/icon-qrcode';
 import { CopyIconButton, Portal } from '@components/atoms';
 import { SideMenuAccountItemProps } from '@types';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { TokenBalance } from '@components/molecules';
+import { useTheme } from 'styled-components';
 import {
   SideMenuAccountItemMoreInfoWrapper,
   SideMenuAccountItemWrapper,
@@ -20,6 +23,7 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   moveGnoscan,
   moveAccountDetail,
 }) => {
+  const theme = useTheme();
   const { accountId, name, address, balance, type } = account;
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
@@ -101,7 +105,18 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
           {label !== null && <span className='label'>{label}</span>}
         </div>
         <div className='balance-wrapper'>
-          <span className='balance'>{balance}</span>
+          {balance === '-' ? (
+            <span className='balance'>{balance}</span>
+          ) : (
+            <TokenBalance
+              value={balance}
+              denom={GNOT_TOKEN.symbol}
+              fontColor={theme.neutral.a}
+              orientation='HORIZONTAL'
+              minimumFontSize='11px'
+              fontStyleKey='body3Reg'
+            />
+          )}
         </div>
       </div>
 

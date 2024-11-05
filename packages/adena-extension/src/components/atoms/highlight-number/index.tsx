@@ -1,5 +1,6 @@
-import React from 'react';
 import { FontsType } from '@styles/theme';
+import BigNumber from 'bignumber.js';
+import React, { useMemo } from 'react';
 import { HighlightNumberWrapper } from './highlight-number.styles';
 
 export interface HighlightNumberProps {
@@ -20,6 +21,10 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   const hasDecimal = value.includes('.');
   const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];
 
+  const integerStr = useMemo(() => {
+    return BigNumber(integer.replace(/,/g, '')).toFormat(0);
+  }, [integer]);
+
   return (
     <HighlightNumberWrapper
       fontColor={fontColor}
@@ -27,7 +32,7 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
       minimumFontSize={minimumFontSize}
       lineHeight={lineHeight}
     >
-      <span className='value integer'>{integer}</span>
+      <span className='value integer'>{integerStr}</span>
       <span className='value decimal'>
         {hasDecimal ? '.' : ''}
         {decimal}
