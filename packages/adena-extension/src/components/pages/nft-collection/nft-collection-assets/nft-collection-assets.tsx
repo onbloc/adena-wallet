@@ -38,10 +38,6 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
     return tokens?.length === 0;
   }, [tokens]);
 
-  if (isLoading) {
-    return <LoadingNft />;
-  }
-
   if (isEmptyAssets) {
     return (
       <NFTCollectionAssetsWrapper>
@@ -62,6 +58,12 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
           moveAssetPage={moveAssetPage}
         />
       ))}
+
+      {isLoading && (
+        <div className='loading-wrapper'>
+          <LoadingNft />
+        </div>
+      )}
     </NFTCollectionAssetsWrapper>
   );
 };

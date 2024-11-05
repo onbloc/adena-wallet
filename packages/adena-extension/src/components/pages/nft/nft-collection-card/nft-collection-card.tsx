@@ -88,7 +88,13 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     <NFTCollectionCardWrapper onClick={onClickCard}>
       <NFTCardImage image={tokenUri} isFetched={isFetchedCardTokenUri} hasBadge />
 
-      <div className='info-static-wrapper'>
+      <div
+        className='info-static-wrapper'
+        onClick={(e): void => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
         <div className='pin-wrapper' onClick={onClickPin}>
           <IconPin className={pinned ? 'icon-pin pinned' : 'icon-pin'} />
         </div>

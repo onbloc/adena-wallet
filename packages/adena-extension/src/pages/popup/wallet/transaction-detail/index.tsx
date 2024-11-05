@@ -1,22 +1,23 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import styled from 'styled-components';
 
-import useLink from '@hooks/use-link';
-import { Text, CopyIconButton, Button } from '@components/atoms';
-import { TokenBalance } from '@components/molecules';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
-import IconShare from '@assets/icon-share';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import ContractIcon from '@assets/contract.svg';
 import AddPackageIcon from '@assets/addpkg.svg';
-import { useNetwork } from '@hooks/use-network';
-import { fonts, getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ContractIcon from '@assets/contract.svg';
+import IconShare from '@assets/icon-share';
 import { SCANNER_URL } from '@common/constants/resource.constant';
+import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import { makeQueryString } from '@common/utils/string-utils';
+import { Button, CopyIconButton, Text } from '@components/atoms';
+import { TokenBalance } from '@components/molecules';
+import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
 
 interface DLProps {
   color?: string;
@@ -28,8 +29,16 @@ export const TransactionDetail = (): JSX.Element => {
   const { currentNetwork, scannerParameters } = useNetwork();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
   const transactionItem = params.transactionInfo;
+  const tokenUriQuery =
+    transactionItem?.type === 'TRANSFER_GRC721'
+      ? useGetGRC721TokenUri(transactionItem.logo, '0')
+      : null;
 
   const getLogoImage = useCallback(() => {
+    if (transactionItem?.type === 'TRANSFER_GRC721') {
+      return tokenUriQuery?.data || `${UnknownTokenIcon}`;
+    }
+
     if (transactionItem?.type === 'ADD_PACKAGE') {
       return `${AddPackageIcon}`;
     }

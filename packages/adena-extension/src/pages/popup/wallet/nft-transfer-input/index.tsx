@@ -14,6 +14,7 @@ import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import BigNumber from 'bignumber.js';
 
 interface HistoryData {
   grc721Token: GRC721Model;
@@ -101,8 +102,10 @@ const NFTTransferInputContainer: React.FC = () => {
           grc721Token,
           toAddress: addressBookInput.resultAddress,
           networkFee: {
-            value: DEFAULT_NETWORK_FEE.toString(),
-            denom: GNOT_TOKEN.denom,
+            value: BigNumber(DEFAULT_NETWORK_FEE)
+              .shiftedBy(GNOT_TOKEN.decimals * -1)
+              .toString(),
+            denom: GNOT_TOKEN.symbol,
           },
           memo,
         },

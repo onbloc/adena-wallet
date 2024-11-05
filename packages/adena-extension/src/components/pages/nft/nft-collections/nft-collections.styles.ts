@@ -1,10 +1,12 @@
+import { getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const NFTCollectionsWrapper = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 16px;
+  gap: 24px;
 
   &.non-items {
     padding-top: 151px;
@@ -31,5 +33,14 @@ export const NFTCollectionsWrapper = styled.div`
     width: 100%;
     justify-content: center;
     align-items: center;
+  }
+
+  .loading-wrapper {
+    position: absolute;
+    width: 100%;
+    height: auto;
+    top: 0;
+    left: 0;
+    background-color: ${getTheme('neutral', '_8')};
   }
 `;

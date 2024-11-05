@@ -22,7 +22,7 @@ const Wrapper = styled.main`
   height: fit-content;
   padding-top: 24px;
   padding-bottom: 96px;
-  gap: 8px;
+  gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
 
   .send-button {

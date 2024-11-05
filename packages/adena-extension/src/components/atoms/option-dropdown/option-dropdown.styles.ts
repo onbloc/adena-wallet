@@ -59,12 +59,24 @@ export const OptionDropdownItemWrapper = styled(Row)`
   transition: 0.2s;
   cursor: pointer;
 
-  & > svg {
-    width: 14px;
+  .item-icon-wrapper {
+    display: block;
+    width: 12px;
     height: 14px;
+
+    & > svg {
+      width: 12px;
+      height: 12px;
+
+      &.large {
+        width: 14px;
+        height: 14px;
+      }
+    }
   }
 
   & > .title {
+    display: inline-flex;
     width: 100%;
     ${fonts.body3Reg}
   }

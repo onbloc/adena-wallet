@@ -95,10 +95,6 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
     moveManageCollectionsPage();
   }, [moveManageCollectionsPage]);
 
-  if (isLoading) {
-    return <LoadingNft />;
-  }
-
   if (isEmptyCollections) {
     return (
       <NFTCollectionsWrapper>
@@ -141,6 +137,12 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
       <div className='manage-collection-button-wrapper'>
         <ManageCollectionsButton onClick={onClickManageCollectionsButton} />
       </div>
+
+      {isLoading && (
+        <div className='loading-wrapper'>
+          <LoadingNft />
+        </div>
+      )}
     </NFTCollectionsWrapper>
   );
 };

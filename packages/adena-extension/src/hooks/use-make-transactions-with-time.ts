@@ -54,7 +54,7 @@ export const useMakeTransactionsWithTime = (
                   denom: 'GNOT',
                 },
               ),
-              logo: collection?.image || '',
+              logo: collection?.packagePath || '',
               date: time || '',
             };
           }

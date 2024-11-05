@@ -1,14 +1,15 @@
 import React from 'react';
 import { useTheme } from 'styled-components';
 
+import { Text } from '@components/atoms';
+import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { TransactionInfo } from '@types';
+import LoadingHistory from '../loading-history';
 import {
   TransactionHistoryDescriptionWrapper,
   TransactionHistoryWrapper,
 } from './transaction-history.styles';
-import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list';
-import { Text } from '@components/atoms';
-import LoadingHistory from '../loading-history';
-import { TransactionInfo } from '@types';
 
 export interface TransactionHistoryProps {
   status: 'error' | 'loading' | 'success';
@@ -16,12 +17,18 @@ export interface TransactionHistoryProps {
     title: string;
     transactions: TransactionInfo[];
   }[];
+  queryGRC721TokenUri?: (
+    packagePath: string,
+    tokenId: string,
+    options?: UseQueryOptions<string | null, Error>,
+  ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   status,
   transactionInfoLists,
+  queryGRC721TokenUri,
   onClickItem,
 }) => {
   const theme = useTheme();
@@ -41,7 +48,12 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   return (
     <TransactionHistoryWrapper>
       {transactionInfoLists.map((transactionInfoList, index) => (
-        <TransactionHistoryList key={index} {...transactionInfoList} onClickItem={onClickItem} />
+        <TransactionHistoryList
+          key={index}
+          {...transactionInfoList}
+          queryGRC721TokenUri={queryGRC721TokenUri}
+          onClickItem={onClickItem}
+        />
       ))}
     </TransactionHistoryWrapper>
   );

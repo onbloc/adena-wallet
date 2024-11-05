@@ -78,7 +78,7 @@ interface OptionDropdownItemProps {
 const OptionDropdownItem: React.FC<OptionDropdownItemProps> = ({ icon, text, onClick }) => {
   return (
     <OptionDropdownItemWrapper onClick={onClick}>
-      {!!icon && icon}
+      <div className='item-icon-wrapper'>{!!icon && icon}</div>
       <span className='title'>{text}</span>
     </OptionDropdownItemWrapper>
   );

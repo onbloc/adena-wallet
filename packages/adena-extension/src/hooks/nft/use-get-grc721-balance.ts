@@ -3,6 +3,8 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
+export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance';
+
 export const useGetGRC721Balance = (
   packagePath: string,
   options?: UseQueryOptions<number | null, Error>,
@@ -12,7 +14,7 @@ export const useGetGRC721Balance = (
   const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: ['nft/useGetGRC721TokenBalance', packagePath, currentAddress, currentNetwork.chainId],
+    queryKey: [GET_GRC721_BALANCE_QUERY_KEY, packagePath, currentAddress, currentNetwork.chainId],
     queryFn: () => {
       if (!currentAddress) {
         return null;

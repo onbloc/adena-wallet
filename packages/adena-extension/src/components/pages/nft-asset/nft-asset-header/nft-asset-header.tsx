@@ -47,7 +47,7 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
       },
       {
         text: visible ? 'Hide Collection' : 'Show Collection',
-        icon: visible ? <IconHide /> : <IconShow />,
+        icon: visible ? <IconHide className='large' /> : <IconShow className='large' />,
         onClick: visible ? hideCollection : showCollection,
       },
     ],

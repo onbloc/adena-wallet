@@ -4,6 +4,7 @@ import ContractIcon from '@assets/contract.svg';
 import FailedIcon from '@assets/failed.svg';
 import SuccessIcon from '@assets/success.svg';
 import { TokenBalance } from '@components/molecules';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import React, { useCallback } from 'react';
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
 
@@ -20,6 +21,11 @@ export interface TransactionHistoryListItemProps {
     denom: string;
   };
   valueType: 'DEFAULT' | 'ACTIVE' | 'BLUR';
+  queryGRC721TokenUri?: (
+    packagePath: string,
+    tokenId: string,
+    options?: UseQueryOptions<string | null, Error>,
+  ) => UseQueryResult<string | null>;
   onClickItem: (hash: string) => void;
 }
 
@@ -33,9 +39,17 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
   description,
   amount,
   valueType,
+  queryGRC721TokenUri,
   onClickItem,
 }) => {
+  const tokenUriQuery =
+    type === 'TRANSFER_GRC721' && queryGRC721TokenUri ? queryGRC721TokenUri(logo || '', '0') : null;
+
   const getLogoImage = useCallback(() => {
+    if (type === 'TRANSFER_GRC721' && tokenUriQuery) {
+      return tokenUriQuery?.data || `${UnknownTokenIcon}`;
+    }
+
     if (type === 'ADD_PACKAGE') {
       return `${AddPackageIcon}`;
     }
@@ -49,7 +63,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
       return `${UnknownTokenIcon}`;
     }
     return `${logo}`;
-  }, [type, logo]);
+  }, [type, logo, tokenUriQuery]);
 
   const getValueTypeClassName = useCallback(() => {
     if (valueType === 'ACTIVE') {

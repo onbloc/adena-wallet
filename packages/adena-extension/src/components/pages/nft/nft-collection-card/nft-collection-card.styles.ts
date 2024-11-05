@@ -25,6 +25,7 @@ export const NFTCollectionCardWrapper = styled(View)`
     align-self: center;
     border-radius: 10px;
     background-color: ${getTheme('neutral', '_9')};
+    cursor: default;
 
     .pin-wrapper {
       ${mixins.flex({ direction: 'column', align: 'center', justify: 'center' })}
@@ -51,6 +52,7 @@ export const NFTCollectionCardWrapper = styled(View)`
       display: inline-block;
       width: 100%;
       ${fonts.captionBold}
+      text-align: center;
       word-break: break-all;
       overflow: hidden;
       white-space: nowrap;
