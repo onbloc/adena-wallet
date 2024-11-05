@@ -1,6 +1,6 @@
-import ManageTokenSearch, { type ManageTokenSearchProps } from '.';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import ManageTokenSearch, { type ManageTokenSearchProps } from '.';
 
 export default {
   title: 'components/manage-token/ManageTokenSearch',
@@ -12,7 +12,7 @@ const tokens = [
     tokenId: 'token1',
     symbol: 'GNOT',
     logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-    name: 'Gnoland',
+    name: 'gno.land',
     balanceAmount: {
       value: '240,255.241155',
       denom: 'GNOT',

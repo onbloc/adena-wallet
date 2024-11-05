@@ -30,8 +30,8 @@ const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
 const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
     main: true,
-    tokenId: 'Gnoland',
-    name: 'Gnoland',
+    tokenId: 'tokenId',
+    name: 'gno.land',
     networkId: DEFAULT_TOKEN_NETWORK_ID,
     image:
       'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',

@@ -1,6 +1,6 @@
-import TokenList, { type TokenListProps } from './token-list';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import TokenList, { type TokenListProps } from './token-list';
 
 export default {
   title: 'components/common/TokenList',
@@ -11,7 +11,7 @@ const tokens = [
   {
     tokenId: 'token1',
     logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-    name: 'Gnoland',
+    name: 'gno.land',
     balanceAmount: {
       value: '240,255.241155',
       denom: 'GNOT',

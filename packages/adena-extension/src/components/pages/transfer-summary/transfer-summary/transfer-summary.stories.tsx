@@ -1,7 +1,6 @@
-import React from 'react';
-import TransferSummary, { type TransferSummaryProps } from './transfer-summary';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import TransferSummary, { type TransferSummaryProps } from './transfer-summary';
 
 export default {
   title: 'components/transfer/TransferSummary',
@@ -14,15 +13,16 @@ export const Default: StoryObj<TransferSummaryProps> = {
     tokenMetainfo: {
       main: true,
       display: false,
-      tokenId: 'Gnoland',
+      tokenId: 'tokenId',
       networkId: 'DEFAULT',
-      name: 'Gnoland',
+      name: 'gno.land',
       image: '',
       symbol: 'GNOT',
       type: 'gno-native',
       decimals: 6,
     },
-    tokenImage: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
+    tokenImage:
+      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
     transferBalance: {
       value: '4,000.123',
       denom: 'GNOT',

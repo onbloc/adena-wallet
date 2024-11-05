@@ -1,8 +1,8 @@
 [
   {
     "symbol": "GNOLAND",
-    "name": "Gno.land",
-    "description": "The official website of Gnoland.",
+    "name": "gno.land",
+    "description": "The official website of gno.land.",
     "logo": "/resources/apps/images/gnoland.svg",
     "link": "https://gno.land",
     "display": true,
@@ -29,7 +29,7 @@
   {
     "symbol": "GNOSWAP",
     "name": "GnoSwap",
-    "description": "The One-stop Gnoland DeFi Platform.",
+    "description": "The One-stop gno.land DeFi Platform.",
     "logo": "/resources/apps/images/gnoswap.svg",
     "link": "https://beta.gnoswap.io/",
     "display": true,

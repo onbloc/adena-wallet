@@ -1,16 +1,15 @@
-import React from 'react';
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
 import TokenList, { TokenListProps } from './token-list';
 
 const tokens = [
   {
     tokenId: 'token1',
     logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-    name: 'Gnoland',
+    name: 'gno.land',
     balanceAmount: {
       value: '240,255.241155',
       denom: 'GNOT',

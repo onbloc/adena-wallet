@@ -1,6 +1,6 @@
-import NetworkList, { type NetworkListProps } from './network-list';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import NetworkList, { type NetworkListProps } from './network-list';
 
 export default {
   title: 'components/change-network/NetworkList',
@@ -15,7 +15,7 @@ export const Default: StoryObj<NetworkListProps> = {
         id: 'test3',
         default: true,
         main: true,
-        chainId: 'GNOLAND',
+        chainId: 'chainId',
         chainName: 'GNO.LAND',
         networkId: 'test3',
         networkName: 'Testnet 3',
@@ -30,7 +30,7 @@ export const Default: StoryObj<NetworkListProps> = {
         id: 'test2',
         default: true,
         main: true,
-        chainId: 'GNOLAND',
+        chainId: 'chainId',
         chainName: 'GNO.LAND',
         networkId: 'test2',
         networkName: 'Testnet 2',

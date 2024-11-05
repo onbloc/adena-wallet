@@ -1,6 +1,6 @@
 {
   "name": "Adena",
-  "description": "Adena is a friendly browser extension wallet for the Gnoland blockchain.",
+  "description": "Adena is a friendly browser extension wallet for the gno.land blockchain.",
   "manifest_version": 3,
   "version": "1.12.0",
   "action": {

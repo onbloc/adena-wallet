@@ -1,6 +1,6 @@
-import ChangeNetwork, { type ChangeNetworkProps } from './change-network';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import ChangeNetwork, { type ChangeNetworkProps } from './change-network';
 
 export default {
   title: 'components/change-network/ChangeNetwork',
@@ -16,7 +16,7 @@ export const Default: StoryObj<ChangeNetworkProps> = {
         id: 'test3',
         default: true,
         main: true,
-        chainId: 'GNOLAND',
+        chainId: 'chainId',
         chainName: 'GNO.LAND',
         networkId: 'test3',
         networkName: 'Testnet 3',
@@ -31,7 +31,7 @@ export const Default: StoryObj<ChangeNetworkProps> = {
         id: 'test2',
         default: true,
         main: true,
-        chainId: 'GNOLAND',
+        chainId: 'chainId',
         chainName: 'GNO.LAND',
         networkId: 'test2',
         networkName: 'Testnet 2',
