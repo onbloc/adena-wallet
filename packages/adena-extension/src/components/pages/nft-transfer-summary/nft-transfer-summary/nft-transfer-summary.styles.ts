@@ -7,7 +7,7 @@ export const NFTTransferSummaryWrapper = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 444px;
+  min-height: auto;
   align-items: center;
 
   .sub-header-wrapper {
@@ -33,7 +33,7 @@ export const NFTTransferSummaryWrapper = styled.div`
   .network-fee-wrapper {
     width: 100%;
     height: 100%;
-    margin-top: 20px;
+    margin-top: 12px;
 
     .error-message {
       position: relative;
