@@ -1,5 +1,6 @@
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 export const useGetGRC721Balance = (
@@ -8,9 +9,10 @@ export const useGetGRC721Balance = (
 ): UseQueryResult<number | null> => {
   const { tokenService } = useAdenaContext();
   const { currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
 
   return useQuery<number | null, Error>({
-    queryKey: ['nft/useGetGRC721TokenBalance', packagePath, currentAddress],
+    queryKey: ['nft/useGetGRC721TokenBalance', packagePath, currentAddress, currentNetwork.chainId],
     queryFn: () => {
       if (!currentAddress) {
         return null;

@@ -17,6 +17,7 @@ export interface ITokenRepository extends IGRC721TokenRepository {
   fetchTokenMetainfos: () => Promise<TokenModel[]>;
   fetchAppInfos: () => Promise<AppInfoResponse[]>;
   fetchAllGRC20Tokens: () => Promise<GRC20TokenModel[]>;
+  fetchAllTransferPackagesBy: (address: string, fromBlockHeight: number) => Promise<string[]>;
   fetchGRC20TokenByPackagePath: (packagePath: string) => Promise<GRC20TokenModel>;
 
   getAccountTokenMetainfos: (accountId: string) => Promise<TokenModel[]>;
@@ -36,14 +37,19 @@ export interface IGRC721TokenRepository {
   fetchGRC721BalanceBy: (packagePath: string, address: string) => Promise<number>;
   fetchGRC721TokensBy: (packagePath: string, address: string) => Promise<GRC721Model[]>;
 
-  getAccountGRC721CollectionsByAccountId: (accountId: string) => Promise<GRC721CollectionModel[]>;
+  getAccountGRC721CollectionsBy: (
+    accountId: string,
+    networkId: string,
+  ) => Promise<GRC721CollectionModel[]>;
   saveAccountGRC721CollectionsBy: (
     accountId: string,
+    networkId: string,
     collections: GRC721CollectionModel[],
   ) => Promise<boolean>;
-  getAccountGRC721PinnedPackagesByAccountId: (accountId: string) => Promise<string[]>;
+  getAccountGRC721PinnedPackagesBy: (accountId: string, networkId: string) => Promise<string[]>;
   saveAccountGRC721PinnedPackagesBy: (
     accountId: string,
+    networkId: string,
     packagePaths: string[],
   ) => Promise<boolean>;
 }

@@ -81,10 +81,13 @@ export type EncryptedStoredPasswordModelV007 = string;
 
 export type CurrentAccountIdModelV007 = string;
 
-export type AccountNamesModelV007 = { [key in string]: string };
+type AccountId = string;
+type NetworkId = string;
+
+export type AccountNamesModelV007 = { [key in AccountId]: string };
 
 export type EstablishSitesModelV007 = {
-  [key in string]: {
+  [key in AccountId]: {
     hostname: string;
     chainId: string;
     account: string;
@@ -121,20 +124,22 @@ export type AccountTokenMetainfoModelV007 = {
 };
 
 export type AccountGRC721CollectionsV007 = {
-  [key in string]: {
-    tokenId: string;
-    networkId: string;
-    display: boolean;
-    type: 'grc721';
-    packagePath: string;
-    name: string;
-    symbol: string;
-    image: string | null;
-    isTokenUri: boolean;
-    isMetadata: boolean;
+  [key in AccountId]: {
+    [key in NetworkId]: {
+      tokenId: string;
+      networkId: string;
+      display: boolean;
+      type: 'grc721';
+      packagePath: string;
+      name: string;
+      symbol: string;
+      image: string | null;
+      isTokenUri: boolean;
+      isMetadata: boolean;
+    }[];
   };
 };
 
 export type AccountGRC721PinnedPackagesV007 = {
-  [key in string]: string[];
+  [key in AccountId]: { [key in NetworkId]: string[] };
 };

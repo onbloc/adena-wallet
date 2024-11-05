@@ -62,6 +62,11 @@ export class TokenService {
     return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
   }
 
+  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
+    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
+    return transferPackages;
+  }
+
   public async getAppInfos(): Promise<AppInfoResponse[]> {
     const response = await this.tokenRepository.fetchAppInfos();
     return response;
@@ -201,26 +206,38 @@ export class TokenService {
     return this.tokenRepository.fetchGRC721TokensBy(packagePath, address);
   }
 
-  public async getAccountGRC721Collections(accountId: string): Promise<GRC721CollectionModel[]> {
-    return this.tokenRepository.getAccountGRC721CollectionsByAccountId(accountId);
+  public async getAccountGRC721Collections(
+    accountId: string,
+    networkId: string,
+  ): Promise<GRC721CollectionModel[]> {
+    return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId);
   }
 
   public async saveAccountGRC721Collections(
     accountId: string,
+    networkId: string,
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
-    return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, collections);
+    return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections);
   }
 
-  public async getAccountGRC721PinnedPackages(accountId: string): Promise<string[]> {
-    return this.tokenRepository.getAccountGRC721PinnedPackagesByAccountId(accountId);
+  public async getAccountGRC721PinnedPackages(
+    accountId: string,
+    networkId: string,
+  ): Promise<string[]> {
+    return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId);
   }
 
   public async saveAccountGRC721PinnedPackages(
     accountId: string,
+    networkId: string,
     packagePaths: string[],
   ): Promise<boolean> {
-    return this.tokenRepository.saveAccountGRC721PinnedPackagesBy(accountId, packagePaths);
+    return this.tokenRepository.saveAccountGRC721PinnedPackagesBy(
+      accountId,
+      networkId,
+      packagePaths,
+    );
   }
 
   public clear = async (): Promise<boolean> => {

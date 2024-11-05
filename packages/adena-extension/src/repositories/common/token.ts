@@ -30,13 +30,18 @@ import {
 import BigNumber from 'bignumber.js';
 import { mapGRC20TokenModel, mapGRC721CollectionModel } from './mapper/token-query.mapper';
 import { AppInfoResponse } from './response';
-import { makeAllRealmsQuery, makeGRC721TransferEventsQuery } from './token.queries';
+import {
+  makeAllRealmsQuery,
+  makeAllTransferEventsQueryBy,
+  makeGRC721TransferEventsQuery,
+} from './token.queries';
 import { ITokenRepository } from './types';
 
 enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
   AccountGRC721Collections = 'ACCOUNT_GRC721_COLLECTIONS',
   AccountGRC721PinnedPackages = 'ACCOUNT_GRC721_PINNED_PACKAGES',
+  AccountTransferEventBlockHeight = 'ACCOUNT_TRANSFER_EVENT_BLOCK_HEIGHT',
 }
 
 const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
@@ -270,14 +275,14 @@ export class TokenRepository implements ITokenRepository {
           name: string;
           symbol: string;
           packagePath: string;
-          isMetadata?: boolean;
-          isTokenUri?: boolean;
+          isTokenURI: boolean;
+          isTokenMeta: boolean;
         }[];
       }>(
         this.networkInstance,
         this.apiUrl + '/gno',
         makeRPCRequest({
-          method: 'getGRC721Tokens',
+          method: 'getGRC721Packages',
         }),
       ).then((data) => data?.result || []);
 
@@ -290,8 +295,8 @@ export class TokenRepository implements ITokenRepository {
         name: token.name,
         symbol: token.symbol,
         image: null,
-        isMetadata: !!token.isMetadata,
-        isTokenUri: !!token.isTokenUri,
+        isMetadata: !!token.isTokenMeta,
+        isTokenUri: !!token.isTokenURI,
       }));
     }
 
@@ -310,6 +315,56 @@ export class TokenRepository implements ITokenRepository {
               )
           : [],
     );
+  }
+
+  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
+    if (!this.apiUrl || !this.queryUrl) {
+      return [];
+    }
+
+    if (this.apiUrl) {
+      const packages = await TokenRepository.postRPCRequest<{
+        result: string[];
+      }>(
+        this.networkInstance,
+        this.apiUrl + '/gno',
+        makeRPCRequest({
+          method: 'getUserTransferPackages',
+          params: [address],
+        }),
+      ).then((data) => data?.result || []);
+
+      return packages;
+    }
+
+    const transferEventsQuery = makeAllTransferEventsQueryBy(address);
+    return TokenRepository.postGraphQuery(
+      this.networkInstance,
+      this.queryUrl,
+      transferEventsQuery,
+    ).then((result) => {
+      const edges = result?.data?.transactions?.edges;
+      if (!edges) {
+        return [];
+      }
+
+      const packagePaths: string[] = edges
+        .flatMap((edge: any) => edge?.transaction?.response?.events || [])
+        .filter((event: any) => {
+          const eventType = event?.type;
+          const eventAttributes = event?.attrs || [];
+          const eventToAttribute = eventAttributes.find((attribute: any) => attribute.key === 'to');
+
+          if (!eventType || !eventToAttribute) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((event: any) => event?.pkg_path || '');
+
+      return [...new Set(packagePaths)];
+    });
   }
 
   public async fetchGRC721CollectionByPackagePath(
@@ -461,61 +516,77 @@ export class TokenRepository implements ITokenRepository {
     return tokens;
   }
 
-  public async getAccountGRC721CollectionsByAccountId(
+  public async getAccountGRC721CollectionsBy(
     accountId: string,
+    networkId: string,
   ): Promise<GRC721CollectionModel[]> {
     const accountGRC721CollectionsMap = await this.localStorage.getToObject<{
-      [key in string]: GRC721CollectionModel[];
+      [key in string]: { [key in string]: GRC721CollectionModel[] };
     }>(LocalValueType.AccountGRC721Collections);
 
-    if (!accountGRC721CollectionsMap[accountId]) {
+    if (!accountGRC721CollectionsMap?.[accountId]?.[networkId]) {
       return [];
     }
 
-    return accountGRC721CollectionsMap[accountId];
+    return accountGRC721CollectionsMap[accountId][networkId];
   }
 
   public async saveAccountGRC721CollectionsBy(
     accountId: string,
+    networkId: string,
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
     const accountGRC721CollectionsMap =
       (await this.localStorage.getToObject<{
-        [key in string]: GRC721CollectionModel[];
+        [key in string]: { [key in string]: GRC721CollectionModel[] };
       }>(LocalValueType.AccountGRC721Collections)) || {};
+
+    const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
 
     await this.localStorage.setByObject(LocalValueType.AccountGRC721Collections, {
       ...accountGRC721CollectionsMap,
-      [accountId]: collections,
+      [accountId]: {
+        ...currentAccountCollections,
+        [networkId]: collections,
+      },
     });
 
     return true;
   }
 
-  public async getAccountGRC721PinnedPackagesByAccountId(accountId: string): Promise<string[]> {
+  public async getAccountGRC721PinnedPackagesBy(
+    accountId: string,
+    networkId: string,
+  ): Promise<string[]> {
     const accountGRC721PinnedPackagesMap = await this.localStorage.getToObject<{
-      [key in string]: string[];
+      [key in string]: { [key in string]: string[] };
     }>(LocalValueType.AccountGRC721PinnedPackages);
 
-    if (!accountGRC721PinnedPackagesMap?.[accountId]) {
+    if (!accountGRC721PinnedPackagesMap?.[accountId]?.[networkId]) {
       return [];
     }
 
-    return accountGRC721PinnedPackagesMap[accountId];
+    return accountGRC721PinnedPackagesMap[accountId][networkId];
   }
 
   public async saveAccountGRC721PinnedPackagesBy(
     accountId: string,
+    networkId: string,
     packagePaths: string[],
   ): Promise<boolean> {
     const accountGRC721PinnedPackagesMap =
       (await this.localStorage.getToObject<{
-        [key in string]: string[];
+        [key in string]: { [key in string]: string[] };
       }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
+
+    const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
 
     await this.localStorage.setByObject(LocalValueType.AccountGRC721PinnedPackages, {
       ...accountGRC721PinnedPackagesMap,
-      [accountId]: [...new Set(packagePaths)],
+      [accountId]: {
+        ...currentAccountPinnedPackages,
+        [networkId]: [...new Set(packagePaths)],
+      },
     });
 
     return true;
