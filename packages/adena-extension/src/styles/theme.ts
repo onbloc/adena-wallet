@@ -353,6 +353,11 @@ export const fonts: FontsKeyType = {
     font-size: 11px;
     line-height: 18px;
   `,
+  light1Bold: css`
+    font-weight: 700;
+    font-size: 10px;
+    line-height: 18px;
+  `,
   light1Reg: css`
     font-weight: 400;
     font-size: 10.5px;
@@ -394,6 +399,7 @@ export type FontsType =
   | 'title1'
   | 'captionBold'
   | 'captionReg'
+  | 'light1Bold'
   | 'light1Reg'
   | 'bold13'
   | 'light13'
