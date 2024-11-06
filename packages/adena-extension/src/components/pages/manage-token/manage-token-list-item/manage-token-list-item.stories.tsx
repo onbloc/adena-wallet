@@ -1,6 +1,6 @@
-import ManageTokenListItem, { type ManageTokenListItemProps } from './manage-token-list-item';
-import { Meta, StoryObj } from '@storybook/react';
 import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react';
+import ManageTokenListItem, { type ManageTokenListItemProps } from './manage-token-list-item';
 
 export default {
   title: 'components/manage-token/ManageTokenListItem',
@@ -10,7 +10,7 @@ export default {
 const token = {
   tokenId: 'token1',
   logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-  name: 'Gnoland',
+  name: 'gno.land',
   symbol: 'GNOT',
   balanceAmount: {
     value: '240,255.241155',

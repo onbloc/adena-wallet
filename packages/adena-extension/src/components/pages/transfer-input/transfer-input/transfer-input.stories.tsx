@@ -12,9 +12,9 @@ export const Default: StoryObj<TransferInputProps> = {
     tokenMetainfo: {
       main: true,
       display: false,
-      tokenId: 'Gnoland',
+      tokenId: 'tokenId',
       networkId: 'DEFAULT',
-      name: 'Gnoland',
+      name: 'gno.land',
       image: '',
       symbol: 'GNOT',
       type: 'gno-native',

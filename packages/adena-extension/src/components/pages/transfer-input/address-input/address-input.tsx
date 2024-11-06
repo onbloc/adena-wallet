@@ -1,8 +1,8 @@
+import CancelIcon from '@assets/cancel-small.svg';
+import TransferAddressBookIcon from '@assets/transfer-address-book.svg';
+import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list';
 import React, { useEffect, useRef } from 'react';
 import { AddressInputWrapper } from './address-input.styles';
-import TransferAddressBookIcon from '@assets/transfer-address-book.svg';
-import CancelIcon from '@assets/cancel-small.svg';
-import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list';
 
 export interface AddressInputProps {
   opened: boolean;
@@ -58,7 +58,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
             className='address-input'
             value={address}
             onChange={(event): void => onChangeAddress(event.target.value)}
-            placeholder='Recipient’s Gnoland Address'
+            placeholder='Recipient’s gno.land Address'
             autoComplete='off'
             maxLength={40}
             rows={1}

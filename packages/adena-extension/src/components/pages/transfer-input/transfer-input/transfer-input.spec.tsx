@@ -1,4 +1,3 @@
-import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
@@ -12,9 +11,9 @@ describe('TransferInput Component', () => {
       tokenMetainfo: {
         main: true,
         display: false,
-        tokenId: 'Gnoland',
+        tokenId: 'tokenId',
         networkId: 'DEFAULT',
-        name: 'Gnoland',
+        name: 'gno.land',
         image: '',
         symbol: 'GNOT',
         type: 'gno-native',

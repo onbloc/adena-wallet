@@ -1,20 +1,20 @@
+import { useQuery } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
-import { useQuery } from '@tanstack/react-query';
 
 import { Row, View, WebMain, WebText } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
-import welcomeJson from '@assets/web/lottie/welcome.json';
-import AnimationAddAccount from '@assets/web/lottie/add-account.json';
-import { useAdenaContext } from '@hooks/use-context';
-import WebMainButton from '@components/atoms/web-main-button';
-import IconHardwareWallet from '@assets/icon-hardware-wallet';
 import IconAirgap from '@assets/icon-airgap';
+import IconHardwareWallet from '@assets/icon-hardware-wallet';
 import IconThunder from '@assets/icon-thunder';
+import AnimationAddAccount from '@assets/web/lottie/add-account.json';
+import welcomeJson from '@assets/web/lottie/welcome.json';
 import Lottie from '@components/atoms/lottie';
+import WebMainButton from '@components/atoms/web-main-button';
 import WalletCreationHelpOverlay from '@components/pages/web/wallet-creation-help-overlay/wallet-creation-help-overlay';
+import { useAdenaContext } from '@hooks/use-context';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -99,7 +99,7 @@ const LandingScreen = (): ReactElement => {
           <View style={{ rowGap: 16 }}>
             <WebText type='headline1'>{'Welcome to Adena!'}</WebText>
             <WebText type='body2' color={theme.webNeutral._500} style={{ whiteSpace: 'nowrap' }}>
-              {'The only wallet you need for Gnoland with unparalleled security.'}
+              {'The only wallet you need for gno.land with unparalleled security.'}
             </WebText>
           </View>
         </React.Fragment>

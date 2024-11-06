@@ -1,9 +1,8 @@
-import React from 'react';
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
 import TransferSummary, { TransferSummaryProps } from './transfer-summary';
 
 describe('TransferSummary Component', () => {
@@ -11,9 +10,9 @@ describe('TransferSummary Component', () => {
     const args: TransferSummaryProps = {
       tokenMetainfo: {
         main: true,
-        tokenId: 'Gnoland',
+        tokenId: 'tokenId',
         networkId: 'DEFAULT',
-        name: 'Gnoland',
+        name: 'gno.land',
         image: '',
         symbol: 'GNOT',
         type: 'gno-native',

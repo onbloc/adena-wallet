@@ -1,16 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useCallback, useEffect, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Text, inputStyle, Button, Copy } from '@components/atoms';
+import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { Button, Copy, inputStyle, Text } from '@components/atoms';
+import { useAccountName } from '@hooks/use-account-name';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useSessionParams from '@hooks/use-session-state';
+import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { useAccountName } from '@hooks/use-account-name';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useSessionParams from '@hooks/use-session-state';
 
 const Wrapper = styled.main`
   ${mixins.flex({ justify: 'stretch' })};
@@ -80,7 +80,7 @@ export const Deposit = (): JSX.Element => {
         <Copy copyStr={currentAddress || ''} />
       </CopyInputBox>
       <Text type='captionReg' color={theme.neutral.a}>
-        Only use this address to receive tokens on Gnoland.
+        Only use this address to receive tokens on gno.land.
       </Text>
       <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={closeButtonClick}>
         <Text type='body1Bold'>Close</Text>
