@@ -82,6 +82,23 @@ export class MessageHandler {
             );
           });
         break;
+      case 'GET_NETWORK':
+        HandlerMethod.checkEstablished(message, sendResponse)
+          .then((isEstablished) => {
+            if (isEstablished) {
+              HandlerMethod.getNetwork(message, sendResponse);
+            }
+          })
+          .catch(() => {
+            sendResponse(
+              InjectionMessageInstance.failure(
+                WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
+                message,
+                message.key,
+              ),
+            );
+          });
+        break;
       case 'ADD_ESTABLISH':
         HandlerMethod.addEstablish(message, sendResponse);
         break;

@@ -20,6 +20,7 @@ import {
   AddNetworkResponse,
   DoContractResponse,
   GetAccountResponse,
+  GetNetworkResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -62,7 +63,7 @@ export class AdenaExecutor {
     const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, {
       name: name ?? 'Unknown',
     });
-    return this.sendEventMessage<boolean>(eventMessage);
+    return this.sendEventMessage<Record<string, never>>(eventMessage);
   };
 
   public doContract = (params: TransactionParams): Promise<DoContractResponse> => {
@@ -79,6 +80,11 @@ export class AdenaExecutor {
 
   public getAccount = (): Promise<GetAccountResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_ACCOUNT);
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public getNetwork = (): Promise<GetNetworkResponse> => {
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_NETWORK);
     return this.sendEventMessage(eventMessage);
   };
 

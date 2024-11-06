@@ -1,4 +1,4 @@
-import { WalletResponse } from '@adena-wallet/sdk';
+import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
 import manifest from '@public/manifest.json';
 
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
@@ -10,6 +10,7 @@ import {
   AddNetworkResponse,
   DoContractResponse,
   GetAccountResponse,
+  GetNetworkResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -36,6 +37,11 @@ const init = (): void => {
     async GetAccount(): Promise<GetAccountResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.getAccount();
+      return response;
+    },
+    async GetNetwork(): Promise<GetNetworkResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.getNetwork();
       return response;
     },
     async Sign(message: TransactionParams): Promise<WalletResponse<unknown>> {
@@ -75,7 +81,7 @@ const init = (): void => {
     },
   };
 
-  window.adena = adena;
+  window.adena = adena as unknown as AdenaWallet;
 };
 
 init();
