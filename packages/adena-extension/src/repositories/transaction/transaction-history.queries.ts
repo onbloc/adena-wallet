@@ -47,6 +47,15 @@ export const makeAccountTransactionsQuery = (
               }
             }
           }
+          {
+            type_url: exec
+            vm_param: {
+              exec: {
+                func: "TransferFrom"
+                args: ["", "${address}"]
+              }
+            }
+          }
         ]
       }
       size: ${size}

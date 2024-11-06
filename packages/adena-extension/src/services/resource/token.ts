@@ -1,15 +1,24 @@
 import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { AppInfoResponse, TokenRepository } from '@repositories/common';
+import { AppInfoResponse } from '@repositories/common/response';
+import { ITokenRepository } from '@repositories/common/types';
 
-import { AccountTokenBalance, GRC20TokenModel, NetworkMetainfo, TokenModel } from '@types';
+import {
+  AccountTokenBalance,
+  GRC20TokenModel,
+  GRC721CollectionModel,
+  GRC721MetadataModel,
+  GRC721Model,
+  NetworkMetainfo,
+  TokenModel,
+} from '@types';
 
 export class TokenService {
-  private tokenRepository: TokenRepository;
+  private tokenRepository: ITokenRepository;
 
   private tokenMetaInfos: TokenModel[];
 
-  constructor(tokenRepository: TokenRepository) {
+  constructor(tokenRepository: ITokenRepository) {
     this.tokenRepository = tokenRepository;
     this.tokenMetaInfos = [];
   }
@@ -51,6 +60,11 @@ export class TokenService {
     }
 
     return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
+  }
+
+  public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
+    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
+    return transferPackages;
   }
 
   public async getAppInfos(): Promise<AppInfoResponse[]> {
@@ -163,6 +177,67 @@ export class TokenService {
   public async deleteAccountTokenMetainfos(accountId: string): Promise<boolean> {
     await this.tokenRepository.deleteTokenMetainfos(accountId);
     return true;
+  }
+
+  public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
+    return this.tokenRepository.fetchGRC721Collections();
+  }
+
+  public async fetchGRC721Collection(packagePath: string): Promise<GRC721CollectionModel> {
+    return this.tokenRepository.fetchGRC721CollectionByPackagePath(packagePath);
+  }
+
+  public async fetchGRC721TokenUri(packagePath: string, tokenId: string): Promise<string> {
+    return this.tokenRepository.fetchGRC721TokenUriBy(packagePath, tokenId);
+  }
+
+  public async fetchGRC721TokenMetadata(
+    packagePath: string,
+    tokenId: string,
+  ): Promise<GRC721MetadataModel> {
+    return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId);
+  }
+
+  public async fetchGRC721Balance(packagePath: string, address: string): Promise<number> {
+    return this.tokenRepository.fetchGRC721BalanceBy(packagePath, address);
+  }
+
+  public async fetchGRC721Tokens(packagePath: string, address: string): Promise<GRC721Model[]> {
+    return this.tokenRepository.fetchGRC721TokensBy(packagePath, address);
+  }
+
+  public async getAccountGRC721Collections(
+    accountId: string,
+    networkId: string,
+  ): Promise<GRC721CollectionModel[]> {
+    return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId);
+  }
+
+  public async saveAccountGRC721Collections(
+    accountId: string,
+    networkId: string,
+    collections: GRC721CollectionModel[],
+  ): Promise<boolean> {
+    return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections);
+  }
+
+  public async getAccountGRC721PinnedPackages(
+    accountId: string,
+    networkId: string,
+  ): Promise<string[]> {
+    return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId);
+  }
+
+  public async saveAccountGRC721PinnedPackages(
+    accountId: string,
+    networkId: string,
+    packagePaths: string[],
+  ): Promise<boolean> {
+    return this.tokenRepository.saveAccountGRC721PinnedPackagesBy(
+      accountId,
+      networkId,
+      packagePaths,
+    );
   }
 
   public clear = async (): Promise<boolean> => {
