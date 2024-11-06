@@ -92,7 +92,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
             denom={token.balance.denom}
             orientation='HORIZONTAL'
             fontColor={theme.neutral.a}
-            fontStyleKey='body4Reg'
+            fontStyleKey='captionReg'
             minimumFontSize='10px'
           />
         </div>

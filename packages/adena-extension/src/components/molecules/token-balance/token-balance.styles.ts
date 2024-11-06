@@ -27,11 +27,11 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
         : css`
             flex-direction: column;
           `}
-  align-items: center;
   width: fit-content;
   height: auto;
   text-align: center;
   justify-content: center;
+  align-items: flex-start;
   column-gap: 4px;
 
   .denom-wrapper {
