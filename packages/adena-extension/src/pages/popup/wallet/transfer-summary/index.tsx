@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -80,7 +81,6 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
     const { tokenMetainfo, networkFee } = summaryInfo;
-    const GAS_WANTED = 1000000;
     const message =
       tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
@@ -88,7 +88,7 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      GAS_WANTED,
+      DEFAULT_GAS_WANTED,
       networkFeeAmount,
       summaryInfo.memo,
     );
@@ -140,10 +140,8 @@ const TransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      const result = await createTransaction();
-      if (result) {
-        navigate(RoutePath.History);
-      }
+      createTransaction();
+      navigate(RoutePath.History);
     } catch (e) {
       if (!(e instanceof Error)) {
         return false;

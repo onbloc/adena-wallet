@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -52,14 +53,13 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return null;
     }
     const { grc721Token, toAddress, networkFee, memo } = summaryInfo;
-    const GAS_WANTED = 1000000;
     const message = makeGRC721TransferMessage(grc721Token, currentAddress, toAddress);
     const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
     const document = await transactionService.createDocument(
       currentAccount,
       currentNetwork.networkId,
       [message],
-      GAS_WANTED,
+      DEFAULT_GAS_WANTED,
       networkFeeAmount,
       memo,
     );
