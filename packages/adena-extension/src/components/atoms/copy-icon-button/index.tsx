@@ -1,13 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { CopyButtonWrapper } from './copy-icon-button.styles';
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
+import React, { useCallback, useEffect, useState } from 'react';
+import { CopyButtonWrapper } from './copy-icon-button.styles';
 
 export interface CopyIconButtonProps {
   className?: string;
   copyText: string;
   style?: React.CSSProperties;
-  size?: number
+  size?: number;
+  onClick?: () => void;
 }
 
 export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
@@ -15,6 +16,7 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   copyText,
   style = {},
   size = 16,
+  onClick,
 }) => {
   const [checked, setChecked] = useState<boolean>(false);
 
@@ -31,12 +33,20 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
       event.stopPropagation();
       setChecked(true);
       navigator.clipboard.writeText(copyText);
+
+      !!onClick && onClick();
     },
-    [copyText, checked],
+    [copyText, checked, onClick],
   );
 
   return (
-    <CopyButtonWrapper className={className} style={style} size={size} checked={checked} onClick={onClickCopyButton}>
+    <CopyButtonWrapper
+      className={className}
+      style={style}
+      size={size}
+      checked={checked}
+      onClick={onClickCopyButton}
+    >
       {checked ? <IconCopyCheck /> : <IconCopy />}
     </CopyButtonWrapper>
   );

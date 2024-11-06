@@ -14,7 +14,9 @@ export interface SideMenuProps {
   locked: boolean;
   currentAccountId: string | null;
   accounts: SideMenuAccountInfo[];
+  focusedAccountId: string | null;
   changeAccount: (accountId: string) => void;
+  focusAccountId: (accountId: string | null) => void;
   openLink: (link: string) => void;
   openRegister: () => void;
   movePage: (link: string) => void;
@@ -25,15 +27,19 @@ export interface SideMenuProps {
 export interface SideMenuAccountItemProps {
   selected: boolean;
   account: SideMenuAccountInfo;
+  focusedAccountId: string | null;
   changeAccount: (accountId: string) => void;
+  focusAccountId: (accountId: string | null) => void;
   moveGnoscan: (address: string) => void;
   moveAccountDetail: (accountId: string) => void;
 }
 
 export interface SideMenuAccountListProps {
   currentAccountId: string | null;
+  focusedAccountId: string | null;
   accounts: SideMenuAccountInfo[];
   changeAccount: (accountId: string) => void;
+  focusAccountId: (accountId: string | null) => void;
   moveGnoscan: (address: string) => void;
   moveAccountDetail: (accountId: string) => void;
 }

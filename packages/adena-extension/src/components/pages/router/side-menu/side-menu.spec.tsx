@@ -15,6 +15,10 @@ describe('SideMenu Component', () => {
       locked: false,
       currentAccountId: null,
       accounts: [],
+      focusedAccountId: '',
+      focusAccountId: () => {
+        return; 
+      },
       changeAccount: () => {
         return;
       },

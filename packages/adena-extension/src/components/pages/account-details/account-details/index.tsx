@@ -1,15 +1,17 @@
-import React, { useCallback } from 'react';
-import { AccountDetailsWrapper } from './account-details.styles';
-import AccountNameInput from '../account-name-input';
-import { QRCodeSVG } from 'qrcode.react';
 import { CopyIconButton, FullButtonRightIcon } from '@components/atoms';
+import { QRCodeSVG } from 'qrcode.react';
+import React, { useCallback } from 'react';
+import AccountNameInput from '../account-name-input';
+import { AccountDetailsWrapper } from './account-details.styles';
 
 export interface AccountDetailsProps {
   hasPrivateKey: boolean;
+  hasSeedPhrase: boolean;
   originName: string;
   name: string;
   address: string;
   moveGnoscan: () => void;
+  moveRevealSeedPhrase: () => void;
   moveExportPrivateKey: () => void;
   setName: (name: string) => void;
   reset: () => void;
@@ -17,12 +19,14 @@ export interface AccountDetailsProps {
 
 const AccountDetails: React.FC<AccountDetailsProps> = ({
   hasPrivateKey,
+  hasSeedPhrase,
   originName,
   name,
   address,
   setName,
   reset,
   moveGnoscan,
+  moveRevealSeedPhrase,
   moveExportPrivateKey,
 }) => {
   const onClickViewOnGnoscan = useCallback(() => {
@@ -35,6 +39,13 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
     }
     moveExportPrivateKey();
   }, [hasPrivateKey, moveExportPrivateKey]);
+
+  const onClickRevealSeedPhrase = useCallback(() => {
+    if (!hasSeedPhrase) {
+      return;
+    }
+    moveRevealSeedPhrase();
+  }, [hasSeedPhrase, moveRevealSeedPhrase]);
 
   return (
     <AccountDetailsWrapper>
@@ -62,6 +73,11 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
           disabled={!hasPrivateKey}
           title={'Export Private Key'}
           onClick={onClickExportPrivateKey}
+        />
+        <FullButtonRightIcon
+          disabled={!hasSeedPhrase}
+          title={'Reveal Seed Phrase'}
+          onClick={onClickRevealSeedPhrase}
         />
       </div>
     </AccountDetailsWrapper>

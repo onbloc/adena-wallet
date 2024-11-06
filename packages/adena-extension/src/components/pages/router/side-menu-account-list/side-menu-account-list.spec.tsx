@@ -12,6 +12,10 @@ describe('SideMenuAccountList Component', () => {
     const args: SideMenuAccountListProps = {
       currentAccountId: '',
       accounts: [],
+      focusedAccountId: '',
+      focusAccountId: () => {
+        return; 
+      },
       changeAccount: () => {
         return;
       },
