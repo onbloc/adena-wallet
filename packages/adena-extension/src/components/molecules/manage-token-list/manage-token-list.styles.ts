@@ -2,6 +2,12 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
+export const ManageTokenListWrapper = styled.div`
+  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  width: 100%;
+  height: auto;
+`;
+
 export const ManageTokenListItemWrapper = styled.div`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   padding: 10px 14px;
@@ -26,6 +32,23 @@ export const ManageTokenListItemWrapper = styled.div`
       width: 100%;
       height: 100%;
       border-radius: 50%;
+
+      &.empty {
+        background-color: ${getTheme('neutral', '_7')};
+      }
+    }
+
+    .icon-empty {
+      display: block;
+      width: 20px;
+      height: 100%;
+      margin: auto;
+    }
+
+    &.square {
+      .logo {
+        border-radius: 8px;
+      }
     }
   }
 
@@ -40,6 +63,11 @@ export const ManageTokenListItemWrapper = styled.div`
     .name {
       ${fonts.body2Bold};
       line-height: 15px;
+    }
+
+    .balance {
+      color: ${getTheme('neutral', 'a')};
+      ${fonts.captionReg};
     }
   }
 
