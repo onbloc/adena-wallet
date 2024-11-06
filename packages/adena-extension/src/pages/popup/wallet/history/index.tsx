@@ -1,18 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-import { TransactionHistory } from '@components/molecules';
-import { RoutePath } from '@types';
-import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import useScrollHistory from '@hooks/use-scroll-history';
-import { fonts } from '@styles/theme';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
+import { TransactionHistory } from '@components/molecules';
+import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import useScrollHistory from '@hooks/use-scroll-history';
+import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
 import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
+import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
+import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
+import { RoutePath } from '@types';
 
 const StyledHistoryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -112,6 +113,7 @@ const HistoryContainer: React.FC = () => {
       <TransactionHistory
         status={isSupported ? status : 'error'}
         transactionInfoLists={data ? TransactionHistoryMapper.queryToDisplay(data) : []}
+        queryGRC721TokenUri={useGetGRC721TokenUri}
         onClickItem={onClickItem}
       />
     </StyledHistoryLayout>

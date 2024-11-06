@@ -1,11 +1,17 @@
 import mixins from '@styles/mixins';
-import { fonts } from '@styles/theme';
+import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const SubHeaderWrapper = styled.div`
   ${mixins.flex({ direction: 'row' })};
   position: relative;
   width: 100%;
+
+  .icon-dropdown {
+    path {
+      fill: ${getTheme('neutral', 'a')};
+    }
+  }
 
   .icon-wrapper {
     position: absolute;
@@ -31,6 +37,11 @@ export const SubHeaderWrapper = styled.div`
   }
 
   .title-wrapper {
+    max-width: calc(100% - 48px - 32px);
+    text-overflow: ellipsis;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
     ${fonts.header4}
   }
 `;

@@ -1,6 +1,6 @@
-import { Storage } from '.';
-import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
 import { CommonError } from '@common/errors/common';
+import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
+import { Storage } from '.';
 
 type StorageKeyTypes =
   | 'NETWORKS'
@@ -15,7 +15,9 @@ type StorageKeyTypes =
   | 'ACCOUNT_TOKEN_METAINFOS'
   | 'QUESTIONNAIRE_EXPIRED_DATE'
   | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
+  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+  | 'ACCOUNT_GRC721_COLLECTIONS'
+  | 'ACCOUNT_GRC721_PINNED_PACKAGES';
 
 const StorageKeys: StorageKeyTypes[] = [
   'NETWORKS',
@@ -31,6 +33,8 @@ const StorageKeys: StorageKeyTypes[] = [
   'QUESTIONNAIRE_EXPIRED_DATE',
   'WALLET_CREATION_GUIDE_CONFIRM_DATE',
   'ADD_ACCOUNT_GUIDE_CONFIRM_DATE',
+  'ACCOUNT_GRC721_COLLECTIONS',
+  'ACCOUNT_GRC721_PINNED_PACKAGES',
 ];
 
 function isStorageKey(key: string): key is StorageKeyTypes {

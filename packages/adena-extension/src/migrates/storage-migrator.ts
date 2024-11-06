@@ -1,16 +1,18 @@
 import { StorageModel } from '@common/storage';
-import { Migration, Migrator } from './migrator';
-import { StorageModelV002 } from './migrations/v002/storage-model-v002';
 import { StorageModelDataV001, StorageModelV001 } from './migrations/v001/storage-model-v001';
 import { StorageMigration002 } from './migrations/v002/storage-migration-v002';
-import { StorageModelV003 } from './migrations/v003/storage-model-v003';
+import { StorageModelV002 } from './migrations/v002/storage-model-v002';
 import { StorageMigration003 } from './migrations/v003/storage-migration-v003';
+import { StorageModelV003 } from './migrations/v003/storage-model-v003';
 import { StorageMigration004 } from './migrations/v004/storage-migration-v004';
 import { StorageModelV004 } from './migrations/v004/storage-model-v004';
-import { StorageModelV005 } from './migrations/v005/storage-model-v005';
 import { StorageMigration005 } from './migrations/v005/storage-migration-v005';
-import { StorageModelV006 } from './migrations/v006/storage-model-v006';
+import { StorageModelV005 } from './migrations/v005/storage-model-v005';
 import { StorageMigration006 } from './migrations/v006/storage-migration-v006';
+import { StorageModelV006 } from './migrations/v006/storage-model-v006';
+import { StorageMigration007 } from './migrations/v007/storage-migration-v007';
+import { StorageModelV007 } from './migrations/v007/storage-model-v007';
+import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
   'NETWORKS',
@@ -25,7 +27,7 @@ const LegacyStorageKeys = [
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 
-export type StorageModelLatest = StorageModelV006;
+export type StorageModelLatest = StorageModelV007;
 
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
@@ -47,6 +49,7 @@ interface Storage {
 
 export class StorageMigrator implements Migrator {
   private static StorageKey = 'ADENA_DATA';
+
   constructor(
     private migrations: Migration[],
     private storage: Storage,
@@ -76,6 +79,7 @@ export class StorageMigrator implements Migrator {
   async deserialize(
     data: string | undefined,
   ): Promise<
+    | StorageModelV007
     | StorageModelV006
     | StorageModelV005
     | StorageModelV004
@@ -95,6 +99,7 @@ export class StorageMigrator implements Migrator {
   }
 
   async getCurrent(): Promise<
+    | StorageModelV007
     | StorageModelV006
     | StorageModelV005
     | StorageModelV004
@@ -113,7 +118,7 @@ export class StorageMigrator implements Migrator {
     };
   }
 
-  async migrate(current: StorageModel): Promise<StorageModelV006 | null> {
+  async migrate(current: StorageModel): Promise<StorageModelV007 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -152,6 +157,7 @@ export class StorageMigrator implements Migrator {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
+    | StorageModelV007
     | StorageModelV006
     | StorageModelV005
     | StorageModelV004
@@ -159,6 +165,9 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    if (json?.version === 7) {
+      return json as StorageModelV007;
+    }
     if (json?.version === 6) {
       return json as StorageModelV006;
     }
@@ -208,6 +217,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration004(),
       new StorageMigration005(),
       new StorageMigration006(),
+      new StorageMigration007(),
     ];
   }
 }

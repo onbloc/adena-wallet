@@ -95,3 +95,148 @@ export const parseGRC20ByFileContents = (
     tokenDecimals,
   };
 };
+
+function checkImport(code: string, importPath: string): boolean {
+  const importRegex = /import\s*\(([^)]+)\)/m;
+  const match = code.match(importRegex);
+  if (!match) return false;
+
+  const imports = match[1].split('\n').map((line) =>
+    line
+      .trim()
+      .replace(/"/g, '')
+      .replace(/^[a-zA-Z_][a-zA-Z0-9_]*\s+/, ''),
+  );
+  return imports.includes(importPath);
+}
+
+interface MethodSignature {
+  [methodName: string]: string;
+}
+
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function extractMethods(code: string, typeName: string): MethodSignature {
+  const escapedTypeName = escapeRegExp(typeName);
+  const methodRegex = new RegExp(
+    // eslint-disable-next-line no-useless-escape
+    `func\\s+${escapedTypeName}\\.([a-zA-Z0-9_]+)\\s*\$begin:math:text$([^)]*)\\$end:math:text$\\s*([^{}]+)\\{`,
+    'g',
+  );
+
+  let match: RegExpExecArray | null;
+  const methods: MethodSignature = {};
+
+  while ((match = methodRegex.exec(code)) !== null) {
+    const methodName = match[1];
+    const params = match[2].trim();
+    const returns = match[3].trim().replace(/\s+/g, ' ');
+    methods[methodName] = `${methodName}(${params}) ${returns}`;
+  }
+
+  return methods;
+}
+
+interface InterfaceCheckResult {
+  implementsInterface: boolean;
+  missingMethods: string[];
+}
+
+function checkInterfaceImplementation(
+  code: string,
+  typeName: string,
+  interfaceDef: { [key: string]: string },
+): InterfaceCheckResult {
+  const methods = extractMethods(code, typeName);
+  const missingMethods: string[] = [];
+
+  for (const methodName in interfaceDef) {
+    if (!(methodName in methods)) {
+      missingMethods.push(methodName);
+    }
+  }
+
+  return {
+    implementsInterface: missingMethods.length === 0,
+    missingMethods,
+  };
+}
+
+interface GRC721Meta {
+  variableName: string;
+  name: string;
+  symbol: string;
+  isTokenUri: boolean;
+  isMetadata: boolean;
+}
+
+function parseGRC721NewFunctions(code: string): GRC721Meta | null {
+  const grcNewRegex =
+    /([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*grc721\.New\w+\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = grcNewRegex.exec(code)) !== null) {
+    if (match.length < 3) {
+      continue;
+    }
+
+    const variableName = match[1];
+    const name = match[2];
+    const symbol = match[3];
+
+    return {
+      variableName,
+      name,
+      symbol,
+      isTokenUri: false,
+      isMetadata: false,
+    };
+  }
+
+  return null;
+}
+
+export function parseGRC721FileContents(contents: string): GRC721Meta | null {
+  const importPath = 'gno.land/p/demo/grc/grc721';
+  const hasImport = checkImport(contents, importPath);
+  if (!hasImport) {
+    return null;
+  }
+
+  const grc721Meta = parseGRC721NewFunctions(contents);
+  if (!grc721Meta) {
+    return null;
+  }
+
+  const interfaceCheck = checkInterfaceImplementation(contents, grc721Meta.variableName, {
+    BalanceOf: 'BalanceOf(owner std.Address) (uint64, error)',
+    OwnerOf: 'OwnerOf(tid TokenID) (std.Address, error)',
+    SetTokenURI: 'SetTokenURI(tid TokenID, tURI TokenURI) (bool, error)',
+    SafeTransferFrom: 'SafeTransferFrom(from, to std.Address, tid TokenID) error',
+    TransferFrom: 'TransferFrom(from, to std.Address, tid TokenID) error',
+    Approve: 'Approve(approved std.Address, tid TokenID) error',
+    SetApprovalForAll: 'SetApprovalForAll(operator std.Address, approved bool) error',
+    GetApproved: 'GetApproved(tid TokenID) (std.Address, error)',
+    IsApprovedForAll: 'IsApprovedForAll(owner, operator std.Address) bool',
+  });
+
+  if (!interfaceCheck.implementsInterface) {
+    return null;
+  }
+
+  const tokenUriCheck = checkInterfaceImplementation(contents, grc721Meta.variableName, {
+    TokenUri: 'TokenURI(tid TokenID) (string, error)',
+  });
+
+  const metadataCheck = checkInterfaceImplementation(contents, grc721Meta.variableName, {
+    TokenMetadata: 'TokenMetadata(tid TokenID) (Metadata, error)',
+  });
+
+  return {
+    ...grc721Meta,
+    isTokenUri: tokenUriCheck.implementsInterface,
+    isMetadata: metadataCheck.implementsInterface,
+  };
+}

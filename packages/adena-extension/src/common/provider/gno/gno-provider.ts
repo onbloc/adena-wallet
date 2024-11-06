@@ -121,11 +121,21 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     return this.evaluateExpression(packagePath, expression)
       .then((result) => {
-        const parseData = result.replace('(', '').replace(')', '').split(' ');
-        if (parseData.length === 0) {
-          return null;
+        const regex = /\((?:"((?:\\.|[^"\\])*)"|(\S+))\s+\w+\)/g;
+        const matches = result.matchAll(regex);
+
+        for (const match of matches) {
+          if (match?.[1] !== undefined) {
+            const unescaped = match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+            return unescaped;
+          }
+
+          if (match?.[2] !== undefined) {
+            return `${match[2]}`;
+          }
         }
-        return parseData[0];
+
+        return null;
       })
       .catch(() => null);
   }

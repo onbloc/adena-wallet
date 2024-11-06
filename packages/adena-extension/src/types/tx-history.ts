@@ -8,7 +8,7 @@ export interface TransactionInfo {
   hash: string;
   height?: number;
   logo: string;
-  type: 'TRANSFER' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
+  type: 'TRANSFER' | 'TRANSFER_GRC721' | 'ADD_PACKAGE' | 'CONTRACT_CALL' | 'MULTI_CONTRACT_CALL';
   typeName?: string;
   status: 'SUCCESS' | 'FAIL';
   title: string;

@@ -1,6 +1,6 @@
+import MainManageTokensFilterIcon from '@assets/main-manage-tokens-filter.svg';
 import React from 'react';
 import { MainManageTokenButtonWrapper } from './main-manage-token-button.styles';
-import MainManageTokensFilterIcon from '@assets/main-manage-tokens-filter.svg';
 
 export interface MainManageTokenButtonProps {
   onClick: () => void;

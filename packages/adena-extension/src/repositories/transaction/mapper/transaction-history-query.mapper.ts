@@ -54,8 +54,11 @@ export function mapTransactionEdgeByAddress(
       // receive native token
       return mapReceivedTransactionByBankMsgSend(transaction);
     case 'exec':
-      // receive grc20 token
-      if (message.value.func === 'Transfer' && message.value.caller !== address) {
+      // receive grc20 or grc721 token
+      if (
+        ['Transfer', 'TransferFrom'].includes(message.value.func) &&
+        message.value.caller !== address
+      ) {
         return mapReceivedTransactionByMsgCall(transaction);
       }
       return mapVMTransaction(transaction);
@@ -99,6 +102,34 @@ export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
 ): TransactionInfo {
   const firstMessage = getDefaultMessage(tx.messages);
+  if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
+    return {
+      hash: tx.hash,
+      height: tx.block_height,
+      logo: firstMessage.value.pkg_path || '',
+      type: 'TRANSFER_GRC721',
+      status: tx.success ? 'SUCCESS' : 'FAIL',
+      typeName: 'Receive',
+      title: 'Receive',
+      description: `From: ${formatAddress(firstMessage.value.caller || '')}`,
+      extraInfo: tx.messages.length > 1 ? `+${tx.messages.length - 1}` : '',
+      amount: {
+        value: firstMessage.value.args?.[2] || '0',
+        denom: firstMessage.value.pkg_path || '',
+      },
+      to: formatAddress(firstMessage.value.args?.[1] || '', 4),
+      from: formatAddress(firstMessage.value.args?.[0] || '', 4),
+      originTo: firstMessage.value.caller || '',
+      originFrom: firstMessage.value.args?.[0] || '',
+      valueType: mapValueType(tx.success, true),
+      date: '',
+      networkFee: {
+        value: `${tx.gas_fee.amount || '0'}`,
+        denom: `${tx.gas_fee.denom}`,
+      },
+    };
+  }
+
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -217,12 +248,13 @@ export function mapVMTransaction(
   if (firstMessage.value.__typename === 'MsgCall') {
     const messageValue = firstMessage.value as MsgCallValue;
     const isTransfer = messageValue.func === 'Transfer';
-
-    const fromAddress = messageValue.caller || '';
-    const toAddress = messageValue.args?.[0] || '';
-    const sendAmount = messageValue.args?.[1] || '0';
+    const isTransferGRC721 = messageValue.func === 'TransferFrom';
 
     if (isTransfer) {
+      const fromAddress = messageValue.caller || '';
+      const toAddress = messageValue.args?.[0] || '';
+      const sendAmount = messageValue.args?.[1] || '0';
+
       return {
         hash: tx.hash,
         height: tx.block_height,
@@ -234,6 +266,36 @@ export function mapVMTransaction(
         description: `To: ${formatAddress(toAddress)}`,
         amount: {
           value: sendAmount,
+          denom: messageValue.pkg_path || '',
+        },
+        valueType: mapValueType(tx.success),
+        date: '',
+        from: formatAddress(fromAddress),
+        originFrom: fromAddress,
+        to: formatAddress(toAddress),
+        originTo: toAddress,
+        networkFee: {
+          value: tx.gas_fee.amount.toString(),
+          denom: tx.gas_fee.denom,
+        },
+      };
+    }
+
+    if (isTransferGRC721) {
+      const fromAddress = messageValue.args?.[0] || '';
+      const toAddress = messageValue.args?.[1] || '';
+
+      return {
+        hash: tx.hash,
+        height: tx.block_height,
+        logo: '',
+        type: 'TRANSFER_GRC721',
+        status: tx.success ? 'SUCCESS' : 'FAIL',
+        typeName: 'Send',
+        title: 'Send',
+        description: `To: ${formatAddress(toAddress)}`,
+        amount: {
+          value: messageValue.args?.[2] || '0',
           denom: messageValue.pkg_path || '',
         },
         valueType: mapValueType(tx.success),

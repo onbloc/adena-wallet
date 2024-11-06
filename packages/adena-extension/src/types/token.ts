@@ -39,15 +39,24 @@ export interface IBCTokenModel extends TokenModel {
 
 export interface ManageTokenInfo {
   tokenId: string;
+  type: 'token';
   logo: string;
-  symbol: string;
   name: string;
   display?: boolean;
   main?: boolean;
-  balanceAmount: {
+  balance: {
     value: string;
     denom: string;
   };
+}
+
+export interface ManageGRC721Info {
+  tokenId: string;
+  packagePath: string;
+  type: 'grc721';
+  isTokenUri: boolean;
+  name: string;
+  display?: boolean;
 }
 
 export interface TokenInfo {
@@ -102,4 +111,45 @@ export interface MainToken {
     value: string;
     denom: string;
   };
+}
+
+export interface GRC721CollectionModel {
+  tokenId: string;
+  networkId: string;
+  display: boolean;
+  type: 'grc721';
+  packagePath: string;
+  name: string;
+  symbol: string;
+  image: string | null;
+  isTokenUri: boolean;
+  isMetadata: boolean;
+}
+
+export interface GRC721Model {
+  tokenId: string;
+  networkId: string;
+  type: 'grc721';
+  packagePath: string;
+  name: string;
+  symbol: string;
+  isTokenUri: boolean;
+  isMetadata: boolean;
+  metadata: GRC721MetadataModel | null;
+}
+
+export interface GRC721MetadataModel {
+  name: string;
+  image: string;
+  imageData: string;
+  externalUrl: string;
+  description: string;
+  backgroundColor: string;
+  animationUrl: string;
+  youtubeUrl: string;
+  attributes: {
+    displayType: string;
+    traitType: string;
+    value: string;
+  }[];
 }
