@@ -8,6 +8,8 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 
+const REFETCH_INTERVAL = 5_000;
+
 export const useTransactionHistoryPage = ({
   enabled,
 }: {
@@ -67,6 +69,7 @@ export const useTransactionHistoryPage = ({
         transactionHistoryService.supported &&
         enabled,
       keepPreviousData: true,
+      refetchInterval: REFETCH_INTERVAL,
     },
   );
 
