@@ -63,7 +63,7 @@ export const Deposit = (): JSX.Element => {
 
   return (
     <Wrapper>
-      <Text type='header4'>{`Deposit ${params?.tokenMetainfo?.symbol || ''}`}</Text>
+      <Text type='header4'>{`Deposit ${params?.token.symbol || ''}`}</Text>
       <QRCodeBox>
         <QRCodeSVG value={currentAddress || ''} size={150} />
       </QRCodeBox>
