@@ -286,18 +286,24 @@ export class TokenRepository implements ITokenRepository {
         }),
       ).then((data) => data?.result || []);
 
-      return tokens.map((token) => ({
-        tokenId: token.packagePath,
-        networkId: this.networkId,
-        display: false,
-        type: 'grc721',
-        packagePath: token.packagePath,
-        name: token.name,
-        symbol: token.symbol,
-        image: null,
-        isMetadata: !!token.isTokenMeta,
-        isTokenUri: !!token.isTokenURI,
-      }));
+      return tokens.reduce<GRC721CollectionModel[]>((accumulated, current) => {
+        const exists = !!accumulated.find((item) => item.packagePath === current.packagePath);
+        if (!exists) {
+          accumulated.push({
+            tokenId: current.packagePath,
+            networkId: this.networkId,
+            display: false,
+            type: 'grc721',
+            packagePath: current.packagePath,
+            name: current.name,
+            symbol: current.symbol,
+            image: null,
+            isMetadata: !!current.isTokenMeta,
+            isTokenUri: !!current.isTokenURI,
+          });
+        }
+        return accumulated;
+      }, []);
     }
 
     if (!this.queryUrl) {
