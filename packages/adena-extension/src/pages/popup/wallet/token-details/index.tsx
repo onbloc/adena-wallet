@@ -10,7 +10,6 @@ import { DoubleButton, TransactionHistory } from '@components/molecules';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useHistoryData from '@hooks/use-history-data';
 import useScrollHistory from '@hooks/use-scroll-history';
-import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
@@ -143,7 +142,10 @@ export const TokenDetails = (): JSX.Element => {
   }, [currentBalances, tokenBalance]);
 
   const transactions = useMemo(() => {
-    return TransactionHistoryMapper.queryToDisplay(data || []);
+    if (!data) {
+      return [];
+    }
+    return data;
   }, [data]);
 
   const onScrollListener = (): void => {
@@ -158,10 +160,7 @@ export const TokenDetails = (): JSX.Element => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions =
-        TransactionHistoryMapper.queryToDisplay(data ?? []).flatMap(
-          (group) => group.transactions,
-        ) ?? [];
+      const transactions = data?.flatMap((group) => group.transactions) ?? [];
       const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);

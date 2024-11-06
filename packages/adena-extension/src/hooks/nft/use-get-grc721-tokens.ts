@@ -38,8 +38,9 @@ export const useGetGRC721Tokens = (
         }))
         .reverse();
     },
-    staleTime: Infinity,
-    keepPreviousData: true,
+    staleTime: 1_000,
+    keepPreviousData: false,
+    refetchOnMount: true,
     ...options,
   });
 };

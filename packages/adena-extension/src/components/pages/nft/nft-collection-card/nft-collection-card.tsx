@@ -40,7 +40,9 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     },
   );
 
-  const { data: balance } = queryGRC721Balance(grc721Collection.packagePath);
+  const { data: balance } = queryGRC721Balance(grc721Collection.packagePath, {
+    refetchOnMount: true,
+  });
 
   const isFetchedCardTokenUri = useMemo(() => {
     if (!grc721Collection.isTokenUri) {
