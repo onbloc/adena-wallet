@@ -1,11 +1,11 @@
 import React from 'react';
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { SideMenuAccountItemProps } from '@types';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
 import SideMenuAccountItem from './side-menu-account-item';
-import { SideMenuAccountItemProps } from '@types';
 
 describe('SideMenuAccountItem Component', () => {
   it('SideMenuAccountItem render', () => {
@@ -17,6 +17,10 @@ describe('SideMenuAccountItem Component', () => {
         address: '',
         balance: '',
         type: 'HD_WALLET',
+      },
+      focusedAccountId: '',
+      focusAccountId: () => {
+        return;
       },
       changeAccount: () => {
         return;

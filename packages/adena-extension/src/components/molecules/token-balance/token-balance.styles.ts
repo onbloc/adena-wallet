@@ -1,4 +1,4 @@
-import { FontsType, fonts } from '@styles/theme';
+import { fonts, FontsType } from '@styles/theme';
 import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 interface TokenBalanceWrapperProps {
@@ -20,19 +20,19 @@ export const TokenBalanceWrapper = styled.div<TokenBalanceWrapperProps>`
           flex-direction: row;
         `
       : maxWidth
-      ? css`
-          flex-flow: row wrap;
-          max-width: ${maxWidth}px;
-        `
-      : css`
-          flex-direction: column;
-        `}
+        ? css`
+            flex-flow: row wrap;
+            max-width: ${maxWidth}px;
+          `
+        : css`
+            flex-direction: column;
+          `}
   align-items: center;
   width: fit-content;
   height: auto;
   text-align: center;
   justify-content: center;
-  column-gap: 9px;
+  column-gap: 4px;
 
   .denom-wrapper {
     display: inline-flex;

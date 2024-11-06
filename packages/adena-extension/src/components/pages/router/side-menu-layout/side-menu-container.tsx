@@ -1,6 +1,6 @@
+import { Account } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Account } from 'adena-module';
 
 import { formatNickname } from '@common/utils/client-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
@@ -11,11 +11,11 @@ import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenBalance } from '@hooks/use-token-balance';
 
-import { SideMenuAccountInfo, TokenBalanceType, RoutePath } from '@types';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
 import { useQuery } from '@tanstack/react-query';
-import { makeQueryString } from '@common/utils/string-utils';
-import { SCANNER_URL } from '@common/constants/resource.constant';
+import { RoutePath, SideMenuAccountInfo, TokenBalanceType } from '@types';
 
 interface SideMenuContainerProps {
   open: boolean;
@@ -34,6 +34,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
   const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
+  const [focusedAccountId, setFocusedAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -73,6 +74,10 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     [setOpen],
   );
 
+  const focusAccountId = useCallback((accountId: string | null) => {
+    setFocusedAccountId(accountId);
+  }, []);
+
   const changeAccount = useCallback(
     async (accountId: string) => {
       setOpen(false);
@@ -108,7 +113,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
         if (!amount) {
           return '-';
         }
-        return `${amount.value} ${amount.denom}`;
+        return `${amount.value}`;
       }
 
       return Promise.all(
@@ -136,7 +141,9 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       locked={locked}
       currentAccountId={currentAccountId}
       accounts={locked ? [] : latestAccountInfos}
+      focusedAccountId={focusedAccountId}
       changeAccount={changeAccount}
+      focusAccountId={focusAccountId}
       movePage={movePage}
       openLink={onOpenLink}
       openRegister={openRegister}
