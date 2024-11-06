@@ -5,9 +5,9 @@ __metadata:
   version: 6
   cacheKey: 8
 
-"@adena-wallet/sdk@npm:^0.0.1":
-  version: 0.0.1
-  resolution: "@adena-wallet/sdk@npm:0.0.1"
+"@adena-wallet/sdk@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "@adena-wallet/sdk@npm:0.0.2"
   dependencies:
     "@gnolang/gno-js-client": ^1.3.0
     "@gnolang/tm2-js-client": ^1.2.1
@@ -15,7 +15,7 @@ __metadata:
     "@web3auth/base-provider": ^8.12.4
     "@web3auth/no-modal": ^8.12.4
     "@web3auth/openlogin-adapter": ^8.12.4
-  checksum: 2432984b2310cf96af017fe53be4631b92f672021f6d74fc8179e8eeeec06f0a1b15d668261c79f43f0575be1a820c6675440c6ed6c75c98c0098eb7dacd5f6d
+  checksum: 68996ed316e9f9dc30c16577bc7721407e73c6ba21048a89b7302597267e3beb2775cc4678aa5aa49cbc9ebbeb7e03a386c455efe2d9d6462a95802aa4dc99d1
   languageName: node
   linkType: hard
 
@@ -7878,7 +7878,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-extension@workspace:packages/adena-extension"
   dependencies:
-    "@adena-wallet/sdk": ^0.0.1
+    "@adena-wallet/sdk": ^0.0.2
     "@babel/core": ^7.23.9
     "@babel/preset-env": ^7.23.9
     "@babel/preset-react": ^7.23.3
