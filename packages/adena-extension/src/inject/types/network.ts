@@ -23,3 +23,13 @@ interface SwitchNetworkResponseData {
 export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>;
 
 export type AdenaSwitchNetwork = (chainId: string) => Promise<SwitchNetworkResponse>;
+
+interface GetNetworkResponseData {
+  chainId: string;
+  networkName: string;
+  addressPrefix: string;
+  rpcUrl: string;
+  indexerUrl: string | null;
+}
+
+export type GetNetworkResponse = AdenaResponse<GetNetworkResponseData>;
