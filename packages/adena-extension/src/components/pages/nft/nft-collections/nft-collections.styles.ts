@@ -22,7 +22,7 @@ export const NFTCollectionsWrapper = styled.div`
 
   .description {
     position: absolute;
-    top: 210px;
+    top: 139px;
     left: 0px;
     width: 100%;
     text-align: center;
