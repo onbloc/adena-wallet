@@ -258,7 +258,7 @@ export function mapVMTransaction(
       return {
         hash: tx.hash,
         height: tx.block_height,
-        logo: '',
+        logo: firstMessage.value.pkg_path || '',
         type: 'TRANSFER',
         status: tx.success ? 'SUCCESS' : 'FAIL',
         typeName: 'Send',
@@ -288,7 +288,7 @@ export function mapVMTransaction(
       return {
         hash: tx.hash,
         height: tx.block_height,
-        logo: '',
+        logo: firstMessage.value.pkg_path || '',
         type: 'TRANSFER_GRC721',
         status: tx.success ? 'SUCCESS' : 'FAIL',
         typeName: 'Send',

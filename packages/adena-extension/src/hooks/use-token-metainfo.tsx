@@ -195,7 +195,11 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     (amount: { value: string; denom: string }) => {
       const tokenMeta = tokenMetaMap[amount.denom];
       if (!tokenMeta) {
-        return amount;
+        const paths = amount.denom.split('/');
+        return {
+          ...amount,
+          denom: paths.length > 0 ? paths[paths.length - 1] : amount.denom,
+        };
       }
       const value = BigNumber(amount.value)
         .shiftedBy(tokenMeta.decimals * -1)

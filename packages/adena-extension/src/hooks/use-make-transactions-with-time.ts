@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
 import { useAdenaContext } from './use-context';
@@ -11,7 +12,7 @@ export interface UseMakeTransactionsWithTimeReturn {
   isLoading: boolean;
   isFetched: boolean;
   isFetching: boolean;
-  data: TransactionInfo[] | null | undefined;
+  data: { title: string; transactions: TransactionInfo[] }[] | null | undefined;
 }
 
 export const useMakeTransactionsWithTime = (
@@ -20,10 +21,12 @@ export const useMakeTransactionsWithTime = (
 ): UseMakeTransactionsWithTimeReturn => {
   const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
-  const { getTokenImageByDenom, getTokenAmount } = useTokenMetainfo();
+  const { allTokenMetainfos, getTokenImageByDenom, getTokenAmount } = useTokenMetainfo();
   const { isFetched: isFetchedTokens } = useGRC20Tokens();
   const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections } =
     useGetAllGRC721Collections();
+
+  const queryClient = useQueryClient();
 
   const { status, isLoading, isFetched, isFetching, data } = useQuery({
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, key || ''],
@@ -34,9 +37,12 @@ export const useMakeTransactionsWithTime = (
 
       return Promise.all(
         transactions.map(async (transaction) => {
-          const time = await transactionHistoryService.fetchBlockTime(
-            Number(transaction.height || 1),
+          const time = await queryClient.fetchQuery(
+            ['blockTime', currentNetwork.networkId, transaction.height || 1],
+            () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
+            { staleTime: Infinity },
           );
+
           if (transaction.type === 'TRANSFER_GRC721') {
             const amount = transaction.amount;
             const collection = grc721Collections.find(
@@ -73,11 +79,18 @@ export const useMakeTransactionsWithTime = (
         }),
       );
     },
+    select: (data) => {
+      if (!data) {
+        return null;
+      }
+      return TransactionHistoryMapper.queryToDisplay(data);
+    },
     enabled:
       !!transactionHistoryService.supported &&
       !!transactions &&
       isFetchedTokens &&
-      isFetchedGRC721Collections,
+      isFetchedGRC721Collections &&
+      allTokenMetainfos.length > 0,
     keepPreviousData: true,
   });
 

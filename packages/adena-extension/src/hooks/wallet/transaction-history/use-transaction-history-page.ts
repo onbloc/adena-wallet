@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -13,7 +13,12 @@ export const useTransactionHistoryPage = ({
 }: {
   enabled: boolean;
 }): {
-  data: TransactionInfo[] | null;
+  data:
+    | {
+        title: string;
+        transactions: TransactionInfo[];
+      }[]
+    | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
   isLoading: boolean;
@@ -61,6 +66,7 @@ export const useTransactionHistoryPage = ({
         tokenMetainfos.length > 0 &&
         transactionHistoryService.supported &&
         enabled,
+      keepPreviousData: true,
     },
   );
 
@@ -75,7 +81,7 @@ export const useTransactionHistoryPage = ({
   }, [allTransactions]);
 
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/page/all/${currentNetwork.chainId}/${transactions?.length}`,
+    `history/page/all/${currentNetwork.chainId}/${transactions?.length || 0}`,
     transactions,
   );
 

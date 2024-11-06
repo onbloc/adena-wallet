@@ -5,7 +5,7 @@ import FailedIcon from '@assets/failed.svg';
 import SuccessIcon from '@assets/success.svg';
 import { TokenBalance } from '@components/molecules';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
 
 export interface TransactionHistoryListItemProps {
@@ -29,23 +29,27 @@ export interface TransactionHistoryListItemProps {
   onClickItem: (hash: string) => void;
 }
 
-const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
-  hash,
-  logo,
-  type,
-  status,
-  title,
-  extraInfo,
-  description,
-  amount,
-  valueType,
-  queryGRC721TokenUri,
-  onClickItem,
-}) => {
-  const tokenUriQuery =
-    type === 'TRANSFER_GRC721' && queryGRC721TokenUri ? queryGRC721TokenUri(logo || '', '0') : null;
+const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (args) => {
+  const {
+    hash,
+    logo,
+    type,
+    status,
+    title,
+    extraInfo,
+    description,
+    amount,
+    valueType,
+    queryGRC721TokenUri,
+    onClickItem,
+  } = args;
 
-  const getLogoImage = useCallback(() => {
+  const tokenUriQuery =
+    type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
+      ? queryGRC721TokenUri(logo || '', '0')
+      : null;
+
+  const logoImage = useMemo(() => {
     if (type === 'TRANSFER_GRC721' && tokenUriQuery) {
       return tokenUriQuery?.data || `${UnknownTokenIcon}`;
     }
@@ -78,7 +82,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = ({
   return (
     <TransactionHistoryListItemWrapper onClick={(): void => onClickItem(hash)}>
       <div className='logo-wrapper'>
-        <img className='logo' src={getLogoImage()} alt='logo image' />
+        <img className='logo' src={logoImage} alt='logo image' />
         <img
           className='badge'
           src={status === 'SUCCESS' ? SuccessIcon : FailedIcon}

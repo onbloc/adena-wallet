@@ -22,7 +22,7 @@ export const useGetGRC721Balance = (
 
       return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null);
     },
-    staleTime: Infinity,
+    staleTime: 0,
     ...options,
   });
 };

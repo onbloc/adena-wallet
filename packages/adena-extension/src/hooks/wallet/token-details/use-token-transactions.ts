@@ -13,7 +13,12 @@ export const useTokenTransactions = (
   tokenPath: string,
   { enabled }: { enabled: boolean },
 ): {
-  data: TransactionInfo[] | null;
+  data:
+    | {
+        title: string;
+        transactions: TransactionInfo[];
+      }[]
+    | null;
   isFetched: boolean;
   status: 'loading' | 'error' | 'success';
   isLoading: boolean;

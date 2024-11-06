@@ -25,9 +25,9 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
     <TransactionHistoryListWrapper>
       <span className='title'>{title}</span>
       <div className='list-wrapper'>
-        {transactions.map((transaction, index) => (
+        {transactions.map((transaction) => (
           <TransactionHistoryListItem
-            key={index}
+            key={transaction.hash}
             {...transaction}
             queryGRC721TokenUri={queryGRC721TokenUri}
             onClickItem={onClickItem}
