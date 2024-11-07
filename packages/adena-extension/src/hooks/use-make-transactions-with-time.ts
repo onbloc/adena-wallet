@@ -21,7 +21,7 @@ export const useMakeTransactionsWithTime = (
 ): UseMakeTransactionsWithTimeReturn => {
   const { currentNetwork } = useNetwork();
   const { transactionHistoryService } = useAdenaContext();
-  const { allTokenMetainfos, getTokenImageByDenom, getTokenAmount } = useTokenMetainfo();
+  const { allTokenMetainfos, tokenLogoMap, getTokenAmount } = useTokenMetainfo();
   const { isFetched: isFetchedTokens } = useGRC20Tokens();
   const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections } =
     useGetAllGRC721Collections();
@@ -29,7 +29,12 @@ export const useMakeTransactionsWithTime = (
   const queryClient = useQueryClient();
 
   const { status, isLoading, isFetched, isFetching, data } = useQuery({
-    queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, key || ''],
+    queryKey: [
+      'useMakeTransactionsWithTime',
+      currentNetwork.chainId,
+      Object.values(tokenLogoMap).length,
+      key || '',
+    ],
     queryFn: () => {
       if (!transactions || !grc721Collections) {
         return null;
@@ -73,7 +78,7 @@ export const useMakeTransactionsWithTime = (
                 denom: 'GNOT',
               },
             ),
-            logo: getTokenImageByDenom(transaction.logo) || '',
+            logo: tokenLogoMap?.[transaction.amount.denom] || '',
             date: time || '',
           };
         }),
@@ -90,7 +95,8 @@ export const useMakeTransactionsWithTime = (
       !!transactions &&
       isFetchedTokens &&
       isFetchedGRC721Collections &&
-      allTokenMetainfos.length > 0,
+      !!allTokenMetainfos &&
+      tokenLogoMap !== null,
     keepPreviousData: true,
   });
 

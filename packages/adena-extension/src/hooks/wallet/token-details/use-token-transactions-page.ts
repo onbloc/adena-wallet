@@ -79,7 +79,7 @@ export const useTokenTransactionsPage = (
   }, [allTransactions]);
 
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `token-details/page/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
+    `token-details/page/history/${currentNetwork.chainId}/${transactions?.[0].hash}/${tokenPath}`,
     transactions,
   );
 

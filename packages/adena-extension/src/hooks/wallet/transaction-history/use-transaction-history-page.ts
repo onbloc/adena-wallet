@@ -81,10 +81,10 @@ export const useTransactionHistoryPage = ({
     return allTransactions.pages.flatMap(
       (page: unknown) => (page as TransactionWithPageInfo).transactions,
     );
-  }, [allTransactions]);
+  }, [allTransactions?.pages]);
 
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/page/all/${currentNetwork.chainId}/${transactions?.length || 0}`,
+    `history/page/all/${currentNetwork.chainId}/${transactions?.[0].hash}`,
     transactions,
   );
 
