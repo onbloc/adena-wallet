@@ -6,7 +6,6 @@ export const makeAccountTransactionsQuery = (
   {
     transactions(
       filter: {
-        success: true
         messages: [
           {
             type_url: send
@@ -125,7 +124,6 @@ export const makeNativeTransactionsQuery = (
   {
     transactions(
       filter: {
-        success: true
         messages: [
           {
             type_url: send
@@ -192,7 +190,6 @@ export const makeGRC20TransferTransactionsQuery = (
   {
     transactions(
       filter: {
-        success: true
         messages: [
           {
             type_url: exec
