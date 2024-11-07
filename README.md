@@ -29,17 +29,18 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Transaction History <br>
 ✅ Settings <br>
 ✅ Connect to Dapps <br>
-✅ Sign GNO Contracts <br>
+✅ Sign Gno Realms (smart contracts) <br>
 ✅ Explore Dapps <br>
 ✅ Multi-Accounts <br>
 ✅ Multi-Network <br>
+✅ Multi-Mnemonic <br>
 ✅ Ledger Support <br>
 ✅ Web3 Login Support <br>
 ✅ Manage Custom Tokens <br>
-✅ Airgap Support <br>
-⬜ Multi-Chain <br>
-⬜ View & Transfer NFTs <br>
-⬜ In-app Swap
+✅ Airgap Account Support <br>
+✅ View & Transfer NFTs <br>
+⬜ In-app Swap <br>
+⬜ Multi-Chain 
 ​
 
 ## Building Locally
