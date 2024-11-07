@@ -6,6 +6,7 @@ import { useCurrentAccount } from './use-current-account';
 import { useNetwork } from './use-network';
 
 import { TokenState } from '@states';
+import { useQuery } from '@tanstack/react-query';
 import { GRC20TokenModel, TokenModel } from '@types';
 import { Account } from 'adena-module';
 import BigNumber from 'bignumber.js';
@@ -25,7 +26,7 @@ interface GRC20Token {
 
 export type UseTokenMetainfoReturn = {
   tokenMetainfos: TokenModel[];
-  allTokenMetainfos: TokenModel[];
+  allTokenMetainfos: TokenModel[] | null;
   currentTokenMetainfos: TokenModel[];
   tokenLogoMap: Record<string, string | null>;
   getTokenAmount: (amount: { value: string; denom: string }) => { value: string; denom: string };
@@ -77,20 +78,30 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const { addCollections } = useNFTCollectionHandler();
   const { data: grc20Tokens } = useGRC20Tokens();
 
-  const allTokenMetainfos = useMemo(() => {
-    if (!grc20Tokens || tokenMetainfos.length === 0) {
-      return tokenMetainfos;
-    }
+  const { data: allTokenMetainfos = null } = useQuery<TokenModel[]>(
+    [
+      'useTokenMetainfo/allTokenMetainfos',
+      grc20Tokens?.map((token) => token.pkgPath),
+      currentNetwork.networkId,
+    ],
+    async (): Promise<TokenModel[]> => {
+      const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos();
+      const remainGRC20Tokens = grc20Tokens
+        ? grc20Tokens.filter(
+            (token) =>
+              !fetchedTokenMetainfos.find(
+                (meta) => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+              ),
+          )
+        : [];
 
-    const remainTokens = grc20Tokens.filter(
-      (token) =>
-        !!token &&
-        tokenMetainfos.findIndex(
-          (meta) => isGRC20TokenModel(meta) && meta?.pkgPath !== token?.pkgPath,
-        ),
-    );
-    return [...tokenMetainfos, ...remainTokens];
-  }, [tokenMetainfos, grc20Tokens]);
+      return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
+    },
+    {
+      staleTime: Infinity,
+      enabled: !!grc20Tokens,
+    },
+  );
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
@@ -99,6 +110,10 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   }, [tokenMetainfos, currentNetwork]);
 
   const tokenMetaMap = useMemo(() => {
+    if (!allTokenMetainfos) {
+      return {};
+    }
+
     return allTokenMetainfos.reduce<{ [key in string]: TokenModel }>((acc, current) => {
       if (isNativeTokenModel(current)) {
         acc[current.denom] = current;
@@ -111,12 +126,16 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   }, [allTokenMetainfos]);
 
   const tokenLogoMap = useMemo(() => {
-    return currentTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
+    if (!allTokenMetainfos) {
+      return {};
+    }
+
+    return allTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
       const key = makeTokenKey(current);
       accum[key] = current.image || null;
       return accum;
     }, {});
-  }, [currentTokenMetainfos]);
+  }, [allTokenMetainfos]);
 
   const initTokenMetainfos = async (withTransferEvents?: boolean): Promise<void> => {
     if (!currentAccount || !currentNetwork.apiUrl) {
@@ -281,7 +300,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       currentAccount.id,
     );
 
-    const changedTokenMetainfos = tokenMetainfos
+    const newTokenMetainfos = tokenMetainfos
       .filter(
         (t1) =>
           !currentTokenMetainfos.find(
@@ -296,7 +315,8 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       }));
 
     await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [
-      ...changedTokenMetainfos,
+      ...currentTokenMetainfos,
+      ...newTokenMetainfos,
     ]);
     return true;
   };

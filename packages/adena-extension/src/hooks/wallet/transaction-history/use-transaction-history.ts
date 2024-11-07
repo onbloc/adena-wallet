@@ -73,7 +73,7 @@ export const useTransactionHistory = ({
   }, [allTransactions, blockIndex]);
 
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/common/all/${currentNetwork.chainId}/${transactions?.length}`,
+    `history/common/all/${currentNetwork.chainId}/${transactions?.[0].hash}`,
     transactions,
   );
 
