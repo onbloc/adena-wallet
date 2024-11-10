@@ -1,6 +1,6 @@
 {
   "name": "adena-extension",
-  "version": "1.13.0",
+  "version": "1.13.1",
   "private": true,
   "description": "Adena is a friendly browser extension wallet for the gno.land blockchain.",
   "scripts": {
