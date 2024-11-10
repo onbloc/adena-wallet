@@ -83,8 +83,16 @@ export const useTransactionHistoryPage = ({
     );
   }, [allTransactions?.pages]);
 
+  const firstTransactionHash = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      return '';
+    }
+
+    return transactions[0]?.hash;
+  }, [transactions]);
+
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/page/all/${currentNetwork.chainId}/${transactions?.[0].hash}`,
+    `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
 

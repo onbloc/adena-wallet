@@ -78,8 +78,16 @@ export const useTokenTransactionsPage = (
     return allTransactions.pages.flatMap((page) => page?.transactions || []);
   }, [allTransactions]);
 
+  const firstTransactionHash = useMemo(() => {
+    if (!transactions || transactions.length === 0) {
+      return '';
+    }
+
+    return transactions[0]?.hash;
+  }, [transactions]);
+
   const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `token-details/page/history/${currentNetwork.chainId}/${transactions?.[0].hash}/${tokenPath}`,
+    `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
     transactions,
   );
 
