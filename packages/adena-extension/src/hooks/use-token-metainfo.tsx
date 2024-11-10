@@ -138,7 +138,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   }, [allTokenMetainfos]);
 
   const initTokenMetainfos = async (withTransferEvents?: boolean): Promise<void> => {
-    if (!currentAccount || !currentNetwork.apiUrl) {
+    if (!currentAccount) {
       return;
     }
 

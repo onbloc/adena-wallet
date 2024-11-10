@@ -9,6 +9,7 @@ import {
   NativeTokenResponse,
 } from './response/token-asset-response';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { makeRPCRequest } from '@common/utils/fetch-utils';
 import {
@@ -44,20 +45,20 @@ enum LocalValueType {
   AccountTransferEventBlockHeight = 'ACCOUNT_TRANSFER_EVENT_BLOCK_HEIGHT',
 }
 
-const DEFAULT_TOKEN_NETWORK_ID = 'DEFAULT';
+const DEFAULT_TOKEN_NETWORK_ID = '';
 
 const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
   {
-    main: true,
-    tokenId: 'tokenId',
-    name: 'gno.land',
+    tokenId: GNOT_TOKEN.denom,
+    type: 'gno-native',
+    name: GNOT_TOKEN.name,
     networkId: DEFAULT_TOKEN_NETWORK_ID,
+    symbol: GNOT_TOKEN.symbol,
+    denom: GNOT_TOKEN.denom,
+    decimals: GNOT_TOKEN.decimals,
     image:
       'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-    symbol: 'GNOT',
-    denom: 'ugnot',
-    type: 'gno-native',
-    decimals: 6,
+    main: true,
     display: true,
   },
 ];
@@ -137,7 +138,10 @@ export class TokenRepository implements ITokenRepository {
       [key in string]: TokenModel[];
     }>(LocalValueType.AccountTokenMetainfos);
 
-    return accountTokenMetainfos[accountId] ?? [];
+    return (
+      accountTokenMetainfos[accountId] ??
+      DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId }))
+    );
   };
 
   public updateTokenMetainfos = async (
