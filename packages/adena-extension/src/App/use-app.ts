@@ -26,10 +26,16 @@ const useApp = (): void => {
   }, [key]);
 
   useEffect(() => {
-    if (currentAccount && currentNetwork) {
-      initTokenMetainfos(true);
+    if (!currentAccount?.id) {
+      return;
     }
-  }, [currentAccount, currentNetwork]);
+
+    if (!currentNetwork?.networkId) {
+      return;
+    }
+
+    initTokenMetainfos();
+  }, [currentAccount?.id, currentNetwork.networkId]);
 
   useEffect(() => {
     initAccountNames(wallet?.accounts ?? []);
