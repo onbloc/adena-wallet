@@ -1,16 +1,14 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 
-import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { RoutePath } from '@types';
 import { CommonFullContentLayout } from '@components/atoms';
+import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useNetwork } from '@hooks/use-network';
+import { RoutePath } from '@types';
 
 const ChangeNetworkContainer: React.FC = () => {
   const { navigate, goBack } = useAppNavigate();
   const { modified, currentNetwork, networks, setModified, changeNetwork } = useNetwork();
-  const { initTokenMetainfos } = useTokenMetainfo();
 
   useEffect(() => {
     if (modified) {
@@ -46,7 +44,6 @@ const ChangeNetworkContainer: React.FC = () => {
 
     if (networkId) {
       await changeNetwork(networkId);
-      await initTokenMetainfos();
       navigate(RoutePath.Wallet);
     }
   };

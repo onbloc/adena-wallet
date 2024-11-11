@@ -75,8 +75,11 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
 
     const isRegistered = tokenMetainfos.some((tokenMetaInfo) => {
-      if (tokenMetaInfo.tokenId === manualTokenPath) {
-        return true;
+      if (
+        tokenMetaInfo.tokenId !== manualTokenPath ||
+        tokenMetaInfo.networkId !== currentNetwork.networkId
+      ) {
+        return false;
       }
 
       if (isGRC20TokenModel(tokenMetaInfo)) {

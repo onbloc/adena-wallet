@@ -1,11 +1,11 @@
+import { Wallet } from 'adena-module';
 import React, { createContext, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
-import { Wallet } from 'adena-module';
 
-import { NetworkState, TokenState, WalletState } from '@states';
 import { useAdenaContext } from '@hooks/use-context';
+import { NetworkState, TokenState, WalletState } from '@states';
+import { NetworkMetainfo, StateType, TokenModel } from '@types';
 import { GnoProvider } from '../gno/gno-provider';
-import { TokenModel, NetworkMetainfo, StateType } from '@types';
 
 export interface WalletContextProps {
   wallet: Wallet | null;
@@ -31,7 +31,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const [walletStatus, setWalletStatus] = useRecoilState(WalletState.state);
 
-  const [tokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
+  const [tokenMetainfos, setTokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
 
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
 
@@ -95,6 +95,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     if (currentAccount) {
       setCurrentAccount(currentAccount);
       await accountService.changeCurrentAccount(currentAccount);
+      await initTokenMetainfos(currentAccount.id);
     }
     return true;
   }
@@ -121,6 +122,13 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);
     return true;
+  }
+
+  async function initTokenMetainfos(accountId: string): Promise<void> {
+    await tokenService.initAccountTokenMetainfos(accountId);
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(accountId);
+    setTokenMetainfos(tokenMetainfos);
+    balanceService.setTokenMetainfos(tokenMetainfos);
   }
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {

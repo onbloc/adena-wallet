@@ -1,16 +1,16 @@
-import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
+import { useEffect, useMemo } from 'react';
 
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { TokenModel, Amount, TokenBalanceType } from '@types';
+import { Amount, TokenBalanceType, TokenModel } from '@types';
 
-import { useNetwork } from './use-network';
-import { useCurrentAccount } from './use-current-account';
 import { useAdenaContext, useWalletContext } from './use-context';
+import { useCurrentAccount } from './use-current-account';
+import { useGRC20Tokens } from './use-grc20-tokens';
+import { useNetwork } from './use-network';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
-import { useGRC20Tokens } from './use-grc20-tokens';
 
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
@@ -22,6 +22,7 @@ export const useTokenBalance = (): {
   const { isFetched: isFetchedGRC20Tokens } = useGRC20Tokens();
   const {
     currentTokenMetainfos: tokenMetainfos,
+    tokenLogoMap,
     updateTokenMetainfos,
     getTokenAmount,
   } = useTokenMetainfo();
@@ -35,12 +36,26 @@ export const useTokenBalance = (): {
     balanceService.setTokenMetainfos(tokenMetainfos);
   }, [tokenMetainfos, balanceService]);
 
+  const availableBalanceFetching = useMemo(() => {
+    if (!existWallet || lockedWallet) {
+      return false;
+    }
+
+    if (!isFetchedGRC20Tokens || tokenMetainfos.length === 0) {
+      return false;
+    }
+
+    return true;
+  }, [existWallet, lockedWallet, tokenMetainfos, isFetchedGRC20Tokens]);
+
   const { data: balances = [] } = useQuery<TokenBalanceType[]>(
     [
       'balances',
       currentAddress,
       currentNetwork.chainId,
       tokenMetainfos.map((token) => token.tokenId),
+      isFetchedGRC20Tokens,
+      tokenLogoMap,
     ],
     () => {
       if (currentAddress === null || nativeToken == null) {
@@ -50,7 +65,10 @@ export const useTokenBalance = (): {
         tokenMetainfos.map((tokenModel) => fetchBalanceBy(currentAddress, tokenModel)),
       );
     },
-    { refetchInterval: 5000, enabled: existWallet && !lockedWallet },
+    {
+      refetchInterval: 5000,
+      enabled: availableBalanceFetching,
+    },
   );
 
   const { data: accountNativeBalanceMap = {} } = useQuery<Record<string, TokenBalanceType>>(
@@ -58,13 +76,14 @@ export const useTokenBalance = (): {
       'accountNativeBalanceMap',
       wallet?.accounts,
       currentNetwork.chainId,
-      tokenMetainfos,
+      tokenMetainfos.map((token) => token.tokenId),
       isFetchedGRC20Tokens,
     ],
     () => {
       if (wallet === null || wallet.accounts === null || nativeToken == null) {
         return {};
       }
+
       return Promise.all(
         wallet.accounts.map(async (account) => {
           const address = await account.getAddress(currentNetwork.addressPrefix);
@@ -79,7 +98,10 @@ export const useTokenBalance = (): {
         }, {}),
       );
     },
-    { refetchInterval: 5000, enabled: existWallet && !lockedWallet && isFetchedGRC20Tokens },
+    {
+      refetchInterval: 5000,
+      enabled: availableBalanceFetching,
+    },
   );
 
   const currentBalances = useMemo((): TokenBalanceType[] => {
@@ -133,14 +155,14 @@ export const useTokenBalance = (): {
     const balanceAmount = isNativeTokenModel(token)
       ? await balanceService.getGnotTokenBalance(address)
       : isGRC20TokenModel(token)
-        ? await balanceService.getGRC20TokenBalance(address, token.pkgPath)
+        ? await balanceService.getGRC20TokenBalance(address, token.pkgPath, token.decimals)
         : null;
 
     return {
       ...token,
       amount: getTokenAmount({
         value: `${balanceAmount || 0}`,
-        denom: isGRC20TokenModel(token) ? token.pkgPath : token.symbol,
+        denom: token.symbol,
       }),
     };
   }
