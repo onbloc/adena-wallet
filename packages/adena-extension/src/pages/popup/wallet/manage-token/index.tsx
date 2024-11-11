@@ -7,6 +7,7 @@ import ManageTokenSearch from '@components/pages/manage-token/manage-token';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useTokenBalance } from '@hooks/use-token-balance';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { ManageTokenInfo, RoutePath } from '@types';
 
 const ManageTokenSearchContainer: React.FC = () => {
@@ -14,6 +15,7 @@ const ManageTokenSearchContainer: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isClose, setIsClose] = useState(false);
   const { currentAccount } = useCurrentAccount();
+  const { tokenLogoMap } = useTokenMetainfo();
   const { currentBalances, toggleDisplayOption } = useTokenBalance();
 
   useEffect(() => {
@@ -39,11 +41,11 @@ const ManageTokenSearchContainer: React.FC = () => {
             value: BigNumber(metainfo.amount.value).toFormat(),
             denom: metainfo.amount.denom,
           },
-          logo: metainfo.image || `${UnknownTokenIcon}`,
+          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`,
         };
       });
     return filteredTokens;
-  }, [searchKeyword, currentBalances]);
+  }, [searchKeyword, currentBalances, tokenLogoMap]);
 
   const moveTokenAddedPage = useCallback(() => {
     navigate(RoutePath.ManageTokenAdded);

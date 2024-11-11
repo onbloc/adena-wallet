@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 import AddPackageIcon from '@assets/addpkg.svg';
@@ -24,35 +24,55 @@ interface DLProps {
 }
 
 export const TransactionDetail = (): JSX.Element => {
+  const [hasLogoError, setHasLogoError] = useState(false);
+  const [isLoadedLogo, setIsLoadedLogo] = useState(false);
+
   const { openLink } = useLink();
   const { convertDenom } = useTokenMetainfo();
   const { currentNetwork, scannerParameters } = useNetwork();
   const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
+
   const transactionItem = params.transactionInfo;
   const tokenUriQuery =
     transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
       : null;
 
-  const getLogoImage = useCallback(() => {
-    if (transactionItem?.type === 'TRANSFER_GRC721') {
+  const logoImage = useMemo(() => {
+    if (transactionItem?.type === 'TRANSFER_GRC721' && tokenUriQuery) {
+      if (!isLoadedLogo || hasLogoError) {
+        return `${UnknownTokenIcon}`;
+      }
+
       return tokenUriQuery?.data || `${UnknownTokenIcon}`;
     }
 
     if (transactionItem?.type === 'ADD_PACKAGE') {
       return `${AddPackageIcon}`;
     }
+
     if (transactionItem?.type === 'CONTRACT_CALL') {
       return `${ContractIcon}`;
     }
+
     if (transactionItem?.type === 'MULTI_CONTRACT_CALL') {
       return `${ContractIcon}`;
     }
+
     if (!transactionItem?.logo) {
       return `${UnknownTokenIcon}`;
     }
+
     return `${transactionItem?.logo}`;
-  }, [transactionItem]);
+  }, [isLoadedLogo, hasLogoError, transactionItem?.type, transactionItem?.logo, tokenUriQuery]);
+
+  const handleLoadLogo = (): void => {
+    setIsLoadedLogo(true);
+  };
+
+  const handleLogoError = (): void => {
+    setHasLogoError(true);
+  };
 
   const handleLinkClick = (hash: string): void => {
     const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
@@ -70,7 +90,13 @@ export const TransactionDetail = (): JSX.Element => {
         alt='status icon'
       />
       <TokenBox color={getStatusStyle(transactionItem.status).color}>
-        <img className='tx-symbol' src={getLogoImage()} alt='logo image' />
+        <img
+          className='tx-symbol'
+          src={logoImage}
+          onLoad={handleLoadLogo}
+          onError={handleLogoError}
+          alt='logo image'
+        />
         {transactionItem.type === 'TRANSFER' ? (
           <TokenBalance
             value={transactionItem.amount.value || '0'}

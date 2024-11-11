@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import IconEmptyImage from '@assets/icon-empty-image.svg';
 import { Loading } from '@components/atoms';
@@ -11,6 +11,17 @@ export interface NFTCardImageProps {
 }
 
 const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge = false }) => {
+  const [hasError, setHasError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const handleLoad = (): void => {
+    setLoaded(true);
+  };
+
+  const handleError = (): void => {
+    setHasError(true);
+  };
+
   if (!isFetched) {
     return (
       <NFTCardImageSkeletonBox>
@@ -19,7 +30,7 @@ const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge 
     );
   }
 
-  if (!image) {
+  if (!image || !loaded || hasError) {
     return (
       <NFTCardImageWrapper className='empty'>
         <img className='empty-image' src={IconEmptyImage} alt='empty image' />
@@ -29,7 +40,13 @@ const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge 
 
   return (
     <NFTCardImageWrapper>
-      <img className='nft-image' src={image} />
+      <img
+        className='nft-image'
+        src={image}
+        onLoad={handleLoad}
+        onError={handleError}
+        alt='nft image'
+      />
     </NFTCardImageWrapper>
   );
 };
