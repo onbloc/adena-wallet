@@ -5,7 +5,7 @@ import FailedIcon from '@assets/failed.svg';
 import SuccessIcon from '@assets/success.svg';
 import { TokenBalance } from '@components/molecules';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
 
 export interface TransactionHistoryListItemProps {
@@ -43,6 +43,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     queryGRC721TokenUri,
     onClickItem,
   } = args;
+  const [hasLogoError, setHasLogoError] = useState(false);
 
   const tokenUriQuery =
     type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
@@ -50,6 +51,10 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
       : null;
 
   const logoImage = useMemo(() => {
+    if (hasLogoError) {
+      return `${UnknownTokenIcon}`;
+    }
+
     if (type === 'TRANSFER_GRC721' && tokenUriQuery) {
       return tokenUriQuery?.data || `${UnknownTokenIcon}`;
     }
@@ -57,17 +62,25 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     if (type === 'ADD_PACKAGE') {
       return `${AddPackageIcon}`;
     }
+
     if (type === 'CONTRACT_CALL') {
       return `${ContractIcon}`;
     }
+
     if (type === 'MULTI_CONTRACT_CALL') {
       return `${ContractIcon}`;
     }
+
     if (!logo) {
       return `${UnknownTokenIcon}`;
     }
+
     return `${logo}`;
-  }, [type, logo, tokenUriQuery]);
+  }, [hasLogoError, type, logo, tokenUriQuery]);
+
+  const handleLogoError = (): void => {
+    setHasLogoError(true);
+  };
 
   const getValueTypeClassName = useCallback(() => {
     if (valueType === 'ACTIVE') {
@@ -82,7 +95,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
   return (
     <TransactionHistoryListItemWrapper onClick={(): void => onClickItem(hash)}>
       <div className='logo-wrapper'>
-        <img className='logo' src={logoImage} alt='logo image' />
+        <img className='logo' src={logoImage} alt='logo image' onError={handleLogoError} />
         <img
           className='badge'
           src={status === 'SUCCESS' ? SuccessIcon : FailedIcon}
