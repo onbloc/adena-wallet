@@ -35,6 +35,7 @@ import {
   makeAllRealmsQuery,
   makeAllTransferEventsQueryBy,
   makeGRC721TransferEventsQuery,
+  makeGRC721TransferEventsQueryWithCursor,
 } from './token.queries';
 import { ITokenRepository } from './types';
 
@@ -268,6 +269,7 @@ export class TokenRepository implements ITokenRepository {
               .map((message: any) =>
                 mapGRC20TokenModel(this.networkMetainfo?.networkId || '', message),
               )
+              .filter((tokenInfo: GRC20TokenModel | null) => !!tokenInfo)
           : [],
     );
   };
@@ -323,15 +325,12 @@ export class TokenRepository implements ITokenRepository {
               .map((message: any) =>
                 mapGRC721CollectionModel(this.networkMetainfo?.networkId || '', message),
               )
+              .filter((collection: GRC721CollectionModel | null) => !!collection)
           : [],
     );
   }
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
-    if (!this.apiUrl || !this.queryUrl) {
-      return [];
-    }
-
     if (this.apiUrl) {
       const packages = await TokenRepository.postRPCRequest<{
         result: string[];
@@ -349,19 +348,23 @@ export class TokenRepository implements ITokenRepository {
       return packages;
     }
 
+    if (!this.queryUrl) {
+      return [];
+    }
+
     const transferEventsQuery = makeAllTransferEventsQueryBy(address);
     return TokenRepository.postGraphQuery(
       this.networkInstance,
       this.queryUrl,
       transferEventsQuery,
     ).then((result) => {
-      const edges = result?.data?.transactions?.edges;
-      if (!edges) {
+      const transactions = result?.data?.transactions;
+      if (!transactions) {
         return [];
       }
 
-      const packagePaths: string[] = edges
-        .flatMap((edge: any) => edge?.transaction?.response?.events || [])
+      const packagePaths: string[] = transactions
+        .flatMap((transaction: any) => transaction?.response?.events || [])
         .filter((event: any) => {
           const eventType = event?.type;
           const eventAttributes = event?.attrs || [];
@@ -460,25 +463,59 @@ export class TokenRepository implements ITokenRepository {
   }
 
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
-    if (!this.queryUrl) {
+    if (!this.apiUrl && !this.queryUrl) {
       return [];
     }
 
-    const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
     const events: {
       type: string;
       pkg_path: string;
       func: string;
       attrs: { [key in string]: string }[];
-    }[] = await TokenRepository.postGraphQuery(
-      this.networkInstance,
-      this.queryUrl,
-      grc721TransferEventsQuery,
-    ).then((result) =>
-      result?.data?.transactions
-        ? result?.data?.transactions?.edges.flatMap((edge: any) => edge.transaction.response.events)
-        : [],
-    );
+    }[] = [];
+
+    if (this.apiUrl) {
+      const grc721TransferEventsQuery = makeGRC721TransferEventsQueryWithCursor(
+        packagePath,
+        address,
+      );
+      const resultEvents: {
+        type: string;
+        pkg_path: string;
+        func: string;
+        attrs: { [key in string]: string }[];
+      }[] = await TokenRepository.postGraphQuery(
+        this.networkInstance,
+        this.queryUrl || this.apiUrl,
+        grc721TransferEventsQuery,
+      ).then((result) =>
+        result?.data?.transactions
+          ? result?.data?.transactions?.edges.flatMap(
+              (edge: any) => edge.transaction.response.events,
+            )
+          : [],
+      );
+
+      events.push(...resultEvents);
+    } else {
+      const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
+      const resultEvents: {
+        type: string;
+        pkg_path: string;
+        func: string;
+        attrs: { [key in string]: string }[];
+      }[] = await TokenRepository.postGraphQuery(
+        this.networkInstance,
+        this.queryUrl || '',
+        grc721TransferEventsQuery,
+      ).then((result) =>
+        result?.data?.transactions
+          ? result?.data?.transactions?.flatMap((transaction: any) => transaction?.response?.events)
+          : [],
+      );
+
+      events.push(...resultEvents);
+    }
 
     const receivedTokenIds: string[] = [];
     const sendedTokenIds: string[] = [];

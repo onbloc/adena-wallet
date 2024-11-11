@@ -48,7 +48,11 @@ export class WalletBalanceService {
       .catch(() => null);
   }
 
-  public async getGRC20TokenBalance(address: string, packagePath: string): Promise<number | null> {
+  public async getGRC20TokenBalance(
+    address: string,
+    packagePath: string,
+    decimals = 6,
+  ): Promise<number | null> {
     const gnoProvider = this.getGnoProvider();
     return gnoProvider
       .getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
@@ -56,7 +60,9 @@ export class WalletBalanceService {
         if (result === null || !BigNumber(result).isInteger()) {
           return null;
         }
-        return BigNumber(result).toNumber();
+        return BigNumber(result)
+          .shiftedBy(decimals * -1)
+          .toNumber();
       })
       .catch(() => null);
   }

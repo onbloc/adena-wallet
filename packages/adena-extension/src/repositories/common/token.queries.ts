@@ -47,6 +47,52 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
         }
       ]
     }
+  ) {
+    hash
+    index
+    success
+    block_height
+    response {
+      events {
+        ...on GnoEvent {
+          type
+          pkg_path
+          func
+          attrs {
+            key
+            value
+          }
+        }
+      }
+    }
+  }
+}
+`;
+export const makeGRC721TransferEventsQueryWithCursor = (
+  packagePath: string,
+  address: string,
+): string => `
+{
+  transactions(
+    filter: {
+      success: true
+      events: {
+        type: "Transfer"
+        pkg_path: "${packagePath}"
+        attrs: [{
+          key: "from"
+          value: "${address}"
+        }, {
+          key:"to"
+          value: "${address}"
+        }]
+      }
+      messages: [
+        {
+          type_url: exec
+        }
+      ]
+    }
     ascending: false
     after: null
   ) {
@@ -81,6 +127,40 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
 `;
 
 export const makeAllTransferEventsQueryBy = (address: string): string => `
+{
+  transactions(
+    filter: {
+      success: true
+      events: {
+        type: "Transfer"
+        attrs: [{
+          key: "to"
+          value: "${address}"
+        }]
+      }
+    }
+  ) {
+    hash
+    index
+    success
+    block_height
+    response {
+      events {
+        ...on GnoEvent {
+          type
+          pkg_path
+          func
+          attrs {
+            key
+            value
+          }
+        }
+      }
+    }
+  }
+}`;
+
+export const makeAllTransferEventsQueryWithCursorBy = (address: string): string => `
 {
   transactions(
     filter: {
