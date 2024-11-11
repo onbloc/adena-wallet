@@ -44,6 +44,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     onClickItem,
   } = args;
   const [hasLogoError, setHasLogoError] = useState(false);
+  const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
   const tokenUriQuery =
     type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
@@ -56,6 +57,10 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     }
 
     if (type === 'TRANSFER_GRC721' && tokenUriQuery) {
+      if (!isLoadedLogo) {
+        return `${UnknownTokenIcon}`;
+      }
+
       return tokenUriQuery?.data || `${UnknownTokenIcon}`;
     }
 
@@ -76,10 +81,14 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     }
 
     return `${logo}`;
-  }, [hasLogoError, type, logo, tokenUriQuery]);
+  }, [isLoadedLogo, hasLogoError, type, logo, tokenUriQuery]);
 
   const handleLogoError = (): void => {
     setHasLogoError(true);
+  };
+
+  const handleLoadLogo = (): void => {
+    setIsLoadedLogo(true);
   };
 
   const getValueTypeClassName = useCallback(() => {
@@ -95,7 +104,13 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
   return (
     <TransactionHistoryListItemWrapper onClick={(): void => onClickItem(hash)}>
       <div className='logo-wrapper'>
-        <img className='logo' src={logoImage} alt='logo image' onError={handleLogoError} />
+        <img
+          className='logo'
+          src={logoImage}
+          alt='logo image'
+          onLoad={handleLoadLogo}
+          onError={handleLogoError}
+        />
         <img
           className='badge'
           src={status === 'SUCCESS' ? SuccessIcon : FailedIcon}

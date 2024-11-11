@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import IconEmptyImage from '@assets/icon-empty-image.svg';
 import Toggle from '@components/atoms/toggle';
@@ -34,6 +34,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
   onToggleActiveItem,
 }) => {
   const theme = useTheme();
+  const [hasLogoError, setHasLogoError] = useState(false);
   const isTokenInfo = isManageTokenInfo(token);
   const tokenUriResponse =
     !isTokenInfo && token.isTokenUri && queryGRC721TokenUri
@@ -45,6 +46,10 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
       : null;
 
   const grc721CollectionImage = useMemo(() => {
+    if (!hasLogoError) {
+      return null;
+    }
+
     if (!tokenUriResponse) {
       return null;
     }
@@ -77,11 +82,15 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
     return `${balanceBN.toFormat()} Item`;
   }, [token]);
 
+  const handleLogoError = (): void => {
+    setHasLogoError(true);
+  };
+
   if (isTokenInfo) {
     return (
       <ManageTokenListItemWrapper>
         <div className={'logo-wrapper'}>
-          <img className='logo' src={token.logo} alt='token img' />
+          <img className='logo' src={token.logo} alt='token img' onError={handleLogoError} />
         </div>
 
         <div className='name-wrapper'>

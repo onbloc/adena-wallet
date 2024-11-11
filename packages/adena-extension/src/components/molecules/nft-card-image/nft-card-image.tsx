@@ -12,6 +12,11 @@ export interface NFTCardImageProps {
 
 const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge = false }) => {
   const [hasError, setHasError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const handleLoad = (): void => {
+    setLoaded(true);
+  };
 
   const handleError = (): void => {
     setHasError(true);
@@ -25,7 +30,7 @@ const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge 
     );
   }
 
-  if (!image || hasError) {
+  if (!image || !loaded || hasError) {
     return (
       <NFTCardImageWrapper className='empty'>
         <img className='empty-image' src={IconEmptyImage} alt='empty image' />
@@ -35,7 +40,13 @@ const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge 
 
   return (
     <NFTCardImageWrapper>
-      <img className='nft-image' src={image} onError={handleError} alt='nft image' />
+      <img
+        className='nft-image'
+        src={image}
+        onLoad={handleLoad}
+        onError={handleError}
+        alt='nft image'
+      />
     </NFTCardImageWrapper>
   );
 };
