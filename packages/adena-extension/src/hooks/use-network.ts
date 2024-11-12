@@ -1,15 +1,15 @@
 import { useCallback, useMemo } from 'react';
 import { useRecoilState, useResetRecoilState } from 'recoil';
 
-import { useAdenaContext, useWalletContext } from './use-context';
-import { EventMessage } from '@inject/message';
-import { useEvent } from './use-event';
 import { fetchHealth } from '@common/utils/fetch-utils';
+import { EventMessage } from '@inject/message';
+import { useAdenaContext, useWalletContext } from './use-context';
+import { useEvent } from './use-event';
 
-import { NetworkMetainfo } from '@types';
+import CHAIN_DATA from '@resources/chains/chains.json';
 import { BalanceState, NetworkState, WalletState } from '@states';
 import { useQuery } from '@tanstack/react-query';
-import CHAIN_DATA from '@resources/chains/chains.json';
+import { NetworkMetainfo } from '@types';
 
 interface NetworkResponse {
   networks: NetworkMetainfo[];
@@ -54,8 +54,11 @@ export const useNetwork = (): NetworkResponse => {
     if (!currentNetwork) {
       return null;
     }
-    const isCustomNetwork = ['test4', 'portal-loop'].includes(currentNetwork.networkId);
-    const networkParameters: { [key in string]: string } = isCustomNetwork
+    const officialNetworkIds = CHAIN_DATA.filter((network) => !!network.apiUrl).map(
+      (network) => network.networkId,
+    );
+    const isOfficialNetwork = officialNetworkIds.includes(currentNetwork.networkId);
+    const networkParameters: { [key in string]: string } = isOfficialNetwork
       ? {
           chainId: currentNetwork.networkId,
         }
