@@ -1,28 +1,29 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import styled from 'styled-components';
-import { useRecoilState } from 'recoil';
-import BigNumber from 'bignumber.js';
 import { isAirgapAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useRecoilState } from 'recoil';
+import styled from 'styled-components';
 
-import { RoutePath } from '@types';
-import { useTokenBalance } from '@hooks/use-token-balance';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { Button, Row, Text } from '@components/atoms';
+import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
+import LoadingButton from '@components/atoms/loading-button/loading-button';
+import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
+import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList from '@components/pages/wallet-main/token-list/token-list';
-import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { WalletState } from '@states';
-import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useNetwork } from '@hooks/use-network';
-import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
-import { Button, Row, Text } from '@components/atoms';
-import mixins from '@styles/mixins';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { useFaucet } from '@hooks/use-faucet';
+import { useLoadImages } from '@hooks/use-load-images';
+import { useNetwork } from '@hooks/use-network';
+import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import { useToast } from '@hooks/use-toast';
-import LoadingButton from '@components/atoms/loading-button/loading-button';
-import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
+import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { WalletState } from '@states';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
 
 const Wrapper = styled.main`
   padding-top: 37px;
@@ -74,6 +75,8 @@ export const WalletMain = (): JSX.Element => {
   const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
   const { show } = useToast();
 
+  const { addLoadingImages, completeImageLoading } = useLoadImages();
+
   const onClickFaucetButton = (): void => {
     if (isFaucetLoading) {
       return;
@@ -119,6 +122,10 @@ export const WalletMain = (): JSX.Element => {
       });
   }, [currentBalances, getTokenImage]);
 
+  const tokenImages = useMemo(() => {
+    return tokens.map((token) => token.logo);
+  }, [tokens]);
+
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
       const tokenBalance = currentBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId);
@@ -136,6 +143,10 @@ export const WalletMain = (): JSX.Element => {
   const onClickManageButton = useCallback(() => {
     navigate(RoutePath.ManageToken);
   }, [navigate]);
+
+  useEffect(() => {
+    addLoadingImages(tokenImages);
+  }, [tokenImages.length]);
 
   return (
     <Wrapper>
@@ -175,7 +186,11 @@ export const WalletMain = (): JSX.Element => {
       </div>
 
       <div className='token-list-wrapper'>
-        <TokenList tokens={tokens} onClickTokenItem={onClickTokenListItem} />
+        <TokenList
+          tokens={tokens}
+          completeImageLoading={completeImageLoading}
+          onClickTokenItem={onClickTokenListItem}
+        />
       </div>
 
       <div className='manage-token-button-wrapper'>
