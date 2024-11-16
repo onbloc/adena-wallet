@@ -7,6 +7,7 @@ export type UseLoadAccountsReturn = {
   isLoading: boolean;
   addLoadingImages: (imageUrls: string[]) => void;
   completeImageLoading: (imageUrl: string) => void;
+  clear: () => void;
 };
 
 export const useLoadImages = (): UseLoadAccountsReturn => {
@@ -28,5 +29,10 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
     setLoadedImageUrls((prev) => [...new Set([...prev, imageUrl])]);
   };
 
-  return { isLoading, addLoadingImages, completeImageLoading };
+  const clear = (): void => {
+    setLoadingImageUrls([]);
+    setLoadedImageUrls([]);
+  };
+
+  return { isLoading, addLoadingImages, completeImageLoading, clear };
 };
