@@ -1,17 +1,17 @@
 [
   {
-    "id": "test4",
+    "id": "test5",
     "default": true,
     "main": true,
-    "chainId": "test4",
+    "chainId": "test5",
     "chainName": "GNO.LAND",
-    "networkId": "test4",
-    "networkName": "Testnet 4",
+    "networkId": "test5",
+    "networkName": "Testnet 5",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test4.gno.land:443",
-    "indexerUrl": "https://test4.indexer.onbloc.xyz",
-    "gnoUrl": "https://test4.gno.land",
-    "apiUrl": "https://test4.api.onbloc.xyz",
+    "rpcUrl": "https://test5.onbloc.xyz:443",
+    "indexerUrl": "https://test5.indexer.onbloc.xyz",
+    "gnoUrl": "https://test5.gno.land",
+    "apiUrl": "https://test5.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
