@@ -31,6 +31,9 @@ describe('TokenList Component', () => {
   it('TokenList render', () => {
     const args: TokenListProps = {
       tokens,
+      completeImageLoading: () => {
+        return;
+      },
       onClickTokenItem: () => {
         return;
       },

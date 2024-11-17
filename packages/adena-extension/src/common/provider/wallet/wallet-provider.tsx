@@ -22,8 +22,7 @@ export interface WalletContextProps {
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, balanceService, accountService, chainService, tokenService } =
-    useAdenaContext();
+  const { walletService, accountService, chainService } = useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -31,7 +30,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   const [walletStatus, setWalletStatus] = useRecoilState(WalletState.state);
 
-  const [tokenMetainfos, setTokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
+  const [tokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
 
   const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
 
@@ -95,7 +94,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     if (currentAccount) {
       setCurrentAccount(currentAccount);
       await accountService.changeCurrentAccount(currentAccount);
-      await initTokenMetainfos(currentAccount.id);
     }
     return true;
   }
@@ -122,13 +120,6 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);
     return true;
-  }
-
-  async function initTokenMetainfos(accountId: string): Promise<void> {
-    await tokenService.initAccountTokenMetainfos(accountId);
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(accountId);
-    setTokenMetainfos(tokenMetainfos);
-    balanceService.setTokenMetainfos(tokenMetainfos);
   }
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {

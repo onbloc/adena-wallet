@@ -48,3 +48,13 @@ export const windowSizeType = atom<WindowSizeType>({
   key: 'common/windowSizeType',
   default: 'DEFAULT',
 });
+
+export const loadingImageUrls = atom<string[]>({
+  key: 'common/loadingImageUrls',
+  default: [],
+});
+
+export const loadedImageUrls = atom<string[]>({
+  key: 'common/loadedImageUrls',
+  default: [],
+});
