@@ -1,16 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
-import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
-import { WebSeedBox } from '@components/molecules';
-import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
-import { AdenaStorage } from '@common/storage';
+import IconWarning from '@assets/web/warning.svg';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
+import { AdenaStorage } from '@common/storage';
+import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
+import { WebSeedBox } from '@components/molecules';
+import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
+import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
-import IconWarning from '@assets/web/warning.svg';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -47,6 +47,7 @@ interface WalletExportResultProps {
 const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
+  const [initializedDone, setInitializedDone] = useState(false);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -76,11 +77,19 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     return exportData;
   }, [exportType, exportData]);
 
+  const onMouseDownDone = (): void => {
+    setInitializedDone(true);
+  };
+
   const onFinishHold = useCallback((finished: boolean) => {
     setBlur(!finished);
   }, []);
 
   const onClickDone = (): void => {
+    if (!initializedDone) {
+      return;
+    }
+
     AdenaStorage.session()
       .remove(WALLET_EXPORT_TYPE_STORAGE_KEY)
       .then(() => {
@@ -111,7 +120,13 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         </Row>
       </StyledInputBox>
 
-      <WebButton figure='primary' size='full' onClick={onClickDone} text='Done' />
+      <WebButton
+        figure='primary'
+        size='full'
+        onMouseDown={onMouseDownDone}
+        onClick={onClickDone}
+        text='Done'
+      />
     </StyledContainer>
   );
 };
