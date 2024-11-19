@@ -59,15 +59,16 @@ const LoadingMain = (): ReactElement => {
     if (state === 'CREATE' || state === 'LOGIN') {
       return false;
     }
-    if (isLoadingImage) {
-      return true;
-    }
     if (state === 'FINISH') {
       // If `failedNetwork` is null, it is loading.
       if (failedNetwork) {
         return false;
       }
       if (failedNetwork === false) {
+        if (isLoadingImage) {
+          return true;
+        }
+
         if (currentBalances.length > 0) {
           return false;
         }
