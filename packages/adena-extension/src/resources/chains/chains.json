@@ -58,20 +58,5 @@
     "gnoUrl": "https://gno.land",
     "apiUrl": "",
     "linkUrl": "https://gnoscan.io"
-  },
-  {
-    "id": "teritori",
-    "default": false,
-    "main": false,
-    "chainId": "teritori-1",
-    "chainName": "Gno-Teritori-Testnet",
-    "networkId": "teritori-1",
-    "networkName": "Gno-Teritori-Testnet",
-    "addressPrefix": "g",
-    "rpcUrl": "https://testnet.gno.teritori.com:26658",
-    "indexerUrl": "",
-    "gnoUrl": "https://testnet.gno.teritori.com",
-    "apiUrl": "",
-    "linkUrl": "https://gnoscan.io"
   }
 ]
