@@ -1,4 +1,8 @@
-import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
+import {
+  WalletResponseFailureType,
+  WalletResponseRejectType,
+  WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
 import { NetworkMetainfo, RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
@@ -86,6 +90,7 @@ export const switchNetwork = async (
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   const core = new InjectCore();
+
   const locked = await core.walletService.isLocked();
   if (locked) {
     sendResponse(
@@ -97,6 +102,7 @@ export const switchNetwork = async (
     );
     return;
   }
+
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(
@@ -108,17 +114,7 @@ export const switchNetwork = async (
     );
     return;
   }
-  const currentNetwork = await core.chainService.getCurrentNetwork();
-  if (currentNetwork.networkId === chainId) {
-    sendResponse(
-      InjectionMessageInstance.failure(
-        WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST,
-        requestData?.data,
-        requestData?.key,
-      ),
-    );
-    return;
-  }
+
   const networks = await core.chainService.getNetworks();
   const existNetwork =
     networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
@@ -128,6 +124,18 @@ export const switchNetwork = async (
         WalletResponseFailureType.UNADDED_NETWORK,
         {},
         requestData.key,
+      ),
+    );
+    return;
+  }
+
+  const currentNetwork = await core.chainService.getCurrentNetwork();
+  if (currentNetwork.networkId === chainId) {
+    sendResponse(
+      InjectionMessageInstance.success(
+        WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS,
+        requestData?.data,
+        requestData?.key,
       ),
     );
     return;
