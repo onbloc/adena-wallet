@@ -1,17 +1,18 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  defaultAddressPrefix,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
   Account,
+  AdenaLedgerConnector,
+  Document,
   LedgerAccount,
+  LedgerKeyring,
   sha256,
   Wallet,
-  Document,
-  LedgerKeyring,
-  AdenaLedgerConnector,
 } from 'adena-module';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
@@ -75,7 +76,7 @@ export class TransactionService {
     memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress('g');
+    const address = await account.getAddress(defaultAddressPrefix);
     const [accountSequence, accountNumber] = await Promise.all([
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),

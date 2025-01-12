@@ -1,3 +1,4 @@
+export * from './gas';
 export * from './question';
 export * from './router';
 export * from './side-menu';

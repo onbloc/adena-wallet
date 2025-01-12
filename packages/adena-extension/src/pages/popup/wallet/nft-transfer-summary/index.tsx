@@ -1,10 +1,12 @@
-import { isLedgerAccount } from 'adena-module';
+import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -12,6 +14,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
@@ -34,6 +37,11 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const { memorizedTransferInfo, setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
+  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
+  const [document, setDocument] = useState<Document | null>(null);
+
+  const useNetworkFeeReturn = useNetworkFee(document);
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const makeGRC721TransferMessage = useCallback(
     (grc721Token: GRC721Model, fromAddress: string, toAddress: string) => {
@@ -52,34 +60,42 @@ const NFTTransferSummaryContainer: React.FC = () => {
     if (!currentNetwork || !currentAccount || !currentAddress) {
       return null;
     }
-    const { grc721Token, toAddress, networkFee, memo } = summaryInfo;
+
+    const { grc721Token, toAddress, memo } = summaryInfo;
     const message = makeGRC721TransferMessage(grc721Token, currentAddress, toAddress);
-    const networkFeeAmount = BigNumber(networkFee.value).shiftedBy(6).toNumber();
+
     const document = await transactionService.createDocument(
       currentAccount,
       currentNetwork.networkId,
       [message],
       DEFAULT_GAS_WANTED,
-      networkFeeAmount,
+      useNetworkFeeReturn.currentGasPriceRawAmount,
       memo,
     );
+
     return document;
   }, [summaryInfo, currentAccount]);
 
   const createTransaction = useCallback(async () => {
+    if (!currentNetwork || !currentAccount || !wallet) {
+      return null;
+    }
+
     const document = await createDocument();
-    if (!currentNetwork || !currentAccount || !document || !wallet) {
+    if (!document) {
       return null;
     }
 
     const walletInstance = wallet.clone();
     walletInstance.currentAccountId = currentAccount.id;
+
     const { signed } = await transactionService.createTransaction(walletInstance, document);
+
     return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
       console.error(e);
       return null;
     });
-  }, [summaryInfo, currentAccount, currentNetwork]);
+  }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
 
   const hasNetworkFee = useCallback(async () => {
     if (!gnoProvider || !currentAddress) {
@@ -87,9 +103,15 @@ const NFTTransferSummaryContainer: React.FC = () => {
     }
 
     const currentBalance = await gnoProvider.getBalance(currentAddress, 'ugnot');
-    const networkFee = summaryInfo.networkFee.value;
-    return BigNumber(currentBalance).shiftedBy(-6).isGreaterThanOrEqualTo(networkFee);
-  }, [gnoProvider, currentAddress, summaryInfo]);
+
+    if (!networkFee) {
+      return false;
+    }
+
+    return BigNumber(currentBalance)
+      .shiftedBy(GasToken.decimals * -1)
+      .isGreaterThanOrEqualTo(networkFee.amount);
+  }, [gnoProvider, currentAddress, summaryInfo, networkFee]);
 
   const transfer = useCallback(async () => {
     if (isSent || !currentAccount) {
@@ -146,19 +168,58 @@ const NFTTransferSummaryContainer: React.FC = () => {
     normalNavigate(-2);
   }, [summaryInfo, navigate]);
 
+  const onClickNetworkFeeSetting = useCallback(() => {
+    setOpenedNetworkFeeSetting(true);
+  }, []);
+
+  const onClickNetworkFeeClose = useCallback(() => {
+    setOpenedNetworkFeeSetting(false);
+  }, []);
+
+  const onClickNetworkFeeSave = useCallback(() => {
+    useNetworkFeeReturn.save();
+    setIsErrorNetworkFee(false);
+    setOpenedNetworkFeeSetting(false);
+  }, [useNetworkFeeReturn.save]);
+
+  useEffect(() => {
+    createDocument().then((doc) => {
+      if (!doc) {
+        return;
+      }
+
+      setDocument(doc);
+    });
+  }, [
+    wallet,
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    useNetworkFeeReturn.currentGasPriceRawAmount,
+  ]);
+
   return (
     <NFTTransferSummaryLayout>
-      <NFTTransferSummary
-        grc721Token={summaryInfo.grc721Token}
-        toAddress={summaryInfo.toAddress}
-        isErrorNetworkFee={isErrorNetworkFee}
-        networkFee={summaryInfo.networkFee}
-        memo={summaryInfo.memo}
-        queryGRC721TokenUri={useGetGRC721TokenUri}
-        onClickBack={onClickBack}
-        onClickCancel={onClickCancel}
-        onClickSend={transfer}
-      />
+      {openedNetworkFeeSetting ? (
+        <NetworkFeeSetting
+          {...useNetworkFeeReturn}
+          onClickBack={onClickNetworkFeeClose}
+          onClickSave={onClickNetworkFeeSave}
+        />
+      ) : (
+        <NFTTransferSummary
+          grc721Token={summaryInfo.grc721Token}
+          toAddress={summaryInfo.toAddress}
+          isErrorNetworkFee={isErrorNetworkFee}
+          networkFee={networkFee}
+          memo={summaryInfo.memo}
+          queryGRC721TokenUri={useGetGRC721TokenUri}
+          onClickBack={onClickBack}
+          onClickCancel={onClickCancel}
+          onClickSend={transfer}
+          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+        />
+      )}
     </NFTTransferSummaryLayout>
   );
 };

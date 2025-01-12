@@ -4,3 +4,5 @@ export const GNOT_TOKEN = {
   symbol: 'GNOT',
   decimals: 6,
 };
+
+export const GasToken = GNOT_TOKEN;

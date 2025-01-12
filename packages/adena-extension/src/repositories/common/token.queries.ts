@@ -41,7 +41,7 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
           value: "${address}"
         }]
       }
-      messages: [
+      message: [
         {
           type_url: exec
         }
@@ -87,7 +87,7 @@ export const makeGRC721TransferEventsQueryWithCursor = (
           value: "${address}"
         }]
       }
-      messages: [
+      message: [
         {
           type_url: exec
         }
