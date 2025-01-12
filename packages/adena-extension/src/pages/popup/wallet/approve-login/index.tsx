@@ -3,7 +3,7 @@ import { isAirgapAccount } from 'adena-module';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 
 import { PasswordValidationError } from '@common/errors';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
@@ -13,7 +13,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { InjectionMessageInstance } from '@inject/message';
-import { Title } from '@pages/popup/certify/login';
+import { ForgetPwd, Title } from '@pages/popup/certify/login';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
@@ -29,6 +29,7 @@ const Wrapper = styled.div`
 `;
 
 export const ApproveLogin = (): JSX.Element => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { walletService } = useAdenaContext();
@@ -152,6 +153,8 @@ export const ApproveLogin = (): JSX.Element => {
 
   const approveButtonClick = (): Promise<void> => tryLoginApprove(password);
 
+  const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
+
   return (
     <>
       {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
@@ -165,7 +168,11 @@ export const ApproveLogin = (): JSX.Element => {
             error={error !== null}
             ref={inputRef}
           />
-          {error && <ErrorText text={error.message} />}
+          <ForgetPwd onClick={onClickForgotButton}>
+            <Text type='body2Reg' color={theme.neutral.a}>
+              Forgot Password?
+            </Text>
+          </ForgetPwd>
           <Button fullWidth onClick={approveButtonClick} margin='auto 0px 0px'>
             <Text type='body1Bold'>Unlock</Text>
           </Button>
