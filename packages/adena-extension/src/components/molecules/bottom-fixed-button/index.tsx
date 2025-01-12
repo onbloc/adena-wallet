@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 
 import { Button, ButtonProps, Text } from '@components/atoms';
@@ -8,6 +8,7 @@ interface BottomFixedButtonProps {
   hierarchy?: ButtonProps['hierarchy'];
   text?: string;
   fill?: boolean;
+  disabled?: boolean;
   onClick: () => unknown;
 }
 
@@ -15,15 +16,16 @@ export const BottomFixedButton = ({
   hierarchy = 'dark',
   text = 'Close',
   fill = true,
+  disabled = false,
   onClick,
 }: BottomFixedButtonProps): JSX.Element => {
-  const onClickButton = useCallback(() => {
+  const onClickButton = React.useCallback(() => {
     onClick();
   }, [onClick]);
 
   return (
     <ButtonWrap fill={fill ? 'fill' : 'none'}>
-      <Button fullWidth hierarchy={hierarchy} onClick={onClickButton}>
+      <Button fullWidth hierarchy={hierarchy} disabled={disabled} onClick={onClickButton}>
         <Text type='body1Bold'>{text}</Text>
       </Button>
     </ButtonWrap>

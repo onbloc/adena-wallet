@@ -2,6 +2,7 @@ import React from 'react';
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import { ApproveTransaction, ApproveTransactionProps } from '.';
@@ -47,6 +48,26 @@ describe('ApproveTransaction Component', () => {
       },
       onClickCancel: () => {
         return;
+      },
+      useNetworkFeeReturn: {
+        currentGasPrice: {
+          amount: '0.0048',
+          denom: 'GNOT',
+        },
+        networkFee: {
+          amount: '0.0048',
+          denom: 'GNOT',
+        },
+        currentGasPriceRawAmount: 4800,
+        changedGasPrice: null,
+        networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
+        networkFeeSettings: [],
+        setNetworkFeeSetting: () => {
+          return;
+        },
+        save: () => {
+          return;
+        },
       },
     };
 

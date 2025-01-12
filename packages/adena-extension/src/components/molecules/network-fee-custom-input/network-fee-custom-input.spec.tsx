@@ -1,27 +1,26 @@
 import React from 'react';
-
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
-import TransferSummaryNetworkFee, {
-  TransferSummaryNetworkFeeProps,
-} from './transfer-summary-network-fee';
+import NetworkFeeCustomInput, { NetworkFeeCustomInputProps } from './network-fee-custom-input';
 
-describe('TransferSummaryNetworkFee Component', () => {
-  it('TransferSummaryNetworkFee render', () => {
-    const args: TransferSummaryNetworkFeeProps = {
-      value: '0.0048',
-      denom: 'GNOT',
-      isError: false,
+describe('NetworkFeeCustomInput Component', () => {
+  it('NetworkFeeCustomInput render', () => {
+    const args: NetworkFeeCustomInputProps = {
+      denom: 'ugnot',
+      value: '0.0001',
+      onChange: () => {
+        return;
+      },
     };
 
     render(
       <RecoilRoot>
         <GlobalPopupStyle />
         <ThemeProvider theme={theme}>
-          <TransferSummaryNetworkFee {...args} />
+          <NetworkFeeCustomInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
     );
