@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import styled, { CSSProp, css } from 'styled-components';
+import styled, { css, CSSProp } from 'styled-components';
 
-import { Text, Button } from '@components/atoms';
+import { isSeparatePopupWindow } from '@common/utils/browser-utils';
+import { Button, Text } from '@components/atoms';
 import { TitleWithDesc } from '@components/molecules';
-import { RoutePath } from '@types';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
 const text = {
   title: 'You’re All Set!',
@@ -41,11 +42,17 @@ export const LaunchAdena = (): JSX.Element => {
     if (clicked) {
       return;
     }
+
     setClicked(true);
     if (params.type === 'GOOGLE' || params.type === 'LEDGER') {
       window.close();
     }
+
     Promise.all([initWallet(), initNetworkMetainfos()]).then(() => {
+      if (isSeparatePopupWindow()) {
+        window.close();
+      }
+
       navigate(RoutePath.Wallet);
       setClicked(false);
     });
