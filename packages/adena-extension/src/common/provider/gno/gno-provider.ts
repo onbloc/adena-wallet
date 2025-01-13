@@ -168,7 +168,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     const simulateResult = parseProto(responseValue, ResponseDeliverTx.decode);
     if (simulateResult.responseBase?.error) {
-      console.warn('Failed to estimate gas', simulateResult.responseBase.error);
+      throw new Error(`Failed to estimate gas: ${simulateResult.responseBase.error.typeUrl}`);
     }
 
     return simulateResult.gasUsed.toInt();

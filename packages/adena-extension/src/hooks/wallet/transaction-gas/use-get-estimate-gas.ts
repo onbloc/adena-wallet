@@ -1,4 +1,5 @@
 import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE } from '@common/constants/tx.constant';
 import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
@@ -25,7 +26,8 @@ function makeSimulateTx(document: Document, gasAmount: string): Tx {
 function makeTokenAmountWithDecimals(amount: string | number, decimals: number): string {
   return BigNumber(amount)
     .shiftedBy(decimals * -1)
-    .toFixed(decimals, BigNumber.ROUND_DOWN);
+    .toFixed(decimals, BigNumber.ROUND_DOWN)
+    .replace(/\.?0+$/, '');
 }
 
 export const useGetEstimateGas = (
@@ -48,7 +50,7 @@ export const useGetEstimateGas = (
       );
 
       const estimatedGasAmounts = await Promise.all(
-        simulateTxs.map((tx) => transactionGasService.estimateGas(tx).catch(() => 0)),
+        simulateTxs.map((tx) => transactionGasService.estimateGas(tx).catch(() => DEFAULT_GAS_FEE)),
       );
 
       return gasPriceTiers.map((tier, index) => {
