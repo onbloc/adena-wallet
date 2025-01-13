@@ -59,7 +59,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   if (isLoading) {
     return (
       <NetworkFeeSettingItemWrapper className='loading'>
-        <span className='title'>{'Loading...'}</span>
+        <span className='title'>{settingTypeName}</span>
 
         <NetworkFeeItemSkeletonBox />
       </NetworkFeeSettingItemWrapper>
