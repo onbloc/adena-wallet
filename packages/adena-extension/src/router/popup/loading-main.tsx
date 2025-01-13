@@ -65,15 +65,16 @@ const LoadingMain = (): ReactElement => {
         return false;
       }
       if (failedNetwork === false) {
-        // if (isLoadingImage) {
-        //   return true;
-        // }
-        // if (currentBalances.length > 0) {
-        //   return false;
-        // }
+        if (isLoadingImage) {
+          return true;
+        }
+
+        if (currentBalances.length > 0) {
+          return false;
+        }
       }
     }
-    return false;
+    return true;
   }, [
     isPopupMatch,
     state,

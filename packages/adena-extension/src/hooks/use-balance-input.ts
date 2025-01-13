@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useState } from 'react';
 
-import { GasToken } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { NetworkFee, TokenBalanceType, TokenModel } from '@types';
@@ -193,7 +193,7 @@ function makeTransferDocument(params: {
         value: {
           from_address: params.fromAddress,
           to_address: params.toAddress,
-          amount: 1,
+          amount: `1${GNOT_TOKEN.denom}`,
         },
       },
     ],
