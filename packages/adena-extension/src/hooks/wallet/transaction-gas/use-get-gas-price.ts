@@ -8,72 +8,85 @@ export const GET_ESTIMATE_GAS_KEY = 'transactionGas/useGetGasPriceTires';
 
 const REFETCH_INTERVAL = 5_000;
 
-type GasPriceTier = {
+export type GasPriceTier = {
   settingType: NetworkFeeSettingType;
   gasPrice: {
     amount: string;
     denom: string;
+    estimatedAmount: string;
   };
 };
 
-const defaultCustomGasPrice = '1';
+const defaultGasPrice = 100_000;
+const defaultRatio = 1;
 
 const defaultGasPriceTiers = [
-  {
-    settingType: NetworkFeeSettingType.CUSTOM,
-    gasPrice: {
-      amount: defaultCustomGasPrice,
-      denom: GasToken.symbol,
-    },
+  NetworkFeeSettingType.FAST,
+  NetworkFeeSettingType.AVERAGE,
+  NetworkFeeSettingType.SLOW,
+].map((settingType) => ({
+  settingType,
+  gasPrice: {
+    amount: defaultGasPrice.toString(),
+    denom: GasToken.symbol,
+    estimatedAmount: '0',
   },
-];
-
-function makeTokenAmountWithDecimals(amount: number, decimals: number): string {
-  return BigNumber(amount)
-    .shiftedBy(decimals * -1)
-    .toString();
-}
+}));
 
 export const useGetGasPriceTires = (
+  ratio: string,
   options?: UseQueryOptions<GasPriceTier[], Error>,
 ): UseQueryResult<GasPriceTier[]> => {
   const { transactionGasService } = useAdenaContext();
 
   return useQuery<GasPriceTier[], Error>({
-    queryKey: [GET_ESTIMATE_GAS_KEY],
+    queryKey: [GET_ESTIMATE_GAS_KEY, ratio],
     queryFn: async () => {
+      const priceRatio = BigNumber(ratio || defaultRatio).toNumber();
+
       const gasPrice = await transactionGasService.getGasPrice(GasToken.denom).catch(() => null);
       if (!gasPrice) {
-        return defaultGasPriceTiers;
+        return defaultGasPriceTiers.map((tier) => ({
+          ...tier,
+          gasPrice: {
+            amount: BigNumber(tier.gasPrice.amount)
+              .multipliedBy(priceRatio)
+              .toFixed(0, BigNumber.ROUND_DOWN),
+            denom: GasToken.symbol,
+            estimatedAmount: '0',
+          },
+        }));
       }
 
       return [
         {
           settingType: NetworkFeeSettingType.FAST,
           gasPrice: {
-            amount: makeTokenAmountWithDecimals(gasPrice.high, GasToken.decimals),
-            denom: GasToken.symbol,
+            amount: BigNumber(gasPrice.high)
+              .multipliedBy(priceRatio)
+              .toFixed(0, BigNumber.ROUND_DOWN),
+            denom: GasToken.denom,
+            estimatedAmount: '0',
           },
         },
         {
           settingType: NetworkFeeSettingType.AVERAGE,
           gasPrice: {
-            amount: makeTokenAmountWithDecimals(gasPrice.average, GasToken.decimals),
-            denom: GasToken.symbol,
+            amount: BigNumber(gasPrice.average)
+              .multipliedBy(priceRatio)
+              .toFixed(0, BigNumber.ROUND_DOWN),
+            denom: GasToken.denom,
+            estimatedAmount: '0',
           },
         },
         {
           settingType: NetworkFeeSettingType.SLOW,
           gasPrice: {
-            amount: makeTokenAmountWithDecimals(gasPrice.low, GasToken.decimals),
-            denom: GasToken.symbol,
-          },
-        },
-        {
-          settingType: NetworkFeeSettingType.CUSTOM,
-          gasPrice: {
-            amount: '',
-            denom: GasToken.symbol,
+            amount: BigNumber(gasPrice.low)
+              .multipliedBy(priceRatio)
+              .toFixed(0, BigNumber.ROUND_DOWN),
+            denom: GasToken.denom,
+            estimatedAmount: '0',
           },
         },
       ];

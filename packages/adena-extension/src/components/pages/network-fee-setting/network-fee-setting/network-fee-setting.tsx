@@ -10,15 +10,12 @@ import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-ite
 import BigNumber from 'bignumber.js';
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
 
-const emptyGasPrice = {
-  amount: '',
-  denom: '',
-};
-
 export interface NetworkFeeSettingProps {
   changedGasPrice: GasPrice | null;
   networkFeeSettingType: NetworkFeeSettingType;
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
+  gasPriceRatio: string;
+  setGasPriceRatio: (ratio: string) => void;
   networkFeeSettings: NetworkFeeSettingInfo[];
   onClickBack: () => void;
   onClickSave: () => void;
@@ -34,6 +31,8 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   changedGasPrice,
   networkFeeSettingType,
   setNetworkFeeSetting,
+  gasPriceRatio,
+  setGasPriceRatio,
   networkFeeSettings,
   onClickBack,
   onClickSave,
@@ -55,14 +54,6 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
     }));
   }, [settingInfoMap]);
 
-  const customFeeGasPrice = useMemo(() => {
-    if (networkFeeSettingType !== NetworkFeeSettingType.CUSTOM) {
-      return emptyGasPrice;
-    }
-
-    return changedGasPrice || emptyGasPrice;
-  }, [changedGasPrice, networkFeeSettingType]);
-
   const enabledSaveButton = useMemo(() => {
     if (!changedGasPrice?.amount) {
       return false;
@@ -79,16 +70,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   );
 
   const onChangeCustomFee = (value: string): void => {
-    const customSetting = settingInfoMap[NetworkFeeSettingType.CUSTOM];
-    const customSettingDenom = customSetting.gasPrice?.denom || '';
-
-    setNetworkFeeSetting({
-      settingType: NetworkFeeSettingType.CUSTOM,
-      gasPrice: {
-        amount: value,
-        denom: customSettingDenom,
-      },
-    });
+    setGasPriceRatio(value);
   };
 
   return (
@@ -114,11 +96,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         </div>
 
         <div className='custom-network-fee-input-wrapper'>
-          <NetworkFeeCustomInput
-            value={customFeeGasPrice.amount}
-            denom={customFeeGasPrice.denom}
-            onChange={onChangeCustomFee}
-          />
+          <NetworkFeeCustomInput value={gasPriceRatio} onChange={onChangeCustomFee} />
         </div>
       </div>
 

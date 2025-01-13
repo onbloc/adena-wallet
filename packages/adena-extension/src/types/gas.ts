@@ -2,12 +2,15 @@ export enum NetworkFeeSettingType {
   FAST = 'FAST',
   AVERAGE = 'AVERAGE',
   SLOW = 'SLOW',
-  CUSTOM = 'CUSTOM',
 }
 
 export interface NetworkFeeSettingInfo {
   settingType: NetworkFeeSettingType;
-  gasPrice: GasPrice | null;
+  gasPrice: {
+    amount: string;
+    denom: string;
+    estimatedAmount: string;
+  };
 }
 
 export interface GasPriceTierInfo {

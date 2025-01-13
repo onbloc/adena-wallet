@@ -13,7 +13,6 @@ const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
   [NetworkFeeSettingType.FAST]: 'Fast',
   [NetworkFeeSettingType.AVERAGE]: 'Average',
   [NetworkFeeSettingType.SLOW]: 'Slow',
-  [NetworkFeeSettingType.CUSTOM]: 'Custom',
 };
 
 const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
@@ -33,8 +32,8 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
       return '';
     }
 
-    return info?.gasPrice?.amount || '';
-  }, [hasGasPrice]);
+    return info?.gasPrice?.estimatedAmount || '';
+  }, [info.gasPrice]);
 
   const gasPriceDenomination = useMemo(() => {
     if (!hasGasPrice) {
@@ -42,7 +41,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     }
 
     return info?.gasPrice?.denom || '';
-  }, [hasGasPrice]);
+  }, [info.gasPrice]);
 
   const onClickItem = (): void => {
     if (!hasGasPrice) {

@@ -111,6 +111,29 @@ const TransferSummaryContainer: React.FC = () => {
     return document;
   };
 
+  const updateDocument = (): void => {
+    if (!document) {
+      return;
+    }
+
+    const memo = summaryInfo.memo;
+    const gasFee = useNetworkFeeReturn.currentGasPriceRawAmount;
+
+    setDocument({
+      ...document,
+      memo,
+      fee: {
+        ...document.fee,
+        amount: [
+          {
+            denom: GasToken.denom,
+            amount: gasFee.toString(),
+          },
+        ],
+      },
+    });
+  };
+
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
       return null;
@@ -143,10 +166,16 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
+    const leastUsedAmount = BigNumber(networkFee.amount);
+
+    if (summaryInfo.tokenMetainfo.type === 'gno-native') {
+      leastUsedAmount.plus(summaryInfo.transferAmount.value);
+    }
+
     return BigNumber(currentBalance)
       .shiftedBy(GasToken.decimals * -1)
-      .isGreaterThanOrEqualTo(networkFee.amount);
-  }, [gnoProvider, currentAddress, networkFee]);
+      .isGreaterThanOrEqualTo(leastUsedAmount);
+  }, [gnoProvider, currentAddress, networkFee, summaryInfo]);
 
   const transfer = useCallback(async () => {
     if (isSent || !currentAccount) {
@@ -215,13 +244,17 @@ const TransferSummaryContainer: React.FC = () => {
   }, [useNetworkFeeReturn.save]);
 
   useEffect(() => {
-    createDocument().then((doc) => {
-      if (!doc) {
-        return;
-      }
+    if (!document) {
+      createDocument().then((doc) => {
+        if (!doc) {
+          return;
+        }
 
-      setDocument(doc);
-    });
+        setDocument(doc);
+      });
+    } else {
+      updateDocument();
+    }
   }, [
     wallet,
     summaryInfo,

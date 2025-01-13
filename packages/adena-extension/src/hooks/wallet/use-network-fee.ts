@@ -13,24 +13,29 @@ export interface UseNetworkFeeReturn {
   networkFee: NetworkFee | null;
   networkFeeSettings: NetworkFeeSettingInfo[];
   networkFeeSettingType: NetworkFeeSettingType;
+  gasPriceRatio: string;
+  setGasPriceRatio: (ratio: string) => void;
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
   save: () => void;
 }
 
 const defaultSettingType = NetworkFeeSettingType.AVERAGE;
-const defaultCustomGasPrice = '1';
+const defaultGasPriceRatio = '1';
 
 export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn => {
   const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
   const [networkFeeSettingType, setNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
-  const [customGasPriceAmount, setCustomGasPriceAmount] = useState<string>('');
-  const { data: gasPriceTiers } = useGetGasPriceTires();
+  const [gasPriceRatio, setGasPriceRatio] = useState<string>(defaultGasPriceRatio);
+
+  const { data: gasPriceTiers } = useGetGasPriceTires(gasPriceRatio);
+
+  const { data: estimatedGasPriceTiers } = useGetEstimateGas(document, gasPriceTiers);
 
   const currentSettingType = useMemo(() => {
-    if (!gasPriceTiers || gasPriceTiers.length <= 1) {
-      return NetworkFeeSettingType.CUSTOM;
+    if (!gasPriceTiers || gasPriceTiers.length <= 0) {
+      return NetworkFeeSettingType.AVERAGE;
     }
 
     return currentNetworkFeeSettingType;
@@ -38,79 +43,71 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
 
   const changedSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 1) {
-      return NetworkFeeSettingType.CUSTOM;
+      return NetworkFeeSettingType.AVERAGE;
     }
 
     return networkFeeSettingType;
   }, [networkFeeSettingType, gasPriceTiers]);
 
   const networkFeeSettings = useMemo(() => {
-    if (!gasPriceTiers) {
-      return [];
+    if (estimatedGasPriceTiers) {
+      return estimatedGasPriceTiers;
     }
 
-    return gasPriceTiers;
-  }, [gasPriceTiers]);
+    return [];
+  }, [estimatedGasPriceTiers]);
 
   const currentGasPrice = useMemo(() => {
-    if (currentSettingType === NetworkFeeSettingType.CUSTOM) {
-      return {
-        amount: customGasPriceAmount || defaultCustomGasPrice,
-        denom: GasToken.symbol,
-      };
-    }
-
     const current = networkFeeSettings.find(
       (setting) => setting.settingType === currentSettingType,
     );
 
     return current?.gasPrice || null;
-  }, [currentSettingType, networkFeeSettings, customGasPriceAmount]);
+  }, [currentSettingType, networkFeeSettings]);
 
   const changedGasPrice = useMemo(() => {
-    if (changedSettingType === NetworkFeeSettingType.CUSTOM) {
-      return {
-        amount: customGasPriceAmount,
-        denom: GasToken.symbol,
-      };
-    }
-
     const current = networkFeeSettings.find(
       (setting) => setting.settingType === changedSettingType,
     );
 
     return current?.gasPrice || null;
-  }, [changedSettingType, networkFeeSettings, customGasPriceAmount]);
+  }, [changedSettingType, networkFeeSettings]);
 
   const currentGasPriceRawAmount = useMemo(() => {
-    const currentGasPriceAmount = currentGasPrice?.amount || defaultCustomGasPrice;
+    if (!currentGasPrice) {
+      return 0;
+    }
+
+    const currentGasPriceAmount = currentGasPrice?.amount;
 
     return BigNumber(currentGasPriceAmount).shiftedBy(GasToken.decimals).toNumber();
   }, [currentGasPrice]);
 
-  const { data: estimatedGas } = useGetEstimateGas(document, currentGasPriceRawAmount.toString());
+  const currentEstimateGas = useMemo(() => {
+    if (!estimatedGasPriceTiers) {
+      return 0;
+    }
+
+    const current = estimatedGasPriceTiers.find(
+      (setting) => setting.settingType === currentSettingType,
+    );
+
+    return current?.gasPrice;
+  }, [currentSettingType, estimatedGasPriceTiers]);
 
   const networkFee = useMemo(() => {
-    if (!estimatedGas) {
+    if (!currentEstimateGas) {
       return null;
     }
 
     return {
-      amount: BigNumber(estimatedGas)
-        .shiftedBy(GasToken.decimals * -1)
-        .toString(),
-      denom: GasToken.symbol,
+      amount: currentEstimateGas.estimatedAmount,
+      denom: currentEstimateGas.denom,
     };
-  }, [currentGasPrice, estimatedGas]);
+  }, [currentEstimateGas]);
 
   const setNetworkFeeSetting = useCallback((settingInfo: NetworkFeeSettingInfo): void => {
     setNetworkFeeSettingType(settingInfo.settingType);
-
-    if (settingInfo.settingType === NetworkFeeSettingType.CUSTOM) {
-      setCustomGasPriceAmount(settingInfo.gasPrice?.amount || '');
-    } else {
-      setCustomGasPriceAmount('');
-    }
   }, []);
 
   const save = useCallback((): void => {
@@ -123,6 +120,8 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
     changedGasPrice,
     networkFeeSettingType: changedSettingType,
     setNetworkFeeSetting,
+    gasPriceRatio,
+    setGasPriceRatio,
     networkFeeSettings,
     networkFee,
     save,

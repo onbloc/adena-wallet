@@ -69,7 +69,7 @@ const ApproveSignContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
-  const useNetworkFeeReturn = useNetworkFee();
+  const useNetworkFeeReturn = useNetworkFee(document);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 

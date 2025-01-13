@@ -1,46 +1,68 @@
 import { GasToken } from '@common/constants/token.constant';
+import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { Document } from 'adena-module';
+import { Document, documentToDefaultTx } from 'adena-module';
+import BigNumber from 'bignumber.js';
+import { GasPriceTier } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_KEY = 'transactionGas/useGetEstimateGas';
 
 const REFETCH_INTERVAL = 5_000;
 
+function makeSimulateTx(document: Document, gasAmount: string): Tx {
+  const simulateDocument = {
+    ...document,
+    fee: {
+      ...document.fee,
+      amount: [{ amount: gasAmount, denom: GasToken.denom }],
+    },
+  };
+
+  return documentToDefaultTx(simulateDocument);
+}
+
+function makeTokenAmountWithDecimals(amount: string | number, decimals: number): string {
+  return BigNumber(amount)
+    .shiftedBy(decimals * -1)
+    .toFixed(decimals, BigNumber.ROUND_DOWN);
+}
+
 export const useGetEstimateGas = (
   document: Document | null | undefined,
-  gasAmount: string,
-  options?: UseQueryOptions<number | null, Error>,
-): UseQueryResult<number | null> => {
+  gasPriceTiers: GasPriceTier[] | null | undefined,
+  options?: UseQueryOptions<GasPriceTier[] | null, Error>,
+): UseQueryResult<GasPriceTier[] | null> => {
   const { wallet, gnoProvider } = useWalletContext();
   const { transactionGasService } = useAdenaContext();
 
-  return useQuery<number | null, Error>({
-    queryKey: [GET_ESTIMATE_GAS_KEY, document, gasAmount],
+  return useQuery<GasPriceTier[] | null, Error>({
+    queryKey: [GET_ESTIMATE_GAS_KEY, document?.msgs, document?.memo, gasPriceTiers],
     queryFn: async () => {
-      if (!document || !wallet || !gnoProvider) {
+      if (!document || !wallet || !gnoProvider || !gasPriceTiers) {
         return null;
       }
 
-      const gasPrice = {
-        amount: gasAmount,
-        denom: GasToken.denom,
-      };
+      const simulateTxs = gasPriceTiers.map((tier) =>
+        makeSimulateTx(document, tier.gasPrice.amount),
+      );
 
-      const estimatedDocument = {
-        ...document,
-        fee: {
-          ...document.fee,
-          amount: [gasPrice],
-        },
-      };
+      const estimatedGasAmounts = await Promise.all(
+        simulateTxs.map((tx) => transactionGasService.estimateGas(tx).catch(() => 0)),
+      );
 
-      const signedResult = await wallet.sign(gnoProvider, estimatedDocument).catch(() => null);
-      if (!signedResult) {
-        return null;
-      }
+      return gasPriceTiers.map((tier, index) => {
+        const estimatedGasAmount = estimatedGasAmounts?.[index] || 0;
 
-      return transactionGasService.estimateGas(signedResult.signed).catch(() => null);
+        return {
+          ...tier,
+          gasPrice: {
+            denom: GasToken.symbol,
+            amount: makeTokenAmountWithDecimals(tier.gasPrice.amount, GasToken.decimals),
+            estimatedAmount: makeTokenAmountWithDecimals(estimatedGasAmount, GasToken.decimals),
+          },
+        };
+      });
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,

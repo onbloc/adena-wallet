@@ -1,6 +1,6 @@
+import { MsgAddPackage, MsgCall, MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
+import { MemFile, MemPackage, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
 import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
-import { MsgCall, MsgAddPackage, MsgSend, MsgEndpoint } from '@gnolang/gno-js-client';
-import { MemPackage, MemFile, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
 import { fromBase64 } from '../encoding';
 
 export interface Document {
@@ -148,6 +148,29 @@ export function documentToTx(document: Document): Tx {
         .join(','),
     }),
     signatures: [],
+    memo: document.memo,
+  };
+}
+
+export function documentToDefaultTx(document: Document): Tx {
+  const messages: Any[] = document.msgs.map(encodeMessageValue);
+  return {
+    messages,
+    fee: TxFee.create({
+      gasWanted: document.fee.gas,
+      gasFee: document.fee.amount
+        .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
+        .join(','),
+    }),
+    signatures: [
+      {
+        pubKey: {
+          typeUrl: '',
+          value: new Uint8Array(),
+        },
+        signature: new Uint8Array(),
+      },
+    ],
     memo: document.memo,
   };
 }

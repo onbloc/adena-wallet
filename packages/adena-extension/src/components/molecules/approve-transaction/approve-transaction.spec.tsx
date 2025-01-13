@@ -58,6 +58,10 @@ describe('ApproveTransaction Component', () => {
           amount: '0.0048',
           denom: 'GNOT',
         },
+        gasPriceRatio: '1.5',
+        setGasPriceRatio: () => {
+          return;
+        },
         currentGasPriceRawAmount: 4800,
         changedGasPrice: null,
         networkFeeSettingType: NetworkFeeSettingType.AVERAGE,

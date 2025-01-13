@@ -9,7 +9,6 @@ import NetworkFeeCustomInput, { NetworkFeeCustomInputProps } from './network-fee
 describe('NetworkFeeCustomInput Component', () => {
   it('NetworkFeeCustomInput render', () => {
     const args: NetworkFeeCustomInputProps = {
-      denom: 'ugnot',
       value: '0.0001',
       onChange: () => {
         return;

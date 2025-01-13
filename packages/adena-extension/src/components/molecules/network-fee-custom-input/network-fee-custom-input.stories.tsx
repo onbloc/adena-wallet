@@ -9,6 +9,5 @@ export default {
 export const Default: StoryObj<NetworkFeeCustomInputProps> = {
   args: {
     value: '0.0048',
-    denom: 'GNOT',
   },
 };

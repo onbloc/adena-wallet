@@ -4,15 +4,10 @@ import { NetworkFeeCustomInputWrapper } from './network-fee-custom-input.styles'
 
 export interface NetworkFeeCustomInputProps {
   value: string;
-  denom: string;
   onChange: (value: string) => void;
 }
 
-const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({
-  value,
-  denom,
-  onChange,
-}) => {
+const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, onChange }) => {
   const onChangeCustomFee = (e: React.ChangeEvent<HTMLInputElement>): void => {
     onChange(e.target.value);
   };
@@ -26,7 +21,6 @@ const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({
         onChange={onChangeCustomFee}
         placeholder='Enter Custom Network Fee'
       />
-      <span className='denom'>{denom}</span>
     </NetworkFeeCustomInputWrapper>
   );
 };

@@ -15,6 +15,8 @@ import {
   Wallet,
 } from 'adena-module';
 
+import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE } from '@common/constants/tx.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -81,11 +83,15 @@ export class TransactionService {
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),
     ]).catch(() => [0, 0]);
-    const gasAmount = await this.getGasAmount(gasFee);
     return {
       msgs: [...messages],
       fee: {
-        amount: [gasAmount],
+        amount: [
+          {
+            denom: GasToken.denom,
+            amount: (gasFee || DEFAULT_GAS_FEE).toString(),
+          },
+        ],
         gas: gasWanted.toString(),
       },
       chain_id: chainId,

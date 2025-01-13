@@ -10,6 +10,10 @@ import NetworkFeeSetting, { NetworkFeeSettingProps } from './network-fee-setting
 describe('NetworkFeeSetting Component', () => {
   it('NetworkFeeSetting render', () => {
     const args: NetworkFeeSettingProps = {
+      gasPriceRatio: '1.5',
+      setGasPriceRatio: () => {
+        return;
+      },
       networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
       changedGasPrice: {
         amount: '0.0001',

@@ -15,6 +15,7 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { ApproveTransaction } from '@components/molecules';
+import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -50,8 +51,6 @@ function mappedTransactionData(document: Document): TransactionData {
   };
 }
 
-const DEFAULT_DENOM = 'GNOT';
-
 const ApproveSignTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { wallet, gnoProvider } = useWalletContext();
@@ -69,7 +68,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
-  const useNetworkFeeReturn = useNetworkFee();
+  const useNetworkFeeReturn = useNetworkFee(document);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -86,14 +85,16 @@ const ApproveSignTransactionContainer: React.FC = () => {
     if (!document || document.fee.amount.length === 0) {
       return {
         amount: '1',
-        denom: DEFAULT_DENOM,
+        denom: GasToken.symbol,
       };
     }
     const networkFeeAmount = document.fee.amount[0].amount;
-    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount).shiftedBy(-6).toString();
+    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount)
+      .shiftedBy(GasToken.decimals)
+      .toString();
     return {
       amount: networkFeeAmountOfGnot,
-      denom: DEFAULT_DENOM,
+      denom: GasToken.symbol,
     };
   }, [document]);
 
@@ -140,7 +141,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     requestData: InjectionMessage,
   ): Promise<boolean> => {
     const validationMessage = validateInjectionData(
-      await currentAccount.getAddress('g'),
+      await currentAccount.getAddress(defaultAddressPrefix),
       requestData,
     );
     if (validationMessage) {
