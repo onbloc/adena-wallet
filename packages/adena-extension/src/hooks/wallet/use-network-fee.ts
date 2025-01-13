@@ -5,6 +5,7 @@ import BigNumber from 'bignumber.js';
 import { useCallback, useMemo, useState } from 'react';
 import { useGetEstimateGas } from './transaction-gas/use-get-estimate-gas';
 import { useGetGasPriceTires } from './transaction-gas/use-get-gas-price';
+import { useGetSingleEstimateGas } from './transaction-gas/use-get-single-estimate-gas';
 
 export interface UseNetworkFeeReturn {
   currentGasPrice: GasPrice | null;
@@ -22,16 +23,24 @@ export interface UseNetworkFeeReturn {
 const defaultSettingType = NetworkFeeSettingType.AVERAGE;
 const defaultGasPriceRatio = '1';
 
-export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn => {
+export const useNetworkFee = (
+  document?: Document | null,
+  isDefaultGasPrice = false,
+): UseNetworkFeeReturn => {
   const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
   const [networkFeeSettingType, setNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
+  const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasPriceRatio, setGasPriceRatio] = useState<string>(defaultGasPriceRatio);
 
   const { data: gasPriceTiers } = useGetGasPriceTires(gasPriceRatio);
 
   const { data: estimatedGasPriceTiers } = useGetEstimateGas(document, gasPriceTiers);
+
+  const { data: estimatedDefaultGasPrice = null } = useGetSingleEstimateGas(document, {
+    enabled: !selectedTier,
+  });
 
   const currentSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 0) {
@@ -74,6 +83,10 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
   }, [changedSettingType, networkFeeSettings]);
 
   const currentGasPriceRawAmount = useMemo(() => {
+    if (!selectedTier) {
+      return BigNumber(document?.fee.amount?.[0].amount || 0).toNumber();
+    }
+
     if (!currentGasPrice) {
       return 0;
     }
@@ -81,7 +94,7 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
     const currentGasPriceAmount = currentGasPrice?.amount;
 
     return BigNumber(currentGasPriceAmount).shiftedBy(GasToken.decimals).toNumber();
-  }, [currentGasPrice]);
+  }, [currentGasPrice, document, selectedTier]);
 
   const currentEstimateGas = useMemo(() => {
     if (!estimatedGasPriceTiers) {
@@ -96,6 +109,10 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
   }, [currentSettingType, estimatedGasPriceTiers]);
 
   const networkFee = useMemo(() => {
+    if (!selectedTier) {
+      return estimatedDefaultGasPrice;
+    }
+
     if (!currentEstimateGas) {
       return null;
     }
@@ -104,7 +121,7 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
       amount: currentEstimateGas.estimatedAmount,
       denom: currentEstimateGas.denom,
     };
-  }, [currentEstimateGas]);
+  }, [currentEstimateGas, estimatedDefaultGasPrice, selectedTier]);
 
   const setNetworkFeeSetting = useCallback((settingInfo: NetworkFeeSettingInfo): void => {
     setNetworkFeeSettingType(settingInfo.settingType);
@@ -112,6 +129,7 @@ export const useNetworkFee = (document?: Document | null): UseNetworkFeeReturn =
 
   const save = useCallback((): void => {
     setCurrentNetworkFeeSettingType(changedSettingType);
+    setSelectedTier(true);
   }, [changedSettingType]);
 
   return {

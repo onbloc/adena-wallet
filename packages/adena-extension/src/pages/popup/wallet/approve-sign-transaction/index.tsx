@@ -1,5 +1,4 @@
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -68,7 +67,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
-  const useNetworkFeeReturn = useNetworkFee(document);
+  const useNetworkFeeReturn = useNetworkFee(document, true);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -80,23 +79,6 @@ const ApproveSignTransactionContainer: React.FC = () => {
     }
     return true;
   }, [requestData?.data?.memo]);
-
-  const networkFee = useMemo(() => {
-    if (!document || document.fee.amount.length === 0) {
-      return {
-        amount: '1',
-        denom: GasToken.symbol,
-      };
-    }
-    const networkFeeAmount = document.fee.amount[0].amount;
-    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount)
-      .shiftedBy(GasToken.decimals)
-      .toString();
-    return {
-      amount: networkFeeAmountOfGnot,
-      denom: GasToken.symbol,
-    };
-  }, [document]);
 
   useEffect(() => {
     checkLockWallet();
@@ -339,7 +321,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      networkFee={networkFee}
+      networkFee={useNetworkFeeReturn.networkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}

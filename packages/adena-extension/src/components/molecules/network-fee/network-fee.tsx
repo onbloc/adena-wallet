@@ -21,13 +21,15 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 }) => {
   const hasSetting = !!onClickSetting;
 
+  const isEmptyValue = value === '' || denom === '';
+
   const hasNetworkFee = !!Number(value) && !!denom;
 
   const hasError = isError || !hasNetworkFee;
 
   return (
     <NetworkFeeContainer>
-      <NetworkFeeWrapper isError={hasError}>
+      <NetworkFeeWrapper isError={hasError && !isEmptyValue}>
         <span className='key'>{'Network Fee'}</span>
 
         <div className='network-fee-amount-wrapper'>
