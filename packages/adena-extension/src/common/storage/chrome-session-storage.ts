@@ -24,6 +24,7 @@ export class ChromeSessionStorage implements Storage {
   };
 
   public remove = async (key: string): Promise<void> => {
+    await this.set(key, '');
     await this.storage.remove(key);
   };
 

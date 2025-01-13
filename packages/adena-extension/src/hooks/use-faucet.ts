@@ -1,3 +1,4 @@
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { waitForRun } from '@common/utils/timeout-utils';
 import { FaucetResponse } from '@repositories/common/response';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -11,7 +12,7 @@ export type UseFaucetReturn = {
   faucet: () => Promise<{ success: boolean; message: string }>;
 };
 
-const FAUCET_AMOUNT = 10_000_000 + 'ugnot';
+const FAUCET_AMOUNT = 10_000_000 + GNOT_TOKEN.denom;
 
 const FAUCET_UNEXPECTED_ERROR_MESSAGES = 'Unexpected Errors.';
 

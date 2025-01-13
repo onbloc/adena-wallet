@@ -6,14 +6,15 @@ import {
 } from '@gnolang/tm2-js-client';
 import {
   Account,
+  AdenaLedgerConnector,
+  Document,
   LedgerAccount,
+  LedgerKeyring,
   sha256,
   Wallet,
-  Document,
-  LedgerKeyring,
-  AdenaLedgerConnector,
 } from 'adena-module';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -49,13 +50,13 @@ export class TransactionService {
   private getGasAmount = async (gasFee?: number): Promise<{ amount: string; denom: string }> => {
     const gasFeeAmount = {
       amount: `${gasFee ?? 1}`,
-      denom: 'ugnot',
+      denom: GNOT_TOKEN.denom,
     };
     return gasFeeAmount;
   };
 
   /**
-   * create amino document
+   * Create a document for transaction
    *
    * @param account
    * @param chainId
@@ -94,6 +95,12 @@ export class TransactionService {
     };
   };
 
+  /** Create a signature
+   *
+   * @param account
+   * @param document
+   * @returns
+   */
   public createSignature = async (
     account: Account,
     document: Document,

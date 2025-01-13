@@ -31,6 +31,11 @@ export class TokenService {
     return this.tokenMetaInfos;
   }
 
+  /**
+   * Fetch token metainfos
+   *
+   * @returns
+   */
   public async fetchTokenMetainfos(): Promise<TokenModel[]> {
     if (this.tokenMetaInfos.length > 0) {
       return this.tokenMetaInfos;
@@ -41,12 +46,23 @@ export class TokenService {
     return this.tokenMetaInfos;
   }
 
+  /**
+   * Fetch GRC20 tokens
+   *
+   * @returns
+   */
   public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
     return this.tokenRepository
       .fetchAllGRC20Tokens()
       .then((tokens) => tokens.filter((token) => !!token));
   }
 
+  /**
+   * Fetch GRC20 token
+   *
+   * @param tokenPath
+   * @returns
+   */
   public async fetchGRC20Token(tokenPath: string): Promise<GRC20TokenModel | null> {
     if (!tokenPath) {
       return null;
@@ -62,16 +78,33 @@ export class TokenService {
     return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
   }
 
+  /**
+   * Fetch GRC20 token balance
+   *
+   * @param address
+   * @returns
+   */
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
     const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
     return transferPackages;
   }
 
+  /**
+   * Fetch Apps information
+   *
+   * @returns
+   */
   public async getAppInfos(): Promise<AppInfoResponse[]> {
     const response = await this.tokenRepository.fetchAppInfos();
     return response;
   }
 
+  /**
+   * Initialize account token meta infos
+   *
+   * @param accountId
+   * @returns
+   */
   public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
     const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
@@ -96,6 +129,12 @@ export class TokenService {
     return true;
   }
 
+  /**
+   * Get token metainfos by account id
+   *
+   * @param accountId
+   * @returns
+   */
   public async getTokenMetainfosByAccountId(accountId: string): Promise<
     {
       image: string;
@@ -119,6 +158,13 @@ export class TokenService {
     }));
   }
 
+  /**
+   * Update token metainfos by account id
+   *
+   * @param accountId
+   * @param tokenMetainfos
+   * @returns
+   */
   public async updateTokenMetainfosByAccountId(
     accountId: string,
     tokenMetainfos: TokenModel[],
@@ -142,6 +188,12 @@ export class TokenService {
     return true;
   }
 
+  /**
+   * Update account token metainfos
+   *
+   * @param accountTokenMetainfos
+   * @returns
+   */
   public async updateAccountTokenMetainfos(
     accountTokenMetainfos: AccountTokenBalance[],
   ): Promise<boolean> {
@@ -154,6 +206,14 @@ export class TokenService {
     return true;
   }
 
+  /**
+   * Change account token metainfo display
+   *
+   * @param accountId
+   * @param tokenId
+   * @param display
+   * @returns
+   */
   public async changeAccountTokenMetainfoDisplay(
     accountId: string,
     tokenId: string,
@@ -174,23 +234,54 @@ export class TokenService {
     return true;
   }
 
+  /**
+   * Delete account token metainfos
+   *
+   * @param accountId
+   * @returns
+   */
   public async deleteAccountTokenMetainfos(accountId: string): Promise<boolean> {
     await this.tokenRepository.deleteTokenMetainfos(accountId);
     return true;
   }
 
+  /**
+   * Fetch GRC721 collections
+   *
+   * @returns
+   */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     return this.tokenRepository.fetchGRC721Collections();
   }
 
+  /**
+   * Fetch GRC721 collection
+   *
+   * @param packagePath
+   * @returns
+   */
   public async fetchGRC721Collection(packagePath: string): Promise<GRC721CollectionModel> {
     return this.tokenRepository.fetchGRC721CollectionByPackagePath(packagePath);
   }
 
+  /**
+   * Fetch GRC721 token uri
+   *
+   * @param packagePath
+   * @param tokenId
+   * @returns
+   */
   public async fetchGRC721TokenUri(packagePath: string, tokenId: string): Promise<string> {
     return this.tokenRepository.fetchGRC721TokenUriBy(packagePath, tokenId);
   }
 
+  /**
+   * Fetch GRC721 token metadata
+   *
+   * @param packagePath
+   * @param tokenId
+   * @returns
+   */
   public async fetchGRC721TokenMetadata(
     packagePath: string,
     tokenId: string,
@@ -198,14 +289,35 @@ export class TokenService {
     return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId);
   }
 
+  /**
+   * Fetch GRC721 token balance
+   *
+   * @param packagePath
+   * @param address
+   * @returns
+   */
   public async fetchGRC721Balance(packagePath: string, address: string): Promise<number> {
     return this.tokenRepository.fetchGRC721BalanceBy(packagePath, address);
   }
 
+  /**
+   * Fetch GRC721 tokens
+   *
+   * @param packagePath
+   * @param address
+   * @returns
+   */
   public async fetchGRC721Tokens(packagePath: string, address: string): Promise<GRC721Model[]> {
     return this.tokenRepository.fetchGRC721TokensBy(packagePath, address);
   }
 
+  /**
+   * Fetch account GRC721 collections
+   *
+   * @param accountId
+   * @param networkId
+   * @returns
+   */
   public async getAccountGRC721Collections(
     accountId: string,
     networkId: string,
@@ -213,6 +325,14 @@ export class TokenService {
     return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId);
   }
 
+  /**
+   * Save account GRC721 collections
+   *
+   * @param accountId
+   * @param networkId
+   * @param collections
+   * @returns
+   */
   public async saveAccountGRC721Collections(
     accountId: string,
     networkId: string,
@@ -221,6 +341,13 @@ export class TokenService {
     return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections);
   }
 
+  /**
+   * Get account GRC721 pinned packages
+   *
+   * @param accountId
+   * @param networkId
+   * @returns
+   */
   public async getAccountGRC721PinnedPackages(
     accountId: string,
     networkId: string,
@@ -228,6 +355,14 @@ export class TokenService {
     return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId);
   }
 
+  /**
+   * Save account GRC721 pinned packages
+   *
+   * @param accountId
+   * @param networkId
+   * @param packagePaths
+   * @returns
+   */
   public async saveAccountGRC721PinnedPackages(
     accountId: string,
     networkId: string,
@@ -240,6 +375,11 @@ export class TokenService {
     );
   }
 
+  /**
+   * Clear token metainfos
+   *
+   * @returns
+   */
   public clear = async (): Promise<boolean> => {
     await this.tokenRepository.deleteAllTokenMetainfo();
     return true;
