@@ -5,7 +5,6 @@ import { SubHeader } from '@components/atoms';
 import { GasPrice, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
 import { BottomFixedButton } from '@components/molecules';
-import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
 import BigNumber from 'bignumber.js';
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
@@ -31,8 +30,6 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   changedGasPrice,
   networkFeeSettingType,
   setNetworkFeeSetting,
-  gasPriceRatio,
-  setGasPriceRatio,
   networkFeeSettings,
   onClickBack,
   onClickSave,
@@ -69,10 +66,6 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
     [networkFeeSettingType],
   );
 
-  const onChangeCustomFee = (value: string): void => {
-    setGasPriceRatio(value);
-  };
-
   return (
     <NetworkFeeSettingWrapper>
       <SubHeader
@@ -95,9 +88,11 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
           ))}
         </div>
 
+        {/* We need more information about the gas estimation.
         <div className='custom-network-fee-input-wrapper'>
           <NetworkFeeCustomInput value={gasPriceRatio} onChange={onChangeCustomFee} />
-        </div>
+        </div> 
+        */}
       </div>
 
       <BottomFixedButton
