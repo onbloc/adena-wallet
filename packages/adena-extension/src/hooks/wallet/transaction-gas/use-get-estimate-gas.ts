@@ -50,7 +50,15 @@ export const useGetEstimateGas = (
       );
 
       const estimatedGasAmounts = await Promise.all(
-        simulateTxs.map((tx) => transactionGasService.estimateGas(tx).catch(() => DEFAULT_GAS_FEE)),
+        simulateTxs.map((tx) =>
+          transactionGasService.estimateGas(tx).catch((e: Error) => {
+            if (e.message === '/std.InvalidPubKeyError') {
+              return DEFAULT_GAS_FEE;
+            }
+
+            return null;
+          }),
+        ),
       );
 
       return gasPriceTiers.map((tier, index) => {
