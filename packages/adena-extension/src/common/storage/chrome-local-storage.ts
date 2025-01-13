@@ -2,6 +2,7 @@ import { CommonError } from '@common/errors/common';
 import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
 import { Storage } from '.';
 
+// Define the valid types of storage keys
 type StorageKeyTypes =
   | 'NETWORKS'
   | 'CURRENT_CHAIN_ID'
@@ -19,6 +20,7 @@ type StorageKeyTypes =
   | 'ACCOUNT_GRC721_COLLECTIONS'
   | 'ACCOUNT_GRC721_PINNED_PACKAGES';
 
+// List of all available storage keys
 const StorageKeys: StorageKeyTypes[] = [
   'NETWORKS',
   'CURRENT_CHAIN_ID',
@@ -37,11 +39,14 @@ const StorageKeys: StorageKeyTypes[] = [
   'ACCOUNT_GRC721_PINNED_PACKAGES',
 ];
 
+// Function to validate if a given key is a valid storage key
 function isStorageKey(key: string): key is StorageKeyTypes {
   return StorageKeys.some((storageKey) => storageKey === key);
 }
 
+// Class to handle Chrome's local storage with migration support
 export class ChromeLocalStorage implements Storage {
+  // Define the main storage key for the application
   private static StorageKey = 'ADENA_DATA';
 
   private storage: chrome.storage.LocalStorageArea;
@@ -71,10 +76,12 @@ export class ChromeLocalStorage implements Storage {
   };
 
   public remove = async (key: string): Promise<void> => {
-    return this.set(key, '');
+    await this.set(key, '');
+    await this.storage.remove(key);
   };
 
   public clear = async (): Promise<void> => {
+    await this.storage.set({ [ChromeLocalStorage.StorageKey]: '{}' });
     await this.storage.clear();
   };
 

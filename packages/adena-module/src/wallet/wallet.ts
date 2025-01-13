@@ -99,11 +99,20 @@ const defaultWalletData: WalletData = {
   keyrings: [] as KeyringData[],
 };
 
+/**
+ * AdenaWallet class provides functionalities for managing accounts, keyrings, and transactions
+ * in the Adena wallet ecosystem. It supports various account types and enables operations such
+ * as signing transactions, broadcasting them, serialization/deserialization, and wallet creation
+ * using different methods (e.g., mnemonic, ledger, Web3Auth).
+ */
 export class AdenaWallet implements Wallet {
+  // Private field for storing account information
   private _accounts: Account[];
 
+  // Private field for storing keyring information
   private _keyrings: Keyring[];
 
+  // Private field for the current account's ID
   private _currentAccountId: string | undefined;
 
   constructor(walletData?: WalletData) {

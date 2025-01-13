@@ -12,6 +12,8 @@ import { StorageMigration006 } from './migrations/v006/storage-migration-v006';
 import { StorageModelV006 } from './migrations/v006/storage-model-v006';
 import { StorageMigration007 } from './migrations/v007/storage-migration-v007';
 import { StorageModelV007 } from './migrations/v007/storage-model-v007';
+import { StorageMigration008 } from './migrations/v008/storage-migration-v008';
+import { StorageModelV008 } from './migrations/v008/storage-model-v008';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -27,8 +29,10 @@ const LegacyStorageKeys = [
   'ACCOUNT_TOKEN_METAINFOS',
 ];
 
-export type StorageModelLatest = StorageModelV007;
+// The latest storage model type
+export type StorageModelLatest = StorageModelV008;
 
+// Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
   ACCOUNT_NAMES: {},
   ADDRESS_BOOK: {},
@@ -42,24 +46,28 @@ const defaultData: StorageModelDataV001 = {
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
+// Storage interface with set and get methods
 interface Storage {
   set(items: { [key: string]: any }): Promise<void>;
   get(keys?: string | string[] | { [key: string]: any } | null): Promise<{ [key: string]: any }>;
 }
 
+// Handles storage migrations and serialization/deserialization of storage data
 export class StorageMigrator implements Migrator {
   private static StorageKey = 'ADENA_DATA';
 
   constructor(
-    private migrations: Migration[],
-    private storage: Storage,
-    private password?: string,
+    private migrations: Migration[], // Array of migration strategies
+    private storage: Storage, // Storage interface for data persistence
+    private password?: string, // Password for encryption (optional)
   ) {}
 
+  // Sets the encryption password
   setPassword(password: string): void {
     this.password = password;
   }
 
+  // Validates if the data can be saved
   async saveable(): Promise<boolean | '' | undefined> {
     const current = await this.getCurrent();
     const latestVersion = Math.max(...this.migrations.map((m) => m.version));
@@ -72,13 +80,16 @@ export class StorageMigrator implements Migrator {
     return this.password && this.password.length > 0;
   }
 
+  // Serializes the storage model to a string
   async serialize(data: StorageModel<unknown>): Promise<string> {
     return JSON.stringify(data);
   }
 
+  // Deserializes a string into the corresponding storage model
   async deserialize(
     data: string | undefined,
   ): Promise<
+    | StorageModelV008
     | StorageModelV007
     | StorageModelV006
     | StorageModelV005
@@ -98,7 +109,9 @@ export class StorageMigrator implements Migrator {
     return this.mappedJson(jsonData);
   }
 
+  // Retrieves the current storage data, performing deserialization
   async getCurrent(): Promise<
+    | StorageModelV008
     | StorageModelV007
     | StorageModelV006
     | StorageModelV005
@@ -118,7 +131,8 @@ export class StorageMigrator implements Migrator {
     };
   }
 
-  async migrate(current: StorageModel): Promise<StorageModelV007 | null> {
+  // Migrates storage data to the latest version
+  async migrate(current: StorageModel): Promise<StorageModelV008 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -137,6 +151,7 @@ export class StorageMigrator implements Migrator {
     return latest as StorageModelLatest;
   }
 
+  // Saves the latest version of the storage data
   async save(latest: StorageModel): Promise<void> {
     if (!(await this.saveable())) {
       throw new Error('Unable to save');
@@ -147,16 +162,19 @@ export class StorageMigrator implements Migrator {
     });
   }
 
+  // Creates a backup of the current storage data
   private async backup(current: StorageModel): Promise<void> {
     const backupStorageKey = `${StorageMigrator.StorageKey}_${Date.now()}`;
     const savedData = await this.serialize(current);
     await this.storage.set({ [backupStorageKey]: savedData });
   }
 
+  // Maps JSON data to the corresponding storage model version
   private async mappedJson(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
+    | StorageModelV008
     | StorageModelV007
     | StorageModelV006
     | StorageModelV005
@@ -165,6 +183,9 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    if (json?.version === 8) {
+      return json as StorageModelV008;
+    }
     if (json?.version === 7) {
       return json as StorageModelV007;
     }
@@ -218,6 +239,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration005(),
       new StorageMigration006(),
       new StorageMigration007(),
+      new StorageMigration008(),
     ];
   }
 }

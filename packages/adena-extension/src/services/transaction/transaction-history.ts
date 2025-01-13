@@ -19,6 +19,12 @@ export class TransactionHistoryService {
     return this.transactionHistoryRepository.supported;
   }
 
+  /**
+   * Get block time by height
+   *
+   * @param height
+   * @returns
+   */
   public async fetchBlockTime(height: number): Promise<string | null> {
     if (this.supported) {
       return this.transactionHistoryRepository
@@ -51,6 +57,13 @@ export class TransactionHistoryService {
       .catch(() => null);
   }
 
+  /**
+   * Fetch all transaction history page
+   *
+   * @param address
+   * @param cursor
+   * @returns
+   */
   public async fetchAllTransactionHistoryPage(
     address: string,
     cursor: string | null,
@@ -71,6 +84,13 @@ export class TransactionHistoryService {
     return result;
   }
 
+  /**
+   * Fetch native transaction history page
+   *
+   * @param address
+   * @param cursor
+   * @returns
+   */
   public async fetchNativeTransactionHistoryPage(
     address: string,
     cursor: string | null,
@@ -89,6 +109,14 @@ export class TransactionHistoryService {
     );
   }
 
+  /**
+   * Fetch GRC20 transaction history page
+   *
+   * @param address
+   * @param packagePath
+   * @param cursor
+   * @returns
+   */
   public async fetchGRC20TransactionHistoryPage(
     address: string,
     packagePath: string,
@@ -109,6 +137,12 @@ export class TransactionHistoryService {
     );
   }
 
+  /**
+   * Fetch all transaction history
+   *
+   * @param address
+   * @returns
+   */
   public async fetchAllTransactionHistory(address: string): Promise<TransactionInfo[]> {
     if (!this.transactionHistoryRepository.supported) {
       return [];

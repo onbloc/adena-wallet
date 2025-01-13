@@ -1,3 +1,4 @@
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { Amount } from '@types';
 import BigNumber from 'bignumber.js';
 import { convertTextToAmount } from './string-utils';
@@ -19,7 +20,7 @@ export function makeGnotAmountByRaw(amountRaw: string): Amount | null {
   return gnotAmount;
 }
 
-export function parseTokenAmount(tokenAmount: string, denomination = 'ugnot'): number {
+export function parseTokenAmount(tokenAmount: string, denomination = GNOT_TOKEN.denom): number {
   const pattern = new RegExp(`^(\\d+)${denomination}$`);
   const match = tokenAmount.match(pattern);
 

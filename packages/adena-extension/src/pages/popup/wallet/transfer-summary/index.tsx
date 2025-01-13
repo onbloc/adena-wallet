@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
@@ -115,7 +116,7 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    const currentBalance = await gnoProvider.getBalance(currentAddress, 'ugnot');
+    const currentBalance = await gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom);
     const networkFee = summaryInfo.networkFee.value;
     return BigNumber(currentBalance).shiftedBy(-6).isGreaterThanOrEqualTo(networkFee);
   }, [gnoProvider, currentAddress, summaryInfo]);
