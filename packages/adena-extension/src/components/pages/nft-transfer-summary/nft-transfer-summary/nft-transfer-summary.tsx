@@ -50,12 +50,8 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   }, [grc721Token]);
 
   const errorMessage = useMemo(() => {
-    if (!isErrorNetworkFee) {
-      return '';
-    }
-
     return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee]);
+  }, []);
 
   return (
     <NFTTransferSummaryWrapper>

@@ -53,7 +53,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         </div>
       </NetworkFeeWrapper>
 
-      {isError && <span className='error-message'>{errorMessage}</span>}
+      {hasError && !isEmptyValue && <span className='error-message'>{errorMessage}</span>}
     </NetworkFeeContainer>
   );
 };

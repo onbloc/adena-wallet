@@ -42,12 +42,8 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
   const errorMessage = useMemo(() => {
-    if (!isErrorNetworkFee) {
-      return '';
-    }
-
     return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee]);
+  }, []);
 
   return (
     <TransferSummaryWrapper>
