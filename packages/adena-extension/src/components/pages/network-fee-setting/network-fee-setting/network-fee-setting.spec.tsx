@@ -11,6 +11,7 @@ describe('NetworkFeeSetting Component', () => {
   it('NetworkFeeSetting render', () => {
     const args: NetworkFeeSettingProps = {
       gasPriceRatio: '1.5',
+      isFetchedPriceTiers: true,
       setGasPriceRatio: () => {
         return;
       },

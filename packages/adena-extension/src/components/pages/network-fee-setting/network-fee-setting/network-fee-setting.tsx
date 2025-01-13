@@ -10,6 +10,7 @@ import BigNumber from 'bignumber.js';
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
 
 export interface NetworkFeeSettingProps {
+  isFetchedPriceTiers: boolean;
   changedGasPrice: GasPrice | null;
   networkFeeSettingType: NetworkFeeSettingType;
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
@@ -27,6 +28,7 @@ const settingTypesOfList: NetworkFeeSettingType[] = [
 ];
 
 const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
+  isFetchedPriceTiers,
   changedGasPrice,
   networkFeeSettingType,
   setNetworkFeeSetting,
@@ -82,6 +84,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
             <NetworkFeeSettingItem
               key={index}
               selected={isSelected(settingInfo)}
+              isLoading={!isFetchedPriceTiers}
               info={settingInfo}
               select={(): void => setNetworkFeeSetting(settingInfo)}
             />

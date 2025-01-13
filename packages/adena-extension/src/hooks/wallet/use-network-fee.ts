@@ -8,6 +8,7 @@ import { useGetGasPriceTires } from './transaction-gas/use-get-gas-price';
 import { useGetSingleEstimateGas } from './transaction-gas/use-get-single-estimate-gas';
 
 export interface UseNetworkFeeReturn {
+  isFetchedPriceTiers: boolean;
   currentGasPrice: GasPrice | null;
   currentGasPriceRawAmount: number;
   changedGasPrice: GasPrice | null;
@@ -36,7 +37,10 @@ export const useNetworkFee = (
 
   const { data: gasPriceTiers } = useGetGasPriceTires(gasPriceRatio);
 
-  const { data: estimatedGasPriceTiers } = useGetEstimateGas(document, gasPriceTiers);
+  const { data: estimatedGasPriceTiers, isFetched: isFetchedPriceTiers } = useGetEstimateGas(
+    document,
+    gasPriceTiers,
+  );
 
   const { data: estimatedDefaultGasPrice = null } = useGetSingleEstimateGas(document, {
     enabled: !selectedTier,
@@ -133,6 +137,7 @@ export const useNetworkFee = (
   }, [changedSettingType]);
 
   return {
+    isFetchedPriceTiers,
     currentGasPrice,
     currentGasPriceRawAmount,
     changedGasPrice,

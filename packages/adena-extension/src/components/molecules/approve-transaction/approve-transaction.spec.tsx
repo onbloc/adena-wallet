@@ -50,6 +50,7 @@ describe('ApproveTransaction Component', () => {
         return;
       },
       useNetworkFeeReturn: {
+        isFetchedPriceTiers: true,
         currentGasPrice: {
           amount: '0.0048',
           denom: 'GNOT',

@@ -1,10 +1,14 @@
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import React, { useMemo } from 'react';
 import { TokenBalance } from '../token-balance';
-import { NetworkFeeSettingItemWrapper } from './network-fee-setting-item.styles';
+import {
+  NetworkFeeItemSkeletonBox,
+  NetworkFeeSettingItemWrapper,
+} from './network-fee-setting-item.styles';
 
 export interface NetworkFeeSettingItemProps {
   selected: boolean;
+  isLoading: boolean;
   select: () => void;
   info: NetworkFeeSettingInfo;
 }
@@ -17,6 +21,7 @@ const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
 
 const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   selected,
+  isLoading,
   info,
   select,
 }) => {
@@ -50,6 +55,16 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
 
     select();
   };
+
+  if (isLoading) {
+    return (
+      <NetworkFeeSettingItemWrapper className='loading'>
+        <span className='title'>{'Loading...'}</span>
+
+        <NetworkFeeItemSkeletonBox />
+      </NetworkFeeSettingItemWrapper>
+    );
+  }
 
   return (
     <NetworkFeeSettingItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
