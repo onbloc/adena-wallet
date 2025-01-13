@@ -100,6 +100,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
         setExportType('PRIVATE_KEY');
         break;
       case 'SEED_PHRASE':
+        setExportAccountId(exportAccountId);
         setExportType('SEED_PHRASE');
         break;
       default:
