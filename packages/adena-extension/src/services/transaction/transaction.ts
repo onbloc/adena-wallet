@@ -15,7 +15,7 @@ import {
   Wallet,
 } from 'adena-module';
 
-import { GasToken } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE } from '@common/constants/tx.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
@@ -52,13 +52,13 @@ export class TransactionService {
   private getGasAmount = async (gasFee?: number): Promise<{ amount: string; denom: string }> => {
     const gasFeeAmount = {
       amount: `${gasFee ?? 1}`,
-      denom: 'ugnot',
+      denom: GNOT_TOKEN.denom,
     };
     return gasFeeAmount;
   };
 
   /**
-   * create amino document
+   * Create a document for transaction
    *
    * @param account
    * @param chainId
@@ -101,6 +101,12 @@ export class TransactionService {
     };
   };
 
+  /** Create a signature
+   *
+   * @param account
+   * @param document
+   * @returns
+   */
   public createSignature = async (
     account: Account,
     document: Document,

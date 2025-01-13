@@ -10,7 +10,7 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { GasToken } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -146,7 +146,7 @@ const ApproveTransactionContainer: React.FC = () => {
       if (!currentAddress || !gnoProvider) {
         return;
       }
-      gnoProvider.getBalance(currentAddress, 'ugnot').then(setCurrentBalance);
+      gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom).then(setCurrentBalance);
     });
   }, [getCurrentAddress, gnoProvider]);
 

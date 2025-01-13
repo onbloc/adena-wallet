@@ -20,3 +20,16 @@ export const createPopupWindow = async (popupPath: string, state: object = {}): 
     });
   });
 };
+
+export const isExtensionPopup = (): boolean => {
+  const views = chrome.extension.getViews({ type: 'popup' });
+  return views.length > 0 && views[0] === window;
+};
+
+export const isSeparatePopupWindow = (): boolean => {
+  if (isExtensionPopup()) {
+    return false;
+  }
+
+  return window.opener || chrome.extension.getViews({ type: 'popup' }).length === 0;
+};

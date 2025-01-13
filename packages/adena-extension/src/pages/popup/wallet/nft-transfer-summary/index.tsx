@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { GasToken } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
@@ -102,7 +102,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    const currentBalance = await gnoProvider.getBalance(currentAddress, 'ugnot');
+    const currentBalance = await gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom);
 
     if (!networkFee) {
       return false;

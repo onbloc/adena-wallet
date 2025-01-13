@@ -40,14 +40,26 @@ Also, follow us on our [Twitter](https://twitter.com/adenaapp) and [Medium](http
 ✅ Airgap Account Support <br>
 ✅ View & Transfer NFTs <br>
 ⬜ In-app Swap <br>
-⬜ Multi-Chain 
+⬜ Multi-Chain
 ​
+
+## Project Environment
+
+| Tool       | Version |
+| ---------- | ------- |
+| Node.js    | 18.14.2 |
+| TypeScript | 4.9.5   |
+| Babel Core | 7.23.9  |
+| Webpack    | 5.90.3  |
+| React      | 18.2.0  |
 
 ## Building Locally
 
 To set up a local environment, clone this repository and run the following commands:
 
 ```
+ nvm use
+
  yarn install
 ​
  yarn build

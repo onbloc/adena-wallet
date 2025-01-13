@@ -3,10 +3,8 @@ import BigNumber from 'bignumber.js';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { TokenBalanceType, TokenModel } from '@types';
-
-const GNOT_DENOM = 'ugnot' as const;
-const GNOT_DECIMALS = 6 as const;
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
@@ -36,11 +34,11 @@ export class WalletBalanceService {
   public async getGnotTokenBalance(address: string): Promise<number | null> {
     const gnoProvider = this.getGnoProvider();
     return gnoProvider
-      .getBalance(address, GNOT_DENOM)
+      .getBalance(address, GNOT_TOKEN.denom)
       .then((result) => {
         if (BigNumber(result).isInteger()) {
           return BigNumber(result)
-            .shiftedBy(GNOT_DECIMALS * -1)
+            .shiftedBy(GNOT_TOKEN.decimals * -1)
             .toNumber();
         }
         return null;
@@ -69,7 +67,7 @@ export class WalletBalanceService {
 
   public getTokenBalances = async (address: string): Promise<TokenBalanceType[]> => {
     const gnoProvider = this.getGnoProvider();
-    const denom = 'ugnot';
+    const denom = GNOT_TOKEN.denom;
     const balance = await gnoProvider
       .getBalance(address, denom)
       .then((value) => ({
