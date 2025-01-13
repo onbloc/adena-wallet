@@ -1,5 +1,7 @@
 export const DEFAULT_GAS_WANTED = 10_000_000;
 
+export const DEFAULT_GAS_FEE = 100_000;
+
 export const DEFAULT_NETWORK_FEE = 1;
 
 export const TRANSACTION_MESSAGE_SEND_OF_REGISTER = '200000000ugnot';

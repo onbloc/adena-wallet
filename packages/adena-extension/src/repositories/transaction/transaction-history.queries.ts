@@ -6,7 +6,7 @@ export const makeAccountTransactionsQuery = (
   {
     transactions(
       filter: {
-        messages: [
+        message: [
           {
             type_url: send
             bank_param: {
@@ -124,7 +124,7 @@ export const makeNativeTransactionsQuery = (
   {
     transactions(
       filter: {
-        messages: [
+        message: [
           {
             type_url: send
             bank_param: {
@@ -190,7 +190,7 @@ export const makeGRC20TransferTransactionsQuery = (
   {
     transactions(
       filter: {
-        messages: [
+        message: [
           {
             type_url: exec
             vm_param: {

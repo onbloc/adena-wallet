@@ -1,23 +1,24 @@
-import { useCallback, useState } from 'react';
 import BigNumber from 'bignumber.js';
+import { useCallback, useEffect, useState } from 'react';
 
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
+import { NetworkFee, TokenBalanceType, TokenModel } from '@types';
+import { Document } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
+import { useNetwork } from './use-network';
 import { useTokenBalance } from './use-token-balance';
 import { useTokenMetainfo } from './use-token-metainfo';
-import { TokenModel, TokenBalanceType } from '@types';
-
-const NETWORK_FEE = 0.000001;
+import { useNetworkFee } from './wallet/use-network-fee';
 
 export type UseBalanceInputHookReturn = {
   hasError: boolean;
   amount: string;
   denom: string;
   description: string;
-  networkFee: {
-    value: string;
-    denom: string;
-  };
+  networkFee: NetworkFee | null;
   setAmount: (amount: string) => void;
   updateCurrentBalance: () => Promise<boolean>;
   onChangeAmount: (amount: string) => void;
@@ -29,6 +30,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   const { balanceService } = useAdenaContext();
   const { wallet } = useWalletContext();
   const { currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
@@ -36,27 +38,43 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   const [availAmountNumber, setAvailAmountNumber] = useState<BigNumber>(BigNumber(0));
   const { fetchBalanceBy } = useTokenBalance();
   const { convertDenom } = useTokenMetainfo();
-  const networkFee = {
-    value: `${NETWORK_FEE}`,
-    denom: 'GNOT',
-  };
 
-  const updateCurrentBalance = useCallback(async () => {
-    if (!currentAddress) {
-      return false;
+  const [document, setDocument] = useState<Document | null>(null);
+  const { networkFee } = useNetworkFee(document);
+
+  useEffect(() => {
+    if (!currentAddress || !currentBalance || !tokenMetainfo) {
+      return;
     }
-    if (!tokenMetainfo) {
-      return false;
+
+    const amount = BigNumber(currentBalance.amount.value)
+      .shiftedBy(tokenMetainfo?.decimals)
+      .toFixed(0, 1);
+
+    setDocument(
+      makeTransferDocument({
+        chainId: currentNetwork.networkId,
+        fromAddress: currentAddress,
+        toAddress: currentAddress,
+        amount: amount,
+        memo: '',
+      }),
+    );
+  }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
+
+  useEffect(() => {
+    if (!networkFee || !currentBalance) {
+      return;
     }
-    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
-    setCurrentBalance(currentBalance);
+
     if (currentBalance.type === 'gno-native') {
       const convertedBalance = convertDenom(
         currentBalance.amount.value,
         currentBalance.amount.denom,
         'COMMON',
       );
-      const availAmountNumber = BigNumber(convertedBalance.value).minus(NETWORK_FEE);
+
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(networkFee.amount);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
       } else {
@@ -70,6 +88,19 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         setAvailAmountNumber(BigNumber(0));
       }
     }
+  }, [networkFee, currentBalance]);
+
+  const updateCurrentBalance = useCallback(async () => {
+    if (!currentAddress) {
+      return false;
+    }
+
+    if (!tokenMetainfo) {
+      return false;
+    }
+
+    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
+    setCurrentBalance(currentBalance);
     return true;
   }, [wallet, balanceService, currentAddress, tokenMetainfo]);
 
@@ -111,8 +142,12 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   }, []);
 
   const onClickMax = useCallback(() => {
+    if (networkFee) {
+      setAmount(availAmountNumber.toString());
+    }
+
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber]);
+  }, [availAmountNumber, networkFee]);
 
   const validateBalanceInput = useCallback(() => {
     if (
@@ -140,3 +175,37 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     validateBalanceInput,
   };
 };
+
+function makeTransferDocument(params: {
+  chainId: string;
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  memo: string;
+}): Document {
+  return {
+    account_number: '0',
+    sequence: '0',
+    chain_id: params.chainId,
+    msgs: [
+      {
+        type: MsgEndpoint.MSG_SEND,
+        value: {
+          from_address: params.fromAddress,
+          to_address: params.toAddress,
+          amount: `1${GNOT_TOKEN.denom}`,
+        },
+      },
+    ],
+    memo: params.memo,
+    fee: {
+      amount: [
+        {
+          denom: GasToken.denom,
+          amount: DEFAULT_GAS_FEE.toString(),
+        },
+      ],
+      gas: DEFAULT_GAS_WANTED.toString(),
+    },
+  };
+}

@@ -1,5 +1,4 @@
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,6 +7,7 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
+import { GasToken } from '@common/constants/token.constant';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -18,6 +18,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
 import { RoutePath } from '@types';
@@ -48,8 +49,6 @@ function mappedTransactionData(document: Document): TransactionData {
   };
 }
 
-const DEFAULT_DENOM = 'GNOT';
-
 const ApproveSignContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
@@ -67,6 +66,9 @@ const ApproveSignContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+  const useNetworkFeeReturn = useNetworkFee(document, true);
+
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -78,21 +80,6 @@ const ApproveSignContainer: React.FC = () => {
     }
     return true;
   }, [requestData?.data?.memo]);
-
-  const networkFee = useMemo(() => {
-    if (!document || document.fee.amount.length === 0) {
-      return {
-        amount: '1',
-        denom: DEFAULT_DENOM,
-      };
-    }
-    const networkFeeAmount = document.fee.amount[0].amount;
-    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount).shiftedBy(-6).toString();
-    return {
-      amount: networkFeeAmountOfGnot,
-      denom: DEFAULT_DENOM,
-    };
-  }, [document]);
 
   useEffect(() => {
     checkLockWallet();
@@ -199,6 +186,32 @@ const ApproveSignContainer: React.FC = () => {
     }
   };
 
+  const updateTransactionData = (): void => {
+    if (!document) {
+      return;
+    }
+
+    const currentMemo = memo;
+    const currentGasPrice = useNetworkFeeReturn.currentGasPriceRawAmount;
+
+    const updatedDocument: Document = {
+      ...document,
+      memo: currentMemo,
+      fee: {
+        ...document.fee,
+        amount: [
+          {
+            amount: currentGasPrice.toString(),
+            denom: GasToken.denom,
+          },
+        ],
+      },
+    };
+
+    setDocument(updatedDocument);
+    setTransactionData(mappedTransactionData(updatedDocument));
+  };
+
   const createSignDocument = async (): Promise<boolean> => {
     if (!document || !currentAccount) {
       setResponse(
@@ -293,6 +306,10 @@ const ApproveSignContainer: React.FC = () => {
     );
   }, [requestData]);
 
+  useEffect(() => {
+    updateTransactionData();
+  }, [memo, useNetworkFeeReturn.currentGasPriceRawAmount]);
+
   return (
     <ApproveTransaction
       title='Sign Transaction'
@@ -305,6 +322,7 @@ const ApproveSignContainer: React.FC = () => {
       done={done}
       logo={favicon}
       networkFee={networkFee}
+      useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}

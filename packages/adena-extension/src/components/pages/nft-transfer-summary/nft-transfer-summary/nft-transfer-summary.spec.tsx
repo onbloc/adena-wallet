@@ -23,7 +23,7 @@ describe('NFTTransferSummary Component', () => {
       },
       toAddress: '',
       networkFee: {
-        value: '0.0048',
+        amount: '0.0048',
         denom: 'GNOT',
       },
       memo: '',
@@ -37,6 +37,10 @@ describe('NFTTransferSummary Component', () => {
       onClickSend: () => {
         return;
       },
+      onClickNetworkFeeSetting: () => {
+        return;
+      },
+      isErrorNetworkFee: false,
     };
 
     render(

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
 import {
@@ -10,7 +10,14 @@ import {
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import DefaultFavicon from '@assets/favicon-default.svg';
-import { ApproveTransactionWrapper } from './approve-transaction.styles';
+import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
+import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { NetworkFee as NetworkFeeType } from '@types';
+import NetworkFee from '../network-fee/network-fee';
+import {
+  ApproveTransactionNetworkFeeWrapper,
+  ApproveTransactionWrapper,
+} from './approve-transaction.styles';
 
 export interface ApproveTransactionProps {
   loading: boolean;
@@ -25,10 +32,7 @@ export interface ApproveTransactionProps {
   memo: string;
   hasMemo: boolean;
   isErrorNetworkFee?: boolean;
-  networkFee: {
-    amount: string;
-    denom: string;
-  };
+  networkFee: NetworkFeeType | null;
   transactionData: string;
   opened: boolean;
   processing: boolean;
@@ -39,6 +43,7 @@ export interface ApproveTransactionProps {
   onTimeout: () => void;
   onClickConfirm: () => void;
   onClickCancel: () => void;
+  useNetworkFeeReturn: UseNetworkFeeReturn;
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -49,12 +54,13 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   contracts,
   memo,
   hasMemo,
-  isErrorNetworkFee,
   networkFee,
+  isErrorNetworkFee,
   transactionData,
   opened,
   processing,
   done,
+  useNetworkFeeReturn,
   changeMemo,
   onToggleTransactionData,
   onResponse,
@@ -62,6 +68,8 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onClickConfirm,
   onClickCancel,
 }) => {
+  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
+
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (hasMemo) {
@@ -74,12 +82,37 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     [hasMemo, changeMemo],
   );
 
+  const onClickNetworkFeeSetting = useCallback(() => {
+    setOpenedNetworkFeeSetting(true);
+  }, []);
+
+  const onClickNetworkFeeClose = useCallback(() => {
+    setOpenedNetworkFeeSetting(false);
+  }, []);
+
+  const onClickNetworkFeeSave = useCallback(() => {
+    useNetworkFeeReturn.save();
+    setOpenedNetworkFeeSetting(false);
+  }, [useNetworkFeeReturn.save]);
+
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
   }
 
   if (processing) {
     return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
+  }
+
+  if (openedNetworkFeeSetting) {
+    return (
+      <ApproveTransactionNetworkFeeWrapper>
+        <NetworkFeeSetting
+          {...useNetworkFeeReturn}
+          onClickBack={onClickNetworkFeeClose}
+          onClickSave={onClickNetworkFeeSave}
+        />
+      </ApproveTransactionNetworkFeeWrapper>
+    );
   }
 
   return (
@@ -125,11 +158,13 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <div className='fee-amount-wrapper row'>
-        <span className='key'>Network Fee:</span>
-        <span className='value'>{`${networkFee.amount} ${networkFee.denom}`}</span>
-      </div>
-      {isErrorNetworkFee && <span className='error-message'>Insufficient network fee</span>}
+      <NetworkFee
+        value={networkFee?.amount || ''}
+        denom={networkFee?.denom || ''}
+        isError={isErrorNetworkFee}
+        errorMessage='Insufficient network fee'
+        onClickSetting={onClickNetworkFeeSetting}
+      />
 
       <div className='transaction-data-wrapper'>
         <Button

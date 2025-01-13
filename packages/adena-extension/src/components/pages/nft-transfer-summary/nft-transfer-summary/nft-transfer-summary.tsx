@@ -8,19 +8,16 @@ import { NFTTransferSummaryWrapper } from './nft-transfer-summary.styles';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
 import { BottomFixedButtonGroup } from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
-import TransferSummaryNetworkFee from '@components/pages/transfer-summary/transfer-summary-network-fee/transfer-summary-network-fee';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721Model } from '@types';
+import { GRC721Model, NetworkFee as NetworkFeeType } from '@types';
 
 export interface NFTTransferSummaryProps {
   grc721Token: GRC721Model;
   toAddress: string;
-  networkFee: {
-    value: string;
-    denom: string;
-  };
+  networkFee: NetworkFeeType | null;
   memo: string;
   isErrorNetworkFee?: boolean;
   queryGRC721TokenUri: (
@@ -31,6 +28,7 @@ export interface NFTTransferSummaryProps {
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
+  onClickNetworkFeeSetting: () => void;
 }
 
 const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
@@ -43,6 +41,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   onClickBack,
   onClickCancel,
   onClickSend,
+  onClickNetworkFeeSetting,
 }) => {
   const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
@@ -51,12 +50,8 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   }, [grc721Token]);
 
   const errorMessage = useMemo(() => {
-    if (!isErrorNetworkFee) {
-      return '';
-    }
-
     return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee]);
+  }, []);
 
   return (
     <NFTTransferSummaryWrapper>
@@ -83,12 +78,13 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       </div>
 
       <div className='network-fee-wrapper'>
-        <TransferSummaryNetworkFee
+        <NetworkFee
           isError={isErrorNetworkFee}
-          value={networkFee.value}
-          denom={networkFee.denom}
+          value={networkFee?.amount || ''}
+          denom={networkFee?.denom || ''}
+          errorMessage={errorMessage}
+          onClickSetting={onClickNetworkFeeSetting}
         />
-        {isErrorNetworkFee && <span className='error-message'>{errorMessage}</span>}
       </div>
 
       <BottomFixedButtonGroup

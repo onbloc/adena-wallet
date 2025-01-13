@@ -6,26 +6,24 @@ import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
-import TransferSummaryNetworkFee from '../transfer-summary-network-fee/transfer-summary-network-fee';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
 
 import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
-import { Amount, TokenModel } from '@types';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel;
   tokenImage: string;
   transferBalance: Amount;
   toAddress: string;
-  networkFee: {
-    value: string;
-    denom: string;
-  };
+  networkFee: NetworkFeeType | null;
   memo: string;
   isErrorNetworkFee?: boolean;
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
+  onClickNetworkFeeSetting: () => void;
 }
 
 const TransferSummary: React.FC<TransferSummaryProps> = ({
@@ -39,16 +37,13 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   onClickBack,
   onClickCancel,
   onClickSend,
+  onClickNetworkFeeSetting,
 }) => {
   const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
   const errorMessage = useMemo(() => {
-    if (!isErrorNetworkFee) {
-      return '';
-    }
-
     return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee]);
+  }, []);
 
   return (
     <TransferSummaryWrapper>
@@ -77,12 +72,13 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       </div>
 
       <div className='network-fee-wrapper'>
-        <TransferSummaryNetworkFee
+        <NetworkFee
           isError={isErrorNetworkFee}
-          value={networkFee.value}
-          denom={networkFee.denom}
+          value={networkFee?.amount || ''}
+          denom={networkFee?.denom || ''}
+          errorMessage={errorMessage}
+          onClickSetting={onClickNetworkFeeSetting}
         />
-        {isErrorNetworkFee && <span className='error-message'>{errorMessage}</span>}
       </div>
 
       <div className='button-group'>

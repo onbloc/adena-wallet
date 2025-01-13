@@ -4,6 +4,7 @@ import {
   CreateAccountState,
   GRC721CollectionModel,
   GRC721Model,
+  NetworkFee,
   TokenBalanceType,
   TokenModel,
   TransactionInfo,
@@ -169,10 +170,7 @@ export type RouteParams = {
       value: string;
       denom: string;
     };
-    networkFee: {
-      value: string;
-      denom: string;
-    };
+    networkFee: NetworkFee | null;
     memo: string;
   };
   [RoutePath.NftTransferSummary]: {

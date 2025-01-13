@@ -25,7 +25,7 @@ export const Default: StoryObj<NFTTransferSummaryProps> = {
     queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
     toAddress: 'g1fnakf9vrd6uqn8qdmp88yac4p0ngy572answ9f',
     networkFee: {
-      value: '0.0048',
+      amount: '0.0048',
       denom: 'GNOT',
     },
     onClickBack: action('click back'),

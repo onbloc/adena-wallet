@@ -10,7 +10,7 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -22,6 +22,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
 import { RoutePath } from '@types';
@@ -63,8 +64,6 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
     }
   }, 5000);
 
-const DEFAULT_DENOM = 'GNOT';
-
 const ApproveTransactionContainer: React.FC = () => {
   const { wallet } = useWalletContext();
   const nomarlNavigate = useNavigate();
@@ -84,6 +83,8 @@ const ApproveTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+  const useNetworkFeeReturn = useNetworkFee(document, true);
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -96,23 +97,14 @@ const ApproveTransactionContainer: React.FC = () => {
     return true;
   }, [requestData?.data?.memo]);
 
-  const networkFee = useMemo(() => {
-    if (!document || document.fee.amount.length === 0) {
-      return {
-        amount: '1',
-        denom: DEFAULT_DENOM,
-      };
-    }
-    const networkFeeAmount = document.fee.amount[0].amount;
-    const networkFeeAmountOfGnot = BigNumber(networkFeeAmount).shiftedBy(-6).toString();
-    return {
-      amount: networkFeeAmountOfGnot,
-      denom: DEFAULT_DENOM,
-    };
-  }, [document]);
-
   const isErrorNetworkFee = useMemo(() => {
-    return BigNumber(currentBalance).shiftedBy(-6).isLessThan(networkFee.amount);
+    if (!networkFee) {
+      return false;
+    }
+
+    return BigNumber(currentBalance)
+      .shiftedBy(GasToken.decimals * -1)
+      .isLessThan(networkFee.amount);
   }, [currentBalance, networkFee]);
 
   const checkLockWallet = (): void => {
@@ -194,6 +186,32 @@ const ApproveTransactionContainer: React.FC = () => {
     return false;
   };
 
+  const updateTransactionData = (): void => {
+    if (!document) {
+      return;
+    }
+
+    const currentMemo = memo;
+    const currentGasPrice = useNetworkFeeReturn.currentGasPriceRawAmount;
+
+    const updatedDocument: Document = {
+      ...document,
+      memo: currentMemo,
+      fee: {
+        ...document.fee,
+        amount: [
+          {
+            amount: currentGasPrice.toString(),
+            denom: GasToken.denom,
+          },
+        ],
+      },
+    };
+
+    setDocument(updatedDocument);
+    setTransactionData(mappedTransactionData(updatedDocument));
+  };
+
   const changeMemo = (memo: string): void => {
     setMemo(memo);
     if (document) {
@@ -223,10 +241,14 @@ const ApproveTransactionContainer: React.FC = () => {
 
     try {
       setProcessType('PROCESSING');
+
       const walletInstance = wallet.clone();
       walletInstance.currentAccountId = currentAccount.id;
+
       const { signed } = await transactionService.createTransaction(walletInstance, document);
+
       const hash = transactionService.createHash(signed);
+
       const response = await new Promise<
         BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null
       >((resolve) => {
@@ -258,10 +280,7 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: {
-                message: response.message,
-                stack: response.stack,
-              },
+              error: response,
             },
             requestData?.key,
           ),
@@ -344,6 +363,10 @@ const ApproveTransactionContainer: React.FC = () => {
     }
   }, [currentAccount, requestData, gnoProvider]);
 
+  useEffect(() => {
+    updateTransactionData();
+  }, [memo, useNetworkFeeReturn.currentGasPriceRawAmount]);
+
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
@@ -383,6 +406,7 @@ const ApproveTransactionContainer: React.FC = () => {
       logo={favicon}
       isErrorNetworkFee={isErrorNetworkFee}
       networkFee={networkFee}
+      useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}

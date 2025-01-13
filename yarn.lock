@@ -1769,6 +1769,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bufbuild/protobuf@npm:^2.2.3":
+  version: 2.2.3
+  resolution: "@bufbuild/protobuf@npm:2.2.3"
+  checksum: 567ca0497669a8944fe84a9fdfa236e4a91d5879190c0ec0c8727d5220cbc21a85d06a114ac1eb35387fc5cb1dcbb7adc583c4d4f6a2ecb34fbe61dcaa7e7e9b
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -2200,19 +2207,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/gno-js-client@npm:1.3.0":
-  version: 1.3.0
-  resolution: "@gnolang/gno-js-client@npm:1.3.0"
-  dependencies:
-    "@cosmjs/ledger-amino": ^0.32.4
-    "@gnolang/tm2-js-client": ^1.2.1
-    long: ^5.2.3
-    protobufjs: ^7.2.3
-  checksum: 65de2b562cea8ddc8713aa3fdfb7aa2df173188455020406b4b591c41a63fdacf6f01ba91cba6288ef54281f887f227a7b4b3da7567af33e87d06382f7bef1a9
-  languageName: node
-  linkType: hard
-
-"@gnolang/gno-js-client@npm:^1.3.0":
+"@gnolang/gno-js-client@npm:1.3.1, @gnolang/gno-js-client@npm:^1.3.0":
   version: 1.3.1
   resolution: "@gnolang/gno-js-client@npm:1.3.1"
   dependencies:
@@ -2224,20 +2219,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@gnolang/tm2-js-client@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@gnolang/tm2-js-client@npm:1.2.1"
+"@gnolang/tm2-js-client@npm:1.2.3":
+  version: 1.2.3
+  resolution: "@gnolang/tm2-js-client@npm:1.2.3"
   dependencies:
     "@cosmjs/amino": ^0.32.4
     "@cosmjs/crypto": ^0.32.4
     "@cosmjs/ledger-amino": ^0.32.4
-    "@types/uuid": ^9.0.4
-    axios: ^1.4.0
+    "@types/uuid": ^10.0.0
+    axios: ^1.7.2
     long: ^5.2.3
-    protobufjs: ^7.2.3
-    uuid: ^9.0.1
-    ws: ^8.16.0
-  checksum: aadc03e5edfa130ff34a963fd6b571332e4380fb9d2e98bd40f301325dc1dfd40ab2634654a7c97edbba685c58cc8a79e58eeb96e8326d766dc3bdc89bb78ad9
+    protobufjs: ^7.4.0
+    uuid: ^10.0.0
+    ws: ^8.18.0
+  checksum: 12c4367f41ddc6065fce1507ed2d8b29ef1d14ad3088852db025e2b353d1dc8e29f7bb3b1971691d80ed05980cd4b115051e4267d1ebc5a55ad5a0423bd21ce0
   languageName: node
   linkType: hard
 
@@ -6713,7 +6708,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/uuid@npm:^9.0.1, @types/uuid@npm:^9.0.4":
+"@types/uuid@npm:^9.0.1":
   version: 9.0.8
   resolution: "@types/uuid@npm:9.0.8"
   checksum: b8c60b7ba8250356b5088302583d1704a4e1a13558d143c549c408bf8920535602ffc12394ede77f8a8083511b023704bc66d1345792714002bfa261b17c5275
@@ -7883,8 +7878,9 @@ __metadata:
     "@babel/preset-env": ^7.23.9
     "@babel/preset-react": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
-    "@gnolang/gno-js-client": 1.3.0
-    "@gnolang/tm2-js-client": 1.2.1
+    "@bufbuild/protobuf": ^2.2.3
+    "@gnolang/gno-js-client": 1.3.1
+    "@gnolang/tm2-js-client": 1.2.3
     "@jest/globals": ^29.7.0
     "@storybook/addon-essentials": ^7.6.17
     "@storybook/addon-interactions": ^7.6.17
@@ -7968,8 +7964,8 @@ __metadata:
     "@babel/preset-flow": ^7.23.3
     "@babel/preset-typescript": ^7.23.3
     "@cosmjs/ledger-amino": ^0.32.4
-    "@gnolang/gno-js-client": 1.3.0
-    "@gnolang/tm2-js-client": 1.2.1
+    "@gnolang/gno-js-client": 1.3.1
+    "@gnolang/tm2-js-client": 1.2.3
     "@ledgerhq/hw-transport": ^6.30.4
     "@ledgerhq/hw-transport-mocker": ^6.28.4
     "@ledgerhq/hw-transport-webhid": ^6.28.4
@@ -8548,7 +8544,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.4.0, axios@npm:^1.7.2":
+"axios@npm:^1.7.2":
   version: 1.7.7
   resolution: "axios@npm:1.7.7"
   dependencies:
@@ -17471,7 +17467,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"protobufjs@npm:^7.2.3, protobufjs@npm:^7.4.0":
+"protobufjs@npm:^7.4.0":
   version: 7.4.0
   resolution: "protobufjs@npm:7.4.0"
   dependencies:

@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
-import { isLedgerAccount, AdenaLedgerConnector } from 'adena-module';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { RoutePath } from '@types';
-import mixins from '@styles/mixins';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
+import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
 
 const TransferLedgerLoadingLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -61,7 +61,6 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
       .then(async ({ signed }) => {
-        console.log(signed);
         connected.close();
         const response = await transactionService.sendTransactionByLedger(
           ledgerConnector,

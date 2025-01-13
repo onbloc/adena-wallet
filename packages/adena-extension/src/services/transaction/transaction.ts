@@ -1,6 +1,7 @@
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  defaultAddressPrefix,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
@@ -14,7 +15,8 @@ import {
   Wallet,
 } from 'adena-module';
 
-import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE } from '@common/constants/tx.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -76,16 +78,20 @@ export class TransactionService {
     memo?: string | undefined,
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
-    const address = await account.getAddress('g');
+    const address = await account.getAddress(defaultAddressPrefix);
     const [accountSequence, accountNumber] = await Promise.all([
       provider.getAccountSequence(address),
       provider.getAccountNumber(address),
     ]).catch(() => [0, 0]);
-    const gasAmount = await this.getGasAmount(gasFee);
     return {
       msgs: [...messages],
       fee: {
-        amount: [gasAmount],
+        amount: [
+          {
+            denom: GasToken.denom,
+            amount: (gasFee || DEFAULT_GAS_FEE).toString(),
+          },
+        ],
         gas: gasWanted.toString(),
       },
       chain_id: chainId,
