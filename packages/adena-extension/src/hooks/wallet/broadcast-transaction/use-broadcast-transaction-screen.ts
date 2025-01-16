@@ -1,19 +1,19 @@
-import { useCallback, useMemo, useState } from 'react';
-import {
-  RawTx,
-  strToSignedTx,
-  RawBankSendMessage,
-  RawVmCallMessage,
-  RawVmAddPackageMessage,
-  RawVmRunMessage,
-} from 'adena-module';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { Tx } from '@gnolang/tm2-js-client';
+import {
+  RawBankSendMessage,
+  RawTx,
+  RawVmAddPackageMessage,
+  RawVmCallMessage,
+  RawVmRunMessage,
+  strToSignedTx,
+} from 'adena-module';
+import { useCallback, useMemo, useState } from 'react';
 
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
 
 export type BroadcastTransactionState = 'UPLOAD_TRANSACTION' | 'LOADING' | 'FAILED' | 'SUCCESS';
@@ -213,7 +213,7 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
     }
     setBroadcastTransactionState('LOADING');
     const isSuccessBroadcasting = await transactionService
-      .sendTransaction(wallet, currentAccount, transaction, true)
+      .sendTransaction(wallet, currentAccount, transaction, false)
       .then((response) => {
         return Boolean(response?.hash);
       })

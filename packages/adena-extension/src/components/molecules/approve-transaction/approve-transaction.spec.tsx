@@ -50,6 +50,7 @@ describe('ApproveTransaction Component', () => {
         return;
       },
       useNetworkFeeReturn: {
+        isFetchedEstimateGasInfo: true,
         isFetchedPriceTiers: true,
         currentGasInfo: {
           gasFee: 0.00000048,
