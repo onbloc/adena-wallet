@@ -1,4 +1,3 @@
-export * from './approve-injection-loading';
 export * from './approve-ledger-loading';
 export * from './approve-loading';
 export * from './approve-transaction';
