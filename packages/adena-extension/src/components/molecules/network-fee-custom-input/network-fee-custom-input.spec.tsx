@@ -10,8 +10,8 @@ describe('NetworkFeeCustomInput Component', () => {
   it('NetworkFeeCustomInput render', () => {
     const args: NetworkFeeCustomInputProps = {
       value: '0.0001',
-      onChange: () => {
-        return;
+      changeValue: () => {
+        return '';
       },
     };
 

@@ -56,7 +56,7 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
 
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
-  gasUsed: number,
+  gasUsed: number | undefined,
   gasAdjustment: string,
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
@@ -71,7 +71,7 @@ export const useGetEstimateGasPriceTiers = (
       gasAdjustment,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
-      if (!document || !gasUsed) {
+      if (!document || gasUsed === undefined) {
         return null;
       }
 
@@ -83,7 +83,7 @@ export const useGetEstimateGasPriceTiers = (
           const adjustedGasPrice = BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
 
           const { gasWanted, gasFee } = makeGasInfoBy(
-            gasUsed,
+            gasUsed || 0,
             adjustedGasPrice,
             GAS_FEE_SAFETY_MARGIN,
           );
@@ -99,14 +99,15 @@ export const useGetEstimateGasPriceTiers = (
               return null;
             });
 
-          if (!result) {
+          if (!result || !gasUsed) {
             return {
               settingType: tier,
               gasInfo: {
-                gasFee: gasFee,
-                gasUsed: gasUsed,
-                gasWanted: gasWanted,
-                gasPrice: adjustedGasPrice,
+                gasFee: 0,
+                gasUsed: 0,
+                gasWanted: 0,
+                gasPrice: 0,
+                hasError: true,
               },
             };
           }

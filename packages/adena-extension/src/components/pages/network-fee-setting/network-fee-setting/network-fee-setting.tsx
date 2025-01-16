@@ -4,6 +4,7 @@ import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { SubHeader } from '@components/atoms';
 import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
+import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
 import { BottomFixedButton } from '@components/molecules';
 import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
@@ -79,17 +80,23 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
     [networkFeeSettingType],
   );
 
-  const onChangeGasAdjustment = useCallback((value: string) => {
+  const changeGasAdjustment = useCallback((value: string): string => {
     if (BigNumber(value).isNaN()) {
-      return;
+      return DEFAULT_GAS_ADJUSTMENT.toString();
     }
 
     // 3 is the maximum value of gas adjustment
     if (BigNumber(value).isGreaterThan(3)) {
-      return;
+      return '3';
+    }
+
+    if (BigNumber(value).isLessThan(0)) {
+      return '0';
     }
 
     setGasAdjustment(value);
+
+    return value;
   }, []);
 
   return (
@@ -128,7 +135,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         </div>
 
         <div className='custom-network-fee-input-wrapper'>
-          <NetworkFeeCustomInput value={gasAdjustment} onChange={onChangeGasAdjustment} />
+          <NetworkFeeCustomInput value={gasAdjustment} changeValue={changeGasAdjustment} />
         </div>
       </div>
 

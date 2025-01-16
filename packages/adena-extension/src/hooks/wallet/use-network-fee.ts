@@ -44,8 +44,9 @@ export const useNetworkFee = (
     defaultEstimatedGasInfo?.gasUsed || 0,
     defaultEstimatedGasInfo?.gasPrice || 0,
   );
+
   const { data: gasPriceTiers = null, isFetched: isFetchedPriceTiers } =
-    useGetEstimateGasPriceTiers(document, estimatedGasInfo?.gasUsed || 0, gasAdjustment);
+    useGetEstimateGasPriceTiers(document, estimatedGasInfo?.gasUsed, gasAdjustment);
 
   const currentSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 0) {
@@ -120,6 +121,13 @@ export const useNetworkFee = (
 
     if (!currentEstimateGas) {
       return null;
+    }
+
+    if (currentEstimateGas.hasError) {
+      return {
+        amount: '0',
+        denom: GasToken.symbol,
+      };
     }
 
     const networkFeeAmount = BigNumber(currentEstimateGas.gasFee)

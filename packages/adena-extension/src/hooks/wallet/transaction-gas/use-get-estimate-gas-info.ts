@@ -94,7 +94,13 @@ export const useGetEstimateGasInfo = (
         });
 
       if (!result) {
-        return null;
+        return {
+          gasFee,
+          gasUsed,
+          gasWanted,
+          gasPrice: 0,
+          hasError: true,
+        };
       }
 
       return {
