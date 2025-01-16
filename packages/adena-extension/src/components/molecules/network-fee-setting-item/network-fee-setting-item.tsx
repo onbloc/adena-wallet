@@ -1,5 +1,5 @@
 import { GasToken } from '@common/constants/token.constant';
-import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+import { GasInfo, NetworkFeeSettingType } from '@types';
 import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
 import { TokenBalance } from '../token-balance';
@@ -12,7 +12,10 @@ export interface NetworkFeeSettingItemProps {
   selected: boolean;
   isLoading: boolean;
   select: () => void;
-  info: NetworkFeeSettingInfo;
+  info: {
+    settingType: NetworkFeeSettingType;
+    gasInfo?: GasInfo | undefined;
+  };
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {

@@ -54,32 +54,15 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
   };
 }
 
-export const defaultGasPriceTiers: NetworkFeeSettingInfo[] = Object.keys(
-  DEFAULT_GAS_PRICE_STEP,
-).map((key) => {
-  const tier = key as NetworkFeeSettingType;
-  const gasPrice = DEFAULT_GAS_PRICE_STEP[tier];
-
-  return {
-    settingType: tier,
-    gasInfo: {
-      gasFee: 0,
-      gasUsed: 0,
-      gasWanted: 0,
-      gasPrice: gasPrice,
-    },
-  };
-});
-
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
   gasUsed: number,
   gasAdjustment: string,
-  options?: UseQueryOptions<NetworkFeeSettingInfo[], Error>,
-): UseQueryResult<NetworkFeeSettingInfo[]> => {
+  options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
+): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { transactionGasService } = useAdenaContext();
 
-  return useQuery<NetworkFeeSettingInfo[], Error>({
+  return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
       GET_ESTIMATE_GAS_PRICE_TIERS,
       document?.msgs,
@@ -87,9 +70,9 @@ export const useGetEstimateGasPriceTiers = (
       gasUsed,
       gasAdjustment,
     ],
-    queryFn: async (): Promise<NetworkFeeSettingInfo[]> => {
+    queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
       if (!document || !gasUsed) {
-        return defaultGasPriceTiers;
+        return null;
       }
 
       return Promise.all(
@@ -109,7 +92,6 @@ export const useGetEstimateGasPriceTiers = (
           const result = await transactionGasService
             .estimateGas(documentToDefaultTx(modifiedDocument))
             .catch((e: Error) => {
-              console.log('e', e);
               if (e.message === '/std.InvalidPubKeyError') {
                 return DEFAULT_GAS_USED;
               }

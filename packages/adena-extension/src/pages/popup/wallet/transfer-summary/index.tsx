@@ -185,9 +185,16 @@ const TransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
-  }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
+  }, [
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    networkFee,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentGasInfo,
+  ]);
 
-  const transfer = useCallback(async () => {
+  const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount) {
       return false;
     }
@@ -201,7 +208,7 @@ const TransferSummaryContainer: React.FC = () => {
       return transferByLedger();
     }
     return transferByCommon();
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  };
 
   const transferByCommon = useCallback(async () => {
     try {
@@ -214,7 +221,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
     setIsSent(false);
     return false;
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  }, [createTransaction]);
 
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
@@ -222,7 +229,7 @@ const TransferSummaryContainer: React.FC = () => {
       navigate(RoutePath.TransferLedgerLoading, { state: { document } });
     }
     return true;
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  }, [createDocument]);
 
   const onClickBack = useCallback(() => {
     setMemorizedTransferInfo(summaryInfo);

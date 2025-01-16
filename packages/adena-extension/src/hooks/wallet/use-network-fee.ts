@@ -8,10 +8,7 @@ import {
   useGetDefaultEstimateGasInfo,
   useGetEstimateGasInfo,
 } from './transaction-gas/use-get-estimate-gas-info';
-import {
-  defaultGasPriceTiers,
-  useGetEstimateGasPriceTiers,
-} from './transaction-gas/use-get-estimate-gas-price-tiers';
+import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
 
 export interface UseNetworkFeeReturn {
   isFetchedPriceTiers: boolean;
@@ -20,7 +17,7 @@ export interface UseNetworkFeeReturn {
   changedGasInfo: GasInfo | null;
   networkFee: NetworkFee | null;
   networkFeeSettingType: NetworkFeeSettingType;
-  networkFeeSettings: NetworkFeeSettingInfo[];
+  networkFeeSettings: NetworkFeeSettingInfo[] | null;
   gasAdjustment: string;
   setGasAdjustment: (ratio: string) => void;
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
@@ -37,6 +34,7 @@ export const useNetworkFee = (
     useState<NetworkFeeSettingType>(defaultSettingType);
   const [networkFeeSettingType, setNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
+
   const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
 
@@ -46,7 +44,7 @@ export const useNetworkFee = (
     defaultEstimatedGasInfo?.gasUsed || 0,
     defaultEstimatedGasInfo?.gasPrice || 0,
   );
-  const { data: gasPriceTiers = defaultGasPriceTiers, isFetched: isFetchedPriceTiers } =
+  const { data: gasPriceTiers = null, isFetched: isFetchedPriceTiers } =
     useGetEstimateGasPriceTiers(document, estimatedGasInfo?.gasUsed || 0, gasAdjustment);
 
   const currentSettingType = useMemo(() => {
@@ -66,12 +64,20 @@ export const useNetworkFee = (
   }, [networkFeeSettingType, gasPriceTiers]);
 
   const currentGasInfo = useMemo(() => {
+    if (!gasPriceTiers) {
+      return null;
+    }
+
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
 
     return current?.gasInfo || null;
   }, [currentSettingType, gasPriceTiers]);
 
   const changedGasInfo = useMemo(() => {
+    if (!gasPriceTiers) {
+      return null;
+    }
+
     const current = gasPriceTiers.find((setting) => setting.settingType === changedSettingType);
 
     return current?.gasInfo || null;
@@ -92,6 +98,10 @@ export const useNetworkFee = (
   }, [currentGasInfo, document, selectedTier]);
 
   const currentEstimateGas = useMemo(() => {
+    if (!gasPriceTiers) {
+      return null;
+    }
+
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
 
     return current?.gasInfo || null;

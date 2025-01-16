@@ -5,6 +5,7 @@ import { SubHeader } from '@components/atoms';
 import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
 import { BottomFixedButton } from '@components/molecules';
+import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
 import BigNumber from 'bignumber.js';
 import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
@@ -16,7 +17,7 @@ export interface NetworkFeeSettingProps {
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
   gasAdjustment: string;
   setGasAdjustment: (ratio: string) => void;
-  networkFeeSettings: NetworkFeeSettingInfo[];
+  networkFeeSettings: NetworkFeeSettingInfo[] | null;
   onClickBack: () => void;
   onClickSave: () => void;
 }
@@ -33,16 +34,26 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   networkFeeSettingType,
   setNetworkFeeSetting,
   networkFeeSettings,
+  gasAdjustment,
+  setGasAdjustment,
   onClickBack,
   onClickSave,
 }) => {
   const settingInfoMap = useMemo(() => {
+    if (!networkFeeSettings) {
+      return {
+        [NetworkFeeSettingType.FAST]: null,
+        [NetworkFeeSettingType.AVERAGE]: null,
+        [NetworkFeeSettingType.SLOW]: null,
+      };
+    }
+
     return networkFeeSettings.reduce(
       (acc, setting) => {
         acc[setting.settingType] = setting;
         return acc;
       },
-      {} as Record<NetworkFeeSettingType, NetworkFeeSettingInfo>,
+      {} as Record<NetworkFeeSettingType, NetworkFeeSettingInfo | null>,
     );
   }, [networkFeeSettings]);
 
@@ -62,11 +73,24 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   }, [changedGasInfo]);
 
   const isSelected = useCallback(
-    (settingInfo: NetworkFeeSettingInfo) => {
-      return settingInfo.settingType === networkFeeSettingType;
+    (settingInfo: { settingType: NetworkFeeSettingType; gasInfo?: GasInfo | undefined }) => {
+      return settingInfo?.settingType === networkFeeSettingType;
     },
     [networkFeeSettingType],
   );
+
+  const onChangeGasAdjustment = useCallback((value: string) => {
+    if (BigNumber(value).isNaN()) {
+      return;
+    }
+
+    // 3 is the maximum value of gas adjustment
+    if (BigNumber(value).isGreaterThan(3)) {
+      return;
+    }
+
+    setGasAdjustment(value);
+  }, []);
 
   return (
     <NetworkFeeSettingWrapper>
@@ -86,16 +110,26 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
               selected={isSelected(settingInfo)}
               isLoading={!isFetchedPriceTiers}
               info={settingInfo}
-              select={(): void => setNetworkFeeSetting(settingInfo)}
+              select={(): void =>
+                setNetworkFeeSetting({
+                  settingType: settingInfo.settingType,
+                  gasInfo: {
+                    ...(settingInfo.gasInfo || {
+                      gasFee: 0,
+                      gasPrice: 0,
+                      gasUsed: 0,
+                      gasWanted: 0,
+                    }),
+                  },
+                })
+              }
             />
           ))}
         </div>
 
-        {/* We need more information about the gas estimation.
         <div className='custom-network-fee-input-wrapper'>
-          <NetworkFeeCustomInput value={gasAdjustment} onChange={onChangeCustomFee} />
-        </div> 
-        */}
+          <NetworkFeeCustomInput value={gasAdjustment} onChange={onChangeGasAdjustment} />
+        </div>
       </div>
 
       <BottomFixedButton
