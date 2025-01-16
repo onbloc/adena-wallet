@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { useTheme } from 'styled-components';
 
-import { Text, SubHeader } from '@components/atoms';
-import { ApproveInjectionLoading, BottomFixedButtonGroup } from '@components/molecules';
 import IconArrowRight from '@assets/arrowL-right-bold.svg';
-import { ApproveChangingNetworkWrapper } from './approve-changing-network.styles';
+import { SubHeader, Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
 import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item';
+import { ApproveChangingNetworkWrapper } from './approve-changing-network.styles';
 
 export interface ChangingNetworkInfo {
   logo?: string;
@@ -33,7 +33,6 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   changeNetwork,
   cancel,
   onResponse,
-  onTimeout,
 }) => {
   const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name]);
 
@@ -50,9 +49,11 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
     changeNetwork();
   }, [changeable, changeNetwork]);
 
-  if (processing) {
-    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
-  }
+  useEffect(() => {
+    if (done) {
+      onResponse();
+    }
+  }, [done, onResponse]);
 
   return (
     <ApproveChangingNetworkWrapper>
@@ -74,13 +75,14 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
         <ApproveChangingNetworkItem {...toChain} />
       </div>
 
-      <BottomFixedButtonGroup
+      <BottomFixedLoadingButtonGroup
         leftButton={{
           text: 'Cancel',
           onClick: onClickCancel,
         }}
         rightButton={{
           primary: true,
+          loading: processing,
           disabled: changeable === false,
           text: 'Switch',
           onClick: onClickSwitch,

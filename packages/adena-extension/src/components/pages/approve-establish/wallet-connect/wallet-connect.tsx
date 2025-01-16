@@ -1,12 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
-import { Text } from '@components/atoms';
-import {
-  ApproveInjectionLoading,
-  ApproveLoading,
-  BottomFixedButtonGroup,
-} from '@components/molecules';
 import DefaultFavicon from '@assets/favicon-default.svg';
+import { Text } from '@components/atoms';
+import { ApproveLoading, BottomFixedLoadingButtonGroup } from '@components/molecules';
 import { WalletConnectWrapper } from './wallet-connect.styles';
 
 export interface WalletConnectProps {
@@ -32,15 +28,16 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
   onClickConnect,
   onClickCancel,
   onResponse,
-  onTimeout,
 }) => {
   if (loading) {
     return <ApproveLoading rightButtonText='Connect' />;
   }
 
-  if (processing) {
-    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
-  }
+  useEffect(() => {
+    if (done) {
+      onResponse();
+    }
+  }, [done, onResponse]);
 
   return (
     <WalletConnectWrapper>
@@ -74,7 +71,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         <span>Only connect to websites you trust.</span>
       </div>
 
-      <BottomFixedButtonGroup
+      <BottomFixedLoadingButtonGroup
         filled
         leftButton={{
           text: 'Cancel',
@@ -82,6 +79,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         }}
         rightButton={{
           primary: true,
+          loading: processing,
           text: 'Connect',
           onClick: onClickConnect,
         }}

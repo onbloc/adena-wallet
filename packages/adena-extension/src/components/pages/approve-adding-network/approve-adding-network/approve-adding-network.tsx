@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import { SubHeader, WarningBox } from '@components/atoms';
-import { ApproveInjectionLoading, BottomFixedButtonGroup } from '@components/molecules';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
 
-import { ApproveAddingNetworkWrapper } from './approve-adding-network.styles';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table';
+import { ApproveAddingNetworkWrapper } from './approve-adding-network.styles';
 
 export interface AddingNetworkInfo {
   chainId: string;
@@ -34,13 +34,14 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   cancel,
   approve,
   onResponse,
-  onTimeout,
 }) => {
   const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
 
-  if (processing) {
-    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
-  }
+  useEffect(() => {
+    if (done) {
+      onResponse();
+    }
+  }, [done, onResponse]);
 
   return (
     <ApproveAddingNetworkWrapper>
@@ -59,7 +60,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         />
       </div>
 
-      <BottomFixedButtonGroup
+      <BottomFixedLoadingButtonGroup
         filled
         leftButton={{
           text: 'Cancel',
@@ -67,6 +68,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         }}
         rightButton={{
           primary: true,
+          loading: processing,
           disabled: approvable === false,
           text: 'Approve',
           onClick: approve,
