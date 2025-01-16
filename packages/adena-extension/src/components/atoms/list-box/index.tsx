@@ -78,22 +78,19 @@ const Wrapper = styled.div<ListBoxStyleProps>`
     if (mode === ListHierarchy.Static) return modeVariants.static;
     return modeVariants.default;
   }}
+  flex-shrink: 0;
   width: 100%;
   height: 60px;
   padding: ${({ padding }): CSSProperties['padding'] => (padding ? padding : '0px 17px 0px 14px')};
   transition: all 0.4s ease;
-  cursor: ${({ cursor }): CSSProperties['cursor'] => cursor ?? 'pointer'};
   border-radius: 18px;
+  cursor: ${({ cursor }): CSSProperties['cursor'] => cursor ?? 'pointer'};
+
   .logo {
     margin-right: 12px;
   }
+
   & + & {
     margin-top: 12px;
   }
-  /* & > :nth-child(2) {
-    margin-left: 12px;
-  }
-  & > :nth-child(3) {
-    margin-left: auto;
-  } */
 `;
