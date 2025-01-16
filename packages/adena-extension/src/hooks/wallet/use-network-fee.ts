@@ -99,40 +99,19 @@ export const useNetworkFee = (
     return Number(currentGasFeeAmount);
   }, [currentGasInfo, document, selectedTier]);
 
-  const currentEstimateGas = useMemo(() => {
-    if (!gasPriceTiers) {
-      return null;
-    }
-
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
-
-    return current?.gasInfo || null;
-  }, [currentSettingType, gasPriceTiers]);
-
   const networkFee = useMemo(() => {
-    if (!selectedTier) {
-      return {
-        amount: BigNumber(document?.fee.amount?.[0].amount || 0)
-          .shiftedBy(-GasToken.decimals)
-          .toFixed(GasToken.decimals)
-          .replace(/(\.\d*?)0+$/, '$1')
-          .replace(/\.$/, ''),
-        denom: document?.fee.amount?.[0].denom || GasToken.symbol,
-      };
-    }
-
-    if (!currentEstimateGas) {
+    if (!currentGasInfo) {
       return null;
     }
 
-    if (currentEstimateGas.hasError) {
+    if (currentGasInfo.hasError) {
       return {
         amount: '0',
-        denom: GasToken.symbol,
+        denom: '',
       };
     }
 
-    const networkFeeAmount = BigNumber(currentEstimateGas.gasFee || 0)
+    const networkFeeAmount = BigNumber(currentGasInfo.gasFee)
       .shiftedBy(-GasToken.decimals)
       .toFixed(GasToken.decimals)
       .replace(/(\.\d*?)0+$/, '$1')
@@ -142,7 +121,7 @@ export const useNetworkFee = (
       amount: networkFeeAmount,
       denom: GasToken.symbol,
     };
-  }, [currentEstimateGas, selectedTier, document]);
+  }, [currentGasInfo]);
 
   const setNetworkFeeSetting = useCallback((settingInfo: NetworkFeeSettingInfo): void => {
     setNetworkFeeSettingType(settingInfo.settingType);

@@ -122,16 +122,9 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
   }
 
   .fee-amount-wrapper {
+    ${mixins.flex({ justify: 'flex-start' })};
     width: 100%;
-    min-height: 48px;
-    border-radius: 30px;
-    padding: 10px 18px;
     margin-bottom: 8px;
-    background-color: ${getTheme('neutral', '_9')};
-    border: 1px solid ${getTheme('neutral', '_7')};
-    ${fonts.body2Reg};
-    ${({ isErrorNetworkFee, theme }): string | false =>
-      isErrorNetworkFee && `border-color: ${theme.red._5};`}
   }
 
   .error-message {

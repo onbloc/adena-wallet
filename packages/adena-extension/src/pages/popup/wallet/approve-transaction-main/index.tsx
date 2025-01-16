@@ -100,8 +100,8 @@ const ApproveTransactionContainer: React.FC = () => {
   const displayNetworkFee = useMemo(() => {
     if (!networkFee) {
       return {
-        amount: '0',
-        denom: GasToken.symbol,
+        amount: '',
+        denom: '',
       };
     }
 
@@ -380,7 +380,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasFeeRawAmount]);
+  }, [memo, useNetworkFeeReturn.currentGasInfo]);
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
