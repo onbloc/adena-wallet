@@ -1,11 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
-import {
-  ApproveInjectionLoading,
-  ApproveLoading,
-  BottomFixedButtonGroup,
-} from '@components/molecules';
+import { ApproveLoading, BottomFixedLoadingButtonGroup } from '@components/molecules';
 
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
@@ -64,7 +60,6 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   changeMemo,
   onToggleTransactionData,
   onResponse,
-  onTimeout,
   onClickConfirm,
   onClickCancel,
 }) => {
@@ -95,12 +90,14 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
 
+  useEffect(() => {
+    if (done) {
+      onResponse();
+    }
+  }, [done, onResponse]);
+
   if (loading) {
     return <ApproveLoading rightButtonText='Approve' />;
-  }
-
-  if (processing) {
-    return <ApproveInjectionLoading done={done} onResponse={onResponse} onTimeout={onTimeout} />;
   }
 
   if (openedNetworkFeeSetting) {
@@ -198,7 +195,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <BottomFixedButtonGroup
+      <BottomFixedLoadingButtonGroup
         filled
         leftButton={{
           text: 'Cancel',
@@ -208,6 +205,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           primary: true,
           disabled: isErrorNetworkFee,
           text: 'Approve',
+          loading: processing,
           onClick: onClickConfirm,
         }}
       />

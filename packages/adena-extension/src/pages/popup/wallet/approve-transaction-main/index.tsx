@@ -97,6 +97,20 @@ const ApproveTransactionContainer: React.FC = () => {
     return true;
   }, [requestData?.data?.memo]);
 
+  const displayNetworkFee = useMemo(() => {
+    if (!networkFee) {
+      return {
+        amount: '0',
+        denom: GasToken.symbol,
+      };
+    }
+
+    return {
+      amount: networkFee.amount,
+      denom: GasToken.symbol,
+    };
+  }, [networkFee]);
+
   const isErrorNetworkFee = useMemo(() => {
     if (!networkFee) {
       return false;
@@ -254,7 +268,7 @@ const ApproveTransactionContainer: React.FC = () => {
         BroadcastTxCommitResult | BroadcastTxSyncResult | TM2Error | null
       >((resolve) => {
         transactionService
-          .sendTransaction(walletInstance, currentAccount, signed, true)
+          .sendTransaction(walletInstance, currentAccount, signed, false)
           .then(resolve)
           .catch((error: TM2Error | Error) => {
             resolve(error);
@@ -406,7 +420,7 @@ const ApproveTransactionContainer: React.FC = () => {
       done={done}
       logo={favicon}
       isErrorNetworkFee={isErrorNetworkFee}
-      networkFee={networkFee}
+      networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}

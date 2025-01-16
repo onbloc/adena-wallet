@@ -12,6 +12,7 @@ import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-
 
 export interface UseNetworkFeeReturn {
   isFetchedPriceTiers: boolean;
+  isFetchedEstimateGasInfo: boolean;
   currentGasInfo: GasInfo | null;
   currentGasFeeRawAmount: number;
   changedGasInfo: GasInfo | null;
@@ -39,7 +40,7 @@ export const useNetworkFee = (
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
 
   const { data: defaultEstimatedGasInfo } = useGetDefaultEstimateGasInfo(document);
-  const { data: estimatedGasInfo } = useGetEstimateGasInfo(
+  const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
     document,
     defaultEstimatedGasInfo?.gasUsed || 0,
     defaultEstimatedGasInfo?.gasPrice || 0,
@@ -114,7 +115,8 @@ export const useNetworkFee = (
         amount: BigNumber(document?.fee.amount?.[0].amount || 0)
           .shiftedBy(-GasToken.decimals)
           .toFixed(GasToken.decimals)
-          .replace(/0+$/, ''),
+          .replace(/(\.\d*?)0+$/, '$1')
+          .replace(/\.$/, ''),
         denom: document?.fee.amount?.[0].denom || GasToken.symbol,
       };
     }
@@ -130,16 +132,17 @@ export const useNetworkFee = (
       };
     }
 
-    const networkFeeAmount = BigNumber(currentEstimateGas.gasFee)
-      .shiftedBy(GasToken.decimals * -1)
-      .toFixed(6, BigNumber.ROUND_UP)
-      .replace(/0+$/, '');
+    const networkFeeAmount = BigNumber(currentEstimateGas.gasFee || 0)
+      .shiftedBy(-GasToken.decimals)
+      .toFixed(GasToken.decimals)
+      .replace(/(\.\d*?)0+$/, '$1')
+      .replace(/\.$/, '');
 
     return {
       amount: networkFeeAmount,
       denom: GasToken.symbol,
     };
-  }, [currentEstimateGas, selectedTier]);
+  }, [currentEstimateGas, selectedTier, document]);
 
   const setNetworkFeeSetting = useCallback((settingInfo: NetworkFeeSettingInfo): void => {
     setNetworkFeeSettingType(settingInfo.settingType);
@@ -151,6 +154,7 @@ export const useNetworkFee = (
   }, [changedSettingType]);
 
   return {
+    isFetchedEstimateGasInfo,
     isFetchedPriceTiers,
     currentGasInfo,
     currentGasFeeRawAmount,
