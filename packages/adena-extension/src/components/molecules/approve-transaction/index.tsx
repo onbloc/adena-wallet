@@ -155,13 +155,15 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         )}
       </div>
 
-      <NetworkFee
-        value={networkFee?.amount || ''}
-        denom={networkFee?.denom || ''}
-        isError={isErrorNetworkFee}
-        errorMessage='Insufficient network fee'
-        onClickSetting={onClickNetworkFeeSetting}
-      />
+      <div className='fee-amount-wrapper'>
+        <NetworkFee
+          value={networkFee?.amount || ''}
+          denom={networkFee?.denom || ''}
+          isError={isErrorNetworkFee}
+          errorMessage='Insufficient network fee'
+          onClickSetting={onClickNetworkFeeSetting}
+        />
+      </div>
 
       <div className='transaction-data-wrapper'>
         <Button

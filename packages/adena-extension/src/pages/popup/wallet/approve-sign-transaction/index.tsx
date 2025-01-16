@@ -69,6 +69,20 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [memo, setMemo] = useState('');
   const useNetworkFeeReturn = useNetworkFee(document, true);
 
+  const displayNetworkFee = useMemo(() => {
+    if (!useNetworkFeeReturn.networkFee) {
+      return {
+        amount: '',
+        denom: '',
+      };
+    }
+
+    return {
+      amount: useNetworkFeeReturn.networkFee.amount,
+      denom: GasToken.symbol,
+    };
+  }, [useNetworkFeeReturn.networkFee]);
+
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
   const done = useMemo(() => processType === 'DONE', [processType]);
@@ -309,7 +323,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasFeeRawAmount]);
+  }, [memo, useNetworkFeeReturn.currentGasInfo]);
 
   return (
     <ApproveTransaction
@@ -322,7 +336,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      networkFee={useNetworkFeeReturn.networkFee}
+      networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}

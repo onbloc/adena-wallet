@@ -16,7 +16,7 @@ import {
 } from 'adena-module';
 
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { DEFAULT_GAS_FEE } from '@common/constants/tx.constant';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -73,7 +73,7 @@ export class TransactionService {
     chainId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[],
-    gasWanted: number,
+    gasWanted?: number,
     gasFee?: number,
     memo?: string | undefined,
   ): Promise<Document> => {
@@ -92,7 +92,7 @@ export class TransactionService {
             amount: (gasFee || DEFAULT_GAS_FEE).toString(),
           },
         ],
-        gas: gasWanted.toString(),
+        gas: (gasWanted || DEFAULT_GAS_WANTED).toString(),
       },
       chain_id: chainId,
       memo: memo || '',

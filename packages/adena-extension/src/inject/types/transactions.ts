@@ -15,8 +15,6 @@ export type ContractMessage = {
 
 export type TransactionParams = {
   messages: ContractMessage[];
-  gasFee: number;
-  gasWanted: number;
   memo?: string;
 };
 
