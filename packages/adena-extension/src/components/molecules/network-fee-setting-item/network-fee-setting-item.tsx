@@ -1,4 +1,6 @@
-import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+import { GasToken } from '@common/constants/token.constant';
+import { GasInfo, NetworkFeeSettingType } from '@types';
+import BigNumber from 'bignumber.js';
 import React, { useMemo } from 'react';
 import { TokenBalance } from '../token-balance';
 import {
@@ -10,7 +12,10 @@ export interface NetworkFeeSettingItemProps {
   selected: boolean;
   isLoading: boolean;
   select: () => void;
-  info: NetworkFeeSettingInfo;
+  info: {
+    settingType: NetworkFeeSettingType;
+    gasInfo?: GasInfo | undefined;
+  };
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
@@ -30,26 +35,32 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     [info.settingType],
   );
 
-  const hasGasPrice = !!info && !!info.gasPrice;
+  const hasGasInfo = !!info && !!info.gasInfo;
 
-  const gasPriceAmount = useMemo(() => {
-    if (!hasGasPrice) {
+  const gasInfoAmount = useMemo(() => {
+    if (!hasGasInfo || !info?.gasInfo) {
       return '';
     }
 
-    return info?.gasPrice?.estimatedAmount || '';
-  }, [info.gasPrice]);
+    return (
+      BigNumber(info.gasInfo.gasFee)
+        .shiftedBy(GasToken.decimals * -1)
+        .toFixed(6, BigNumber.ROUND_UP)
+        .toString()
+        .replace(/0+$/, '') || ''
+    );
+  }, [info.gasInfo]);
 
-  const gasPriceDenomination = useMemo(() => {
-    if (!hasGasPrice) {
+  const gasInfoDenomination = useMemo(() => {
+    if (!hasGasInfo) {
       return '-';
     }
 
-    return info?.gasPrice?.denom || '';
-  }, [info.gasPrice]);
+    return GasToken.symbol;
+  }, [info.gasInfo]);
 
   const onClickItem = (): void => {
-    if (!hasGasPrice) {
+    if (!hasGasInfo) {
       return;
     }
 
@@ -70,10 +81,10 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     <NetworkFeeSettingItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
       <span className='title'>{settingTypeName}</span>
 
-      {hasGasPrice ? (
+      {hasGasInfo ? (
         <TokenBalance
-          value={gasPriceAmount}
-          denom={gasPriceDenomination}
+          value={gasInfoAmount}
+          denom={gasInfoDenomination}
           fontStyleKey='body2Reg'
           minimumFontSize='11px'
           orientation='HORIZONTAL'

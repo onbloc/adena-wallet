@@ -1,27 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import { NetworkFeeCustomInputWrapper } from './network-fee-custom-input.styles';
+import {
+  NetworkFeeCustomInputContainer,
+  NetworkFeeCustomInputWrapper,
+} from './network-fee-custom-input.styles';
 
 export interface NetworkFeeCustomInputProps {
   value: string;
-  onChange: (value: string) => void;
+  changeValue: (value: string) => string;
 }
 
-const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, onChange }) => {
+const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, changeValue }) => {
+  const [fee, setFee] = useState(value);
+
   const onChangeCustomFee = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    onChange(e.target.value);
+    setFee(e.target.value);
+  };
+
+  const onFocusOut = (): void => {
+    const changedValue = changeValue(fee);
+    setFee(changedValue);
   };
 
   return (
-    <NetworkFeeCustomInputWrapper>
-      <input
-        className='fee-input'
-        type='number'
-        value={value}
-        onChange={onChangeCustomFee}
-        placeholder='Enter Custom Network Fee'
-      />
-    </NetworkFeeCustomInputWrapper>
+    <NetworkFeeCustomInputContainer>
+      <span className='description'>{'Gas Adjustment'}</span>
+
+      <NetworkFeeCustomInputWrapper>
+        <input
+          className='fee-input'
+          type='number'
+          value={fee}
+          onChange={onChangeCustomFee}
+          onBlur={onFocusOut}
+          placeholder='Enter Custom Network Fee'
+        />
+      </NetworkFeeCustomInputWrapper>
+    </NetworkFeeCustomInputContainer>
   );
 };
 

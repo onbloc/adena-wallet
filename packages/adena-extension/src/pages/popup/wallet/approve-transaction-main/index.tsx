@@ -192,19 +192,20 @@ const ApproveTransactionContainer: React.FC = () => {
     }
 
     const currentMemo = memo;
-    const currentGasPrice = useNetworkFeeReturn.currentGasPriceRawAmount;
+    const currentGasFee = useNetworkFeeReturn.currentGasFeeRawAmount;
+    const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
     const updatedDocument: Document = {
       ...document,
       memo: currentMemo,
       fee: {
-        ...document.fee,
         amount: [
           {
-            amount: currentGasPrice.toString(),
+            amount: currentGasFee.toString(),
             denom: GasToken.denom,
           },
         ],
+        gas: currentGasWanted.toString(),
       },
     };
 
@@ -365,7 +366,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasPriceRawAmount]);
+  }, [memo, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(

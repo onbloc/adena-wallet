@@ -51,20 +51,22 @@ describe('ApproveTransaction Component', () => {
       },
       useNetworkFeeReturn: {
         isFetchedPriceTiers: true,
-        currentGasPrice: {
-          amount: '0.0048',
-          denom: 'GNOT',
+        currentGasInfo: {
+          gasFee: 0.00000048,
+          gasPrice: 0.00000000048,
+          gasUsed: 100000,
+          gasWanted: 150000,
         },
         networkFee: {
           amount: '0.0048',
           denom: 'GNOT',
         },
-        gasPriceRatio: '1.5',
-        setGasPriceRatio: () => {
+        gasAdjustment: '1.5',
+        setGasAdjustment: () => {
           return;
         },
-        currentGasPriceRawAmount: 4800,
-        changedGasPrice: null,
+        currentGasFeeRawAmount: 4800,
+        changedGasInfo: null,
         networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
         networkFeeSettings: [],
         setNetworkFeeSetting: () => {

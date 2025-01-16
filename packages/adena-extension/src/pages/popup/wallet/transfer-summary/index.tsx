@@ -6,7 +6,6 @@ import styled from 'styled-components';
 
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { GasToken } from '@common/constants/token.constant';
-import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
@@ -136,8 +135,8 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      DEFAULT_GAS_WANTED,
-      useNetworkFeeReturn.currentGasPriceRawAmount,
+      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
+      useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,
     );
 
@@ -150,19 +149,19 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     const memo = summaryInfo.memo;
-    const gasFee = useNetworkFeeReturn.currentGasPriceRawAmount;
+    const gasFee = useNetworkFeeReturn.currentGasFeeRawAmount;
 
     setDocument({
       ...document,
       memo,
       fee: {
-        ...document.fee,
         amount: [
           {
             denom: GasToken.denom,
             amount: gasFee.toString(),
           },
         ],
+        gas: useNetworkFeeReturn.currentGasInfo?.gasWanted.toString() || '0',
       },
     });
   };
@@ -186,9 +185,16 @@ const TransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
-  }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
+  }, [
+    summaryInfo,
+    currentAccount,
+    currentNetwork,
+    networkFee,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+    useNetworkFeeReturn.currentGasInfo,
+  ]);
 
-  const transfer = useCallback(async () => {
+  const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount) {
       return false;
     }
@@ -202,7 +208,7 @@ const TransferSummaryContainer: React.FC = () => {
       return transferByLedger();
     }
     return transferByCommon();
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  };
 
   const transferByCommon = useCallback(async () => {
     try {
@@ -215,7 +221,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
     setIsSent(false);
     return false;
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  }, [createTransaction]);
 
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
@@ -223,7 +229,7 @@ const TransferSummaryContainer: React.FC = () => {
       navigate(RoutePath.TransferLedgerLoading, { state: { document } });
     }
     return true;
-  }, [summaryInfo, currentAccount, isSent, hasNetworkFee]);
+  }, [createDocument]);
 
   const onClickBack = useCallback(() => {
     setMemorizedTransferInfo(summaryInfo);
@@ -268,7 +274,7 @@ const TransferSummaryContainer: React.FC = () => {
     summaryInfo,
     currentAccount,
     currentNetwork,
-    useNetworkFeeReturn.currentGasPriceRawAmount,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
   ]);
 
   return (
