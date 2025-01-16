@@ -192,19 +192,20 @@ const ApproveSignTransactionContainer: React.FC = () => {
     }
 
     const currentMemo = memo;
-    const currentGasPrice = useNetworkFeeReturn.currentGasPriceRawAmount;
+    const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
+    const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
     const updatedDocument: Document = {
       ...document,
       memo: currentMemo,
       fee: {
-        ...document.fee,
         amount: [
           {
             amount: currentGasPrice.toString(),
             denom: GasToken.denom,
           },
         ],
+        gas: currentGasWanted.toString(),
       },
     };
 
@@ -308,7 +309,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasPriceRawAmount]);
+  }, [memo, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   return (
     <ApproveTransaction

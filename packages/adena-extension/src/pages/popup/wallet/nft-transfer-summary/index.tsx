@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
@@ -68,8 +67,8 @@ const NFTTransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      DEFAULT_GAS_WANTED,
-      useNetworkFeeReturn.currentGasPriceRawAmount,
+      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
+      useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,
     );
 
@@ -195,7 +194,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
     summaryInfo,
     currentAccount,
     currentNetwork,
-    useNetworkFeeReturn.currentGasPriceRawAmount,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
   ]);
 
   return (

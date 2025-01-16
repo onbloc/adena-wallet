@@ -40,7 +40,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   const { convertDenom } = useTokenMetainfo();
 
   const [document, setDocument] = useState<Document | null>(null);
-  const { networkFee } = useNetworkFee(document);
+  const { currentGasInfo, networkFee } = useNetworkFee(document);
 
   useEffect(() => {
     if (!currentAddress || !currentBalance || !tokenMetainfo) {
@@ -48,8 +48,8 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     }
 
     const amount = BigNumber(currentBalance.amount.value)
-      .shiftedBy(tokenMetainfo?.decimals)
-      .toFixed(0, 1);
+      .multipliedBy(0.9)
+      .toFixed(tokenMetainfo.decimals || 6);
 
     setDocument(
       makeTransferDocument({
@@ -63,7 +63,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
 
   useEffect(() => {
-    if (!networkFee || !currentBalance) {
+    if (!currentGasInfo || !currentBalance) {
       return;
     }
 
@@ -74,7 +74,9 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         'COMMON',
       );
 
-      const availAmountNumber = BigNumber(convertedBalance.value).minus(networkFee.amount);
+      const gasWantedBN = BigNumber(currentGasInfo.gasWanted).shiftedBy(GasToken.decimals * -1);
+
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(gasWantedBN);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
       } else {
@@ -88,7 +90,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         setAvailAmountNumber(BigNumber(0));
       }
     }
-  }, [networkFee, currentBalance]);
+  }, [currentGasInfo, currentBalance]);
 
   const updateCurrentBalance = useCallback(async () => {
     if (!currentAddress) {
@@ -142,16 +144,16 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   }, []);
 
   const onClickMax = useCallback(() => {
-    if (networkFee) {
+    if (currentGasInfo) {
       setAmount(availAmountNumber.toString());
     }
 
     setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, networkFee]);
+  }, [availAmountNumber, currentGasInfo]);
 
   const validateBalanceInput = useCallback(() => {
     if (
-      BigNumber(amount || 0).isGreaterThan(availAmountNumber) ||
+      BigNumber(amount || 0).isGreaterThan(currentBalance?.amount.value || 0) ||
       BigNumber(amount || 0).isLessThanOrEqualTo(0)
     ) {
       setHasError(true);
@@ -160,7 +162,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     }
     clearError();
     return true;
-  }, [availAmountNumber, amount]);
+  }, [currentBalance, amount]);
 
   return {
     hasError,

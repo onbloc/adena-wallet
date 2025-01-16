@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import { SubHeader } from '@components/atoms';
-import { GasPrice, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
+import { GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 
 import { BottomFixedButton } from '@components/molecules';
 import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
@@ -11,11 +11,11 @@ import { NetworkFeeSettingWrapper } from './network-fee-setting.styles';
 
 export interface NetworkFeeSettingProps {
   isFetchedPriceTiers: boolean;
-  changedGasPrice: GasPrice | null;
+  changedGasInfo: GasInfo | null;
   networkFeeSettingType: NetworkFeeSettingType;
   setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
-  gasPriceRatio: string;
-  setGasPriceRatio: (ratio: string) => void;
+  gasAdjustment: string;
+  setGasAdjustment: (ratio: string) => void;
   networkFeeSettings: NetworkFeeSettingInfo[];
   onClickBack: () => void;
   onClickSave: () => void;
@@ -29,7 +29,7 @@ const settingTypesOfList: NetworkFeeSettingType[] = [
 
 const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   isFetchedPriceTiers,
-  changedGasPrice,
+  changedGasInfo,
   networkFeeSettingType,
   setNetworkFeeSetting,
   networkFeeSettings,
@@ -54,12 +54,12 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   }, [settingInfoMap]);
 
   const enabledSaveButton = useMemo(() => {
-    if (!changedGasPrice?.amount) {
+    if (!changedGasInfo) {
       return false;
     }
 
-    return BigNumber(changedGasPrice.amount).gt(0);
-  }, [changedGasPrice]);
+    return BigNumber(changedGasInfo.gasFee).gt(0);
+  }, [changedGasInfo]);
 
   const isSelected = useCallback(
     (settingInfo: NetworkFeeSettingInfo) => {
@@ -93,7 +93,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
 
         {/* We need more information about the gas estimation.
         <div className='custom-network-fee-input-wrapper'>
-          <NetworkFeeCustomInput value={gasPriceRatio} onChange={onChangeCustomFee} />
+          <NetworkFeeCustomInput value={gasAdjustment} onChange={onChangeCustomFee} />
         </div> 
         */}
       </div>

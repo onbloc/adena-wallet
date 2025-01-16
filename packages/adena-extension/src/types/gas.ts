@@ -6,11 +6,7 @@ export enum NetworkFeeSettingType {
 
 export interface NetworkFeeSettingInfo {
   settingType: NetworkFeeSettingType;
-  gasPrice: {
-    amount: string;
-    denom: string;
-    estimatedAmount: string;
-  };
+  gasInfo: GasInfo;
 }
 
 export interface GasPriceTierInfo {
@@ -27,4 +23,11 @@ export interface GasPrice {
 export interface NetworkFee {
   amount: string;
   denom: string;
+}
+
+export interface GasInfo {
+  gasFee: number;
+  gasUsed: number;
+  gasWanted: number;
+  gasPrice: number;
 }
