@@ -8,7 +8,7 @@ import styled, { useTheme } from 'styled-components';
 import { PasswordValidationError } from '@common/errors';
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { validateEmptyPassword } from '@common/validation';
-import { Button, DefaultInput, ErrorText, Text } from '@components/atoms';
+import { Button, DefaultInput, Text } from '@components/atoms';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
@@ -23,9 +23,9 @@ import LoadingApproveTransaction from './loading-approve-transaction';
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
-  max-width: 380px;
-  min-height: 514px;
-  padding: 29px 20px 24px;
+  max-width: 100%;
+  min-height: 100%;
+  padding: 29px 20px 72px;
 `;
 
 export const ApproveLogin = (): JSX.Element => {
