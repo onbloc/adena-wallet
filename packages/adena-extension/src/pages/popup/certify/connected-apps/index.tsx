@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
+import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
+import styled, { useTheme } from 'styled-components';
 
-import { Text, ListBox, ListHierarchy } from '@components/atoms';
-import { LoadingNft, CloseShadowButton } from '@components/molecules';
-import { getTheme } from '@styles/theme';
-import { WalletState } from '@states';
-import DefaultImage from '@assets/favicon-default-small.svg';
 import disconnected from '@assets/disconnected.svg';
+import DefaultImage from '@assets/favicon-default-small.svg';
+import { ListBox, ListHierarchy, Text } from '@components/atoms';
+import { CloseShadowButton, LoadingNft } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { WalletState } from '@states';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { getTheme } from '@styles/theme';
 
 export const ConnectedApps = (): JSX.Element => {
   const theme = useTheme();
@@ -83,6 +83,9 @@ export const ConnectedApps = (): JSX.Element => {
               No connections
             </Text>
           )}
+
+          <div className='empty-box' />
+
           <CloseShadowButton onClick={goBack} />
         </>
       ) : (
@@ -119,6 +122,14 @@ const Wrapper = styled.main`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .empty-box {
+    ${mixins.flex({ direction: 'row' })};
+    flex-shrink: 0;
+    width: 100%;
+    height: 96px;
+    margin-top: 20px;
   }
 `;
 
