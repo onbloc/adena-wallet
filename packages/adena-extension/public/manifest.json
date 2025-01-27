@@ -31,6 +31,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; img-src 'self' https: data:; font-src data:; style-src 'self' 'unsafe-inline'; connect-src 'self' data: https: http://127.0.0.1:*; frame-src https:;"
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' https:; object-src: 'none'; font-src data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http://127.0.0.1:26657; base-uri: 'self'; form-action: 'none';"
   }
 }
