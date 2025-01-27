@@ -169,7 +169,8 @@ export class AdenaExecutor {
       hostname: window.location.hostname,
       key: this.eventKey,
     };
-    window.postMessage(this.eventMessage, '*');
+
+    window.postMessage(this.eventMessage, window.location.origin);
     this.messages[this.eventKey] = {
       request: this.eventMessage,
       response: undefined,

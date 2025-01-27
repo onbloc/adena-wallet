@@ -5,7 +5,9 @@ const sendMessage = (event: MessageEvent): void => {
   const message = event.data;
   chrome.runtime.sendMessage(message, (response) => {
     Promise.resolve(response).then((result) => {
-      event.source?.postMessage(result);
+      event.source?.postMessage(result, {
+        targetOrigin: event.origin,
+      });
     });
     return true;
   });
