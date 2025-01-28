@@ -3,7 +3,7 @@
 //
 // libsodium.js API: https://gist.github.com/webmaster128/b2dbe6d54d36dd168c9fabf441b9b09c
 
-import sodium from 'libsodium-wrappers';
+import sodium from 'libsodium-wrappers-sumo';
 import { isNonNullObject } from '../utils';
 
 export interface Argon2idOptions {
@@ -40,6 +40,7 @@ export class Argon2id {
     options: Argon2idOptions,
   ): Promise<Uint8Array> {
     await sodium.ready;
+    console.log(sodium);
     return sodium.crypto_pwhash(
       options.outputLength,
       password,
