@@ -6140,14 +6140,14 @@ __metadata:
   linkType: hard
 
 "@types/express-serve-static-core@npm:*, @types/express-serve-static-core@npm:^5.0.0":
-  version: 5.0.5
-  resolution: "@types/express-serve-static-core@npm:5.0.5"
+  version: 5.0.6
+  resolution: "@types/express-serve-static-core@npm:5.0.6"
   dependencies:
     "@types/node": "*"
     "@types/qs": "*"
     "@types/range-parser": "*"
     "@types/send": "*"
-  checksum: d66e603674fafabab94430fb5665c9bda5a867373b8e29f30631a43a29dd246057fe584a61395b3472b45cdb23caeeef4931b781b1030fa5ebb2b38ccad27108
+  checksum: bc3ea44923da7d1ffaa29eff7cc41a2b05f7340e8879fe9ee40717859937d73bcd635fcc0f8232f66af942624cc48bff42971e9e2c4075db6afe478534245855
   languageName: node
   linkType: hard
 
@@ -6355,7 +6355,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/libsodium-wrappers@npm:0.7.14":
+"@types/libsodium-wrappers-sumo@npm:0.7.8":
+  version: 0.7.8
+  resolution: "@types/libsodium-wrappers-sumo@npm:0.7.8"
+  dependencies:
+    "@types/libsodium-wrappers": "*"
+  checksum: 878106ea886da94e3d0136f2af437dc90327248f72c2877400f7249b24a397b8b85bfdc3491d8f0d4e17b7f80bad02f242f2841e8cc4d6045efd3c8eb37bd9e7
+  languageName: node
+  linkType: hard
+
+"@types/libsodium-wrappers@npm:*":
   version: 0.7.14
   resolution: "@types/libsodium-wrappers@npm:0.7.14"
   checksum: 565d178cd12aa5f7abc03149e50a962450d797e995935368ca1abe1cb5a5b96d81f3115a91f6b6f7dcff210d25f104003708b4bfc5a34751f23460efeb169fa4
@@ -7947,7 +7956,7 @@ __metadata:
     "@types/bn.js": 5.1.5
     "@types/elliptic": 6.4.18
     "@types/jest": 29.5.12
-    "@types/libsodium-wrappers": 0.7.14
+    "@types/libsodium-wrappers-sumo": 0.7.8
     "@typescript-eslint/eslint-plugin": 5.62.0
     "@typescript-eslint/parser": 5.62.0
     bech32: 2.0.0
@@ -7958,7 +7967,7 @@ __metadata:
     eslint: 8.56.0
     jest: 29.7.0
     ledger-cosmos-js: 2.1.8
-    libsodium-wrappers: 0.7.14
+    libsodium-wrappers-sumo: 0.7.15
     lodash.merge: 4.6.2
     npm-run-all: 4.1.5
     prettier: 3.2.5
@@ -15294,28 +15303,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"libsodium-wrappers-sumo@npm:^0.7.11":
+"libsodium-wrappers-sumo@npm:0.7.15, libsodium-wrappers-sumo@npm:^0.7.11":
   version: 0.7.15
   resolution: "libsodium-wrappers-sumo@npm:0.7.15"
   dependencies:
     libsodium-sumo: ^0.7.15
   checksum: 5e2e72c9abbc8cb5be62afb82cdf96694b0dce0d9878dec9b2dce62891aac753f7f76e6669d901eab6d7ccabc7f23e3085ee0eea0dde8dcc48af7e1e840002e5
-  languageName: node
-  linkType: hard
-
-"libsodium-wrappers@npm:0.7.14":
-  version: 0.7.14
-  resolution: "libsodium-wrappers@npm:0.7.14"
-  dependencies:
-    libsodium: ^0.7.14
-  checksum: 874d3762bf05e2e49565d4554f955390fe48792b18fff5a990ecb85bed68e3d86fb4300b20ce2171e7e4b56c6ed56f30b2b58556e2f661b76b2dd7b6fa6b6b1b
-  languageName: node
-  linkType: hard
-
-"libsodium@npm:^0.7.14":
-  version: 0.7.15
-  resolution: "libsodium@npm:0.7.15"
-  checksum: c641fee43415c8c516c531303439ab89cd1e72de56e3f9fd9e07f695a2cf0fe8f3095f6015db5e351ae4693a1ba50ac18cb19b3e0d241be0546b82319166abe0
   languageName: node
   linkType: hard
 
