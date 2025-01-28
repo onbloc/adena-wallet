@@ -1,9 +1,9 @@
 import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
-import styled, { css, FlattenSimpleInterpolation, useTheme } from 'styled-components';
+import styled, { css, RuleSet, useTheme } from 'styled-components';
 
-import { WebText } from '../web-text';
-import { Row, View } from '../base';
 import IconCopy from '@assets/web/icon-copy';
+import { Row, View } from '../base';
+import { WebText } from '../web-text';
 
 interface WebCopyButtonProps {
   width?: CSSProperties['width'];
@@ -11,7 +11,7 @@ interface WebCopyButtonProps {
   copyText: string;
 }
 
-const StyledContainer = styled(Row) <{ clicked: boolean }>`
+const StyledContainer = styled(Row)<{ clicked: boolean }>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -21,7 +21,7 @@ const StyledContainer = styled(Row) <{ clicked: boolean }>`
   border: 1px solid #212429;
   background: transparent;
   cursor: pointer;
-  user-select:none;
+  user-select: none;
 
   svg {
     width: 16px;
@@ -32,16 +32,19 @@ const StyledContainer = styled(Row) <{ clicked: boolean }>`
     stroke: ${({ theme }): string => theme.webNeutral._500};
   }
 
-  :hover {
+  &:hover {
     background: rgba(255, 255, 255, 0.08);
     svg * {
       stroke: ${({ theme }): string => theme.webNeutral._100};
     }
   }
 
-  ${({ clicked }): FlattenSimpleInterpolation | string => clicked ? css`
-    background: rgba(255, 255, 255, 0.08);
-  `: ''}
+  ${({ clicked }): RuleSet | string =>
+    clicked
+      ? css`
+          background: rgba(255, 255, 255, 0.08);
+        `
+      : ''}
 `;
 
 export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
@@ -58,7 +61,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       return 'Copied!';
     }
     return 'Copy';
-  }, [clicked])
+  }, [clicked]);
 
   const activated = useMemo(() => {
     return mouseover || clicked;
@@ -96,10 +99,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       onMouseOut={onMouseLeave}
     >
       {clicked ? (
-        <WebText
-          color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
-          type='body6'
-        >
+        <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
           {buttonStr}
         </WebText>
       ) : (
@@ -107,14 +107,11 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
           <View>
             <IconCopy />
           </View>
-          <WebText
-            color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
-            type='title6'
-          >
+          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
             {buttonStr}
           </WebText>
         </React.Fragment>
       )}
     </StyledContainer>
   );
-}
+};

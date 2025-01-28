@@ -12,7 +12,7 @@ export const TransactionHistoryListItemWrapper = styled.div`
   cursor: pointer;
   transition: 0.2s;
 
-  :hover {
+  &:hover {
     background-color: ${getTheme('neutral', 'b')};
   }
 

@@ -1,4 +1,4 @@
-import { css, DefaultTheme, FlattenSimpleInterpolation } from 'styled-components';
+import { css, DefaultTheme, RuleSet } from 'styled-components';
 
 enum WebNeutral {
   _0 = '#FFFFFF',
@@ -112,7 +112,7 @@ export type WebFontType =
   | 'display4'
   | 'display5';
 
-export const webFonts: Record<WebFontType, FlattenSimpleInterpolation> = {
+export const webFonts: Record<WebFontType, RuleSet> = {
   title1: css`
     font-size: 24px;
     font-weight: 600;
@@ -405,7 +405,7 @@ export type FontsType =
   | 'light13'
   | 'light11';
 
-type FontsKeyType = { [key in FontsType]: FlattenSimpleInterpolation };
+type FontsKeyType = { [key in FontsType]: RuleSet };
 
 type ThemeType = typeof theme;
 

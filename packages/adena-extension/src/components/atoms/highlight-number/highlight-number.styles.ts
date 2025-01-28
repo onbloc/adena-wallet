@@ -1,6 +1,6 @@
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 import mixins from '@styles/mixins';
-import { FontsType, fonts } from '@styles/theme';
+import { fonts, FontsType } from '@styles/theme';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface HighlightNumberWrapperProps {
   fontColor: string;
@@ -19,8 +19,8 @@ export const HighlightNumberWrapper = styled.div<HighlightNumberWrapperProps>`
     color: ${({ fontColor }): string => fontColor};
     text-align: bottom;
 
-    ${({ fontStyleKey }): FlattenSimpleInterpolation => fonts[fontStyleKey]};
-    ${({ lineHeight }): FlattenSimpleInterpolation =>
+    ${({ fontStyleKey }): RuleSet => fonts[fontStyleKey]};
+    ${({ lineHeight }): RuleSet =>
       lineHeight
         ? css`
             line-height: ${lineHeight};

@@ -33,7 +33,7 @@ export const ManageTokenSearchWrapper = styled.div`
       ${fonts.body1Bold};
       transition: 0.2s;
 
-      :hover {
+      &:hover {
         background-color: ${getTheme('neutral', '_6')};
       }
     }

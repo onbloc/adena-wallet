@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from 'styled-components';
 
 import { Button } from '@components/atoms';
@@ -20,7 +19,7 @@ const GhostBtnWrap = styled.div`
 const GhostBtn = styled(Button)`
   ${fonts.body1Bold};
   transition: all 0.4s ease;
-  :disabled {
+  &:disabled {
     color: ${getTheme('neutral', '_4')};
     border: none;
   }

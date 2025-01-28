@@ -59,7 +59,7 @@ export const NFTTransferSummaryWrapper = styled.div`
       background-color: ${getTheme('neutral', '_5')};
       transition: 0.2s;
 
-      :hover {
+      &:hover {
         background-color: ${getTheme('neutral', '_6')};
       }
 
@@ -70,7 +70,7 @@ export const NFTTransferSummaryWrapper = styled.div`
       &.send {
         background-color: ${getTheme('primary', '_6')};
 
-        :hover {
+        &:hover {
           background-color: ${getTheme('primary', '_7')};
         }
       }

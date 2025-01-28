@@ -3,8 +3,8 @@
 //
 // libsodium.js API: https://gist.github.com/webmaster128/b2dbe6d54d36dd168c9fabf441b9b09c
 
+import sodium from 'libsodium-wrappers';
 import { isNonNullObject } from '../utils';
-import sodium from 'libsodium-wrappers-sumo';
 
 export interface Argon2idOptions {
   /** Output length in bytes */
