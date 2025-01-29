@@ -1,37 +1,46 @@
+import { CommandMessage, CommandMessageData } from '@inject/message/command-message';
 import CryptoJS from 'crypto-js';
-import { v4 as uuidv4 } from 'uuid';
-
-// Static cipher key used for encrypting the cryptographic key
-const ENCRYPT_CIPHER_KEY = 'r3v4';
 
 export const encryptSha256Password = (password: string): string => {
   return CryptoJS.SHA256(password).toString();
 };
 
-// Encrypts a password with a dynamically generated key and returns the encrypted key and password
-export const encryptPassword = (
+// Sends a message to the background script to encrypt a password
+export const encryptPassword = async (
   password: string,
-): { encryptedKey: string; encryptedPassword: string } => {
-  const cryptKey = uuidv4();
-  const adenaKey = ENCRYPT_CIPHER_KEY;
-  const encryptedKey = CryptoJS.AES.encrypt(cryptKey, adenaKey).toString();
-  const encryptedPassword = CryptoJS.AES.encrypt(password, cryptKey).toString();
+): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
+  const result = await sendMessage(CommandMessage.command('encryptPassword', { password }));
+  if (!result.data) {
+    throw new Error('Encryption key not initialized.');
+  }
+
   return {
-    encryptedKey,
-    encryptedPassword,
+    encryptedKey: result.data.encryptedKey,
+    encryptedPassword: result.data.encryptedPassword,
   };
 };
 
-// Decrypts a password using the encrypted key and password
-export const decryptPassword = (encryptedKey: string, encryptedPassword: string): string => {
-  const adenaKey = ENCRYPT_CIPHER_KEY;
-  const key = CryptoJS.AES.decrypt(encryptedKey, adenaKey).toString(CryptoJS.enc.Utf8);
-  if (key === '') {
-    throw new Error('CipherKey Decryption Failed');
+// Sends a message to the background script to encrypt a password
+export const decryptPassword = async (iv: string, encryptedPassword: string): Promise<string> => {
+  const result = await sendMessage(
+    CommandMessage.command('decryptPassword', {
+      iv,
+      encryptedPassword,
+    }),
+  );
+  if (!result.data) {
+    throw new Error('Encryption key not initialized.');
   }
-  const password = CryptoJS.AES.decrypt(encryptedPassword, key).toString(CryptoJS.enc.Utf8);
-  if (password === '') {
-    throw new Error('Password Decryption Failed');
-  }
-  return password;
+
+  return result.data.password;
 };
+
+export const clearInMemoryKey = async (): Promise<void> => {
+  await sendMessage(CommandMessage.command('clearEncryptKey'));
+};
+
+function sendMessage<T = any>(message: CommandMessageData): Promise<CommandMessageData<T>> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(message, resolve);
+  });
+}

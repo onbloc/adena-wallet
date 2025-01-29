@@ -1,8 +1,9 @@
 import { WalletError } from '@common/errors';
 import { StorageManager } from '@common/storage/storage-manager';
 import {
-  encryptPassword,
+  clearInMemoryKey,
   decryptPassword,
+  encryptPassword,
   encryptSha256Password,
 } from '@common/utils/crypto-utils';
 
@@ -29,11 +30,13 @@ export class WalletRepository {
     if (!serializedWallet || serializedWallet === '') {
       throw new WalletError('NOT_FOUND_SERIALIZED');
     }
+
     return serializedWallet;
   };
 
   public updateSerializedWallet = async (serializedWallet: string): Promise<boolean> => {
     await this.localStorage.set('SERIALIZED', serializedWallet);
+
     return true;
   };
 
@@ -41,6 +44,7 @@ export class WalletRepository {
     await this.localStorage.remove('SERIALIZED');
     await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE');
+
     return true;
   };
 
@@ -66,8 +70,9 @@ export class WalletRepository {
     }
 
     try {
-      const password = decryptPassword(encryptedKey, encryptedPassword);
+      const password = await decryptPassword(encryptedKey, encryptedPassword);
       this.updateStoragePassword(password);
+
       return password;
     } catch (e) {
       throw new WalletError('NOT_FOUND_PASSWORD');
@@ -75,18 +80,24 @@ export class WalletRepository {
   };
 
   public updateWalletPassword = async (password: string): Promise<boolean> => {
-    const { encryptedKey, encryptedPassword } = encryptPassword(password);
+    const { encryptedKey, encryptedPassword } = await encryptPassword(password);
     const storedPassword = encryptSha256Password(password);
+
     this.updateStoragePassword(password);
+
     await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', storedPassword);
     await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
     await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
+
     return true;
   };
 
   public deleteWalletPassword = async (): Promise<boolean> => {
+    await clearInMemoryKey();
+
     await this.sessionStorage.remove('ENCRYPTED_KEY');
     await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
+
     return true;
   };
 
@@ -104,6 +115,7 @@ export class WalletRepository {
     if (!expiredDateTime) {
       return null;
     }
+
     return Number(expiredDateTime);
   };
 
@@ -116,6 +128,7 @@ export class WalletRepository {
     if (!confirmDate) {
       return null;
     }
+
     return Number(confirmDate);
   };
 
@@ -128,6 +141,7 @@ export class WalletRepository {
     if (!confirmDate) {
       return null;
     }
+
     return Number(confirmDate);
   };
 
