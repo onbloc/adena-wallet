@@ -1,14 +1,15 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { HandlerMethod } from '.';
+import { CommandMessageData } from './command-message';
 import { InjectionMessage, InjectionMessageInstance } from './message';
 import { existsPopups, removePopups } from './methods';
 import { InjectCore } from './methods/core';
 
 export class MessageHandler {
   public static createHandler = (
-    message: InjectionMessage | any,
+    message: InjectionMessage | CommandMessageData | any,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: InjectionMessage | any) => void,
+    sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void,
   ): boolean => {
     try {
       if (message?.status) {
