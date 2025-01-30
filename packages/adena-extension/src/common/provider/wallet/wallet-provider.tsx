@@ -1,4 +1,4 @@
-import { Wallet } from 'adena-module';
+import { AdenaWallet, Wallet } from 'adena-module';
 import React, { createContext, useEffect, useState } from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 
@@ -17,6 +17,7 @@ export interface WalletContextProps {
   initWallet: () => Promise<boolean>;
   initNetworkMetainfos: () => Promise<boolean>;
   changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>;
+  clearWallet: () => Promise<void>;
 }
 
 export const WalletContext = createContext<WalletContextProps | null>(null);
@@ -82,9 +83,17 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
 
   async function updateWallet(wallet: Wallet): Promise<boolean> {
     setWallet(wallet);
-    const password = await walletService.loadWalletPassword();
-    await walletService.saveWallet(wallet, password);
+    await walletService.updateWallet(wallet);
     return true;
+  }
+
+  async function clearWallet(): Promise<void> {
+    await setWallet(new AdenaWallet());
+
+    await Promise.all([
+      async (): Promise<void> => await setWallet(null),
+      async (): Promise<void> => await setCurrentAccount(null),
+    ]);
   }
 
   async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
@@ -142,6 +151,7 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
         updateWallet,
         initNetworkMetainfos,
         changeNetwork,
+        clearWallet,
       }}
     >
       {children}

@@ -127,6 +127,19 @@ export class WalletService {
     }
   };
 
+  public updateWallet = async (wallet: Wallet): Promise<void> => {
+    let password = await this.walletRepository.getWalletPassword();
+    const serializedWallet = await wallet.serialize(password);
+    password = '';
+
+    await this.walletRepository.updateSerializedWallet(serializedWallet);
+    try {
+      chrome?.action?.setPopup({ popup: 'popup.html' });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   /**
    * This function deserializes the wallet with the password.
    *
@@ -173,15 +186,6 @@ export class WalletService {
       return false;
     }
     return false;
-  };
-
-  public getRawPassword = async (): Promise<string> => {
-    try {
-      const rawPassword = await this.walletRepository.getWalletPassword();
-      return rawPassword;
-    } catch (e) {
-      return '';
-    }
   };
 
   public updatePassword = async (password: string): Promise<boolean> => {

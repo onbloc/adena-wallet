@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatNickname } from '@common/utils/client-utils';
 import SideMenu from '@components/pages/router/side-menu/side-menu';
 import { useAccountName } from '@hooks/use-account-name';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { useNetwork } from '@hooks/use-network';
@@ -26,6 +26,7 @@ interface SideMenuContainerProps {
 const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) => {
   const { openLink, openRegister } = useLink();
   const { walletService } = useAdenaContext();
+  const { clearWallet } = useWalletContext();
   const navigate = useNavigate();
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork, scannerParameters } = useNetwork();
@@ -95,6 +96,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const lock = useCallback(async () => {
     setOpen(false);
     await walletService.lockWallet();
+    await clearWallet();
     await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
     await loadAccounts();
     navigate(RoutePath.Login, { replace: true });

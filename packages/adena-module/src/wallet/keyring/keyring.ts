@@ -45,7 +45,7 @@ export interface KeyringData {
   publicKey?: number[];
   privateKey?: number[];
   seed?: number[];
-  mnemonic?: string;
+  mnemonicEntropy?: number[];
   addressBytes?: number[];
 }
 

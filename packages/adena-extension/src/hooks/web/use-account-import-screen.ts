@@ -5,6 +5,7 @@ import {
   isAirgapAccount,
   isHDWalletKeyring,
   Keyring,
+  mnemonicToEntropy,
   PrivateKeyKeyring,
   SeedAccount,
   SingleAccount,
@@ -208,9 +209,11 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     } else if (step === 'SELECT_ACCOUNT') {
       let resultWallet = wallet.clone();
 
+      const entropy = mnemonicToEntropy(inputValue);
+
       const storedKeyring = resultWallet.keyrings
         .filter(isHDWalletKeyring)
-        .find((keyring) => keyring.mnemonic === inputValue.trim());
+        .find((keyring) => keyring.mnemonicEntropy === entropy);
       const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
 
       for (const account of loadedAccounts) {
