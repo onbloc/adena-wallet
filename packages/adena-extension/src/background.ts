@@ -2,6 +2,7 @@ import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
 import { CommandHandler } from '@inject/message/command-handler';
 import { isCommandMessageData } from '@inject/message/command-message';
+import { clearInMemoryKey } from '@inject/message/commands/encrypt';
 import { MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
@@ -48,6 +49,29 @@ chrome.action.onClicked.addListener(async () => {
       });
     }
   });
+});
+
+chrome.runtime.onConnect.addListener((port) => {
+  inMemoryProvider.addConnection();
+
+  port.onDisconnect.addListener(() => {
+    inMemoryProvider.removeConnection();
+    chrome.alarms.clear('expired_password');
+
+    if (!inMemoryProvider.isActive()) {
+      chrome.alarms.clear('expired_password');
+      chrome.alarms.create('expired_password', {
+        delayInMinutes: inMemoryProvider.getExpiredPasswordDurationMinutes(),
+      });
+    }
+  });
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'expired_password') {
+    await chrome.storage.session.clear();
+    await clearInMemoryKey(inMemoryProvider);
+  }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

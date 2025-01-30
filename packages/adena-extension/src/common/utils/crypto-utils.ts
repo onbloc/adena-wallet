@@ -10,7 +10,7 @@ export const encryptPassword = async (
   password: string,
 ): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
   const result = await sendMessage(CommandMessage.command('encryptPassword', { password }));
-  if (!result.data) {
+  if (result.code !== 200) {
     throw new Error('Encryption key not initialized.');
   }
 
@@ -28,7 +28,7 @@ export const decryptPassword = async (iv: string, encryptedPassword: string): Pr
       encryptedPassword,
     }),
   );
-  if (!result.data) {
+  if (result.code !== 200 || !result.data?.password) {
     throw new Error('Encryption key not initialized.');
   }
 

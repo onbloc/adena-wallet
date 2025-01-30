@@ -40,7 +40,6 @@ export class Argon2id {
     options: Argon2idOptions,
   ): Promise<Uint8Array> {
     await sodium.ready;
-    console.log(sodium);
     return sodium.crypto_pwhash(
       options.outputLength,
       password,

@@ -13,7 +13,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["unlimitedStorage", "storage", "tabs"],
+  "permissions": ["unlimitedStorage", "storage", "tabs", "alarms"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
