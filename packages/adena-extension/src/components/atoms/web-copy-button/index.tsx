@@ -1,17 +1,19 @@
-import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { css, FlattenSimpleInterpolation, useTheme } from 'styled-components';
 
-import { WebText } from '../web-text';
-import { Row, View } from '../base';
 import IconCopy from '@assets/web/icon-copy';
+import { Row, View } from '../base';
+import { WebText } from '../web-text';
 
 interface WebCopyButtonProps {
   width?: CSSProperties['width'];
   height?: CSSProperties['height'];
   copyText: string;
+  clearClipboardTimeout?: number;
+  onCopy?: () => void;
 }
 
-const StyledContainer = styled(Row) <{ clicked: boolean }>`
+const StyledContainer = styled(Row)<{ clicked: boolean }>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -21,7 +23,7 @@ const StyledContainer = styled(Row) <{ clicked: boolean }>`
   border: 1px solid #212429;
   background: transparent;
   cursor: pointer;
-  user-select:none;
+  user-select: none;
 
   svg {
     width: 16px;
@@ -39,15 +41,23 @@ const StyledContainer = styled(Row) <{ clicked: boolean }>`
     }
   }
 
-  ${({ clicked }): FlattenSimpleInterpolation | string => clicked ? css`
-    background: rgba(255, 255, 255, 0.08);
-  `: ''}
+  ${({ clicked }): FlattenSimpleInterpolation | string =>
+    clicked
+      ? css`
+          background: rgba(255, 255, 255, 0.08);
+        `
+      : ''}
 `;
+
+const CLEAR_CLIPBOARD_TIMEOUT = 30_000; // 30 seconds
+const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000; // 2 seconds
 
 export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   width = 'fit-content',
   height = 32,
   copyText,
+  clearClipboardTimeout = CLEAR_CLIPBOARD_TIMEOUT,
+  onCopy,
 }) => {
   const theme = useTheme();
   const [clicked, setClicked] = useState(false);
@@ -58,7 +68,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       return 'Copied!';
     }
     return 'Copy';
-  }, [clicked])
+  }, [clicked]);
 
   const activated = useMemo(() => {
     return mouseover || clicked;
@@ -69,11 +79,14 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       return;
     }
     setClicked(true);
+
     navigator.clipboard.writeText(copyText);
+    onCopy && onCopy();
+
     setTimeout(() => {
       setClicked(false);
-    }, 2000);
-  }, [clicked, copyText]);
+    }, COPY_TOOLTIP_DISPLAY_TIMEOUT);
+  }, [clicked, copyText, onCopy]);
 
   const onMouseOver = useCallback(() => {
     setMouseover(true);
@@ -82,6 +95,20 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   const onMouseLeave = useCallback(() => {
     setMouseover(false);
   }, []);
+
+  useEffect(() => {
+    if (!clicked) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      navigator?.clipboard?.writeText('');
+    }, clearClipboardTimeout);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [clicked, clearClipboardTimeout]);
 
   return (
     <StyledContainer
@@ -96,10 +123,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       onMouseOut={onMouseLeave}
     >
       {clicked ? (
-        <WebText
-          color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
-          type='body6'
-        >
+        <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
           {buttonStr}
         </WebText>
       ) : (
@@ -107,14 +131,11 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
           <View>
             <IconCopy />
           </View>
-          <WebText
-            color={activated ? theme.webNeutral._100 : theme.webNeutral._500}
-            type='title6'
-          >
+          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
             {buttonStr}
           </WebText>
         </React.Fragment>
       )}
     </StyledContainer>
   );
-}
+};
