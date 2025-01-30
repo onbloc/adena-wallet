@@ -15,60 +15,54 @@ export class CommandHandler {
     _: chrome.runtime.MessageSender,
     sendResponse: (response?: CommandMessageData) => void,
   ): Promise<void> => {
-    if (message.code !== 0) {
-      return;
-    }
-
-    if (message.command === 'encryptPassword') {
-      const key = await getInMemoryKey(inMemoryProvider);
-      if (!key) {
-        sendResponse({
-          ...message,
-          code: 500,
-        });
+    try {
+      if (message.code !== 0) {
         return;
       }
 
-      const password = message.data.password;
-      const resultData = await encryptPassword(key, password);
+      if (message.command === 'encryptPassword') {
+        if (!message.data.password) {
+          throw new Error('Password is required');
+        }
 
-      sendResponse({
-        ...message,
-        code: 200,
-        data: resultData,
-      });
+        const key = await getInMemoryKey(inMemoryProvider);
+        if (!key) {
+          throw new Error('Failed to get in-memory key');
+        }
 
-      return;
-    }
+        const password = message.data.password;
+        const responseData = await encryptPassword(key, password);
 
-    if (message.command === 'decryptPassword') {
-      const key = await getInMemoryKey(inMemoryProvider);
-      if (!key) {
-        sendResponse({
-          ...message,
-          code: 500,
-        });
+        sendResponse(makeSuccessResponse(message, responseData));
         return;
       }
 
-      const iv = message.data.iv;
-      const encryptedPassword = message.data.encryptedPassword;
-      const decryptedPassword = await decryptPassword(key, iv, encryptedPassword);
+      if (message.command === 'decryptPassword') {
+        const key = await getInMemoryKey(inMemoryProvider);
+        if (!key) {
+          throw new Error('Failed to in-memory key');
+        }
 
-      sendResponse({
-        ...message,
-        code: 200,
-        data: {
+        const iv = message.data.iv;
+        const encryptedPassword = message.data.encryptedPassword;
+        const decryptedPassword = await decryptPassword(key, iv, encryptedPassword);
+
+        const responseData = {
           password: decryptedPassword,
-        },
-      });
-      return;
-    }
+        };
 
-    if (message.command === 'clearEncryptKey') {
-      await clearInMemoryKey(inMemoryProvider);
-      sendResponse({ ...message, code: 200 });
-      return;
+        sendResponse(makeSuccessResponse(message, responseData));
+        return;
+      }
+
+      if (message.command === 'clearEncryptKey') {
+        await clearInMemoryKey(inMemoryProvider);
+        sendResponse(makeSuccessResponse(message));
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      sendResponse(makeInternalErrorResponse(message));
     }
 
     if (message.command === 'clearPopup') {
@@ -77,5 +71,20 @@ export class CommandHandler {
       sendResponse({ ...message, code: 200 });
       return;
     }
+  };
+}
+
+function makeSuccessResponse(message: CommandMessageData, data: any = null): CommandMessageData {
+  return {
+    ...message,
+    code: 200,
+    data,
+  };
+}
+
+function makeInternalErrorResponse(message: CommandMessageData): CommandMessageData {
+  return {
+    ...message,
+    code: 500,
   };
 }

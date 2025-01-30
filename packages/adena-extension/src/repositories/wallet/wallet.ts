@@ -62,15 +62,15 @@ export class WalletRepository {
   };
 
   public getWalletPassword = async (): Promise<string> => {
-    const encryptedKey = await this.sessionStorage.get('ENCRYPTED_KEY');
+    const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
     const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
 
-    if (encryptedKey === '' || encryptedPassword === '') {
+    if (iv === '' || encryptedPassword === '') {
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
 
     try {
-      const password = await decryptPassword(encryptedKey, encryptedPassword);
+      const password = await decryptPassword(iv, encryptedPassword);
       this.updateStoragePassword(password);
 
       return password;
