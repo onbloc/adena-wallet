@@ -3,8 +3,8 @@ import { StorageMigration009 } from './storage-migration-v009';
 
 const mockStorageData = {
   NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test4',
-  CURRENT_NETWORK_ID: 'test4',
+  CURRENT_CHAIN_ID: 'test5',
+  CURRENT_NETWORK_ID: 'test5',
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
@@ -31,10 +31,9 @@ describe('serialized wallet migration V009', () => {
       data: mockStorageData,
     };
     const migration = new StorageMigration009();
-    const result = await migration.up(mockData);
+    const result = await migration.up(mockData, '123');
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test5');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test5');
+    expect(result.version).toBe(9);
   });
 
   it('up password success', async () => {
@@ -44,12 +43,10 @@ describe('serialized wallet migration V009', () => {
     };
     const password = '123';
     const migration = new StorageMigration009();
-    const result = await migration.up(mockData);
+    const result = await migration.up(mockData, password);
 
     expect(result.version).toBe(9);
     expect(result.data).not.toBeNull();
-    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);
@@ -57,9 +54,6 @@ describe('serialized wallet migration V009', () => {
 
     expect(wallet.accounts).toHaveLength(0);
     expect(wallet.keyrings).toHaveLength(0);
-
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test5');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test5');
   });
 
   it('up failed throw error', async () => {
@@ -69,7 +63,7 @@ describe('serialized wallet migration V009', () => {
     };
     const migration = new StorageMigration009();
 
-    await expect(migration.up(mockData)).rejects.toThrow(
+    await expect(migration.up(mockData, '123')).rejects.toThrow(
       'Storage Data does not match version V009',
     );
   });

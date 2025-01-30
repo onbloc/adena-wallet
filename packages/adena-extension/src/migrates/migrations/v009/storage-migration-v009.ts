@@ -1,10 +1,10 @@
 import { StorageModel } from '@common/storage';
 import { Migration } from '@migrates/migrator';
-import { AdenaWallet, isHDWalletKeyring, mnemonicToEntropy } from 'adena-module';
+import { AdenaWallet, decryptAES, mnemonicToEntropy } from 'adena-module';
 import {
-  KeyringDataModelV008,
   SerializedModelV008,
   StorageModelDataV008,
+  WalletModelV008,
 } from '../v008/storage-model-v008';
 import { SerializedModelV009, StorageModelDataV009 } from './storage-model-v009';
 
@@ -15,6 +15,10 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     current: StorageModel<StorageModelDataV008>,
     password?: string,
   ): Promise<StorageModel<StorageModelDataV009>> {
+    if (!password) {
+      return current;
+    }
+
     if (!this.validateModelV008(current.data)) {
       throw new Error('Storage Data does not match version V009');
     }
@@ -86,41 +90,33 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
       return '';
     }
 
-    let wallet = await AdenaWallet.deserialize(serialized, password).catch(() => null);
-    if (!wallet) {
-      return '';
-    }
-
-    let accounts = wallet.accounts.map((account) => {
-      return account.toData();
-    });
+    let decrypted = await decryptAES(serialized, password);
+    let wallet = JSON.parse(decrypted) as WalletModelV008;
 
     let keyrings = wallet.keyrings.map((keyring) => {
-      if (isHDWalletKeyring(keyring)) {
-        const data = keyring.toData() as KeyringDataModelV008;
-        if (data.mnemonic) {
-          return {
-            id: data.id,
-            type: data.type,
-            seed: data.seed,
-            mnemonicEntropy: Array.from(mnemonicToEntropy(data.mnemonic)),
-          };
-        }
+      if (keyring.type === 'HD_WALLET' && keyring.mnemonic) {
+        return {
+          id: keyring.id,
+          type: keyring.type,
+          seed: keyring.seed,
+          mnemonicEntropy: Array.from(mnemonicToEntropy(keyring.mnemonic)),
+        };
       }
-      return keyring.toData();
+
+      return keyring;
     });
 
     let changedWallet = new AdenaWallet({
-      accounts: accounts,
+      accounts: wallet.accounts,
       keyrings: keyrings,
       currentAccountId: wallet.currentAccountId,
     });
 
     const serializedWallet = await changedWallet.serialize(password);
 
-    wallet = null;
     keyrings = [];
-    accounts = [];
+    wallet = { accounts: [], keyrings: [] };
+    decrypted = '';
     changedWallet = new AdenaWallet();
 
     return serializedWallet;
