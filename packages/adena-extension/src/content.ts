@@ -5,7 +5,9 @@ const sendMessage = (event: MessageEvent): void => {
   const message = event.data;
   chrome.runtime.sendMessage(message, (response) => {
     Promise.resolve(response).then((result) => {
-      event.source?.postMessage(result);
+      event.source?.postMessage(result, {
+        targetOrigin: event.origin,
+      });
     });
     return true;
   });
@@ -21,21 +23,24 @@ const loadScript = (): void => {
 };
 
 const initListener = (): void => {
-  window.addEventListener(
-    'message',
-    (event) => {
-      try {
-        if (event.data?.status === 'request') {
-          sendMessage(event);
-        } else {
-          return event.data;
-        }
-      } catch (e) {
-        console.error(e);
+  const listener = (event: MessageEvent): void => {
+    if (event.origin !== window.location.origin) {
+      console.warn(`Untrusted origin: ${event.origin}`);
+      return;
+    }
+
+    try {
+      if (event.data?.status === 'request') {
+        sendMessage(event);
+      } else {
+        return event.data;
       }
-    },
-    false,
-  );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  window.addEventListener('message', listener, false);
 };
 
 const initExtensionListener = (): void => {
