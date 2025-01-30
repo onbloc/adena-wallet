@@ -169,7 +169,8 @@ export class AdenaExecutor {
       hostname: window.location.hostname,
       key: this.eventKey,
     };
-    window.postMessage(this.eventMessage, '*');
+
+    window.postMessage(this.eventMessage, window.location.origin);
     this.messages[this.eventKey] = {
       request: this.eventMessage,
       response: undefined,
@@ -201,6 +202,11 @@ export class AdenaExecutor {
   };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
+    if (event.origin !== window.location.origin) {
+      console.warn(`Untrusted origin: ${event.origin}`);
+      return;
+    }
+
     const eventData = event.data;
     if (eventData.status) {
       const { key, status, data, code, message, type } = eventData;

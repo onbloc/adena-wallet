@@ -1,5 +1,11 @@
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
+import { CommandHandler } from '@inject/message/command-handler';
+import { isCommandMessageData } from '@inject/message/command-message';
 import { MessageHandler } from './inject/message';
+
+const inMemoryProvider = new MemoryProvider();
+inMemoryProvider.init();
 
 function existsWallet(): Promise<boolean> {
   const storage = new ChromeLocalStorage();
@@ -44,4 +50,11 @@ chrome.action.onClicked.addListener(async () => {
   });
 });
 
-chrome.runtime.onMessage.addListener(MessageHandler.createHandler);
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (isCommandMessageData(message)) {
+    CommandHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
+    return true;
+  }
+
+  return MessageHandler.createHandler(message, sender, sendResponse);
+});

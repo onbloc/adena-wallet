@@ -48,6 +48,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
   const [initializedDone, setInitializedDone] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -62,6 +63,13 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     }
     return 'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.';
   }, [exportType]);
+
+  const warningCopiedMessage = useMemo(() => {
+    if (!copied) {
+      return '';
+    }
+    return 'You have copied sensitive info. Make sure you do not paste it in public or shared environments, and clear your clipboard as soon as you’ve used it.';
+  }, [copied]);
 
   const seeds = useMemo((): string[] => {
     if (exportType !== 'SEED_PHRASE' || !exportData) {
@@ -97,6 +105,10 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
       });
   };
 
+  const onCopy = (): void => {
+    setCopied(true);
+  };
+
   return (
     <StyledContainer>
       <StyledMessageBox>
@@ -107,6 +119,15 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
             {warningMessage}
           </WebText>
         </StyledWarnBox>
+
+        {warningCopiedMessage && (
+          <StyledWarnBox center={exportType === 'SEED_PHRASE'}>
+            <WebImg src={IconWarning} size={20} />
+            <WebText type='body6' color={theme.webWarning._100}>
+              {warningCopiedMessage}
+            </WebText>
+          </StyledWarnBox>
+        )}
       </StyledMessageBox>
 
       <StyledInputBox>
@@ -116,7 +137,7 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
           <WebHoldButton onFinishHold={onFinishHold} />
-          <WebCopyButton width={80} copyText={exportData || ''} />
+          <WebCopyButton width={80} copyText={exportData || ''} onCopy={onCopy} />
         </Row>
       </StyledInputBox>
 

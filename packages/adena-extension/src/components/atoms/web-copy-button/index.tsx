@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useMemo, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { css, RuleSet, useTheme } from 'styled-components';
 
 import IconCopy from '@assets/web/icon-copy';
@@ -9,6 +9,8 @@ interface WebCopyButtonProps {
   width?: CSSProperties['width'];
   height?: CSSProperties['height'];
   copyText: string;
+  clearClipboardTimeout?: number;
+  onCopy?: () => void;
 }
 
 const StyledContainer = styled(Row)<{ clicked: boolean }>`
@@ -47,10 +49,15 @@ const StyledContainer = styled(Row)<{ clicked: boolean }>`
       : ''}
 `;
 
+const CLEAR_CLIPBOARD_TIMEOUT = 30_000; // 30 seconds
+const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000; // 2 seconds
+
 export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   width = 'fit-content',
   height = 32,
   copyText,
+  clearClipboardTimeout = CLEAR_CLIPBOARD_TIMEOUT,
+  onCopy,
 }) => {
   const theme = useTheme();
   const [clicked, setClicked] = useState(false);
@@ -72,11 +79,14 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       return;
     }
     setClicked(true);
+
     navigator.clipboard.writeText(copyText);
+    onCopy && onCopy();
+
     setTimeout(() => {
       setClicked(false);
-    }, 2000);
-  }, [clicked, copyText]);
+    }, COPY_TOOLTIP_DISPLAY_TIMEOUT);
+  }, [clicked, copyText, onCopy]);
 
   const onMouseOver = useCallback(() => {
     setMouseover(true);
@@ -85,6 +95,20 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   const onMouseLeave = useCallback(() => {
     setMouseover(false);
   }, []);
+
+  useEffect(() => {
+    if (!clicked) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      navigator?.clipboard?.writeText('');
+    }, clearClipboardTimeout);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [clicked, clearClipboardTimeout]);
 
   return (
     <StyledContainer
