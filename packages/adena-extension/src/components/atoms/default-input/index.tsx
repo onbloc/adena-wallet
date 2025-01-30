@@ -20,7 +20,9 @@ export const inputStyle = css`
   }
 `;
 
-export const DefaultInput = styled.input<InputProps>`
+export const DefaultInput = styled.input.withConfig({
+  shouldForwardProp: (prop) => !['error', 'margin'].includes(prop),
+})<InputProps>`
   ${inputStyle};
   border: 1px solid ${({ error, theme }): string => (error ? theme.red._5 : theme.neutral._7)};
   margin: ${({ margin }): string | undefined => margin && margin};

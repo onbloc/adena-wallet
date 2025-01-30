@@ -52,16 +52,17 @@ chrome.action.onClicked.addListener(async () => {
   });
 });
 
-chrome.runtime.onConnect.addListener((port) => {
+chrome.runtime.onConnect.addListener(async (port) => {
   inMemoryProvider.addConnection();
+  await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
 
-  port.onDisconnect.addListener(() => {
+  port.onDisconnect.addListener(async () => {
     inMemoryProvider.removeConnection();
-    chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
 
-    if (!inMemoryProvider.isActive()) {
-      chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
-      chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
+    if (inMemoryProvider.isActive()) {
+      await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+    } else {
+      await chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
         delayInMinutes: inMemoryProvider.getExpiredPasswordDurationMinutes(),
       });
     }
@@ -70,10 +71,14 @@ chrome.runtime.onConnect.addListener((port) => {
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === AlarmKey.EXPIRED_PASSWORD) {
+    await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+
+    if (inMemoryProvider.isActive()) {
+      return;
+    }
+
     await chrome.storage.session.clear();
     await clearInMemoryKey(inMemoryProvider);
-
-    return;
   }
 });
 
