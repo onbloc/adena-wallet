@@ -142,7 +142,7 @@ const DisconnectedBtn = styled.button`
   background-color: ${getTheme('red', '_5')};
   transition: all ease 0.4s;
   margin-left: auto;
-  :hover {
+  &:hover {
     background-color: #bb160b;
   }
 `;

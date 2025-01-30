@@ -25,7 +25,7 @@ export const AddressBookListItemWrapper = styled.div`
   transition: 0.2s;
   cursor: pointer;
 
-  :hover {
+  &:hover {
     background-color: ${getTheme('neutral', '_7')};
   }
 

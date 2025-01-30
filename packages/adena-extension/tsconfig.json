@@ -2,6 +2,14 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "outDir": "./dist/",
+    "types": [
+      "node",
+      "jest",
+      "@types/react",
+      "@types/react-dom",
+      "@types/styled-components",
+      "@types/chrome"
+    ],
     "noImplicitAny": true,
     "module": "esnext",
     "target": "es5",

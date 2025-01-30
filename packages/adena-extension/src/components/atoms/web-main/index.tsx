@@ -1,7 +1,7 @@
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { css, RuleSet } from 'styled-components';
 
-import mixins from '@styles/mixins';
 import { WEB_CONTENT_WIDTH } from '@common/constants/ui.constant';
+import mixins from '@styles/mixins';
 
 interface WebMainProps {
   width?: React.CSSProperties['width'];
@@ -15,7 +15,7 @@ export const WebMain = styled.main<WebMainProps>`
   margin: 0 auto 0;
   row-gap: 24px;
 
-  ${({ spacing }): FlattenSimpleInterpolation =>
+  ${({ spacing }): RuleSet =>
     spacing
       ? css`
           height: calc(100vh - 80px);
@@ -28,7 +28,7 @@ export const WebMain = styled.main<WebMainProps>`
           justify-content: center;
         `}
 
-  ${({ responsiveSpacing }): FlattenSimpleInterpolation =>
+  ${({ responsiveSpacing }): RuleSet =>
     responsiveSpacing
       ? css`
           @media (max-height: 850px) {

@@ -1,6 +1,6 @@
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
 import { Pressable } from '@components/atoms';
 import { getTheme, webFonts } from '@styles/theme';
+import styled, { css, RuleSet } from 'styled-components';
 
 export const StyledPressable = styled(Pressable)<{ selected: boolean }>`
   width: 100%;
@@ -15,7 +15,7 @@ export const StyledPressable = styled(Pressable)<{ selected: boolean }>`
   transition: 0.2s;
   ${webFonts['body4']}
 
-  ${({ selected }): FlattenSimpleInterpolation | string =>
+  ${({ selected }): RuleSet | string =>
     selected === false
       ? css`
           &:hover {
@@ -26,7 +26,7 @@ export const StyledPressable = styled(Pressable)<{ selected: boolean }>`
 `;
 
 export const StyledCorrectButton = styled(StyledPressable)`
-  ${({ theme, selected }): FlattenSimpleInterpolation | string =>
+  ${({ theme, selected }): RuleSet | string =>
     selected
       ? css`
           cursor: default;
@@ -38,7 +38,7 @@ export const StyledCorrectButton = styled(StyledPressable)`
 `;
 
 export const StyledIncorrectButton = styled(StyledPressable)`
-  ${({ theme, selected }): FlattenSimpleInterpolation | string =>
+  ${({ theme, selected }): RuleSet | string =>
     selected
       ? css`
           cursor: default;

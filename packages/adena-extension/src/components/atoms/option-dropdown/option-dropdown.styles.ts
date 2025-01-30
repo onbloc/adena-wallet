@@ -1,7 +1,7 @@
 import { Row, View } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { css, RuleSet } from 'styled-components';
 
 export const OptionDropdownWrapper = styled(View)<{ position: 'left' | 'right' }>`
   position: relative;
@@ -17,7 +17,7 @@ export const OptionDropdownWrapper = styled(View)<{ position: 'left' | 'right' }
     align-items: center;
     cursor: pointer;
 
-    :hover {
+    &:hover {
       background-color: ${getTheme('neutral', '_7')};
     }
   }
@@ -39,7 +39,7 @@ export const OptionDropdownWrapper = styled(View)<{ position: 'left' | 'right' }
     z-index: 99;
     overflow: hidden;
 
-    ${({ position }): FlattenSimpleInterpolation | string =>
+    ${({ position }): RuleSet | string =>
       position === 'left'
         ? css`
             left: -122px;

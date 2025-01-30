@@ -1,5 +1,5 @@
 import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { css, FlattenSimpleInterpolation, useTheme } from 'styled-components';
+import styled, { css, RuleSet, useTheme } from 'styled-components';
 
 import IconCopy from '@assets/web/icon-copy';
 import { Row, View } from '../base';
@@ -34,14 +34,14 @@ const StyledContainer = styled(Row)<{ clicked: boolean }>`
     stroke: ${({ theme }): string => theme.webNeutral._500};
   }
 
-  :hover {
+  &:hover {
     background: rgba(255, 255, 255, 0.08);
     svg * {
       stroke: ${({ theme }): string => theme.webNeutral._100};
     }
   }
 
-  ${({ clicked }): FlattenSimpleInterpolation | string =>
+  ${({ clicked }): RuleSet | string =>
     clicked
       ? css`
           background: rgba(255, 255, 255, 0.08);

@@ -52,7 +52,7 @@ export const ManageTokenSearchInputWrapper = styled.div`
       transition: 0.2s;
     }
 
-    :hover {
+    &:hover {
       .added {
         fill: ${getTheme('neutral', 'b')};
       }

@@ -22,7 +22,7 @@ export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
     }
   }
 
-  :hover svg {
+  &:hover svg {
     path {
       stroke: ${getTheme('neutral', '_1')};
     }

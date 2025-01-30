@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, HTMLAttributes, useMemo } from 'react';
 import { AnimationConfigWithData, AnimationItem, default as LottieWeb } from 'lottie-web';
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
+import React, { HTMLAttributes, useEffect, useMemo, useRef, useState } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
 type LottieProps = {
   animationData: any;
@@ -22,28 +22,27 @@ const StyledContainer = styled.div<{
 }>`
   display: flex;
   position: relative;
-  width: ${({ width }): string => width ? `${width}px` : 'auto'};
-  height: ${({ height }): string => height ? `${height}px` : 'auto'};
+  width: ${({ width }): string => (width ? `${width}px` : 'auto')};
+  height: ${({ height }): string => (height ? `${height}px` : 'auto')};
 
-${({ isOverflow, visibleSize, width, height }): FlattenSimpleInterpolation =>
-    isOverflow ?
-      css`
-        & .lottie-player {
-          display: flex;
-          position: absolute;
-          width: auto !important;
-          height: ${`${visibleSize}px`} !important;
-          left: 0;
-          bottom: 0;
-        }
-    ` :
-      css`
-        & .lottie-player {
-          width: ${width ? `${width}px` : 'auto'} !important;
-          height: ${height ? `${height}px` : 'auto'} !important;
-        }
-    `
-  }
+  ${({ isOverflow, visibleSize, width, height }): RuleSet =>
+    isOverflow
+      ? css`
+          & .lottie-player {
+            display: flex;
+            position: absolute;
+            width: auto !important;
+            height: ${`${visibleSize}px`} !important;
+            left: 0;
+            bottom: 0;
+          }
+        `
+      : css`
+          & .lottie-player {
+            width: ${width ? `${width}px` : 'auto'} !important;
+            height: ${height ? `${height}px` : 'auto'} !important;
+          }
+        `}
 `;
 
 const Lottie: React.FC<LottieProps> = ({

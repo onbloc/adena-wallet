@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
-import { fonts, getTheme } from '@styles/theme';
 import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
 
 export const CustomNetworkInputWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
@@ -23,7 +23,7 @@ export const CustomNetworkInputWrapper = styled.div`
       border-radius: 30px;
       margin-top: 12px;
 
-      :first-child {
+      &:first-child {
         margin-top: 0;
       }
 

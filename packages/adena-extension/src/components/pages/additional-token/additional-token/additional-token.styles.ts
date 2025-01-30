@@ -54,7 +54,7 @@ export const AdditionalTokenWrapper = styled.div`
       &.cancel-button {
         background-color: ${getTheme('neutral', '_5')};
 
-        :hover {
+        &:hover {
           background-color: ${getTheme('neutral', '_6')};
         }
       }

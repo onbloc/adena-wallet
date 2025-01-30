@@ -1,5 +1,5 @@
 import React from 'react';
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { css, RuleSet } from 'styled-components';
 
 import { Button, ButtonProps, Text } from '@components/atoms';
 import mixins from '@styles/mixins';
@@ -42,7 +42,7 @@ const ButtonWrap = styled.div<{ fill: string }>`
   padding: 0px 20px;
   z-index: 1;
 
-  ${({ fill, theme }): FlattenSimpleInterpolation =>
+  ${({ fill, theme }): RuleSet =>
     fill === 'fill'
       ? css`
           box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);

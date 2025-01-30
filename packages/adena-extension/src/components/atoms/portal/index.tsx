@@ -13,5 +13,6 @@ export const Portal: React.FC<PortalProps> = ({ children, selector }) => {
     setElement(document.getElementById(selector ?? 'portal-root'));
   }, [selector]);
 
-  return <>{element ? createPortal(children, element) : null}</>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <>{element ? createPortal(children as any, element) : null}</>;
 };

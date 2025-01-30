@@ -1,7 +1,7 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import styled, { FlattenSimpleInterpolation } from 'styled-components';
+import styled, { RuleSet } from 'styled-components';
 
-import { WebFontType, webFonts } from '@styles/theme';
+import { webFonts, WebFontType } from '@styles/theme';
 
 type FormTextProps = {
   type: WebFontType;
@@ -11,9 +11,9 @@ type FormTextProps = {
   textCenter?: boolean;
 };
 
-const StyledContainer = styled.div<{ type: WebFontType, color?: CSSProperties['color']; }>`
-  color: ${({ color }): CSSProperties['color'] => color ? color : '#FAFCFF'};
-  ${({ type }): FlattenSimpleInterpolation => webFonts[type]}
+const StyledContainer = styled.div<{ type: WebFontType; color?: CSSProperties['color'] }>`
+  color: ${({ color }): CSSProperties['color'] => (color ? color : '#FAFCFF')};
+  ${({ type }): RuleSet => webFonts[type]}
   white-space: pre-wrap;
 `;
 

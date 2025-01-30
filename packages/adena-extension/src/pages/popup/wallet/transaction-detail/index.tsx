@@ -268,7 +268,7 @@ const DLWrap = styled.dl<DLProps>`
   width: 100%;
   height: 40px;
   padding: 0px 18px;
-  :not(:last-child) {
+  &:not(:last-child) {
     border-bottom: 2px solid ${getTheme('neutral', '_8')};
   }
   dd,
@@ -303,7 +303,7 @@ const StatusInfo = styled.div`
       }
     }
 
-    :hover {
+    &:hover {
       svg {
         path {
           fill: ${getTheme('neutral', '_1')};

@@ -12,7 +12,7 @@ export const StyledSelectSeedPhraseContent = styled(View)`
   background-color: #14161a;
   border-radius: 12px;
 
-  ::-webkit-scrollbar {
+  &::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera*/
   }
 `;
@@ -23,7 +23,7 @@ export const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
   gap: 4px;
 
   cursor: pointer;
-  :disabled {
+  &:disabled {
     cursor: not-allowed;
   }
 `;

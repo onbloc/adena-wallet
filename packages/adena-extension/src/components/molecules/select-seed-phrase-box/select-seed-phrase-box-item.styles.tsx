@@ -7,7 +7,7 @@ export const StyledSelectSeedPhraseBoxItem = styled(Row)`
   justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid #1f2329;
-  :last-child {
+  &:last-child {
     border-bottom: 1px solid #14161a;
   }
 `;

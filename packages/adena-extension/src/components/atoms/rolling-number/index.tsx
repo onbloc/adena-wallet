@@ -1,12 +1,12 @@
 import { WebFontType } from '@styles/theme';
 import React, { useEffect, useState } from 'react';
-import styled, { css, FlattenSimpleInterpolation } from 'styled-components';
+import styled, { css, RuleSet } from 'styled-components';
 import { View } from '../base';
 import { WebText } from '../web-text';
 
-export const StyledWrapper = styled(View) <{ active: boolean, height?: number }>`
+export const StyledWrapper = styled(View)<{ active: boolean; height?: number }>`
   width: fit-content;
-  height: ${({ height }): string => height ? `${height}px` : '1em'};
+  height: ${({ height }): string => (height ? `${height}px` : '1em')};
   flex-direction: column;
   overflow: hidden;
 
@@ -20,13 +20,15 @@ export const StyledWrapper = styled(View) <{ active: boolean, height?: number }>
     }
   }
 
-  ${({ active }): FlattenSimpleInterpolation | string => active ? css`
-    & > * {
-      animation: rolling-animation 0.2s linear forwards;
-    }
-  ` : ''}
+  ${({ active }): RuleSet | string =>
+    active
+      ? css`
+          & > * {
+            animation: rolling-animation 0.2s linear forwards;
+          }
+        `
+      : ''}
 `;
-
 
 export interface RollingNumberProps {
   value: number;
@@ -65,20 +67,10 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
 
   return (
     <StyledWrapper active={animated} height={height}>
-      <WebText
-        type={type}
-        color={color}
-        style={style}
-        textCenter={textCenter}
-      >
+      <WebText type={type} color={color} style={style} textCenter={textCenter}>
         {currentValue}
       </WebText>
-      <WebText
-        type={type}
-        color={color}
-        style={style}
-        textCenter={textCenter}
-      >
+      <WebText type={type} color={color} style={style} textCenter={textCenter}>
         {value}
       </WebText>
     </StyledWrapper>

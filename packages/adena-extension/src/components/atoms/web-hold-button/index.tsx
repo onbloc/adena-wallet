@@ -1,8 +1,8 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import styled, { css, FlattenSimpleInterpolation, keyframes, useTheme } from 'styled-components';
+import styled, { css, keyframes, RuleSet, useTheme } from 'styled-components';
 
-import { WebText } from '../web-text';
 import { View } from '../base';
+import { WebText } from '../web-text';
 
 interface WebHoldButtonProps {
   width?: CSSProperties['width'];
@@ -20,7 +20,7 @@ const fill = keyframes`
   }
 `;
 
-const StyledContainer = styled(View) <{ pressed: boolean; finish: boolean; }>`
+const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
   position: relative;
   overflow: hidden;
   display: flex;
@@ -31,30 +31,37 @@ const StyledContainer = styled(View) <{ pressed: boolean; finish: boolean; }>`
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  user-select:none;
+  user-select: none;
   box-shadow: 0 0 0 1px #212429 inset;
 
-  ${({ pressed, finish }): FlattenSimpleInterpolation => (pressed || finish) ? css`
-    box-shadow: 0 0 0 1px #1E3C71 inset, 0px 2px 16px 4px rgba(0, 89, 255, 0.24), 0px 1px 3px 0px rgba(0, 0, 0, 0.10), 0px 1px 2px 0px rgba(0, 0, 0, 0.06);
-    background: ${finish ? '#0059ff52' : 'transparent'};
-    ::before {
-      content: '';
-      z-index: -1;
-      position: absolute;
-      top: 0px;
-      left: 0px;
-      height: 100%;
-      background: ${finish ? 'transparent' : '#0059ff52'};
-      border-radius: 8px;
-      animation: ${fill} 3s forwards; 
-      box-shadow: ${finish ? 'none' : '0 0 0 1px #1E3C71 inset'};
-    }
-  `: css`
-    :hover {
-      background: #ffffff14;
-      box-shadow: 0 0 0 1px #ffffff14 inset;
-    }
-  `}
+  ${({ pressed, finish }): RuleSet =>
+    pressed || finish
+      ? css`
+          box-shadow:
+            0 0 0 1px #1e3c71 inset,
+            0px 2px 16px 4px rgba(0, 89, 255, 0.24),
+            0px 1px 3px 0px rgba(0, 0, 0, 0.1),
+            0px 1px 2px 0px rgba(0, 0, 0, 0.06);
+          background: ${finish ? '#0059ff52' : 'transparent'};
+          ::before {
+            content: '';
+            z-index: -1;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            height: 100%;
+            background: ${finish ? 'transparent' : '#0059ff52'};
+            border-radius: 8px;
+            animation: ${fill} 3s forwards;
+            box-shadow: ${finish ? 'none' : '0 0 0 1px #1E3C71 inset'};
+          }
+        `
+      : css`
+          &:hover {
+            background: #ffffff14;
+            box-shadow: 0 0 0 1px #ffffff14 inset;
+          }
+        `}
 `;
 
 export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
@@ -128,7 +135,7 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
       onMouseOut={onMouseLeave}
     >
       <WebText
-        color={(mouseover || finish) ? theme.webNeutral._100 : theme.webNeutral._500}
+        color={mouseover || finish ? theme.webNeutral._100 : theme.webNeutral._500}
         type='title6'
       >
         {text}

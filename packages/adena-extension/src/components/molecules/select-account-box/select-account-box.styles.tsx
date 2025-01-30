@@ -22,7 +22,7 @@ export const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
   gap: 4px;
 
   cursor: pointer;
-  :disabled {
+  &:disabled {
     cursor: not-allowed;
   }
 `;

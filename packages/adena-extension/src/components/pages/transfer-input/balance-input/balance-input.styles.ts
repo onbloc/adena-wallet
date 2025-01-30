@@ -36,7 +36,7 @@ export const BalanceInputWrapper = styled.div`
       justify-content: center;
       transition: 0.2s;
 
-      :hover {
+      &:hover {
         background-color: ${getTheme('neutral', 'b')};
       }
     }

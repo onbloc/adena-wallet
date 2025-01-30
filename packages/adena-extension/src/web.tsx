@@ -5,5 +5,6 @@ import App from './App/web';
 const mountNode = document.getElementById('web');
 if (mountNode) {
   const root = ReactDOM.createRoot(mountNode);
-  root.render(<App />);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  root.render((<App />) as any);
 }
