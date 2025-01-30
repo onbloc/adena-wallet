@@ -14,6 +14,8 @@ import { StorageMigration007 } from './migrations/v007/storage-migration-v007';
 import { StorageModelV007 } from './migrations/v007/storage-model-v007';
 import { StorageMigration008 } from './migrations/v008/storage-migration-v008';
 import { StorageModelV008 } from './migrations/v008/storage-model-v008';
+import { StorageMigration009 } from './migrations/v009/storage-migration-v009';
+import { StorageModelV009 } from './migrations/v009/storage-model-v009';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -89,6 +91,7 @@ export class StorageMigrator implements Migrator {
   async deserialize(
     data: string | undefined,
   ): Promise<
+    | StorageModelV009
     | StorageModelV008
     | StorageModelV007
     | StorageModelV006
@@ -111,6 +114,7 @@ export class StorageMigrator implements Migrator {
 
   // Retrieves the current storage data, performing deserialization
   async getCurrent(): Promise<
+    | StorageModelV009
     | StorageModelV008
     | StorageModelV007
     | StorageModelV006
@@ -174,6 +178,7 @@ export class StorageMigrator implements Migrator {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
+    | StorageModelV009
     | StorageModelV008
     | StorageModelV007
     | StorageModelV006
@@ -183,6 +188,9 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    if (json?.version === 9) {
+      return json as StorageModelV009;
+    }
     if (json?.version === 8) {
       return json as StorageModelV008;
     }
@@ -240,6 +248,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration006(),
       new StorageMigration007(),
       new StorageMigration008(),
+      new StorageMigration009(),
     ];
   }
 }

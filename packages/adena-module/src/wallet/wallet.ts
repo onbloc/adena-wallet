@@ -200,7 +200,7 @@ export class AdenaWallet implements Wallet {
         if (!isHDWalletKeyring(k)) {
           return false;
         }
-        return keyring.mnemonic === k.mnemonic;
+        return keyring.mnemonicEntropy === k.mnemonicEntropy;
       });
     }
 
@@ -225,7 +225,7 @@ export class AdenaWallet implements Wallet {
     if (!isHDWalletKeyring(this.currentKeyring)) {
       throw new Error('Mnemonic words not found');
     }
-    return this.currentKeyring.mnemonic;
+    return this.currentKeyring.getMnemonic();
   }
 
   getLastAccountIndexBy(keyring: Keyring) {

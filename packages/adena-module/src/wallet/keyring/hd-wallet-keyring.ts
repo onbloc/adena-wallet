@@ -8,7 +8,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Bip39, EnglishMnemonic } from '../../crypto';
+import { Bip39, EnglishMnemonic, entropyToMnemonic, mnemonicToEntropy } from '../../crypto';
 import { Document, makeSignedTx, useTm2Wallet } from './../..';
 import { Keyring, KeyringData, KeyringType } from './keyring';
 
@@ -16,19 +16,23 @@ export class HDWalletKeyring implements Keyring {
   public readonly id: string;
   public readonly type: KeyringType = 'HD_WALLET';
   public readonly seed: Uint8Array;
-  public readonly mnemonic: string;
+  public readonly mnemonicEntropy: Uint8Array;
 
-  constructor({ id, mnemonic, seed }: KeyringData) {
-    if (!mnemonic || !seed) {
+  constructor({ id, mnemonicEntropy, seed }: KeyringData) {
+    if (!mnemonicEntropy || !seed) {
       throw new Error('Invalid parameter values');
     }
     this.id = id || uuidv4();
-    this.mnemonic = mnemonic;
+    this.mnemonicEntropy = Uint8Array.from(mnemonicEntropy);
     this.seed = Uint8Array.from(seed);
   }
 
+  getMnemonic() {
+    return entropyToMnemonic(this.mnemonicEntropy);
+  }
+
   async getKeypair(hdPath: number) {
-    const { privateKey, publicKey } = await generateKeyPair(this.mnemonic, hdPath);
+    const { privateKey, publicKey } = await generateKeyPair(this.getMnemonic(), hdPath);
     return { privateKey, publicKey: publicKey };
   }
 
@@ -47,7 +51,7 @@ export class HDWalletKeyring implements Keyring {
       id: this.id,
       type: this.type,
       seed: Array.from(this.seed),
-      mnemonic: this.mnemonic,
+      mnemonicEntropy: Array.from(this.mnemonicEntropy),
     };
   }
 
@@ -59,7 +63,7 @@ export class HDWalletKeyring implements Keyring {
     signed: Tx;
     signature: TxSignature[];
   }> {
-    const wallet = await useTm2Wallet(document).fromMnemonic(this.mnemonic, {
+    const wallet = await useTm2Wallet(document).fromMnemonic(this.getMnemonic(), {
       accountIndex: hdPath,
     });
     wallet.connect(provider);
@@ -75,13 +79,13 @@ export class HDWalletKeyring implements Keyring {
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
   }
 
   async broadcastTxCommit(provider: Provider, signedTx: Tx, hdPath: number = 0) {
-    const wallet = await Tm2Wallet.fromMnemonic(this.mnemonic, { accountIndex: hdPath });
+    const wallet = await Tm2Wallet.fromMnemonic(this.getMnemonic(), { accountIndex: hdPath });
     wallet.connect(provider);
     return wallet.sendTransaction(signedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
@@ -89,6 +93,10 @@ export class HDWalletKeyring implements Keyring {
   public static async fromMnemonic(mnemonic: string) {
     const englishMnemonic = new EnglishMnemonic(mnemonic);
     const seed = await Bip39.mnemonicToSeed(englishMnemonic);
-    return new HDWalletKeyring({ mnemonic, seed: Array.from(seed) });
+    const mnemonicEntropy = await mnemonicToEntropy(englishMnemonic.toString());
+    return new HDWalletKeyring({
+      mnemonicEntropy: Array.from(mnemonicEntropy),
+      seed: Array.from(seed),
+    });
   }
 }

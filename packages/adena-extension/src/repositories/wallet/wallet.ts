@@ -70,10 +70,7 @@ export class WalletRepository {
     }
 
     try {
-      const password = await decryptPassword(iv, encryptedPassword);
-      this.updateStoragePassword(password);
-
-      return password;
+      return decryptPassword(iv, encryptedPassword);
     } catch (e) {
       throw new WalletError('NOT_FOUND_PASSWORD');
     }

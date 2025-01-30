@@ -67,7 +67,7 @@ type AccountDataModelV008 = {
   addressBytes?: number[];
 };
 
-type KeyringDataModelV008 = {
+export type KeyringDataModelV008 = {
   id?: string;
   type: 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH' | 'AIRGAP';
   publicKey?: number[];
