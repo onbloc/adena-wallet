@@ -76,8 +76,10 @@ export interface AdditionalTokenProps {
   keyword: string;
   manualTokenPath: string;
   tokenInfos: TokenInfo[];
+  selectedTokenPath: string | null;
   selectedTokenInfo: TokenInfo | null;
   isLoadingManualGRC20Token: boolean;
+  isLoadingSelectedGRC20Token: boolean;
   errorManualGRC20Token: BaseError | null;
   selectAddingType: (type: AddingType) => void;
   onChangeKeyword: (keyword: string) => void;
