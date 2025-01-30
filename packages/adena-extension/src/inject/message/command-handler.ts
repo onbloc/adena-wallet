@@ -6,6 +6,7 @@ import {
   encryptPassword,
   getInMemoryKey,
 } from './commands/encrypt';
+import { clearPopup } from './commands/popup';
 
 export class CommandHandler {
   public static createHandler = async (
@@ -66,6 +67,13 @@ export class CommandHandler {
 
     if (message.command === 'clearEncryptKey') {
       await clearInMemoryKey(inMemoryProvider);
+      sendResponse({ ...message, code: 200 });
+      return;
+    }
+
+    if (message.command === 'clearPopup') {
+      await clearInMemoryKey(inMemoryProvider);
+      await clearPopup();
       sendResponse({ ...message, code: 200 });
       return;
     }

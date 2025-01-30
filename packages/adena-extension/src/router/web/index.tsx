@@ -1,33 +1,41 @@
 import { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
 
-import LandingScreen from '@pages/web/landing-screen';
-import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
-import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
+import AccountAddScreen from '@pages/web/account-add-screen';
+import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
+import AccountImportScreen from '@pages/web/account-import-screen';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
+import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
-import WalletCreateScreen from '@pages/web/wallet-create-screen';
-import AccountAddScreen from '@pages/web/account-add-screen';
-import AccountImportScreen from '@pages/web/account-import-screen';
-import WalletImportScreen from '@pages/web/wallet-import-screen';
-import WalletExportScreen from '@pages/web/wallet-export-screen';
+import LandingScreen from '@pages/web/landing-screen';
 import QuestionnaireScreen from '@pages/web/questionnaire-screen';
-import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
+import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
 import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
-import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
+import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
+import WalletCreateScreen from '@pages/web/wallet-create-screen';
+import WalletExportScreen from '@pages/web/wallet-export-screen';
+import WalletImportScreen from '@pages/web/wallet-import-screen';
 
-import Header from './Header';
+import { useWallet } from '@hooks/use-wallet';
 import NotFoundScreen from '@pages/web/404';
+import Header from './Header';
 
 export const WebRouter = (): JSX.Element => {
   const pathname = window?.location?.pathname || '';
   const isRegister = pathname.startsWith('/register.html');
   const isExport = pathname.startsWith('/security.html');
   const { navigate } = useAppNavigate();
+  const { existWallet, lockedWallet } = useWallet();
+
+  useEffect(() => {
+    if (existWallet && lockedWallet) {
+      window.close();
+    }
+  }, [existWallet, lockedWallet]);
 
   useEffect(() => {
     const preventGoBack = (): void => {

@@ -14,6 +14,7 @@ import { useTokenBalance } from '@hooks/use-token-balance';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
+import { CommandMessage } from '@inject/message/command-message';
 import { useQuery } from '@tanstack/react-query';
 import { RoutePath, SideMenuAccountInfo, TokenBalanceType } from '@types';
 
@@ -94,6 +95,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const lock = useCallback(async () => {
     setOpen(false);
     await walletService.lockWallet();
+    await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
     await loadAccounts();
     navigate(RoutePath.Login, { replace: true });
   }, [walletService, navigate]);
