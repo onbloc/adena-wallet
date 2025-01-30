@@ -795,6 +795,12 @@ export class TokenRepository implements ITokenRepository {
     query: string,
     header?: { [key in string]: number } | null,
   ): Promise<T | null> => {
+    if (query.includes('__schema') || query.includes('__typename')) {
+      console.warn('GraphQL Introspection queries are blocked.');
+
+      return Promise.resolve(null);
+    }
+
     return axiosInstance
       .post<T>(
         url,

@@ -194,7 +194,7 @@ export function mapVMTransaction(
   const firstMessage = getDefaultMessage(tx.messages);
 
   if (tx.messages.length > 1) {
-    const isAddPackage = firstMessage.value?.__typename === 'MsgAddPackage';
+    const isAddPackage = isAddPackageValue(firstMessage.value);
     const messageValue: any = firstMessage.value;
     return {
       hash: tx.hash,
@@ -222,7 +222,7 @@ export function mapVMTransaction(
     };
   }
 
-  if (firstMessage.value.__typename === 'MsgAddPackage') {
+  if (firstMessage.value === 'MsgAddPackage') {
     return {
       hash: tx.hash,
       height: tx.block_height,
@@ -245,7 +245,7 @@ export function mapVMTransaction(
     };
   }
 
-  if (firstMessage.value.__typename === 'MsgCall') {
+  if (isMsgCallValue(firstMessage.value)) {
     const messageValue = firstMessage.value as MsgCallValue;
     const isTransfer = messageValue.func === 'Transfer';
     const isTransferGRC721 = messageValue.func === 'TransferFrom';
@@ -351,4 +351,14 @@ export function mapVMTransaction(
       denom: `${tx.gas_fee.denom}`,
     },
   };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isAddPackageValue(value: any): value is AddPackageValue {
+  return value.creator !== undefined && value.package !== undefined;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isMsgCallValue(value: any): value is MsgCallValue {
+  return value.caller !== undefined && value.pkg_path !== undefined;
 }
