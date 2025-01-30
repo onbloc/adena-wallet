@@ -18,8 +18,10 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   keyword,
   manualTokenPath,
   tokenInfos,
+  selectedTokenPath,
   selectedTokenInfo,
   isLoadingManualGRC20Token,
+  isLoadingSelectedGRC20Token,
   errorManualGRC20Token,
   selectAddingType,
   onChangeKeyword,
@@ -35,12 +37,12 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   }, [addingType]);
 
   const isLoadingTokenInfo = useMemo(() => {
-    if (addingType === AddingType.SEARCH) {
-      return false;
+    if (isSearchType) {
+      return isLoadingSelectedGRC20Token;
     }
 
     return isLoadingManualGRC20Token;
-  }, [addingType, isLoadingManualGRC20Token]);
+  }, [addingType, isLoadingManualGRC20Token, isLoadingSelectedGRC20Token]);
 
   const tokenPathInputErrorMessage = useMemo(() => {
     if (!errorManualGRC20Token) {
@@ -53,6 +55,18 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   const enabledAddButton = useMemo(() => {
     return selectedTokenInfo && !errorManualGRC20Token;
   }, [selectedTokenInfo, errorManualGRC20Token]);
+
+  const displaySelectedTokenPath = useMemo(() => {
+    const token = tokenInfos.find((token) => token.path === selectedTokenPath);
+    if (!token) {
+      return null;
+    }
+
+    return {
+      name: token.name,
+      symbol: token.symbol,
+    };
+  }, [selectedTokenPath, tokenInfos]);
 
   return (
     <AdditionalTokenWrapper>
@@ -77,7 +91,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
             selected={selected}
             keyword={keyword}
             tokenInfos={tokenInfos}
-            selectedInfo={selectedTokenInfo || null}
+            selectedInfo={displaySelectedTokenPath || null}
             onChangeKeyword={onChangeKeyword}
             onClickOpenButton={onClickOpenButton}
             onClickListItem={onClickListItem}

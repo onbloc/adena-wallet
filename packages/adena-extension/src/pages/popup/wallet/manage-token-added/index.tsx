@@ -21,6 +21,7 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
+  const [selectedTokenPath, setSelectedTokenPath] = useState<string | null>(null);
   const [selectedTokenInfo, setSelectedTokenInfo] = useState<TokenInfo | null>(null);
   const [finished, setFinished] = useState(false);
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
@@ -28,13 +29,26 @@ const ManageTokenAddedContainer: React.FC = () => {
 
   const { data: grc20Tokens } = useGRC20Tokens();
 
+  /**
+   * Manual GRC20 Token Query
+   */
   const {
     debouncedValue: debouncedManualTokenPath,
     setDebouncedValue: setDebouncedManualTokenPath,
     isLoading: isLoadingDebounce,
   } = useDebounce(manualTokenPath, 500);
-  const { data: manualGRC20Token, isFetching: isFetchingManualGRC20Token } =
-    useGRC20Token(debouncedManualTokenPath);
+  const { data: manualGRC20Token, isFetching: isFetchingManualGRC20Token } = useGRC20Token(
+    debouncedManualTokenPath,
+    { enabled: manualTokenPath !== '' },
+  );
+
+  /**
+   * Selected GRC20 Token Query
+   */
+  const { data: selectedGRC20Token, isFetching: isFetchingSelectedGRC20Token } = useGRC20Token(
+    selectedTokenPath || '',
+    { enabled: selected && !!selectedTokenPath },
+  );
 
   const isValidManualGRC20Token = useMemo(() => {
     if (manualTokenPath === '') {
@@ -48,6 +62,14 @@ const ManageTokenAddedContainer: React.FC = () => {
       return false;
     }
   }, [manualTokenPath]);
+
+  const isLoadingSelectedGRC20Token = useMemo(() => {
+    if (!selectedTokenPath) {
+      return false;
+    }
+
+    return isFetchingSelectedGRC20Token;
+  }, [selectedTokenPath, isFetchingSelectedGRC20Token]);
 
   const isLoadingManualGRC20Token = useMemo(() => {
     if (!isValidManualGRC20Token) {
@@ -162,7 +184,7 @@ const ManageTokenAddedContainer: React.FC = () => {
       }
 
       setSelected(true);
-      setSelectedTokenInfo(tokenInfo);
+      setSelectedTokenPath(tokenInfo.path);
       setOpened(false);
     },
     [tokenInfos],
@@ -223,6 +245,33 @@ const ManageTokenAddedContainer: React.FC = () => {
     });
   }, [addingType, manualGRC20Token, isLoadingManualGRC20Token]);
 
+  useEffect(() => {
+    if (addingType === AddingType.MANUAL) {
+      return;
+    }
+
+    if (isFetchingSelectedGRC20Token) {
+      setSelectedTokenInfo(null);
+      return;
+    }
+
+    if (!selectedGRC20Token) {
+      setSelectedTokenInfo(null);
+      return;
+    }
+
+    setSelected(true);
+    setSelectedTokenInfo({
+      tokenId: selectedGRC20Token.tokenId,
+      name: selectedGRC20Token.name,
+      symbol: selectedGRC20Token.symbol,
+      path: selectedGRC20Token.pkgPath,
+      decimals: selectedGRC20Token.decimals,
+      chainId: selectedGRC20Token.networkId,
+      pathInfo: selectedGRC20Token.pkgPath.replace('gno.land/', ''),
+    });
+  }, [addingType, selectedGRC20Token, isFetchingSelectedGRC20Token]);
+
   return (
     <ManageTokenLayout>
       <AdditionalToken
@@ -232,8 +281,10 @@ const ManageTokenAddedContainer: React.FC = () => {
         keyword={keyword}
         tokenInfos={tokenInfos ?? []}
         manualTokenPath={manualTokenPath}
+        isLoadingSelectedGRC20Token={isLoadingSelectedGRC20Token}
         isLoadingManualGRC20Token={isLoadingManualGRC20Token}
         errorManualGRC20Token={errorManualGRC20Token}
+        selectedTokenPath={selectedTokenPath}
         selectedTokenInfo={selectedTokenInfo}
         selectAddingType={selectAddingType}
         onChangeKeyword={onChangeKeyword}
