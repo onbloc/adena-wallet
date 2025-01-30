@@ -1,3 +1,4 @@
+import { AlarmKey } from '@common/constants/alarm-key.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
 import { CommandHandler } from '@inject/message/command-handler';
@@ -56,11 +57,11 @@ chrome.runtime.onConnect.addListener((port) => {
 
   port.onDisconnect.addListener(() => {
     inMemoryProvider.removeConnection();
-    chrome.alarms.clear('expired_password');
+    chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
 
     if (!inMemoryProvider.isActive()) {
-      chrome.alarms.clear('expired_password');
-      chrome.alarms.create('expired_password', {
+      chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+      chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
         delayInMinutes: inMemoryProvider.getExpiredPasswordDurationMinutes(),
       });
     }
@@ -68,9 +69,11 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'expired_password') {
+  if (alarm.name === AlarmKey.EXPIRED_PASSWORD) {
     await chrome.storage.session.clear();
     await clearInMemoryKey(inMemoryProvider);
+
+    return;
   }
 });
 
