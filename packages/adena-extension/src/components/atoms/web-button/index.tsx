@@ -22,7 +22,9 @@ type WebButtonProps = {
 ) &
   ButtonHTMLAttributes<HTMLButtonElement>;
 
-const StyledButtonBase = styled.button<{ size: 'full' | 'large' | 'small'; fixed?: boolean }>`
+const StyledButtonBase = styled.button.withConfig({
+  shouldForwardProp: (prop) => !['ref', 'size', 'fixed', 'rightIcon'].includes(prop),
+})<{ size: 'full' | 'large' | 'small'; fixed?: boolean }>`
   & {
     cursor: pointer;
     border: none;

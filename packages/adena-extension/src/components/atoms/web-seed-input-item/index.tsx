@@ -10,7 +10,9 @@ interface StyleProps {
   error: boolean;
 }
 
-const StyledContainer = styled(Row)<StyleProps & { type: string }>`
+const StyledContainer = styled(Row).withConfig({
+  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
+})<StyleProps & { type: string }>`
   width: 100%;
   height: 40px;
   position: relative;
@@ -49,7 +51,9 @@ const StyledContainer = styled(Row)<StyleProps & { type: string }>`
       : ''}
 `;
 
-const StyledTitle = styled(View)<StyleProps>`
+const StyledTitle = styled(View).withConfig({
+  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
+})<StyleProps>`
   width: 40px;
   height: 100%;
   background: ${({ theme }): string => theme.webInput._100};
@@ -75,7 +79,9 @@ const StyledTitle = styled(View)<StyleProps>`
       : ''}
 `;
 
-const StyledInput = styled.input<StyleProps>`
+const StyledInput = styled.input.withConfig({
+  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
+})<StyleProps>`
   flex: 1;
   width: 100%;
   height: 40px;

@@ -1,7 +1,7 @@
-import styled, { css } from 'styled-components';
-import React, { CSSProperties } from 'react';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import React, { CSSProperties } from 'react';
+import styled, { css } from 'styled-components';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 type XOR<T, U> =
@@ -107,7 +107,10 @@ export const Button = ({
   );
 };
 
-const ButtonWrapper = styled.button<ButtonProps>`
+const ButtonWrapper = styled.button.withConfig({
+  shouldForwardProp: (prop) =>
+    !['width', 'height', 'hierarchy', 'margin', 'radius', 'fullWidth', 'bgColor'].includes(prop),
+})<ButtonProps>`
   ${mixins.flex({ direction: 'row' })};
   width: ${({ width, fullWidth }): string => {
     if (width) return typeof width === 'number' ? `${width}px` : width;

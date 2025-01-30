@@ -14,7 +14,9 @@ type LottieProps = {
   visibleSize?: number;
 } & HTMLAttributes<HTMLDivElement>;
 
-const StyledContainer = styled.div<{
+const StyledContainer = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['visibleSize', 'isOverflow'].includes(prop),
+})<{
   width?: number;
   height?: number;
   visibleSize: number;

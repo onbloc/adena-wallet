@@ -13,7 +13,9 @@ interface WebCopyButtonProps {
   onCopy?: () => void;
 }
 
-const StyledContainer = styled(Row)<{ clicked: boolean }>`
+const StyledContainer = styled(Row).withConfig({
+  shouldForwardProp: (prop): boolean => !['clicked'].includes(prop),
+})<{ clicked: boolean }>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -61,6 +63,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
 }) => {
   const theme = useTheme();
   const [clicked, setClicked] = useState(false);
+  const [clickedAt, setClickedAt] = useState(0);
   const [mouseover, setMouseover] = useState(false);
 
   const buttonStr = useMemo(() => {
@@ -79,6 +82,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       return;
     }
     setClicked(true);
+    setClickedAt(Date.now());
 
     navigator.clipboard.writeText(copyText);
     onCopy && onCopy();
@@ -97,18 +101,17 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!clicked) {
-      return;
-    }
+    console.log('clear start clipboard');
 
     const timeout = setTimeout(() => {
+      console.log('clear clipboard');
       navigator?.clipboard?.writeText('');
     }, clearClipboardTimeout);
 
     return () => {
       clearTimeout(timeout);
     };
-  }, [clicked, clearClipboardTimeout]);
+  }, [clickedAt, clearClipboardTimeout]);
 
   return (
     <StyledContainer

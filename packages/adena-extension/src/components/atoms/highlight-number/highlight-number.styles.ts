@@ -9,7 +9,10 @@ interface HighlightNumberWrapperProps {
   lineHeight?: string;
 }
 
-export const HighlightNumberWrapper = styled.div<HighlightNumberWrapperProps>`
+export const HighlightNumberWrapper = styled.div.withConfig({
+  shouldForwardProp: (prop): boolean =>
+    !['fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight'].includes(prop),
+})<HighlightNumberWrapperProps>`
   ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
   width: fit-content;
   height: auto;
