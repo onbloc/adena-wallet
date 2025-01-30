@@ -1,6 +1,6 @@
 import { createGlobalStyle } from 'styled-components';
-import { fonts } from './theme';
 import mixins from './mixins';
+import { fonts } from './theme';
 
 export const GlobalWebStyle = createGlobalStyle`
   * {
@@ -84,7 +84,6 @@ export const GlobalPopupStyle = createGlobalStyle`
   input, textarea {
     background: none; border: none; outline: none;
     &[type="password"]{
-      letter-spacing: 7px;
       ::placeholder {
         letter-spacing: normal;
       }
