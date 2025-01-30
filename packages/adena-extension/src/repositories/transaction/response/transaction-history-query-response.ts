@@ -24,21 +24,18 @@ export interface Amount {
 }
 
 export interface BankSendValue {
-  __typename: string;
   from_address: string;
   to_address: string;
   amount: string;
 }
 
 export interface MsgRunValue {
-  __typename: string;
   caller?: string;
   send?: string;
   package?: Package;
 }
 
 export interface MsgCallValue {
-  __typename: string;
   caller?: string;
   send?: string;
   pkg_path?: string;
@@ -47,7 +44,6 @@ export interface MsgCallValue {
 }
 
 export interface AddPackageValue {
-  __typename: string;
   creator?: string;
   deposit?: string;
   package?: Package;
@@ -63,7 +59,6 @@ export interface Package {
 }
 
 export interface Event {
-  __typename: string;
   type: string;
   pkg_path: string;
   func: string;

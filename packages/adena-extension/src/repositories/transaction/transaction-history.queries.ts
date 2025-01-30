@@ -81,7 +81,6 @@ export const makeAccountTransactionsQuery = (
           messages {
             typeUrl
             value {
-              __typename
               ... on BankMsgSend {
                 from_address
                 to_address
@@ -167,7 +166,6 @@ export const makeNativeTransactionsQuery = (
           messages {
             typeUrl
             value {
-              __typename
               ... on BankMsgSend {
                 from_address
                 to_address
@@ -237,7 +235,6 @@ export const makeGRC20TransferTransactionsQuery = (
           messages {
             typeUrl
             value {
-              __typename
               ...on MsgCall {
                 caller
                 send
@@ -281,7 +278,6 @@ export const makeGRC20ReceivedTransactionsByAddressQuery = (address: string): st
     }
     messages {
       value {
-        __typename
         ...on MsgCall {
           caller
           send
@@ -328,7 +324,6 @@ export const makeVMTransactionsByAddressQuery = (address: string): string => `
     }
     messages {
       value {
-        __typename
         ... on BankMsgSend {
           from_address
           to_address
@@ -384,7 +379,6 @@ export const makeNativeTokenSendTransactionsByAddressQuery = (address: string): 
     }
     messages {
       value {
-        __typename
         ...on BankMsgSend{
           from_address
           to_address
@@ -423,7 +417,6 @@ export const makeNativeTokenReceivedTransactionsByAddressQuery = (address: strin
     }
     messages {
       value {
-        __typename
         ...on BankMsgSend{
           from_address
           to_address
@@ -467,7 +460,6 @@ export const makeGRC20ReceivedTransactionsByAddressQueryByPackagePath = (
     }
     messages {
       value {
-        __typename
         ...on MsgCall {
           caller
           send
@@ -512,7 +504,6 @@ export const makeGRC20SendTransactionsByAddressQueryByPackagePath = (
     }
     messages {
       value {
-        __typename
         ... on MsgCall {
           caller
           send
