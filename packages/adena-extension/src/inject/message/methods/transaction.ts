@@ -138,16 +138,28 @@ export const validateInjectionTransactionMessage = (
         }
         break;
       case '/vm.m_call':
+        if (message.value.caller === '') {
+          message.value.caller = currentAccountAddress;
+        }
+
         if (currentAccountAddress !== message.value.caller) {
           return false;
         }
         break;
       case '/vm.m_addpkg':
+        if (message.value.creator === '') {
+          message.value.creator = currentAccountAddress;
+        }
+
         if (currentAccountAddress !== message.value.creator) {
           return false;
         }
         break;
       case '/vm.m_run':
+        if (message.value.caller === '') {
+          message.value.caller = currentAccountAddress;
+        }
+
         if (currentAccountAddress !== message.value.caller) {
           return false;
         }

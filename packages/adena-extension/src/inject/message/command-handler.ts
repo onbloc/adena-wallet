@@ -1,4 +1,6 @@
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
+import { AdenaExecutor } from '@inject/executor';
+import { ContractMessage, TransactionParams } from '@inject/types';
 import { CommandMessageData } from './command-message';
 import {
   clearInMemoryKey,
@@ -7,6 +9,12 @@ import {
   getInMemoryKey,
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
+import {
+  GnoConnectInfo,
+  GnoMessageInfo,
+  parseGnoConnectInfo,
+  parseGnoMessageInfo,
+} from './methods/gno-connect';
 
 export class CommandHandler {
   public static createHandler = async (
@@ -72,6 +80,30 @@ export class CommandHandler {
       return;
     }
   };
+
+  public static createContentHandler = async (message: CommandMessageData): Promise<void> => {
+    if (message.code !== 0 || message.command !== 'checkMetadata') {
+      return;
+    }
+
+    // Parse GnoMessageInfo
+    const gnoMessageInfo = parseGnoMessageInfo();
+    if (gnoMessageInfo === null) {
+      return;
+    }
+
+    // Parse GnoConnectInfo
+    const gnoConnectInfo = parseGnoConnectInfo();
+    if (gnoConnectInfo === null) {
+      return;
+    }
+
+    // Make TransactionParams
+    const transactionParams = makeTransactionMessage(gnoMessageInfo, gnoConnectInfo);
+
+    const executor = new AdenaExecutor();
+    executor.doContract(transactionParams).then(console.info).catch(console.error);
+  };
 }
 
 function makeSuccessResponse(message: CommandMessageData, data: any = null): CommandMessageData {
@@ -86,5 +118,28 @@ function makeInternalErrorResponse(message: CommandMessageData): CommandMessageD
   return {
     ...message,
     code: 500,
+  };
+}
+
+function makeTransactionMessage(
+  gnoMessageInfo: GnoMessageInfo,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  gnoConnectInfo: GnoConnectInfo,
+): TransactionParams {
+  const messages: ContractMessage[] = [
+    {
+      type: '/vm.m_call',
+      value: {
+        caller: '',
+        send: gnoMessageInfo.send,
+        pkg_path: gnoMessageInfo.packagePath,
+        func: gnoMessageInfo.functionName,
+        args: gnoMessageInfo.args,
+      },
+    },
+  ];
+
+  return {
+    messages,
   };
 }

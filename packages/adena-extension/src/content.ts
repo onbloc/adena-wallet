@@ -1,5 +1,7 @@
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { EventMessageData } from '@inject/message';
+import { CommandHandler } from '@inject/message/command-handler';
+import { CommandMessageData } from '@inject/message/command-message';
 
 const sendMessage = (event: MessageEvent): void => {
   const message = event.data;
@@ -44,12 +46,18 @@ const initListener = (): void => {
 };
 
 const initExtensionListener = (): void => {
-  chrome.runtime.onMessage.addListener((message: EventMessageData) => {
+  chrome.runtime.onMessage.addListener((message: EventMessageData | CommandMessageData) => {
     if (message.status === 'event') {
       const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {
         detail: message.data,
       });
+
       window.dispatchEvent(changedAccountEvent);
+      return;
+    }
+
+    if (message.status === 'command') {
+      return CommandHandler.createContentHandler(message);
     }
   });
 };
