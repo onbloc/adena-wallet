@@ -30,7 +30,7 @@ function makeGasInfoBy(
   }
 
   const gasWantedBN = BigNumber(gasUsed).multipliedBy(safetyMargin);
-  const gasFeeBN = gasWantedBN.multipliedBy(gasPrice);
+  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
 
   return {
     gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
@@ -81,7 +81,7 @@ export const useGetEstimateGasInfo = (
         return null;
       }
 
-      const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
+      const modifiedDocument = modifyDocument(document, gasWanted * 100, gasFee);
 
       const result = await transactionGasService
         .estimateGas(documentToDefaultTx(modifiedDocument))

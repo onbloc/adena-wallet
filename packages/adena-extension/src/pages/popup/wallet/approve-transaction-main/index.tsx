@@ -380,7 +380,11 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasInfo]);
+  }, [
+    memo,
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+  ]);
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(

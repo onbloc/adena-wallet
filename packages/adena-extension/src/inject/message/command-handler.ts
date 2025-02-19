@@ -1,3 +1,4 @@
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
@@ -125,7 +126,7 @@ function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   gnoConnectInfo: GnoConnectInfo,
-): TransactionParams {
+): TransactionParams & { gasFee: number; gasWanted: number } {
   const messages: ContractMessage[] = [
     {
       type: '/vm.m_call',
@@ -141,5 +142,7 @@ function makeTransactionMessage(
 
   return {
     messages,
+    gasFee: 0,
+    gasWanted: DEFAULT_GAS_WANTED,
   };
 }

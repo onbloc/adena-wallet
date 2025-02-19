@@ -73,7 +73,7 @@ export const useNetworkFee = (
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
 
     return current?.gasInfo || null;
-  }, [currentSettingType, gasPriceTiers]);
+  }, [gasPriceTiers, currentSettingType]);
 
   const changedGasInfo = useMemo(() => {
     if (!gasPriceTiers) {
@@ -86,7 +86,7 @@ export const useNetworkFee = (
   }, [changedSettingType, gasPriceTiers]);
 
   const currentGasFeeRawAmount = useMemo(() => {
-    if (!selectedTier) {
+    if (!selectedTier && !currentGasInfo) {
       return BigNumber(document?.fee.amount?.[0].amount || 0).toNumber();
     }
 
@@ -97,7 +97,7 @@ export const useNetworkFee = (
     const currentGasFeeAmount = BigNumber(currentGasInfo.gasFee).toFixed(0, BigNumber.ROUND_UP);
 
     return Number(currentGasFeeAmount);
-  }, [currentGasInfo, document, selectedTier]);
+  }, [currentGasInfo?.gasFee, document, selectedTier]);
 
   const networkFee = useMemo(() => {
     if (!currentGasInfo) {
