@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BroadcastTxCommitResult, BroadcastTxSyncResult, TM2Error } from '@gnolang/tm2-js-client';
+import {
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
+  defaultAddressPrefix,
+  TM2Error,
+} from '@gnolang/tm2-js-client';
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -25,7 +30,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
-import { RoutePath } from '@types';
+import { NetworkMetainfo, RoutePath } from '@types';
 
 interface TransactionData {
   messages: readonly any[];
@@ -34,6 +39,23 @@ interface TransactionData {
   gasFee: string;
   memo: string;
   document: Document;
+}
+
+function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
+  return {
+    addressPrefix: defaultAddressPrefix,
+    chainId,
+    rpcUrl,
+    networkId: chainId,
+    networkName: '',
+    apiUrl: '',
+    indexerUrl: '',
+    chainName: '',
+    default: false,
+    gnoUrl: '',
+    id: chainId,
+    linkUrl: '',
+  };
 }
 
 function mappedTransactionData(document: Document): TransactionData {
@@ -68,7 +90,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { wallet } = useWalletContext();
   const nomarlNavigate = useNavigate();
   const { navigate } = useAppNavigate();
-  const { gnoProvider } = useWalletContext();
+  const { gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
   const { currentAccount, getCurrentAddress } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
@@ -78,13 +100,26 @@ const ApproveTransactionContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [document, setDocument] = useState<Document>();
-  const { currentNetwork } = useNetwork();
+  const { currentNetwork: currentWalletNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  const currentNetwork: NetworkMetainfo = useMemo(() => {
+    const networkInfo = requestData?.data?.networkInfo;
+    if (!!networkInfo?.chainId && !!networkInfo?.rpcUrl) {
+      return makeDefaultNetworkInfo(networkInfo.chainId, networkInfo.rpcUrl);
+    }
+
+    return currentWalletNetwork;
+  }, [currentWalletNetwork, requestData]);
+
+  useEffect(() => {
+    changeNetwork(currentNetwork);
+  }, [currentNetwork.chainId]);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -380,7 +415,11 @@ const ApproveTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasInfo]);
+  }, [
+    memo,
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+  ]);
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(

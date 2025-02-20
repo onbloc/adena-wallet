@@ -1,3 +1,5 @@
+import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
@@ -102,6 +104,23 @@ export class CommandHandler {
     const transactionParams = makeTransactionMessage(gnoMessageInfo, gnoConnectInfo);
 
     const executor = new AdenaExecutor();
+
+    const addEstablishResponse = await executor.addEstablish();
+    // Not connected
+    if (
+      addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS &&
+      addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
+    ) {
+      return;
+    }
+
+    console.log(addEstablishResponse);
+
+    const network = await executor.getNetwork();
+    if (network.data?.chainId !== gnoConnectInfo.chainId) {
+      await executor.switchNetwork(gnoConnectInfo.chainId);
+    }
+
     executor.doContract(transactionParams).then(console.info).catch(console.error);
   };
 }
@@ -123,9 +142,8 @@ function makeInternalErrorResponse(message: CommandMessageData): CommandMessageD
 
 function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   gnoConnectInfo: GnoConnectInfo,
-): TransactionParams {
+): TransactionParams & { gasFee: number; gasWanted: number } {
   const messages: ContractMessage[] = [
     {
       type: '/vm.m_call',
@@ -141,5 +159,11 @@ function makeTransactionMessage(
 
   return {
     messages,
+    gasFee: 0,
+    gasWanted: DEFAULT_GAS_WANTED,
+    networkInfo: {
+      chainId: gnoConnectInfo.chainId,
+      rpcUrl: gnoConnectInfo.rpc,
+    },
   };
 }
