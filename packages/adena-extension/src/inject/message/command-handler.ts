@@ -111,12 +111,18 @@ export class CommandHandler {
       addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS &&
       addEstablishResponse.type !== WalletResponseFailureType.ALREADY_CONNECTED
     ) {
+      console.info('response: ', addEstablishResponse);
       return;
     }
 
-    const network = await executor.getNetwork();
-    if (network.data?.chainId !== gnoConnectInfo.chainId) {
-      await executor.switchNetwork(gnoConnectInfo.chainId);
+    const switchNetworkResponse = await executor.switchNetwork(gnoConnectInfo.chainId);
+    if (
+      switchNetworkResponse.type !== WalletResponseSuccessType.SWITCH_NETWORK_SUCCESS &&
+      switchNetworkResponse.type !== WalletResponseFailureType.REDUNDANT_CHANGE_REQUEST &&
+      switchNetworkResponse.type !== WalletResponseFailureType.UNADDED_NETWORK
+    ) {
+      console.info('response: ', switchNetworkResponse);
+      return;
     }
 
     executor.doContract(transactionParams).then(console.info).catch(console.error);

@@ -86,17 +86,7 @@ export const switchNetwork = async (
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   const core = new InjectCore();
-  const locked = await core.walletService.isLocked();
-  if (locked) {
-    sendResponse(
-      InjectionMessageInstance.failure(
-        WalletResponseFailureType.WALLET_LOCKED,
-        {},
-        requestData.key,
-      ),
-    );
-    return;
-  }
+
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(
@@ -108,6 +98,7 @@ export const switchNetwork = async (
     );
     return;
   }
+
   const currentNetwork = await core.chainService.getCurrentNetwork();
   if (currentNetwork.networkId === chainId) {
     sendResponse(
@@ -119,6 +110,7 @@ export const switchNetwork = async (
     );
     return;
   }
+
   const networks = await core.chainService.getNetworks();
   const existNetwork =
     networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;

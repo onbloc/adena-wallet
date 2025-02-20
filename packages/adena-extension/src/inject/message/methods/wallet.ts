@@ -113,19 +113,8 @@ export const addEstablish = async (
   const isLocked = await core.walletService.isLocked();
   const siteName = getSiteName(message.protocol, message.hostname);
 
-  if (!isLocked) {
-    sendResponse(
-      InjectionMessageInstance.success(
-        WalletResponseSuccessType.CONNECTION_SUCCESS,
-        {},
-        message.key,
-      ),
-    );
-    return true;
-  }
-
   const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
-  if (isEstablished) {
+  if (!isLocked && isEstablished) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.ALREADY_CONNECTED,
