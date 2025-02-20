@@ -114,8 +114,6 @@ export class CommandHandler {
       return;
     }
 
-    console.log(addEstablishResponse);
-
     const network = await executor.getNetwork();
     if (network.data?.chainId !== gnoConnectInfo.chainId) {
       await executor.switchNetwork(gnoConnectInfo.chainId);
