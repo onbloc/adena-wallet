@@ -2,7 +2,7 @@ import { AlarmKey } from '@common/constants/alarm-key.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
 import { CommandHandler } from '@inject/message/command-handler';
-import { isCommandMessageData } from '@inject/message/command-message';
+import { CommandMessage, isCommandMessageData } from '@inject/message/command-message';
 import { clearInMemoryKey } from '@inject/message/commands/encrypt';
 import { MessageHandler } from './inject/message';
 
@@ -79,6 +79,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
     await chrome.storage.session.clear();
     await clearInMemoryKey(inMemoryProvider);
+  }
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  // Check metadata when tab is updated
+  if (changeInfo.status === 'complete') {
+    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata'));
   }
 });
 

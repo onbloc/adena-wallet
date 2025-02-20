@@ -112,10 +112,12 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     if (networkMetainfos.length === 0) {
       return false;
     }
-    setNetworkMetainfos(networkMetainfos);
-    chainService.updateNetworks(networkMetainfos);
 
+    setNetworkMetainfos(networkMetainfos);
+
+    chainService.updateNetworks(networkMetainfos);
     await initCurrentNetworkMetainfos(networkMetainfos);
+
     return true;
   }
 
@@ -126,16 +128,20 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     const currentNetwork =
       networkMetainfos.find((networkMetainfo) => networkMetainfo.id === currentNetworkId) ??
       networkMetainfos[0];
+
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);
+
     return true;
   }
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {
     const rpcUrl = networkMetainfo.rpcUrl;
     const gnoProvider = new GnoProvider(rpcUrl, networkMetainfo.networkId);
+
     setCurrentNetwork(networkMetainfo);
     setGnoProvider(gnoProvider);
+
     return networkMetainfo;
   }
 

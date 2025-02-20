@@ -16,6 +16,10 @@ export type ContractMessage = {
 export type TransactionParams = {
   messages: ContractMessage[];
   memo?: string;
+  networkInfo?: {
+    chainId: string;
+    rpcUrl: string;
+  };
 };
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
