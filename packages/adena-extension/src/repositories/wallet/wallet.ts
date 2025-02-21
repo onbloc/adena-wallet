@@ -72,6 +72,7 @@ export class WalletRepository {
     try {
       return decryptPassword(iv, encryptedPassword);
     } catch (e) {
+      console.log('e', e);
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
   };

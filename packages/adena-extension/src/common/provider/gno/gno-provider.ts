@@ -11,7 +11,6 @@ import {
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
-import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import axios from 'axios';
 import { ResponseDeliverTx } from './proto/tm2/abci';
 import { parseProto } from './utils';
@@ -72,11 +71,18 @@ export class GnoProvider extends GnoJSONRPCProvider {
       ]),
     };
 
-    const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(this.baseURL, params.request, {
-      adapter: fetchAdapter,
-    });
+    const abciResponse = await fetch(this.baseURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params.request),
+    })
+      .then((res) => res.json())
+      .then((data) => data as RPCResponse<ABCIResponse>)
+      .catch(() => null);
 
-    const abciData = abciResponse.data.result?.response.ResponseBase.Data;
+    const abciData = abciResponse?.result?.response.ResponseBase.Data;
     // Make sure the response is initialized
     if (!abciData) {
       return defaultAccount;
@@ -157,9 +163,11 @@ export class GnoProvider extends GnoJSONRPCProvider {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
     };
 
-    const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(this.baseURL, params.request, {
-      adapter: fetchAdapter,
-    });
+    const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(
+      this.baseURL,
+      params.request,
+      {},
+    );
 
     const responseValue = abciResponse.data.result?.response.Value;
     if (!responseValue) {

@@ -19,12 +19,11 @@ import {
   WalletService,
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
-import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 
 export class InjectCore {
   private gnoProvider: GnoProvider | null = null;
 
-  private axiosInstance = axios.create({ adapter: fetchAdapter });
+  private axiosInstance = axios.create({});
 
   private localStorage = AdenaStorage.local();
 

@@ -1,6 +1,5 @@
-const builtins = require('rollup-plugin-node-builtins');
 const nodeResolve = require('@rollup/plugin-node-resolve');
-const { default: dotenv } = require("rollup-plugin-dotenv");
+const { default: dotenv } = require('rollup-plugin-dotenv');
 const typescript = require('rollup-plugin-typescript2');
 const path = require('path');
 const merge = require('lodash.merge');
@@ -30,7 +29,6 @@ module.exports = merge({
   input: resolve('index.ts'),
   output: jobs,
   plugins: [
-    builtins(),
     dotenv(),
     nodeResolve({
       extensions,
@@ -41,6 +39,8 @@ module.exports = merge({
     }),
   ],
   onwarn: function (warning) {
-    if (warning.code === 'THIS_IS_UNDEFINED') { return; }
-  }
+    if (warning.code === 'THIS_IS_UNDEFINED') {
+      return;
+    }
+  },
 });
