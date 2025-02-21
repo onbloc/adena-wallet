@@ -1,5 +1,6 @@
 import { AdenaWallet, Wallet } from 'adena-module';
 import dayjs from 'dayjs';
+import { v4 as uuidv4 } from 'uuid';
 
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
@@ -7,10 +8,16 @@ import { encryptSha256Password } from '@common/utils/crypto-utils';
 import { WalletRepository } from '@repositories/wallet';
 
 export class WalletService {
+  private _id: string;
   private walletRepository: WalletRepository;
 
   constructor(walletRepository: WalletRepository) {
+    this._id = uuidv4();
     this.walletRepository = walletRepository;
+  }
+
+  public get id(): string {
+    return this._id;
   }
 
   public existsWallet = (): Promise<boolean> => {

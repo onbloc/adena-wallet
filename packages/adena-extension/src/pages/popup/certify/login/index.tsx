@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
 import { useLocation } from 'react-router-dom';
+import styled, { useTheme } from 'styled-components';
 
-import { Text, DefaultInput, Button } from '@components/atoms';
-import { fonts } from '@styles/theme';
-import { RoutePath } from '@types';
 import { validateEmptyPassword } from '@common/validation';
+import { Button, DefaultInput, Text } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useLoadAccounts } from '@hooks/use-load-accounts';
 import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
 import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
+import { fonts } from '@styles/theme';
+import { RoutePath } from '@types';
 
 const text = 'Enter\nYour Password';
 
@@ -80,6 +80,7 @@ export const Login = (): JSX.Element => {
           return;
         }
         await walletService.updatePassword(password);
+        await setPassword('');
         await loadAccounts();
         navigate(RoutePath.Wallet);
         return;
@@ -111,6 +112,7 @@ export const Login = (): JSX.Element => {
     <Wrapper>
       <Title>{text}</Title>
       <DefaultInput
+        value={password}
         type='password'
         placeholder='Password'
         onChange={onChangePasswordInput}

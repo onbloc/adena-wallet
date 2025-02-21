@@ -23,7 +23,7 @@ export const useWallet = (): UseWalletReturn => {
   }, [wallet]);
 
   const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
-    ['wallet/existWallet', walletService],
+    ['wallet/existWallet', walletService.id],
     async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
@@ -32,7 +32,7 @@ export const useWallet = (): UseWalletReturn => {
   );
 
   const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
-    ['wallet/locked', walletService],
+    ['wallet/locked', walletService.id],
     async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;

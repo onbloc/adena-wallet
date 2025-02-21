@@ -104,7 +104,8 @@ export class WalletRepository {
   };
 
   public updateStoragePassword = (password: string): void => {
-    this.localStorage.updatePassword(password);
+    const encryptedPassword = encryptSha256Password(password);
+    this.localStorage.updatePassword(encryptedPassword);
   };
 
   public getQuestionnaireExpiredDate = async (): Promise<number | null> => {
