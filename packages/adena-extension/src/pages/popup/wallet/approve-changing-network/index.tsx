@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   WalletResponseFailureType,
@@ -9,12 +9,16 @@ import {
 import { decodeParameter, parseParameters } from '@common/utils/client-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import ApproveChangingNetwork from '@components/pages/approve-changing-network/approve-changing-network/approve-changing-network';
+import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { RoutePath } from '@types';
 
 const ApproveChangingNetworkContainer: React.FC = () => {
   const { search } = useLocation();
+  const navigate = useNavigate();
   const { currentNetwork, networks, changeNetwork } = useNetwork();
+  const { walletService } = useAdenaContext();
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -38,6 +42,10 @@ const ApproveChangingNetworkContainer: React.FC = () => {
     const parsedData = decodeParameter(data['data']);
     setRequestData({ ...parsedData, hostname: data['hostname'] });
     setChainId(parsedData?.data?.chainId || '');
+  };
+
+  const checkLockWallet = (): void => {
+    walletService.isLocked().then((locked) => locked && navigate(RoutePath.ApproveLogin + search));
   };
 
   const onClickChangeNetwork = useCallback(async () => {
@@ -91,6 +99,10 @@ const ApproveChangingNetworkContainer: React.FC = () => {
       ),
     );
   }, [requestData]);
+
+  useEffect(() => {
+    checkLockWallet();
+  }, [walletService]);
 
   return (
     <CommonFullContentLayout>

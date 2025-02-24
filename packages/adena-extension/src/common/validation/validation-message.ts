@@ -1,14 +1,4 @@
 export const validateDoContractRequest = (requestData: any): boolean => {
-  if (typeof requestData?.gasFee !== 'number') {
-    if (Number.isNaN(parseInt(`${requestData?.gasFee}`))) {
-      return false;
-    }
-  }
-  if (typeof requestData?.gasWanted !== 'number') {
-    if (Number.isNaN(parseInt(`${requestData?.gasWanted}`))) {
-      return false;
-    }
-  }
   if (!Array.isArray(requestData?.messages)) {
     return false;
   }
