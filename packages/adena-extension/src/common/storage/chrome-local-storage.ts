@@ -68,7 +68,7 @@ export class ChromeLocalStorage implements Storage {
       throw new Error('Unsupported key (' + key + ')');
     }
     const data = await this.getStorageData();
-    return data?.data[key];
+    return data?.data?.[key];
   };
 
   public set = async (key: string, value: any): Promise<void> => {
@@ -85,28 +85,27 @@ export class ChromeLocalStorage implements Storage {
     await this.storage.clear();
   };
 
-  public updatePassword = (password: string): void => {
-    this.migrator.setPassword(password);
+  public updatePassword = async (password: string): Promise<StorageModelLatest | null> => {
+    const current = await this.migrator.getCurrent();
+    this.current = await this.migrator.migrate(current, password);
+    return this.current;
   };
 
-  private getStorageData = async (): Promise<StorageModelLatest | null> => {
+  private getStorageData = async (): Promise<any | null> => {
     if (this.current === null) {
-      const current = await this.migrator.getCurrent();
-      const data = await this.migrator.migrate(current);
-      return data;
+      return this.migrator.getCurrent();
     }
     return this.current;
   };
 
   private setStorageData = async (key: string, value: any): Promise<void> => {
-    const current = await this.getStorageData();
-    if (current === null) {
+    if (this.current === null) {
       return;
     }
     const storageData = {
-      ...current,
+      ...this.current,
       data: {
-        ...current.data,
+        ...this.current.data,
         [key]: value,
       },
     };

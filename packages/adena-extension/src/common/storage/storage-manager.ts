@@ -1,5 +1,5 @@
-import { Storage } from './storage';
 import { ChromeLocalStorage } from './chrome-local-storage';
+import { Storage } from './storage';
 
 type objectType = { [key in string]: any };
 
@@ -43,9 +43,11 @@ export class StorageManager<T extends string = string> {
     await this.storage.set(valueType, value);
   };
 
-  updatePassword = (password: string): void => {
+  updatePassword = async (password: string): Promise<void> => {
     if (this.storage instanceof ChromeLocalStorage) {
-      this.storage.updatePassword(password);
+      let storagePassword = password;
+      await this.storage.updatePassword(storagePassword);
+      storagePassword = '';
     }
   };
 }

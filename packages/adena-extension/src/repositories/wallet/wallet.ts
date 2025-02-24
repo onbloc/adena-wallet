@@ -81,7 +81,7 @@ export class WalletRepository {
     const { encryptedKey, encryptedPassword } = await encryptPassword(password);
     const storedPassword = encryptSha256Password(password);
 
-    this.updateStoragePassword(password);
+    await this.updateStoragePassword(password);
 
     await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', storedPassword);
     await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
@@ -104,8 +104,8 @@ export class WalletRepository {
     return encryptedPassword;
   };
 
-  public updateStoragePassword = (password: string): void => {
-    this.localStorage.updatePassword(password);
+  public updateStoragePassword = async (password: string): Promise<void> => {
+    await this.localStorage.updatePassword(password);
   };
 
   public getQuestionnaireExpiredDate = async (): Promise<number | null> => {
