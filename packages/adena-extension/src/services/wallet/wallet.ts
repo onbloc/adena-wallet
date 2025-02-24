@@ -175,6 +175,8 @@ export class WalletService {
   public equalsPassword = async (password: string): Promise<boolean> => {
     try {
       const storedPassword = await this.walletRepository.getEncryptedPassword();
+      console.log(storedPassword, password);
+      console.log('encryptSha256Password(password)', encryptSha256Password(password));
       if (storedPassword !== '') {
         const encryptedPassword = encryptSha256Password(password);
         return storedPassword === encryptedPassword;

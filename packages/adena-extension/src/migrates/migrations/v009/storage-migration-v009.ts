@@ -1,4 +1,5 @@
 import { StorageModel } from '@common/storage';
+import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { Migration } from '@migrates/migrator';
 import { AdenaWallet, decryptAES, mnemonicToEntropy } from 'adena-module';
 import {
@@ -86,8 +87,12 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     serialized: SerializedModelV008,
     password: string,
   ): Promise<SerializedModelV009> {
-    if (!password || !serialized) {
-      return '';
+    if (!serialized) {
+      throw new Error('Serialized data is empty');
+    }
+
+    if (!password) {
+      return serialized;
     }
 
     let decrypted = await decryptAES(serialized, password);
@@ -112,7 +117,9 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
       currentAccountId: wallet.currentAccountId,
     });
 
-    const serializedWallet = await changedWallet.serialize(password);
+    const sha256Password = encryptWalletPassword(password);
+
+    const serializedWallet = await changedWallet.serialize(sha256Password);
 
     keyrings = [];
     wallet = { accounts: [], keyrings: [] };

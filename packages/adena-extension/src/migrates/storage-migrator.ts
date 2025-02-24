@@ -32,7 +32,7 @@ const LegacyStorageKeys = [
 ];
 
 // The latest storage model type
-export type StorageModelLatest = StorageModelV008;
+export type StorageModelLatest = StorageModelV009;
 
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
@@ -61,16 +61,10 @@ export class StorageMigrator implements Migrator {
   constructor(
     private migrations: Migration[], // Array of migration strategies
     private storage: Storage, // Storage interface for data persistence
-    private password?: string, // Password for encryption (optional)
   ) {}
 
-  // Sets the encryption password
-  setPassword(password: string): void {
-    this.password = password;
-  }
-
   // Validates if the data can be saved
-  async saveable(): Promise<boolean | '' | undefined> {
+  async saveable(): Promise<boolean> {
     const current = await this.getCurrent();
     const latestVersion = Math.max(...this.migrations.map((m) => m.version));
     if (current.data.SERIALIZED === '') {
@@ -79,7 +73,7 @@ export class StorageMigrator implements Migrator {
     if (current.version !== latestVersion) {
       return false;
     }
-    return this.password && this.password.length > 0;
+    return true;
   }
 
   // Serializes the storage model to a string
@@ -136,7 +130,7 @@ export class StorageMigrator implements Migrator {
   }
 
   // Migrates storage data to the latest version
-  async migrate(current: StorageModel): Promise<StorageModelV008 | null> {
+  async migrate(current: StorageModel, password: string): Promise<StorageModelV009 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -145,7 +139,7 @@ export class StorageMigrator implements Migrator {
         .filter((migration) => migration.version > currentVersion);
 
       for (const migration of migrations) {
-        latest = await migration.up(latest, this.password);
+        latest = await migration.up(latest, password);
       }
     } catch (error) {
       console.error(error);

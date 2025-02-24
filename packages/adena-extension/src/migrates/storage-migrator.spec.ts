@@ -45,7 +45,6 @@ describe('StorageMigrator', () => {
 
   it('getCurrent success', async () => {
     const migrator = new StorageMigrator(StorageMigrator.migrations(), storage);
-    migrator.setPassword('123');
     const current = await migrator.getCurrent();
 
     expect(current).not.toBeNull();
@@ -64,9 +63,8 @@ describe('StorageMigrator', () => {
 
   it('migrate success', async () => {
     const migrator = new StorageMigrator(StorageMigrator.migrations(), storage);
-    migrator.setPassword('123');
     const current = await migrator.getCurrent();
-    const migrated = await migrator.migrate(current);
+    const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
     expect(migrated?.version).toBe(9);
@@ -83,9 +81,8 @@ describe('StorageMigrator', () => {
 
   it('migrate with password success', async () => {
     const migrator = new StorageMigrator(StorageMigrator.migrations(), storage);
-    migrator.setPassword('123');
     const current = await migrator.getCurrent();
-    const migrated = await migrator.migrate(current);
+    const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
     expect(migrated?.version).toBe(9);

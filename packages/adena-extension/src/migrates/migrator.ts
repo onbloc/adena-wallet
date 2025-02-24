@@ -7,6 +7,6 @@ export interface Migration<R = any> {
 
 export interface Migrator {
   getCurrent: () => Promise<StorageModel>;
-  migrate: (current: StorageModel) => Promise<StorageModel | null>;
+  migrate: (current: StorageModel, password: string) => Promise<StorageModel | null>;
   save: (result: StorageModel) => Promise<void>;
 }
