@@ -230,7 +230,7 @@ export class AdenaExecutor {
             this.resolver &&
               this.resolver({
                 status: status as WalletResponseStatus,
-                data: Object.keys(data || {}).length > 0 ? data : null,
+                data,
                 code,
                 message,
                 type,

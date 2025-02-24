@@ -1,5 +1,4 @@
 import axios from 'axios';
-import fetchAdapter from '@vespaiach/axios-fetch-adapter';
 import { v1 } from 'uuid';
 
 export interface RPCRequest {
@@ -11,7 +10,7 @@ export interface RPCRequest {
 
 export async function fetchHealth(url: string): Promise<{ url: string; healthy: boolean }> {
   const healthy = await axios
-    .get(url + '/health', { adapter: fetchAdapter, timeout: 5000 })
+    .get(url + '/health', { timeout: 5000 })
     .then((response) => response.status === 200)
     .catch(() => false);
   return {
