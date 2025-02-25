@@ -21,7 +21,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 }) => {
   const hasSetting = !!onClickSetting;
 
-  const isEmptyValue = value === '' || denom === '';
+  const isEmptyValue = value === '';
 
   const hasNetworkFee = !!Number(value) && !!denom;
 

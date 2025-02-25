@@ -1,4 +1,4 @@
-import { NetworkFee, TokenModel } from '@types';
+import { GasInfo, TokenModel } from '@types';
 import { atom } from 'recoil';
 
 export interface TransferInfo {
@@ -8,7 +8,7 @@ export interface TransferInfo {
     value: string;
     denom: string;
   };
-  networkFee: NetworkFee | null;
+  gasInfo: GasInfo | null;
   memo: string;
 }
 

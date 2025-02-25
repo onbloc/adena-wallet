@@ -5,8 +5,8 @@ import { NetworkFeeSettingType } from '@types';
 export const MINIMUM_GAS_PRICE = 0.001 as const;
 
 // Adena default gas used
-// When the gas used is not set, the default value is 100,000
-export const DEFAULT_GAS_USED = 100_000 as const;
+// When the gas used is not set, the default value is 10,000,000
+export const DEFAULT_GAS_USED = 10_000_000 as const;
 
 // Default gas price step
 // Slow = 0.001, Average = 0.0025, Fast = 0.004

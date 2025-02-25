@@ -295,7 +295,7 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: response,
+              error: response?.name || response.message || '',
             },
             requestData?.key,
           ),
@@ -419,7 +419,7 @@ const ApproveTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      isErrorNetworkFee={isErrorNetworkFee}
+      isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}

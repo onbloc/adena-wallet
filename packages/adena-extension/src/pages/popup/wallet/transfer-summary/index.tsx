@@ -40,7 +40,7 @@ const TransferSummaryContainer: React.FC = () => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
-  const useNetworkFeeReturn = useNetworkFee(document);
+  const useNetworkFeeReturn = useNetworkFee(document, false, summaryInfo.gasInfo);
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const { data: currentBalance } = useGetGnotBalance();
@@ -69,7 +69,7 @@ const TransferSummaryContainer: React.FC = () => {
   }, [currentBalance, networkFee?.amount, summaryInfo]);
 
   const isNetworkFeeError = useMemo(() => {
-    if (!currentBalance || !Number(networkFee?.amount)) {
+    if (!currentBalance || !networkFee) {
       return false;
     }
 
@@ -127,7 +127,7 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    const { tokenMetainfo, memo } = summaryInfo;
+    const { tokenMetainfo, memo, gasInfo } = summaryInfo;
     const message =
       tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
 
@@ -135,8 +135,10 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
-      useNetworkFeeReturn.currentGasFeeRawAmount,
+      gasInfo?.gasWanted || 0,
+      BigNumber(networkFee?.amount || 0)
+        .shiftedBy(GasToken.decimals)
+        .toNumber(),
       memo,
     );
 

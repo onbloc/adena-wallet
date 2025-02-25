@@ -9,6 +9,7 @@ import {
   useGetEstimateGasInfo,
 } from './transaction-gas/use-get-estimate-gas-info';
 import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
+import { useGetGasPriceTier } from './transaction-gas/use-get-gas-price';
 
 export interface UseNetworkFeeReturn {
   isFetchedPriceTiers: boolean;
@@ -30,6 +31,7 @@ const defaultSettingType = NetworkFeeSettingType.AVERAGE;
 export const useNetworkFee = (
   document?: Document | null,
   isDefaultGasPrice = false,
+  gasInfo?: GasInfo | null,
 ): UseNetworkFeeReturn => {
   const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] =
     useState<NetworkFeeSettingType>(defaultSettingType);
@@ -39,15 +41,24 @@ export const useNetworkFee = (
   const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
 
-  const { data: defaultEstimatedGasInfo } = useGetDefaultEstimateGasInfo(document);
+  const { data: gasPriceTier } = useGetGasPriceTier(GasToken.denom);
+  const { data: defaultEstimatedGasInfo, isFetched: isFetchedDefaultEstimatedGasInfo } =
+    useGetDefaultEstimateGasInfo(document);
   const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
     document,
-    defaultEstimatedGasInfo?.gasUsed || 0,
-    defaultEstimatedGasInfo?.gasPrice || 0,
+    gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0,
   );
 
   const { data: gasPriceTiers = null, isFetched: isFetchedPriceTiers } =
-    useGetEstimateGasPriceTiers(document, estimatedGasInfo?.gasUsed, gasAdjustment);
+    useGetEstimateGasPriceTiers(
+      document,
+      gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
+      gasAdjustment,
+    );
+
+  const hasSimulateError = useMemo(() => {
+    return isFetchedDefaultEstimatedGasInfo && !defaultEstimatedGasInfo;
+  }, [isFetchedDefaultEstimatedGasInfo, defaultEstimatedGasInfo]);
 
   const currentSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 0) {
@@ -66,6 +77,16 @@ export const useNetworkFee = (
   }, [networkFeeSettingType, gasPriceTiers]);
 
   const currentGasInfo = useMemo(() => {
+    if (hasSimulateError) {
+      return {
+        gasFee: 0,
+        gasUsed: 0,
+        gasWanted: 0,
+        gasPrice: 0,
+        hasError: true,
+      };
+    }
+
     if (!gasPriceTiers) {
       return null;
     }
@@ -73,7 +94,7 @@ export const useNetworkFee = (
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
 
     return current?.gasInfo || null;
-  }, [currentSettingType, gasPriceTiers]);
+  }, [hasSimulateError, currentSettingType, gasPriceTiers]);
 
   const changedGasInfo = useMemo(() => {
     if (!gasPriceTiers) {
@@ -86,12 +107,8 @@ export const useNetworkFee = (
   }, [changedSettingType, gasPriceTiers]);
 
   const currentGasFeeRawAmount = useMemo(() => {
-    if (!selectedTier) {
-      return BigNumber(document?.fee.amount?.[0].amount || 0).toNumber();
-    }
-
     if (!currentGasInfo) {
-      return 0;
+      return BigNumber(document?.fee.amount?.[0].amount || 0).toNumber();
     }
 
     const currentGasFeeAmount = BigNumber(currentGasInfo.gasFee).toFixed(0, BigNumber.ROUND_UP);
@@ -100,6 +117,10 @@ export const useNetworkFee = (
   }, [currentGasInfo, document, selectedTier]);
 
   const networkFee = useMemo(() => {
+    if (!gasPriceTier) {
+      return null;
+    }
+
     if (!currentGasInfo) {
       return null;
     }
@@ -134,7 +155,7 @@ export const useNetworkFee = (
 
   return {
     isFetchedEstimateGasInfo,
-    isFetchedPriceTiers,
+    isFetchedPriceTiers: isFetchedEstimateGasInfo && isFetchedPriceTiers,
     currentGasInfo,
     currentGasFeeRawAmount,
     changedGasInfo,

@@ -1,14 +1,11 @@
-import {
-  DEFAULT_GAS_PRICE_STEP,
-  DEFAULT_GAS_USED,
-  GAS_FEE_SAFETY_MARGIN,
-} from '@common/constants/gas.constant';
+import { DEFAULT_GAS_USED, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import { Document, documentToDefaultTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
+import { useGetGasPriceTier } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
 
@@ -61,6 +58,9 @@ export const useGetEstimateGasPriceTiers = (
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { transactionGasService } = useAdenaContext();
+  const { data: gasPriceTier } = useGetGasPriceTier(GasToken.denom);
+
+  const priceTierKey = gasPriceTier ? Object.keys(gasPriceTier).join(',') : '';
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
@@ -69,16 +69,17 @@ export const useGetEstimateGasPriceTiers = (
       document?.memo,
       gasUsed,
       gasAdjustment,
+      priceTierKey,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
-      if (!document || gasUsed === undefined) {
+      if (!document || gasUsed === undefined || !gasPriceTier) {
         return null;
       }
 
       return Promise.all(
-        Object.keys(DEFAULT_GAS_PRICE_STEP).map(async (key) => {
+        Object.keys(gasPriceTier).map(async (key) => {
           const tier = key as NetworkFeeSettingType;
-          const gasPrice = DEFAULT_GAS_PRICE_STEP[tier];
+          const gasPrice = gasPriceTier[tier];
 
           const adjustedGasPrice = BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
 
@@ -92,7 +93,7 @@ export const useGetEstimateGasPriceTiers = (
           const result = await transactionGasService
             .estimateGas(documentToDefaultTx(modifiedDocument))
             .catch((e: Error) => {
-              if (e.message === '/std.InvalidPubKeyError') {
+              if (e?.message === '/std.InvalidPubKeyError') {
                 return DEFAULT_GAS_USED;
               }
 
@@ -132,7 +133,7 @@ export const useGetEstimateGasPriceTiers = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!document,
+    enabled: !!document && !!gasPriceTier,
     ...options,
   });
 };
