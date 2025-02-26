@@ -3,6 +3,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import { useNetwork } from '@hooks/use-network';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingType } from '@types';
+import BigNumber from 'bignumber.js';
 
 export const GET_GAS_PRICE = 'transactionGas/useGetGasPrice';
 
@@ -26,15 +27,15 @@ export const useGetGasPriceTier = (
         .getGasPrice(denomination)
         .then((tierInfo) => ({
           [NetworkFeeSettingType.FAST]: handleInsufficientGasPrice(
-            tierInfo?.high || 0,
+            tierInfo?.low || 0,
             DEFAULT_GAS_PRICE_STEP.FAST,
           ),
           [NetworkFeeSettingType.AVERAGE]: handleInsufficientGasPrice(
-            tierInfo?.average || 0,
+            tierInfo?.high || 0,
             DEFAULT_GAS_PRICE_STEP.AVERAGE,
           ),
           [NetworkFeeSettingType.SLOW]: handleInsufficientGasPrice(
-            tierInfo?.low || 0,
+            tierInfo?.average || 0,
             DEFAULT_GAS_PRICE_STEP.SLOW,
           ),
         }))
@@ -56,9 +57,10 @@ function handleInsufficientGasPrice(
   overPrice = 1,
   lowerPrice = MINIMUM_GAS_PRICE,
 ): number {
-  if (price >= overPrice || price <= lowerPrice) {
+  const priceBN = BigNumber(price.toFixed(6));
+  if (priceBN.isGreaterThanOrEqualTo(overPrice) || priceBN.isLessThanOrEqualTo(lowerPrice)) {
     return defaultPrice;
   }
 
-  throw price;
+  return priceBN.toNumber();
 }

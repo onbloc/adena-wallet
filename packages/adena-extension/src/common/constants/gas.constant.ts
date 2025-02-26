@@ -16,6 +16,12 @@ export const DEFAULT_GAS_PRICE_STEP: Record<NetworkFeeSettingType, number> = {
   SLOW: 0.001,
 } as const;
 
+export const DEFAULT_GAS_PRICE_RATE: Record<NetworkFeeSettingType, number> = {
+  FAST: 4,
+  AVERAGE: 2.5,
+  SLOW: 1,
+} as const;
+
 // Default gas adjustment
 export const DEFAULT_GAS_ADJUSTMENT = 1 as const;
 

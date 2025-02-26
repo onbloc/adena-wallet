@@ -75,18 +75,6 @@ export const useNetworkFee = (
     isFetchedPriceTiers,
   ]);
 
-  const isSimulateError = useMemo(() => {
-    if (!isFetchedDefaultEstimatedGasInfo && !defaultEstimatedGasInfo) {
-      return true;
-    }
-
-    if (defaultEstimatedGasInfo?.hasError) {
-      return true;
-    }
-
-    return false;
-  }, [isFetchedDefaultEstimatedGasInfo, defaultEstimatedGasInfo]);
-
   const currentSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 0) {
       return NetworkFeeSettingType.AVERAGE;
@@ -104,7 +92,12 @@ export const useNetworkFee = (
   }, [networkFeeSettingType, gasPriceTiers]);
 
   const currentGasInfo = useMemo(() => {
-    if (isSimulateError) {
+    if (!gasPriceTiers) {
+      return null;
+    }
+
+    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    if (current?.gasInfo?.hasError) {
       return {
         gasFee: 0,
         gasUsed: 0,
@@ -114,14 +107,20 @@ export const useNetworkFee = (
       };
     }
 
-    if (!gasPriceTiers) {
-      return null;
+    return current?.gasInfo || null;
+  }, [currentSettingType, gasPriceTiers]);
+
+  const isSimulateError = useMemo(() => {
+    if (currentGasInfo?.hasError) {
+      return true;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    if (!isFetchedDefaultEstimatedGasInfo && !defaultEstimatedGasInfo) {
+      return true;
+    }
 
-    return current?.gasInfo || null;
-  }, [isSimulateError, currentSettingType, gasPriceTiers]);
+    return false;
+  }, [isFetchedDefaultEstimatedGasInfo, defaultEstimatedGasInfo, currentGasInfo]);
 
   const changedGasInfo = useMemo(() => {
     if (!gasPriceTiers) {
@@ -169,7 +168,7 @@ export const useNetworkFee = (
       amount: networkFeeAmount,
       denom: GasToken.symbol,
     };
-  }, [currentGasInfo]);
+  }, [gasPriceTier, currentGasInfo]);
 
   const setNetworkFeeSetting = useCallback((settingInfo: NetworkFeeSettingInfo): void => {
     setNetworkFeeSettingType(settingInfo.settingType);

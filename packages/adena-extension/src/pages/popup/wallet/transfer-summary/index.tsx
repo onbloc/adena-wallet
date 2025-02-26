@@ -73,12 +73,12 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    if (!currentBalance || !networkFee) {
+    if (!currentBalance) {
       return false;
     }
 
     return !hasNetworkFee;
-  }, [currentBalance, networkFee, hasNetworkFee]);
+  }, [currentBalance, useNetworkFeeReturn.isLoading, hasNetworkFee]);
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;

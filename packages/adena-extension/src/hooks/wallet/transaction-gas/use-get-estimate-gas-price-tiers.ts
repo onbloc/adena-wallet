@@ -1,4 +1,9 @@
-import { DEFAULT_GAS_USED, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
+import {
+  DEFAULT_GAS_PRICE_RATE,
+  DEFAULT_GAS_USED,
+  GAS_FEE_SAFETY_MARGIN,
+  MINIMUM_GAS_PRICE,
+} from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
@@ -84,7 +89,10 @@ export const useGetEstimateGasPriceTiers = (
           const tier = key as NetworkFeeSettingType;
           const gasPrice = gasPriceTier[tier];
 
-          const adjustedGasPrice = BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
+          const adjustedGasPriceBN = BigNumber(gasPrice).multipliedBy(gasAdjustment);
+          const adjustedGasPrice = adjustedGasPriceBN.isLessThan(MINIMUM_GAS_PRICE)
+            ? MINIMUM_GAS_PRICE * DEFAULT_GAS_PRICE_RATE[tier]
+            : BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
 
           const { gasWanted, gasFee } = makeGasInfoBy(
             gasUsed || 0,

@@ -53,7 +53,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     }
 
     return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee]);
+  }, [isErrorNetworkFee, insufficientNetworkFeeError.message]);
 
   return (
     <TransferSummaryWrapper>
