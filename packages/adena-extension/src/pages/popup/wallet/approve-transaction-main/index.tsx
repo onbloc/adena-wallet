@@ -112,6 +112,10 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   const isErrorNetworkFee = useMemo(() => {
+    if (!useNetworkFeeReturn.isLoading && currentBalance === 0) {
+      return true;
+    }
+
     if (!networkFee) {
       return false;
     }
@@ -119,7 +123,7 @@ const ApproveTransactionContainer: React.FC = () => {
     return BigNumber(currentBalance)
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(networkFee.amount);
-  }, [currentBalance, networkFee]);
+  }, [currentBalance, networkFee, useNetworkFeeReturn.isLoading]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -419,7 +423,8 @@ const ApproveTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      currentBalance={currentBalance}
+      isErrorNetworkFee={isErrorNetworkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}

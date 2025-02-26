@@ -27,6 +27,7 @@ export interface ApproveTransactionProps {
   }[];
   memo: string;
   hasMemo: boolean;
+  currentBalance?: number;
   isErrorNetworkFee?: boolean;
   networkFee: NetworkFeeType | null;
   transactionData: string;
@@ -49,6 +50,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   domain,
   contracts,
   memo,
+  currentBalance,
   hasMemo,
   networkFee,
   isErrorNetworkFee,
@@ -70,8 +72,11 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [isErrorNetworkFee, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
+    console.log('isErrorNetworkFee', isErrorNetworkFee);
     if (useNetworkFeeReturn.isSimulateError) {
-      return 'This transaction cannot be simulated. Try again.';
+      if (currentBalance !== 0) {
+        return 'This transaction cannot be simulated. Try again.';
+      }
     }
 
     if (isErrorNetworkFee) {
@@ -79,7 +84,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     }
 
     return '';
-  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee]);
+  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
