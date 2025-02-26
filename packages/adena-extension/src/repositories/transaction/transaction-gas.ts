@@ -1,5 +1,5 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { makeRPCRequest } from '@common/utils/fetch-utils';
+import { makeIndexerRPCRequest } from '@common/utils/fetch-utils';
 import { Tx } from '@gnolang/tm2-js-client';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
@@ -26,15 +26,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
       return null;
     }
 
-    if (this.networkMetainfo.apiUrl) {
-      return this.networkMetainfo.apiUrl + '/v1/indexer';
-    }
-
-    if (this.networkMetainfo.indexerUrl) {
-      return this.indexerUrl;
-    }
-
-    return null;
+    return this.networkMetainfo.indexerUrl || null;
   }
 
   public async fetchGasPrices(): Promise<TransactionGasResponse[]> {
@@ -47,7 +39,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     }>(
       this.networkInstance,
       this.indexerUrl,
-      makeRPCRequest({
+      makeIndexerRPCRequest({
         method: 'getGasPrice',
       }),
     ).then((data) => data?.result || []);

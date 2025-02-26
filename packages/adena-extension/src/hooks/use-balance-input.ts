@@ -1,10 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useState } from 'react';
 
+import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { NetworkFee, TokenBalanceType, TokenModel } from '@types';
+import { GasInfo, TokenBalanceType, TokenModel } from '@types';
 import { Document } from 'adena-module';
 import { useAdenaContext, useWalletContext } from './use-context';
 import { useCurrentAccount } from './use-current-account';
@@ -18,7 +19,7 @@ export type UseBalanceInputHookReturn = {
   amount: string;
   denom: string;
   description: string;
-  networkFee: NetworkFee | null;
+  gasInfo: GasInfo | null;
   setAmount: (amount: string) => void;
   updateCurrentBalance: () => Promise<boolean>;
   onChangeAmount: (amount: string) => void;
@@ -40,7 +41,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
   const { convertDenom } = useTokenMetainfo();
 
   const [document, setDocument] = useState<Document | null>(null);
-  const { currentGasInfo, networkFee } = useNetworkFee(document);
+  const { currentGasInfo } = useNetworkFee(document);
 
   useEffect(() => {
     if (!currentAddress || !currentBalance || !tokenMetainfo) {
@@ -74,9 +75,12 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         'COMMON',
       );
 
-      const gasWantedBN = BigNumber(currentGasInfo.gasWanted).shiftedBy(GasToken.decimals * -1);
+      const maxGasFeeBN = BigNumber(currentGasInfo.gasWanted)
+        .multipliedBy(currentGasInfo.gasPrice * GAS_FEE_SAFETY_MARGIN)
+        .shiftedBy(GasToken.decimals * -1)
+        .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
 
-      const availAmountNumber = BigNumber(convertedBalance.value).minus(gasWantedBN);
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(maxGasFeeBN);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
       } else {
@@ -169,7 +173,7 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     amount,
     denom: tokenMetainfo?.symbol || '',
     description: getDescription(),
-    networkFee,
+    gasInfo: currentGasInfo,
     setAmount,
     updateCurrentBalance,
     onChangeAmount,

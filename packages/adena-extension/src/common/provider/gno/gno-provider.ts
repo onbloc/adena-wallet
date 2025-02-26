@@ -175,6 +175,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     const simulateResult = parseProto(responseValue, ResponseDeliverTx.decode);
+    console.info('simulateResult', simulateResult);
+
     if (simulateResult.responseBase?.error) {
       throw new Error(simulateResult.responseBase.error.typeUrl);
     }

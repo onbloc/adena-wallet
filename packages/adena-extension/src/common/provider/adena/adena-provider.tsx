@@ -42,7 +42,7 @@ export interface AdenaContextProps {
   transactionService: TransactionService;
   transactionHistoryService: TransactionHistoryService;
   faucetService: FaucetService;
-  transactionGasService: TransactionGasService;
+  transactionGasService: TransactionGasService | null;
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
@@ -97,10 +97,13 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new TransactionHistoryRepository(axiosInstance, currentNetwork);
   }, [axiosInstance, currentNetwork]);
 
-  const transactionGasRepository = useMemo(
-    () => new TransactionGasRepository(gnoProvider, axiosInstance, currentNetwork),
-    [gnoProvider, transactionHistoryRepository, currentNetwork],
-  );
+  const transactionGasRepository = useMemo(() => {
+    if (!currentNetwork) {
+      return null;
+    }
+
+    return new TransactionGasRepository(gnoProvider, axiosInstance, currentNetwork);
+  }, [gnoProvider, transactionHistoryRepository, currentNetwork]);
 
   const chainService = useMemo(() => new ChainService(chainRepository), [chainRepository]);
 
@@ -137,10 +140,13 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     [gnoProvider, transactionHistoryRepository],
   );
 
-  const transactionGasService = useMemo(
-    () => new TransactionGasService(transactionGasRepository),
-    [transactionGasRepository],
-  );
+  const transactionGasService = useMemo(() => {
+    if (!transactionGasRepository) {
+      return null;
+    }
+
+    return new TransactionGasService(transactionGasRepository);
+  }, [transactionGasRepository]);
 
   const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
 

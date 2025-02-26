@@ -95,7 +95,7 @@ const ButtonWrap = styled.div<{ filled?: boolean }>`
     filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
   ${({ filled }): false | 'align-items: center;' | undefined => filled && 'align-items: center;'}
   background-color: ${({ filled, theme }): string => (filled ? theme.neutral._8 : 'transparent')};
-  z-index: 1;
+  z-index: 9;
 
   & > button {
     margin-right: 10px;
