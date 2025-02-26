@@ -16,9 +16,9 @@ export const useGetGasPriceTier = (
   const { transactionGasService } = useAdenaContext();
 
   return useQuery<Record<NetworkFeeSettingType, number> | null, Error>({
-    queryKey: [GET_GAS_PRICE, denomination],
+    queryKey: [GET_GAS_PRICE, denomination, transactionGasService],
     queryFn: () => {
-      if (!currentNetwork.indexerUrl) {
+      if (!currentNetwork.indexerUrl || !transactionGasService) {
         return DEFAULT_GAS_PRICE_STEP;
       }
 
@@ -44,6 +44,7 @@ export const useGetGasPriceTier = (
         });
     },
     refetchInterval: REFETCH_INTERVAL,
+    enabled: !!transactionGasService,
     keepPreviousData: true,
     ...options,
   });

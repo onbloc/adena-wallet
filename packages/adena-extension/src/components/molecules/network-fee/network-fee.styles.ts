@@ -1,3 +1,4 @@
+import { SkeletonBoxStyle } from '@components/atoms';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
@@ -42,4 +43,11 @@ export const NetworkFeeWrapper = styled.div<{ isError?: boolean }>`
       height: 16px;
     }
   }
+`;
+
+export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
+  ${mixins.flex({ align: 'flex-start' })};
+  width: 55px;
+  height: 14px;
+  align-self: center;
 `;

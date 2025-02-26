@@ -17,7 +17,7 @@ export const DEFAULT_GAS_PRICE_STEP: Record<NetworkFeeSettingType, number> = {
 } as const;
 
 // Default gas adjustment
-export const DEFAULT_GAS_ADJUSTMENT = 1.6 as const;
+export const DEFAULT_GAS_ADJUSTMENT = 1 as const;
 
 // Gas fee safety margin
 // This is gas wanted safety margin

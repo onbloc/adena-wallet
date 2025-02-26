@@ -12,8 +12,10 @@ import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-
 import { useGetGasPriceTier } from './transaction-gas/use-get-gas-price';
 
 export interface UseNetworkFeeReturn {
+  isLoading: boolean;
   isFetchedPriceTiers: boolean;
   isFetchedEstimateGasInfo: boolean;
+  isSimulateError: boolean;
   currentGasInfo: GasInfo | null;
   currentGasFeeRawAmount: number;
   changedGasInfo: GasInfo | null;
@@ -56,8 +58,28 @@ export const useNetworkFee = (
       gasAdjustment,
     );
 
-  const hasSimulateError = useMemo(() => {
-    return isFetchedDefaultEstimatedGasInfo && !defaultEstimatedGasInfo;
+  const isLoading = useMemo(() => {
+    if (gasPriceTier === undefined || gasPriceTiers === undefined) {
+      return true;
+    }
+
+    if (!isFetchedEstimateGasInfo || !isFetchedPriceTiers) {
+      return true;
+    }
+
+    return false;
+  }, [gasPriceTier, gasPriceTiers, isFetchedEstimateGasInfo, isFetchedPriceTiers]);
+
+  const isSimulateError = useMemo(() => {
+    if (!isFetchedDefaultEstimatedGasInfo && !defaultEstimatedGasInfo) {
+      return true;
+    }
+
+    if (defaultEstimatedGasInfo?.hasError) {
+      return true;
+    }
+
+    return false;
   }, [isFetchedDefaultEstimatedGasInfo, defaultEstimatedGasInfo]);
 
   const currentSettingType = useMemo(() => {
@@ -77,7 +99,7 @@ export const useNetworkFee = (
   }, [networkFeeSettingType, gasPriceTiers]);
 
   const currentGasInfo = useMemo(() => {
-    if (hasSimulateError) {
+    if (isSimulateError) {
       return {
         gasFee: 0,
         gasUsed: 0,
@@ -94,7 +116,7 @@ export const useNetworkFee = (
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
 
     return current?.gasInfo || null;
-  }, [hasSimulateError, currentSettingType, gasPriceTiers]);
+  }, [isSimulateError, currentSettingType, gasPriceTiers]);
 
   const changedGasInfo = useMemo(() => {
     if (!gasPriceTiers) {
@@ -154,8 +176,10 @@ export const useNetworkFee = (
   }, [changedSettingType]);
 
   return {
+    isLoading,
     isFetchedEstimateGasInfo,
     isFetchedPriceTiers: isFetchedEstimateGasInfo && isFetchedPriceTiers,
+    isSimulateError,
     currentGasInfo,
     currentGasFeeRawAmount,
     changedGasInfo,

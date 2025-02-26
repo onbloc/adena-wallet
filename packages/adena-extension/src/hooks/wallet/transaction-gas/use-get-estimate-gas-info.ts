@@ -76,6 +76,7 @@ export const useGetEstimateGasInfo = (
   return useQuery<GasInfo | null, Error>({
     queryKey: [
       GET_ESTIMATE_GAS_INFO_KEY,
+      transactionGasService,
       document?.msgs || '',
       document?.memo || '',
       gasUsed,
@@ -89,7 +90,7 @@ export const useGetEstimateGasInfo = (
       const gasPrice = gasPriceTier?.[NetworkFeeSettingType.AVERAGE];
 
       const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice, safetyMargin);
-      if (!gasFee || !gasWanted) {
+      if (!transactionGasService || !gasFee || !gasWanted) {
         return null;
       }
 
@@ -124,7 +125,7 @@ export const useGetEstimateGasInfo = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!document,
+    enabled: !!document && !!transactionGasService,
     ...options,
   });
 };

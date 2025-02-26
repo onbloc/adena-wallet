@@ -65,6 +65,7 @@ export const useGetEstimateGasPriceTiers = (
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
       GET_ESTIMATE_GAS_PRICE_TIERS,
+      transactionGasService,
       document?.msgs,
       document?.memo,
       gasUsed,
@@ -72,7 +73,7 @@ export const useGetEstimateGasPriceTiers = (
       priceTierKey,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
-      if (!document || gasUsed === undefined || !gasPriceTier) {
+      if (!transactionGasService || !document || gasUsed === undefined || !gasPriceTier) {
         return null;
       }
 
@@ -133,7 +134,7 @@ export const useGetEstimateGasPriceTiers = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!document && !!gasPriceTier,
+    enabled: !!transactionGasService && !!document && !!gasPriceTier,
     ...options,
   });
 };

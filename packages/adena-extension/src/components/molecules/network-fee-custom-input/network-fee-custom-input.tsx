@@ -24,7 +24,7 @@ const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, ch
 
   return (
     <NetworkFeeCustomInputContainer>
-      <span className='description'>{'Gas Adjustment'}</span>
+      <span className='description'>{'Network Fee Multiplier'}</span>
 
       <NetworkFeeCustomInputWrapper>
         <input

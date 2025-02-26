@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
 import { ApproveLoading, BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -65,6 +65,22 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
+  const disabledApprove = useMemo(() => {
+    return isErrorNetworkFee || Number(networkFee?.amount || 0) <= 0;
+  }, [isErrorNetworkFee, networkFee]);
+
+  const networkFeeErrorMessage = useMemo(() => {
+    if (useNetworkFeeReturn.isSimulateError) {
+      return 'This transaction cannot be simulated. Try again.';
+    }
+
+    if (isErrorNetworkFee) {
+      return 'Insufficient network fee';
+    }
+
+    return '';
+  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee]);
+
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (hasMemo) {
@@ -89,6 +105,14 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     useNetworkFeeReturn.save();
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
+
+  const onClickConfirmButton = useCallback(() => {
+    if (disabledApprove) {
+      return;
+    }
+
+    onClickConfirm();
+  }, [onClickConfirm, disabledApprove]);
 
   useEffect(() => {
     if (done) {
@@ -159,8 +183,9 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          isError={isErrorNetworkFee}
-          errorMessage='Insufficient network fee'
+          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
+          isLoading={useNetworkFeeReturn.isLoading}
+          errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
@@ -205,10 +230,10 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         }}
         rightButton={{
           primary: true,
-          disabled: isErrorNetworkFee,
+          disabled: disabledApprove,
           text: 'Approve',
           loading: processing,
-          onClick: onClickConfirm,
+          onClick: onClickConfirmButton,
         }}
       />
     </ApproveTransactionWrapper>
