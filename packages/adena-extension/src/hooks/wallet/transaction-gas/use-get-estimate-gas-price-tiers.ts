@@ -58,7 +58,9 @@ export const useGetEstimateGasPriceTiers = (
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { transactionGasService } = useAdenaContext();
-  const { data: gasPriceTier } = useGetGasPriceTier(GasToken.denom);
+  const { data: gasPriceTier, isFetched: isFetchedGasPriceTier } = useGetGasPriceTier(
+    GasToken.denom,
+  );
 
   const priceTierKey = gasPriceTier ? Object.keys(gasPriceTier).join(',') : '';
 
@@ -134,7 +136,7 @@ export const useGetEstimateGasPriceTiers = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!transactionGasService && !!document && !!gasPriceTier,
+    enabled: !!transactionGasService && !!document && isFetchedGasPriceTier,
     ...options,
   });
 };

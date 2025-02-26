@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import IconRight from '@assets/icon-right';
 import { TokenBalance } from '@components/molecules';
@@ -29,7 +29,13 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 
   const isEmptyValue = value === '';
 
-  const hasError = isError || !!errorMessage;
+  const hasError = useMemo(() => {
+    if (isLoading) {
+      return false;
+    }
+
+    return isError || !!errorMessage;
+  }, [isError, errorMessage]);
 
   return (
     <NetworkFeeContainer>
