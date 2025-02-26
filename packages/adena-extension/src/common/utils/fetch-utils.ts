@@ -1,9 +1,16 @@
-import axios from 'axios';
 import fetchAdapter from '@vespaiach/axios-fetch-adapter';
+import axios from 'axios';
 import { v1 } from 'uuid';
 
 export interface RPCRequest {
   id: string;
+  jsonrpc: string;
+  method: string;
+  params: any[];
+}
+
+export interface IndexerRPCRequest {
+  id: number;
   jsonrpc: string;
   method: string;
   params: any[];
@@ -35,4 +42,25 @@ export function makeRPCRequest({
     method: method,
     params: params || [],
   };
+}
+
+export function makeIndexerRPCRequest({
+  id,
+  method,
+  params,
+}: {
+  id?: number;
+  method: string;
+  params?: any[];
+}): IndexerRPCRequest {
+  return {
+    id: makeRandId(),
+    jsonrpc: '2.0',
+    method: method,
+    params: params || [],
+  };
+}
+
+function makeRandId(): number {
+  return Math.floor(Math.random() * 10 ** 16);
 }

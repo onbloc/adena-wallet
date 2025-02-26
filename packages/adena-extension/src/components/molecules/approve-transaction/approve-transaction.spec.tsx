@@ -50,8 +50,10 @@ describe('ApproveTransaction Component', () => {
         return;
       },
       useNetworkFeeReturn: {
+        isLoading: false,
         isFetchedEstimateGasInfo: true,
         isFetchedPriceTiers: true,
+        isSimulateError: false,
         currentGasInfo: {
           gasFee: 0.00000048,
           gasPrice: 0.00000000048,

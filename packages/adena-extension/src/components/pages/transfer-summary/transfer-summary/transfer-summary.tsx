@@ -20,6 +20,7 @@ export interface TransferSummaryProps {
   networkFee: NetworkFeeType | null;
   memo: string;
   isErrorNetworkFee?: boolean;
+  isLoadingNetworkFee?: boolean;
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
@@ -34,6 +35,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   networkFee,
   memo,
   isErrorNetworkFee,
+  isLoadingNetworkFee,
   onClickBack,
   onClickCancel,
   onClickSend,
@@ -41,9 +43,17 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 }) => {
   const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
+  const disabledSendButton = useMemo(() => {
+    return isLoadingNetworkFee || isErrorNetworkFee;
+  }, [isLoadingNetworkFee, isErrorNetworkFee]);
+
   const errorMessage = useMemo(() => {
+    if (!isErrorNetworkFee) {
+      return '';
+    }
+
     return insufficientNetworkFeeError.message;
-  }, []);
+  }, [isErrorNetworkFee, insufficientNetworkFeeError.message]);
 
   return (
     <TransferSummaryWrapper>
@@ -74,6 +84,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className='network-fee-wrapper'>
         <NetworkFee
           isError={isErrorNetworkFee}
+          isLoading={isLoadingNetworkFee}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           errorMessage={errorMessage}
@@ -85,7 +96,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <button className='cancel' onClick={onClickCancel}>
           Cancel
         </button>
-        <button className='send' onClick={onClickSend}>
+        <button className={disabledSendButton ? 'send disabled' : 'send'} onClick={onClickSend}>
           Send
         </button>
       </div>
