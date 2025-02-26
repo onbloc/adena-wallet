@@ -69,6 +69,12 @@ export const TransferSummaryWrapper = styled.div`
         :hover {
           background-color: ${getTheme('primary', '_7')};
         }
+
+        &.disabled {
+          background-color: ${getTheme('primary', '_9')};
+          color: ${getTheme('neutral', '_5')};
+          cursor: default;
+        }
       }
     }
   }

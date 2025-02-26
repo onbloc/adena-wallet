@@ -69,6 +69,10 @@ const TransferSummaryContainer: React.FC = () => {
   }, [currentBalance, networkFee?.amount, summaryInfo]);
 
   const isNetworkFeeError = useMemo(() => {
+    if (useNetworkFeeReturn.isLoading) {
+      return false;
+    }
+
     if (!currentBalance || !networkFee) {
       return false;
     }
@@ -201,7 +205,7 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    if (!hasNetworkFee) {
+    if (isNetworkFeeError) {
       return false;
     }
 
@@ -294,6 +298,7 @@ const TransferSummaryContainer: React.FC = () => {
           toAddress={summaryInfo.toAddress}
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
+          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
           networkFee={networkFee}
           memo={summaryInfo.memo}
           onClickBack={onClickBack}
