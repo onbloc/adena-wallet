@@ -2,6 +2,7 @@ import { Account } from 'adena-module';
 import axios from 'axios';
 
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaStorage } from '@common/storage';
 import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
@@ -19,8 +20,11 @@ import {
   WalletService,
 } from '@services/wallet';
 import { NetworkMetainfo } from '@types';
+import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
 
 export class InjectCore {
+  private inMemoryProvider: MemoryProvider;
+
   private gnoProvider: GnoProvider | null = null;
 
   private axiosInstance = axios.create({});
@@ -63,6 +67,14 @@ export class InjectCore {
 
   public transactionService = new TransactionService(this.walletService, this.gnoProvider);
 
+  constructor(inMemoryProvider: MemoryProvider) {
+    this.inMemoryProvider = inMemoryProvider;
+  }
+
+  public async getInMemoryKey(): Promise<CryptoKey | null> {
+    return getInMemoryKey(this.inMemoryProvider);
+  }
+
   public async initGnoProvider(): Promise<boolean> {
     try {
       const network = await this.chainService.getCurrentNetwork();
@@ -95,18 +107,41 @@ export class InjectCore {
     return this.chainRepository.getCurrentNetworkId().catch(() => '');
   }
 
-  public async getCurrentAccount(): Promise<Account | undefined> {
-    const wallet = await this.walletService.loadWallet();
+  public async getCurrentAccount(inMemoryKey: CryptoKey | null): Promise<Account | undefined> {
+    const password = await this.getPasswordBy(inMemoryKey);
+    if (!password) {
+      return undefined;
+    }
+
+    const wallet = await this.walletService.deserializeWallet(password);
+
     const accountId = await this.accountService.getCurrentAccountId();
     const currentAccount = wallet.accounts.find((account) => account.id === accountId);
     return currentAccount;
   }
 
-  public async getCurrentAddress(): Promise<string | null> {
-    const currentAccount = await this.getCurrentAccount();
+  public async getCurrentAddress(inMemoryKey: CryptoKey | null): Promise<string | null> {
+    const currentAccount = await this.getCurrentAccount(inMemoryKey);
     if (!currentAccount) {
       return null;
     }
     return currentAccount.getAddress('g');
+  }
+
+  public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {
+    return this.getPasswordBy(inMemoryKey).then((password) => !password);
+  }
+
+  private async getPasswordBy(inMemoryKey: CryptoKey | null): Promise<string | null> {
+    if (!inMemoryKey) {
+      return null;
+    }
+
+    const { iv, encryptedPassword } = await this.walletRepository.getSessionCryptPasswords();
+    if (iv === '' || encryptedPassword === '') {
+      return null;
+    }
+
+    return decryptPassword(inMemoryKey, iv, encryptedPassword);
   }
 }

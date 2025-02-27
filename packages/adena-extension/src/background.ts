@@ -95,5 +95,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  return MessageHandler.createHandler(message, sender, sendResponse);
+  return MessageHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
 });

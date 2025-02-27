@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
-import { encryptSha256Password } from '@common/utils/crypto-utils';
+import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
 import { WalletRepository } from '@repositories/wallet';
 
 export class WalletService {
@@ -85,8 +85,8 @@ export class WalletService {
    */
   public isLocked = async (): Promise<boolean> => {
     try {
-      const password = await this.walletRepository.getWalletPassword();
-      return password === '';
+      const existsPassword = await this.walletRepository.existsWalletPassword();
+      return !existsPassword;
     } catch (e) {
       return true;
     }
@@ -124,8 +124,10 @@ export class WalletService {
    * @param password wallet's password
    */
   public saveWallet = async (wallet: Wallet, password: string): Promise<void> => {
-    const serializedWallet = await wallet.serialize(password);
-    await this.walletRepository.updateWalletPassword(password);
+    const encryptedPassword = encryptWalletPassword(password);
+
+    const serializedWallet = await wallet.serialize(encryptedPassword);
+    await this.walletRepository.updateWalletPassword(encryptedPassword);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
       chrome?.action?.setPopup({ popup: 'popup.html' });
@@ -135,9 +137,9 @@ export class WalletService {
   };
 
   public updateWallet = async (wallet: Wallet): Promise<void> => {
-    let password = await this.walletRepository.getWalletPassword();
-    const serializedWallet = await wallet.serialize(password);
-    password = '';
+    let encryptedWallet = await this.walletRepository.getWalletPassword();
+    const serializedWallet = await wallet.serialize(encryptedWallet);
+    encryptedWallet = '';
 
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
@@ -155,11 +157,11 @@ export class WalletService {
    */
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
-      await this.walletRepository.updateWalletPassword(password);
       const serializedWallet = await this.walletRepository.getSerializedWallet();
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
       return walletInstance;
     } catch (e) {
+      console.error(e);
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
@@ -173,31 +175,32 @@ export class WalletService {
   };
 
   public equalsPassword = async (password: string): Promise<boolean> => {
+    const storedPassword = await this.walletRepository.getEncryptedPassword();
+
     try {
-      const storedPassword = await this.walletRepository.getEncryptedPassword();
-      if (storedPassword !== '') {
-        const encryptedPassword = encryptSha256Password(password);
-        return storedPassword === encryptedPassword;
+      if (encryptSha256Password(password) === storedPassword) {
+        await this.walletRepository.migrate(password);
+        return this.updatePassword(password);
       }
 
-      // For migration
-      const isWallet = await this.existsWallet();
-      if (isWallet) {
-        const wallet = await this.deserializeWallet(password);
-        if (wallet) {
-          await this.updatePassword(password);
-          return true;
-        }
+      const encryptedPassword = encryptWalletPassword(password);
+      const wallet = await this.deserializeWallet(encryptedPassword);
+      if (wallet) {
+        return this.updatePassword(password);
       }
     } catch (e) {
-      return false;
+      console.error(e);
     }
     return false;
   };
 
   public updatePassword = async (password: string): Promise<boolean> => {
-    await this.walletRepository.updateWalletPassword(password);
-    return true;
+    return this.walletRepository.updateWalletPassword(password);
+  };
+
+  public updatePasswordWithEncrypt = async (password: string): Promise<boolean> => {
+    const encryptedPassword = encryptWalletPassword(password);
+    return this.updatePassword(encryptedPassword);
   };
 
   public changePassword = async (password: string): Promise<boolean> => {
@@ -205,7 +208,8 @@ export class WalletService {
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
     } catch (e) {
-      await this.walletRepository.updateWalletPassword(password);
+      console.error(e);
+      return false;
     }
     return true;
   };

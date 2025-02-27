@@ -5,13 +5,15 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
 export const signAmino = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const core = new InjectCore();
-  const locked = await core.walletService.isLocked();
-  if (!locked) {
-    const address = await core.getCurrentAddress();
+  const inMemoryKey = await core.getInMemoryKey();
+
+  const isLocked = await core.isLockedBy(inMemoryKey);
+  if (isLocked) {
+    const address = await core.getCurrentAddress(inMemoryKey);
     const validationMessage = validateInjectionData(address, requestData);
     if (validationMessage) {
       sendResponse(validationMessage);
@@ -28,13 +30,15 @@ export const signAmino = async (
 };
 
 export const signTransaction = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const core = new InjectCore();
-  const locked = await core.walletService.isLocked();
-  if (!locked) {
-    const address = await core.getCurrentAddress();
+  const inMemoryKey = await core.getInMemoryKey();
+
+  const isLocked = await core.isLockedBy(inMemoryKey);
+  if (isLocked) {
+    const address = await core.getCurrentAddress(inMemoryKey);
     const validationMessage = validateInjectionData(address, requestData);
     if (validationMessage) {
       sendResponse(validationMessage);
@@ -51,13 +55,15 @@ export const signTransaction = async (
 };
 
 export const doContract = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const core = new InjectCore();
-  const locked = await core.walletService.isLocked();
-  if (!locked) {
-    const address = await core.getCurrentAddress();
+  const inMemoryKey = await core.getInMemoryKey();
+
+  const isLocked = await core.isLockedBy(inMemoryKey);
+  if (isLocked) {
+    const address = await core.getCurrentAddress(inMemoryKey);
     const validationMessage = validateInjectionData(address, requestData);
     if (validationMessage) {
       sendResponse(validationMessage);

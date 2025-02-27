@@ -34,7 +34,7 @@ export const decryptPassword = async (iv: string, encryptedPassword: string): Pr
       encryptedPassword,
     }),
   );
-  if (result.code !== 200 || !result.data?.password) {
+  if (result?.code !== 200 || !result?.data?.password) {
     throw new Error('Encryption key not initialized.');
   }
 

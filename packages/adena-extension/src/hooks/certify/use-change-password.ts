@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PasswordValidationError } from '@common/errors';
-import { useAdenaContext } from '@hooks/use-context';
+import { encryptWalletPassword } from '@common/utils/crypto-utils';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEqualsChangePassword,
   validateInvalidPassword,
@@ -8,7 +8,8 @@ import {
   validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
+import { useAdenaContext } from '@hooks/use-context';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
@@ -108,7 +109,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     let isValid = true;
     let errorMessage = '';
     try {
-      validateInvalidPassword(currentPassword, storedPassword);
+      const encryptedCurrentPassword = encryptWalletPassword(currentPassword);
+      validateInvalidPassword(encryptedCurrentPassword, storedPassword);
     } catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
@@ -146,6 +148,12 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     if (isValid) {
       try {
         await walletService.changePassword(newPassword);
+        setSavedPassword('');
+        setInputs({
+          currPwd: '',
+          newPwd: '',
+          confirmPwd: '',
+        });
         return 'FINISH';
       } catch (e) {
         console.error(e);

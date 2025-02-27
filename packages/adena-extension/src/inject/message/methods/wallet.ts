@@ -10,13 +10,14 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
 
 export const getAccount = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
-    const core = new InjectCore();
+    const inMemoryKey = await core.getInMemoryKey();
 
-    const isLocked = await core.walletService.isLocked();
+    const isLocked = await core.isLockedBy(inMemoryKey);
     if (isLocked) {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -28,7 +29,7 @@ export const getAccount = async (
       return;
     }
 
-    const currentAccountAddress = await core.getCurrentAddress();
+    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey);
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
@@ -51,19 +52,24 @@ export const getAccount = async (
     );
   } catch (error) {
     sendResponse(
-      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.NO_ACCOUNT,
+        { error: error?.toString() },
+        requestData.key,
+      ),
     );
   }
 };
 
 export const getNetwork = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
-    const core = new InjectCore();
+    const inMemoryKey = await core.getInMemoryKey();
 
-    const isLocked = await core.walletService.isLocked();
+    const isLocked = await core.isLockedBy(inMemoryKey);
     if (isLocked) {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -75,7 +81,7 @@ export const getNetwork = async (
       return;
     }
 
-    const currentAccountAddress = await core.getCurrentAddress();
+    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey);
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
@@ -105,16 +111,18 @@ export const getNetwork = async (
 };
 
 export const addEstablish = async (
+  core: InjectCore,
   message: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<boolean> => {
-  const core = new InjectCore();
-  const accountId = await core.getCurrentAccountId();
-  const isLocked = await core.walletService.isLocked();
-  const siteName = getSiteName(message.protocol, message.hostname);
+  const inMemoryKey = await core.getInMemoryKey();
 
+  const isLocked = await core.isLockedBy(inMemoryKey);
+
+  const accountId = await core.getCurrentAccountId();
+  const siteName = getSiteName(message.protocol, message.hostname);
   const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
-  if (!isLocked && isEstablished) {
+  if (isEstablished && !isLocked) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.ALREADY_CONNECTED,

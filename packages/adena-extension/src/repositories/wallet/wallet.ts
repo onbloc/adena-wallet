@@ -1,11 +1,6 @@
 import { WalletError } from '@common/errors';
 import { StorageManager } from '@common/storage/storage-manager';
-import {
-  clearInMemoryKey,
-  decryptPassword,
-  encryptPassword,
-  encryptSha256Password,
-} from '@common/utils/crypto-utils';
+import { clearInMemoryKey, decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
 
 type LocalValueType =
   | 'SERIALIZED'
@@ -61,9 +56,21 @@ export class WalletRepository {
     return true;
   };
 
-  public getWalletPassword = async (): Promise<string> => {
+  public getSessionCryptPasswords = async (): Promise<{
+    iv: string;
+    encryptedPassword: string;
+  }> => {
     const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
     const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
+
+    return {
+      iv,
+      encryptedPassword,
+    };
+  };
+
+  public getWalletPassword = async (): Promise<string> => {
+    const { iv, encryptedPassword } = await this.getSessionCryptPasswords();
 
     if (iv === '' || encryptedPassword === '') {
       throw new WalletError('NOT_FOUND_PASSWORD');
@@ -79,14 +86,15 @@ export class WalletRepository {
 
   public updateWalletPassword = async (password: string): Promise<boolean> => {
     const { encryptedKey, encryptedPassword } = await encryptPassword(password);
-    const storedPassword = encryptSha256Password(password);
-
-    await this.updateStoragePassword(password);
-
-    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', storedPassword);
     await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
     await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
+    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
 
+    return true;
+  };
+
+  public updateStoredPassword = async (encryptedStoredPassword: string): Promise<boolean> => {
+    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', encryptedStoredPassword);
     return true;
   };
 
@@ -145,5 +153,9 @@ export class WalletRepository {
 
   public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
     await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
+  };
+
+  public migrate = async (password: string): Promise<void> => {
+    await this.localStorage.updatePassword(password);
   };
 }

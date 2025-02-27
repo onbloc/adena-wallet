@@ -15,7 +15,7 @@ import { StorageModelV007 } from './migrations/v007/storage-model-v007';
 import { StorageMigration008 } from './migrations/v008/storage-migration-v008';
 import { StorageModelV008 } from './migrations/v008/storage-model-v008';
 import { StorageMigration009 } from './migrations/v009/storage-migration-v009';
-import { StorageModelV009 } from './migrations/v009/storage-model-v009';
+import { StorageModelDataV009, StorageModelV009 } from './migrations/v009/storage-model-v009';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -46,6 +46,24 @@ const defaultData: StorageModelDataV001 = {
   ENCRYPTED_STORED_PASSWORD: '',
   SERIALIZED: '',
   ACCOUNT_TOKEN_METAINFOS: {},
+};
+
+const defaultLegacyData: StorageModelDataV009 = {
+  NETWORKS: [],
+  CURRENT_CHAIN_ID: '',
+  CURRENT_NETWORK_ID: '',
+  SERIALIZED: '',
+  ENCRYPTED_STORED_PASSWORD: '',
+  CURRENT_ACCOUNT_ID: '',
+  ACCOUNT_NAMES: {},
+  ESTABLISH_SITES: {},
+  ADDRESS_BOOK: '',
+  ACCOUNT_TOKEN_METAINFOS: {},
+  QUESTIONNAIRE_EXPIRED_DATE: 0,
+  WALLET_CREATION_GUIDE_CONFIRM_DATE: 0,
+  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: 0,
+  ACCOUNT_GRC721_COLLECTIONS: {},
+  ACCOUNT_GRC721_PINNED_PACKAGES: {},
 };
 
 // Storage interface with set and get methods
@@ -123,9 +141,10 @@ export class StorageMigrator implements Migrator {
     if (data) {
       return data;
     }
+
     return {
-      version: 1,
-      data: defaultData,
+      version: 9,
+      data: defaultLegacyData,
     };
   }
 
@@ -210,16 +229,19 @@ export class StorageMigrator implements Migrator {
       return json as StorageModelV001;
     }
 
-    let data = defaultData;
     const isLegacy = await this.storage.get('SERIALIZED');
-    if (isLegacy) {
-      data = await this.getLegacyData();
+    if (Object.keys(isLegacy).length > 0) {
+      const data = await this.getLegacyData();
+      return {
+        version: 1,
+        data,
+      } as StorageModelV001;
     }
 
     return {
-      version: 1,
-      data,
-    } as StorageModelV001;
+      version: 9,
+      data: defaultLegacyData,
+    } as StorageModelV009;
   }
 
   private async getLegacyData(): Promise<StorageModelDataV001> {
