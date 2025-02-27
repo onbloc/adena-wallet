@@ -15,8 +15,10 @@ export const inputStyle = css`
   color: ${getTheme('neutral', '_1')};
   border-radius: 30px;
   padding: 14px 16px;
-  ::placeholder {
+  letter-spacing: 7px;
+  &::placeholder {
     color: ${getTheme('neutral', 'a')};
+    letter-spacing: 0px;
   }
 `;
 
