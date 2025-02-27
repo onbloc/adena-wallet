@@ -18,6 +18,7 @@ import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 
+import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
@@ -85,9 +86,11 @@ export const ApproveLogin = (): JSX.Element => {
     let currentError = null;
     try {
       validateEmptyPassword(password);
+
+      const encryptedPassword = encryptWalletPassword(password);
       const equalPassword = await walletService.equalsPassword(password);
       if (equalPassword) {
-        await walletService.updatePassword(password);
+        await walletService.updatePassword(encryptedPassword);
         await initWallet();
         setState('FINISH');
       }

@@ -12,13 +12,15 @@ function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string): boolean {
 }
 
 export const addNetwork = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const core = new InjectCore();
-  const locked = await core.walletService.isLocked();
+  const inMemoryKey = await core.getInMemoryKey();
+
+  const isLocked = await core.isLockedBy(inMemoryKey);
   const data = requestData.data;
-  if (!locked) {
+  if (!isLocked) {
     const chainId = data?.chainId || '';
     const chainName = data?.chainName || '';
     const rpcUrl = data?.rpcUrl || '';
@@ -82,11 +84,10 @@ export const addNetwork = async (
 };
 
 export const switchNetwork = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const core = new InjectCore();
-
   const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(

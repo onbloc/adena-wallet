@@ -71,10 +71,10 @@ export const removePopups = async (): Promise<void> => {
 };
 
 export const checkEstablished = async (
+  core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (response: any) => void,
 ): Promise<boolean> => {
-  const core = new InjectCore();
   const accountId = await core.getCurrentAccountId();
 
   const siteName = getSiteName(requestData.protocol, requestData.hostname);

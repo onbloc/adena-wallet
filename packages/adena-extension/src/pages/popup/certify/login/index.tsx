@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
+import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { validateEmptyPassword } from '@common/validation';
 import { Button, DefaultInput, Text } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -74,12 +75,13 @@ export const Login = (): JSX.Element => {
   const login = async (): Promise<void> => {
     try {
       if (validateEmptyPassword(password)) {
+        const encryptedPassword = encryptWalletPassword(password);
         const result = await walletService.equalsPassword(password);
         if (!result) {
           setValidateState(false);
           return;
         }
-        await walletService.updatePassword(password);
+        await walletService.updatePassword(encryptedPassword);
         await setPassword('');
         await loadAccounts();
         navigate(RoutePath.Wallet);
