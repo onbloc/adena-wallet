@@ -99,9 +99,11 @@ export class ChromeLocalStorage implements Storage {
   };
 
   private setStorageData = async (key: string, value: any): Promise<void> => {
-    if (this.current === null) {
+    this.current = await this.getStorageData();
+    if (!this.current) {
       return;
     }
+
     const storageData = {
       ...this.current,
       data: {
@@ -109,6 +111,8 @@ export class ChromeLocalStorage implements Storage {
         [key]: value,
       },
     };
+
+    this.current = storageData;
     await this.storage.set({
       [ChromeLocalStorage.StorageKey]: JSON.stringify(storageData),
     });
