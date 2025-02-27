@@ -207,8 +207,8 @@ export class AdenaExecutor {
       return;
     }
 
-    const eventData = event.data;
-    if (eventData.status) {
+    const eventData = event?.data;
+    if (!!eventData?.status) {
       const { key, status, data, code, message, type } = eventData;
       if (key === this.eventKey) {
         switch (eventData.status) {

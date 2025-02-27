@@ -118,10 +118,12 @@ export const addEstablish = async (
   const inMemoryKey = await core.getInMemoryKey();
 
   const isLocked = await core.isLockedBy(inMemoryKey);
+  console.log('3?');
 
   const accountId = await core.getCurrentAccountId();
   const siteName = getSiteName(message.protocol, message.hostname);
   const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
+  console.log('4?');
   if (isEstablished && !isLocked) {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -133,6 +135,7 @@ export const addEstablish = async (
     return true;
   }
 
+  console.log('5?');
   HandlerMethod.createPopup(
     RoutePath.ApproveEstablish,
     message,

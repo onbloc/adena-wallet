@@ -43,12 +43,13 @@ export const createPopup = async (
             called: tabId,
           },
           async () => {
-            chrome.runtime.onMessage.addListener((popupMessage) => {
-              chrome.runtime.onMessage.removeListener((popupMessage) =>
-                popupMessageListener(windowResponse.id, message, popupMessage, sendResponse),
-              );
-              popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
-            });
+            function handlePopupMessage(popupMessage: any) {
+              popupMessageListener(windowResponse?.id, message, popupMessage, sendResponse);
+            }
+
+            chrome.runtime.onMessage.addListener(handlePopupMessage);
+
+            chrome.runtime.onMessage.removeListener(handlePopupMessage);
           },
         );
       }
@@ -56,13 +57,21 @@ export const createPopup = async (
   });
 };
 
+function getAllWindows(): Promise<chrome.windows.Window[]> {
+  return new Promise((resolve) => {
+    chrome.windows.getAll((windows) => {
+      resolve(windows);
+    });
+  });
+}
+
 export const existsPopups = async (): Promise<boolean> => {
-  const windows = await chrome.windows.getAll();
+  const windows = await getAllWindows();
   return windows.findIndex((window) => window.type === 'popup') > -1;
 };
 
 export const removePopups = async (): Promise<void> => {
-  const windows = await chrome.windows.getAll();
+  const windows = await getAllWindows();
   windows.forEach((window) => {
     if (window.type === 'popup' && window.id) {
       chrome.windows.remove(window.id);

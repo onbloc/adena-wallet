@@ -1,5 +1,5 @@
 import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
-import manifest from '@public/manifest.json';
+import manifest from '@public/manifest/v2.json';
 
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 

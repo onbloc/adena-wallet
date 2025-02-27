@@ -69,7 +69,10 @@ const defaultLegacyData: StorageModelDataV009 = {
 // Storage interface with set and get methods
 interface Storage {
   set(items: { [key: string]: any }): Promise<void>;
-  get(keys?: string | string[] | { [key: string]: any } | null): Promise<{ [key: string]: any }>;
+  get(
+    keys: string | string[] | { [key: string]: any } | null,
+    callback: (data: any) => void,
+  ): Promise<{ [key: string]: any }>;
 }
 
 // Handles storage migrations and serialization/deserialization of storage data
@@ -136,8 +139,12 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | { version: number; data: StorageModelDataV001 }
   > {
-    const storedValues = await this.storage.get(StorageMigrator.StorageKey);
-    const data = await this.deserialize(storedValues[StorageMigrator.StorageKey]);
+    const storageValue = await new Promise<string>((resolve) => {
+      this.storage.get(StorageMigrator.StorageKey, (result) => {
+        resolve(result?.[StorageMigrator.StorageKey]);
+      });
+    }).catch(() => undefined);
+    const data = await this.deserialize(storageValue);
     if (data) {
       return data;
     }
@@ -229,8 +236,12 @@ export class StorageMigrator implements Migrator {
       return json as StorageModelV001;
     }
 
-    const isLegacy = await this.storage.get('SERIALIZED');
-    if (Object.keys(isLegacy).length > 0) {
+    const isLegacy = await new Promise<string | undefined>((resolve) => {
+      this.storage.get('SERIALIZED', (result) => {
+        resolve(result?.['SERIALIZED']);
+      });
+    }).catch(() => '');
+    if (isLegacy && isLegacy.length > 0) {
       const data = await this.getLegacyData();
       return {
         version: 1,
@@ -247,7 +258,11 @@ export class StorageMigrator implements Migrator {
   private async getLegacyData(): Promise<StorageModelDataV001> {
     const legacyData: { [key in string]: unknown } = defaultData;
     for (const key of LegacyStorageKeys) {
-      const data = (await this.storage.get(key))[key];
+      const data = await new Promise<string>((resolve) => {
+        this.storage.get('SERIALIZED', (result) => {
+          resolve(result?.['SERIALIZED']);
+        });
+      }).catch(() => '');
       if (data) {
         legacyData[key] = typeof legacyData[key] === 'object' ? JSON.parse(data) : data;
       }

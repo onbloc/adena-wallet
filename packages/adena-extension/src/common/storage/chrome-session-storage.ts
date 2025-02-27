@@ -2,18 +2,21 @@ import { CommonError } from '@common/errors/common';
 import { Storage } from '.';
 
 export class ChromeSessionStorage implements Storage {
-  private storage: chrome.storage.SessionStorageArea;
+  private storage: chrome.storage.LocalStorageArea;
 
   constructor() {
     if (!chrome.storage) {
       throw new CommonError('FAILED_INITIALIZE_CHROME_API');
     }
-    this.storage = chrome.storage.session;
+    this.storage = chrome.storage.local;
   }
 
   public get = async (key: string): Promise<string> => {
-    const values = await this.storage.get(key);
-    const value = values[`${key}`] ?? '';
+    const value = await new Promise<string>((resolve) => {
+      this.storage.get([key], (result) => {
+        resolve(`${result?.[key] || ''}`);
+      });
+    });
     return `${value}`;
   };
 

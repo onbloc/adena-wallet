@@ -16,7 +16,11 @@ const config = {
     background: path.join(__dirname, './src/background.ts'),
     inject: path.join(__dirname, './src/inject.ts'),
   },
-  output: { path: path.join(__dirname, '/dist'), filename: '[name].js' },
+  output: {
+    publicPath: '',
+    path: path.join(__dirname, '/dist'),
+    filename: '[name].js',
+  },
   module: {
     rules: [
       {
@@ -82,7 +86,8 @@ const config = {
     new CopyWebPackPlugin({
       patterns: [
         {
-          from: './public/manifest.json',
+          from: './public/manifest/v2.json',
+          to: './manifest.json',
           transform: (content, path) =>
             Buffer.from(
               JSON.stringify({

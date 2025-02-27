@@ -1,0 +1,41 @@
+{
+  "name": "Adena",
+  "description": "Adena is a friendly browser extension wallet for the gno.land blockchain.",
+  "manifest_version": 2,
+  "version": "1.14.1",
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    },
+    "default_title": "Adena"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
+  "permissions": [
+    "unlimitedStorage",
+    "storage",
+    "tabs",
+    "alarms",
+    "http://localhost/*",
+    "https://gno.land:443/*",
+    "https://indexer.onbloc.xyz/*",
+    "https://api.onbloc.xyz/*",
+    "https://*/gno.land:443/*",
+    "https://*/indexer.onbloc.xyz/*",
+    "https://*/api.onbloc.xyz/*",
+    "https://gnoscan.io/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": ["inject.js", "resources/*"],
+  "content_security_policy": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' https:; object-src 'none'; font-src data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http://127.0.0.1:26657; base-uri 'self'; form-action 'none';"
+}

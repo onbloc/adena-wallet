@@ -9,7 +9,7 @@ fi
 
 # change version in package.json
 version_prefix="\"version\": "
-for entry in `(find . ! \( -path '*node_modules' -prune -o -path '*dist' -prune \) -name 'package.json' -o -name "manifest.json")`
+for entry in `(find . ! \( -path '*node_modules' -prune -o -path '*dist' -prune \) -name 'package.json' -o -name "v2.json")`
 do
     sed -i '' -e "s/$version_prefix.*/$version_prefix\"$changed_version\",/g" $entry
 done

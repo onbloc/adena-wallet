@@ -19,7 +19,7 @@ function existsWallet(): Promise<boolean> {
 
 function setupPopup(existWallet: boolean): boolean {
   const popupUri = existWallet ? 'popup.html' : '';
-  chrome.action.setPopup({ popup: popupUri });
+  chrome.browserAction.setPopup({ popup: popupUri });
   return true;
 }
 
@@ -41,7 +41,7 @@ chrome.tabs.onCreated.addListener(() => {
   });
 });
 
-chrome.action.onClicked.addListener(async () => {
+chrome.browserAction.onClicked.addListener(async () => {
   existsWallet().then((existWallet) => {
     setupPopup(existWallet);
     if (!existWallet) {
@@ -53,19 +53,20 @@ chrome.action.onClicked.addListener(async () => {
 });
 
 chrome.runtime.onConnect.addListener(async (port) => {
-  inMemoryProvider.addConnection();
   await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+  inMemoryProvider.addConnection();
 
   port.onDisconnect.addListener(async () => {
     inMemoryProvider.removeConnection();
-
     if (inMemoryProvider.isActive()) {
-      await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
-    } else {
-      await chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
-        delayInMinutes: inMemoryProvider.getExpiredPasswordDurationMinutes(),
-      });
+      return;
     }
+
+    inMemoryProvider.updateExpiredTime();
+
+    await chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
+      delayInMinutes: 5,
+    });
   });
 });
 
@@ -77,7 +78,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       return;
     }
 
-    await chrome.storage.session.clear();
+    if (!inMemoryProvider.isExpired()) {
+      return;
+    }
+
+    await chrome.storage.session.set({
+      PASSWORD_EXPIRED_TIME: 0,
+      ENCRYPTED_KEY: '',
+      ENCRYPTED_PASSWORD: '',
+    });
     await clearInMemoryKey(inMemoryProvider);
   }
 });

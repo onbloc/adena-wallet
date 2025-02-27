@@ -17,7 +17,6 @@ export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<Cr
 
 export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<void> {
   const random = await generateInMemoryKey();
-  memoryProvider.set(MEMORY_KEY, random);
   memoryProvider.set(MEMORY_KEY, null);
 }
 
@@ -49,8 +48,11 @@ export const decryptPassword = async (
   iv: string,
   encryptedPassword: string,
 ): Promise<string> => {
+  console.log('1');
   const encryptedData = Buffer.from(encryptedPassword, 'base64');
+  console.log('12');
   const ivBytes = Buffer.from(iv, 'base64');
+  console.log('123');
   const dec = new TextDecoder();
 
   const decrypted = await crypto.subtle.decrypt(
@@ -61,6 +63,7 @@ export const decryptPassword = async (
     key,
     encryptedData,
   );
+  console.log('1234');
 
   return dec.decode(decrypted);
 };
