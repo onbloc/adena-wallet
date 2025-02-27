@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import IconRight from '@assets/icon-right';
 import { TokenBalance } from '@components/molecules';
-import { NetworkFeeContainer, NetworkFeeWrapper } from './network-fee.styles';
+import {
+  NetworkFeeContainer,
+  NetworkFeeItemSkeletonBox,
+  NetworkFeeWrapper,
+} from './network-fee.styles';
 
 export interface NetworkFeeProps {
   value: string;
   denom: string;
+  isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
   onClickSetting?: () => void;
@@ -15,17 +20,22 @@ export interface NetworkFeeProps {
 const NetworkFee: React.FC<NetworkFeeProps> = ({
   value,
   denom,
+  isLoading = false,
   isError,
   errorMessage,
   onClickSetting,
 }) => {
   const hasSetting = !!onClickSetting;
 
-  const isEmptyValue = value === '' || denom === '';
+  const isEmptyValue = value === '';
 
-  const hasNetworkFee = !!Number(value) && !!denom;
+  const hasError = useMemo(() => {
+    if (isLoading) {
+      return false;
+    }
 
-  const hasError = isError || !hasNetworkFee;
+    return isError || !!errorMessage;
+  }, [isError, errorMessage]);
 
   return (
     <NetworkFeeContainer>
@@ -33,19 +43,9 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         <span className='key'>{'Network Fee'}</span>
 
         <div className='network-fee-amount-wrapper'>
-          {hasNetworkFee ? (
-            <TokenBalance
-              value={value}
-              denom={denom}
-              fontStyleKey='body2Reg'
-              minimumFontSize='11px'
-              orientation='HORIZONTAL'
-            />
-          ) : (
-            <span className='value'>{'-'}</span>
-          )}
+          <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
 
-          {hasSetting && (
+          {hasSetting && !isLoading && (
             <button className='setting-button' onClick={onClickSetting}>
               <IconRight />
             </button>
@@ -55,6 +55,32 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 
       {hasError && !isEmptyValue && <span className='error-message'>{errorMessage}</span>}
     </NetworkFeeContainer>
+  );
+};
+
+const NetworkFeeAmount: React.FC<{
+  value: string;
+  denom: string;
+  isLoading: boolean;
+}> = ({ value, denom, isLoading }) => {
+  const hasNetworkFee = !!Number(value) && !!denom;
+
+  if (isLoading) {
+    return <NetworkFeeItemSkeletonBox />;
+  }
+
+  if (!hasNetworkFee) {
+    return <span className='value'>{'-'}</span>;
+  }
+
+  return (
+    <TokenBalance
+      value={value}
+      denom={denom}
+      fontStyleKey='body2Reg'
+      minimumFontSize='11px'
+      orientation='HORIZONTAL'
+    />
   );
 };
 

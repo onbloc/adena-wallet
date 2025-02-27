@@ -2,9 +2,9 @@ import { InjectionMessage } from '@inject/message';
 import { AddressBookItem } from '@repositories/wallet';
 import {
   CreateAccountState,
+  GasInfo,
   GRC721CollectionModel,
   GRC721Model,
-  NetworkFee,
   TokenBalanceType,
   TokenModel,
   TransactionInfo,
@@ -170,7 +170,7 @@ export type RouteParams = {
       value: string;
       denom: string;
     };
-    networkFee: NetworkFee | null;
+    gasInfo: GasInfo | null;
     memo: string;
   };
   [RoutePath.NftTransferSummary]: {

@@ -124,7 +124,7 @@ const TransferInputContainer: React.FC = () => {
             value: balanceInput.amount,
             denom: balanceInput.denom,
           },
-          networkFee: balanceInput.networkFee,
+          gasInfo: balanceInput.gasInfo,
           memo,
         },
       });

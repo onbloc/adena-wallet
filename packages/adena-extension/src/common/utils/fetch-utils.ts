@@ -8,6 +8,13 @@ export interface RPCRequest {
   params: any[];
 }
 
+export interface IndexerRPCRequest {
+  id: number;
+  jsonrpc: string;
+  method: string;
+  params: any[];
+}
+
 export async function fetchHealth(url: string): Promise<{ url: string; healthy: boolean }> {
   const healthy = await axios
     .get(url + '/health', { timeout: 5000 })
@@ -34,4 +41,25 @@ export function makeRPCRequest({
     method: method,
     params: params || [],
   };
+}
+
+export function makeIndexerRPCRequest({
+  id,
+  method,
+  params,
+}: {
+  id?: number;
+  method: string;
+  params?: any[];
+}): IndexerRPCRequest {
+  return {
+    id: id || makeRandId(),
+    jsonrpc: '2.0',
+    method: method,
+    params: params || [],
+  };
+}
+
+function makeRandId(): number {
+  return Math.floor(Math.random() * 10 ** 16);
 }

@@ -29,7 +29,7 @@ export const SkeletonBoxStyle = styled.div`
     right: 0;
     width: 100%;
     height: 100%;
-    z-index: 99;
+    z-index: 8;
     background: linear-gradient(
       270deg,
       rgba(82, 82, 107, 0) 0%,

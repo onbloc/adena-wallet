@@ -40,7 +40,7 @@ const TransferSummaryContainer: React.FC = () => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
-  const useNetworkFeeReturn = useNetworkFee(document);
+  const useNetworkFeeReturn = useNetworkFee(document, false, summaryInfo.gasInfo);
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const { data: currentBalance } = useGetGnotBalance();
@@ -69,12 +69,16 @@ const TransferSummaryContainer: React.FC = () => {
   }, [currentBalance, networkFee?.amount, summaryInfo]);
 
   const isNetworkFeeError = useMemo(() => {
-    if (!currentBalance || !Number(networkFee?.amount)) {
+    if (useNetworkFeeReturn.isLoading) {
+      return false;
+    }
+
+    if (!currentBalance) {
       return false;
     }
 
     return !hasNetworkFee;
-  }, [currentBalance, networkFee, hasNetworkFee]);
+  }, [currentBalance, useNetworkFeeReturn.isLoading, hasNetworkFee]);
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
@@ -127,7 +131,7 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    const { tokenMetainfo, memo } = summaryInfo;
+    const { tokenMetainfo, memo, gasInfo } = summaryInfo;
     const message =
       tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
 
@@ -135,8 +139,10 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
-      useNetworkFeeReturn.currentGasFeeRawAmount,
+      gasInfo?.gasWanted || 0,
+      BigNumber(networkFee?.amount || 0)
+        .shiftedBy(GasToken.decimals)
+        .toNumber(),
       memo,
     );
 
@@ -199,7 +205,7 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    if (!hasNetworkFee) {
+    if (isNetworkFeeError) {
       return false;
     }
 
@@ -292,6 +298,7 @@ const TransferSummaryContainer: React.FC = () => {
           toAddress={summaryInfo.toAddress}
           transferBalance={getTransferBalance()}
           isErrorNetworkFee={isNetworkFeeError}
+          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
           networkFee={networkFee}
           memo={summaryInfo.memo}
           onClickBack={onClickBack}
