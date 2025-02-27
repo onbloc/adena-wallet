@@ -1,14 +1,10 @@
-import {
-  DEFAULT_GAS_PRICE_RATE,
-  DEFAULT_GAS_USED,
-  GAS_FEE_SAFETY_MARGIN,
-  MINIMUM_GAS_PRICE,
-} from '@common/constants/gas.constant';
+import { DEFAULT_GAS_PRICE_RATE, MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-import { Document, documentToDefaultTx } from 'adena-module';
+import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useGetGasPriceTier } from './use-get-gas-price';
 
@@ -19,7 +15,6 @@ const REFETCH_INTERVAL = 5_000;
 function makeGasInfoBy(
   gasUsed: number | null | undefined,
   gasPrice: number | null | undefined,
-  safetyMargin: number,
 ): {
   gasWanted: number;
   gasFee: number;
@@ -31,28 +26,12 @@ function makeGasInfoBy(
     };
   }
 
-  const gasWantedBN = BigNumber(gasUsed).multipliedBy(safetyMargin);
+  const gasWantedBN = BigNumber(DEFAULT_GAS_WANTED);
   const gasFeeBN = gasWantedBN.multipliedBy(gasPrice);
 
   return {
     gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
-  };
-}
-
-function modifyDocument(document: Document, gasWanted: number, gasFee: number): Document {
-  return {
-    ...document,
-    fee: {
-      ...document.fee,
-      gas: gasWanted.toString(),
-      amount: [
-        {
-          denom: GasToken.denom,
-          amount: gasFee.toString(),
-        },
-      ],
-    },
   };
 }
 
@@ -94,47 +73,16 @@ export const useGetEstimateGasPriceTiers = (
             ? MINIMUM_GAS_PRICE * DEFAULT_GAS_PRICE_RATE[tier]
             : BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
 
-          const { gasWanted, gasFee } = makeGasInfoBy(
-            gasUsed || 0,
-            adjustedGasPrice,
-            GAS_FEE_SAFETY_MARGIN,
-          );
-          const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
-
-          const result = await transactionGasService
-            .estimateGas(documentToDefaultTx(modifiedDocument))
-            .catch((e: Error) => {
-              if (e?.message === '/std.InvalidPubKeyError') {
-                return DEFAULT_GAS_USED;
-              }
-
-              return null;
-            });
-
-          if (!result || !gasUsed) {
-            return {
-              settingType: tier,
-              gasInfo: {
-                gasFee: 0,
-                gasUsed: 0,
-                gasWanted: 0,
-                gasPrice: 0,
-                hasError: true,
-              },
-            };
-          }
-
           const { gasWanted: resultGasWanted, gasFee: resultGasFee } = makeGasInfoBy(
-            result,
+            gasUsed,
             adjustedGasPrice,
-            GAS_FEE_SAFETY_MARGIN,
           );
 
           return {
             settingType: tier,
             gasInfo: {
               gasFee: resultGasFee,
-              gasUsed: result,
+              gasUsed,
               gasWanted: resultGasWanted,
               gasPrice: adjustedGasPrice,
             },
