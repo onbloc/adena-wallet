@@ -102,7 +102,7 @@ const WalletAllSetScreen = (): JSX.Element => {
           <View style={{ gap: 40 }}>
             <StyledLinkBox>
               <WebText type='title3' color={theme.webNeutral._200}>
-                Explore the Gnoland Ecosystem
+                Explore the gno.land Ecosystem
               </WebText>
               <Row style={{ columnGap: 24 }}>
                 <StyledBtn
@@ -117,10 +117,10 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
-                      Gno.land
+                      gno.land
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      Visit the official website for the Gno.land project.
+                      Visit the official website of gno.land.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>
@@ -136,10 +136,10 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
-                      Gnoswap
+                      GnoSwap
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      Swap & earn in the most capital efficient DEX.
+                      Swap & earn in GnoSwap, the One-stop DeFi platform on gno.land.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>
@@ -156,10 +156,10 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
-                      Gnoscan
+                      GnoScan
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      A simple & fast explorer for Gno.land networks.
+                      A simple & fast explorer for gno.land networks.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>

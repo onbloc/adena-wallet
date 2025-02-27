@@ -20,7 +20,7 @@
   {
     "symbol": "GNODOCS",
     "name": "Gno Official Docs",
-    "description": "The official Gno.land documentation.",
+    "description": "The official gno.land documentation.",
     "logo": "/resources/apps/images/gnodocs.svg",
     "link": "https://docs.gno.land/",
     "display": true,
