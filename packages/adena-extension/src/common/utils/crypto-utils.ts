@@ -16,7 +16,7 @@ export const encryptPassword = async (
   password: string,
 ): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
   const result = await sendMessage(CommandMessage.command('encryptPassword', { password }));
-  if (result.code !== 200) {
+  if (!result || result.code !== 200) {
     throw new Error('Encryption key not initialized.');
   }
 
@@ -34,7 +34,7 @@ export const decryptPassword = async (iv: string, encryptedPassword: string): Pr
       encryptedPassword,
     }),
   );
-  if (result?.code !== 200 || !result?.data?.password) {
+  if (!result || result?.code !== 200 || !result?.data?.password) {
     throw new Error('Encryption key not initialized.');
   }
 
@@ -45,8 +45,11 @@ export const clearInMemoryKey = async (): Promise<void> => {
   await sendMessage(CommandMessage.command('clearEncryptKey'));
 };
 
-function sendMessage<T = any>(message: CommandMessageData): Promise<CommandMessageData<T>> {
-  return new Promise((resolve) => {
+function sendMessage<T = any>(message: CommandMessageData): Promise<CommandMessageData<T> | null> {
+  return new Promise<CommandMessageData<T> | null>((resolve) => {
     chrome.runtime.sendMessage(message, resolve);
+  }).catch((error) => {
+    console.warn(error);
+    return null;
   });
 }

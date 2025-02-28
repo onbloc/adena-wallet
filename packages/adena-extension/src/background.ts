@@ -106,7 +106,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   // Check metadata when tab is updated
   if (changeInfo.status === 'complete') {
-    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata'));
+    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata')).catch(console.info);
   }
 });
 
@@ -120,9 +120,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function initAlarms(): void {
-  SCHEDULE_ALARMS.map((alarm) => {
+  SCHEDULE_ALARMS.map(initAlarmWithDelay);
+}
+
+function initAlarmWithDelay(alarm: { key: string; periodInMinutes: number; delay: number }): void {
+  if (alarm.delay === 0) {
     chrome.alarms.create(alarm.key, {
       periodInMinutes: alarm.periodInMinutes,
     });
-  });
+    return;
+  }
+
+  setTimeout(
+    () =>
+      chrome.alarms.create(alarm.key, {
+        periodInMinutes: alarm.periodInMinutes,
+      }),
+    alarm.delay,
+  );
 }

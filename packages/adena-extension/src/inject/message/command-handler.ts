@@ -71,7 +71,7 @@ export class CommandHandler {
         return;
       }
     } catch (error) {
-      console.error(error);
+      console.info(error);
       sendResponse(makeInternalErrorResponse(message));
     }
 

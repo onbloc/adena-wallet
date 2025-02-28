@@ -3,19 +3,6 @@ import { EventMessageData } from '@inject/message';
 import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessageData } from '@inject/message/command-message';
 
-const sendMessage = (event: MessageEvent): void => {
-  const message = event.data;
-
-  chrome.runtime.sendMessage(message, (response) => {
-    Promise.resolve(response).then((result) => {
-      event.source?.postMessage(result, {
-        targetOrigin: event.origin,
-      });
-    });
-    return true;
-  });
-};
-
 const loadScript = (): void => {
   const container = document.head || document.documentElement;
   const scriptElement = document.createElement('script');
@@ -60,6 +47,21 @@ const initExtensionListener = (): void => {
     if (message.status === 'command') {
       return CommandHandler.createContentHandler(message);
     }
+  });
+};
+
+const sendMessage = (event: MessageEvent): void => {
+  const message = event.data;
+
+  chrome.runtime.sendMessage(message, (response) => {
+    Promise.resolve(response)
+      .then((result) => {
+        event.source?.postMessage(result, {
+          targetOrigin: event.origin,
+        });
+      })
+      .catch(console.info);
+    return true;
   });
 };
 
