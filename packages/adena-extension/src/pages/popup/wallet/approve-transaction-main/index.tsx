@@ -16,6 +16,7 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -92,7 +93,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount, getCurrentAddress } = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
@@ -146,19 +147,41 @@ const ApproveTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
-  const isErrorNetworkFee = useMemo(() => {
-    if (!useNetworkFeeReturn.isLoading && currentBalance === 0) {
-      return true;
-    }
+  const consumedTokenAmount = useMemo(() => {
+    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
+      const messageValue = msg.value;
+      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.deposit;
+      if (!amountStr) {
+        return acc;
+      }
 
+      try {
+        const amount = parseTokenAmount(amountStr);
+        return BigNumber(acc).plus(amount).toNumber();
+      } catch {
+        return acc;
+      }
+    }, 0);
+
+    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
+    return consumedBN.toNumber();
+  }, [document]);
+
+  const isErrorNetworkFee = useMemo(() => {
     if (!networkFee) {
       return false;
     }
 
+    if (currentBalance === 0) {
+      return true;
+    }
+
+    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
+
     return BigNumber(currentBalance)
       .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(networkFee.amount);
-  }, [currentBalance, networkFee, useNetworkFeeReturn.isLoading]);
+      .isLessThan(resultConsumedAmount);
+  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -194,14 +217,20 @@ const ApproveTransactionContainer: React.FC = () => {
     setFavicon(faviconData);
   };
 
-  const initBalance = useCallback(() => {
-    getCurrentAddress().then((currentAddress) => {
-      if (!currentAddress || !gnoProvider) {
-        return;
-      }
-      gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom).then(setCurrentBalance);
-    });
-  }, [getCurrentAddress, gnoProvider]);
+  const initBalance = (address: string) => {
+    if (!gnoProvider || !address) {
+      return;
+    }
+
+    gnoProvider
+      .getBalance(address, GNOT_TOKEN.denom)
+      .then((balance) => {
+        setCurrentBalance(balance);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
   const initTransactionData = async (): Promise<boolean> => {
     if (!currentNetwork || !currentAccount || !requestData) {
@@ -334,7 +363,7 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: response?.name || response.message || '',
+              error: response?.toString(),
             },
             requestData?.key,
           ),
@@ -411,7 +440,8 @@ const ApproveTransactionContainer: React.FC = () => {
         if (validated) {
           initFavicon();
           initTransactionData();
-          initBalance();
+
+          currentAccount.getAddress(currentNetwork.addressPrefix).then(initBalance);
         }
       });
     }
@@ -463,7 +493,7 @@ const ApproveTransactionContainer: React.FC = () => {
       done={done}
       logo={favicon}
       currentBalance={currentBalance}
-      isErrorNetworkFee={isErrorNetworkFee}
+      isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}

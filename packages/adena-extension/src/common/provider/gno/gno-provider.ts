@@ -157,7 +157,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return response;
   }
 
-  async estimateGas(tx: Tx): Promise<number> {
+  async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
     const params = {
       request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
@@ -175,12 +175,17 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     const simulateResult = parseProto(responseValue, ResponseDeliverTx.decode);
-    console.info('simulateResult', simulateResult);
 
     if (simulateResult.responseBase?.error) {
       throw new Error(simulateResult.responseBase.error.typeUrl);
     }
 
-    return simulateResult.gasUsed.toInt();
+    return simulateResult;
+  }
+
+  async estimateGas(tx: Tx): Promise<number> {
+    return this.simulateTx(tx).then((response) => {
+      return response.gasUsed.toInt();
+    });
   }
 }

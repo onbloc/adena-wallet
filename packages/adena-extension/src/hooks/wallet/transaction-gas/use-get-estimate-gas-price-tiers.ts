@@ -7,7 +7,7 @@ import { GasToken } from '@common/constants/token.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-import { Document } from 'adena-module';
+import { Document, documentToDefaultTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useGetGasPriceTier } from './use-get-gas-price';
 
@@ -39,10 +39,27 @@ function makeGasInfoBy(
   };
 }
 
+function modifyDocument(document: Document, gasWanted: number, gasFee: number): Document {
+  return {
+    ...document,
+    fee: {
+      ...document.fee,
+      gas: gasWanted.toString(),
+      amount: [
+        {
+          denom: GasToken.denom,
+          amount: gasFee.toString(),
+        },
+      ],
+    },
+  };
+}
+
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
   gasUsed: number | undefined,
   gasAdjustment: string,
+  isSuccessSimulate = true,
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { transactionGasService } = useAdenaContext();
@@ -80,8 +97,21 @@ export const useGetEstimateGasPriceTiers = (
           const { gasWanted: resultGasWanted, gasFee: resultGasFee } = makeGasInfoBy(
             gasUsed,
             adjustedGasPrice,
-            GAS_FEE_SAFETY_MARGIN,
+            isSuccessSimulate ? GAS_FEE_SAFETY_MARGIN : 2,
           );
+
+          const modifiedDocument = modifyDocument(document, resultGasWanted, resultGasFee);
+
+          const isSuccess = await transactionGasService
+            .simulateTx(documentToDefaultTx(modifiedDocument))
+            .then(() => true)
+            .catch((e: Error) => {
+              if (e?.message === '/std.InvalidPubKeyError') {
+                return true;
+              }
+
+              return false;
+            });
 
           return {
             settingType: tier,
@@ -90,6 +120,7 @@ export const useGetEstimateGasPriceTiers = (
               gasUsed,
               gasWanted: resultGasWanted,
               gasPrice: adjustedGasPrice,
+              hasError: !isSuccess,
             },
           };
         }),
