@@ -15,7 +15,6 @@ const REFETCH_INTERVAL = 5_000;
 function makeGasInfoBy(
   gasUsed: number | null | undefined,
   gasPrice: number | null | undefined,
-  safetyMargin: number,
 ): {
   gasWanted: number;
   gasFee: number;
@@ -27,11 +26,8 @@ function makeGasInfoBy(
     };
   }
 
-  const gasWantedBN =
-    safetyMargin > 0
-      ? BigNumber(gasUsed).multipliedBy(safetyMargin)
-      : BigNumber(DEFAULT_GAS_WANTED);
-  const gasFeeBN = gasWantedBN.multipliedBy(gasPrice);
+  const gasWantedBN = BigNumber(DEFAULT_GAS_WANTED);
+  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
 
   return {
     gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
@@ -89,7 +85,7 @@ export const useGetEstimateGasInfo = (
 
       const gasPrice = gasPriceTier?.[NetworkFeeSettingType.AVERAGE];
 
-      const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice, safetyMargin);
+      const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
       if (!transactionGasService || !gasFee || !gasWanted) {
         return null;
       }
