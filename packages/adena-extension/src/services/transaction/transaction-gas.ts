@@ -1,3 +1,4 @@
+import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
 import { Tx } from '@gnolang/tm2-js-client';
 import { ITransactionGasRepository } from '@repositories/transaction/types';
 import { GasPriceTierInfo } from '@types';
@@ -19,6 +20,10 @@ export class TransactionGasService implements ITransactionGasService {
     }
 
     return gasPrice;
+  }
+
+  public async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
+    return this.gasRepository.simulateTx(tx);
   }
 
   public async estimateGas(tx: Tx): Promise<number> {

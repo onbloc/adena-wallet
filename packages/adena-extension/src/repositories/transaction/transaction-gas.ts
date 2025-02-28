@@ -1,4 +1,5 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
 import { makeIndexerRPCRequest } from '@common/utils/fetch-utils';
 import { Tx } from '@gnolang/tm2-js-client';
 import { NetworkMetainfo } from '@types';
@@ -45,6 +46,14 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     ).then((data) => data?.result || []);
 
     return response;
+  }
+
+  public async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
+    if (!this.gnoProvider) {
+      throw new Error('GnoProvider is not initialized');
+    }
+
+    return this.gnoProvider.simulateTx(tx);
   }
 
   public async estimateGasByTx(tx: Tx): Promise<number> {

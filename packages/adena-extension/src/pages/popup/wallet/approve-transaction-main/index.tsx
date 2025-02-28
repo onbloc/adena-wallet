@@ -363,7 +363,7 @@ const ApproveTransactionContainer: React.FC = () => {
             WalletResponseFailureType.TRANSACTION_FAILED,
             {
               hash,
-              error: response?.name || response.message || '',
+              error: response?.toString(),
             },
             requestData?.key,
           ),

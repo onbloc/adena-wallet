@@ -55,6 +55,7 @@ export const useNetworkFee = (
     document,
     gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
     gasAdjustment,
+    !estimatedGasInfo?.hasError,
   );
 
   const isLoading = useMemo(() => {
@@ -97,7 +98,7 @@ export const useNetworkFee = (
     }
 
     const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
-    if (current?.gasInfo?.hasError) {
+    if (!current?.gasInfo) {
       return {
         gasFee: 0,
         gasUsed: 0,
