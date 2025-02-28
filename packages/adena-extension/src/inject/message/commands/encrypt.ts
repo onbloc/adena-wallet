@@ -6,7 +6,7 @@ const KEY_LENGTH = 256; // AES-256 key length
 const IV_LENGTH = 12; // GCM nonce length (12 bytes is recommended)
 
 export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<CryptoKey | null> {
-  const key = memoryProvider.get(MEMORY_KEY) || null;
+  const key = memoryProvider?.get(MEMORY_KEY) || null;
   if (!key) {
     const generated = await generateInMemoryKey();
     memoryProvider.set(MEMORY_KEY, generated);
@@ -49,6 +49,10 @@ export const decryptPassword = async (
   iv: string,
   encryptedPassword: string,
 ): Promise<string> => {
+  if (!key || !iv || !encryptedPassword) {
+    return '';
+  }
+
   const encryptedData = Buffer.from(encryptedPassword, 'base64');
   const ivBytes = Buffer.from(iv, 'base64');
   const dec = new TextDecoder();

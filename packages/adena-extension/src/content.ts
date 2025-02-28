@@ -5,6 +5,7 @@ import { CommandMessageData } from '@inject/message/command-message';
 
 const sendMessage = (event: MessageEvent): void => {
   const message = event.data;
+
   chrome.runtime.sendMessage(message, (response) => {
     Promise.resolve(response).then((result) => {
       event.source?.postMessage(result, {
