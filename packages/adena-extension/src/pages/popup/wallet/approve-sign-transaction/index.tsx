@@ -1,4 +1,5 @@
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,6 +9,7 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
+import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -19,6 +21,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
+import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
@@ -67,21 +70,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+
+  const { data: currentBalance = null } = useGetGnotBalance();
+
   const useNetworkFeeReturn = useNetworkFee(document, true);
-
-  const displayNetworkFee = useMemo(() => {
-    if (!useNetworkFeeReturn.networkFee) {
-      return {
-        amount: '',
-        denom: '',
-      };
-    }
-
-    return {
-      amount: useNetworkFeeReturn.networkFee.amount,
-      denom: GasToken.symbol,
-    };
-  }, [useNetworkFeeReturn.networkFee]);
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -93,6 +86,52 @@ const ApproveSignTransactionContainer: React.FC = () => {
     }
     return true;
   }, [requestData?.data?.memo]);
+
+  const displayNetworkFee = useMemo(() => {
+    if (!networkFee) {
+      return {
+        amount: '',
+        denom: '',
+      };
+    }
+
+    return {
+      amount: networkFee.amount,
+      denom: GasToken.symbol,
+    };
+  }, [networkFee]);
+
+  const consumedTokenAmount = useMemo(() => {
+    const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
+      const messageValue = msg.value;
+      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.deposit;
+      if (!amountStr) {
+        return acc;
+      }
+
+      try {
+        const amount = parseTokenAmount(amountStr);
+        return BigNumber(acc).plus(amount).toNumber();
+      } catch {
+        return acc;
+      }
+    }, 0);
+
+    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
+    return consumedBN.toNumber();
+  }, [document]);
+
+  const isErrorNetworkFee = useMemo(() => {
+    if (!networkFee) {
+      return false;
+    }
+
+    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
+
+    return BigNumber(currentBalance || 0)
+      .shiftedBy(GasToken.decimals * -1)
+      .isLessThan(resultConsumedAmount);
+  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
 
   useEffect(() => {
     checkLockWallet();
@@ -336,6 +375,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
+      currentBalance={currentBalance || 0}
+      isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       changeMemo={changeMemo}
