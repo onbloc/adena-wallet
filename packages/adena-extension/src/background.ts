@@ -1,4 +1,5 @@
-import { AlarmKey } from '@common/constants/alarm-key.constant';
+import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
+import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
 import { CommandHandler } from '@inject/message/command-handler';
@@ -8,6 +9,8 @@ import { MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
 inMemoryProvider.init();
+
+initAlarms();
 
 function existsWallet(): Promise<boolean> {
   const storage = new ChromeLocalStorage();
@@ -53,39 +56,57 @@ chrome.action.onClicked.addListener(async () => {
 });
 
 chrome.runtime.onConnect.addListener(async (port) => {
+  if (port.name !== ADENA_WALLET_EXTENSION_ID) {
+    return;
+  }
+
   inMemoryProvider.addConnection();
-  await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+  inMemoryProvider.updateExpiredTimeBy(null);
 
   port.onDisconnect.addListener(async () => {
     inMemoryProvider.removeConnection();
 
-    if (inMemoryProvider.isActive()) {
-      await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
-    } else {
-      await chrome.alarms.create(AlarmKey.EXPIRED_PASSWORD, {
-        delayInMinutes: inMemoryProvider.getExpiredPasswordDurationMinutes(),
-      });
+    if (!inMemoryProvider.isActive()) {
+      const expiredTime = new Date().getTime() + inMemoryProvider.getExpiredPasswordDurationTime();
+      inMemoryProvider.updateExpiredTimeBy(expiredTime);
+
+      console.info('Password Expired time:', new Date(expiredTime));
     }
   });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === AlarmKey.EXPIRED_PASSWORD) {
-    await chrome.alarms.clear(AlarmKey.EXPIRED_PASSWORD);
+  try {
+    const currentTime = new Date().getTime();
+    chrome.storage.local.set({ SESSION: currentTime });
 
-    if (inMemoryProvider.isActive()) {
-      return;
+    switch (alarm?.name) {
+      case AlarmKey.EXPIRED_PASSWORD:
+        if (!inMemoryProvider.isExpired(currentTime)) {
+          return;
+        }
+
+        await chrome.storage.session.clear();
+        await clearInMemoryKey(inMemoryProvider);
+
+        inMemoryProvider.updateExpiredTimeBy(null);
+        console.info('Password Expired');
+
+        break;
+      default:
+        break;
     }
-
-    await chrome.storage.session.clear();
-    await clearInMemoryKey(inMemoryProvider);
+  } catch (error) {
+    console.error(error);
   }
+
+  return true;
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   // Check metadata when tab is updated
   if (changeInfo.status === 'complete') {
-    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata'));
+    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata')).catch(console.info);
   }
 });
 
@@ -97,3 +118,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   return MessageHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
 });
+
+function initAlarms(): void {
+  SCHEDULE_ALARMS.map(initAlarmWithDelay);
+}
+
+function initAlarmWithDelay(alarm: { key: string; periodInMinutes: number; delay: number }): void {
+  if (alarm.delay === 0) {
+    chrome.alarms.create(alarm.key, {
+      periodInMinutes: alarm.periodInMinutes,
+    });
+    return;
+  }
+
+  setTimeout(
+    () =>
+      chrome.alarms.create(alarm.key, {
+        periodInMinutes: alarm.periodInMinutes,
+      }),
+    alarm.delay,
+  );
+}

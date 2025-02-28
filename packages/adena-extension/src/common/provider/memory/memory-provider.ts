@@ -4,6 +4,7 @@ export class MemoryProvider {
   private memory: Map<string, any> = new Map();
   private activeConnections = 0;
   private expiredPasswordDuration = EXPIRED_PASSWORD_DURATION_MIN;
+  private expiredTime: number | null = null;
 
   public get = <T = any>(key: string): T | null => {
     if (!this.memory.get(key)) {
@@ -33,11 +34,27 @@ export class MemoryProvider {
     return this.activeConnections > 0;
   }
 
-  public getExpiredPasswordDurationMinutes(): number {
-    return this.expiredPasswordDuration;
+  public getExpiredPasswordDurationTime(): number {
+    return this.expiredPasswordDuration * 60 * 1000;
   }
 
   public setExpiredPasswordDurationMinutes(duration: number): void {
     this.expiredPasswordDuration = duration;
+  }
+
+  public isExpired(time: number): boolean {
+    if (this.isActive()) {
+      return false;
+    }
+
+    if (!this.expiredTime) {
+      return false;
+    }
+
+    return this.expiredTime < time;
+  }
+
+  public updateExpiredTimeBy(time: number | null): void {
+    this.expiredTime = time;
   }
 }

@@ -170,7 +170,11 @@ export class AdenaExecutor {
       key: this.eventKey,
     };
 
-    window.postMessage(this.eventMessage, window.location.origin);
+    try {
+      window.postMessage(this.eventMessage, window.location.origin);
+    } catch (error) {
+      console.warn(error);
+    }
     this.messages[this.eventKey] = {
       request: this.eventMessage,
       response: undefined,

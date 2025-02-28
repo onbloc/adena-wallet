@@ -97,7 +97,13 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
     setOpen(false);
     await walletService.lockWallet();
     await clearWallet();
-    await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
+
+    try {
+      await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
+    } catch (error) {
+      console.warn(error);
+    }
+
     await loadAccounts();
     navigate(RoutePath.Login, { replace: true });
   }, [walletService, navigate]);

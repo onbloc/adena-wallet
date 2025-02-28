@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
 import { useAccountName } from '@hooks/use-account-name';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -18,6 +19,12 @@ const useApp = (): void => {
   const { clear: clearLoadingImages } = useLoadImages();
   const { pathname, key } = useLocation();
   const { scrollMove } = useScrollHistory();
+
+  useEffect(() => {
+    try {
+      chrome?.runtime?.connect({ name: ADENA_WALLET_EXTENSION_ID });
+    } catch {}
+  }, []);
 
   useEffect(() => {
     checkNetworkState();

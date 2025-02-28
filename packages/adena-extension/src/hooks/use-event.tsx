@@ -12,7 +12,7 @@ export const useEvent = (): UseEventReturn => {
         return;
       }
       const tabId = currentTab.id;
-      chrome.tabs.sendMessage(tabId, message);
+      chrome.tabs.sendMessage(tabId, message).catch(console.warn);
     });
   }
 

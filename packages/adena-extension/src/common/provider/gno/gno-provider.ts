@@ -108,7 +108,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
         sequence,
       };
     } catch (e) {
-      console.error(e);
+      console.info(e);
     }
     return {
       ...defaultAccount,
