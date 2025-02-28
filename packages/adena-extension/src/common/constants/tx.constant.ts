@@ -1,4 +1,4 @@
-export const DEFAULT_GAS_WANTED = 10_000_000;
+export const DEFAULT_GAS_WANTED = 20_000_000;
 
 export const DEFAULT_GAS_FEE = 100_000;
 
