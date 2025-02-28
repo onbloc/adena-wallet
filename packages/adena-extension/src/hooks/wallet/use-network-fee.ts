@@ -152,13 +152,6 @@ export const useNetworkFee = (
       return null;
     }
 
-    if (currentGasInfo.hasError) {
-      return {
-        amount: '0',
-        denom: '',
-      };
-    }
-
     const networkFeeAmount = BigNumber(currentGasInfo.gasFee)
       .shiftedBy(-GasToken.decimals)
       .toFixed(GasToken.decimals)
