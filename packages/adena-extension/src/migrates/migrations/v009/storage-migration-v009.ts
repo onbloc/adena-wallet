@@ -1,13 +1,18 @@
 import { StorageModel } from '@common/storage';
 import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import { Migration } from '@migrates/migrator';
-import { AdenaWallet, decryptAES, mnemonicToEntropy } from 'adena-module';
+import { AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy } from 'adena-module';
 import {
+  AddressBookModelV008,
   SerializedModelV008,
   StorageModelDataV008,
   WalletModelV008,
 } from '../v008/storage-model-v008';
-import { SerializedModelV009, StorageModelDataV009 } from './storage-model-v009';
+import {
+  AddressBookModelV009,
+  SerializedModelV009,
+  StorageModelDataV009,
+} from './storage-model-v009';
 
 export class StorageMigration009 implements Migration<StorageModelDataV009> {
   public readonly version = 9;
@@ -25,10 +30,12 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     }
     const previous: StorageModelDataV008 = current.data;
     const serialized = await this.migrateSerialized(previous.SERIALIZED, password || '');
+    const addressBook = await this.migrateAddressBook(previous.ADDRESS_BOOK, password || '');
     return {
       version: this.version,
       data: {
         ...previous,
+        ADDRESS_BOOK: addressBook,
         SERIALIZED: serialized,
       },
     };
@@ -127,5 +134,27 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     changedWallet = new AdenaWallet();
 
     return serializedWallet;
+  }
+
+  private async migrateAddressBook(
+    addressBook: AddressBookModelV008,
+    password: string,
+  ): Promise<AddressBookModelV009> {
+    if (!addressBook) {
+      return addressBook;
+    }
+
+    if (!password) {
+      return addressBook;
+    }
+
+    let decrypted = await decryptAES(addressBook, password);
+
+    const sha256Password = encryptWalletPassword(password);
+    const encryptedAddressBook = await encryptAES(decrypted, sha256Password);
+
+    decrypted = '';
+
+    return encryptedAddressBook;
   }
 }
