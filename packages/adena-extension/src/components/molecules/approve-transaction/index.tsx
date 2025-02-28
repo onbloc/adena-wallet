@@ -68,11 +68,14 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
-    return isErrorNetworkFee || Number(networkFee?.amount || 0) <= 0;
+    if (isErrorNetworkFee) {
+      return true;
+    }
+
+    return Number(networkFee?.amount || 0) <= 0;
   }, [isErrorNetworkFee, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
-    console.log('isErrorNetworkFee', isErrorNetworkFee);
     if (useNetworkFeeReturn.isSimulateError) {
       if (currentBalance !== 0) {
         return 'This transaction cannot be simulated. Try again.';
