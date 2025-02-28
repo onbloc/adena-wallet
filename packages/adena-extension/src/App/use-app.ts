@@ -21,7 +21,9 @@ const useApp = (): void => {
   const { scrollMove } = useScrollHistory();
 
   useEffect(() => {
-    chrome?.runtime?.connect({ name: ADENA_WALLET_EXTENSION_ID });
+    try {
+      chrome?.runtime?.connect({ name: ADENA_WALLET_EXTENSION_ID });
+    } catch {}
   }, []);
 
   useEffect(() => {
