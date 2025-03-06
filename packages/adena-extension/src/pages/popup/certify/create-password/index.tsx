@@ -1,14 +1,13 @@
-import React from 'react';
-import styled, { CSSProp, css } from 'styled-components';
+import styled, { css, CSSProp } from 'styled-components';
 
-import { Text, DefaultInput, ErrorText, Button, View } from '@components/atoms';
-import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
-import { useCreatePassword } from '@hooks/certify/use-create-password';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-import useLink from '@hooks/use-link';
+import { Button, DefaultInput, ErrorText, Text, View } from '@components/atoms';
 import { PasswordInput } from '@components/atoms/password-input';
+import { TermsCheckbox, TitleWithDesc } from '@components/molecules';
+import { useCreatePassword } from '@hooks/certify/use-create-password';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
 
 const text = {
   title: 'Create\na Password',
@@ -68,6 +67,7 @@ export const CreatePassword = (): JSX.Element => {
             name='pwd'
             placeholder='Password'
             evaluationResult={pwdState.evaluationResult}
+            value={pwdState.value}
             onChange={pwdState.onChange}
             onKeyDown={onKeyDown}
             error={pwdState.error}
@@ -77,6 +77,7 @@ export const CreatePassword = (): JSX.Element => {
             type='password'
             name='confirmPwd'
             placeholder='Confirm Password'
+            value={confirmPwdState.value}
             onChange={confirmPwdState.onChange}
             onKeyDown={onKeyDown}
             error={confirmPwdState.error}

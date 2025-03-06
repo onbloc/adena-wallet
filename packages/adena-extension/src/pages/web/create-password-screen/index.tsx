@@ -1,26 +1,26 @@
 import { useCallback, useMemo } from 'react';
 import styled, { useTheme } from 'styled-components';
 
+import IconConfirmCheck from '@assets/icon-confirm-check';
+import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
+  Pressable,
+  Row,
+  View,
+  WebButton,
+  WebErrorText,
   WebInput,
   WebMain,
-  View,
-  Pressable,
-  WebButton,
-  Row,
-  WebErrorText,
   WebText,
 } from '@components/atoms';
 import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
 import { WebMainHeader } from '@components/pages/web/main-header';
-import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
-import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
-import { EvaluatePasswordResult } from '@common/utils/password-utils';
-import useLink from '@hooks/use-link';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
 import { RoutePath } from '@types';
-import IconConfirmCheck from '@assets/icon-confirm-check';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -61,6 +61,7 @@ const CreatePasswordScreen = (): JSX.Element => {
     errorMessage,
     buttonState,
     onKeyDown,
+    clearPassword,
   } = useCreatePasswordScreen();
 
   const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
@@ -68,6 +69,15 @@ const CreatePasswordScreen = (): JSX.Element => {
   const moveAdenaTermsPage = useCallback(() => {
     openLink(ADENA_TERMS_PAGE);
   }, [openLink]);
+
+  const onClickNext = (): void => {
+    if (buttonState.disabled) {
+      return;
+    }
+
+    clearPassword();
+    buttonState.onClick();
+  };
 
   return (
     <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
@@ -92,6 +102,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 name='password'
                 placeholder='Password'
                 style={{ width: '100%', flexShrink: 0 }}
+                value={passwordState.value}
                 onChange={passwordState.onChange}
                 onKeyDown={onKeyDown}
                 error={passwordState.error}
@@ -111,6 +122,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 name='confirmPassword'
                 placeholder='Confirm Password'
                 style={{ width: '100%' }}
+                value={confirmPasswordState.value}
                 onChange={confirmPasswordState.onChange}
                 onKeyDown={onKeyDown}
                 error={confirmPasswordState.error}
@@ -137,7 +149,7 @@ const CreatePasswordScreen = (): JSX.Element => {
           figure='primary'
           size='small'
           disabled={buttonState.disabled}
-          onClick={buttonState.onClick}
+          onClick={onClickNext}
           tabIndex={5}
           text='Save'
           rightIcon='chevronRight'

@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
 import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
+import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
@@ -11,6 +12,7 @@ import { WebSeedBox } from '@components/molecules';
 import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
 import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
+import { Wallet } from 'adena-module';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -41,7 +43,7 @@ const StyledInputBox = styled(View)`
 
 interface WalletExportResultProps {
   exportType: ExportType;
-  exportData: string | null;
+  exportData: Wallet | null;
 }
 
 const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
@@ -49,6 +51,8 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
   const [blur, setBlur] = useState(true);
   const [initializedDone, setInitializedDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [seeds, setSeeds] = useState<string>('');
+  const [privateKey, setPrivateKey] = useState<string>('');
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -70,20 +74,6 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
     }
     return 'You have copied sensitive info. Make sure you do not paste it in public or shared environments, and clear your clipboard as soon as you’ve used it.';
   }, [copied]);
-
-  const seeds = useMemo((): string[] => {
-    if (exportType !== 'SEED_PHRASE' || !exportData) {
-      return [];
-    }
-    return exportData.split(' ');
-  }, [exportType, exportData]);
-
-  const privateKey = useMemo((): string => {
-    if (exportType !== 'PRIVATE_KEY' || !exportData) {
-      return '';
-    }
-    return exportData;
-  }, [exportType, exportData]);
 
   const onMouseDownDone = (): void => {
     setInitializedDone(true);
@@ -107,7 +97,45 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
 
   const onCopy = (): void => {
     setCopied(true);
+
+    if (exportType === 'SEED_PHRASE') {
+      navigator.clipboard.writeText(stringFromBase64(seeds));
+    } else {
+      exportData?.getPrivateKeyStr().then((result) => {
+        navigator.clipboard.writeText(result);
+      });
+    }
   };
+
+  useEffect(() => {
+    if (!exportType || !exportData) {
+      return;
+    }
+
+    switch (exportType) {
+      case 'SEED_PHRASE': {
+        let mnemonicStr = exportData.getMnemonic();
+
+        if (mnemonicStr) {
+          mnemonicStr = mnemonicStr.trim();
+          setSeeds(stringToBase64(mnemonicStr));
+          mnemonicStr = '';
+        }
+        break;
+      }
+      case 'PRIVATE_KEY': {
+        exportData.getPrivateKeyStr().then((result) => {
+          setPrivateKey(stringToBase64(result));
+        });
+        break;
+      }
+    }
+
+    return () => {
+      setSeeds('');
+      setPrivateKey('');
+    };
+  }, [exportType, exportData]);
 
   return (
     <StyledContainer>
@@ -131,13 +159,13 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
       </StyledMessageBox>
 
       <StyledInputBox>
-        {exportType === 'SEED_PHRASE' && <WebSeedBox seeds={seeds} showBlur={blur} />}
+        {exportType === 'SEED_PHRASE' && <WebSeedBox seedString={seeds} showBlur={blur} />}
         {exportType === 'PRIVATE_KEY' && (
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
         <Row style={{ gap: 16, justifyContent: 'center' }}>
           <WebHoldButton onFinishHold={onFinishHold} />
-          <WebCopyButton width={80} copyText={exportData || ''} onCopy={onCopy} />
+          <WebCopyButton width={80} copyText={''} onCopy={onCopy} />
         </Row>
       </StyledInputBox>
 

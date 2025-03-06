@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { stringFromBase64 } from '@common/utils/encoding-util';
+import { useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 
 interface WebSeedBoxProps {
-  seeds: string[];
+  seedString: string;
   showBlur?: boolean;
 }
 
@@ -31,11 +32,19 @@ const BOX_WIDTH = 185;
 const BOX_HEIGHT = 40;
 const NUMBER_BOX_WIDTH = 40;
 
-export const WebSeedBox = ({ seeds, showBlur = true }: WebSeedBoxProps): JSX.Element => {
+export const WebSeedBox = ({ seedString, showBlur = true }: WebSeedBoxProps): JSX.Element => {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
+  const seedSize = useMemo(() => {
+    return `${stringFromBase64(seedString)}`.split(' ').length;
+  }, [seedString]);
+
   useEffect(() => {
+    if (seedSize === 0) return;
+
     const dpr = window?.devicePixelRatio || 1;
+
+    const seeds = `${stringFromBase64(seedString)}`.split(' ');
 
     seeds.forEach((seed, index) => {
       const canvas = canvasRefs.current[index];
@@ -87,11 +96,11 @@ export const WebSeedBox = ({ seeds, showBlur = true }: WebSeedBoxProps): JSX.Ele
 
       ctx.scale(dpr, dpr);
     });
-  }, [seeds, showBlur, window?.devicePixelRatio]);
+  }, [seedSize, seedString, showBlur, window?.devicePixelRatio]);
 
   return (
     <CanvasContainer>
-      {seeds.map((_, index) => (
+      {Array.from({ length: seedSize }).map((_, index) => (
         <CanvasWrapper key={index} blur={showBlur}>
           <canvas
             ref={(el): HTMLCanvasElement | null => (canvasRefs.current[index] = el)}

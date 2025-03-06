@@ -8,7 +8,7 @@ export default {
 
 export const Default: StoryObj<typeof WebSeedBox> = {
   args: {
-    seeds: ['seed', 'seed', 'seed', 'seed'],
+    seedString: '',
     showBlur: true,
   },
 };

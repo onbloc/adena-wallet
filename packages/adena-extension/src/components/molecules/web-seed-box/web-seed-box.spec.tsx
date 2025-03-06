@@ -6,8 +6,6 @@ import theme from '@styles/theme';
 import { GlobalWebStyle } from '@styles/global-style';
 import { WebSeedBox } from '.';
 
-const seeds = ['seed', 'seed', 'seed', 'seed'];
-
 describe('WebSeedBox Component', () => {
   it('WebSeedBox render', () => {
 
@@ -15,7 +13,7 @@ describe('WebSeedBox Component', () => {
       <RecoilRoot>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
-          <WebSeedBox seeds={seeds} />
+          <WebSeedBox seedString='' />
         </ThemeProvider>
       </RecoilRoot>,
     );

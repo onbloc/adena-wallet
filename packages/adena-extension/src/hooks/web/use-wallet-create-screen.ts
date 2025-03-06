@@ -1,6 +1,7 @@
 import { AdenaWallet, HDWalletKeyring, SeedAccount } from 'adena-module';
 import { useCallback, useMemo, useState } from 'react';
 
+import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -42,7 +43,9 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
     hasQuestionnaire: true,
   });
 
-  const seeds = useMemo(() => AdenaWallet.generateMnemonic(), []);
+  const seeds = useMemo(() => {
+    return stringToBase64(AdenaWallet.generateMnemonic());
+  }, []);
 
   const onClickGoBack = useCallback(() => {
     if (step === 'INIT') {
@@ -65,7 +68,10 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
       }
     } else if (step === 'GET_SEED_PHRASE') {
       if (wallet) {
-        const keyring = await HDWalletKeyring.fromMnemonic(seeds);
+        let rawSeeds = stringFromBase64(seeds);
+        const keyring = await HDWalletKeyring.fromMnemonic(rawSeeds);
+        rawSeeds = '';
+
         const account = await SeedAccount.createBy(
           keyring,
           `Account ${wallet.lastAccountIndex + 1}`,
@@ -85,7 +91,10 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         await updateWallet(clone);
         navigate(RoutePath.WebAccountAddedComplete);
       } else {
-        const createdWallet = await AdenaWallet.createByMnemonic(seeds);
+        let rawSeeds = stringFromBase64(seeds);
+        const createdWallet = await AdenaWallet.createByMnemonic(rawSeeds);
+        rawSeeds = '';
+
         const serializedWallet = await createdWallet.serialize('');
 
         navigate(RoutePath.WebCreatePassword, {
