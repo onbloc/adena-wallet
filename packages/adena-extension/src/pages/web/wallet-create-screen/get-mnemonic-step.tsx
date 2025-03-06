@@ -3,6 +3,7 @@ import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
 
+import { stringFromBase64 } from '@common/utils/encoding-util';
 import { Row, View, WebButton, WebCheckBox, WebImg, WebText } from '@components/atoms';
 import { WebCopyButton } from '@components/atoms/web-copy-button';
 import { WebHoldButton } from '@components/atoms/web-hold-button';
@@ -47,6 +48,7 @@ const GetMnemonicStep = ({
 
   const onCopy = (): void => {
     setCopied(true);
+    navigator.clipboard.writeText(stringFromBase64(seeds));
   };
 
   return (
@@ -71,13 +73,13 @@ const GetMnemonicStep = ({
       </StyledMessageBox>
 
       <View style={{ width: '100%', gap: 16 }}>
-        <WebSeedBox seeds={seeds.split(' ')} showBlur={showBlur} />
+        <WebSeedBox seedString={seeds} showBlur={showBlur} />
 
         {ableToReveal ? (
           <>
             <Row style={{ justifyContent: 'center', columnGap: 12 }}>
               <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
-              <WebCopyButton width={80} copyText={seeds} onCopy={onCopy} />
+              <WebCopyButton width={80} copyText={''} onCopy={onCopy} />
             </Row>
             <Row style={{ columnGap: 8, alignItems: 'center', marginTop: 8 }}>
               <WebCheckBox

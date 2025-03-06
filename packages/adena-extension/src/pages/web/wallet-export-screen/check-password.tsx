@@ -3,8 +3,8 @@ import styled, { useTheme } from 'styled-components';
 
 import IconWarning from '@assets/web/warning.svg';
 import { Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
-import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { TermsCheckbox } from '@components/molecules';
+import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
 import { getTheme } from '@styles/theme';
 
 const StyledContainer = styled(View)`
@@ -105,6 +105,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
     }
     const checkedPassword = await checkPassword(password);
     if (checkedPassword) {
+      setPassword('');
       moveExport(password);
     } else {
       setErrorMessage('Invalid password');
@@ -134,6 +135,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
           name='password'
           width='100%'
           placeholder='Password'
+          value={password}
           onChange={onChangePassword}
           error={hasError}
         />

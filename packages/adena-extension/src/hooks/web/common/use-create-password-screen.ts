@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AdenaWallet } from 'adena-module';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { RoutePath } from '@types';
 import { PasswordValidationError } from '@common/errors';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
@@ -13,7 +13,7 @@ import { useAdenaContext } from '@hooks/use-context';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
+import { RoutePath } from '@types';
 
 export type UseCreatePasswordScreenReturn = {
   passwordState: {
@@ -41,6 +41,7 @@ export type UseCreatePasswordScreenReturn = {
   };
   indicatorInfo: UseIndicatorStepReturn;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  clearPassword: () => void;
 };
 
 export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
@@ -126,11 +127,16 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
     return false;
   };
 
+  const clearPassword = (): void => {
+    setInputs({ password: '', confirmPassword: '' });
+  };
+
   const _saveWalletByPassword = async (password: string): Promise<void> => {
     const { serializedWallet } = params;
     const wallet = await AdenaWallet.deserialize(serializedWallet, '');
     await walletService.saveWallet(wallet, password);
     await accountService.changeCurrentAccount(wallet.currentAccount);
+    await setInputs({ password: '', confirmPassword: '' });
   };
 
   const onChangePassword = useCallback(
@@ -157,14 +163,15 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
   };
 
   const onKeyDownInput = useCallback(
-    () => (e: React.KeyboardEvent<HTMLInputElement>): void => {
-      if (e.key === 'Enter') {
-        if (disabledCreateButton) {
-          return;
+    () =>
+      (e: React.KeyboardEvent<HTMLInputElement>): void => {
+        if (e.key === 'Enter') {
+          if (disabledCreateButton) {
+            return;
+          }
+          onClickCreateButton();
         }
-        onClickCreateButton();
-      }
-    },
+      },
     [disabledCreateButton, onClickCreateButton],
   );
 
@@ -207,5 +214,6 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       disabled: disabledCreateButton,
     },
     onKeyDown: onKeyDownInput,
+    clearPassword,
   };
 };

@@ -92,6 +92,7 @@ export const ApproveLogin = (): JSX.Element => {
       if (equalPassword) {
         await walletService.updatePassword(encryptedPassword);
         await initWallet();
+        setPassword('');
         setState('FINISH');
       }
     } catch (error) {
@@ -166,6 +167,7 @@ export const ApproveLogin = (): JSX.Element => {
           <DefaultInput
             type='password'
             placeholder='Password'
+            value={password}
             onChange={onChange}
             onKeyDown={onKeyDown}
             error={error !== null}

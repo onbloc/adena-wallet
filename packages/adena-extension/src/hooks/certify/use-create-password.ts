@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PasswordValidationError } from '@common/errors';
-import { useAdenaContext } from '@hooks/use-context';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
   validatePasswordComplexity,
 } from '@common/validation';
-import { AdenaWallet } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { CreateAccountState, GoogleState, LedgerState, SeedState, RoutePath } from '@types';
-import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
+import { useAdenaContext } from '@hooks/use-context';
+import { CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState } from '@types';
+import { AdenaWallet } from 'adena-module';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type UseCreatePasswordReturn = {
   pwdState: {
@@ -169,6 +169,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       });
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.changePassword(pwd);
+      clearPassword();
     } catch (error) {
       console.error(error);
       return 'FAIL';
@@ -183,6 +184,7 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       const wallet = await AdenaWallet.createByWeb3Auth(googleState.privateKey);
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.saveWallet(wallet, pwd);
+      clearPassword();
     } catch (error) {
       console.error(error);
       return 'FAIL';
@@ -211,6 +213,10 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     }
 
     setActivated(true);
+  };
+
+  const clearPassword = (): void => {
+    setInputs({ pwd: '', confirmPwd: '' });
   };
 
   return {

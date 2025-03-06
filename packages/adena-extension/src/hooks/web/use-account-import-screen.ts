@@ -189,6 +189,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
           const { account, keyring } = result;
           const resultWallet = await addAccountWith(wallet.clone(), keyring, account);
           await updateWallet(resultWallet);
+          setInputValue('');
         }).then(() => navigate(RoutePath.WebAccountAddedComplete));
         return;
       } else {
@@ -224,6 +225,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       }
 
       await updateWallet(resultWallet);
+      setInputValue('');
       navigate(RoutePath.WebAccountAddedComplete);
     }
   }, [

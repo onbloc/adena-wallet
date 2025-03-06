@@ -15,6 +15,7 @@ import useIndicatorStep, {
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { ImportWalletType, RoutePath } from '@types';
 
+import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
 import useQuestionnaire from './use-questionnaire';
 
 export type UseWalletImportReturn = {
@@ -74,17 +75,21 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
   const [inputType, setInputType] = useState<ImportWalletType>('12seeds');
   const [errMsg, setErrMsg] = useState('');
 
+  const decodedInputValue = useMemo(() => {
+    return stringFromBase64(inputValue);
+  }, [inputValue]);
+
   const updateInputValue = useCallback((value: string) => {
-    setInputValue(value);
+    setInputValue(stringToBase64(value));
     setErrMsg('');
   }, []);
 
   const isValidForm = useMemo(() => {
     let validInput = false;
     if (inputType === '12seeds') {
-      validInput = isSeedPhraseString(inputValue, 12);
+      validInput = isSeedPhraseString(decodedInputValue, 12);
     } else if (inputType === '24seeds') {
-      validInput = isSeedPhraseString(inputValue, 24);
+      validInput = isSeedPhraseString(decodedInputValue, 24);
     } else {
       validInput = !!inputValue;
     }
@@ -132,15 +137,18 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
 
       const isSeed = inputType === '12seeds' || inputType === '24seeds';
       if (isSeed) {
-        if (!isValidMnemonic(inputValue)) {
+        if (!isValidMnemonic(decodedInputValue)) {
           setErrMsg('Invalid seed phrase');
           return;
         }
 
         setStep('LOADING');
-        serializedWallet = await createSerializedWalletWithMnemonic(inputValue);
+        serializedWallet = await createSerializedWalletWithMnemonic(decodedInputValue);
+        setInputValue('');
       } else {
-        const keyring = await PrivateKeyKeyring.fromPrivateKeyStr(inputValue).catch(() => null);
+        let keyring = await PrivateKeyKeyring.fromPrivateKeyStr(decodedInputValue).catch(
+          () => null,
+        );
         if (keyring === null) {
           setErrMsg('Invalid private key');
           return;
@@ -148,6 +156,8 @@ const useWalletImportScreen = (): UseWalletImportReturn => {
 
         setStep('LOADING');
         serializedWallet = await createSerializedWalletWithPrivateKeyKeyring(keyring);
+        keyring = null;
+        setInputValue('');
       }
 
       if (!serializedWallet) {

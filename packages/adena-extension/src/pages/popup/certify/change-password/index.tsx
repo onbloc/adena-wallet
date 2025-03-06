@@ -1,12 +1,11 @@
-import React from 'react';
 import styled from 'styled-components';
 
-import { Text, DefaultInput, ErrorText } from '@components/atoms';
+import { DefaultInput, ErrorText, Text } from '@components/atoms';
 import { CancelAndConfirmButton } from '@components/molecules';
 
+import { PasswordInput } from '@components/atoms/password-input';
 import { useChangePassword } from '@hooks/certify/use-change-password';
 import mixins from '@styles/mixins';
-import { PasswordInput } from '@components/atoms/password-input';
 
 const Wrapper = styled.main`
   ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
@@ -47,6 +46,7 @@ export const ChangePassword = (): JSX.Element => {
             type='password'
             name='currPwd'
             placeholder='Current Password'
+            value={currPwdState.value}
             onChange={currPwdState.onChange}
             onKeyDown={onKeyDown}
             error={currPwdState.error}
@@ -56,6 +56,7 @@ export const ChangePassword = (): JSX.Element => {
             type='password'
             name='newPwd'
             placeholder='New Password'
+            value={newPwdState.value}
             onChange={newPwdState.onChange}
             onKeyDown={onKeyDown}
             error={newPwdState.error}
@@ -65,6 +66,7 @@ export const ChangePassword = (): JSX.Element => {
             type='password'
             name='confirmPwd'
             placeholder='Confirm New Password'
+            value={confirmPwdState.value}
             onChange={confirmPwdState.onChange}
             onKeyDown={onKeyDown}
             error={confirmPwdState.error}
