@@ -8,7 +8,9 @@ import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import DefaultFavicon from '@assets/favicon-default.svg';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
+import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import {
   ApproveTransactionNetworkFeeWrapper,
@@ -34,6 +36,8 @@ export interface ApproveTransactionProps {
   opened: boolean;
   processing: boolean;
   done: boolean;
+  transactionMessages: ContractMessage[];
+  changeTransactionMessages: (messages: ContractMessage[]) => void;
   changeMemo: (memo: string) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
@@ -48,7 +52,8 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   title,
   logo,
   domain,
-  contracts,
+  transactionMessages,
+  changeTransactionMessages,
   memo,
   currentBalance,
   hasMemo,
@@ -158,18 +163,10 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         <span>{domain}</span>
       </div>
 
-      {contracts.map((contract, index) => (
-        <div key={index} className='info-table'>
-          <div className='row'>
-            <span className='key'>Contract</span>
-            <span className='value'>{contract.type}</span>
-          </div>
-          <div className='row'>
-            <span className='key'>Function</span>
-            <span className='value'>{contract.function}</span>
-          </div>
-        </div>
-      ))}
+      <ApproveTransactionMessageBox
+        messages={transactionMessages}
+        changeMessages={changeTransactionMessages}
+      />
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>

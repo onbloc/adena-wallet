@@ -16,6 +16,10 @@ describe('ApproveTransaction Component', () => {
       title: 'Sign Transaction',
       memo: '',
       hasMemo: true,
+      transactionMessages: [],
+      changeTransactionMessages: () => {
+        return;
+      },
       contracts: [
         {
           type: '/vm.m_call',

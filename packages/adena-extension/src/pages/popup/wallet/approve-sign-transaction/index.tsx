@@ -9,6 +9,7 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
+import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
@@ -25,6 +26,7 @@ import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
+import { ContractMessage } from '@inject/types';
 import { RoutePath } from '@types';
 
 interface TransactionData {
@@ -70,6 +72,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
   const { data: currentBalance = null } = useGetGnotBalance();
 
@@ -210,6 +213,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
       setMemo(document.memo);
+      setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
     } catch (e) {
       console.error(e);
@@ -229,14 +233,6 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
   const changeMemo = (memo: string): void => {
     setMemo(memo);
-    if (document) {
-      setDocument((prev): Document | undefined => {
-        if (!prev) {
-          return undefined;
-        }
-        return { ...document, memo };
-      });
-    }
   };
 
   const updateTransactionData = (): void => {
@@ -361,8 +357,17 @@ const ApproveSignTransactionContainer: React.FC = () => {
   }, [requestData]);
 
   useEffect(() => {
+    if (transactionMessages.length === 0) {
+      return;
+    }
+
     updateTransactionData();
-  }, [memo, useNetworkFeeReturn.currentGasInfo]);
+  }, [
+    memo,
+    transactionMessages,
+    useNetworkFeeReturn.currentGasInfo?.gasWanted,
+    useNetworkFeeReturn.currentGasFeeRawAmount,
+  ]);
 
   return (
     <ApproveTransaction
@@ -379,6 +384,8 @@ const ApproveSignTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
+      transactionMessages={transactionMessages}
+      changeTransactionMessages={setTransactionMessages}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
