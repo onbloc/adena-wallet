@@ -61,8 +61,7 @@ export const ArgumentEditBoxWrapper = styled(View)`
     height: 16px;
     cursor: pointer;
 
-    .edit-confirm-icon,
-    .edit-cancel-icon {
+    svg {
       &:hover {
         * {
           stroke: ${getTheme('neutral', '_1')};

@@ -10,6 +10,9 @@ import {
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import { GNO_PACKAGE_PREFIX } from '@common/constants/metatag.constant';
+import { formatAddress } from '@common/utils/client-utils';
+import { isBech32Address } from '@common/utils/string-utils';
 import ArgumentEditBox from '../argument-edit-box/argument-edit-box';
 
 const functionNameMap = {
@@ -76,6 +79,34 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     return func;
   }, [func]);
 
+  const realmPath = useMemo(() => {
+    if (!pkg_path) {
+      return '';
+    }
+
+    const pathWithoutPrefix = pkg_path.replace(GNO_PACKAGE_PREFIX + '/', '');
+
+    const paths = pathWithoutPrefix.split('/');
+    if (paths.length < 2) {
+      return pathWithoutPrefix;
+    }
+
+    const nameSpace = paths[1];
+    if (isBech32Address(nameSpace)) {
+      return paths
+        .map((path, index) => {
+          if (index === 1) {
+            return formatAddress(path, 4);
+          }
+
+          return path;
+        })
+        .join('/');
+    }
+
+    return pathWithoutPrefix;
+  }, [pkg_path]);
+
   const displayArguments = useMemo(() => {
     if (!isOpen) {
       return [];
@@ -112,7 +143,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     <ApproveTransactionMessageWrapper>
       <div className='row'>
         <span className='key'>Realm</span>
-        <span className='value'>{pkg_path}</span>
+        <span className='value realm'>{realmPath}</span>
       </div>
 
       <div className='row'>

@@ -8,8 +8,9 @@ export function mappedTransactionMessages(
 ): ContractMessage[] {
   return messages
     .map((message) => {
+      console.log(message);
       switch (message.type) {
-        case '/bank.MsgSend ':
+        case '/bank.MsgSend':
           return {
             type: '/bank.MsgSend',
             value: message.value,

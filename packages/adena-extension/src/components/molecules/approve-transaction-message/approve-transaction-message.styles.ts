@@ -39,6 +39,10 @@ export const ApproveTransactionMessageWrapper = styled(View)`
       text-align: right;
       text-overflow: ellipsis;
       overflow: hidden;
+
+      &.realm {
+        direction: rtl;
+      }
     }
   }
 `;
@@ -49,7 +53,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   height: auto;
   color: ${getTheme('neutral', 'a')};
   padding: 10px 18px;
-  ${fonts.body1Reg};
+  ${fonts.body2Reg};
 
   & .description-wrapper {
     ${mixins.flex({ direction: 'row' })};
