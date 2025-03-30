@@ -1,6 +1,7 @@
 import {
   GNO_CHAIN_ID_META_TAG,
   GNO_CONNECT_PREFIX,
+  GNO_PACKAGE_PREFIX,
   GNO_RPC_META_TAG,
 } from '@common/constants/metatag.constant';
 
@@ -26,6 +27,10 @@ export interface GnoMessageInfo {
  *          otherwise returns null.
  */
 export function parseGnoConnectInfo(): GnoConnectInfo | null {
+  if (document === null) {
+    return null;
+  }
+
   const gnoConnectInfo: GnoConnectInfo = {
     rpc: '',
     chainId: '',
@@ -73,11 +78,9 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
  * @returns GnoMessageInfo object (packagePath, functionName, send, args)
  *          if $help is found and func is provided; otherwise returns null.
  */
-export function parseGnoMessageInfo(): GnoMessageInfo | null {
-  const rawUrl = window?.location?.href || '';
-  const url = new URL(rawUrl);
-  const { host, pathname } = url;
-
+export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
+  const url = new URL(href);
+  const { pathname } = url;
   if (!pathname.includes('$help')) {
     return null;
   }
@@ -88,8 +91,17 @@ export function parseGnoMessageInfo(): GnoMessageInfo | null {
     send: '',
     args: null,
   };
+  const splitter = '$help';
+  if (!pathname.includes(splitter)) {
+    return null;
+  }
+
   const [beforeHelp, afterHelp] = pathname.split('$help');
-  const domain = `${host}${beforeHelp}`.replace(/^\/+/, '');
+  const packagePostfix = `${beforeHelp}`.replace(/^\/+/, '');
+  if (packagePostfix === '') {
+    return null;
+  }
+
   const queryPart = afterHelp.replace(/^&+/, '');
   const parts = queryPart.split('&');
 
@@ -120,11 +132,29 @@ export function parseGnoMessageInfo(): GnoMessageInfo | null {
     return null;
   }
 
-  messageInfo.packagePath = domain;
+  messageInfo.packagePath = GNO_PACKAGE_PREFIX + '/' + packagePostfix;
 
   if (args.length !== 0) {
     messageInfo.args = args;
   }
 
   return messageInfo;
+}
+
+export function shouldIntercept(href: string): boolean {
+  const gnoMessageInfo = parseGnoMessageInfo(href);
+  if (!gnoMessageInfo) {
+    return false;
+  }
+
+  return true;
+}
+
+export function shouldRegisterAnchorIntercept(): boolean {
+  const gnoMessageInfo = parseGnoConnectInfo();
+  if (!gnoMessageInfo) {
+    return false;
+  }
+
+  return true;
 }

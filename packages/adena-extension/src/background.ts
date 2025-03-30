@@ -103,10 +103,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   return true;
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  // Check metadata when tab is updated
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
-    chrome.tabs.sendMessage(tabId, CommandMessage.command('checkMetadata')).catch(console.info);
+    try {
+      chrome.tabs
+        .sendMessage(
+          tabId,
+          CommandMessage.command('checkMetadata', {
+            gnoMessageInfo: null,
+            gnoConnectInfo: null,
+          }),
+        )
+        .catch(console.info);
+    } catch (e) {
+      console.warn('Failed to send message(checkMetadata)', e);
+    }
   }
 });
 

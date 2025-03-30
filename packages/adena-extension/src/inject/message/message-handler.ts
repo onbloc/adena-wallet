@@ -30,9 +30,11 @@ export class MessageHandler {
             sendResponse(message);
             break;
         }
+      } else {
+        sendResponse(message);
       }
     } catch (error) {
-      console.error(error);
+      console.warn(error);
     }
     return true;
   };
