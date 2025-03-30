@@ -45,11 +45,18 @@ export const clearInMemoryKey = async (): Promise<void> => {
   await sendMessage(CommandMessage.command('clearEncryptKey'));
 };
 
-function sendMessage<T = any>(message: CommandMessageData): Promise<CommandMessageData<T> | null> {
-  return new Promise<CommandMessageData<T> | null>((resolve) => {
-    chrome.runtime.sendMessage(message, resolve);
-  }).catch((error) => {
-    console.warn(error);
-    return null;
-  });
+async function sendMessage<T = any>(
+  message: CommandMessageData,
+): Promise<CommandMessageData<T> | null> {
+  try {
+    return new Promise<CommandMessageData<T> | null>((resolve) => {
+      chrome.runtime.sendMessage(message, resolve);
+    }).catch((error) => {
+      console.warn(error);
+      return null;
+    });
+  } catch (e) {
+    console.warn('Failed to send message', e);
+  }
+  return null;
 }
