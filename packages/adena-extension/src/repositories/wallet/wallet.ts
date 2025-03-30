@@ -60,13 +60,22 @@ export class WalletRepository {
     iv: string;
     encryptedPassword: string;
   }> => {
-    const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
-    const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
+    try {
+      const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
+      const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
 
-    return {
-      iv,
-      encryptedPassword,
-    };
+      return {
+        iv,
+        encryptedPassword,
+      };
+    } catch (e) {
+      console.warn('Failed to get session crypt passwords', e);
+
+      return {
+        iv: '',
+        encryptedPassword: '',
+      };
+    }
   };
 
   public getWalletPassword = async (): Promise<string> => {
@@ -85,10 +94,16 @@ export class WalletRepository {
   };
 
   public updateWalletPassword = async (password: string): Promise<boolean> => {
-    const { encryptedKey, encryptedPassword } = await encryptPassword(password);
-    await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
-    await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
-    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
+    try {
+      const { encryptedKey, encryptedPassword } = await encryptPassword(password);
+      await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
+      await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
+      await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
+    } catch (e) {
+      console.warn('Failed to update wallet password', e);
+
+      return false;
+    }
 
     return true;
   };

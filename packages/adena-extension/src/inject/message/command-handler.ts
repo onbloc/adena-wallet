@@ -3,7 +3,7 @@ import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
-import { CommandMessageData } from './command-message';
+import { CheckMetadataMessageData, CommandMessageData } from './command-message';
 import {
   clearInMemoryKey,
   decryptPassword,
@@ -83,20 +83,18 @@ export class CommandHandler {
     }
   };
 
-  public static createContentHandler = async (message: CommandMessageData): Promise<void> => {
-    if (message.code !== 0 || message.command !== 'checkMetadata') {
+  public static createContentHandler = async (
+    message: CommandMessageData<CheckMetadataMessageData>,
+  ): Promise<void> => {
+    if (message.code !== 0 || message.command !== 'checkMetadata' || !message.data) {
       return;
     }
 
-    // Parse GnoMessageInfo
-    const gnoMessageInfo = parseGnoMessageInfo();
-    if (gnoMessageInfo === null) {
-      return;
-    }
+    const currentUrl = window?.location?.href || '';
+    const gnoMessageInfo = message.data.gnoMessageInfo || parseGnoMessageInfo(currentUrl);
+    const gnoConnectInfo = message.data.gnoConnectInfo || parseGnoConnectInfo();
 
-    // Parse GnoConnectInfo
-    const gnoConnectInfo = parseGnoConnectInfo();
-    if (gnoConnectInfo === null) {
+    if (gnoMessageInfo === null || gnoConnectInfo === null) {
       return;
     }
 
