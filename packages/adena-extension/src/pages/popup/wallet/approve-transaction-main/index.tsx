@@ -16,6 +16,7 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
@@ -31,6 +32,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
+import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 
 interface TransactionData {
@@ -106,6 +108,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -217,7 +220,7 @@ const ApproveTransactionContainer: React.FC = () => {
     setFavicon(faviconData);
   };
 
-  const initBalance = (address: string) => {
+  const initBalance = (address: string): void => {
     if (!gnoProvider || !address) {
       return;
     }
@@ -249,6 +252,7 @@ const ApproveTransactionContainer: React.FC = () => {
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
       setMemo(document.memo);
+      setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
     } catch (e) {
       const error: any = e;
@@ -279,6 +283,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
     const updatedDocument: Document = {
       ...document,
+      msgs: transactionMessages,
       memo: currentMemo,
       fee: {
         amount: [
@@ -297,14 +302,6 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const changeMemo = (memo: string): void => {
     setMemo(memo);
-    if (document) {
-      setDocument((prev): Document | undefined => {
-        if (!prev) {
-          return undefined;
-        }
-        return { ...document, memo };
-      });
-    }
   };
 
   const sendTransaction = async (): Promise<boolean> => {
@@ -448,9 +445,14 @@ const ApproveTransactionContainer: React.FC = () => {
   }, [currentAccount, requestData, gnoProvider]);
 
   useEffect(() => {
+    if (transactionMessages.length === 0) {
+      return;
+    }
+
     updateTransactionData();
   }, [
     memo,
+    transactionMessages,
     useNetworkFeeReturn.currentGasInfo?.gasWanted,
     useNetworkFeeReturn.currentGasFeeRawAmount,
   ]);
@@ -496,6 +498,8 @@ const ApproveTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
+      transactionMessages={transactionMessages}
+      changeTransactionMessages={setTransactionMessages}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
