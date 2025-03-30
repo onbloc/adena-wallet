@@ -4,9 +4,9 @@ import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 
 import { AdenaResponse } from '.';
 
-type EMessageType = '/bank.MsgSend' | '/vm.m_call' | '/vm.m_addpkg' | '/vm.m_run';
+export type EMessageType = '/bank.MsgSend' | '/vm.m_call' | '/vm.m_addpkg' | '/vm.m_run';
 
-type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
+export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
 
 export type ContractMessage = {
   type: EMessageType;

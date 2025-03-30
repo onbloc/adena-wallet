@@ -32,7 +32,7 @@ export const makeDisplayPackagePath = (packagePath: string): string => {
   return items.map((item) => (isBech32Address(item) ? formatAddress(item, 4) : item)).join('/');
 };
 
-const isBech32Address = (str: string): boolean => {
+export const isBech32Address = (str: string): boolean => {
   try {
     const { prefix } = fromBech32(str);
     return !!prefix;

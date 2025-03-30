@@ -139,7 +139,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
 
   .transaction-data-wrapper {
     width: 100%;
-    ${fonts.body1Reg};
+    ${fonts.body2Reg};
     ${mixins.flex()};
 
     .visible-button {
