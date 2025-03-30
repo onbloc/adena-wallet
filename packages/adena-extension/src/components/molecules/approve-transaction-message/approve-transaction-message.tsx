@@ -84,6 +84,14 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     return args || [];
   }, [args, isOpen]);
 
+  const hasArgument = useMemo(() => {
+    if (!args) {
+      return false;
+    }
+
+    return args.length > 0;
+  }, [args]);
+
   const changeArgument = (argumentIndex: number, value: string): void => {
     if (!args) {
       return;
@@ -122,7 +130,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         </div>
       ))}
 
-      <MessageBoxArgumentsOpener isOpen={isOpen} setIsOpen={setIsOpen} />
+      {hasArgument && <MessageBoxArgumentsOpener isOpen={isOpen} setIsOpen={setIsOpen} />}
     </ApproveTransactionMessageWrapper>
   );
 };

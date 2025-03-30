@@ -6,9 +6,9 @@ const IconRight = (): JSX.Element => (
     <path
       d='M6 12L10 8L6 4'
       stroke='#777777'
-      stroke-width='1.5'
-      stroke-linecap='round'
-      stroke-linejoin='round'
+      strokeWidth='1.5'
+      strokeLinecap='round'
+      strokeLinejoin='round'
     />
   </svg>
 );

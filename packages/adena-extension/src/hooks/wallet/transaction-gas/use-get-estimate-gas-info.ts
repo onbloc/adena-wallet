@@ -1,4 +1,4 @@
-import { DEFAULT_GAS_USED, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
+import { DEFAULT_GAS_USED } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { useAdenaContext } from '@hooks/use-context';
@@ -26,11 +26,10 @@ function makeGasInfoBy(
     };
   }
 
-  const gasWantedBN = BigNumber(DEFAULT_GAS_WANTED);
   const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
 
   return {
-    gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
+    gasWanted: DEFAULT_GAS_WANTED,
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
   };
 }
@@ -55,15 +54,12 @@ export const useGetDefaultEstimateGasInfo = (
   document: Document | null | undefined,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
-  const emptyMargin = 0;
-
-  return useGetEstimateGasInfo(document, DEFAULT_GAS_USED, emptyMargin, options);
+  return useGetEstimateGasInfo(document, DEFAULT_GAS_USED, options);
 };
 
 export const useGetEstimateGasInfo = (
   document: Document | null | undefined,
   gasUsed: number,
-  safetyMargin: number = GAS_FEE_SAFETY_MARGIN,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
   const { transactionGasService } = useAdenaContext();
@@ -90,7 +86,7 @@ export const useGetEstimateGasInfo = (
         return null;
       }
 
-      const modifiedDocument = modifyDocument(document, gasWanted * 100, gasFee);
+      const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
 
       const result = await transactionGasService
         .estimateGas(documentToDefaultTx(modifiedDocument))

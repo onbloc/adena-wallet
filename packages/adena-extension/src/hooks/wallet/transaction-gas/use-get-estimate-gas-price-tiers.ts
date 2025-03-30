@@ -4,6 +4,7 @@ import {
   MINIMUM_GAS_PRICE,
 } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
@@ -35,6 +36,28 @@ function makeGasInfoBy(
 
   return {
     gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
+    gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
+  };
+}
+
+function makeDefaultGasInfoBy(
+  gasUsed: number | null | undefined,
+  gasPrice: number | null | undefined,
+): {
+  gasWanted: number;
+  gasFee: number;
+} {
+  if (!gasUsed || !gasPrice) {
+    return {
+      gasWanted: 0,
+      gasFee: 0,
+    };
+  }
+
+  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
+
+  return {
+    gasWanted: DEFAULT_GAS_WANTED,
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
   };
 }
@@ -94,11 +117,9 @@ export const useGetEstimateGasPriceTiers = (
             ? MINIMUM_GAS_PRICE * DEFAULT_GAS_PRICE_RATE[tier]
             : BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
 
-          const { gasWanted: resultGasWanted, gasFee: resultGasFee } = makeGasInfoBy(
-            gasUsed,
-            adjustedGasPrice,
-            isSuccessSimulate ? GAS_FEE_SAFETY_MARGIN : 2,
-          );
+          const { gasWanted: resultGasWanted, gasFee: resultGasFee } = isSuccessSimulate
+            ? makeGasInfoBy(gasUsed, adjustedGasPrice, GAS_FEE_SAFETY_MARGIN)
+            : makeDefaultGasInfoBy(gasUsed, adjustedGasPrice);
 
           const modifiedDocument = modifyDocument(document, resultGasWanted, resultGasFee);
 
