@@ -53,6 +53,7 @@ describe('ApproveTransaction Component', () => {
       onClickCancel: () => {
         return;
       },
+      openScannerLink: jest.fn(),
       useNetworkFeeReturn: {
         isLoading: false,
         isFetchedEstimateGasInfo: true,

@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
-import { ApproveLoading, BottomFixedLoadingButtonGroup } from '@components/molecules';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
 
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
-import DefaultFavicon from '@assets/favicon-default.svg';
+import UnknownLogo from '@assets/common-unknown-logo.svg';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
+import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import {
@@ -39,6 +40,7 @@ export interface ApproveTransactionProps {
   transactionMessages: ContractMessage[];
   changeTransactionMessages: (messages: ContractMessage[]) => void;
   changeMemo: (memo: string) => void;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
   onTimeout: () => void;
@@ -69,6 +71,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onResponse,
   onClickConfirm,
   onClickCancel,
+  openScannerLink,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
@@ -142,7 +145,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [done, onResponse]);
 
   if (loading) {
-    return <ApproveLoading rightButtonText='Approve' />;
+    return <ApproveTransactionLoading rightButtonText='Approve' />;
   }
 
   if (openedNetworkFeeSetting) {
@@ -163,17 +166,15 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         {title}
       </Text>
 
-      <div className='logo-wrapper'>
-        <img src={logo || DefaultFavicon} alt='logo img' />
-      </div>
-
       <div className='domain-wrapper'>
+        <img className='logo' src={logo || UnknownLogo} alt='logo img' />
         <span>{domain}</span>
       </div>
 
       <ApproveTransactionMessageBox
         messages={transactionMessages}
         changeMessages={changeTransactionMessages}
+        openScannerLink={openScannerLink}
       />
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>

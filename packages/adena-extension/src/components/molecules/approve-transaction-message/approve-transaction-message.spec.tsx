@@ -10,6 +10,7 @@ describe('ApproveTransactionMessage Component', () => {
   it('ApproveTransactionMessage render', () => {
     const args: ApproveTransactionMessageProps = {
       changeMessage: jest.fn(),
+      openScannerLink: jest.fn(),
       index: 0,
       message: {
         type: '/vm.m_call',

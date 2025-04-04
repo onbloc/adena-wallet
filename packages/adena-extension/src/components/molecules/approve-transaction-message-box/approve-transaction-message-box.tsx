@@ -8,11 +8,13 @@ import { ApproveTransactionMessageBoxWrapper } from './approve-transaction-messa
 export interface ApproveTransactionMessageBoxProps {
   messages: ContractMessage[];
   changeMessages: (messages: ContractMessage[]) => void;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
 }
 
 const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> = ({
   messages,
   changeMessages,
+  openScannerLink,
 }) => {
   const changeMessage = (index: number, message: ContractMessage): void => {
     const newMessages = [...messages];
@@ -32,6 +34,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
           index={index}
           message={message}
           changeMessage={changeMessage}
+          openScannerLink={openScannerLink}
         />
       ))}
     </ApproveTransactionMessageBoxWrapper>

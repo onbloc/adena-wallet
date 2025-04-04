@@ -20,6 +20,7 @@ import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
@@ -71,6 +72,7 @@ const ApproveSignContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
+  const { openScannerLink } = useLink();
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
   const { data: currentBalance = null } = useGetGnotBalance();
@@ -390,6 +392,7 @@ const ApproveSignContainer: React.FC = () => {
       onResponse={onResponseSignTransaction}
       onTimeout={onTimeoutSignTransaction}
       onToggleTransactionData={onToggleTransactionData}
+      openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
     />
