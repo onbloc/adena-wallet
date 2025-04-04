@@ -105,6 +105,7 @@ export const useNetworkFee = (
         gasWanted: 0,
         gasPrice: 0,
         hasError: true,
+        simulateErrorMessage: null,
       };
     }
 
