@@ -90,9 +90,16 @@ export const useGetEstimateGasInfo = (
 
       const result = await transactionGasService
         .estimateGas(documentToDefaultTx(modifiedDocument))
+        .then((gasUsed) => ({
+          gasUsed,
+          errorMessage: null,
+        }))
         .catch((e: Error) => {
           if (e?.message === '/std.InvalidPubKeyError') {
-            return DEFAULT_GAS_USED;
+            return {
+              gasUsed: DEFAULT_GAS_USED,
+              errorMessage: null,
+            };
           }
 
           return null;
@@ -105,14 +112,17 @@ export const useGetEstimateGasInfo = (
           gasWanted,
           gasPrice: 0,
           hasError: true,
+          simulateErrorMessage: '',
         };
       }
 
       return {
         gasFee: gasFee,
-        gasUsed: result,
+        gasUsed: result.gasUsed,
         gasWanted: gasWanted,
         gasPrice: gasPrice,
+        hasError: result.errorMessage !== null,
+        simulateErrorMessage: result.errorMessage,
       };
     },
     refetchInterval: REFETCH_INTERVAL,

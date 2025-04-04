@@ -31,4 +31,5 @@ export interface GasInfo {
   gasWanted: number;
   gasPrice: number;
   hasError?: boolean;
+  simulateErrorMessage: string | null;
 }

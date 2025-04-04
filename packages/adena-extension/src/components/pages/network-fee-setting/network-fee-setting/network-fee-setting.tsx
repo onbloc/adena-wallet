@@ -126,6 +126,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
                       gasPrice: 0,
                       gasUsed: 0,
                       gasWanted: 0,
+                      simulateErrorMessage: null,
                     }),
                   },
                 })

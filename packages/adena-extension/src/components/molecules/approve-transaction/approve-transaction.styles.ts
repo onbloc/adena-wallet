@@ -132,8 +132,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     width: 100%;
     padding: 0 16px;
     ${fonts.captionReg};
-    height: 14px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: ${getTheme('red', '_5')};
   }
 

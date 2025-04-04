@@ -1,7 +1,12 @@
+import {
+  INVALID_PUBLIC_KEY_ERROR_TYPE,
+  UNKNOWN_ADDRESS_ERROR_TYPE,
+} from '@common/constants/tx-error.constant';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   ABCIEndpoint,
   ABCIResponse,
+  Any,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   newRequest,
@@ -177,7 +182,27 @@ export class GnoProvider extends GnoJSONRPCProvider {
     const simulateResult = parseProto(responseValue, ResponseDeliverTx.decode);
 
     if (simulateResult.responseBase?.error) {
-      throw new Error(simulateResult.responseBase.error.typeUrl);
+      if (
+        simulateResult.responseBase.error.typeUrl === INVALID_PUBLIC_KEY_ERROR_TYPE ||
+        simulateResult.responseBase.error.typeUrl === UNKNOWN_ADDRESS_ERROR_TYPE
+      ) {
+        throw new Error(INVALID_PUBLIC_KEY_ERROR_TYPE);
+      }
+
+      const errorResult = parseProto(simulateResult.responseBase.error.value, Any.decode);
+      if (errorResult.typeUrl !== '') {
+        throw new Error(errorResult.typeUrl);
+      }
+
+      const typeUrl = simulateResult.responseBase.error.typeUrl;
+      const errorLogs = simulateResult.responseBase.log.split('\n');
+
+      const errorLogFirstLine = errorLogs.length > 0 ? errorLogs[0] : '';
+      if (errorLogFirstLine !== '') {
+        throw new Error(`${typeUrl}: ${errorLogFirstLine}`);
+      }
+
+      throw new Error(typeUrl);
     }
 
     return simulateResult;

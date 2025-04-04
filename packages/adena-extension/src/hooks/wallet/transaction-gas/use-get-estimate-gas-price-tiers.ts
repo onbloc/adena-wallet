@@ -4,6 +4,7 @@ import {
   MINIMUM_GAS_PRICE,
 } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
+import { INVALID_PUBLIC_KEY_ERROR_TYPE } from '@common/constants/tx-error.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
@@ -123,15 +124,15 @@ export const useGetEstimateGasPriceTiers = (
 
           const modifiedDocument = modifyDocument(document, resultGasWanted, resultGasFee);
 
-          const isSuccess = await transactionGasService
+          const errorMessage = await transactionGasService
             .simulateTx(documentToDefaultTx(modifiedDocument))
-            .then(() => true)
+            .then(() => null)
             .catch((e: Error) => {
-              if (e?.message === '/std.InvalidPubKeyError') {
-                return true;
+              if (e?.message === INVALID_PUBLIC_KEY_ERROR_TYPE) {
+                return null;
               }
 
-              return false;
+              return e?.message || '';
             });
 
           return {
@@ -141,7 +142,8 @@ export const useGetEstimateGasPriceTiers = (
               gasUsed,
               gasWanted: resultGasWanted,
               gasPrice: adjustedGasPrice,
-              hasError: !isSuccess,
+              hasError: errorMessage !== null,
+              simulateErrorMessage: errorMessage,
             },
           };
         }),

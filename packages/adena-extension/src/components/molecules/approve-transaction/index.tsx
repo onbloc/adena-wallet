@@ -73,12 +73,12 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
-    if (isErrorNetworkFee) {
+    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, networkFee]);
+  }, [isErrorNetworkFee, useNetworkFeeReturn.isSimulateError, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isSimulateError) {
@@ -93,6 +93,14 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
     return '';
   }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
+
+  const simulateErrorMessage = useMemo(() => {
+    if (useNetworkFeeReturn.isSimulateError) {
+      return useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
+    }
+
+    return null;
+  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.currentGasInfo]);
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,6 +199,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
           isLoading={useNetworkFeeReturn.isLoading}
           errorMessage={networkFeeErrorMessage}
+          simulateErrorMessage={simulateErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>

@@ -63,6 +63,7 @@ describe('ApproveTransaction Component', () => {
           gasPrice: 0.00000000048,
           gasUsed: 100000,
           gasWanted: 150000,
+          simulateErrorMessage: null,
         },
         networkFee: {
           amount: '0.0048',
