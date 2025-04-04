@@ -13,6 +13,7 @@ import IconLink from '@assets/icon-link';
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
+  MessageRowWrapper,
   RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
 
@@ -27,9 +28,14 @@ function isMsgCall(type: string): boolean {
   return type === '/vm.m_call';
 }
 
+function makeTitle(index: number, functionName: string): string {
+  return `${index + 1}. ${functionName}`;
+}
+
 export interface ApproveTransactionMessageProps {
   index: number;
   message: ContractMessage;
+  argumentKeyMap?: Record<number, string>;
   changeMessage: (index: number, messages: ContractMessage) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
 }
@@ -37,6 +43,7 @@ export interface ApproveTransactionMessageProps {
 const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
+  argumentKeyMap,
   changeMessage,
   openScannerLink,
 }) => {
@@ -47,6 +54,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       <MsgCallTransactionMessage
         index={index}
         message={message}
+        argumentKeyMap={argumentKeyMap}
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
       />
@@ -63,7 +71,10 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   );
 };
 
-const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({ message }) => {
+const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+}) => {
   const { type } = message;
   const [isOpen, setIsOpen] = useState(true);
 
@@ -71,21 +82,25 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({ m
     return functionNameMap[type] || 'Unknown';
   }, [type]);
 
+  const title = useMemo(() => {
+    return makeTitle(index, functionName);
+  }, [functionName, index]);
+
   return (
     <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={functionName} isOpen={isOpen} setIsOpen={setIsOpen} />
+      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
       {isOpen && (
-        <React.Fragment>
-          <div className='row'>
+        <MessageRowWrapper>
+          <div className='message-row'>
             <span className='key'>Type</span>
             <span className='value'>{type}</span>
           </div>
-          <div className='row'>
+          <div className='message-row'>
             <span className='key'>Function</span>
             <span className='value'>{functionName}</span>
           </div>
-        </React.Fragment>
+        </MessageRowWrapper>
       )}
     </ApproveTransactionMessageWrapper>
   );
@@ -94,6 +109,7 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({ m
 const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
+  argumentKeyMap,
   changeMessage,
   openScannerLink,
 }) => {
@@ -103,6 +119,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   const functionName = useMemo(() => {
     return func || '';
   }, [func]);
+
+  const title = useMemo(() => {
+    return makeTitle(index, functionName);
+  }, [functionName, index]);
 
   const realmPathInfo = useMemo(() => {
     if (!pkg_path) {
@@ -127,7 +147,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       };
     }
 
-    const domain = paths.slice(0, 2).join('/');
+    const domain = paths.slice(1, 2).join('/');
     const nameSpace = paths[2];
     const namespaceSubPath = paths.length > 5 ? paths.slice(3, paths.length - 1).join('/') : '';
     const contract = paths[paths.length - 1];
@@ -189,11 +209,11 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
   return (
     <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={functionName} isOpen={isOpen} setIsOpen={setIsOpen} />
+      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
       {isOpen && (
-        <React.Fragment>
-          <div className='row'>
+        <MessageRowWrapper>
+          <div className='message-row'>
             <span className='key realm'>Realm</span>
             <span className='realm-wrapper'>
               <RealmPathInfo
@@ -207,7 +227,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
               </div>
             </span>
           </div>
-          <div className='row argument'>
+          <div className='message-row argument'>
             <span className='key'>Send</span>
             <ArgumentEditBox
               value={sendAmount}
@@ -215,15 +235,17 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             />
           </div>
           {displayArguments.map((arg, argumentIndex) => (
-            <div className='row argument' key={argumentIndex}>
-              <span className='key'>{`Arg${argumentIndex + 1}`}</span>
+            <div className='message-row argument' key={argumentIndex}>
+              <span className='key'>
+                {argumentKeyMap?.[argumentIndex] || `Arg${argumentIndex + 1}`}
+              </span>
               <ArgumentEditBox
                 value={arg}
                 onChange={(value): void => changeArgument(argumentIndex, value)}
               />
             </div>
           ))}
-        </React.Fragment>
+        </MessageRowWrapper>
       )}
     </ApproveTransactionMessageWrapper>
   );
@@ -266,11 +288,17 @@ const RealmPathInfo: React.FC<{
     return displayNamespace;
   }, [nameSpace, namespaceSubPath]);
 
+  if (!domain && !displayNamespacePath && !contract) {
+    return <RealmPathInfoWrapper />;
+  }
+
   return (
     <RealmPathInfoWrapper>
-      {domain && <span className='domain'>{domain}</span>}
-      {displayNamespacePath && <span className='namespace-path'>/{displayNamespacePath}</span>}
-      {contract && <span className='contract'>/{contract}</span>}
+      {domain && <span className='domain-path'>{domain}</span>}
+      {displayNamespacePath && <span className='namespace-path'>/</span>}
+      {displayNamespacePath && <span className='namespace-path'>{displayNamespacePath}</span>}
+      {contract && <span className='contract-path'>/</span>}
+      {contract && <span className='contract-path'>{contract}</span>}
     </RealmPathInfoWrapper>
   );
 };

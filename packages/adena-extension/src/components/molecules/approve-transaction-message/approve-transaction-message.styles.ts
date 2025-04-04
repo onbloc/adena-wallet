@@ -10,20 +10,21 @@ export const ApproveTransactionMessageWrapper = styled(View)`
   margin-bottom: 8px;
   background-color: ${getTheme('neutral', '_9')};
 
-  .row {
+  .message-row {
     ${mixins.flex({ direction: 'row' })};
     position: relative;
-    padding: 10px 18px;
+    width: 100%;
+    padding: 10px 0;
     justify-content: space-between;
     border-bottom: 2px solid ${getTheme('neutral', '_8')};
-    ${fonts.body1Reg};
+    ${fonts.body2Reg};
 
     &:last-child {
       border-bottom: none;
     }
 
     &.argument {
-      padding: 0 0 0 18px;
+      padding: 0;
     }
 
     .key {
@@ -68,6 +69,15 @@ export const ApproveTransactionMessageWrapper = styled(View)`
   }
 `;
 
+export const MessageRowWrapper = styled(View)`
+  ${mixins.flex({ direction: 'column' })};
+  position: relative;
+  width: 100%;
+  padding: 0 18px;
+  justify-content: flex-start;
+  border-bottom: 2px solid ${getTheme('neutral', '_8')};
+`;
+
 export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
   width: 100%;
@@ -75,6 +85,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   color: ${getTheme('neutral', 'a')};
   padding: 14px 18px;
   ${fonts.body1Bold};
+  border-bottom: 2px solid ${getTheme('neutral', '_8')};
 
   & .title-wrapper {
     ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
@@ -101,20 +112,23 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
 
 export const RealmPathInfoWrapper = styled.span`
   display: block;
-  max-width: 157px;
+  max-width: 191px;
   text-align: right;
   text-overflow: ellipsis;
   overflow: hidden;
-  ${fonts.body1Reg};
+  ${fonts.body2Reg};
   direction: rtl;
-  color: ${getTheme('neutral', 'a')};
+  & .domain-path {
+    color: ${getTheme('neutral', 'a')};
+    font-weight: 400;
+  }
 
   & .namespace-path {
     color: ${getTheme('neutral', '_1')};
     font-weight: 400;
   }
 
-  & .contract {
+  & .contract-path {
     color: ${getTheme('neutral', '_1')};
     font-weight: 700;
   }

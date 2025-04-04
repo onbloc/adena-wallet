@@ -16,7 +16,7 @@ export const ApproveTransactionLoadingWrapper = styled.div`
   }
 
   .domain-skeleton {
-    margin: 24px auto;
+    margin: 24px auto 12px auto;
   }
 `;
 

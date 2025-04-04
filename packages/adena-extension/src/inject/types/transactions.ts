@@ -1,6 +1,7 @@
 import { MsgAddPackage, MsgCall, MsgSend } from '@gnolang/gno-js-client';
 import { MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
 import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 
 import { AdenaResponse } from '.';
 
@@ -20,6 +21,7 @@ export type TransactionParams = {
     chainId: string;
     rpcUrl: string;
   };
+  arguments?: GnoArgumentInfo[] | null;
 };
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call

@@ -8,6 +8,7 @@ import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
@@ -35,6 +36,7 @@ export interface ApproveTransactionProps {
   networkFee: NetworkFeeType | null;
   transactionData: string;
   opened: boolean;
+  argumentInfos?: GnoArgumentInfo[];
   processing: boolean;
   done: boolean;
   transactionMessages: ContractMessage[];
@@ -66,6 +68,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   processing,
   done,
   useNetworkFeeReturn,
+  argumentInfos,
   changeMemo,
   onToggleTransactionData,
   onResponse,
@@ -173,6 +176,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
       <ApproveTransactionMessageBox
         messages={transactionMessages}
+        argumentInfos={argumentInfos}
         changeMessages={changeTransactionMessages}
         openScannerLink={openScannerLink}
       />

@@ -33,6 +33,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 interface TransactionData {
@@ -186,6 +187,10 @@ const ApproveTransactionContainer: React.FC = () => {
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(resultConsumedAmount);
   }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+
+  const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
+    return requestData?.data?.arguments || [];
+  }, [requestData?.data?.arguments]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -509,6 +514,7 @@ const ApproveTransactionContainer: React.FC = () => {
       onToggleTransactionData={onToggleTransactionData}
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
+      argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
     />
   );

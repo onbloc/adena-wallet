@@ -26,6 +26,7 @@ import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { RoutePath } from '@types';
 
@@ -136,6 +137,10 @@ const ApproveSignContainer: React.FC = () => {
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(resultConsumedAmount);
   }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+
+  const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
+    return requestData?.data?.arguments || [];
+  }, [requestData?.data?.arguments]);
 
   useEffect(() => {
     checkLockWallet();
@@ -385,6 +390,7 @@ const ApproveSignContainer: React.FC = () => {
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
+      argumentInfos={argumentInfos}
       changeTransactionMessages={setTransactionMessages}
       changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
