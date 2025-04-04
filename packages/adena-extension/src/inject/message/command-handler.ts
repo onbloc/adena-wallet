@@ -146,6 +146,11 @@ function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
   gnoConnectInfo: GnoConnectInfo,
 ): TransactionParams & { gasFee: number; gasWanted: number } {
+  const args =
+    gnoMessageInfo.args?.map((arg) => {
+      return arg.value;
+    }) || [];
+
   const messages: ContractMessage[] = [
     {
       type: '/vm.m_call',
@@ -154,7 +159,7 @@ function makeTransactionMessage(
         send: gnoMessageInfo.send,
         pkg_path: gnoMessageInfo.packagePath,
         func: gnoMessageInfo.functionName,
-        args: gnoMessageInfo.args,
+        args,
       },
     },
   ];
@@ -167,5 +172,6 @@ function makeTransactionMessage(
       chainId: gnoConnectInfo.chainId,
       rpcUrl: gnoConnectInfo.rpc,
     },
+    arguments: gnoMessageInfo.args,
   };
 }

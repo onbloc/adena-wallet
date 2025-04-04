@@ -39,6 +39,18 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
     return isError || !!errorMessage;
   }, [isLoading, isError, errorMessage]);
 
+  const displayErrorMessage = useMemo(() => {
+    if (!hasError || isEmptyValue) {
+      return '';
+    }
+
+    if (simulateErrorMessage) {
+      return errorMessage + '\n' + 'Error: ' + simulateErrorMessage;
+    }
+
+    return errorMessage;
+  }, [hasError, isEmptyValue, simulateErrorMessage, errorMessage]);
+
   return (
     <NetworkFeeContainer>
       <NetworkFeeWrapper error={hasError && !isEmptyValue ? 1 : 0}>
@@ -55,10 +67,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         </div>
       </NetworkFeeWrapper>
 
-      {hasError && !isEmptyValue && <span className='error-message'>{errorMessage}</span>}
-      {hasError && !!simulateErrorMessage && (
-        <span className='error-message'>{simulateErrorMessage}</span>
-      )}
+      {displayErrorMessage && <span className='error-message'>{displayErrorMessage}</span>}
     </NetworkFeeContainer>
   );
 };

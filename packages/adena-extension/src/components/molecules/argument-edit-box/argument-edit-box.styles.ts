@@ -2,10 +2,11 @@ import { View } from '@components/atoms';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
-export const ArgumentEditBoxWrapper = styled(View)`
+export const ArgumentEditBoxWrapper = styled(View)<{ marginRight?: number }>`
   width: 100%;
-  max-width: 228px;
+  max-width: ${({ marginRight = 0 }): string => `${206 - marginRight}px`};
   height: 44px;
+  margin-right: ${({ marginRight = 0 }): string => `${marginRight}px`};
 
   .editable-wrapper {
     display: flex;
@@ -16,15 +17,18 @@ export const ArgumentEditBoxWrapper = styled(View)`
     justify-content: space-between;
     gap: 3px;
     border-radius: 30px;
-    padding: 8px 10px;
+    padding: 10px 18px 10px 10px;
     background-color: ${getTheme('neutral', '_7')};
-    ${fonts.body1Reg};
+    ${fonts.body2Reg};
 
     .edit-input {
       display: flex;
       flex-direction: row;
-      width: 100%;
+      width: calc(100% - 40px);
       color: #fff;
+      ${fonts.body2Reg};
+      line-height: 16px;
+      margin-right: -18px;
     }
 
     .button-wrapper {
@@ -44,7 +48,6 @@ export const ArgumentEditBoxWrapper = styled(View)`
     align-items: center;
     justify-content: space-between;
     gap: 3px;
-    padding-right: 18px;
 
     .display-value {
       display: inline;
@@ -52,7 +55,9 @@ export const ArgumentEditBoxWrapper = styled(View)`
       text-overflow: ellipsis;
       overflow: hidden;
       text-align: end;
-      ${fonts.body1Reg};
+      direction: rtl;
+      text-align: right;
+      ${fonts.body2Reg};
     }
   }
 

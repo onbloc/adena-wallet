@@ -14,7 +14,13 @@ export interface GnoMessageInfo {
   packagePath: string;
   functionName: string;
   send: string;
-  args: string[] | null;
+  args: GnoArgumentInfo[] | null;
+}
+
+export interface GnoArgumentInfo {
+  index: number;
+  key: string;
+  value: string;
 }
 
 /**
@@ -105,7 +111,9 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
   const queryPart = afterHelp.replace(/^&+/, '');
   const parts = queryPart.split('&');
 
-  const args: string[] = [];
+  const args: GnoArgumentInfo[] = [];
+
+  let argumentIndex = 0;
 
   for (const p of parts) {
     const params = p.split('=');
@@ -113,19 +121,25 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
       continue;
     }
 
-    const param = params[1];
+    const [key, value] = params;
 
-    if (p.startsWith('func=')) {
-      messageInfo.functionName = param || '';
+    if (key === 'func') {
+      messageInfo.functionName = value || '';
       continue;
     }
 
-    if (p.startsWith('send=')) {
-      messageInfo.send = param || '';
+    if (key === 'send') {
+      messageInfo.send = value || '';
       continue;
     }
 
-    args.push(param);
+    args.push({
+      index: argumentIndex,
+      key,
+      value,
+    });
+
+    argumentIndex++;
   }
 
   if (!messageInfo.functionName) {

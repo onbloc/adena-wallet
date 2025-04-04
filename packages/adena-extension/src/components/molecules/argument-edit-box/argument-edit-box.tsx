@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { ArgumentEditBoxWrapper } from './argument-edit-box.styles';
 
@@ -7,13 +7,18 @@ import IconEditConfirm from '@assets/icon-edit-confirm';
 import IconPencil from '@assets/icon-pencil';
 
 export interface ArgumentEditBoxProps {
+  editRightMargin?: number;
   value: string;
   onChange: (value: string) => void;
 }
 
 type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none';
 
-const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({ value, onChange }) => {
+const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
+  value,
+  onChange,
+  editRightMargin = -18,
+}) => {
   const [editable, setEditable] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [editState, setEditState] = useState<EditStateType>('none');
@@ -93,8 +98,16 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({ value, onChange }) =>
     setEditable(false);
   }, [editState]);
 
+  const marginRight = useMemo(() => {
+    if (editable) {
+      return editRightMargin;
+    }
+
+    return 0;
+  }, [editable, editRightMargin]);
+
   return (
-    <ArgumentEditBoxWrapper>
+    <ArgumentEditBoxWrapper marginRight={marginRight}>
       {editable ? (
         <div className='editable-wrapper'>
           <input

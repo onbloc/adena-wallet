@@ -70,7 +70,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     min-height: 41px;
     border-radius: 24px;
     padding: 10px 18px;
-    margin: 24px auto;
+    margin: 24px auto 12px auto;
     gap: 7px;
     background-color: ${getTheme('neutral', '_9')};
     ${fonts.body2Reg};
@@ -139,8 +139,8 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     width: 100%;
     padding: 0 16px;
     ${fonts.captionReg};
-    margin-bottom: 8px;
     color: ${getTheme('red', '_5')};
+    white-space: pre-line;
   }
 
   .transaction-data-wrapper {
