@@ -21,6 +21,7 @@ import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
@@ -73,7 +74,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
-
+  const { openScannerLink } = useLink();
   const { data: currentBalance = null } = useGetGnotBalance();
 
   const useNetworkFeeReturn = useNetworkFee(document, true);
@@ -392,6 +393,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       onResponse={onResponseSignTransaction}
       onTimeout={onTimeoutSignTransaction}
       onToggleTransactionData={onToggleTransactionData}
+      openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
     />

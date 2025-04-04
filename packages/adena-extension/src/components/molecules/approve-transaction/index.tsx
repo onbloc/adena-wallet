@@ -40,6 +40,7 @@ export interface ApproveTransactionProps {
   transactionMessages: ContractMessage[];
   changeTransactionMessages: (messages: ContractMessage[]) => void;
   changeMemo: (memo: string) => void;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
   onTimeout: () => void;
@@ -70,6 +71,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onResponse,
   onClickConfirm,
   onClickCancel,
+  openScannerLink,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
@@ -164,6 +166,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       <ApproveTransactionMessageBox
         messages={transactionMessages}
         changeMessages={changeTransactionMessages}
+        openScannerLink={openScannerLink}
       />
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>

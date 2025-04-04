@@ -10,7 +10,6 @@ import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
 
 import IconLink from '@assets/icon-link';
-import useLink from '@hooks/use-link';
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
@@ -32,23 +31,35 @@ export interface ApproveTransactionMessageProps {
   index: number;
   message: ContractMessage;
   changeMessage: (index: number, messages: ContractMessage) => void;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
 }
 
 const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
   changeMessage,
+  openScannerLink,
 }) => {
   const { type } = message;
 
   if (isMsgCall(type)) {
     return (
-      <MsgCallTransactionMessage index={index} message={message} changeMessage={changeMessage} />
+      <MsgCallTransactionMessage
+        index={index}
+        message={message}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+      />
     );
   }
 
   return (
-    <DefaultTransactionMessage index={index} message={message} changeMessage={changeMessage} />
+    <DefaultTransactionMessage
+      index={index}
+      message={message}
+      changeMessage={changeMessage}
+      openScannerLink={openScannerLink}
+    />
   );
 };
 
@@ -84,10 +95,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
   changeMessage,
+  openScannerLink,
 }) => {
   const { func, pkg_path, args, send } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
-  const { openScannerLink } = useLink();
 
   const functionName = useMemo(() => {
     return func || '';

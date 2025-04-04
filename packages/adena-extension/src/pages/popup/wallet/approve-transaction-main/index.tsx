@@ -28,13 +28,13 @@ import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { validateInjectionData } from '@inject/message/methods';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
-
 interface TransactionData {
   messages: readonly any[];
   contracts: { type: string; function: string; value: any }[];
@@ -109,6 +109,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
+  const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -506,6 +507,7 @@ const ApproveTransactionContainer: React.FC = () => {
       onResponse={onResponseSendTransaction}
       onTimeout={onTimeoutSendTransaction}
       onToggleTransactionData={onToggleTransactionData}
+      openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
     />
