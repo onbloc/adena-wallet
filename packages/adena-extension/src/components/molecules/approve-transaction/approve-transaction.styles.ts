@@ -65,14 +65,21 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
   }
 
   .domain-wrapper {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
     padding: 10px 18px;
-    margin-bottom: 8px;
+    margin: 24px auto;
+    gap: 7px;
     background-color: ${getTheme('neutral', '_9')};
     ${fonts.body2Reg};
+
+    .logo {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
   }
 
   .info-table {
