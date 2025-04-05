@@ -58,6 +58,7 @@ export const ArgumentEditBoxWrapper = styled(View)<{ marginRight?: number }>`
       direction: rtl;
       text-align: right;
       unicode-bidi: bidi-override;
+      white-space: nowrap;
       ${fonts.body2Reg};
     }
   }
