@@ -23,6 +23,14 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   const [editValue, setEditValue] = useState(value);
   const [editState, setEditState] = useState<EditStateType>('none');
 
+  const displayValue = useMemo(() => {
+    if (!value) {
+      return '';
+    }
+
+    return value.split('').reverse().join('');
+  }, [value]);
+
   const activateEditMode = (): void => {
     setEditable(true);
   };
@@ -128,7 +136,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
         </div>
       ) : (
         <div className='display-wrapper'>
-          <span className='display-value'>{value}</span>
+          <span className='display-value'>{displayValue}</span>
           <div className='icon-wrapper' onClick={activateEditMode}>
             <IconPencil className='edit-icon' />
           </div>
