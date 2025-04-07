@@ -5,6 +5,7 @@ import { ArgumentEditBoxWrapper } from './argument-edit-box.styles';
 import IconEditCancel from '@assets/icon-edit-cancel';
 import IconEditConfirm from '@assets/icon-edit-confirm';
 import IconPencil from '@assets/icon-pencil';
+import { reverseString } from '@common/utils/string-utils';
 
 export interface ArgumentEditBoxProps {
   editRightMargin?: number;
@@ -28,7 +29,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
       return '';
     }
 
-    return value.split('').reverse().join('');
+    return reverseString(value);
   }, [value]);
 
   const activateEditMode = (): void => {

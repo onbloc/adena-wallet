@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { formatAddress } from '@common/utils/client-utils';
-import { isBech32Address } from '@common/utils/string-utils';
+import { isBech32Address, reverseString } from '@common/utils/string-utils';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
 import { ContractMessage } from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
@@ -278,15 +278,23 @@ const RealmPathInfo: React.FC<{
   namespaceSubPath: string;
   contract: string;
 }> = ({ domain, nameSpace, namespaceSubPath, contract }) => {
+  const displayDomain = useMemo(() => {
+    return reverseString(domain);
+  }, [domain]);
+
   const displayNamespacePath = useMemo(() => {
     const displayNamespace = isBech32Address(nameSpace) ? formatAddress(nameSpace, 4) : nameSpace;
 
     if (namespaceSubPath.length > 0) {
-      return `${displayNamespace}/${namespaceSubPath}/`;
+      return reverseString(`${displayNamespace}/${namespaceSubPath}`);
     }
 
-    return displayNamespace;
+    return reverseString(displayNamespace);
   }, [nameSpace, namespaceSubPath]);
+
+  const displayContractPath = useMemo(() => {
+    return reverseString(contract);
+  }, [contract]);
 
   if (!domain && !displayNamespacePath && !contract) {
     return <RealmPathInfoWrapper />;
@@ -294,11 +302,11 @@ const RealmPathInfo: React.FC<{
 
   return (
     <RealmPathInfoWrapper>
-      {domain && <span className='domain-path'>{domain}</span>}
-      {displayNamespacePath && <span className='namespace-path'>/</span>}
+      {displayContractPath && <span className='contract-path'>{displayContractPath}</span>}
+      {displayContractPath && <span className='contract-path'>/</span>}
       {displayNamespacePath && <span className='namespace-path'>{displayNamespacePath}</span>}
-      {contract && <span className='contract-path'>/</span>}
-      {contract && <span className='contract-path'>{contract}</span>}
+      {displayNamespacePath && <span className='namespace-path'>/</span>}
+      {displayDomain && <span className='domain-path'>{displayDomain}</span>}
     </RealmPathInfoWrapper>
   );
 };
