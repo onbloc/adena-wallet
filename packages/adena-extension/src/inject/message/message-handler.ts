@@ -71,7 +71,7 @@ export class MessageHandler {
       case 'DO_CONTRACT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.doContract(core, message, sendResponse);
+            HandlerMethod.doContract(message, sendResponse);
           }
         });
         break;
@@ -139,14 +139,14 @@ export class MessageHandler {
       case 'SIGN_AMINO':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signAmino(core, message, sendResponse);
+            HandlerMethod.signAmino(message, sendResponse);
           }
         });
         break;
       case 'SIGN_TX':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signTransaction(core, message, sendResponse);
+            HandlerMethod.signTransaction(message, sendResponse);
           }
         });
         break;

@@ -6,13 +6,20 @@ const KEY_LENGTH = 256; // AES-256 key length
 const IV_LENGTH = 12; // GCM nonce length (12 bytes is recommended)
 
 export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<CryptoKey | null> {
-  const key = memoryProvider?.get(MEMORY_KEY) || null;
-  if (!key) {
-    const generated = await generateInMemoryKey();
-    memoryProvider.set(MEMORY_KEY, generated);
+  try {
+    const key = memoryProvider?.get(MEMORY_KEY) || null;
+    if (!key) {
+      const generated = await generateInMemoryKey();
+
+      memoryProvider.set(MEMORY_KEY, generated);
+    }
+
+    return memoryProvider.get(MEMORY_KEY) || null;
+  } catch (e) {
+    console.error(e);
   }
 
-  return memoryProvider.get(MEMORY_KEY) || null;
+  return null;
 }
 
 export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<void> {

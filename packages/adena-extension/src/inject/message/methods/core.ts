@@ -129,7 +129,9 @@ export class InjectCore {
   }
 
   public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {
-    return this.getPasswordBy(inMemoryKey).then((password) => !password);
+    return this.getPasswordBy(inMemoryKey)
+      .then((password) => !password)
+      .catch(() => true);
   }
 
   private async getPasswordBy(inMemoryKey: CryptoKey | null): Promise<string | null> {
