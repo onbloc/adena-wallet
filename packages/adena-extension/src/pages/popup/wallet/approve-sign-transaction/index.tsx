@@ -16,6 +16,7 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -26,7 +27,6 @@ import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { validateInjectionData } from '@inject/message/methods';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { RoutePath } from '@types';
@@ -184,9 +184,9 @@ const ApproveSignTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const validationMessage = validateInjectionData(
-      await currentAccount.getAddress(defaultAddressPrefix),
+    const validationMessage = validateInjectionDataWithAddress(
       requestData,
+      await currentAccount.getAddress(defaultAddressPrefix),
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
