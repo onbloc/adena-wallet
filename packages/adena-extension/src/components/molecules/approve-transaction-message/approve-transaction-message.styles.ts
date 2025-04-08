@@ -113,11 +113,13 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
 export const RealmPathInfoWrapper = styled.span`
   display: block;
   max-width: 191px;
-  text-align: right;
   text-overflow: ellipsis;
   overflow: hidden;
-  ${fonts.body2Reg};
   direction: rtl;
+  text-align: right;
+  unicode-bidi: bidi-override;
+  ${fonts.body2Reg};
+
   & .domain-path {
     color: ${getTheme('neutral', 'a')};
     font-weight: 400;

@@ -46,3 +46,7 @@ export function calculateByteSize(str: string): number {
   const encodedStr = encoder.encode(str);
   return encodedStr.length;
 }
+
+export function reverseString(str: string): string {
+  return str.split('').reverse().join('');
+}
