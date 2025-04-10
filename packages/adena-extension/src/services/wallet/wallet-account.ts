@@ -1,4 +1,4 @@
-import { AccountInfo, GnoProvider } from '@common/provider/gno/gno-provider';
+import { AccountInfo, GnoProvider } from '@common/provider/gno';
 import { WalletAccountRepository } from '@repositories/wallet';
 import { Account } from 'adena-module';
 
@@ -83,11 +83,9 @@ export class WalletAccountService {
     return this.walletAccountRepository.getAccountNames();
   };
 
-  public updateAccountNames = async (
-    accountNames: {
-      [key in string]: string;
-    },
-  ): Promise<boolean> => {
+  public updateAccountNames = async (accountNames: {
+    [key in string]: string;
+  }): Promise<boolean> => {
     return this.walletAccountRepository.updateAccountNames(accountNames);
   };
 

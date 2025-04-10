@@ -1,5 +1,7 @@
 import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { GnoDocumentInfo } from '@common/provider/gno';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
@@ -12,6 +14,7 @@ import {
 } from './commands/encrypt';
 import { clearPopup } from './commands/popup';
 import {
+  GnoArgumentInfo,
   GnoConnectInfo,
   GnoMessageInfo,
   parseGnoConnectInfo,
@@ -120,10 +123,25 @@ export class CommandHandler {
       return;
     }
 
-    // Make TransactionParams
-    const transactionParams = makeTransactionMessage(gnoMessageInfo, gnoConnectInfo);
+    const gnoProvider = new GnoProvider(gnoConnectInfo.rpc, gnoConnectInfo.chainId);
+    const realmDocument = await gnoProvider.getRealmDocument(gnoMessageInfo.packagePath);
+    if (!realmDocument) {
+      console.info('Realm document not found');
+      return;
+    }
 
-    executor.doContract(transactionParams).then(console.info).catch(console.error);
+    try {
+      // Make TransactionParams
+      const transactionParams = makeTransactionMessage(
+        gnoMessageInfo,
+        gnoConnectInfo,
+        realmDocument,
+      );
+
+      executor.doContract(transactionParams).then(console.info);
+    } catch (error) {
+      console.info(error);
+    }
   };
 }
 
@@ -145,11 +163,27 @@ function makeInternalErrorResponse(message: CommandMessageData): CommandMessageD
 function makeTransactionMessage(
   gnoMessageInfo: GnoMessageInfo,
   gnoConnectInfo: GnoConnectInfo,
+  realmDocument: GnoDocumentInfo,
 ): TransactionParams & { gasFee: number; gasWanted: number } {
-  const args =
-    gnoMessageInfo.args?.map((arg) => {
-      return arg.value;
-    }) || [];
+  const func = realmDocument.funcs.find((f) => f.name === gnoMessageInfo.functionName);
+  if (!func) {
+    throw new Error(`Function not found: ${gnoMessageInfo.functionName}`);
+  }
+
+  const gnoArguments: GnoArgumentInfo[] = func.params.map((param, index) => {
+    const arg = gnoMessageInfo.args?.find((arg) => arg.key === param.name);
+    const value = arg?.value || '';
+
+    return {
+      index,
+      key: param.name,
+      value,
+    };
+  });
+
+  const messageArguments = gnoArguments.map((arg) => {
+    return arg.value;
+  });
 
   const messages: ContractMessage[] = [
     {
@@ -159,7 +193,7 @@ function makeTransactionMessage(
         send: gnoMessageInfo.send,
         pkg_path: gnoMessageInfo.packagePath,
         func: gnoMessageInfo.functionName,
-        args,
+        args: messageArguments,
       },
     },
   ];
@@ -172,6 +206,6 @@ function makeTransactionMessage(
       chainId: gnoConnectInfo.chainId,
       rpcUrl: gnoConnectInfo.rpc,
     },
-    arguments: gnoMessageInfo.args,
+    arguments: gnoArguments,
   };
 }
