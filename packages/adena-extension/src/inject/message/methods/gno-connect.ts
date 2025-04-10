@@ -4,6 +4,7 @@ import {
   GNO_PACKAGE_PREFIX,
   GNO_RPC_META_TAG,
 } from '@common/constants/metatag.constant';
+import { hasHttpProtocol } from '@common/provider/gno/utils';
 
 export interface GnoConnectInfo {
   rpc: string;
@@ -54,7 +55,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
 
     switch (name) {
       case GNO_RPC_META_TAG:
-        gnoConnectInfo.rpc = content;
+        gnoConnectInfo.rpc = getUrlPathWithoutProtocol(content);
         break;
       case GNO_CHAIN_ID_META_TAG:
         gnoConnectInfo.chainId = content;
@@ -171,4 +172,14 @@ export function shouldRegisterAnchorIntercept(): boolean {
   }
 
   return true;
+}
+
+export function getUrlPathWithoutProtocol(url: string): string {
+  const trimmedUrl = url.trim();
+
+  if (hasHttpProtocol(trimmedUrl)) {
+    return trimmedUrl;
+  }
+
+  return trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
 }

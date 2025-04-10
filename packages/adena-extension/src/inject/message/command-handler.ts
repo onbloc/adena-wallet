@@ -138,7 +138,7 @@ export class CommandHandler {
         realmDocument,
       );
 
-      executor.doContract(transactionParams).then(console.info);
+      executor.doContract(transactionParams).then(console.info).catch(console.info);
     } catch (error) {
       console.info(error);
     }
