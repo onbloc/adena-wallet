@@ -15,8 +15,9 @@ import {
   Wallet,
 } from 'adena-module';
 
-import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
@@ -49,14 +50,6 @@ export class TransactionService {
     this.gnoProvider = gnoProvider;
   }
 
-  private getGasAmount = async (gasFee?: number): Promise<{ amount: string; denom: string }> => {
-    const gasFeeAmount = {
-      amount: `${gasFee ?? 1}`,
-      denom: GNOT_TOKEN.denom,
-    };
-    return gasFeeAmount;
-  };
-
   /**
    * Create a document for transaction
    *
@@ -84,7 +77,7 @@ export class TransactionService {
       provider.getAccountNumber(address),
     ]).catch(() => [0, 0]);
     return {
-      msgs: [...messages],
+      msgs: mappedDocumentMessagesWithCaller(messages, address),
       fee: {
         amount: [
           {

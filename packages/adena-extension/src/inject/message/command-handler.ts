@@ -98,9 +98,6 @@ export class CommandHandler {
       return;
     }
 
-    // Make TransactionParams
-    const transactionParams = makeTransactionMessage(gnoMessageInfo, gnoConnectInfo);
-
     const executor = new AdenaExecutor();
 
     const addEstablishResponse = await executor.addEstablish();
@@ -122,6 +119,9 @@ export class CommandHandler {
       console.info('response: ', switchNetworkResponse);
       return;
     }
+
+    // Make TransactionParams
+    const transactionParams = makeTransactionMessage(gnoMessageInfo, gnoConnectInfo);
 
     executor.doContract(transactionParams).then(console.info).catch(console.error);
   };
