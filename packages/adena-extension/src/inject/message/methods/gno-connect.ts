@@ -78,7 +78,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
  *   https://gno.land/r/demo/boards$help&func=CreateThread&bid=2&send=100ugnot
  *   - $help acts as a marker to split the pathname.
  *   - func= specifies functionName.
- *   - send= specifies the amount to send.
+ *   - .send= specifies the amount to send.
  *   - other parameters are collected in the args array.
  *
  * @returns GnoMessageInfo object (packagePath, functionName, send, args)
@@ -128,7 +128,7 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
       continue;
     }
 
-    if (key === 'send') {
+    if (key === '.send') {
       messageInfo.send = value || '';
       continue;
     }
