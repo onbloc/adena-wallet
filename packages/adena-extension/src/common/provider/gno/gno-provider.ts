@@ -20,7 +20,13 @@ import {
 import axios from 'axios';
 import { ResponseDeliverTx } from './proto/tm2/abci';
 import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
-import { fetchABCIResponse, makeRequestQueryPath, parseProto, postABCIResponse } from './utils';
+import {
+  fetchABCIResponse,
+  isHttpsAvailable,
+  makeRequestQueryPath,
+  parseProto,
+  postABCIResponse,
+} from './utils';
 
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
@@ -182,7 +188,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
   public async getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
     const query = VMQueryType.QUERY_DOCUMENT;
     const base64PackagePath = stringToBase64(packagePath);
-    const requestQuery = this.makeRequestQueryPath(query, base64PackagePath);
+    const requestQuery = await this.getRequestQueryPath(query, base64PackagePath);
 
     try {
       const abciResponse = await fetchABCIResponse(requestQuery, false);
@@ -199,7 +205,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return null;
   }
 
-  private makeRequestQueryPath(path: string, data: string): string {
-    return makeRequestQueryPath(this.baseURL, path, data);
+  private async getRequestQueryPath(path: string, data: string): Promise<string> {
+    const ssl = await isHttpsAvailable(this.baseURL);
+    return makeRequestQueryPath(this.baseURL, path, data, ssl);
   }
 }

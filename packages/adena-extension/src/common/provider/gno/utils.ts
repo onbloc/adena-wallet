@@ -1,6 +1,11 @@
 import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { ABCIResponse, RPCRequest, RPCResponse } from '@gnolang/tm2-js-client';
 
+const HTTP_PROTOCOL = 'http';
+const HTTPS_PROTOCOL = 'https';
+const HTTP_PROTOCOL_PREFIX = `${HTTP_PROTOCOL}://`;
+const HTTPS_PROTOCOL_PREFIX = `${HTTPS_PROTOCOL}://`;
+
 export const parseProto = <T>(
   data: string | Uint8Array,
   decodeFn: (input: BinaryReader | Uint8Array, length?: number) => T,
@@ -37,15 +42,47 @@ export const postABCIResponse = async (
   return data;
 };
 
-export const makeRequestQueryPath = (baseUrl: string, path: string, data: string): string => {
+export const makeRequestQueryPath = (
+  baseUrl: string,
+  path: string,
+  data: string,
+  ssl: boolean,
+): string => {
   const requestUri = `${baseUrl}/abci_query?path="${path}"&data="${data}"`;
 
-  if (baseUrl.startsWith('http') || baseUrl.startsWith('https')) {
+  if (hasHttpProtocol(baseUrl)) {
     return requestUri;
   }
 
-  const isLocal = baseUrl.startsWith('localhost') || baseUrl.startsWith('127.0.0.1');
-  const protocol = isLocal ? 'http' : 'https';
+  const protocol = ssl ? HTTPS_PROTOCOL : HTTP_PROTOCOL;
 
   return `${protocol}://${requestUri}`;
+};
+
+export const isHttpsAvailable = async (domain: string): Promise<boolean> => {
+  if (hasHttpProtocol(domain)) {
+    return isHttpsProtocol(domain);
+  }
+
+  try {
+    const response = await fetch(`${HTTPS_PROTOCOL_PREFIX}${domain}`, {
+      method: 'HEAD',
+      cache: 'force-cache',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+export const hasHttpProtocol = (domain: string): boolean => {
+  return isHttpProtocol(domain) || isHttpsProtocol(domain);
+};
+
+export const isHttpsProtocol = (domain: string): boolean => {
+  return domain.startsWith(HTTPS_PROTOCOL_PREFIX);
+};
+
+export const isHttpProtocol = (domain: string): boolean => {
+  return domain.startsWith(HTTP_PROTOCOL_PREFIX);
 };
