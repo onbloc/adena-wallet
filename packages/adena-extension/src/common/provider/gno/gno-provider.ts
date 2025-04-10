@@ -12,39 +12,15 @@ import {
   newRequest,
   parseABCI,
   RPCResponse,
+  stringToBase64,
   TransactionEndpoint,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import axios from 'axios';
 import { ResponseDeliverTx } from './proto/tm2/abci';
-import { parseProto } from './utils';
-
-interface ABCIAccount {
-  BaseAccount: {
-    address: string;
-    coins: string;
-    public_key: {
-      '@type': string;
-      value: string;
-    } | null;
-    account_number: string;
-    sequence: string;
-  };
-}
-
-export interface AccountInfo {
-  address: string;
-  coins: string;
-  chainId: string;
-  status: 'ACTIVE' | 'IN_ACTIVE';
-  publicKey: {
-    '@type': string;
-    value: string;
-  } | null;
-  accountNumber: string;
-  sequence: string;
-}
+import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+import { fetchABCIResponse, makeRequestQueryPath, parseProto, postABCIResponse } from './utils';
 
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
@@ -67,25 +43,14 @@ export class GnoProvider extends GnoJSONRPCProvider {
       accountNumber: '0',
       sequence: '0',
     };
-    const params = {
-      request: newRequest(ABCIEndpoint.ABCI_QUERY, [
-        `auth/accounts/${address}`,
-        '',
-        `${height ?? 0}`,
-        false,
-      ]),
-    };
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
+      `auth/accounts/${address}`,
+      '',
+      `${height ?? 0}`,
+      false,
+    ]);
 
-    const abciResponse = await fetch(this.baseURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params.request),
-    })
-      .then((res) => res.json())
-      .then((data) => data as RPCResponse<ABCIResponse>)
-      .catch(() => null);
+    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
 
     const abciData = abciResponse?.result?.response.ResponseBase.Data;
     // Make sure the response is initialized
@@ -212,5 +177,29 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return this.simulateTx(tx).then((response) => {
       return response.gasUsed.toInt();
     });
+  }
+
+  public async getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
+    const query = VMQueryType.QUERY_DOCUMENT;
+    const base64PackagePath = stringToBase64(packagePath);
+    const requestQuery = this.makeRequestQueryPath(query, base64PackagePath);
+
+    try {
+      const abciResponse = await fetchABCIResponse(requestQuery, false);
+      const abciData = abciResponse?.result?.response.ResponseBase.Data;
+      if (!abciData) {
+        return null;
+      }
+
+      return parseABCI<GnoDocumentInfo>(abciData);
+    } catch (e) {
+      console.info(e);
+    }
+
+    return null;
+  }
+
+  private makeRequestQueryPath(path: string, data: string): string {
+    return makeRequestQueryPath(this.baseURL, path, data);
   }
 }
