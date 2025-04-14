@@ -103,7 +103,8 @@ export class CommandHandler {
 
     const executor = new AdenaExecutor();
 
-    const addEstablishResponse = await executor.addEstablish();
+    const domain = new URL(window.location.href).hostname;
+    const addEstablishResponse = await executor.addEstablish(domain);
     // Not connected
     if (
       addEstablishResponse.type !== WalletResponseSuccessType.CONNECTION_SUCCESS &&
