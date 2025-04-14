@@ -137,6 +137,8 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
     const paths = pkg_path.split('/');
 
+    console.log('paths', paths);
+
     if (paths.length < 3) {
       return {
         path: pkg_path,
@@ -149,7 +151,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
     const domain = paths.slice(1, 2).join('/');
     const nameSpace = paths[2];
-    const namespaceSubPath = paths.length > 5 ? paths.slice(3, paths.length - 1).join('/') : '';
+    const namespaceSubPath = paths.length > 4 ? paths.slice(3, paths.length - 1).join('/') : '';
     const contract = paths[paths.length - 1];
 
     return {
