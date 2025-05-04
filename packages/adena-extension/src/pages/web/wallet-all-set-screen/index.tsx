@@ -139,7 +139,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                       GnoSwap
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      Swap & earn in GnoSwap, the One-stop DeFi platform on gno.land.
+                      The One-stop DeFi platform on gno.land.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>
