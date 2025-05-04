@@ -108,6 +108,7 @@ const ValidateMnemonicStep = ({
         size='small'
         onClick={validate}
         disabled={!availableToNext}
+        rightIcon='chevronRight'
         style={{ justifyContent: 'center' }}
       >
         <WebText type='title4'>Next</WebText>
