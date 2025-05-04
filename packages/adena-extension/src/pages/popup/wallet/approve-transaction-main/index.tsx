@@ -356,6 +356,7 @@ const ApproveTransactionContainer: React.FC = () => {
               error: null,
             },
             requestData?.key,
+            requestData?.withNotification,
           ),
         );
         return true;
@@ -369,6 +370,7 @@ const ApproveTransactionContainer: React.FC = () => {
               error: response?.toString(),
             },
             requestData?.key,
+            requestData?.withNotification,
           ),
         );
         return true;
@@ -379,6 +381,7 @@ const ApproveTransactionContainer: React.FC = () => {
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
           response,
           requestData?.key,
+          requestData?.withNotification,
         ),
       );
       return true;
@@ -394,6 +397,7 @@ const ApproveTransactionContainer: React.FC = () => {
           WalletResponseFailureType.TRANSACTION_FAILED,
           {},
           requestData?.key,
+          requestData?.withNotification,
         ),
       );
     }

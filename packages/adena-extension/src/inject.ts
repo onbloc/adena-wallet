@@ -29,9 +29,12 @@ const init = (): void => {
       const response = await executor.addEstablish(name);
       return response;
     },
-    async DoContract(message: TransactionParams): Promise<DoContractResponse> {
+    async DoContract(
+      message: TransactionParams,
+      withNotification = true,
+    ): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.doContract(message);
+      const response = await executor.doContract(message, withNotification);
       return response;
     },
     async GetAccount(): Promise<GetAccountResponse> {

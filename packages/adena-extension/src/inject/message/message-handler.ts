@@ -67,6 +67,7 @@ export class MessageHandler {
     if (isPopup) {
       await removePopups();
     }
+
     switch (message.type) {
       case 'DO_CONTRACT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {

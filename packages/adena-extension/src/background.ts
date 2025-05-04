@@ -1,14 +1,28 @@
 import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
 import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
+import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { ChromeLocalStorage } from '@common/storage';
 import { CommandHandler } from '@inject/message/command-handler';
-import { CommandMessage, isCommandMessageData } from '@inject/message/command-message';
+import {
+  CommandMessage,
+  CommandMessageData,
+  isCommandMessageData,
+} from '@inject/message/command-message';
 import { clearInMemoryKey } from '@inject/message/commands/encrypt';
-import { MessageHandler } from './inject/message';
+import {
+  addTransactionEvent,
+  isTransactionNotification,
+  parseTransactionScannerUrl,
+} from '@inject/message/methods/transaction-event';
+import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
 inMemoryProvider.init();
+
+const transactionEventStore = new TransactionEventStore();
+
+let transactionEventInterval: NodeJS.Timeout | undefined = undefined;
 
 initAlarms();
 
@@ -91,7 +105,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
         inMemoryProvider.updateExpiredTimeBy(null);
         console.info('Password Expired');
-
         break;
       default:
         break;
@@ -127,7 +140,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  return MessageHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
+  return MessageHandler.createHandler(inMemoryProvider, message, sender, (response) =>
+    sendResponseWithNotification(response, message, sendResponse),
+  );
+});
+
+/** When the notification is clicked, the tab is opened and the notification is cleared. */
+chrome.notifications.onClicked.addListener((notificationId) => {
+  if (isTransactionNotification(notificationId)) {
+    const scannerUrl = parseTransactionScannerUrl(notificationId);
+    if (scannerUrl) {
+      chrome.tabs.create({ url: scannerUrl });
+    }
+
+    chrome.notifications.clear(notificationId);
+  }
 });
 
 function initAlarms(): void {
@@ -149,4 +176,38 @@ function initAlarmWithDelay(alarm: { key: string; periodInMinutes: number; delay
       }),
     alarm.delay,
   );
+}
+
+/**
+ * Send response with notification and transaction event.
+ *
+ * @param response - Response to send.
+ * @param message - Message to send.
+ * @param sendResponse - Send response function.
+ */
+async function sendResponseWithNotification(
+  response: InjectionMessage | CommandMessageData | any,
+  message: any,
+  sendResponse: (response?: any) => void,
+): Promise<void> {
+  sendResponse(response);
+
+  const addedEvents = await addTransactionEvent(inMemoryProvider, transactionEventStore, message);
+
+  if (transactionEventStore.count() > 0 || addedEvents) {
+    if (transactionEventInterval) {
+      clearInterval(transactionEventInterval);
+      transactionEventInterval = undefined;
+    }
+
+    transactionEventInterval = setInterval(async () => {
+      await transactionEventStore.updatePendingEvents();
+      await transactionEventStore.emitAllEvents();
+
+      if (transactionEventStore.count() === 0 && transactionEventInterval) {
+        clearInterval(transactionEventInterval);
+        transactionEventInterval = undefined;
+      }
+    }, 1000);
+  }
 }
