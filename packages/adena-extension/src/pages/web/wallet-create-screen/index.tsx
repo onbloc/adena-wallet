@@ -3,11 +3,12 @@ import { ReactElement } from 'react';
 import { WebMain } from '@components/atoms';
 import { WebMainHeader } from '@components/pages/web/main-header';
 
-import GetMnemonicStep from './get-mnemonic-step';
-import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
 import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
+import GetMnemonicStep from './get-mnemonic-step';
+import ValidateMnemonicStep from './validate-mnemonic-step';
 
 const WalletCreateScreen = (): ReactElement => {
   const useWalletCreateScreenReturn = useWalletCreateScreen();
@@ -31,6 +32,9 @@ const WalletCreateScreen = (): ReactElement => {
       )}
       {step === 'GET_SEED_PHRASE' && (
         <GetMnemonicStep useWalletCreateScreenReturn={useWalletCreateScreenReturn} />
+      )}
+      {step === 'VALIDATE_MNEMONIC' && (
+        <ValidateMnemonicStep useWalletCreateScreenReturn={useWalletCreateScreenReturn} />
       )}
     </WebMain>
   );
