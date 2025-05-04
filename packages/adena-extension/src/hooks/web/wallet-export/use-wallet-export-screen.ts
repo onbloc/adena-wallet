@@ -7,15 +7,12 @@ import {
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
 import { encryptWalletPassword } from '@common/utils/crypto-utils';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
 import { useQuery } from '@tanstack/react-query';
-import { RoutePath } from '@types';
-import useQuestionnaire from '../use-questionnaire';
 
 export type UseWalletExportReturn = {
   currentAccount: Account | null;
@@ -64,18 +61,14 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
   const { wallet } = useWalletContext();
   const { walletService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [exportType, setExportType] = useState<ExportType>('NONE');
-  const { navigate, params } = useAppNavigate<RoutePath.WebWalletExport>();
-  const [walletExportState, setWalletExportState] = useState<WalletExportStateType>(
-    params?.doneQuestionnaire ? 'CHECK_PASSWORD' : 'INIT',
-  );
+  const [walletExportState, setWalletExportState] = useState<WalletExportStateType>('INIT');
   const [exportData, setExportData] = useState<Wallet | null>(null);
   const [exportAccountId, setExportAccountId] = useState<string | null>(null);
   const indicatorInfo = useIndicatorStep({
     stepMap: walletExportStepNo,
     currentState: walletExportState,
-    hasQuestionnaire: true,
+    hasQuestionnaire: false,
   });
 
   const { data: account = null } = useQuery(
@@ -118,16 +111,8 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
   }, [walletExportState]);
 
   const initWalletExport = useCallback(() => {
-    if (ableToSkipQuestionnaire) {
-      setWalletExportState('CHECK_PASSWORD');
-      return;
-    }
-    navigate(RoutePath.WebQuestionnaire, {
-      state: {
-        callbackPath: RoutePath.WebWalletExport,
-      },
-    });
-  }, [ableToSkipQuestionnaire]);
+    setWalletExportState('CHECK_PASSWORD');
+  }, []);
 
   const checkPassword = useCallback(
     async (password: string) => {
