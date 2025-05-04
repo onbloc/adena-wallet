@@ -110,7 +110,7 @@ const ValidateMnemonicStep = ({
         disabled={!availableToNext}
         style={{ justifyContent: 'center' }}
       >
-        <WebText type='title4'>Reveal Seed Phrase</WebText>
+        <WebText type='title4'>Next</WebText>
       </WebButton>
     </StyledContainer>
   );
