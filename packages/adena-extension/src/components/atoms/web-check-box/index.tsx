@@ -14,7 +14,7 @@ type WebCheckBoxProps = {
 const StyledContainer = styled(View) <{ checked: boolean; disabled?: boolean }>`
   cursor: ${({ disabled }): string => (disabled ? 'not-allowed' : 'pointer')};
   opacity: ${({ disabled }): number => (disabled ? 0.5 : 1)};
-  outline: ${({ checked }): string => (checked ? 'none' : '0.5px solid #36383d')};
+  outline: ${({ checked }): string => (checked ? 'none' : '0.5px solid #6C717A')};
   width: 20px;
   height: 20px;
   background-color: ${({ checked, theme }): string =>
