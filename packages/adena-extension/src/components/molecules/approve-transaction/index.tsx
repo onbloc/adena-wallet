@@ -79,12 +79,21 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
+    if (useNetworkFeeReturn.isLoading) {
+      return true;
+    }
+
     if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, useNetworkFeeReturn.isSimulateError, networkFee]);
+  }, [
+    isErrorNetworkFee,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.isSimulateError,
+    networkFee,
+  ]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isSimulateError) {

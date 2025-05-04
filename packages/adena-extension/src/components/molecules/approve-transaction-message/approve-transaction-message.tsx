@@ -180,10 +180,6 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   };
 
   const changeSendAmount = (sendAmount: string): void => {
-    if (!args) {
-      return;
-    }
-
     changeMessage(index, {
       ...message,
       value: {
