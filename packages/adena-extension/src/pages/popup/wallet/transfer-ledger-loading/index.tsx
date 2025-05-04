@@ -5,6 +5,7 @@ import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/tra
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { createNotificationSendMessageByHash } from '@inject/message/methods/transaction-event';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
@@ -69,6 +70,7 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
         );
         return response.hash;
       })
+      .then(createNotificationSendMessageByHash)
       .catch((error: Error) => {
         console.log(error);
         connected.close();

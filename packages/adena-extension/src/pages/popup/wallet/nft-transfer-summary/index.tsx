@@ -14,6 +14,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
+import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
@@ -132,7 +133,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      createTransaction();
+      createTransaction().then(createNotificationSendMessage);
       navigate(RoutePath.History);
     } catch (e) {
       if (!(e instanceof Error)) {

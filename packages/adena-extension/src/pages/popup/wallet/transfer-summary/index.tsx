@@ -16,6 +16,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
+import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
@@ -214,18 +215,20 @@ const TransferSummaryContainer: React.FC = () => {
     if (isLedgerAccount(currentAccount)) {
       return transferByLedger();
     }
+
     return transferByCommon();
   };
 
   const transferByCommon = useCallback(async () => {
     try {
-      createTransaction();
+      createTransaction().then(createNotificationSendMessage);
       navigate(RoutePath.History);
     } catch (e) {
       if (!(e instanceof Error)) {
         return false;
       }
     }
+
     setIsSent(false);
     return false;
   }, [createTransaction]);

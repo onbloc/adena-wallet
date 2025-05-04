@@ -66,14 +66,19 @@ export class AdenaExecutor {
     return this.sendEventMessage<Record<string, never>>(eventMessage);
   };
 
-  public doContract = (params: TransactionParams): Promise<DoContractResponse> => {
+  public doContract = (
+    params: TransactionParams,
+    withNotification: boolean,
+  ): Promise<DoContractResponse> => {
     const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
+
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.DO_CONTRACT,
       params,
+      withNotification,
     );
     return this.sendEventMessage(eventMessage);
   };
@@ -201,8 +206,9 @@ export class AdenaExecutor {
   private static createEventMessage = (
     type: WalletResponseType,
     params?: Params,
+    withNotification?: boolean,
   ): InjectionMessage => {
-    return InjectionMessageInstance.request(type, params);
+    return InjectionMessageInstance.request(type, params, undefined, withNotification);
   };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
