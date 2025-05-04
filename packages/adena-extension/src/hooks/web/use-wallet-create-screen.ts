@@ -20,7 +20,7 @@ export type UseWalletCreateReturn = {
   onClickNext: () => void;
 };
 
-export type WalletCreateStateType = 'INIT' | 'GET_SEED_PHRASE';
+export type WalletCreateStateType = 'INIT' | 'GET_SEED_PHRASE' | 'VALIDATE_MNEMONIC';
 
 const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const { navigate, params } = useAppNavigate<RoutePath.WebWalletCreate>();
@@ -35,6 +35,7 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
   const walletCreateStepNo = {
     INIT: 0,
     GET_SEED_PHRASE: 1,
+    VALIDATE_MNEMONIC: 2,
   };
 
   const indicatorInfo = useIndicatorStep<string>({
@@ -52,6 +53,8 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
       navigate(RoutePath.WebAdvancedOption);
     } else if (step === 'GET_SEED_PHRASE') {
       setStep('INIT');
+    } else if (step === 'VALIDATE_MNEMONIC') {
+      setStep('GET_SEED_PHRASE');
     }
   }, [step]);
 
@@ -67,6 +70,8 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         });
       }
     } else if (step === 'GET_SEED_PHRASE') {
+      setStep('VALIDATE_MNEMONIC');
+    } else if (step === 'VALIDATE_MNEMONIC') {
       if (wallet) {
         let rawSeeds = stringFromBase64(seeds);
         const keyring = await HDWalletKeyring.fromMnemonic(rawSeeds);
@@ -96,7 +101,6 @@ const useWalletCreateScreen = (): UseWalletCreateReturn => {
         rawSeeds = '';
 
         const serializedWallet = await createdWallet.serialize('');
-
         navigate(RoutePath.WebCreatePassword, {
           state: { serializedWallet, stepLength: indicatorInfo.stepLength },
         });

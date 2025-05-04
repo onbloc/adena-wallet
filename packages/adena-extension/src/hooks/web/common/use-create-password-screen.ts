@@ -40,6 +40,7 @@ export type UseCreatePasswordScreenReturn = {
     disabled: boolean;
   };
   indicatorInfo: UseIndicatorStepReturn;
+  validateMatchPassword: () => boolean;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   clearPassword: () => void;
 };
@@ -213,6 +214,7 @@ export const useCreatePasswordScreen = (): UseCreatePasswordScreenReturn => {
       onClick: onClickCreateButton,
       disabled: disabledCreateButton,
     },
+    validateMatchPassword,
     onKeyDown: onKeyDownInput,
     clearPassword,
   };
