@@ -60,6 +60,7 @@ const CreatePasswordScreen = (): JSX.Element => {
     termsState,
     errorMessage,
     buttonState,
+    validateMatchPassword,
     onKeyDown,
     clearPassword,
   } = useCreatePasswordScreen();
@@ -72,6 +73,10 @@ const CreatePasswordScreen = (): JSX.Element => {
 
   const onClickNext = (): void => {
     if (buttonState.disabled) {
+      return;
+    }
+
+    if (!validateMatchPassword()) {
       return;
     }
 
