@@ -1,7 +1,6 @@
 import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
 import { Tx } from '@gnolang/tm2-js-client';
 import { ITransactionGasRepository } from '@repositories/transaction/types';
-import { GasPriceTierInfo } from '@types';
 import { ITransactionGasService } from '..';
 
 export class TransactionGasService implements ITransactionGasService {
@@ -11,15 +10,8 @@ export class TransactionGasService implements ITransactionGasService {
     this.gasRepository = gasRepository;
   }
 
-  public async getGasPrice(denomination: string): Promise<GasPriceTierInfo | null> {
-    const gasPrices = await this.gasRepository.fetchGasPrices();
-
-    const gasPrice = gasPrices.find((gasPrice) => gasPrice.denom === denomination);
-    if (!gasPrice) {
-      return null;
-    }
-
-    return gasPrice;
+  public async getGasPrice(): Promise<number | null> {
+    return this.gasRepository.fetchGasPrices();
   }
 
   public async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {

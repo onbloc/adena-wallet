@@ -17,8 +17,8 @@ export const DEFAULT_GAS_PRICE_STEP: Record<NetworkFeeSettingType, number> = {
 } as const;
 
 export const DEFAULT_GAS_PRICE_RATE: Record<NetworkFeeSettingType, number> = {
-  FAST: 4,
-  AVERAGE: 2.5,
+  FAST: 1.2,
+  AVERAGE: 1.1,
   SLOW: 1,
 } as const;
 

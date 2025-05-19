@@ -1,10 +1,8 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
-import { makeIndexerRPCRequest } from '@common/utils/fetch-utils';
 import { Tx } from '@gnolang/tm2-js-client';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
-import { TransactionGasResponse } from './response/transaction-gas-response';
 import { ITransactionGasRepository } from './types';
 
 export class TransactionGasRepository implements ITransactionGasRepository {
@@ -30,22 +28,17 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     return this.networkMetainfo.indexerUrl || null;
   }
 
-  public async fetchGasPrices(): Promise<TransactionGasResponse[]> {
-    if (!this.indexerUrl) {
-      throw new Error('Not supported network');
+  public async fetchGasPrices(): Promise<number | null> {
+    if (!this.gnoProvider) {
+      return null;
     }
 
-    const response = await TransactionGasRepository.postRPCRequest<{
-      result: TransactionGasResponse[];
-    }>(
-      this.networkInstance,
-      this.indexerUrl,
-      makeIndexerRPCRequest({
-        method: 'getGasPrice',
-      }),
-    ).then((data) => data?.result || []);
+    const gasPrice = await this.gnoProvider.getGasPrice();
+    if (!gasPrice) {
+      return null;
+    }
 
-    return response;
+    return gasPrice;
   }
 
   public async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
