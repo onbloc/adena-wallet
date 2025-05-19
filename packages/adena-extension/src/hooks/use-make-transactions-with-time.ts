@@ -33,6 +33,7 @@ export const useMakeTransactionsWithTime = (
       'useMakeTransactionsWithTime',
       currentNetwork.chainId,
       Object.values(tokenLogoMap).length,
+      transactions?.length,
       key || '',
     ],
     queryFn: () => {
@@ -42,11 +43,15 @@ export const useMakeTransactionsWithTime = (
 
       return Promise.all(
         transactions.map(async (transaction) => {
-          const time = await queryClient.fetchQuery(
-            ['blockTime', currentNetwork.networkId, transaction.height || 1],
-            () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-            { staleTime: Infinity },
-          );
+          let time: string | null = transaction.date;
+
+          if (!transactionHistoryService.supportedApi) {
+            time = await queryClient.fetchQuery(
+              ['blockTime', currentNetwork.networkId, transaction.height || 1],
+              () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
+              { staleTime: Infinity },
+            );
+          }
 
           if (transaction.type === 'TRANSFER_GRC721') {
             const amount = transaction.amount;
@@ -88,6 +93,7 @@ export const useMakeTransactionsWithTime = (
       if (!data) {
         return null;
       }
+
       return TransactionHistoryMapper.queryToDisplay(data);
     },
     enabled:

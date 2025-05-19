@@ -1,54 +1,38 @@
 export interface TransactionHistoryResponse {
-  hits: number;
-  next: boolean;
-  txs: HistoryItem[];
+  page: {
+    cursor: string;
+    hasNext: boolean;
+  };
+  items: TransactionHistoryItem[];
 }
 
-export interface HistoryItem {
-  height: number;
-  date: string;
-  hash: string;
-  result: {
-    status: 'Success' | 'Fail';
-    err: {
-      type: string;
-      msg: string;
-    };
-  };
-  type: string;
-  msg_num: number;
-  func?: string;
-  transfer: {
-    amount: string;
+export interface TransactionHistoryItem {
+  amountIn: {
     denom: string;
+    value: string;
   };
+  amountOut: {
+    denom: string;
+    value: string;
+  };
+  blockHeight: number;
   fee: {
-    amount: string;
     denom: string;
+    value: string;
   };
-  to?: string;
-  from?: string;
-}
-
-export interface HistoryItemBankMsgSend extends HistoryItem {
-  from: string;
-  to: string;
-}
-
-export interface HistoryItemVmMCall extends HistoryItem {
-  caller: string;
-  pkgPath: string;
-  args: string[];
-}
-
-export interface HistoryItemVmMAddPkg extends HistoryItem {
-  creator: string;
-  package: {
-    name: string;
-    path: string;
-    files: {
-      name: string;
-      body: string;
-    }[];
-  };
+  func: [
+    {
+      funcType: string;
+      messageType: string;
+      pkgPath: string;
+    },
+  ];
+  isGRC20Transfer: boolean;
+  isGRC721Transfer: boolean;
+  messageCount: number;
+  successYn: boolean;
+  timestamp: string;
+  fromAddress: string;
+  toAddress: string;
+  txHash: string;
 }

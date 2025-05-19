@@ -6,3 +6,24 @@ export interface ITransactionGasRepository {
   simulateTx: (tx: Tx) => Promise<ResponseDeliverTx>;
   estimateGasByTx: (tx: Tx) => Promise<number>;
 }
+
+export interface ITransactionHistoryRepository {
+  type: 'api' | 'indexer' | 'none';
+  fetchAllTransactionHistoryBy: (
+    address: string,
+    cursor?: string | null,
+  ) => Promise<TransactionWithPageInfo>;
+  fetchNativeTransactionHistoryBy: (
+    address: string,
+    cursor?: string | null,
+  ) => Promise<TransactionWithPageInfo>;
+  fetchGRC20TransactionHistoryBy: (
+    address: string,
+    packagePath: string,
+    cursor?: string | null,
+  ) => Promise<TransactionWithPageInfo>;
+}
+
+export interface ITransactionHistoryIndexerRepository extends ITransactionHistoryRepository {
+  fetchBlockTimeByHeight: (height: number) => Promise<string | null>;
+}

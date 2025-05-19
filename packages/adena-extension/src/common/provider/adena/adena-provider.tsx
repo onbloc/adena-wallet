@@ -3,7 +3,10 @@ import { useWindowSize } from '@hooks/use-window-size';
 import { ChainRepository } from '@repositories/common';
 import { TokenRepository } from '@repositories/common/token';
 import { FaucetRepository } from '@repositories/faucet/faucet';
-import { TransactionHistoryRepository } from '@repositories/transaction';
+import {
+  TransactionHistoryApiRepository,
+  TransactionHistoryIndexerRepository,
+} from '@repositories/transaction';
 import { TransactionGasRepository } from '@repositories/transaction/transaction-gas';
 import {
   WalletAccountRepository,
@@ -94,7 +97,11 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
   );
 
   const transactionHistoryRepository = useMemo(() => {
-    return new TransactionHistoryRepository(axiosInstance, currentNetwork);
+    if (currentNetwork?.apiUrl) {
+      return new TransactionHistoryApiRepository(axiosInstance, currentNetwork);
+    }
+
+    return new TransactionHistoryIndexerRepository(axiosInstance, currentNetwork);
   }, [axiosInstance, currentNetwork]);
 
   const transactionGasRepository = useMemo(() => {
