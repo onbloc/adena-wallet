@@ -32,7 +32,6 @@ export class TransactionHistoryApiRepository implements ITransactionHistoryRepos
       this.axiosInstance,
       path + paramsString,
     ).then((result) => {
-      console.log('result', result);
       return TransactionHistoryMapper.fromResponse(result, address);
     });
   }
