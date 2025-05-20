@@ -29,6 +29,23 @@ interface EncodeTxSignature {
   signature: string;
 }
 
+export const emptyDocument: Document = {
+  msgs: [],
+  fee: {
+    amount: [
+      {
+        denom: GasToken.denom,
+        amount: '0',
+      },
+    ],
+    gas: '0',
+  },
+  chain_id: '',
+  account_number: '0',
+  sequence: '0',
+  memo: '',
+};
+
 export class TransactionService {
   private walletService: WalletService;
 
@@ -72,10 +89,9 @@ export class TransactionService {
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
-    const [accountSequence, accountNumber] = await Promise.all([
-      provider.getAccountSequence(address),
-      provider.getAccountNumber(address),
-    ]).catch(() => [0, 0]);
+    const accountInfo = await provider.getAccount(address).catch(() => null);
+    const accountNumber = accountInfo?.accountNumber ?? 0;
+    const accountSequence = accountInfo?.sequence ?? 0;
     return {
       msgs: mappedDocumentMessagesWithCaller(messages, address),
       fee: {
@@ -138,6 +154,70 @@ export class TransactionService {
       signature: uint8ArrayToBase64(s.signature),
     }));
     return { signed, signature: encodedSignature };
+  };
+
+  public broadcastEmptyTransaction = async (wallet: Wallet, account: Account): Promise<boolean> => {
+    const accountAddress = await account.getAddress(defaultAddressPrefix);
+    const accountInfo = await this.getGnoProvider()
+      .getAccount(accountAddress)
+      .catch(() => null);
+    const document: Document = {
+      ...emptyDocument,
+      msgs: [
+        {
+          type: '/vm.m_call',
+          value: {
+            caller: accountAddress,
+            send: '',
+            pkg_path: 'gno.land/r/demo/wugnot',
+            func: 'Render',
+            args: [''],
+          },
+        },
+      ],
+      chain_id: accountInfo?.chainId ?? '',
+      account_number: accountInfo?.accountNumber.toString() ?? '0',
+      sequence: accountInfo?.sequence.toString() ?? '0',
+      fee: {
+        amount: [
+          {
+            denom: GasToken.denom,
+            amount: '0',
+          },
+        ],
+        gas: '20000000',
+      },
+    };
+    const { signed } = await this.createTransaction(wallet, document);
+    console.log('signed', signed);
+
+    const provider = this.getGnoProvider();
+    const response = await provider.simulateTx(signed);
+    console.log('simulateTx response', response);
+
+    const responase = await wallet.broadcastTxCommit(provider, account.id, signed).catch((e) => {
+      console.log('error', e);
+      return null;
+    });
+    console.log('responase', responase);
+    return responase !== null;
+    // return wallet
+    //   .broadcastTxSync(provider, account.id, signed)
+    //   .then((r) => {
+    //     console.log('results', r);
+    //     return true;
+    //   })
+    //   .catch((e) => {
+    //     if (e instanceof TM2Error) {
+    //       return !!e.name;
+    //     }
+
+    //     if (e instanceof Error) {
+    //       return e.message === 'unknown request';
+    //     }
+
+    //     return false;
+    //   });
   };
 
   /**

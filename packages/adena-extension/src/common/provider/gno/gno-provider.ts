@@ -37,6 +37,18 @@ export class GnoProvider extends GnoJSONRPCProvider {
     this.chainId = chainId;
   }
 
+  public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
+    return this.getAccount(address, height)
+      .then((account) => Number(account?.accountNumber ?? 0))
+      .catch(() => 0);
+  }
+
+  public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
+    return this.getAccount(address, height)
+      .then((account) => Number(account?.sequence ?? 0))
+      .catch(() => 0);
+  }
+
   public async getGasPrice(height?: number | undefined): Promise<number> {
     const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
       'auth/gasprice',

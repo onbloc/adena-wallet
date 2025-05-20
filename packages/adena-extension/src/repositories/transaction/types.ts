@@ -1,5 +1,6 @@
 import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
 import { Tx } from '@gnolang/tm2-js-client';
+import { TransactionWithPageInfo } from '@types';
 
 export interface ITransactionGasRepository {
   fetchGasPrices: () => Promise<number | null>;

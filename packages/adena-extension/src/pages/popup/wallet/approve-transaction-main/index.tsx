@@ -96,7 +96,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAddress, currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
@@ -112,6 +112,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
+
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const currentNetwork: NetworkMetainfo = useMemo(() => {
