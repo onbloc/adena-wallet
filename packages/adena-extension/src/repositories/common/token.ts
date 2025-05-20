@@ -3,10 +3,12 @@ import { AxiosInstance } from 'axios';
 import { StorageManager } from '@common/storage/storage-manager';
 import { TokenMapper } from './mapper/token-mapper';
 import {
+  AccountAssetsResponse,
   GRC20TokenResponse,
   IBCNativeTokenResponse,
   IBCTokenResponse,
   NativeTokenResponse,
+  TokenMetaResponse,
 } from './response/token-asset-response';
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
@@ -57,7 +59,7 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
     denom: GNOT_TOKEN.denom,
     decimals: GNOT_TOKEN.decimals,
     image:
-      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
+      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/ugnot.svg',
     main: true,
     display: true,
   },
@@ -225,16 +227,10 @@ export class TokenRepository implements ITokenRepository {
 
   public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
     if (this.apiUrl) {
-      const tokens = await TokenRepository.fetch<{
-        items: {
-          tokenType: string;
-          path: string;
-          name: string;
-          symbol: string;
-          decimals: number;
-          logoUrl: string;
-        }[];
-      }>(this.networkInstance, this.apiUrl + '/v1/token-meta').then((data) => data?.items || []);
+      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
+        this.networkInstance,
+        this.apiUrl + '/v1/token-meta',
+      ).then((data) => data?.items || []);
 
       return tokens
         .filter((token) => token.tokenType === 'GRC20')
@@ -248,7 +244,7 @@ export class TokenRepository implements ITokenRepository {
           name: token.name,
           symbol: token.symbol,
           decimals: token.decimals,
-          image: token.logoUrl,
+          image: token.logoUrl ?? '',
         }));
     }
 
@@ -272,16 +268,10 @@ export class TokenRepository implements ITokenRepository {
 
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     if (this.apiUrl) {
-      const tokens = await TokenRepository.fetch<{
-        items: {
-          tokenType: string;
-          path: string;
-          name: string;
-          symbol: string;
-          decimals: number;
-          logoUrl: string;
-        }[];
-      }>(this.networkInstance, this.apiUrl + '/v1/token-meta').then((data) => data?.items || []);
+      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
+        this.networkInstance,
+        this.apiUrl + '/v1/token-meta',
+      ).then((data) => data?.items || []);
 
       return tokens
         .filter((token) => token.tokenType === 'GRC721')
@@ -293,7 +283,7 @@ export class TokenRepository implements ITokenRepository {
           packagePath: token.path,
           name: token.name,
           symbol: token.symbol,
-          image: token.logoUrl,
+          image: token.logoUrl ?? '',
           isTokenUri: false,
           isMetadata: false,
         }));
@@ -318,22 +308,11 @@ export class TokenRepository implements ITokenRepository {
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
     if (this.apiUrl) {
-      const packages = await TokenRepository.fetch<{
-        address: string;
-        assets: [
-          {
-            address: string;
-            amount: string;
-            decimals: number;
-            logoUrl: string;
-            name: string;
-            packagePath: string;
-            symbol: string;
-            tokenType: string;
-          },
-        ];
-      }>(this.networkInstance, this.apiUrl + '/v1/accounts/' + address)
-        .then((data) => data?.assets || [])
+      const packages = await TokenRepository.fetch<AccountAssetsResponse>(
+        this.networkInstance,
+        this.apiUrl + '/v1/accounts/' + address,
+      )
+        .then((data) => data?.data?.assets || [])
         .then((assets) => [...new Set(assets.map((asset) => asset.packagePath))]);
 
       return packages;
