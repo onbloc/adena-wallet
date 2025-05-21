@@ -20,7 +20,7 @@ const NFTHeader: React.FC<NFTHeaderProps> = ({ openGnoscan, moveDepositPage }) =
         onClick: moveDepositPage,
       },
       {
-        text: 'View on Gnoscan',
+        text: 'View on GnoScan',
         icon: <IconLink />,
         onClick: openGnoscan,
       },

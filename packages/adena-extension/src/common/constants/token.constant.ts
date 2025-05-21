@@ -1,5 +1,5 @@
 export const GNOT_TOKEN = {
-  name: 'gno.land',
+  name: 'Gno.land',
   denom: 'ugnot',
   symbol: 'GNOT',
   decimals: 6,

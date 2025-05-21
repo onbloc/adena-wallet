@@ -20,7 +20,7 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
   const dropdownOptions = useMemo(
     () => [
       {
-        text: 'View on Gnoscan',
+        text: 'View on GnoScan',
         icon: <IconLink />,
         onClick: openGnoscanCollection,
       },

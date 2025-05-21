@@ -9,7 +9,7 @@ import TokenListItem, { TokenListItemProps } from './token-list-item';
 const token = {
   tokenId: 'token1',
   logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-  name: 'gno.land',
+  name: 'Gno.land',
   balanceAmount: {
     value: '240,255.241155',
     denom: 'GNOT',

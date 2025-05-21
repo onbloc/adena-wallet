@@ -190,7 +190,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
       >
         <div className='info-wrapper' onClick={onClickViewOnGnoscan}>
           <IconLink />
-          <span className='title'>View on Gnoscan</span>
+          <span className='title'>View on GnoScan</span>
         </div>
         <div className='info-wrapper' onClick={onClickAccountDetails}>
           <IconQRCode />

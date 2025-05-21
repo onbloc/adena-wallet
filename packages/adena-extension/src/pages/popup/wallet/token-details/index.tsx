@@ -212,7 +212,7 @@ export const TokenDetails = (): JSX.Element => {
 
   const getTooltipItems = (): { tooltipText: string; onClick: () => void }[] => {
     const accountDetailItem = {
-      tooltipText: 'View on Gnoscan',
+      tooltipText: 'View on GnoScan',
       onClick: () => openLink(getAccountDetailUri()),
     };
     if (tokenBalance && !isGRC20TokenModel(tokenBalance)) {
@@ -231,7 +231,7 @@ export const TokenDetails = (): JSX.Element => {
         <LeftArrowBtn onClick={handlePrevButtonClick} />
         <Text type='header4'>{tokenBalance?.name}</Text>
         <EtcIcon className={etcClicked ? 'show-tooltip' : ''} onClick={etcButtonClick}>
-          <img src={etc} alt='View on Gnoscan' />
+          <img src={etc} alt='View on GnoScan' />
           <StaticMultiTooltip bgColor={theme.neutral._7} posTop='28px' items={getTooltipItems()} />
         </EtcIcon>
       </HeaderWrap>

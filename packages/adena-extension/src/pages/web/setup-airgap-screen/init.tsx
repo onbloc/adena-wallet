@@ -59,7 +59,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
       <WebTitleWithDescription
         title='Set Up Airgap Account'
         description={
-          'You can import an account from your custom airgap setup. To sign\ntransactions, use the gno.land CLI.'
+          'You can import an account from your custom airgap setup. To sign\ntransactions, use the Gno.land CLI.'
         }
         marginBottom={-6}
       />

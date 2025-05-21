@@ -13,7 +13,7 @@ describe('TransferSummary Component', () => {
         main: true,
         tokenId: 'tokenId',
         networkId: 'DEFAULT',
-        name: 'gno.land',
+        name: 'Gno.land',
         image: '',
         symbol: 'GNOT',
         type: 'gno-native',

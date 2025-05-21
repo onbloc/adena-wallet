@@ -102,7 +102,7 @@ const WalletAllSetScreen = (): JSX.Element => {
           <View style={{ gap: 40 }}>
             <StyledLinkBox>
               <WebText type='title3' color={theme.webNeutral._200}>
-                Explore the gno.land Ecosystem
+                Explore the Gno.land Ecosystem
               </WebText>
               <Row style={{ columnGap: 24 }}>
                 <StyledBtn
@@ -117,10 +117,10 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{ width: '100%', gap: 6 }}>
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
-                      gno.land
+                      Gno.land
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      Visit the official website of gno.land.
+                      Visit the official website of Gno.land.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>
@@ -139,7 +139,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                       GnoSwap
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      The One-stop DeFi platform on gno.land.
+                      The One-stop DeFi platform on Gno.land.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>
@@ -159,7 +159,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                       GnoScan
                     </StyledBtnTitle>
                     <StyledBtnInfo type='title6' color={theme.webNeutral._200}>
-                      A simple & fast explorer for gno.land networks.
+                      A simple & fast explorer for Gno.land networks.
                     </StyledBtnInfo>
                   </View>
                 </StyledBtn>

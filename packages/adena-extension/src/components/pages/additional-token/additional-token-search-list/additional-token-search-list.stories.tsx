@@ -9,7 +9,7 @@ export default {
 const tokenInfos = [
   {
     tokenId: 'token1',
-    name: 'Gnoswap',
+    name: 'GnoSwap',
     symbol: 'GNOS',
     chainId: 'test3',
     path: 'gno.land/gnoswap',

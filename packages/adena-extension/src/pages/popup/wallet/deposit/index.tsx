@@ -80,7 +80,7 @@ export const Deposit = (): JSX.Element => {
         <Copy copyStr={currentAddress || ''} />
       </CopyInputBox>
       <Text type='captionReg' color={theme.neutral.a}>
-        Only use this address to receive tokens on gno.land.
+        Only use this address to receive tokens on Gno.land.
       </Text>
       <Button fullWidth hierarchy='dark' margin='auto 0px 0px' onClick={closeButtonClick}>
         <Text type='body1Bold'>Close</Text>

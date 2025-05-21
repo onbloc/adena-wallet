@@ -11,7 +11,7 @@ const tokens = [
   {
     tokenId: 'token1',
     logo: 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
-    name: 'gno.land',
+    name: 'Gno.land',
     balanceAmount: {
       value: '240,255.241155',
       denom: 'GNOT',
@@ -20,7 +20,7 @@ const tokens = [
   {
     tokenId: 'token2',
     logo: 'https://avatars.githubusercontent.com/u/118414737?s=200&v=4',
-    name: 'Gnoswap',
+    name: 'GnoSwap',
     balanceAmount: {
       value: '252.844',
       denom: 'GNOS',

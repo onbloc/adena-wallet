@@ -25,7 +25,7 @@ const tokens = [
     type: 'token' as const,
     symbol: 'GNOS',
     logo: 'https://avatars.githubusercontent.com/u/118414737?s=200&v=4',
-    name: 'Gnoswap',
+    name: 'GnoSwap',
     balance: {
       value: '252.844',
       denom: 'GNOS',

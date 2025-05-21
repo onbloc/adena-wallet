@@ -12,7 +12,7 @@ export default {
 const tokenInfos = [
   {
     tokenId: 'token1',
-    name: 'Gnoswap',
+    name: 'GnoSwap',
     symbol: 'GNOS',
     chainId: 'test3',
     path: 'gno.land/gnoswap',
@@ -56,7 +56,7 @@ export const Default: StoryObj<AdditionalTokenProps> = {
     tokenInfos,
     selectedTokenInfo: {
       tokenId: 'token1',
-      name: 'Gnoswap',
+      name: 'GnoSwap',
       symbol: 'GNOS',
       chainId: 'test3',
       path: 'gno.land/gnoswap',

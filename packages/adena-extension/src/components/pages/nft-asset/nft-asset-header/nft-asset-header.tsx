@@ -36,7 +36,7 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
   const dropdownOptions = useMemo(
     () => [
       {
-        text: 'View on Gnoscan',
+        text: 'View on GnoScan',
         icon: <IconLink />,
         onClick: openGnoscanCollection,
       },

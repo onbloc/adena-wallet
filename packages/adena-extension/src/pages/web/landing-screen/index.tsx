@@ -99,7 +99,7 @@ const LandingScreen = (): ReactElement => {
           <View style={{ rowGap: 16 }}>
             <WebText type='headline1'>{'Welcome to Adena!'}</WebText>
             <WebText type='body2' color={theme.webNeutral._500} style={{ whiteSpace: 'nowrap' }}>
-              {'The only wallet you need for gno.land with unparalleled security.'}
+              {'The only wallet you need for Gno.land with unparalleled security.'}
             </WebText>
           </View>
         </React.Fragment>

@@ -1,8 +1,8 @@
 [
   {
     "symbol": "GNOLAND",
-    "name": "gno.land",
-    "description": "The official website of gno.land.",
+    "name": "Gno.land",
+    "description": "The official website of Gno.land.",
     "logo": "/resources/apps/images/gnoland.svg",
     "link": "https://gno.land",
     "display": true,
@@ -20,7 +20,7 @@
   {
     "symbol": "GNODOCS",
     "name": "Gno Official Docs",
-    "description": "The official gno.land documentation.",
+    "description": "The official Gno.land documentation.",
     "logo": "/resources/apps/images/gnodocs.svg",
     "link": "https://docs.gno.land/",
     "display": true,
@@ -29,7 +29,7 @@
   {
     "symbol": "GNOSWAP",
     "name": "GnoSwap",
-    "description": "The One-stop gno.land DeFi Platform.",
+    "description": "The One-stop Gno.land DeFi Platform.",
     "logo": "/resources/apps/images/gnoswap.svg",
     "link": "https://beta.gnoswap.io/",
     "display": true,

@@ -14,7 +14,7 @@ describe('TransferInput Component', () => {
         display: false,
         tokenId: 'tokenId',
         networkId: 'DEFAULT',
-        name: 'gno.land',
+        name: 'Gno.land',
         image: '',
         symbol: 'GNOT',
         type: 'gno-native',

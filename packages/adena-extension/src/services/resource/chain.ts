@@ -34,7 +34,7 @@ export class ChainService {
       default: false,
       main: false,
       chainId: chainId,
-      chainName: 'GNO.LAND',
+      chainName: 'Gno.land',
       networkId: chainId,
       networkName: name,
       addressPrefix: 'g',

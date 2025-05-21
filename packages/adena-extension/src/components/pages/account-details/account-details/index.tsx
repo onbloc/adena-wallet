@@ -66,7 +66,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
       <div className='button-group-wrapper'>
         <FullButtonRightIcon
           icon='WEBLINK'
-          title={'View on Gnoscan'}
+          title={'View on GnoScan'}
           onClick={onClickViewOnGnoscan}
         />
         <FullButtonRightIcon
