@@ -1,89 +1,26 @@
-import { DEFAULT_GAS_PRICE_RATE, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
-import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_PRICE_RATE, DEFAULT_GAS_USED } from '@common/constants/gas.constant';
 import { INVALID_PUBLIC_KEY_ERROR_TYPE } from '@common/constants/tx-error.constant';
-import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { useAdenaContext } from '@hooks/use-context';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-import { Document, documentToDefaultTx } from 'adena-module';
+import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
+import { makeEstimateGasTransaction } from './use-get-estimate-gas-info';
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
 
 const REFETCH_INTERVAL = 5_000;
 
-function makeGasInfoBy(
-  gasUsed: number | null | undefined,
-  gasPrice: number | null | undefined,
-  safetyMargin: number,
-): {
-  gasWanted: number;
-  gasFee: number;
-} {
-  if (!gasUsed || !gasPrice) {
-    return {
-      gasWanted: 0,
-      gasFee: 0,
-    };
-  }
-
-  const gasWantedBN = BigNumber(gasUsed).multipliedBy(safetyMargin);
-  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
-
-  return {
-    gasWanted: Number(gasWantedBN.toFixed(0, BigNumber.ROUND_DOWN)),
-    gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
-  };
-}
-
-function makeDefaultGasInfoBy(
-  gasUsed: number | null | undefined,
-  gasPrice: number | null | undefined,
-): {
-  gasWanted: number;
-  gasFee: number;
-} {
-  if (!gasUsed || !gasPrice) {
-    return {
-      gasWanted: 0,
-      gasFee: 0,
-    };
-  }
-
-  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
-
-  return {
-    gasWanted: DEFAULT_GAS_WANTED,
-    gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
-  };
-}
-
-function modifyDocument(document: Document, gasWanted: number, gasFee: number): Document {
-  return {
-    ...document,
-    fee: {
-      ...document.fee,
-      gas: gasWanted.toString(),
-      amount: [
-        {
-          denom: GasToken.denom,
-          amount: gasFee.toString(),
-        },
-      ],
-    },
-  };
-}
-
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
   gasUsed: number | undefined,
   gasAdjustment: string,
-  isSuccessSimulate = true,
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
-  const { transactionGasService } = useAdenaContext();
+  const { transactionGasService, transactionService } = useAdenaContext();
   const { data: gasPrice } = useGetGasPrice();
+  const { wallet } = useWalletContext();
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
@@ -96,7 +33,7 @@ export const useGetEstimateGasPriceTiers = (
       gasPrice || 0,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
-      if (!transactionGasService || !document || gasUsed === undefined || !gasPrice) {
+      if (!transactionService || !transactionGasService || !document || !gasPrice) {
         return null;
       }
 
@@ -104,37 +41,75 @@ export const useGetEstimateGasPriceTiers = (
         Object.keys(NetworkFeeSettingType).map(async (key) => {
           const tier = key as NetworkFeeSettingType;
 
-          const adjustedGasPriceBN = BigNumber(gasPrice)
-            .multipliedBy(DEFAULT_GAS_PRICE_RATE[tier])
-            .multipliedBy(gasAdjustment);
+          const adjustGasUsedBN = BigNumber(gasUsed || DEFAULT_GAS_USED).multipliedBy(
+            DEFAULT_GAS_PRICE_RATE[tier],
+          );
+          const adjustGasUsed = adjustGasUsedBN.toFixed(0, BigNumber.ROUND_DOWN);
+          const adjustedGasPriceBN = BigNumber(gasPrice).multipliedBy(gasAdjustment);
           const adjustedGasPrice = adjustedGasPriceBN.toNumber();
+          const gasFee = adjustedGasPriceBN
+            .multipliedBy(adjustGasUsed)
+            .toFixed(0, BigNumber.ROUND_UP);
 
-          const { gasWanted: resultGasWanted, gasFee: resultGasFee } = isSuccessSimulate
-            ? makeGasInfoBy(gasUsed, adjustedGasPrice, GAS_FEE_SAFETY_MARGIN)
-            : makeDefaultGasInfoBy(gasUsed, adjustedGasPrice);
+          const tx = await makeEstimateGasTransaction(
+            wallet,
+            transactionService,
+            document,
+            Number(adjustGasUsed),
+            adjustedGasPriceBN.toNumber(),
+          );
 
-          const modifiedDocument = modifyDocument(document, resultGasWanted, resultGasFee);
+          console.log('tx', tx);
+          console.log('gasUsed', gasUsed);
+          console.log('gasPrice', adjustedGasPrice);
+          console.log('gasFee', gasFee);
+          console.log('document', document);
 
-          const errorMessage = await transactionGasService
-            .simulateTx(documentToDefaultTx(modifiedDocument))
-            .then(() => null)
+          if (!tx) {
+            return {
+              settingType: tier,
+              gasInfo: {
+                gasFee: 0,
+                gasUsed: Number(adjustGasUsed),
+                gasWanted: Number(adjustGasUsed),
+                gasPrice: adjustedGasPrice,
+                hasError: true,
+                simulateErrorMessage: 'Failed to simulate transaction',
+              },
+            };
+          }
+
+          const result = await transactionGasService
+            .simulateTx(tx)
+            .then((simulateResult) => {
+              return {
+                gasUsed: simulateResult.gasUsed.toNumber(),
+                errorMessage: null,
+              };
+            })
             .catch((e: Error) => {
               if (e?.message === INVALID_PUBLIC_KEY_ERROR_TYPE) {
-                return null;
+                return {
+                  gasUsed: Number(adjustGasUsed),
+                  errorMessage: null,
+                };
               }
 
-              return e?.message || '';
+              return {
+                gasUsed: Number(adjustGasUsed),
+                errorMessage: e?.message || '',
+              };
             });
 
           return {
             settingType: tier,
             gasInfo: {
-              gasFee: resultGasFee,
-              gasUsed,
-              gasWanted: resultGasWanted,
+              gasFee: Number(gasFee),
+              gasUsed: result.gasUsed,
+              gasWanted: result.gasUsed,
               gasPrice: adjustedGasPrice,
-              hasError: errorMessage !== null,
-              simulateErrorMessage: errorMessage,
+              hasError: result.errorMessage !== null,
+              simulateErrorMessage: result.errorMessage,
             },
           };
         }),

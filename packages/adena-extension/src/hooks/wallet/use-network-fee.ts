@@ -53,7 +53,6 @@ export const useNetworkFee = (
     document,
     gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
     gasAdjustment,
-    !estimatedGasInfo?.hasError,
   );
 
   const isLoading = useMemo(() => {
