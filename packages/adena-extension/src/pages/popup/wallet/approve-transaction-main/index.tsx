@@ -96,7 +96,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, transactionService } = useAdenaContext();
-  const { currentAddress, currentAccount } = useCurrentAccount();
+  const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();

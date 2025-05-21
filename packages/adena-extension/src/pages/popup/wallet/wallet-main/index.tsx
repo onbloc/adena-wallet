@@ -71,7 +71,8 @@ export const WalletMain = (): JSX.Element => {
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, currentBalances } = useTokenBalance();
-  const { getTokenImage } = useTokenMetainfo();
+  const { refetchBalances } = useTokenBalance();
+  const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
   const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
   const { show } = useToast();
 
@@ -106,9 +107,27 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null;
+
+    if (currentAccount?.id && currentNetwork.chainId) {
+      interval = setInterval(() => {
+        updateAllTokenMetainfos();
+        refetchBalances();
+      }, 5_000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [currentAccount?.id, currentNetwork.chainId]);
+
   const tokens = useMemo(() => {
     return currentBalances
       .filter((tokenBalance) => tokenBalance.display)
+      .filter((tokenBalance) => !BigNumber(tokenBalance.amount.value).isNaN())
       .map((tokenBalance) => {
         return {
           tokenId: tokenBalance.tokenId,

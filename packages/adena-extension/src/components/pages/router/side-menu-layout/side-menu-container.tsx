@@ -32,7 +32,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
   const { currentNetwork, scannerParameters } = useNetwork();
   const { accountNames } = useAccountName();
   const { accounts, loadAccounts } = useLoadAccounts();
-  const { accountNativeBalanceMap } = useTokenBalance();
+  const { accountNativeBalanceMap, refetchAccountNativeBalanceMap } = useTokenBalance();
   const [locked, setLocked] = useState(true);
   const { currentAccount } = useCurrentAccount();
   const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
@@ -143,6 +143,12 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({ open, setOpen }) 
       setLatestAccountInfos(sideMenuAccounts);
     }
   }, [sideMenuAccounts]);
+
+  useEffect(() => {
+    if (open && sideMenuAccounts.length > 0) {
+      refetchAccountNativeBalanceMap();
+    }
+  }, [open, sideMenuAccounts]);
 
   return (
     <SideMenu
