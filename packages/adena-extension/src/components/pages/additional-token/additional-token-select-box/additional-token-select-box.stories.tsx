@@ -12,7 +12,7 @@ const tokenInfos = [
   {
     tokenId: 'token1',
     name: 'GnoSwap',
-    symbol: 'GNOS',
+    symbol: 'GNS',
     chainId: 'test3',
     path: 'gno.land/gnoswap',
     pathInfo: 'gnoswap',
@@ -52,7 +52,7 @@ export const Default: StoryObj<AdditionalTokenSelectBoxProps> = {
     selected: false,
     selectedInfo: {
       name: 'GnoSwap',
-      symbol: 'GNOS',
+      symbol: 'GNS',
     },
     opened: false,
     tokenInfos,
@@ -68,7 +68,7 @@ export const SelectedAndClosed: StoryObj<AdditionalTokenSelectBoxProps> = {
     selected: true,
     selectedInfo: {
       name: 'GnoSwap',
-      symbol: 'GNOS',
+      symbol: 'GNS',
     },
     opened: false,
     tokenInfos,
@@ -84,7 +84,7 @@ export const SelectedAndOpened: StoryObj<AdditionalTokenSelectBoxProps> = {
     selected: true,
     selectedInfo: {
       name: 'GnoSwap',
-      symbol: 'GNOS',
+      symbol: 'GNS',
     },
     opened: true,
     tokenInfos,
@@ -100,7 +100,7 @@ export const Opened: StoryObj<AdditionalTokenSelectBoxProps> = {
     selected: false,
     selectedInfo: {
       name: 'GnoSwap',
-      symbol: 'GNOS',
+      symbol: 'GNS',
     },
     opened: true,
     tokenInfos,
@@ -116,7 +116,7 @@ export const OpenedAndKeyword: StoryObj<AdditionalTokenSelectBoxProps> = {
     selected: false,
     selectedInfo: {
       name: 'GnoSwap',
-      symbol: 'GNOS',
+      symbol: 'GNS',
     },
     opened: true,
     tokenInfos,

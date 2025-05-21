@@ -9,7 +9,7 @@ export default {
 export const VerticalTokenBalance: StoryObj<TokenBalanceProps> = {
   args: {
     value: '123,456,789.123456',
-    denom: 'GNOS',
+    denom: 'GNS',
     orientation: 'VERTICAL',
     fontStyleKey: 'header6',
     fontColor: 'white',
@@ -20,7 +20,7 @@ export const VerticalTokenBalance: StoryObj<TokenBalanceProps> = {
 export const HorizontalTokenBalance: StoryObj<TokenBalanceProps> = {
   args: {
     value: '123,456,789.123456',
-    denom: 'GNOS',
+    denom: 'GNS',
     orientation: 'HORIZONTAL',
     fontStyleKey: 'header6',
     fontColor: 'white',

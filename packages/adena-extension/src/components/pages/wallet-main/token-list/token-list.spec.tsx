@@ -22,7 +22,7 @@ const tokens = [
     name: 'GnoSwap',
     balanceAmount: {
       value: '252.844',
-      denom: 'GNOS',
+      denom: 'GNS',
     },
   },
 ];

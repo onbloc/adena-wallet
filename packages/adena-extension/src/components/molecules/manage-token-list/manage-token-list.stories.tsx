@@ -23,12 +23,12 @@ const tokens = [
   {
     tokenId: 'token2',
     type: 'token' as const,
-    symbol: 'GNOS',
+    symbol: 'GNS',
     logo: 'https://avatars.githubusercontent.com/u/118414737?s=200&v=4',
     name: 'GnoSwap',
     balance: {
       value: '252.844',
-      denom: 'GNOS',
+      denom: 'GNS',
     },
     activated: true,
   },
