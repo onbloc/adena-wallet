@@ -9,6 +9,7 @@ export const TransferSummaryWrapper = styled.div`
   height: 100%;
   padding-top: 5px;
   min-height: 444px;
+  padding-bottom: 70px;
   align-items: center;
 
   .sub-header-wrapper {
@@ -41,41 +42,8 @@ export const TransferSummaryWrapper = styled.div`
   }
 
   .button-group {
-    position: absolute;
-    display: flex;
+    display: block;
+    padding-top: 70px;
     width: 100%;
-    bottom: 0;
-    justify-content: space-between;
-
-    button {
-      width: 100%;
-      height: 48px;
-      border-radius: 30px;
-      ${fonts.body1Bold};
-      background-color: ${getTheme('neutral', '_5')};
-      transition: 0.2s;
-
-      &:hover {
-        background-color: ${getTheme('neutral', '_6')};
-      }
-
-      &:last-child {
-        margin-left: 10px;
-      }
-
-      &.send {
-        background-color: ${getTheme('primary', '_6')};
-
-        &:hover {
-          background-color: ${getTheme('primary', '_7')};
-        }
-
-        &.disabled {
-          background-color: ${getTheme('primary', '_9')};
-          color: ${getTheme('neutral', '_5')};
-          cursor: default;
-        }
-      }
-    }
   }
 `;

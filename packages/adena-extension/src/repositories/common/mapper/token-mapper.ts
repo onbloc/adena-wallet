@@ -10,10 +10,10 @@ import {
 } from '../response/token-asset-response';
 
 import {
-  NativeTokenModel,
   GRC20TokenModel,
   IBCNativeTokenModel,
   IBCTokenModel,
+  NativeTokenModel,
   TokenModel,
 } from '@types';
 
@@ -27,7 +27,7 @@ export class TokenMapper {
   ): NativeTokenModel[] {
     return response.map((token) => {
       const { decimals, denom, image, name, symbol, description, website_url } = token;
-      const isGNOT = symbol === 'GNOT';
+      const isGNOT = denom === 'ugnot';
       return {
         main: isGNOT,
         display: isGNOT,

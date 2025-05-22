@@ -8,8 +8,9 @@ import TransferSummaryAddress from '../transfer-summary-address/transfer-summary
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
 import { TransferSummaryWrapper } from './transfer-summary.styles';
 
-import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { BottomFixedButtonGroup } from '@components/molecules';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
 
 export interface TransferSummaryProps {
@@ -19,6 +20,8 @@ export interface TransferSummaryProps {
   toAddress: string;
   networkFee: NetworkFeeType | null;
   memo: string;
+  currentBalance: number | null | undefined;
+  useNetworkFeeReturn: UseNetworkFeeReturn;
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
   onClickBack: () => void;
@@ -34,26 +37,52 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   toAddress,
   networkFee,
   memo,
+  currentBalance,
+  useNetworkFeeReturn,
   isErrorNetworkFee,
-  isLoadingNetworkFee,
   onClickBack,
   onClickCancel,
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
-  const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
-
   const disabledSendButton = useMemo(() => {
-    return isLoadingNetworkFee || isErrorNetworkFee;
-  }, [isLoadingNetworkFee, isErrorNetworkFee]);
-
-  const errorMessage = useMemo(() => {
-    if (!isErrorNetworkFee) {
-      return '';
+    if (useNetworkFeeReturn.isLoading) {
+      return true;
     }
 
-    return insufficientNetworkFeeError.message;
-  }, [isErrorNetworkFee, insufficientNetworkFeeError.message]);
+    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+      return true;
+    }
+
+    return Number(networkFee?.amount || 0) <= 0;
+  }, [
+    isErrorNetworkFee,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.isSimulateError,
+    networkFee,
+  ]);
+
+  const networkFeeErrorMessage = useMemo(() => {
+    if (useNetworkFeeReturn.isSimulateError) {
+      if (currentBalance !== 0) {
+        return 'This transaction cannot be simulated. Try again.';
+      }
+    }
+
+    if (isErrorNetworkFee) {
+      return 'Insufficient network fee';
+    }
+
+    return '';
+  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
+
+  const simulateErrorMessage = useMemo(() => {
+    if (useNetworkFeeReturn.isSimulateError) {
+      return useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
+    }
+
+    return null;
+  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.currentGasInfo]);
 
   return (
     <TransferSummaryWrapper>
@@ -83,23 +112,29 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
       <div className='network-fee-wrapper'>
         <NetworkFee
-          isError={isErrorNetworkFee}
-          isLoading={isLoadingNetworkFee}
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          errorMessage={errorMessage}
+          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
+          isLoading={useNetworkFeeReturn.isLoading}
+          errorMessage={networkFeeErrorMessage}
+          simulateErrorMessage={simulateErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
+      {simulateErrorMessage !== null && <div className='button-group' />}
 
-      <div className='button-group'>
-        <button className='cancel' onClick={onClickCancel}>
-          Cancel
-        </button>
-        <button className={disabledSendButton ? 'send disabled' : 'send'} onClick={onClickSend}>
-          Send
-        </button>
-      </div>
+      <BottomFixedButtonGroup
+        leftButton={{
+          text: 'Cancel',
+          onClick: onClickCancel,
+        }}
+        rightButton={{
+          text: 'Send',
+          primary: true,
+          onClick: onClickSend,
+          disabled: disabledSendButton,
+        }}
+      />
     </TransferSummaryWrapper>
   );
 };

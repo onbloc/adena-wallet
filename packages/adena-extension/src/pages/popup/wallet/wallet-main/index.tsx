@@ -25,6 +25,8 @@ import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
 
+const REFETCH_INTERVAL = 3_000;
+
 const Wrapper = styled.main`
   padding-top: 37px;
   text-align: center;
@@ -71,7 +73,8 @@ export const WalletMain = (): JSX.Element => {
   const { currentNetwork } = useNetwork();
   const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, currentBalances } = useTokenBalance();
-  const { getTokenImage } = useTokenMetainfo();
+  const { refetchBalances } = useTokenBalance();
+  const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
   const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
   const { show } = useToast();
 
@@ -106,9 +109,28 @@ export const WalletMain = (): JSX.Element => {
     }
   }, [state]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null;
+
+    if (currentAccount?.id && currentNetwork.chainId) {
+      interval = setInterval(() => {
+        updateAllTokenMetainfos().then(() => {
+          refetchBalances();
+        });
+      }, REFETCH_INTERVAL);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [currentAccount?.id, currentNetwork.chainId]);
+
   const tokens = useMemo(() => {
     return currentBalances
       .filter((tokenBalance) => tokenBalance.display)
+      .filter((tokenBalance) => !BigNumber(tokenBalance.amount.value).isNaN())
       .map((tokenBalance) => {
         return {
           tokenId: tokenBalance.tokenId,

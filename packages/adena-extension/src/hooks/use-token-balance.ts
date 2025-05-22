@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { QueryObserverResult, useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
 import { useEffect, useMemo } from 'react';
 
@@ -12,10 +12,16 @@ import { useNetwork } from './use-network';
 import { useTokenMetainfo } from './use-token-metainfo';
 import { useWallet } from './use-wallet';
 
+const REFETCH_INTERVAL = 3_000;
+
 export const useTokenBalance = (): {
   mainTokenBalance: Amount | null;
   currentBalances: TokenBalanceType[];
   accountNativeBalanceMap: Record<string, TokenBalanceType>;
+  refetchBalances: () => Promise<QueryObserverResult<TokenBalanceType[], unknown>>;
+  refetchAccountNativeBalanceMap: () => Promise<
+    QueryObserverResult<Record<string, TokenBalanceType>, unknown>
+  >;
   fetchBalanceBy: (address: string, token: TokenModel) => Promise<TokenBalanceType>;
   toggleDisplayOption: (account: Account, token: TokenModel, activated: boolean) => void;
 } => {
@@ -48,15 +54,8 @@ export const useTokenBalance = (): {
     return true;
   }, [existWallet, lockedWallet, tokenMetainfos, isFetchedGRC20Tokens]);
 
-  const { data: balances = [] } = useQuery<TokenBalanceType[]>(
-    [
-      'balances',
-      currentAddress,
-      currentNetwork.chainId,
-      tokenMetainfos.map((token) => token.tokenId),
-      isFetchedGRC20Tokens,
-      tokenLogoMap,
-    ],
+  const { data: balances = [], refetch: refetchBalances } = useQuery<TokenBalanceType[]>(
+    ['balances', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
     () => {
       if (currentAddress === null || nativeToken == null) {
         return [];
@@ -66,19 +65,16 @@ export const useTokenBalance = (): {
       );
     },
     {
-      refetchInterval: 5000,
+      refetchInterval: REFETCH_INTERVAL,
+      keepPreviousData: true,
       enabled: availableBalanceFetching,
     },
   );
 
-  const { data: accountNativeBalanceMap = {} } = useQuery<Record<string, TokenBalanceType>>(
-    [
-      'accountNativeBalanceMap',
-      wallet?.accounts,
-      currentNetwork.chainId,
-      tokenMetainfos.map((token) => token.tokenId),
-      isFetchedGRC20Tokens,
-    ],
+  const { data: accountNativeBalanceMap = {}, refetch: refetchAccountNativeBalanceMap } = useQuery<
+    Record<string, TokenBalanceType>
+  >(
+    ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, isFetchedGRC20Tokens],
     () => {
       if (wallet === null || wallet.accounts === null || nativeToken == null) {
         return {};
@@ -99,7 +95,7 @@ export const useTokenBalance = (): {
       );
     },
     {
-      refetchInterval: 5000,
+      refetchInterval: REFETCH_INTERVAL,
       enabled: availableBalanceFetching,
     },
   );
@@ -171,6 +167,8 @@ export const useTokenBalance = (): {
     mainTokenBalance,
     currentBalances,
     accountNativeBalanceMap,
+    refetchBalances,
+    refetchAccountNativeBalanceMap,
     toggleDisplayOption,
     fetchBalanceBy,
   };

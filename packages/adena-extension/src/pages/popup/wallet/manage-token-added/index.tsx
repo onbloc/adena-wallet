@@ -27,7 +27,7 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
   const [manualTokenPath, setManualTokenPath] = useState('');
 
-  const { data: grc20Tokens } = useGRC20Tokens();
+  const { data: grc20Tokens, refetch: refetchGRC20Tokens } = useGRC20Tokens();
 
   /**
    * Manual GRC20 Token Query
@@ -271,6 +271,10 @@ const ManageTokenAddedContainer: React.FC = () => {
       pathInfo: selectedGRC20Token.pkgPath.replace('gno.land/', ''),
     });
   }, [addingType, selectedGRC20Token, isFetchingSelectedGRC20Token]);
+
+  useEffect(() => {
+    refetchGRC20Tokens();
+  }, []);
 
   return (
     <ManageTokenLayout>

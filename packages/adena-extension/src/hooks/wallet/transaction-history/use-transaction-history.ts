@@ -55,7 +55,7 @@ export const useTransactionHistory = ({
       return null;
     }
     if (!fetchedHistoryBlockHeight) {
-      return allTransactions.length < 20 ? allTransactions.length : 20;
+      return allTransactions.transactions.length < 20 ? allTransactions.transactions.length : 20;
     }
     return fetchedHistoryBlockHeight;
   }, [allTransactions, fetchedHistoryBlockHeight]);
@@ -69,7 +69,7 @@ export const useTransactionHistory = ({
       return null;
     }
 
-    return allTransactions.slice(0, blockIndex || 0);
+    return allTransactions.transactions.slice(0, blockIndex || 0);
   }, [allTransactions, blockIndex]);
 
   const firstTransactionHash = useMemo(() => {
@@ -86,7 +86,7 @@ export const useTransactionHistory = ({
   );
 
   const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = allTransactions?.length || 0;
+    const transactionSize = allTransactions?.transactions.length || 0;
     const endIndex = blockIndex || 20;
     const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
 
@@ -105,7 +105,7 @@ export const useTransactionHistory = ({
     status,
     isLoading,
     isFetching,
-    hasNextPage: allTransactions?.length !== blockIndex,
+    hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,
     refetch: refetchTransactions,
   };
