@@ -52,6 +52,7 @@ import { ErrorContainer } from '@components/molecules';
 import { useNetwork } from '@hooks/use-network';
 import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
+import AccountInitializationPage from '@pages/popup/wallet/account-initialization';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
 import ManageNFT from '@pages/popup/wallet/manage-nft';
 import NFTTransferInput from '@pages/popup/wallet/nft-transfer-input';
@@ -97,6 +98,10 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ManageTokenAdded} element={<ManageTokenAdded />} />
         <Route path={RoutePath.Setting} element={<Settings />} />
         <Route path={RoutePath.SettingChangePassword} element={<ChangePassword />} />
+        <Route
+          path={RoutePath.WalletAccountInitialization}
+          element={<AccountInitializationPage />}
+        />
         <Route path={RoutePath.WalletSearch} element={<WalletSearch />} />
         <Route path={RoutePath.TransferInput} element={<TransferInput />} />
         <Route path={RoutePath.TransferSummary} element={<TransferSummary />} />

@@ -8,7 +8,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { TransactionInfo, TransactionWithPageInfo } from '@types';
 
-const REFETCH_INTERVAL = 5_000;
+const REFETCH_INTERVAL = 3_000;
 
 export const useTransactionHistoryPage = ({
   enabled,
@@ -44,7 +44,7 @@ export const useTransactionHistoryPage = ({
     {
       queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
       getNextPageParam: (lastPage?: TransactionWithPageInfo): string | boolean | null => {
-        return lastPage?.cursor || null;
+        return lastPage?.page.cursor || null;
       },
       queryFn: (context: any) => {
         if (context?.pageParam === false) {
@@ -56,10 +56,7 @@ export const useTransactionHistoryPage = ({
         }
 
         const cursor = context?.pageParam || null;
-        return transactionHistoryService.fetchAllTransactionHistoryPage(
-          currentAddress || '',
-          cursor,
-        );
+        return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor);
       },
     },
     {

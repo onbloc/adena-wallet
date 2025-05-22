@@ -54,8 +54,8 @@ export const useTokenTransactionsPage = (
       const cursor = context.pageParam || null;
 
       return isNative
-        ? transactionHistoryService.fetchNativeTransactionHistoryPage(currentAddress || '', cursor)
-        : transactionHistoryService.fetchGRC20TransactionHistoryPage(
+        ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '', cursor)
+        : transactionHistoryService.fetchGRC20TransactionHistory(
             currentAddress || '',
             tokenPath,
             cursor,

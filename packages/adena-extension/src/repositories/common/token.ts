@@ -3,15 +3,16 @@ import { AxiosInstance } from 'axios';
 import { StorageManager } from '@common/storage/storage-manager';
 import { TokenMapper } from './mapper/token-mapper';
 import {
+  AccountAssetsResponse,
   GRC20TokenResponse,
   IBCNativeTokenResponse,
   IBCTokenResponse,
   NativeTokenResponse,
+  TokenMetaResponse,
 } from './response/token-asset-response';
 
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { makeRPCRequest } from '@common/utils/fetch-utils';
 import {
   parseGRC20ByABCIRender,
   parseGRC20ByFileContents,
@@ -58,7 +59,7 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
     denom: GNOT_TOKEN.denom,
     decimals: GNOT_TOKEN.decimals,
     image:
-      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/gnot.svg',
+      'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/ugnot.svg',
     main: true,
     display: true,
   },
@@ -102,7 +103,7 @@ export class TokenRepository implements ITokenRepository {
     if (!this.networkMetainfo?.apiUrl) {
       return null;
     }
-    return this.networkMetainfo.apiUrl + '/v1';
+    return this.networkMetainfo.apiUrl;
   }
 
   public get queryUrl(): string | null {
@@ -226,33 +227,22 @@ export class TokenRepository implements ITokenRepository {
 
   public fetchAllGRC20Tokens = async (): Promise<GRC20TokenModel[]> => {
     if (this.apiUrl) {
-      const tokens = await TokenRepository.postRPCRequest<{
-        result: {
-          name: string;
-          owner: string;
-          symbol: string;
-          packagePath: string;
-          decimals: number;
-        }[];
-      }>(
+      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
         this.networkInstance,
-        this.apiUrl + '/gno',
-        makeRPCRequest({
-          method: 'getGRC20Tokens',
-        }),
-      ).then((data) => data?.result || []);
+        this.apiUrl + '/v1/tokens?limit=100',
+      ).then((data) => data?.items || []);
 
       return tokens.map((token) => ({
         main: false,
-        tokenId: token.packagePath,
-        pkgPath: token.packagePath,
+        tokenId: token.path,
+        pkgPath: token.path,
         networkId: this.networkId,
         display: false,
         type: 'grc20',
         name: token.name,
         symbol: token.symbol,
         decimals: token.decimals,
-        image: '',
+        image: token.logoUrl ?? '',
       }));
     }
 
@@ -276,42 +266,26 @@ export class TokenRepository implements ITokenRepository {
 
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
     if (this.apiUrl) {
-      const tokens = await TokenRepository.postRPCRequest<{
-        result: {
-          name: string;
-          symbol: string;
-          packagePath: string;
-          isTokenURI: boolean;
-          isTokenMeta: boolean;
-        }[];
-      }>(
+      const tokens = await TokenRepository.fetch<TokenMetaResponse>(
         this.networkInstance,
-        this.apiUrl + '/gno',
-        makeRPCRequest({
-          method: 'getGRC721Packages',
-        }),
-      ).then((data) => data?.result || []);
+        this.apiUrl + '/v1/token-meta',
+      ).then((data) => data?.items || []);
 
-      return tokens.reduce<GRC721CollectionModel[]>((accumulated, current) => {
-        const exists = !!accumulated.find((item) => item.packagePath === current.packagePath);
-        if (!exists) {
-          accumulated.push({
-            tokenId: current.packagePath,
-            networkId: this.networkId,
-            display: false,
-            type: 'grc721',
-            packagePath: current.packagePath,
-            name: current.name,
-            symbol: current.symbol,
-            image: null,
-            isMetadata: !!current.isTokenMeta,
-            isTokenUri: !!current.isTokenURI,
-          });
-        }
-        return accumulated;
-      }, []);
+      return tokens
+        .filter((token) => token.tokenType === 'GRC721')
+        .map((token) => ({
+          tokenId: token.path,
+          networkId: this.networkId,
+          display: false,
+          type: 'grc721',
+          packagePath: token.path,
+          name: token.name,
+          symbol: token.symbol,
+          image: token.logoUrl ?? '',
+          isTokenUri: false,
+          isMetadata: false,
+        }));
     }
-
     if (!this.queryUrl) {
       return [];
     }
@@ -332,18 +306,12 @@ export class TokenRepository implements ITokenRepository {
 
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
     if (this.apiUrl) {
-      const packages = await TokenRepository.postRPCRequest<{
-        result: string[];
-      }>(
+      const packages = await TokenRepository.fetch<AccountAssetsResponse>(
         this.networkInstance,
-        this.apiUrl + '/gno',
-        makeRPCRequest({
-          method: 'getUserTransferPackages',
-          params: [address],
-        }),
+        this.apiUrl + '/v1/accounts/' + address,
       )
-        .then((data) => data?.result || [])
-        .then((packages) => [...new Set(packages)]);
+        .then((data) => data?.data?.assets || [])
+        .then((assets) => [...new Set(assets.map((asset) => asset.packagePath))]);
 
       return packages;
     }
@@ -775,14 +743,13 @@ export class TokenRepository implements ITokenRepository {
     return null;
   }
 
-  private static postRPCRequest = <T = any>(
+  private static fetch = <T = any>(
     axiosInstance: AxiosInstance,
     url: string,
-    data: any,
   ): Promise<T | null> => {
     return axiosInstance
-      .post<T>(url, data)
-      .then((response) => response.data)
+      .get<any>(url)
+      .then((response) => response.data?.data || null)
       .catch((e) => {
         console.log(e);
         return null;

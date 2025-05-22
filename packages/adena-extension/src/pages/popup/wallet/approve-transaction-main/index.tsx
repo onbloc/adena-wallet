@@ -112,6 +112,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
+
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const currentNetwork: NetworkMetainfo = useMemo(() => {

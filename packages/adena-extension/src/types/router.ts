@@ -31,6 +31,7 @@ export enum RoutePath {
 
   //wallet
   Wallet = '/wallet',
+  WalletAccountInitialization = '/wallet/account-initialization',
   WalletSearch = '/wallet/search',
   TransactionDetail = '/wallet/transaction-detail',
   Deposit = '/wallet/deposit',
@@ -99,6 +100,7 @@ export type RouteParams = {
   [RoutePath.NftCollection]: {
     collection: GRC721CollectionModel;
   };
+  [RoutePath.WalletAccountInitialization]: null;
   [RoutePath.NftCollectionAsset]: {
     collectionAsset: GRC721Model;
   };

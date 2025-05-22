@@ -1,10 +1,11 @@
-import { DEFAULT_GAS_USED } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { useAdenaContext } from '@hooks/use-context';
+import { Tx } from '@gnolang/tm2-js-client';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { TransactionService } from '@services/index';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GasInfo } from '@types';
-import { Document, documentToDefaultTx } from 'adena-module';
+import { Document, documentToDefaultTx, Wallet } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useGetGasPrice } from './use-get-gas-price';
 
@@ -29,7 +30,7 @@ function makeGasInfoBy(
   const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
 
   return {
-    gasWanted: DEFAULT_GAS_WANTED,
+    gasWanted: Number(gasUsed),
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
   };
 }
@@ -54,7 +55,44 @@ export const useGetDefaultEstimateGasInfo = (
   document: Document | null | undefined,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
-  return useGetEstimateGasInfo(document, DEFAULT_GAS_USED, options);
+  return useGetEstimateGasInfo(document, DEFAULT_GAS_WANTED, options);
+};
+
+export const makeEstimateGasTransaction = async (
+  wallet: Wallet | null,
+  transactionService: TransactionService | null,
+  document: Document | null | undefined,
+  gasUsed: number,
+  gasPrice: number | null,
+  withSignTransaction = false,
+): Promise<Tx | null> => {
+  if (!document || !gasPrice) {
+    return null;
+  }
+
+  const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
+  if (!transactionService || !gasFee || !gasWanted || !wallet) {
+    return null;
+  }
+
+  const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
+
+  if (!withSignTransaction) {
+    return documentToDefaultTx(modifiedDocument);
+  }
+
+  const { signed } = await transactionService
+    .createTransaction(wallet, modifiedDocument)
+    .catch(() => {
+      return {
+        signed: null,
+      };
+    });
+  if (!signed) {
+    return documentToDefaultTx(modifiedDocument);
+  }
+
+  return signed;
 };
 
 export const useGetEstimateGasInfo = (
@@ -63,7 +101,23 @@ export const useGetEstimateGasInfo = (
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
   const { data: gasPrice } = useGetGasPrice();
-  const { transactionGasService } = useAdenaContext();
+  const { wallet } = useWalletContext();
+  const { transactionService, transactionGasService } = useAdenaContext();
+
+  async function makeTransaction(document: Document | null | undefined): Promise<Tx | null> {
+    if (!document || !gasPrice) {
+      return null;
+    }
+
+    return makeEstimateGasTransaction(
+      wallet,
+      transactionService,
+      document,
+      gasUsed,
+      gasPrice,
+      true,
+    );
+  }
 
   return useQuery<GasInfo | null, Error>({
     queryKey: [
@@ -74,53 +128,46 @@ export const useGetEstimateGasInfo = (
       gasUsed,
       gasPrice || 0,
     ],
-    queryFn: async () => {
-      if (!document || !gasPrice) {
+    queryFn: async (): Promise<GasInfo | null> => {
+      if (!transactionGasService || !gasPrice) {
         return null;
       }
 
-      const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
-      if (!transactionGasService || !gasFee || !gasWanted) {
+      const tx = await makeTransaction(document);
+      if (!tx) {
         return null;
       }
 
-      const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
-
-      const result = await transactionGasService
-        .estimateGas(documentToDefaultTx(modifiedDocument))
+      const resultGasUsed = await transactionGasService
+        .estimateGas(tx)
         .then((gasUsed) => ({
           gasUsed,
           errorMessage: null,
         }))
-        .catch((e: Error) => {
-          if (e?.message === '/std.InvalidPubKeyError') {
-            return {
-              gasUsed: DEFAULT_GAS_USED,
-              errorMessage: null,
-            };
-          }
+        .catch(() => null);
 
-          return null;
-        });
-
-      if (!result) {
+      if (!resultGasUsed) {
         return {
-          gasFee,
-          gasUsed,
-          gasWanted,
+          gasFee: 0,
+          gasUsed: 0,
+          gasWanted: 0,
           gasPrice: 0,
           hasError: true,
           simulateErrorMessage: '',
         };
       }
 
+      const gasFee = BigNumber(resultGasUsed.gasUsed)
+        .multipliedBy(gasPrice)
+        .toFixed(0, BigNumber.ROUND_UP);
+
       return {
-        gasFee: gasFee,
-        gasUsed: result.gasUsed,
-        gasWanted: gasWanted,
+        gasFee: Number(gasFee),
+        gasUsed: resultGasUsed.gasUsed,
+        gasWanted: resultGasUsed.gasUsed,
         gasPrice: gasPrice,
-        hasError: result.errorMessage !== null,
-        simulateErrorMessage: result.errorMessage,
+        hasError: resultGasUsed.errorMessage !== null,
+        simulateErrorMessage: resultGasUsed.errorMessage,
       };
     },
     refetchInterval: REFETCH_INTERVAL,

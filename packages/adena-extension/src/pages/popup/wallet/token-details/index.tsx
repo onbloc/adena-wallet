@@ -196,8 +196,8 @@ export const TokenDetails = (): JSX.Element => {
   const getAccountDetailUri = (): string => {
     const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     return scannerParameters
-      ? `${scannerUrl}/accounts/${currentAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/accounts/${currentAddress}`;
+      ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/account/${currentAddress}`;
   };
 
   const getTokenUri = (): string => {

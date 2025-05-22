@@ -47,7 +47,7 @@ const TransferSummaryContainer: React.FC = () => {
   const { data: currentBalance } = useGetGnotBalance();
 
   const hasNetworkFee = useMemo(() => {
-    if (!currentBalance) {
+    if (!currentBalance || currentBalance === 0) {
       return false;
     }
 
@@ -74,12 +74,16 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
-    if (!currentBalance) {
+    if (currentBalance === null || currentBalance === undefined) {
       return false;
     }
 
+    if (currentBalance === 0) {
+      return true;
+    }
+
     return !hasNetworkFee;
-  }, [currentBalance, useNetworkFeeReturn.isLoading, hasNetworkFee]);
+  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, hasNetworkFee]);
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
