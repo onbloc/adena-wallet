@@ -35,7 +35,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     [info.settingType],
   );
 
-  const hasGasInfo = !!info && !!info.gasInfo;
+  const hasGasInfo = !!info && !!info.gasInfo && !info.gasInfo.hasError;
 
   const gasInfoAmount = useMemo(() => {
     if (!hasGasInfo || !info?.gasInfo) {
