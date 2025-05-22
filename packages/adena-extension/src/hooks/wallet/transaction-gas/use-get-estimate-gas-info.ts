@@ -1,3 +1,4 @@
+import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { Tx } from '@gnolang/tm2-js-client';
@@ -20,17 +21,10 @@ function makeGasInfoBy(
   gasWanted: number;
   gasFee: number;
 } {
-  if (!gasUsed || !gasPrice) {
-    return {
-      gasWanted: 0,
-      gasFee: 0,
-    };
-  }
-
-  const gasFeeBN = BigNumber(gasUsed).multipliedBy(gasPrice);
+  const gasFeeBN = BigNumber(gasUsed || 1000).multipliedBy(gasPrice || MINIMUM_GAS_PRICE);
 
   return {
-    gasWanted: Number(gasUsed),
+    gasWanted: Number(DEFAULT_GAS_WANTED),
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
   };
 }
@@ -55,7 +49,7 @@ export const useGetDefaultEstimateGasInfo = (
   document: Document | null | undefined,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
-  return useGetEstimateGasInfo(document, DEFAULT_GAS_WANTED, options);
+  return useGetEstimateGasInfo(document, 0, options);
 };
 
 export const makeEstimateGasTransaction = async (
