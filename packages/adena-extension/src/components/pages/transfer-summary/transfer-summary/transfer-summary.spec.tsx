@@ -1,7 +1,9 @@
 import React from 'react';
+
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
 import { render } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
 import { RecoilRoot } from 'recoil';
 import { ThemeProvider } from 'styled-components';
 import TransferSummary, { TransferSummaryProps } from './transfer-summary';
@@ -19,6 +21,29 @@ describe('TransferSummary Component', () => {
         type: 'gno-native',
         decimals: 6,
         display: true,
+      },
+      currentBalance: 1000000,
+      useNetworkFeeReturn: {
+        isLoading: false,
+        isSimulateError: false,
+        currentGasInfo: null,
+        currentGasFeeRawAmount: 0,
+        changedGasInfo: null,
+        networkFee: null,
+        networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
+        networkFeeSettings: null,
+        gasAdjustment: '0',
+        setGasAdjustment: () => {
+          return;
+        },
+        setNetworkFeeSetting: () => {
+          return;
+        },
+        save: () => {
+          return;
+        },
+        isFetchedPriceTiers: false,
+        isFetchedEstimateGasInfo: false,
       },
       tokenImage: '',
       transferBalance: {

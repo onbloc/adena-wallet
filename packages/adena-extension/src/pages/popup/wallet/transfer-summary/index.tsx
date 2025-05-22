@@ -309,6 +309,8 @@ const TransferSummaryContainer: React.FC = () => {
           isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
           networkFee={networkFee}
           memo={summaryInfo.memo}
+          currentBalance={currentBalance}
+          useNetworkFeeReturn={useNetworkFeeReturn}
           onClickBack={onClickBack}
           onClickCancel={onClickCancel}
           onClickSend={transfer}
