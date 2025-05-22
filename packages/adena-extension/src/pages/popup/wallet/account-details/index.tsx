@@ -63,8 +63,8 @@ const AccountDetailsContainer: React.FC = () => {
   const moveGnoscan = useCallback(() => {
     const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     const openLinkUrl = scannerParameters
-      ? `${scannerUrl}/accounts/${address}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/accounts/${address}`;
+      ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
+      : `${scannerUrl}/account/${address}`;
     openLink(openLinkUrl);
   }, [address]);
 

@@ -60,6 +60,10 @@ const HistoryContainer: React.FC = () => {
     transactionHistoryQuery;
 
   useEffect(() => {
+    refetch();
+  }, []);
+
+  useEffect(() => {
     if (loadingNextFetch && !isLoading && !isFetching && hasNextPage) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }

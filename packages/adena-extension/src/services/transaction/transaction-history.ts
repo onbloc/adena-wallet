@@ -1,22 +1,33 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { TransactionHistoryRepository } from '@repositories/transaction';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import {
+  ITransactionHistoryIndexerRepository,
+  ITransactionHistoryRepository,
+} from '@repositories/transaction/types';
+import { TransactionWithPageInfo } from '@types';
 
 export class TransactionHistoryService {
-  private transactionHistoryRepository: TransactionHistoryRepository;
+  private transactionHistoryRepository: ITransactionHistoryRepository;
   private gnoProvider: GnoProvider | null;
   private blockTimeMap: { [key in number]: string } = {};
 
   constructor(
     gnoProvider: GnoProvider | null,
-    transactionHistoryRepository: TransactionHistoryRepository,
+    transactionHistoryRepository: ITransactionHistoryRepository,
   ) {
     this.gnoProvider = gnoProvider;
     this.transactionHistoryRepository = transactionHistoryRepository;
   }
 
   public get supported(): boolean {
-    return this.transactionHistoryRepository.supported;
+    return this.transactionHistoryRepository.type !== 'none';
+  }
+
+  public get supportedIndexer(): boolean {
+    return this.transactionHistoryRepository.type === 'indexer';
+  }
+
+  public get supportedApi(): boolean {
+    return this.transactionHistoryRepository.type === 'api';
   }
 
   /**
@@ -26,8 +37,12 @@ export class TransactionHistoryService {
    * @returns
    */
   public async fetchBlockTime(height: number): Promise<string | null> {
-    if (this.supported) {
-      return this.transactionHistoryRepository
+    if (this.blockTimeMap?.[height]) {
+      return this.blockTimeMap?.[height];
+    }
+
+    if (this.supportedIndexer) {
+      return (this.transactionHistoryRepository as ITransactionHistoryIndexerRepository)
         .fetchBlockTimeByHeight(height)
         .then((time) => {
           if (!time) {
@@ -43,10 +58,6 @@ export class TransactionHistoryService {
       return null;
     }
 
-    if (this.blockTimeMap?.[height]) {
-      return this.blockTimeMap?.[height];
-    }
-
     return this.gnoProvider
       .getBlock(height)
       .then((response) => {
@@ -58,106 +69,64 @@ export class TransactionHistoryService {
   }
 
   /**
-   * Fetch all transaction history page
-   *
-   * @param address
-   * @param cursor
-   * @returns
-   */
-  public async fetchAllTransactionHistoryPage(
-    address: string,
-    cursor: string | null,
-  ): Promise<TransactionWithPageInfo> {
-    if (!this.transactionHistoryRepository.supported) {
-      return {
-        hasNext: false,
-        cursor: null,
-        transactions: [],
-      };
-    }
-
-    const result = await this.transactionHistoryRepository.fetchTransactionHistoryWithCursorBy(
-      address,
-      cursor,
-    );
-
-    return result;
-  }
-
-  /**
-   * Fetch native transaction history page
-   *
-   * @param address
-   * @param cursor
-   * @returns
-   */
-  public async fetchNativeTransactionHistoryPage(
-    address: string,
-    cursor: string | null,
-  ): Promise<TransactionWithPageInfo> {
-    if (!this.transactionHistoryRepository.supported) {
-      return {
-        hasNext: false,
-        cursor: null,
-        transactions: [],
-      };
-    }
-
-    return this.transactionHistoryRepository.fetchNativeTransactionHistoryWithCursorBy(
-      address,
-      cursor,
-    );
-  }
-
-  /**
-   * Fetch GRC20 transaction history page
-   *
-   * @param address
-   * @param packagePath
-   * @param cursor
-   * @returns
-   */
-  public async fetchGRC20TransactionHistoryPage(
-    address: string,
-    packagePath: string,
-    cursor: string | null,
-  ): Promise<TransactionWithPageInfo> {
-    if (!this.transactionHistoryRepository.supported) {
-      return {
-        hasNext: false,
-        cursor: null,
-        transactions: [],
-      };
-    }
-
-    return this.transactionHistoryRepository.fetchGRC20TransactionHistoryWithCursorBy(
-      address,
-      packagePath,
-      cursor,
-    );
-  }
-
-  /**
    * Fetch all transaction history
    *
    * @param address
    * @returns
    */
-  public async fetchAllTransactionHistory(address: string): Promise<TransactionInfo[]> {
-    if (!this.transactionHistoryRepository.supported) {
-      return [];
+  public async fetchAllTransactionHistory(
+    address: string,
+    cursor?: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.supported) {
+      return {
+        page: {
+          hasNext: false,
+          cursor: null,
+        },
+        transactions: [],
+      };
     }
-    return this.transactionHistoryRepository.fetchAllTransactionHistoryBy(address);
+
+    return this.transactionHistoryRepository.fetchAllTransactionHistoryBy(address, cursor);
   }
 
-  public fetchNativeTransactionHistory(address: string): Promise<TransactionInfo[]> {
-    return this.transactionHistoryRepository.fetchNativeTransactionHistoryBy(address);
+  public async fetchNativeTransactionHistory(
+    address: string,
+    cursor?: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.supported) {
+      return {
+        page: {
+          hasNext: false,
+          cursor: null,
+        },
+        transactions: [],
+      };
+    }
+
+    return this.transactionHistoryRepository.fetchNativeTransactionHistoryBy(address, cursor);
   }
 
-  public fetchGRC20TransactionHistory(
+  public async fetchGRC20TransactionHistory(
     address: string,
     packagePath: string,
-  ): Promise<TransactionInfo[]> {
-    return this.transactionHistoryRepository.fetchGRC20TransactionHistoryBy(address, packagePath);
+    cursor?: string | null,
+  ): Promise<TransactionWithPageInfo> {
+    if (!this.supported) {
+      return {
+        page: {
+          hasNext: false,
+          cursor: null,
+        },
+        transactions: [],
+      };
+    }
+
+    return this.transactionHistoryRepository.fetchGRC20TransactionHistoryBy(
+      address,
+      packagePath,
+      cursor,
+    );
   }
 }

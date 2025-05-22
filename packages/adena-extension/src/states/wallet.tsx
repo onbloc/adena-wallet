@@ -1,16 +1,16 @@
-import { atom } from 'recoil';
 import { Account, Wallet } from 'adena-module';
+import { atom } from 'recoil';
 
-import { HistoryItem } from '@repositories/transaction/response/transaction-history-response';
-import { StateType } from '@types';
+import { TransactionHistoryItem } from '@repositories/transaction/response/transaction-history-response';
 import { AddressBookItem } from '@repositories/wallet';
+import { StateType } from '@types';
 
 interface TransactionHistoryState {
   address: string | null;
   currentPage: number;
   init: boolean;
   isFinish: boolean;
-  items: Array<HistoryItem>;
+  items: Array<TransactionHistoryItem>;
 }
 
 export const wallet = atom<Wallet | null>({

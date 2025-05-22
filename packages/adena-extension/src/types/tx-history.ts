@@ -1,6 +1,8 @@
 export interface TransactionWithPageInfo {
-  hasNext: boolean;
-  cursor: string | null;
+  page: {
+    hasNext: boolean;
+    cursor: string | null;
+  };
   transactions: TransactionInfo[];
 }
 

@@ -30,8 +30,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
   const moveGnoscan = useCallback(
     (address: string) => {
       const openLinkUrl = scannerQueryString
-        ? `${scannerUrl}/accounts/${address}?${scannerQueryString}`
-        : `${scannerUrl}/accounts/${address}`;
+        ? `${scannerUrl}/account/${address}?${scannerQueryString}`
+        : `${scannerUrl}/account/${address}`;
       openLink(openLinkUrl);
     },
     [openLink],

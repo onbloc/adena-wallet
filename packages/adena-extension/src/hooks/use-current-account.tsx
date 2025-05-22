@@ -1,12 +1,12 @@
+import { EventMessage } from '@inject/message/event-message';
 import { WalletState } from '@states';
+import { useQuery } from '@tanstack/react-query';
 import { Account } from 'adena-module';
+import { useCallback } from 'react';
 import { useRecoilState } from 'recoil';
 import { useAdenaContext, useWalletContext } from './use-context';
-import { useNetwork } from './use-network';
-import { useCallback } from 'react';
 import { useEvent } from './use-event';
-import { EventMessage } from '@inject/message/event-message';
-import { useQuery } from '@tanstack/react-query';
+import { useNetwork } from './use-network';
 
 export const useCurrentAccount = (): {
   currentAccount: Account | null;
@@ -20,12 +20,15 @@ export const useCurrentAccount = (): {
   const { currentNetwork } = useNetwork();
   const { dispatchEvent } = useEvent();
 
-  const getCurrentAddress = useCallback(async (prefix?: string) => {
-    if (!currentAccount) {
-      return null;
-    }
-    return await currentAccount.getAddress(prefix ?? 'g');
-  }, [currentAccount]);
+  const getCurrentAddress = useCallback(
+    async (prefix?: string) => {
+      if (!currentAccount) {
+        return null;
+      }
+      return await currentAccount.getAddress(prefix ?? 'g');
+    },
+    [currentAccount],
+  );
 
   const changeCurrentAccount = async (changedAccount: Account): Promise<boolean> => {
     if (!wallet) {

@@ -33,3 +33,32 @@ interface IBCTokenInfo extends TokenInfo {
   channel: string;
   port: string;
 }
+
+export interface TokenMetaResponse {
+  items: {
+    tokenType?: string;
+    path: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+    logoUrl: string | null;
+  }[];
+}
+
+export interface AccountAssetsResponse {
+  data: {
+    address: string;
+    assets: [
+      {
+        address: string;
+        amount: string;
+        decimals: number;
+        logoUrl: string | null;
+        name: string;
+        packagePath: string;
+        symbol: string;
+        tokenType: string;
+      },
+    ];
+  };
+}

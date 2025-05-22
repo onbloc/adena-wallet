@@ -72,10 +72,9 @@ export class TransactionService {
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
-    const [accountSequence, accountNumber] = await Promise.all([
-      provider.getAccountSequence(address),
-      provider.getAccountNumber(address),
-    ]).catch(() => [0, 0]);
+    const accountInfo = await provider.getAccount(address).catch(() => null);
+    const accountNumber = accountInfo?.accountNumber ?? 0;
+    const accountSequence = accountInfo?.sequence ?? 0;
     return {
       msgs: mappedDocumentMessagesWithCaller(messages, address),
       fee: {

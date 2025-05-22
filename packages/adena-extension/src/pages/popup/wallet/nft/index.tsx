@@ -71,7 +71,7 @@ export const Nft = (): JSX.Element => {
     if (!currentAddress) {
       return;
     }
-    openScannerLink('/accounts/' + currentAddress);
+    openScannerLink('/account/' + currentAddress);
   }, [currentAddress, openScannerLink]);
 
   const moveDepositPage = useCallback(() => {
