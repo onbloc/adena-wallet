@@ -3,10 +3,10 @@ import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { useAdenaContext } from '@hooks/use-context';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GasInfo, NetworkFeeSettingType } from '@types';
+import { GasInfo } from '@types';
 import { Document, documentToDefaultTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useGetGasPriceTier } from './use-get-gas-price';
+import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
 
@@ -62,8 +62,8 @@ export const useGetEstimateGasInfo = (
   gasUsed: number,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
+  const { data: gasPrice } = useGetGasPrice();
   const { transactionGasService } = useAdenaContext();
-  const { data: gasPriceTier } = useGetGasPriceTier(GasToken.denom);
 
   return useQuery<GasInfo | null, Error>({
     queryKey: [
@@ -72,14 +72,12 @@ export const useGetEstimateGasInfo = (
       document?.msgs || '',
       document?.memo || '',
       gasUsed,
-      gasPriceTier?.[NetworkFeeSettingType.AVERAGE] || 0,
+      gasPrice || 0,
     ],
     queryFn: async () => {
-      if (!document || !gasPriceTier) {
+      if (!document || !gasPrice) {
         return null;
       }
-
-      const gasPrice = gasPriceTier?.[NetworkFeeSettingType.AVERAGE];
 
       const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
       if (!transactionGasService || !gasFee || !gasWanted) {

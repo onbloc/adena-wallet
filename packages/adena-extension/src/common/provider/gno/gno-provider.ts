@@ -2,6 +2,7 @@ import {
   INVALID_PUBLIC_KEY_ERROR_TYPE,
   UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
+import { parseTokenAmount } from '@common/utils/amount-utils';
 import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
 import {
   ABCIEndpoint,
@@ -34,6 +35,35 @@ export class GnoProvider extends GnoJSONRPCProvider {
   constructor(baseURL: string, chainId?: string) {
     super(baseURL);
     this.chainId = chainId;
+  }
+
+  public async getGasPrice(height?: number | undefined): Promise<number> {
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
+      'auth/gasprice',
+      '',
+      `${height ?? 0}`,
+      false,
+    ]);
+
+    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
+
+    const abciData = abciResponse?.result?.response.ResponseBase.Data;
+    // Make sure the response is initialized
+    if (!abciData) {
+      return 0;
+    }
+
+    const gasPrice = parseABCI<{
+      gas: number;
+      price: string;
+    }>(abciData);
+
+    const priceAmount = parseTokenAmount(gasPrice.price);
+    if (gasPrice.gas === 0 || priceAmount === 0) {
+      return 0;
+    }
+
+    return priceAmount / gasPrice.gas;
   }
 
   public async getAccount(

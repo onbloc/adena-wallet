@@ -1,8 +1,4 @@
-import {
-  DEFAULT_GAS_PRICE_RATE,
-  GAS_FEE_SAFETY_MARGIN,
-  MINIMUM_GAS_PRICE,
-} from '@common/constants/gas.constant';
+import { DEFAULT_GAS_PRICE_RATE, GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { INVALID_PUBLIC_KEY_ERROR_TYPE } from '@common/constants/tx-error.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
@@ -11,7 +7,7 @@ import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query
 import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import { Document, documentToDefaultTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useGetGasPriceTier } from './use-get-gas-price';
+import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
 
@@ -87,11 +83,7 @@ export const useGetEstimateGasPriceTiers = (
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const { transactionGasService } = useAdenaContext();
-  const { data: gasPriceTier, isFetched: isFetchedGasPriceTier } = useGetGasPriceTier(
-    GasToken.denom,
-  );
-
-  const priceTierKey = gasPriceTier ? Object.keys(gasPriceTier).join(',') : '';
+  const { data: gasPrice } = useGetGasPrice();
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
@@ -101,22 +93,21 @@ export const useGetEstimateGasPriceTiers = (
       document?.memo,
       gasUsed,
       gasAdjustment,
-      priceTierKey,
+      gasPrice || 0,
     ],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
-      if (!transactionGasService || !document || gasUsed === undefined || !gasPriceTier) {
+      if (!transactionGasService || !document || gasUsed === undefined || !gasPrice) {
         return null;
       }
 
       return Promise.all(
-        Object.keys(gasPriceTier).map(async (key) => {
+        Object.keys(NetworkFeeSettingType).map(async (key) => {
           const tier = key as NetworkFeeSettingType;
-          const gasPrice = gasPriceTier[tier];
 
-          const adjustedGasPriceBN = BigNumber(gasPrice).multipliedBy(gasAdjustment);
-          const adjustedGasPrice = adjustedGasPriceBN.isLessThan(MINIMUM_GAS_PRICE)
-            ? MINIMUM_GAS_PRICE * DEFAULT_GAS_PRICE_RATE[tier]
-            : BigNumber(gasPrice).multipliedBy(gasAdjustment).toNumber();
+          const adjustedGasPriceBN = BigNumber(gasPrice)
+            .multipliedBy(DEFAULT_GAS_PRICE_RATE[tier])
+            .multipliedBy(gasAdjustment);
+          const adjustedGasPrice = adjustedGasPriceBN.toNumber();
 
           const { gasWanted: resultGasWanted, gasFee: resultGasFee } = isSuccessSimulate
             ? makeGasInfoBy(gasUsed, adjustedGasPrice, GAS_FEE_SAFETY_MARGIN)
@@ -151,7 +142,7 @@ export const useGetEstimateGasPriceTiers = (
     },
     refetchInterval: REFETCH_INTERVAL,
     keepPreviousData: true,
-    enabled: !!transactionGasService && !!document && isFetchedGasPriceTier,
+    enabled: !!transactionGasService && !!document && !!gasPrice,
     ...options,
   });
 };
