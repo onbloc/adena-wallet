@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 
@@ -46,6 +46,10 @@ export const Login = (): JSX.Element => {
   const { loadAccounts } = useLoadAccounts();
   const [existWallet, setExistWallet] = useState(false);
 
+  const availableLogin = useMemo(() => {
+    return password.length > 0;
+  }, [password]);
+
   useEffect(() => {
     walletService
       .existsWallet()
@@ -73,6 +77,10 @@ export const Login = (): JSX.Element => {
   }, [inputRef]);
 
   const login = async (): Promise<void> => {
+    if (!availableLogin) {
+      return;
+    }
+
     try {
       if (validateEmptyPassword(password)) {
         const encryptedPassword = encryptWalletPassword(password);
@@ -127,7 +135,12 @@ export const Login = (): JSX.Element => {
           Forgot Password?
         </Text>
       </ForgetPwd>
-      <Button fullWidth onClick={onClickUnLockButton} margin='auto 0px 0px'>
+      <Button
+        fullWidth
+        onClick={onClickUnLockButton}
+        margin='auto 0px 0px'
+        disabled={!availableLogin}
+      >
         <Text type='body1Bold'>Unlock</Text>
       </Button>
     </Wrapper>

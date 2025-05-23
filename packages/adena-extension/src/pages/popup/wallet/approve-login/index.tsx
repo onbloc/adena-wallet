@@ -1,6 +1,6 @@
 import { WalletResponseFailureType, WalletResponseType } from '@adena-wallet/sdk';
 import { isAirgapAccount } from 'adena-module';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import styled, { useTheme } from 'styled-components';
@@ -43,6 +43,10 @@ export const ApproveLogin = (): JSX.Element => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
 
+  const availableLogin = useMemo(() => {
+    return password.length > 0;
+  }, [password]);
+
   useEffect(() => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
@@ -83,6 +87,10 @@ export const ApproveLogin = (): JSX.Element => {
   }, [inputRef]);
 
   const tryLoginApprove = async (password: string): Promise<void> => {
+    if (!availableLogin) {
+      return;
+    }
+
     let currentError = null;
     try {
       validateEmptyPassword(password);
@@ -178,7 +186,12 @@ export const ApproveLogin = (): JSX.Element => {
               Forgot Password?
             </Text>
           </ForgetPwd>
-          <Button fullWidth onClick={approveButtonClick} margin='auto 0px 0px'>
+          <Button
+            fullWidth
+            onClick={approveButtonClick}
+            margin='auto 0px 0px'
+            disabled={!availableLogin}
+          >
             <Text type='body1Bold'>Unlock</Text>
           </Button>
         </Wrapper>
