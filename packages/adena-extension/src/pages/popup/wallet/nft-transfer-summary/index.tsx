@@ -1,10 +1,10 @@
 import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
+import { GasToken } from '@common/constants/token.constant';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
@@ -13,6 +13,7 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
+import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
 import { TransactionMessage } from '@services/index';
@@ -30,7 +31,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate, goBack, params } = useAppNavigate<RoutePath.NftTransferSummary>();
   const summaryInfo = params;
-  const { wallet, gnoProvider } = useWalletContext();
+  const { wallet } = useWalletContext();
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
@@ -40,8 +41,43 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
+  const { data: currentBalance } = useGetGnotBalance();
+
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  const hasNetworkFee = useMemo(() => {
+    if (!currentBalance || currentBalance === 0) {
+      return false;
+    }
+
+    if (!networkFee || !Number(networkFee.amount)) {
+      return false;
+    }
+
+    const currentBalanceAmount = BigNumber(currentBalance).shiftedBy(GasToken.decimals * -1);
+    if (currentBalanceAmount.isLessThan(networkFee.amount)) {
+      return false;
+    }
+
+    return true;
+  }, [currentBalance, networkFee?.amount, summaryInfo]);
+
+  const isNetworkFeeError = useMemo(() => {
+    if (useNetworkFeeReturn.isLoading) {
+      return false;
+    }
+
+    if (currentBalance === null || currentBalance === undefined) {
+      return false;
+    }
+
+    if (currentBalance === 0) {
+      return true;
+    }
+
+    return !hasNetworkFee;
+  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, hasNetworkFee]);
 
   const makeGRC721TransferMessage = useCallback(
     (grc721Token: GRC721Model, fromAddress: string, toAddress: string) => {
@@ -97,29 +133,12 @@ const NFTTransferSummaryContainer: React.FC = () => {
     });
   }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
 
-  const hasNetworkFee = useCallback(async () => {
-    if (!gnoProvider || !currentAddress) {
-      return false;
-    }
-
-    const currentBalance = await gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom);
-
-    if (!networkFee) {
-      return false;
-    }
-
-    return BigNumber(currentBalance)
-      .shiftedBy(GasToken.decimals * -1)
-      .isGreaterThanOrEqualTo(networkFee.amount);
-  }, [gnoProvider, currentAddress, summaryInfo, networkFee]);
-
   const transfer = async (): Promise<boolean> => {
-    if (isSent || !currentAccount) {
+    if (isSent || !currentAccount || !hasNetworkFee) {
       return false;
     }
 
-    const isNetworkFee = await hasNetworkFee();
-    if (!isNetworkFee) {
+    if (isNetworkFeeError) {
       setIsErrorNetworkFee(true);
       return false;
     }
