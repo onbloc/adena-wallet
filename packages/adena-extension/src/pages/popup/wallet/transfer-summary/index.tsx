@@ -207,7 +207,7 @@ const TransferSummaryContainer: React.FC = () => {
   ]);
 
   const transfer = async (): Promise<boolean> => {
-    if (isSent || !currentAccount || !hasNetworkFee || !isNetworkFeeError) {
+    if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
       return false;
     }
 

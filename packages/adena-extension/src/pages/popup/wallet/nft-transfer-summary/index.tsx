@@ -134,7 +134,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
   }, [summaryInfo, currentAccount, currentNetwork, networkFee]);
 
   const transfer = async (): Promise<boolean> => {
-    if (isSent || !currentAccount || !hasNetworkFee) {
+    if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
       return false;
     }
 
