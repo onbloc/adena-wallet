@@ -86,3 +86,7 @@ export const isHttpsProtocol = (domain: string): boolean => {
 export const isHttpProtocol = (domain: string): boolean => {
   return domain.startsWith(HTTP_PROTOCOL_PREFIX);
 };
+
+export const isInterRealmParameter = (name: string, type: string): boolean => {
+  return name === 'cur' && type === 'realm';
+};
