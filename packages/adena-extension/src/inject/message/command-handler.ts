@@ -2,6 +2,7 @@ import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wal
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GnoDocumentInfo } from '@common/provider/gno';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
+import { isInterRealmParameter } from '@common/provider/gno/utils';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AdenaExecutor } from '@inject/executor';
 import { ContractMessage, TransactionParams } from '@inject/types';
@@ -171,16 +172,19 @@ function makeTransactionMessage(
     throw new Error(`Function not found: ${gnoMessageInfo.functionName}`);
   }
 
-  const gnoArguments: GnoArgumentInfo[] = func.params.map((param, index) => {
-    const arg = gnoMessageInfo.args?.find((arg) => arg.key === param.name);
-    const value = arg?.value || '';
+  const gnoArguments: GnoArgumentInfo[] = func.params
+    .filter((param) => !isInterRealmParameter(param.name, param.type))
+    .map((param, index) => {
+      const messageArguments = gnoMessageInfo.args || [];
+      const arg = messageArguments.find((arg) => arg.key === param.name);
+      const value = arg?.value || '';
 
-    return {
-      index,
-      key: param.name,
-      value,
-    };
-  });
+      return {
+        index,
+        key: param.name,
+        value,
+      };
+    });
 
   const messageArguments = gnoArguments.map((arg) => {
     return arg.value;
