@@ -1,17 +1,17 @@
 [
   {
-    "id": "test6",
+    "id": "test7",
     "default": true,
     "main": true,
-    "chainId": "test6",
+    "chainId": "test7",
     "chainName": "Gno.land",
-    "networkId": "test6",
-    "networkName": "Testnet 6",
+    "networkId": "test7",
+    "networkName": "Testnet 7",
     "addressPrefix": "g",
-    "rpcUrl": "https://test6.onbloc.xyz:443",
-    "indexerUrl": "https://test6.indexer.onbloc.xyz",
-    "gnoUrl": "https://test6.testnets.gno.land",
-    "apiUrl": "https://test6.api.onbloc.xyz",
+    "rpcUrl": "https://test7.onbloc.xyz:443",
+    "indexerUrl": "https://test7.indexer.onbloc.xyz",
+    "gnoUrl": "https://test7.testnets.gno.land",
+    "apiUrl": "https://test7.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
