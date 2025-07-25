@@ -3,8 +3,8 @@ import { StorageMigration011 } from './storage-migration-v011';
 
 const mockStorageData = {
   NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test5',
-  CURRENT_NETWORK_ID: 'test5',
+  CURRENT_CHAIN_ID: 'test6',
+  CURRENT_NETWORK_ID: 'test6',
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
@@ -33,8 +33,8 @@ describe('serialized wallet migration V011', () => {
     const migration = new StorageMigration011();
     const result = await migration.up(mockData);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test6');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test6');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('test7');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('test7');
   });
 
   it('up password success', async () => {
@@ -58,8 +58,8 @@ describe('serialized wallet migration V011', () => {
     expect(wallet.accounts).toHaveLength(0);
     expect(wallet.keyrings).toHaveLength(0);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test6');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test6');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('test7');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('test7');
   });
 
   it('up failed throw error', async () => {
@@ -70,7 +70,7 @@ describe('serialized wallet migration V011', () => {
     const migration = new StorageMigration011();
 
     await expect(migration.up(mockData)).rejects.toThrow(
-      'Storage Data does not match version V009',
+      'Storage Data does not match version V010',
     );
   });
 });
