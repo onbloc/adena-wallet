@@ -88,5 +88,5 @@ export const isHttpProtocol = (domain: string): boolean => {
 };
 
 export const isInterRealmParameter = (name: string, type: string): boolean => {
-  return name === 'cur' && type === 'realm';
+  return type === 'realm';
 };
