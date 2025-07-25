@@ -10,6 +10,7 @@ export const createMessageOfVmCreateBoard = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'CreateBoard',
     args: [info.boardName],
     send: '',
@@ -30,6 +31,7 @@ export const createMessageOfVmCreateRepost = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'CreateRepost',
     args: [
       `${info.boardId}`,
@@ -54,6 +56,7 @@ export const createMessageOfVmCreateThread = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'CreateThread',
     args: [`${info.boardId}`, info.title, info.body],
     send: '',
@@ -74,6 +77,7 @@ export const createMessageOfVmEditPost = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'EditPost',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.title, info.body],
     send: '',
@@ -92,6 +96,7 @@ export const createMessageOfVmDeletePost = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'DeletePost',
     args: [`${info.boardId}`, `${info.postId}`, info.reason],
     send: '',
@@ -111,6 +116,7 @@ export const createMessageOfVmCreateReply = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/boards',
+    max_deposit: '',
     func: 'CreateReply',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.body],
     send: '',

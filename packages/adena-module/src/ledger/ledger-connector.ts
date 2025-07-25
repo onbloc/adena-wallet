@@ -12,7 +12,7 @@ export class AdenaLedgerConnector extends AminoLedgerConnector {
     return new AminoLedgerConnector(transport);
   }
 
-  public static async createTransport() {
+  public static async createTransport(): Promise<Transport> {
     const interactiveTimeout = 120_000;
     const isHID = await AdenaLedgerConnector.isSupportHID();
     if (isHID) {

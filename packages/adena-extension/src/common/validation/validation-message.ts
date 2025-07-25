@@ -72,7 +72,7 @@ export const validateTransactionMessageOfAddPkg = (message: { [key in string]: a
   if (typeof message.value.creator !== 'string') {
     return false;
   }
-  if (typeof message.value.deposit !== 'string') {
+  if (typeof message.value.max_deposit !== 'string') {
     return false;
   }
   if (typeof message.value.package !== 'object') {

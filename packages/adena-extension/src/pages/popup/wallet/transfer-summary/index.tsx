@@ -123,6 +123,7 @@ const TransferSummaryContainer: React.FC = () => {
       caller: currentAddress || '',
       send: '',
       pkgPath: tokenMetainfo.pkgPath,
+      max_deposit: '',
       func: 'Transfer',
       args: [
         toAddress,

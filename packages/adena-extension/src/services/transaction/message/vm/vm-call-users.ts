@@ -16,6 +16,7 @@ export const createMessageOfVmRegister = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/users',
+    max_deposit: '',
     func: 'Register',
     args: [invitor, info.accountName, info.accountProfile],
     send: send,
@@ -32,6 +33,7 @@ export const createMessageOfVmInvite = (info: {
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/users',
+    max_deposit: '',
     func: 'Invite',
     args: [info.invitee],
     send: '',

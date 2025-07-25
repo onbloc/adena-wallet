@@ -109,7 +109,7 @@ const ApproveSignContainer: React.FC = () => {
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
       const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.deposit;
+      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
       if (!amountStr) {
         return acc;
       }

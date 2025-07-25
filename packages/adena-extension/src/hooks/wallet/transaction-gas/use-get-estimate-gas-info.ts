@@ -70,7 +70,6 @@ export const makeEstimateGasTransaction = async (
   }
 
   const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
-
   if (!withSignTransaction) {
     return documentToDefaultTx(modifiedDocument);
   }
