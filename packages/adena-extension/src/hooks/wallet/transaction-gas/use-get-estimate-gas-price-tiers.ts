@@ -87,7 +87,7 @@ export const useGetEstimateGasPriceTiers = (
           const result = await transactionGasService
             .simulateTx(tx)
             .then((simulateResult) => {
-              if (simulateResult.gasUsed.toNumber() > Number(adjustGasUsed)) {
+              if (simulateResult.gas_used.toNumber() > Number(adjustGasUsed)) {
                 return {
                   gasUsed: 0,
                   errorMessage: 'Network fee too low',

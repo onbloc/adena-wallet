@@ -1,6 +1,6 @@
 import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { ResponseDeliverTx } from '@common/provider/gno/proto/tm2/abci';
 import { Tx } from '@gnolang/tm2-js-client';
+import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import { NetworkMetainfo } from '@types';
 import { AxiosInstance } from 'axios';
 import { ITransactionGasRepository } from './types';
@@ -54,7 +54,8 @@ export class TransactionGasRepository implements ITransactionGasRepository {
       throw new Error('GnoProvider is not initialized');
     }
 
-    return this.gnoProvider.estimateGas(tx);
+    const simulateResult = await this.gnoProvider.simulateTx(tx);
+    return simulateResult.gas_used.toNumber();
   }
 
   private static postRPCRequest = <T = any>(

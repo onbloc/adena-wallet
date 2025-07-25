@@ -108,8 +108,8 @@ export class TransactionService {
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
     const signatures = signature.map((s) => ({
       pubKey: {
-        typeUrl: s?.pubKey?.typeUrl,
-        value: s?.pubKey?.value ? uint8ArrayToBase64(s.pubKey.value as Uint8Array) : undefined,
+        typeUrl: s?.pub_key?.type_url,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
@@ -131,8 +131,8 @@ export class TransactionService {
     const { signed, signature } = await wallet.sign(provider, document);
     const encodedSignature = signature.map((s) => ({
       pubKey: {
-        typeUrl: s?.pubKey?.typeUrl,
-        value: s?.pubKey?.value ? uint8ArrayToBase64(s.pubKey.value as Uint8Array) : undefined,
+        typeUrl: s?.pub_key?.type_url,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
@@ -157,8 +157,8 @@ export class TransactionService {
     const { signed, signature } = await keyring.sign(provider, document, account.hdPath);
     const encodedSignature = signature.map((s) => ({
       pubKey: {
-        typeUrl: s?.pubKey?.typeUrl,
-        value: s?.pubKey?.value ? uint8ArrayToBase64(s.pubKey.value as Uint8Array) : undefined,
+        typeUrl: s?.pub_key?.type_url,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));

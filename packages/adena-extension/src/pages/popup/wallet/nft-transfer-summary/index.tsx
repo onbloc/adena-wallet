@@ -84,6 +84,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return TransactionMessage.createMessageOfVmCall({
         caller: fromAddress,
         send: '',
+        max_deposit: '',
         pkgPath: grc721Token.packagePath,
         func: 'TransferFrom',
         args: [fromAddress, toAddress, grc721Token.tokenId],

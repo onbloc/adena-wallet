@@ -1,7 +1,14 @@
-import { MsgAddPackage, MsgCall, MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
-import { MemFile, MemPackage, MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import { MsgEndpoint } from '@gnolang/gno-js-client';
 import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { fromBase64 } from '../encoding';
+import { MsgSend } from '../libs/gno-js-client/proto/gno/bank';
+import {
+  MemFile,
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgRun,
+} from '../libs/gno-js-client/proto/gno/vm';
 
 export interface Document {
   chain_id: string;
@@ -25,12 +32,12 @@ export interface Document {
 
 export const decodeTxMessages = (messages: Any[]): any[] => {
   return messages.map((m: Any) => {
-    switch (m.typeUrl) {
+    switch (m.type_url) {
       case MsgEndpoint.MSG_CALL: {
         const decodedMessage = MsgCall.decode(m.value);
         const messageJson = MsgCall.toJSON(decodedMessage) as any;
         return {
-          '@type': m.typeUrl,
+          '@type': m.type_url,
           ...messageJson,
           send: messageJson?.send || '',
         };
@@ -39,7 +46,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const decodedMessage = MsgSend.decode(m.value);
         const messageJson = MsgSend.toJSON(decodedMessage) as object;
         return {
-          '@type': m.typeUrl,
+          '@type': m.type_url,
           ...messageJson,
         };
       }
@@ -47,7 +54,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const decodedMessage = MsgAddPackage.decode(m.value);
         const messageJson = MsgAddPackage.toJSON(decodedMessage) as object;
         return {
-          '@type': m.typeUrl,
+          '@type': m.type_url,
           ...messageJson,
         };
       }
@@ -55,12 +62,12 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const decodedMessage = MsgRun.decode(m.value);
         const messageJson = MsgRun.toJSON(decodedMessage) as object;
         return {
-          '@type': m.typeUrl,
+          '@type': m.type_url,
           ...messageJson,
         };
       }
       default:
-        throw new Error(`unsupported message type ${m.typeUrl}`);
+        throw new Error(`unsupported message type ${m.type_url}`);
     }
   });
 };
@@ -84,11 +91,11 @@ function encodeMessageValue(message: { type: string; value: any }) {
       const value = message.value;
       const msgAddPackage = MsgAddPackage.create({
         creator: value.creator,
-        deposit: value.deposit || null,
+        max_deposit: value?.max_deposit || '',
         package: value.package ? createMemPackage(value.package) : undefined,
       });
       return Any.create({
-        typeUrl: MsgEndpoint.MSG_ADD_PKG,
+        type_url: MsgEndpoint.MSG_ADD_PKG,
         value: MsgAddPackage.encode(msgAddPackage).finish(),
       });
     }
@@ -105,14 +112,17 @@ function encodeMessageValue(message: { type: string; value: any }) {
         pkg_path: message.value.pkg_path,
         send: message.value.send || '',
       });
+      console.log('message.value', message.value);
+      console.log('message.value', MsgCall.create(message.value));
+      console.log('result', result);
       return Any.create({
-        typeUrl: MsgEndpoint.MSG_CALL,
+        type_url: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(result).finish(),
       });
     }
     case MsgEndpoint.MSG_SEND: {
       return Any.create({
-        typeUrl: MsgEndpoint.MSG_SEND,
+        type_url: MsgEndpoint.MSG_SEND,
         value: MsgSend.encode(MsgSend.create(message.value)).finish(),
       });
     }
@@ -122,15 +132,16 @@ function encodeMessageValue(message: { type: string; value: any }) {
         caller: value.caller,
         send: value.send || null,
         package: value.package ? createMemPackage(value.package) : undefined,
+        max_deposit: value?.max_deposit || '',
       });
       return Any.create({
-        typeUrl: MsgEndpoint.MSG_RUN,
+        type_url: MsgEndpoint.MSG_RUN,
         value: MsgRun.encode(msgRun).finish(),
       });
     }
     default: {
       return Any.create({
-        typeUrl: MsgEndpoint.MSG_CALL,
+        type_url: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish(),
       });
     }
@@ -142,8 +153,8 @@ export function documentToTx(document: Document): Tx {
   return {
     messages,
     fee: TxFee.create({
-      gasWanted: document.fee.gas,
-      gasFee: document.fee.amount
+      gas_wanted: document.fee.gas,
+      gas_fee: document.fee.amount
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
     }),
@@ -157,15 +168,15 @@ export function documentToDefaultTx(document: Document): Tx {
   return {
     messages,
     fee: TxFee.create({
-      gasWanted: document.fee.gas,
-      gasFee: document.fee.amount
+      gas_wanted: document.fee.gas,
+      gas_fee: document.fee.amount
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
     }),
     signatures: [
       {
-        pubKey: {
-          typeUrl: '',
+        pub_key: {
+          type_url: '',
           value: new Uint8Array(),
         },
         signature: new Uint8Array(),
@@ -192,13 +203,14 @@ export interface RawVmCallMessage {
   func: string;
   send: string;
   pkg_path: string;
+  max_deposit: string;
   args: string[];
 }
 
 export interface RawVmAddPackageMessage {
   '@type': string;
   creator: string;
-  deposit: string;
+  max_deposit: string;
   package: RawMemPackage;
 }
 
@@ -206,6 +218,7 @@ export interface RawVmRunMessage {
   '@type': string;
   caller: string;
   send: string;
+  max_deposit: string;
   package: RawMemPackage;
 }
 
@@ -216,6 +229,14 @@ export interface RawMemPackage {
     name: string;
     body: string;
   }[];
+  info?: {
+    type_url: string;
+    value: string;
+  };
+  type?: {
+    type_url: string;
+    value: string;
+  };
 }
 
 export type RawTxMessageType =
@@ -264,8 +285,8 @@ export const strToSignedTx = (str: string): Tx | null => {
     return {
       messages,
       fee: TxFee.create({
-        gasWanted: document.fee.gas_wanted,
-        gasFee: document.fee.gas_fee,
+        gas_wanted: document.fee.gas_wanted,
+        gas_fee: document.fee.gas_fee,
       }),
       signatures: document.signatures.map((signature) => {
         const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
@@ -276,8 +297,8 @@ export const strToSignedTx = (str: string): Tx | null => {
         const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
         const signatureBytes = fromBase64(signature?.signature || '');
         return TxSignature.create({
-          pubKey: {
-            typeUrl: publicKeyTypeUrl,
+          pub_key: {
+            type_url: publicKeyTypeUrl,
             value: encodedPublicKeyBytes,
           },
           signature: signatureBytes,

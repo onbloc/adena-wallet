@@ -137,8 +137,6 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 
     const paths = pkg_path.split('/');
 
-    console.log('paths', paths);
-
     if (paths.length < 3) {
       return {
         path: pkg_path,

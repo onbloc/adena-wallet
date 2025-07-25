@@ -18,8 +18,8 @@ import {
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
+import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
-import { ResponseDeliverTx } from './proto/tm2/abci';
 import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
 import {
   fetchABCIResponse,
@@ -194,21 +194,21 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     const simulateResult = parseProto(responseValue, ResponseDeliverTx.decode);
 
-    if (simulateResult.responseBase?.error) {
+    if (simulateResult.response_base?.error) {
       if (
-        simulateResult.responseBase.error.typeUrl === INVALID_PUBLIC_KEY_ERROR_TYPE ||
-        simulateResult.responseBase.error.typeUrl === UNKNOWN_ADDRESS_ERROR_TYPE
+        simulateResult.response_base.error.type_url === INVALID_PUBLIC_KEY_ERROR_TYPE ||
+        simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
       ) {
         throw new Error(INVALID_PUBLIC_KEY_ERROR_TYPE);
       }
 
-      const errorResult = parseProto(simulateResult.responseBase.error.value, Any.decode);
-      if (errorResult.typeUrl !== '') {
-        throw new Error(errorResult.typeUrl);
+      const errorResult = parseProto(simulateResult.response_base.error.value, Any.decode);
+      if (errorResult.type_url !== '') {
+        throw new Error(errorResult.type_url);
       }
 
-      const typeUrl = simulateResult.responseBase.error.typeUrl;
-      const errorLogs = simulateResult.responseBase.log.split('\n');
+      const typeUrl = simulateResult.response_base.error.type_url;
+      const errorLogs = simulateResult.response_base.log.split('\n');
 
       const errorLogFirstLine = errorLogs.length > 0 ? errorLogs[0] : '';
       if (errorLogFirstLine !== '') {
@@ -219,12 +219,6 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     return simulateResult;
-  }
-
-  async estimateGas(tx: Tx): Promise<number> {
-    return this.simulateTx(tx).then((response) => {
-      return response.gasUsed.toInt();
-    });
   }
 
   public async getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
