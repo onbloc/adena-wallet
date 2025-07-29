@@ -33,20 +33,23 @@ export interface MsgRunValue {
   caller?: string;
   send?: string;
   package?: Package;
+  max_deposit?: string;
 }
 
 export interface MsgCallValue {
   caller?: string;
   send?: string;
   pkg_path?: string;
+  max_deposit?: string;
   func?: string;
   args?: string[];
 }
 
 export interface AddPackageValue {
   creator?: string;
-  deposit?: string;
   package?: Package;
+  send?: string;
+  max_deposit?: string;
 }
 
 export interface Package {

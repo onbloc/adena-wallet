@@ -1,14 +1,13 @@
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
-import { fromBase64 } from '../encoding';
-import { MsgSend } from '../libs/gno-js-client/proto/gno/bank';
+import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
 import {
   MemFile,
   MemPackage,
   MsgAddPackage,
   MsgCall,
   MsgRun,
-} from '../libs/gno-js-client/proto/gno/vm';
+} from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+import { fromBase64 } from '../encoding';
 
 export interface Document {
   chain_id: string;
@@ -38,32 +37,44 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const messageJson = MsgCall.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...messageJson,
+          caller: messageJson?.caller || '',
           send: messageJson?.send || '',
+          max_deposit: messageJson?.max_deposit || '',
+          pkg_path: messageJson?.pkg_path || '',
+          func: messageJson?.func || '',
+          args: messageJson?.args,
         };
       }
       case MsgEndpoint.MSG_SEND: {
         const decodedMessage = MsgSend.decode(m.value);
-        const messageJson = MsgSend.toJSON(decodedMessage) as object;
+        const messageJson = MsgSend.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...messageJson,
+          from_address: messageJson?.from_address || '',
+          to_address: messageJson?.to_address || '',
+          amount: messageJson?.amount || '',
         };
       }
       case MsgEndpoint.MSG_ADD_PKG: {
         const decodedMessage = MsgAddPackage.decode(m.value);
-        const messageJson = MsgAddPackage.toJSON(decodedMessage) as object;
+        const messageJson = MsgAddPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...messageJson,
+          creator: messageJson?.creator || '',
+          send: messageJson?.send || '',
+          max_deposit: messageJson?.max_deposit || '',
+          package: messageJson?.package,
         };
       }
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
-        const messageJson = MsgRun.toJSON(decodedMessage) as object;
+        const messageJson = MsgRun.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          ...messageJson,
+          caller: messageJson?.caller,
+          send: messageJson?.send,
+          max_deposit: messageJson?.max_deposit,
+          package: messageJson?.package,
         };
       }
       default:
@@ -111,10 +122,8 @@ function encodeMessageValue(message: { type: string; value: any }) {
         func: message.value.func,
         pkg_path: message.value.pkg_path,
         send: message.value.send || '',
+        max_deposit: message.value.max_deposit || '',
       });
-      console.log('message.value', message.value);
-      console.log('message.value', MsgCall.create(message.value));
-      console.log('result', result);
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(result).finish(),

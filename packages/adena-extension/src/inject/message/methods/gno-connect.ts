@@ -15,6 +15,7 @@ export interface GnoMessageInfo {
   packagePath: string;
   functionName: string;
   send: string;
+  maxDeposit: string;
   args: GnoArgumentInfo[] | null;
 }
 
@@ -96,6 +97,7 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
     packagePath: '',
     functionName: '',
     send: '',
+    maxDeposit: '',
     args: null,
   };
   const splitter = '$help';
@@ -131,6 +133,11 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
 
     if (key === '.send') {
       messageInfo.send = value || '';
+      continue;
+    }
+
+    if (key === '.max_deposit') {
+      messageInfo.maxDeposit = value || '';
       continue;
     }
 
