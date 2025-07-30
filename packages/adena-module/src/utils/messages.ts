@@ -1,13 +1,15 @@
 import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
+import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+
+import { fromBase64 } from '../encoding';
 import {
   MemFile,
   MemPackage,
   MsgAddPackage,
   MsgCall,
   MsgRun,
-} from '@gnolang/gno-js-client/bin/proto/gno/vm';
-import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
-import { fromBase64 } from '../encoding';
+} from '../libs/gno-js-client/proto/gno/vm';
+import { Any } from '../libs/gno-js-client/proto/google/protobuf/any';
 
 export interface Document {
   chain_id: string;
@@ -37,12 +39,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const messageJson = MsgCall.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          caller: messageJson?.caller || '',
-          send: messageJson?.send || '',
-          max_deposit: messageJson?.max_deposit || '',
-          pkg_path: messageJson?.pkg_path || '',
-          func: messageJson?.func || '',
-          args: messageJson?.args,
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_SEND: {
@@ -50,9 +47,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const messageJson = MsgSend.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          from_address: messageJson?.from_address || '',
-          to_address: messageJson?.to_address || '',
-          amount: messageJson?.amount || '',
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_ADD_PKG: {
@@ -60,10 +55,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const messageJson = MsgAddPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          creator: messageJson?.creator || '',
-          send: messageJson?.send || '',
-          max_deposit: messageJson?.max_deposit || '',
-          package: messageJson?.package,
+          ...messageJson,
         };
       }
       case MsgEndpoint.MSG_RUN: {
@@ -71,10 +63,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         const messageJson = MsgRun.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
-          caller: messageJson?.caller,
-          send: messageJson?.send,
-          max_deposit: messageJson?.max_deposit,
-          package: messageJson?.package,
+          ...messageJson,
         };
       }
       default:
@@ -83,7 +72,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
   });
 };
 
-function createMemPackage(memPackage: RawMemPackage) {
+function createMemPackage(memPackage: RawMemPackage): any {
   return MemPackage.create({
     name: memPackage.name,
     path: memPackage.path,
@@ -102,6 +91,7 @@ function encodeMessageValue(message: { type: string; value: any }) {
       const value = message.value;
       const msgAddPackage = MsgAddPackage.create({
         creator: value.creator,
+        send: value.send || '',
         max_deposit: value?.max_deposit || '',
         package: value.package ? createMemPackage(value.package) : undefined,
       });
@@ -219,6 +209,7 @@ export interface RawVmCallMessage {
 export interface RawVmAddPackageMessage {
   '@type': string;
   creator: string;
+  send: string;
   max_deposit: string;
   package: RawMemPackage;
 }

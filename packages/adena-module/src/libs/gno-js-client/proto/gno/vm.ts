@@ -224,7 +224,7 @@ export const MsgCall: MessageFns<MsgCall> = {
     } else {
       obj.args = null;
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;
@@ -334,7 +334,7 @@ export const MsgAddPackage: MessageFns<MsgAddPackage> = {
     if (message.send !== undefined) {
       obj.send = message.send;
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;
@@ -445,7 +445,7 @@ export const MsgRun: MessageFns<MsgRun> = {
     if (message.package !== undefined) {
       obj.package = MemPackage.toJSON(message.package);
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;

@@ -1,14 +1,14 @@
 [
   {
-    "id": "test7",
+    "id": "test7.2",
     "default": true,
     "main": true,
-    "chainId": "test7",
+    "chainId": "test7.2",
     "chainName": "Gno.land",
-    "networkId": "test7",
+    "networkId": "test7.2",
     "networkName": "Testnet 7",
     "addressPrefix": "g",
-    "rpcUrl": "https://test7.onbloc.xyz:443",
+    "rpcUrl": "https://rpc.test7.testnets.gno.land:443",
     "indexerUrl": "https://test7.indexer.onbloc.xyz",
     "gnoUrl": "https://test7.testnets.gno.land",
     "apiUrl": "https://test7.api.onbloc.xyz",
