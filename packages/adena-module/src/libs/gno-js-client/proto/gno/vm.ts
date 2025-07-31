@@ -100,10 +100,7 @@ function createBaseMsgCall(): MsgCall {
 }
 
 export const MsgCall: MessageFns<MsgCall> = {
-  encode(
-    message: MsgCall,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
+  encode(message: MsgCall, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.caller !== '') {
       writer.uint32(10).string(message.caller);
     }
@@ -128,8 +125,7 @@ export const MsgCall: MessageFns<MsgCall> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): MsgCall {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMsgCall();
     while (reader.pos < end) {
@@ -200,16 +196,12 @@ export const MsgCall: MessageFns<MsgCall> = {
     return {
       caller: isSet(object.caller) ? globalThis.String(object.caller) : '',
       send: isSet(object.send) ? globalThis.String(object.send) : '',
-      pkg_path: isSet(object.pkg_path)
-        ? globalThis.String(object.pkg_path)
-        : '',
+      pkg_path: isSet(object.pkg_path) ? globalThis.String(object.pkg_path) : '',
       func: isSet(object.func) ? globalThis.String(object.func) : '',
       args: globalThis.Array.isArray(object?.args)
         ? object.args.map((e: any) => globalThis.String(e))
         : null,
-      max_deposit: isSet(object.max_deposit)
-        ? globalThis.String(object.max_deposit)
-        : '',
+      max_deposit: isSet(object.max_deposit) ? globalThis.String(object.max_deposit) : '',
     };
   },
 
@@ -232,7 +224,7 @@ export const MsgCall: MessageFns<MsgCall> = {
     } else {
       obj.args = null;
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;
@@ -258,10 +250,7 @@ function createBaseMsgAddPackage(): MsgAddPackage {
 }
 
 export const MsgAddPackage: MessageFns<MsgAddPackage> = {
-  encode(
-    message: MsgAddPackage,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
+  encode(message: MsgAddPackage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.creator !== '') {
       writer.uint32(10).string(message.creator);
     }
@@ -278,8 +267,7 @@ export const MsgAddPackage: MessageFns<MsgAddPackage> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): MsgAddPackage {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMsgAddPackage();
     while (reader.pos < end) {
@@ -329,13 +317,9 @@ export const MsgAddPackage: MessageFns<MsgAddPackage> = {
   fromJSON(object: any): MsgAddPackage {
     return {
       creator: isSet(object.creator) ? globalThis.String(object.creator) : '',
-      package: isSet(object.package)
-        ? MemPackage.fromJSON(object.package)
-        : undefined,
+      package: isSet(object.package) ? MemPackage.fromJSON(object.package) : undefined,
       send: isSet(object.send) ? globalThis.String(object.send) : '',
-      max_deposit: isSet(object.max_deposit)
-        ? globalThis.String(object.max_deposit)
-        : '',
+      max_deposit: isSet(object.max_deposit) ? globalThis.String(object.max_deposit) : '',
     };
   },
 
@@ -350,20 +334,16 @@ export const MsgAddPackage: MessageFns<MsgAddPackage> = {
     if (message.send !== undefined) {
       obj.send = message.send;
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;
   },
 
-  create<I extends Exact<DeepPartial<MsgAddPackage>, I>>(
-    base?: I
-  ): MsgAddPackage {
+  create<I extends Exact<DeepPartial<MsgAddPackage>, I>>(base?: I): MsgAddPackage {
     return MsgAddPackage.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MsgAddPackage>, I>>(
-    object: I
-  ): MsgAddPackage {
+  fromPartial<I extends Exact<DeepPartial<MsgAddPackage>, I>>(object: I): MsgAddPackage {
     const message = createBaseMsgAddPackage();
     message.creator = object.creator ?? '';
     message.package =
@@ -381,10 +361,7 @@ function createBaseMsgRun(): MsgRun {
 }
 
 export const MsgRun: MessageFns<MsgRun> = {
-  encode(
-    message: MsgRun,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
+  encode(message: MsgRun, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.caller !== '') {
       writer.uint32(10).string(message.caller);
     }
@@ -401,8 +378,7 @@ export const MsgRun: MessageFns<MsgRun> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): MsgRun {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMsgRun();
     while (reader.pos < end) {
@@ -453,12 +429,8 @@ export const MsgRun: MessageFns<MsgRun> = {
     return {
       caller: isSet(object.caller) ? globalThis.String(object.caller) : '',
       send: isSet(object.send) ? globalThis.String(object.send) : '',
-      package: isSet(object.package)
-        ? MemPackage.fromJSON(object.package)
-        : undefined,
-      max_deposit: isSet(object.max_deposit)
-        ? globalThis.String(object.max_deposit)
-        : '',
+      package: isSet(object.package) ? MemPackage.fromJSON(object.package) : undefined,
+      max_deposit: isSet(object.max_deposit) ? globalThis.String(object.max_deposit) : '',
     };
   },
 
@@ -473,7 +445,7 @@ export const MsgRun: MessageFns<MsgRun> = {
     if (message.package !== undefined) {
       obj.package = MemPackage.toJSON(message.package);
     }
-    if (message.max_deposit !== undefined) {
+    if (message.max_deposit !== undefined && message.max_deposit !== '') {
       obj.max_deposit = message.max_deposit;
     }
     return obj;
@@ -500,10 +472,7 @@ function createBaseMemPackage(): MemPackage {
 }
 
 export const MemPackage: MessageFns<MemPackage> = {
-  encode(
-    message: MemPackage,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
+  encode(message: MemPackage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.name !== '') {
       writer.uint32(10).string(message.name);
     }
@@ -523,8 +492,7 @@ export const MemPackage: MessageFns<MemPackage> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): MemPackage {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMemPackage();
     while (reader.pos < end) {
@@ -614,21 +582,15 @@ export const MemPackage: MessageFns<MemPackage> = {
   create<I extends Exact<DeepPartial<MemPackage>, I>>(base?: I): MemPackage {
     return MemPackage.fromPartial(base ?? ({} as any));
   },
-  fromPartial<I extends Exact<DeepPartial<MemPackage>, I>>(
-    object: I
-  ): MemPackage {
+  fromPartial<I extends Exact<DeepPartial<MemPackage>, I>>(object: I): MemPackage {
     const message = createBaseMemPackage();
     message.name = object.name ?? '';
     message.path = object.path ?? '';
     message.files = object.files?.map((e) => MemFile.fromPartial(e)) || [];
     message.type =
-      object.type !== undefined && object.type !== null
-        ? Any.fromPartial(object.type)
-        : undefined;
+      object.type !== undefined && object.type !== null ? Any.fromPartial(object.type) : undefined;
     message.info =
-      object.info !== undefined && object.info !== null
-        ? Any.fromPartial(object.info)
-        : undefined;
+      object.info !== undefined && object.info !== null ? Any.fromPartial(object.info) : undefined;
     return message;
   },
 };
@@ -638,10 +600,7 @@ function createBaseMemFile(): MemFile {
 }
 
 export const MemFile: MessageFns<MemFile> = {
-  encode(
-    message: MemFile,
-    writer: BinaryWriter = new BinaryWriter()
-  ): BinaryWriter {
+  encode(message: MemFile, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.name !== '') {
       writer.uint32(10).string(message.name);
     }
@@ -652,8 +611,7 @@ export const MemFile: MessageFns<MemFile> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): MemFile {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseMemFile();
     while (reader.pos < end) {
@@ -713,14 +671,7 @@ export const MemFile: MessageFns<MemFile> = {
   },
 };
 
-type Builtin =
-  | Date
-  | Function
-  | Uint8Array
-  | string
-  | number
-  | boolean
-  | undefined;
+type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
 export type DeepPartial<T> = T extends Builtin
   ? T

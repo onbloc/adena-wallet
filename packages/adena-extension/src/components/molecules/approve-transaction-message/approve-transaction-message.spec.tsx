@@ -19,6 +19,7 @@ describe('ApproveTransactionMessage Component', () => {
           caller: '',
           func: '',
           pkg_path: '',
+          max_deposit: '',
           send: '',
         },
       },

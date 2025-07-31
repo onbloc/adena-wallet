@@ -199,6 +199,7 @@ function makeTransactionMessage(
         pkg_path: gnoMessageInfo.packagePath,
         func: gnoMessageInfo.functionName,
         args: messageArguments,
+        max_deposit: gnoMessageInfo.maxDeposit,
       },
     },
   ];

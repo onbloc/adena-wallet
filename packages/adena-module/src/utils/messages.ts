@@ -1,7 +1,7 @@
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { Any, PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
+import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+
 import { fromBase64 } from '../encoding';
-import { MsgSend } from '../libs/gno-js-client/proto/gno/bank';
 import {
   MemFile,
   MemPackage,
@@ -9,6 +9,7 @@ import {
   MsgCall,
   MsgRun,
 } from '../libs/gno-js-client/proto/gno/vm';
+import { Any } from '../libs/gno-js-client/proto/google/protobuf/any';
 
 export interface Document {
   chain_id: string;
@@ -39,12 +40,11 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
         return {
           '@type': m.type_url,
           ...messageJson,
-          send: messageJson?.send || '',
         };
       }
       case MsgEndpoint.MSG_SEND: {
         const decodedMessage = MsgSend.decode(m.value);
-        const messageJson = MsgSend.toJSON(decodedMessage) as object;
+        const messageJson = MsgSend.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
           ...messageJson,
@@ -52,7 +52,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
       }
       case MsgEndpoint.MSG_ADD_PKG: {
         const decodedMessage = MsgAddPackage.decode(m.value);
-        const messageJson = MsgAddPackage.toJSON(decodedMessage) as object;
+        const messageJson = MsgAddPackage.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
           ...messageJson,
@@ -60,7 +60,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
       }
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
-        const messageJson = MsgRun.toJSON(decodedMessage) as object;
+        const messageJson = MsgRun.toJSON(decodedMessage) as any;
         return {
           '@type': m.type_url,
           ...messageJson,
@@ -72,7 +72,7 @@ export const decodeTxMessages = (messages: Any[]): any[] => {
   });
 };
 
-function createMemPackage(memPackage: RawMemPackage) {
+function createMemPackage(memPackage: RawMemPackage): any {
   return MemPackage.create({
     name: memPackage.name,
     path: memPackage.path,
@@ -91,6 +91,7 @@ function encodeMessageValue(message: { type: string; value: any }) {
       const value = message.value;
       const msgAddPackage = MsgAddPackage.create({
         creator: value.creator,
+        send: value.send || '',
         max_deposit: value?.max_deposit || '',
         package: value.package ? createMemPackage(value.package) : undefined,
       });
@@ -111,10 +112,8 @@ function encodeMessageValue(message: { type: string; value: any }) {
         func: message.value.func,
         pkg_path: message.value.pkg_path,
         send: message.value.send || '',
+        max_deposit: message.value.max_deposit || '',
       });
-      console.log('message.value', message.value);
-      console.log('message.value', MsgCall.create(message.value));
-      console.log('result', result);
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
         value: MsgCall.encode(result).finish(),
@@ -210,6 +209,7 @@ export interface RawVmCallMessage {
 export interface RawVmAddPackageMessage {
   '@type': string;
   creator: string;
+  send: string;
   max_deposit: string;
   package: RawMemPackage;
 }
