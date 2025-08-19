@@ -4,6 +4,12 @@ import {
   GNO_PACKAGE_PREFIX,
   GNO_RPC_META_TAG,
 } from '@common/constants/metatag.constant';
+import {
+  GNO_HELP_MARKER,
+  GNO_FUNC_PARAM,
+  GNO_SEND_PARAM,
+  GNO_MAX_DEPOSIT_PARAM,
+} from '@common/constants/url.constant';
 import { hasHttpProtocol } from '@common/provider/gno/utils';
 
 export interface GnoConnectInfo {
@@ -89,7 +95,7 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
 export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
   const url = new URL(href);
   const { pathname } = url;
-  if (!pathname.includes('$help')) {
+  if (!pathname.includes(GNO_HELP_MARKER)) {
     return null;
   }
 
@@ -100,12 +106,8 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
     maxDeposit: '',
     args: null,
   };
-  const splitter = '$help';
-  if (!pathname.includes(splitter)) {
-    return null;
-  }
 
-  const [beforeHelp, afterHelp] = pathname.split('$help');
+  const [beforeHelp, afterHelp] = pathname.split(GNO_HELP_MARKER);
   const packagePostfix = `${beforeHelp}`.replace(/^\/+/, '');
   if (packagePostfix === '') {
     return null;
@@ -115,7 +117,6 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
   const parts = queryPart.split('&');
 
   const args: GnoArgumentInfo[] = [];
-
   let argumentIndex = 0;
 
   for (const p of parts) {
@@ -126,26 +127,23 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
 
     const [key, value] = params;
 
-    if (key === 'func') {
-      messageInfo.functionName = value || '';
-      continue;
+    switch (key) {
+      case GNO_FUNC_PARAM:
+        messageInfo.functionName = value || '';
+        continue;
+      case GNO_SEND_PARAM:
+        messageInfo.send = value || '';
+        continue;
+      case GNO_MAX_DEPOSIT_PARAM:
+        messageInfo.maxDeposit = value || '';
+        continue;
+      default:
+        args.push({
+          index: argumentIndex,
+          key,
+          value: decodeURIComponent(value),
+        });
     }
-
-    if (key === '.send') {
-      messageInfo.send = value || '';
-      continue;
-    }
-
-    if (key === '.max_deposit') {
-      messageInfo.maxDeposit = value || '';
-      continue;
-    }
-
-    args.push({
-      index: argumentIndex,
-      key,
-      value,
-    });
 
     argumentIndex++;
   }
