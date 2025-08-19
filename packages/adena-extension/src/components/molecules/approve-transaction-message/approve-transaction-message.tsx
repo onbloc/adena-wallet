@@ -4,11 +4,7 @@ import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
 import { ContractMessage, EMessageType } from '@inject/types';
-import {
-  MsgCallValue,
-  AddPackageValue,
-  MsgRunValue,
-} from '@repositories/transaction/response/transaction-history-query-response';
+import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
@@ -20,6 +16,7 @@ import {
   MessageRowWrapper,
   RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
+import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
 
 const functionNameMap = {
   '/bank.MsgSend': 'Transfer',
@@ -28,17 +25,9 @@ const functionNameMap = {
   '/vm.m_call': 'Call',
 };
 
-function isMsgCall(type: string): boolean {
-  return type === EMessageType.VM_CALL;
-}
-
-function isMsgAddPkg(type: string): boolean {
-  return type === EMessageType.VM_ADDPKG;
-}
-
-function isMsgRun(type: string): boolean {
-  return type === EMessageType.VM_RUN;
-}
+const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
+const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
+const isMsgRun = (type: string): boolean => type === EMessageType.VM_RUN;
 
 function makeTitle(index: number, functionName: string): string {
   return `${index + 1}. ${functionName}`;
@@ -311,35 +300,8 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
 }) => {
-  const { type } = message;
-  const [isOpen, setIsOpen] = useState(true);
-  const { max_deposit } = message.value as AddPackageValue;
-
-  const maxDeposit = useMemo(() => {
-    return max_deposit || '';
-  }, [max_deposit]);
-
-  const functionName = useMemo(() => {
-    return functionNameMap[type] || 'Unknown';
-  }, [type]);
-
-  const title = useMemo(() => {
-    return makeTitle(index, functionName);
-  }, [functionName, index]);
-
-  const changeMaxDeposit = (maxDeposit: string): void => {
-    const updatedValue: typeof message.value & { max_deposit: string } = {
-      ...message.value,
-      max_deposit: maxDeposit,
-    };
-
-    const updatedMessage: typeof message = {
-      ...message,
-      value: updatedValue,
-    };
-
-    changeMessage(index, updatedMessage);
-  };
+  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
+    useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <ApproveTransactionMessageWrapper>
@@ -373,35 +335,8 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
 }) => {
-  const { type } = message;
-  const [isOpen, setIsOpen] = useState(true);
-  const { max_deposit } = message.value as MsgRunValue;
-
-  const maxDeposit = useMemo(() => {
-    return max_deposit || '';
-  }, [max_deposit]);
-
-  const functionName = useMemo(() => {
-    return functionNameMap[type] || 'Unknown';
-  }, [type]);
-
-  const title = useMemo(() => {
-    return makeTitle(index, functionName);
-  }, [functionName, index]);
-
-  const changeMaxDeposit = (maxDeposit: string): void => {
-    const updatedValue: typeof message.value & { max_deposit: string } = {
-      ...message.value,
-      max_deposit: maxDeposit,
-    };
-
-    const updatedMessage: typeof message = {
-      ...message,
-      value: updatedValue,
-    };
-
-    changeMessage(index, updatedMessage);
-  };
+  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
+    useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <ApproveTransactionMessageWrapper>
@@ -418,7 +353,7 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <span className='value'>{functionName}</span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>Max Deposit</span>
+            <span className='key'>Max Depositt</span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
