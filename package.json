@@ -49,5 +49,6 @@
       "@lavamoat/preinstall-always-fail": false,
       "@storybook/react>@storybook/docs-tools>@storybook/core-common>esbuild": false
     }
-  }
+  },
+  "packageManager": "yarn@4.9.2"
 }
