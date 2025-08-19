@@ -3,8 +3,12 @@ import React, { useMemo, useState } from 'react';
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
-import { ContractMessage } from '@inject/types';
-import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
+import { ContractMessage, EMessageType } from '@inject/types';
+import {
+  MsgCallValue,
+  AddPackageValue,
+  MsgRunValue,
+} from '@repositories/transaction/response/transaction-history-query-response';
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
@@ -25,7 +29,15 @@ const functionNameMap = {
 };
 
 function isMsgCall(type: string): boolean {
-  return type === '/vm.m_call';
+  return type === EMessageType.VM_CALL;
+}
+
+function isMsgAddPkg(type: string): boolean {
+  return type === EMessageType.VM_ADDPKG;
+}
+
+function isMsgRun(type: string): boolean {
+  return type === EMessageType.VM_RUN;
 }
 
 function makeTitle(index: number, functionName: string): string {
@@ -55,6 +67,28 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         index={index}
         message={message}
         argumentKeyMap={argumentKeyMap}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+      />
+    );
+  }
+
+  if (isMsgAddPkg(type)) {
+    return (
+      <MsgAddPkgTransactionMessage
+        index={index}
+        message={message}
+        changeMessage={changeMessage}
+        openScannerLink={openScannerLink}
+      />
+    );
+  }
+
+  if (isMsgRun(type)) {
+    return (
+      <MsgRunTransactionMessage
+        index={index}
+        message={message}
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
       />
@@ -113,7 +147,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   changeMessage,
   openScannerLink,
 }) => {
-  const { func, pkg_path, args, send } = message.value as MsgCallValue;
+  const { func, pkg_path, args, send, max_deposit } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
 
   const functionName = useMemo(() => {
@@ -173,6 +207,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     return send || '';
   }, [send]);
 
+  const maxDeposit = useMemo(() => {
+    return max_deposit || '';
+  }, [max_deposit]);
+
   const moveGnoscan = (): void => {
     openScannerLink('/realms/details', { path: realmPathInfo.path });
   };
@@ -203,6 +241,20 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
     });
   };
 
+  const changeMaxDeposit = (maxDeposit: string): void => {
+    const updatedValue: typeof message.value & { max_deposit: string } = {
+      ...message.value,
+      max_deposit: maxDeposit,
+    };
+
+    const updatedMessage: typeof message = {
+      ...message,
+      value: updatedValue,
+    };
+
+    changeMessage(index, updatedMessage);
+  };
+
   return (
     <ApproveTransactionMessageWrapper>
       <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
@@ -224,6 +276,13 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             </span>
           </div>
           <div className='message-row argument'>
+            <span className='key'>Max Deposit</span>
+            <ArgumentEditBox
+              value={maxDeposit}
+              onChange={(value): void => changeMaxDeposit(value)}
+            />
+          </div>
+          <div className='message-row argument'>
             <span className='key'>Send</span>
             <ArgumentEditBox
               value={sendAmount}
@@ -241,6 +300,130 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
               />
             </div>
           ))}
+        </MessageRowWrapper>
+      )}
+    </ApproveTransactionMessageWrapper>
+  );
+};
+
+const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+  changeMessage,
+}) => {
+  const { type } = message;
+  const [isOpen, setIsOpen] = useState(true);
+  const { max_deposit } = message.value as AddPackageValue;
+
+  const maxDeposit = useMemo(() => {
+    return max_deposit || '';
+  }, [max_deposit]);
+
+  const functionName = useMemo(() => {
+    return functionNameMap[type] || 'Unknown';
+  }, [type]);
+
+  const title = useMemo(() => {
+    return makeTitle(index, functionName);
+  }, [functionName, index]);
+
+  const changeMaxDeposit = (maxDeposit: string): void => {
+    const updatedValue: typeof message.value & { max_deposit: string } = {
+      ...message.value,
+      max_deposit: maxDeposit,
+    };
+
+    const updatedMessage: typeof message = {
+      ...message,
+      value: updatedValue,
+    };
+
+    changeMessage(index, updatedMessage);
+  };
+
+  return (
+    <ApproveTransactionMessageWrapper>
+      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+      {isOpen && (
+        <MessageRowWrapper>
+          <div className='message-row'>
+            <span className='key'>Type</span>
+            <span className='value'>{type}</span>
+          </div>
+          <div className='message-row'>
+            <span className='key'>Function</span>
+            <span className='value'>{functionName}</span>
+          </div>
+          <div className='message-row argument'>
+            <span className='key'>Max Deposit</span>
+            <ArgumentEditBox
+              value={maxDeposit}
+              onChange={(value): void => changeMaxDeposit(value)}
+            />
+          </div>
+        </MessageRowWrapper>
+      )}
+    </ApproveTransactionMessageWrapper>
+  );
+};
+
+const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
+  index,
+  message,
+  changeMessage,
+}) => {
+  const { type } = message;
+  const [isOpen, setIsOpen] = useState(true);
+  const { max_deposit } = message.value as MsgRunValue;
+
+  const maxDeposit = useMemo(() => {
+    return max_deposit || '';
+  }, [max_deposit]);
+
+  const functionName = useMemo(() => {
+    return functionNameMap[type] || 'Unknown';
+  }, [type]);
+
+  const title = useMemo(() => {
+    return makeTitle(index, functionName);
+  }, [functionName, index]);
+
+  const changeMaxDeposit = (maxDeposit: string): void => {
+    const updatedValue: typeof message.value & { max_deposit: string } = {
+      ...message.value,
+      max_deposit: maxDeposit,
+    };
+
+    const updatedMessage: typeof message = {
+      ...message,
+      value: updatedValue,
+    };
+
+    changeMessage(index, updatedMessage);
+  };
+
+  return (
+    <ApproveTransactionMessageWrapper>
+      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+
+      {isOpen && (
+        <MessageRowWrapper>
+          <div className='message-row'>
+            <span className='key'>Type</span>
+            <span className='value'>{type}</span>
+          </div>
+          <div className='message-row'>
+            <span className='key'>Function</span>
+            <span className='value'>{functionName}</span>
+          </div>
+          <div className='message-row argument'>
+            <span className='key'>Max Deposit</span>
+            <ArgumentEditBox
+              value={maxDeposit}
+              onChange={(value): void => changeMaxDeposit(value)}
+            />
+          </div>
         </MessageRowWrapper>
       )}
     </ApproveTransactionMessageWrapper>
