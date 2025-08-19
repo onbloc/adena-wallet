@@ -14,6 +14,13 @@ export const EMessageType = {
 
 export type EMessageType = (typeof EMessageType)[keyof typeof EMessageType];
 
+export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
+  [EMessageType.BANK_MSG_SEND]: 'Transfer',
+  [EMessageType.VM_ADDPKG]: 'AddPackage',
+  [EMessageType.VM_RUN]: 'Run',
+  [EMessageType.VM_CALL]: 'Call',
+};
+
 export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
 
 export type ContractMessage = {

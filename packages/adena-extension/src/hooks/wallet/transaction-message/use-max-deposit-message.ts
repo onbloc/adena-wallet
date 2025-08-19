@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ContractMessage } from '@inject/types';
+import { ContractMessage, FUNCTION_NAME_MAP } from '@inject/types';
 import {
   AddPackageValue,
   MsgRunValue,
@@ -21,7 +21,7 @@ export const useMaxDepositMessage = (
   }, [max_deposit]);
 
   const functionName = React.useMemo(() => {
-    return functionNameMap[type] || 'Unknown';
+    return FUNCTION_NAME_MAP[type] || 'Unknown';
   }, [type]);
 
   const title = React.useMemo(() => {
@@ -47,13 +47,6 @@ export const useMaxDepositMessage = (
     title,
     changeMaxDeposit,
   };
-};
-
-const functionNameMap = {
-  '/bank.MsgSend': 'Transfer',
-  '/vm.m_addpkg': 'AddPackage',
-  '/vm.m_run': 'Run',
-  '/vm.m_call': 'Call',
 };
 
 function makeTitle(index: number, functionName: string): string {

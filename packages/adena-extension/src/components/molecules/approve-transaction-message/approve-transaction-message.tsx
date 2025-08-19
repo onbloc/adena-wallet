@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';
 import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
-import { ContractMessage, EMessageType } from '@inject/types';
+import { ContractMessage, EMessageType, FUNCTION_NAME_MAP } from '@inject/types';
 import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
 
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
@@ -17,13 +17,6 @@ import {
   RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
 import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
-
-const functionNameMap = {
-  '/bank.MsgSend': 'Transfer',
-  '/vm.m_addpkg': 'AddPackage',
-  '/vm.m_run': 'Run',
-  '/vm.m_call': 'Call',
-};
 
 const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
 const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
@@ -102,7 +95,7 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   const [isOpen, setIsOpen] = useState(true);
 
   const functionName = useMemo(() => {
-    return functionNameMap[type] || 'Unknown';
+    return FUNCTION_NAME_MAP[type] || 'Unknown';
   }, [type]);
 
   const title = useMemo(() => {
