@@ -109,11 +109,11 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       {isOpen && (
         <MessageRowWrapper>
           <div className='message-row'>
-            <span className='key'>Type</span>
+            <span className='key'>type</span>
             <span className='value'>{type}</span>
           </div>
           <div className='message-row'>
-            <span className='key'>Function</span>
+            <span className='key'>function</span>
             <span className='value'>{functionName}</span>
           </div>
         </MessageRowWrapper>
@@ -244,7 +244,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       {isOpen && (
         <MessageRowWrapper>
           <div className='message-row'>
-            <span className='key realm'>Realm</span>
+            <span className='key realm'>realm</span>
             <span className='realm-wrapper'>
               <RealmPathInfo
                 domain={realmPathInfo.domain}
@@ -258,14 +258,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             </span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>Max Deposit</span>
-            <ArgumentEditBox
-              value={maxDeposit}
-              onChange={(value): void => changeMaxDeposit(value)}
-            />
-          </div>
-          <div className='message-row argument'>
-            <span className='key'>Send</span>
+            <span className='key'>send</span>
             <ArgumentEditBox
               value={sendAmount}
               onChange={(value): void => changeSendAmount(value)}
@@ -274,7 +267,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
           {displayArguments.map((arg, argumentIndex) => (
             <div className='message-row argument' key={argumentIndex}>
               <span className='key'>
-                {argumentKeyMap?.[argumentIndex] || `Arg${argumentIndex + 1}`}
+                {argumentKeyMap?.[argumentIndex] || `arg${argumentIndex + 1}`}
               </span>
               <ArgumentEditBox
                 value={arg}
@@ -282,6 +275,13 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
               />
             </div>
           ))}
+          <div className='message-row argument'>
+            <span className='key'>max_deposit</span>
+            <ArgumentEditBox
+              value={maxDeposit}
+              onChange={(value): void => changeMaxDeposit(value)}
+            />
+          </div>
         </MessageRowWrapper>
       )}
     </ApproveTransactionMessageWrapper>
@@ -303,15 +303,15 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       {isOpen && (
         <MessageRowWrapper>
           <div className='message-row'>
-            <span className='key'>Type</span>
+            <span className='key'>type</span>
             <span className='value'>{type}</span>
           </div>
           <div className='message-row'>
-            <span className='key'>Function</span>
+            <span className='key'>function</span>
             <span className='value'>{functionName}</span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>Max Deposit</span>
+            <span className='key'>max_deposit</span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
@@ -338,15 +338,15 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       {isOpen && (
         <MessageRowWrapper>
           <div className='message-row'>
-            <span className='key'>Type</span>
+            <span className='key'>type</span>
             <span className='value'>{type}</span>
           </div>
           <div className='message-row'>
-            <span className='key'>Function</span>
+            <span className='key'>function</span>
             <span className='value'>{functionName}</span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>Max Depositt</span>
+            <span className='key'>max_deposit</span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
