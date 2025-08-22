@@ -1,4 +1,3 @@
-import React from 'react';
 
 import { GlobalPopupStyle } from '@styles/global-style';
 import theme from '@styles/theme';
@@ -28,6 +27,7 @@ describe('TransferSummary Component', () => {
         isSimulateError: false,
         currentGasInfo: null,
         currentGasFeeRawAmount: 0,
+        currentStorageDeposits: null,
         changedGasInfo: null,
         networkFee: null,
         networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
