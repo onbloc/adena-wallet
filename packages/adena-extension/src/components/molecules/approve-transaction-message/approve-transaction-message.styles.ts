@@ -32,6 +32,7 @@ export const ApproveTransactionMessageWrapper = styled(View)`
       width: fit-content;
       flex-shrink: 0;
       color: ${getTheme('neutral', 'a')};
+      gap: 4px;
     }
 
     .value {

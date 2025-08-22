@@ -120,6 +120,12 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
               select={(): void =>
                 setNetworkFeeSetting({
                   settingType: settingInfo.settingType,
+                  storageDeposits: settingInfo.storageDeposits || {
+                    storageDeposit: 0,
+                    unlockDeposit: 0,
+                    storageUsage: 0,
+                    releaseStorageUsage: 0,
+                  },
                   gasInfo: {
                     ...(settingInfo.gasInfo || {
                       gasFee: 0,

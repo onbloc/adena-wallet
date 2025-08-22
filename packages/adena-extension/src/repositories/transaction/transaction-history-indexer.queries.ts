@@ -90,12 +90,14 @@ export const makeAccountTransactionsQuery = (
                 caller
                 send
                 func
+                max_deposit
                 pkg_path
                 args
               }
               ... on MsgAddPackage {
                 creator
-                deposit
+                send
+                max_deposit
                 package {
                   path
                 }
@@ -103,6 +105,7 @@ export const makeAccountTransactionsQuery = (
               ... on MsgRun {
                 caller
                 send
+                max_deposit
                 package {
                   path
                 }
@@ -238,6 +241,7 @@ export const makeGRC20TransferTransactionsQuery = (
               ...on MsgCall {
                 caller
                 send
+                max_deposit
                 pkg_path
                 func
                 args
@@ -332,6 +336,7 @@ export const makeVMTransactionsByAddressQuery = (address: string): string => `
         ... on MsgCall {
           caller
           send
+          max_deposit
           func
           pkg_path
           args
@@ -507,6 +512,7 @@ export const makeGRC20SendTransactionsByAddressQueryByPackagePath = (
         ... on MsgCall {
           caller
           send
+          max_deposit
           func
           pkg_path
           args

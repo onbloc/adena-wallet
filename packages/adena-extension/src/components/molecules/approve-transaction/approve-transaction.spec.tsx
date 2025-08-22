@@ -66,6 +66,12 @@ describe('ApproveTransaction Component', () => {
           gasWanted: 150000,
           simulateErrorMessage: null,
         },
+        currentStorageDeposits: {
+          storageDeposit: 0,
+          unlockDeposit: 0,
+          storageUsage: 0,
+          releaseStorageUsage: 0,
+        },
         networkFee: {
           amount: '0.0048',
           denom: 'GNOT',

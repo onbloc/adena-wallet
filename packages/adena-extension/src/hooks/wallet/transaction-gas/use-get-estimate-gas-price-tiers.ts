@@ -1,5 +1,6 @@
 import { DEFAULT_GAS_PRICE_RATE } from '@common/constants/gas.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { parseStorageDeposits } from '@common/provider/gno/utils';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
@@ -11,6 +12,13 @@ import { makeEstimateGasTransaction } from './use-get-estimate-gas-info';
 import { useGetGasPrice } from './use-get-gas-price';
 
 const REFETCH_INTERVAL = 5_000;
+
+const DefaultStorageDeposits = {
+  storageDeposit: 0,
+  unlockDeposit: 0,
+  storageUsage: 0,
+  releaseStorageUsage: 0,
+};
 
 export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
 
@@ -73,6 +81,7 @@ export const useGetEstimateGasPriceTiers = (
           if (!tx) {
             return {
               settingType: tier,
+              storageDeposits: DefaultStorageDeposits,
               gasInfo: {
                 gasFee: 0,
                 gasUsed: Number(adjustGasUsed),
@@ -91,11 +100,17 @@ export const useGetEstimateGasPriceTiers = (
                 return {
                   gasUsed: 0,
                   errorMessage: 'Network fee too low',
+                  storageDeposits: DefaultStorageDeposits,
                 };
               }
 
+              const storageDeposits = parseStorageDeposits(
+                simulateResult.response_base?.events ?? [],
+              );
+
               return {
                 gasUsed: Number(adjustGasUsed),
+                storageDeposits,
                 errorMessage: null,
               };
             })
@@ -103,12 +118,14 @@ export const useGetEstimateGasPriceTiers = (
               return {
                 gasUsed: 0,
                 errorMessage: e?.message || '',
+                storageDeposits: DefaultStorageDeposits,
               };
             });
 
           if (result.gasUsed === 0) {
             return {
               settingType: tier,
+              storageDeposits: result.storageDeposits,
               gasInfo: {
                 gasFee: 0,
                 gasUsed: Number(adjustGasUsed),
@@ -122,6 +139,7 @@ export const useGetEstimateGasPriceTiers = (
 
           return {
             settingType: tier,
+            storageDeposits: result.storageDeposits,
             gasInfo: {
               gasFee: Number(gasFee),
               gasUsed: Number(adjustGasUsed),

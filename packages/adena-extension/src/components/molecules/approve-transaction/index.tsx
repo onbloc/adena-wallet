@@ -14,6 +14,7 @@ import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
+import StorageDeposit from '../storage-deposit/storage-deposit';
 import {
   ApproveTransactionNetworkFeeWrapper,
   ApproveTransactionWrapper,
@@ -207,6 +208,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       </div>
 
       <div className='fee-amount-wrapper'>
+        <StorageDeposit
+          storageDeposit={{
+            storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
+            unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
+          }}
+          isLoading={useNetworkFeeReturn.isLoading}
+          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
+          errorMessage={networkFeeErrorMessage}
+        />
+
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}

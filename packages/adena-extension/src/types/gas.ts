@@ -7,6 +7,12 @@ export enum NetworkFeeSettingType {
 export interface NetworkFeeSettingInfo {
   settingType: NetworkFeeSettingType;
   gasInfo: GasInfo;
+  storageDeposits: {
+    storageDeposit: number;
+    unlockDeposit: number;
+    storageUsage: number;
+    releaseStorageUsage: number;
+  };
 }
 
 export interface GasPriceTierInfo {

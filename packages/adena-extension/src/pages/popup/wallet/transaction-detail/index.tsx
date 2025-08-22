@@ -6,9 +6,11 @@ import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
 import { SCANNER_URL } from '@common/constants/resource.constant';
+import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
 import { makeQueryString } from '@common/utils/string-utils';
 import { Button, CopyIconButton, Text } from '@components/atoms';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -16,12 +18,16 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import theme, { fonts, getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
 
 interface DLProps {
   color?: string;
 }
+
+const storageDepositTooltipMessage = `The total amount of GNOT deposited or
+released for storage usage by this
+transaction.`;
 
 export const TransactionDetail = (): JSX.Element => {
   const [hasLogoError, setHasLogoError] = useState(false);
@@ -65,6 +71,28 @@ export const TransactionDetail = (): JSX.Element => {
 
     return `${transactionItem?.logo}`;
   }, [isLoadedLogo, hasLogoError, transactionItem?.type, transactionItem?.logo, tokenUriQuery]);
+
+  const storageDeposit = useMemo(() => {
+    if (!transactionItem?.storageDeposit) {
+      return {
+        amountValue: '0',
+        amountDenom: GNOT_TOKEN.denom,
+        isRefundable: false,
+        fontColor: theme.neutral._1,
+      };
+    }
+
+    const isRefundable = transactionItem.storageDeposit.value < 0;
+    const amountValue = Math.abs(transactionItem.storageDeposit.value);
+    const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
+
+    return {
+      amountValue,
+      amountDenom: transactionItem.storageDeposit.denom,
+      isRefundable,
+      fontColor,
+    };
+  }, [transactionItem?.storageDeposit]);
 
   const handleLoadLogo = (): void => {
     setIsLoadedLogo(true);
@@ -169,6 +197,22 @@ export const TransactionDetail = (): JSX.Element => {
           <dd>
             {formatHash(transactionItem.hash)}
             <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
+          </dd>
+        </DLWrap>
+        <DLWrap>
+          <dt>
+            {'Storage Deposit'}
+            <InfoTooltip content={storageDepositTooltipMessage} />
+          </dt>
+          <dd>
+            <TokenBalance
+              {...convertDenom(`${storageDeposit.amountValue}`, storageDeposit.amountDenom)}
+              minimumFontSize='12px'
+              fontStyleKey='body1Reg'
+              orientation='HORIZONTAL'
+              fontColor={storageDeposit.fontColor}
+              withSign={storageDeposit.isRefundable}
+            />
           </dd>
         </DLWrap>
         {transactionItem.networkFee && (
@@ -277,6 +321,8 @@ const DLWrap = styled.dl<DLProps>`
   }
   dt {
     color: ${getTheme('neutral', 'a')};
+    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    gap: 4px;
   }
   dd {
     display: flex;

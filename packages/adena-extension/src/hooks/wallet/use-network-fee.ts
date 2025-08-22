@@ -17,6 +17,12 @@ export interface UseNetworkFeeReturn {
   isSimulateError: boolean;
   currentGasInfo: GasInfo | null;
   currentGasFeeRawAmount: number;
+  currentStorageDeposits: {
+    storageDeposit: number;
+    unlockDeposit: number;
+    storageUsage: number;
+    releaseStorageUsage: number;
+  } | null;
   changedGasInfo: GasInfo | null;
   networkFee: NetworkFee | null;
   networkFeeSettingType: NetworkFeeSettingType;
@@ -108,6 +114,24 @@ export const useNetworkFee = (
     return current?.gasInfo || null;
   }, [gasPriceTiers, currentSettingType]);
 
+  const currentStorageDeposits = useMemo(() => {
+    if (!gasPriceTiers) {
+      return null;
+    }
+
+    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    if (!current?.storageDeposits) {
+      return {
+        storageDeposit: 0,
+        unlockDeposit: 0,
+        storageUsage: 0,
+        releaseStorageUsage: 0,
+      };
+    }
+
+    return current?.storageDeposits || null;
+  }, [gasPriceTiers, currentSettingType]);
+
   const isSimulateError = useMemo(() => {
     if (currentGasInfo?.hasError) {
       return true;
@@ -172,6 +196,7 @@ export const useNetworkFee = (
     isFetchedPriceTiers: isFetchedEstimateGasInfo && isFetchedPriceTiers,
     isSimulateError,
     currentGasInfo,
+    currentStorageDeposits,
     currentGasFeeRawAmount,
     changedGasInfo,
     networkFeeSettingType: changedSettingType,

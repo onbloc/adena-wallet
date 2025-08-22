@@ -5,7 +5,7 @@ import FailedIcon from '@assets/failed.svg';
 import SuccessIcon from '@assets/success.svg';
 import { TokenBalance } from '@components/molecules';
 import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TransactionHistoryListItemWrapper } from './transaction-history-list-item.styles';
 
 export interface TransactionHistoryListItemProps {
@@ -91,7 +91,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     setIsLoadedLogo(true);
   };
 
-  const getValueTypeClassName = useCallback(() => {
+  const getValueTypeClassName = useMemo(() => {
     if (valueType === 'ACTIVE') {
       return 'active';
     }
@@ -99,6 +99,10 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
       return 'blur';
     }
     return '';
+  }, [valueType]);
+
+  const withSignAmount = useMemo(() => {
+    return valueType === 'ACTIVE';
   }, [valueType]);
 
   return (
@@ -126,7 +130,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
         {description && <span className='description'>{description}</span>}
       </div>
 
-      <div className={`value-wrapper ${getValueTypeClassName()}`}>
+      <div className={`value-wrapper ${getValueTypeClassName}`}>
         {type === 'MULTI_CONTRACT_CALL' ? (
           <span className='value more'>More</span>
         ) : type === 'TRANSFER_GRC721' ? (
@@ -138,6 +142,7 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
             fontStyleKey='body2Reg'
             minimumFontSize='11px'
             orientation='HORIZONTAL'
+            withSign={withSignAmount}
           />
         )}
       </div>

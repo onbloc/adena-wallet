@@ -131,6 +131,7 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
   .fee-amount-wrapper {
     ${mixins.flex({ justify: 'flex-start' })};
     width: 100%;
+    gap: 8px;
     margin-bottom: 8px;
   }
 
