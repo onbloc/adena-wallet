@@ -16,6 +16,10 @@ export interface TransactionInfo {
   title: string;
   description?: string;
   extraInfo?: string;
+  storageDeposit?: {
+    value: number;
+    denom: string;
+  };
   amount: {
     value: string;
     denom: string;

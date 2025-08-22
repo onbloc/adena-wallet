@@ -136,6 +136,7 @@ export class TransactionHistoryMapper {
       type: 'MULTI_CONTRACT_CALL',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
       typeName: message.funcType,
+      storageDeposit: historyItem.storageDeposit,
       title: message.funcType,
       extraInfo: `+${historyItem.messageCount - 1}`,
       amount: {
@@ -186,6 +187,7 @@ export class TransactionHistoryMapper {
       logo: '',
       type: 'TRANSFER',
       typeName: functionName,
+      storageDeposit: historyItem.storageDeposit,
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
       title: functionName,
       description,
@@ -243,6 +245,7 @@ export class TransactionHistoryMapper {
       logo: '',
       type: transactionType,
       typeName: 'Contract Interaction',
+      storageDeposit: historyItem.storageDeposit,
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
       title: functionName,
       amount: {
@@ -279,6 +282,7 @@ export class TransactionHistoryMapper {
       type: 'ADD_PACKAGE',
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
       typeName: 'Add Package',
+      storageDeposit: historyItem.storageDeposit,
       title: 'AddPkg',
       amount: {
         value: `${historyItem.amountIn.value || '0'}`,
@@ -300,6 +304,7 @@ export class TransactionHistoryMapper {
       logo: '',
       type: 'CONTRACT_CALL',
       typeName: 'Contract Interaction',
+      storageDeposit: historyItem.storageDeposit,
       status: historyItem.successYn ? 'SUCCESS' : 'FAIL',
       title: historyItem.func[0].funcType,
       amount: {

@@ -1,7 +1,7 @@
+import { HighlightNumber } from '@components/atoms';
+import { FontsType } from '@styles/theme';
 import React from 'react';
 import { TokenBalanceWrapper } from './token-balance.styles';
-import { FontsType } from '@styles/theme';
-import { HighlightNumber } from '@components/atoms';
 
 export interface TokenBalanceProps {
   value: string;
@@ -12,6 +12,7 @@ export interface TokenBalanceProps {
   minimumFontSize?: string;
   lineHeight?: string;
   maxWidth?: number;
+  withSign?: boolean;
 }
 
 export const TokenBalance: React.FC<TokenBalanceProps> = ({
@@ -23,6 +24,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
   minimumFontSize = '14px',
   lineHeight,
   maxWidth,
+  withSign = false,
 }) => {
   return (
     <TokenBalanceWrapper
@@ -39,6 +41,7 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
         fontStyleKey={fontStyleKey}
         minimumFontSize={minimumFontSize}
         lineHeight={lineHeight}
+        withSign={withSign}
       />
       <div className='denom-wrapper'>
         <span className='denom'>{denom}</span>

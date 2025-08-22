@@ -9,6 +9,7 @@ export interface HighlightNumberProps {
   fontStyleKey?: FontsType;
   minimumFontSize?: string;
   lineHeight?: string;
+  withSign?: boolean;
 }
 
 export const HighlightNumber: React.FC<HighlightNumberProps> = ({
@@ -17,12 +18,18 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   fontStyleKey = 'header6',
   minimumFontSize = '14px',
   lineHeight,
+  withSign = false,
 }) => {
   const hasDecimal = value.includes('.');
   const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];
 
   const integerStr = useMemo(() => {
-    return BigNumber(integer.replace(/,/g, '')).toFormat(0);
+    const formattedValue = BigNumber(integer.replace(/,/g, '')).toFormat(0);
+    if (withSign) {
+      return `+${formattedValue}`;
+    }
+
+    return formattedValue;
   }, [integer]);
 
   return (

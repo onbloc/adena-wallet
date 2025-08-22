@@ -1,15 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
-import IconHelp from '@assets/icon-help';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import { TokenBalance } from '@components/molecules';
 import theme from '@styles/theme';
 import BigNumber from 'bignumber.js';
 import {
   StorageDepositContainer,
-  StorageDepositIconWrapper,
   StorageDepositItemSkeletonBox,
-  StorageDepositTooltipBoxWrapper,
   StorageDepositWrapper,
 } from './storage-deposit.styles';
 
@@ -33,8 +31,6 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isError,
   errorMessage,
 }) => {
-  const [isHelpTooltipOpen, setIsHelpTooltipOpen] = useState(false);
-
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
   }, [storageDeposit.storageDeposit, storageDeposit.unlockDeposit]);
@@ -77,17 +73,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
         <span className='key'>
           {'Storage Deposit'}
 
-          <StorageDepositIconWrapper
-            onMouseOver={(): void => setIsHelpTooltipOpen(true)}
-            onMouseLeave={(): void => setIsHelpTooltipOpen(false)}
-          >
-            <IconHelp />
-            {isHelpTooltipOpen && (
-              <StorageDepositTooltipBoxWrapper>
-                {storageDepositTooltipMessage}
-              </StorageDepositTooltipBoxWrapper>
-            )}
-          </StorageDepositIconWrapper>
+          <InfoTooltip content={storageDepositTooltipMessage} />
         </span>
 
         <div className='storage-deposit-amount-wrapper'>
@@ -141,6 +127,7 @@ const StorageDepositAmount: React.FC<{
       fontStyleKey='body2Reg'
       minimumFontSize='11px'
       orientation='HORIZONTAL'
+      withSign={isRefundable}
     />
   );
 };

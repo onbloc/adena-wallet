@@ -20,6 +20,10 @@ export interface TransactionHistoryItem {
     denom: string;
     value: string;
   };
+  storageDeposit?: {
+    denom: string;
+    value: number;
+  };
   func: [
     {
       funcType: string;

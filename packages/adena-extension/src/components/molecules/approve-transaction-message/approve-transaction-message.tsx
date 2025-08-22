@@ -10,13 +10,25 @@ import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
 
 import IconLink from '@assets/icon-link';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
   MessageRowWrapper,
   RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
-import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
+
+const sendTooltipMessage = `The amount of tokens directly sent to
+the realm or account. Double-check the
+amount and token symbol before
+sending, as it is irreversible once sent.`;
+
+const maxDepositTooltipMessage = `The maximum GNOT deposited for
+storage usage. You can leave this field
+empty as the network will automatically
+determine the actual amount required
+for storage.`;
 
 const isMsgCall = (type: string): boolean => type === EMessageType.VM_CALL;
 const isMsgAddPkg = (type: string): boolean => type === EMessageType.VM_ADDPKG;
@@ -258,7 +270,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             </span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>send</span>
+            <span className='key'>
+              send
+              <InfoTooltip content={sendTooltipMessage} />
+            </span>
             <ArgumentEditBox
               value={sendAmount}
               onChange={(value): void => changeSendAmount(value)}
@@ -276,7 +291,10 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             </div>
           ))}
           <div className='message-row argument'>
-            <span className='key'>max_deposit</span>
+            <span className='key'>
+              max_deposit
+              <InfoTooltip content={maxDepositTooltipMessage} />
+            </span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
@@ -311,7 +329,10 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <span className='value'>{functionName}</span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>max_deposit</span>
+            <span className='key'>
+              max_deposit
+              <InfoTooltip content={maxDepositTooltipMessage} />
+            </span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
@@ -346,7 +367,10 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <span className='value'>{functionName}</span>
           </div>
           <div className='message-row argument'>
-            <span className='key'>max_deposit</span>
+            <span className='key'>
+              max_deposit
+              <InfoTooltip content={maxDepositTooltipMessage} />
+            </span>
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
