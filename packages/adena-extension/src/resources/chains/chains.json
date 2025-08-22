@@ -11,7 +11,7 @@
     "rpcUrl": "https://rpc.test7.testnets.gno.land:443",
     "indexerUrl": "https://test7.indexer.onbloc.xyz",
     "gnoUrl": "https://test7.testnets.gno.land",
-    "apiUrl": "https://test7.api.onbloc.xyz",
+    "apiUrl": "https://dev-test7.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
@@ -26,7 +26,7 @@
     "rpcUrl": "https://rpc.gno.land:443",
     "indexerUrl": "https://indexer.onbloc.xyz",
     "gnoUrl": "https://gno.land",
-    "apiUrl": "https://staging.api.onbloc.xyz",
+    "apiUrl": "https://dev-staging.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
