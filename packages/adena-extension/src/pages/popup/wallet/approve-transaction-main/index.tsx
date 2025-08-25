@@ -153,6 +153,25 @@ const ApproveTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
+  const maxDepositAmount = useMemo(() => {
+    const accumulatedAmount = document?.msgs.reduce((acc, msg): number => {
+      const messageValue = msg.value;
+      const amountStr = messageValue?.max_deposit;
+      if (!amountStr) {
+        return acc;
+      }
+
+      try {
+        const amount = parseTokenAmount(amountStr);
+        return BigNumber(acc).plus(amount).toNumber();
+      } catch {
+        return acc;
+      }
+    }, 0);
+
+    return accumulatedAmount;
+  }, [document]);
+
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
       const messageValue = msg.value;
@@ -506,6 +525,7 @@ const ApproveTransactionContainer: React.FC = () => {
       done={done}
       logo={favicon}
       currentBalance={currentBalance}
+      maxDepositAmount={maxDepositAmount}
       isErrorNetworkFee={isErrorNetworkFee || !networkFee}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
