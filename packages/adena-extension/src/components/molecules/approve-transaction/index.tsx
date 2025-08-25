@@ -41,6 +41,7 @@ export interface ApproveTransactionProps {
   processing: boolean;
   done: boolean;
   transactionMessages: ContractMessage[];
+  maxDepositAmount?: number;
   changeTransactionMessages: (messages: ContractMessage[]) => void;
   changeMemo: (memo: string) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
@@ -69,6 +70,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   done,
   useNetworkFeeReturn,
   argumentInfos,
+  maxDepositAmount,
   changeTransactionMessages,
   changeMemo,
   onToggleTransactionData,
@@ -95,6 +97,22 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     useNetworkFeeReturn.isSimulateError,
     networkFee,
   ]);
+
+  const isMaxDepositError = useMemo(() => {
+    if (!maxDepositAmount || currentBalance === undefined) {
+      return false;
+    }
+
+    return currentBalance < maxDepositAmount;
+  }, [currentBalance, maxDepositAmount]);
+
+  const maxDepositErrorMessage = useMemo(() => {
+    if (isMaxDepositError) {
+      return 'Insufficient balance';
+    }
+
+    return '';
+  }, [currentBalance, maxDepositAmount]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isSimulateError) {
@@ -214,8 +232,8 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
             unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
           }}
           isLoading={useNetworkFeeReturn.isLoading}
-          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
-          errorMessage={networkFeeErrorMessage}
+          isError={useNetworkFeeReturn.isSimulateError || isMaxDepositError}
+          errorMessage={maxDepositErrorMessage}
         />
 
         <NetworkFee
