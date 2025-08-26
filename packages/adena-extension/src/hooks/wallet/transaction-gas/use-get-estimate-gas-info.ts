@@ -1,13 +1,16 @@
+import { Tx } from '@gnolang/tm2-js-client';
+import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { Account, Document, documentToDefaultTx, Wallet } from 'adena-module';
+import BigNumber from 'bignumber.js';
+
 import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { Tx } from '@gnolang/tm2-js-client';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { TransactionService } from '@services/index';
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { GasInfo } from '@types';
-import { Document, documentToDefaultTx, Wallet } from 'adena-module';
-import BigNumber from 'bignumber.js';
+
 import { useGetGasPrice } from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
@@ -54,6 +57,7 @@ export const useGetDefaultEstimateGasInfo = (
 
 export const makeEstimateGasTransaction = async (
   wallet: Wallet | null,
+  account: Account | null,
   transactionService: TransactionService | null,
   document: Document | null | undefined,
   gasUsed: number,
@@ -65,7 +69,7 @@ export const makeEstimateGasTransaction = async (
   }
 
   const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
-  if (!transactionService || !gasFee || !gasWanted || !wallet) {
+  if (!transactionService || !gasFee || !gasWanted || !wallet || !account) {
     return null;
   }
 
@@ -75,7 +79,7 @@ export const makeEstimateGasTransaction = async (
   }
 
   const { signed } = await transactionService
-    .createTransaction(wallet, modifiedDocument)
+    .createTransaction(wallet, account, modifiedDocument)
     .catch(() => {
       return {
         signed: null,
@@ -93,6 +97,7 @@ export const useGetEstimateGasInfo = (
   gasUsed: number,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { data: gasPrice } = useGetGasPrice();
   const { wallet } = useWalletContext();
   const { transactionService, transactionGasService } = useAdenaContext();
@@ -104,6 +109,7 @@ export const useGetEstimateGasInfo = (
 
     return makeEstimateGasTransaction(
       wallet,
+      currentAccount,
       transactionService,
       document,
       gasUsed,
@@ -114,10 +120,14 @@ export const useGetEstimateGasInfo = (
 
   return useQuery<GasInfo | null, Error>({
     queryKey: [
+      currentAccount?.id,
+      currentAddress,
       GET_ESTIMATE_GAS_INFO_KEY,
       transactionGasService,
       document?.msgs || '',
       document?.memo || '',
+      document?.account_number,
+      document?.sequence,
       gasUsed,
       gasPrice || 0,
     ],

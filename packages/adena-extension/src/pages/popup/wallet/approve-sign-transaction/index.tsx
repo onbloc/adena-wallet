@@ -282,7 +282,11 @@ const ApproveSignTransactionContainer: React.FC = () => {
 
     try {
       setProcessType('PROCESSING');
-      const { signed } = await transactionService.createTransaction(wallet, document);
+      const { signed } = await transactionService.createTransaction(
+        wallet,
+        currentAccount,
+        document,
+      );
       const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(
         InjectionMessageInstance.success(

@@ -126,7 +126,11 @@ const NFTTransferSummaryContainer: React.FC = () => {
     const walletInstance = wallet.clone();
     walletInstance.currentAccountId = currentAccount.id;
 
-    const { signed } = await transactionService.createTransaction(walletInstance, document);
+    const { signed } = await transactionService.createTransaction(
+      walletInstance,
+      currentAccount,
+      document,
+    );
 
     return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
       console.error(e);
