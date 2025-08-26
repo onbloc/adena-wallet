@@ -107,12 +107,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [currentBalance, maxDepositAmount]);
 
   const maxDepositErrorMessage = useMemo(() => {
+    if (useNetworkFeeReturn.isLoading) {
+      return '';
+    }
+
     if (isMaxDepositError) {
       return 'Insufficient balance';
     }
 
     return '';
-  }, [currentBalance, maxDepositAmount]);
+  }, [useNetworkFeeReturn.isLoading, isMaxDepositError]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isSimulateError) {

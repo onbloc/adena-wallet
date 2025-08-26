@@ -13,6 +13,7 @@ export const StorageDepositContainer = styled.div`
     padding: 0 16px;
     ${fonts.captionReg};
     color: ${getTheme('red', '_5')};
+    word-break: break-all;
   }
 `;
 
