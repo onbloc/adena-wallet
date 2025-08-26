@@ -40,16 +40,8 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
       return false;
     }
 
-    return isError || !!errorMessage;
-  }, [isLoading, isError, errorMessage]);
-
-  const displayErrorMessage = useMemo(() => {
-    if (!hasError || isEmptyValue) {
-      return '';
-    }
-
-    return errorMessage;
-  }, [hasError, isEmptyValue, errorMessage]);
+    return isError;
+  }, [isLoading, isError]);
 
   const depositAmount = useMemo(() => {
     if (isEmptyValue) {
@@ -69,7 +61,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
 
   return (
     <StorageDepositContainer>
-      <StorageDepositWrapper error={hasError && !isEmptyValue ? 1 : 0}>
+      <StorageDepositWrapper error={hasError ? 1 : 0}>
         <span className='key'>
           {'Storage Deposit'}
 
@@ -85,7 +77,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
         </div>
       </StorageDepositWrapper>
 
-      {displayErrorMessage && <span className='error-message'>{displayErrorMessage}</span>}
+      {errorMessage && <span className='error-message'>{errorMessage}</span>}
     </StorageDepositContainer>
   );
 };
