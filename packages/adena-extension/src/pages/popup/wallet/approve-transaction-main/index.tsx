@@ -351,7 +351,11 @@ const ApproveTransactionContainer: React.FC = () => {
       const walletInstance = wallet.clone();
       walletInstance.currentAccountId = currentAccount.id;
 
-      const { signed } = await transactionService.createTransaction(walletInstance, document);
+      const { signed } = await transactionService.createTransaction(
+        walletInstance,
+        currentAccount,
+        document,
+      );
 
       const hash = transactionService.createHash(signed);
 

@@ -125,10 +125,11 @@ export class TransactionService {
    */
   public createTransaction = async (
     wallet: Wallet,
+    account: Account,
     document: Document,
   ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
     const provider = this.getGnoProvider();
-    const { signed, signature } = await wallet.sign(provider, document);
+    const { signed, signature } = await wallet.signByAccountId(provider, account.id, document);
     const encodedSignature = signature.map((s) => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,

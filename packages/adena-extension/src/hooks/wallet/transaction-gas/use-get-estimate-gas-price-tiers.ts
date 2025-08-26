@@ -28,7 +28,7 @@ export const useGetEstimateGasPriceTiers = (
   gasAdjustment: string,
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
-  const { currentAddress } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { transactionGasService, transactionService } = useAdenaContext();
   const { data: gasPrice } = useGetGasPrice();
   const { wallet } = useWalletContext();
@@ -36,10 +36,14 @@ export const useGetEstimateGasPriceTiers = (
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [
+      wallet,
+      currentAccount?.id,
       GET_ESTIMATE_GAS_PRICE_TIERS,
       transactionGasService,
       document?.msgs,
       document?.memo,
+      document?.account_number,
+      document?.sequence,
       gasUsed,
       gasAdjustment,
       gasPrice || 0,
@@ -71,6 +75,7 @@ export const useGetEstimateGasPriceTiers = (
 
           const tx = await makeEstimateGasTransaction(
             wallet,
+            currentAccount,
             transactionService,
             document,
             Number(adjustGasUsed),
