@@ -1,15 +1,8 @@
 import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 
+import { Any, MemFile, MemPackage, MsgAddPackage, MsgCall, MsgRun } from '@gnolang/gno-js-client';
 import { fromBase64 } from '../encoding';
-import {
-  MemFile,
-  MemPackage,
-  MsgAddPackage,
-  MsgCall,
-  MsgRun,
-} from '../libs/gno-js-client/proto/gno/vm';
-import { Any } from '../libs/gno-js-client/proto/google/protobuf/any';
 
 export interface Document {
   chain_id: string;
