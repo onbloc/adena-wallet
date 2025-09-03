@@ -1,6 +1,6 @@
 import { DEFAULT_GAS_PRICE_RATE } from '@common/constants/gas.constant';
 import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { parseStorageDeposits } from '@common/provider/gno/utils';
+import { parseStorageDeposits } from '@common/provider/gno/event-parser';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
