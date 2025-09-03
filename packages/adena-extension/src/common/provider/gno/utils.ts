@@ -1,8 +1,8 @@
+import { StorageDepositEvent, StorageUnlockEvent } from '@adena-wallet/sdk';
 import { BinaryReader } from '@bufbuild/protobuf/wire';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import { ABCIResponse, Any, RPCRequest, RPCResponse } from '@gnolang/tm2-js-client';
-import { GnoEvent } from 'adena-module';
-import { StorageDepositAttributeKey, StorageDepositEventType } from './types';
+import { StorageDepositEventType } from './types';
 
 const HTTP_PROTOCOL = 'http';
 const HTTPS_PROTOCOL = 'https';
@@ -129,50 +129,29 @@ const parseStorageDeposit = (
   storageUsage: number;
   releaseStorageUsage: number;
 } => {
-  const decodedEvent = parseProto(event.value, GnoEvent.decode);
-  const attributes = decodedEvent.attributes;
-
-  switch (decodedEvent.type) {
+  switch (event.type_url) {
     case StorageDepositEventType.StorageDeposit: {
-      const depositAttribute = attributes.find(
-        (attribute) => attribute.key === StorageDepositAttributeKey.Deposit,
-      );
-      const storageUsageAttribute = attributes.find(
-        (attribute) => attribute.key === StorageDepositAttributeKey.Storage,
-      );
-      if (!depositAttribute || !storageUsageAttribute) {
-        break;
-      }
-
-      const storageDeposit = parseTokenAmount(depositAttribute.value);
-      const storageUsage = parseStorageUsage(storageUsageAttribute.value);
+      const decodedEvent = parseProto(event.value, StorageDepositEvent.decode);
+      const bytesDelta = decodedEvent.bytes_delta.toInt();
+      const feeDelta = decodedEvent.fee_delta ? parseTokenAmount(decodedEvent.fee_delta) : 0;
 
       return {
-        storageDeposit,
-        storageUsage,
+        storageDeposit: Math.abs(feeDelta),
+        storageUsage: Math.abs(bytesDelta),
         unlockDeposit: 0,
         releaseStorageUsage: 0,
       };
     }
     case StorageDepositEventType.UnlockDeposit: {
-      const unlockDepositAttribute = attributes.find(
-        (attribute) => attribute.key === StorageDepositAttributeKey.Deposit,
-      );
-      const releaseStorageUsageAttribute = attributes.find(
-        (attribute) => attribute.key === StorageDepositAttributeKey.ReleaseStorage,
-      );
-      if (!unlockDepositAttribute || !releaseStorageUsageAttribute) {
-        break;
-      }
-
-      const unlockDeposit = parseTokenAmount(unlockDepositAttribute.value);
-      const releaseStorageUsage = parseStorageUsage(releaseStorageUsageAttribute.value);
+      const decodedEvent = parseProto(event.value, StorageUnlockEvent.decode);
+      const bytesDelta = decodedEvent.bytes_delta.toInt();
+      const feeDelta = decodedEvent.fee_refund ? parseTokenAmount(decodedEvent.fee_refund) : 0;
 
       return {
         storageDeposit: 0,
         storageUsage: 0,
-        unlockDeposit,
-        releaseStorageUsage,
+        unlockDeposit: Math.abs(bytesDelta),
+        releaseStorageUsage: Math.abs(feeDelta),
       };
     }
     default:
@@ -185,13 +164,4 @@ const parseStorageDeposit = (
     storageUsage: 0,
     releaseStorageUsage: 0,
   };
-};
-
-const parseStorageUsage = (usage: string): number => {
-  const splits = usage.split(' ');
-  if (splits.length !== 2) {
-    return 0;
-  }
-
-  return parseInt(splits[0], 10);
 };
