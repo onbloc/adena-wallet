@@ -10,9 +10,12 @@ import {
   Any,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  CommonEndpoint,
   newRequest,
   parseABCI,
+  RestService,
   RPCResponse,
+  Status,
   stringToBase64,
   TransactionEndpoint,
   Tx,
@@ -35,6 +38,12 @@ export class GnoProvider extends GnoJSONRPCProvider {
   constructor(baseURL: string, chainId?: string) {
     super(baseURL);
     this.chainId = chainId;
+  }
+
+  public async getStatus(): Promise<Status> {
+    return await RestService.post<Status>(this.baseURL, {
+      request: newRequest(CommonEndpoint.STATUS, ['0']),
+    });
   }
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
