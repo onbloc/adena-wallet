@@ -20,7 +20,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
-import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -38,13 +38,13 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
-    return this.getAccount(address, height)
+    return this.getAccountInfo(address, height)
       .then((account) => Number(account?.accountNumber ?? 0))
       .catch(() => 0);
   }
 
   public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
-    return this.getAccount(address, height)
+    return this.getAccountInfo(address, height)
       .then((account) => Number(account?.sequence ?? 0))
       .catch(() => 0);
   }
@@ -78,7 +78,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return priceAmount / gasPrice.gas;
   }
 
-  public async getAccount(
+  public async getAccountInfo(
     address: string,
     height?: number | undefined,
   ): Promise<AccountInfo | null> {
@@ -91,33 +91,18 @@ export class GnoProvider extends GnoJSONRPCProvider {
       accountNumber: '0',
       sequence: '0',
     };
-    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
-      `auth/accounts/${address}`,
-      '',
-      `${height ?? 0}`,
-      false,
-    ]);
-
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
-
-    const abciData = abciResponse?.result?.response.ResponseBase.Data;
-    // Make sure the response is initialized
-    if (!abciData) {
-      return defaultAccount;
-    }
 
     try {
-      // Parse the account
-      const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
+      const account = await this.getAccount(address, height)
       const {
-        address,
+        address: accAddr,
         coins,
         sequence,
         account_number: accountNumber,
         public_key: publicKey,
       } = account.BaseAccount;
       return {
-        address,
+        address: accAddr,
         coins,
         chainId: this.chainId ?? '',
         status: 'ACTIVE',
@@ -128,10 +113,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
     } catch (e) {
       console.info(e);
     }
-    return {
-      ...defaultAccount,
-      address,
-    };
+
+    return {...defaultAccount, address};
   }
 
   public getValueByEvaluateExpression(

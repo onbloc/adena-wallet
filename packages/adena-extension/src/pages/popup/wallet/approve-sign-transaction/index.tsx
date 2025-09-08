@@ -324,10 +324,6 @@ const ApproveSignTransactionContainer: React.FC = () => {
         wallet,
         currentAccount,
         document,
-        requestData?.data?.multisig && {
-          accountNumber: requestData.data.accountNumber,
-          sequence: requestData.data.sequence,
-        },
       );
       const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(

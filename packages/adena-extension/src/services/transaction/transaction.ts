@@ -1,15 +1,8 @@
 import {
-  BlockInfo,
-  BlockResult,
-  BroadcastTransactionMap,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  ConsensusParams,
   defaultAddressPrefix,
-  NetworkInfo,
-  Status,
   Tx,
-  TxResult,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
@@ -27,9 +20,6 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
-import { AccountInfo, GnoDocumentInfo } from '@common/provider/gno';
-import { FunctionSignature } from '@gnolang/gno-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 
 interface EncodeTxSignature {
   pubKey: {
@@ -82,7 +72,7 @@ export class TransactionService {
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
-    const accountInfo = await provider.getAccount(address).catch(() => null);
+    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
     const accountNumber = accountInfo?.accountNumber ?? 0;
     const accountSequence = accountInfo?.sequence ?? 0;
     return {
@@ -112,12 +102,8 @@ export class TransactionService {
   public createSignature = async (
     account: Account,
     document: Document,
-    multisig?: {accountNumber: number, sequence: number},
   ): Promise<EncodeTxSignature> => {
-    let provider = this.getGnoProvider();
-    if (multisig) {
-      provider = new MultisigProvider(provider, multisig.accountNumber, multisig.sequence)
-    }
+    const provider = this.getGnoProvider();
     const wallet = await this.walletService.loadWallet();
     const { signature } = await wallet.signByAccountId(provider, account.id, document);
     const signatures = signature.map((s) => ({
@@ -141,12 +127,8 @@ export class TransactionService {
     wallet: Wallet,
     account: Account,
     document: Document,
-    multisig?: {accountNumber: number, sequence: number},
   ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
-    let provider = this.getGnoProvider();
-    if (multisig) {
-      provider = new MultisigProvider(provider, multisig.accountNumber, multisig.sequence)
-    }
+    const provider = this.getGnoProvider();
     const { signed, signature } = await wallet.signByAccountId(provider, account.id, document);
     const encodedSignature = signature.map((s) => ({
       pubKey: {
@@ -252,89 +234,5 @@ export class TransactionService {
    */
   public encodeTransaction(transaction: Tx): string {
     return uint8ArrayToBase64(Tx.encode(transaction).finish());
-  }
-}
-
-class MultisigProvider implements GnoProvider {
-  prov: GnoProvider
-  accountNumber: number
-  sequence: number
-  constructor(prov: GnoProvider, accountNumber: number, sequence: number) {
-    this.prov = prov
-    this.accountNumber = accountNumber
-    this.sequence = sequence
-  }
-  public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
-    return this.accountNumber
-  }
-  public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
-    return this.sequence
-  }
-  public getGasPrice(height?: number | undefined): Promise<number> {
-    return this.prov.getGasPrice(height)
-  }
-  public getAccount(address: string, height?: number | undefined): Promise<AccountInfo | null> {
-    return this.prov.getAccount(address, height)
-  }
-  public getValueByEvaluateExpression(packagePath: string, functionName: string, params: (string | number)[]): Promise<string | null> {
-   return  this.prov.getValueByEvaluateExpression(packagePath, functionName, params)
-  }
-  public sendTransactionSync(tx: string): Promise<BroadcastTxSyncResult> {
-    return this.prov.sendTransactionSync(tx)
-  }
-  public sendTransactionCommit(tx: string): Promise<BroadcastTxCommitResult> {
-    return this.prov.sendTransactionCommit(tx)
-  }
-  simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
-    return this.prov.simulateTx(tx)
-  }
-  public getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
-    return this.prov.getRealmDocument(packagePath)
-  }
-  evaluateExpression(packagePath: string, expression: string, height?: number): Promise<string> {
-    return this.prov.evaluateExpression(packagePath, expression, height)
-  }
-  getFileContent(packagePath: string, height?: number): Promise<string> {
-    return this.prov.getFileContent(packagePath, height)
-  }
-  getFunctionSignatures(packagePath: string, height?: number): Promise<FunctionSignature[]> {
-    return this.prov.getFunctionSignatures(packagePath, height)
-  }
-  getRenderOutput(packagePath: string, path: string, height?: number): Promise<string> {
-    throw new Error('Method not implemented.');
-  }
-  protected baseURL: string;
-  estimateGas(tx: Tx): Promise<number> {
-    throw new Error('Method not implemented.');
-  }
-  getBalance(address: string, denomination?: string, height?: number): Promise<number> {
-    throw new Error('Method not implemented.');
-  }
-  getBlock(height: number): Promise<BlockInfo> {
-    throw new Error('Method not implemented.');
-  }
-  getBlockResult(height: number): Promise<BlockResult> {
-    throw new Error('Method not implemented.');
-  }
-  getBlockNumber(): Promise<number> {
-    throw new Error('Method not implemented.');
-  }
-  getConsensusParams(height: number): Promise<ConsensusParams> {
-    throw new Error('Method not implemented.');
-  }
-  getNetwork(): Promise<NetworkInfo> {
-    return this.prov.getNetwork()
-  }
-  getStatus(): Promise<Status> {
-    return this.prov.getStatus()
-  }
-  getTransaction(hash: string): Promise<TxResult> {
-    throw new Error('Method not implemented.');
-  }
-  sendTransaction<K extends keyof BroadcastTransactionMap>(tx: string, endpoint: K): Promise<BroadcastTransactionMap[K]['result']> {
-    throw new Error('Method not implemented.');
-  }
-  waitForTransaction(hash: string, fromHeight?: number, timeout?: number): Promise<Tx> {
-    throw new Error('Method not implemented.');
   }
 }

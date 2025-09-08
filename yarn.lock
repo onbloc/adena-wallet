@@ -2159,6 +2159,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@gnolang/gno-js-client@npm:1.4.4":
+  version: 1.4.4
+  resolution: "@gnolang/gno-js-client@npm:1.4.4"
+  dependencies:
+    "@cosmjs/ledger-amino": ^0.36.0
+    "@gnolang/tm2-js-client": ^1.3.3
+    long: ^5.3.2
+    protobufjs: ^7.5.3
+  checksum: 764d52c92aceb8a4eb2ae28f834905480837b64a6b26495dec6b38138fd11aac816b8a1d66e3cab686818c7ced62c878c3e6df1a85befc4816c1d9736e545127
+  languageName: node
+  linkType: hard
+
 "@gnolang/tm2-js-client@npm:1.3.1, @gnolang/tm2-js-client@npm:^1.3.1":
   version: 1.3.1
   resolution: "@gnolang/tm2-js-client@npm:1.3.1"
@@ -2173,6 +2185,23 @@ __metadata:
     uuid: ^11.1.0
     ws: ^8.18.0
   checksum: 037e44b0cfbfa08d9d251bac18a0d288f93393876155fcf2880d40e571eb392fd8202b7b23d03dd1acd15ddbe4a304826dafb5eb4a7b9f66da3d696271732474
+  languageName: node
+  linkType: hard
+
+"@gnolang/tm2-js-client@npm:1.3.3, @gnolang/tm2-js-client@npm:^1.3.3":
+  version: 1.3.3
+  resolution: "@gnolang/tm2-js-client@npm:1.3.3"
+  dependencies:
+    "@cosmjs/amino": ^0.36.0
+    "@cosmjs/crypto": ^0.36.0
+    "@cosmjs/ledger-amino": ^0.36.0
+    "@types/uuid": ^10.0.0
+    axios: ^1.11.0
+    long: ^5.3.2
+    protobufjs: ^7.5.3
+    uuid: ^11.1.0
+    ws: ^8.18.0
+  checksum: 4a7ac6e4d560f30b1a49dc35e438266f6440f86808941c18723bc0163ab9d3ecde5e9a141874d620c3c0818d766a19c4abf35870bf1e171e681992aa48edf163
   languageName: node
   linkType: hard
 
@@ -6056,8 +6085,8 @@ __metadata:
     "@babel/preset-react": 7.23.3
     "@babel/preset-typescript": 7.23.3
     "@bufbuild/protobuf": 2.2.3
-    "@gnolang/gno-js-client": 1.4.2
-    "@gnolang/tm2-js-client": 1.3.1
+    "@gnolang/gno-js-client": 1.4.4
+    "@gnolang/tm2-js-client": 1.3.3
     "@jest/globals": 29.7.0
     "@storybook/addon-essentials": 8.5.8
     "@storybook/addon-interactions": 8.5.8
@@ -6140,8 +6169,8 @@ __metadata:
     "@babel/preset-flow": 7.23.3
     "@babel/preset-typescript": 7.23.3
     "@cosmjs/ledger-amino": 0.36.0
-    "@gnolang/gno-js-client": 1.4.2
-    "@gnolang/tm2-js-client": 1.3.1
+    "@gnolang/gno-js-client": 1.4.4
+    "@gnolang/tm2-js-client": 1.3.3
     "@ledgerhq/hw-transport": 6.31.4
     "@ledgerhq/hw-transport-mocker": 6.29.4
     "@ledgerhq/hw-transport-webhid": 6.30.0

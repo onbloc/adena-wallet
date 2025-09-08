@@ -1,4 +1,4 @@
-import { Tx, Wallet as Tm2Wallet } from '@gnolang/tm2-js-client';
+import { Tx, Wallet as Tm2Wallet, SignTransactionOptions } from '@gnolang/tm2-js-client';
 
 import { decodeTxMessages, Document, documentToTx } from './../../utils/messages';
 import { AddressKeyring } from './address-keyring';
@@ -51,5 +51,13 @@ export function makeSignedTx(wallet: Tm2Wallet, document: Document): Promise<Tx>
   const tx = documentToTx(document);
   const decodeTxMessageFunction = decodeTxMessages;
 
-  return wallet.signTransaction(tx, decodeTxMessageFunction);
+  const opts: SignTransactionOptions = {}
+  if (document.account_number) {
+    opts.accountNumber = document.account_number
+  }
+  if (document.sequence) {
+    opts.sequence = document.sequence
+  }
+
+  return wallet.signTransaction(tx, decodeTxMessageFunction, opts);
 }

@@ -321,10 +321,6 @@ const ApproveSignContainer: React.FC = () => {
       const signature = await transactionService.createSignature(
         currentAccount,
         document,
-        requestData?.data?.multisig && {
-          accountNumber: requestData.data.accountNumber,
-          sequence: requestData.data.sequence,
-        },
       );
       const addr = await currentAccount?.getAddress('g')
       setProcessType('PROCESSING');

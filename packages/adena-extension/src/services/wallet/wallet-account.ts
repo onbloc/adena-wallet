@@ -55,7 +55,7 @@ export class WalletAccountService {
     gnoProvider: GnoProvider,
   ): Promise<AccountInfo> => {
     try {
-      const account = await gnoProvider.getAccount(address);
+      const account = await gnoProvider.getAccountInfo(address);
       if (account) {
         return account;
       }
