@@ -78,7 +78,21 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const { openScannerLink } = useLink();
   const { data: currentBalance = null } = useGetGnotBalance();
 
-  const useNetworkFeeReturn = useNetworkFee(document, true);
+  let useNetworkFeeReturn = useNetworkFee(document, true);
+
+  if (requestData?.data?.multisig) {
+    useNetworkFeeReturn = {
+      ...useNetworkFeeReturn,
+      networkFee: {
+        amount: requestData.data.gasFee.toString(),
+        denom: GasToken.denom,
+      },
+      isLoading: false,
+      isSimulateError: false,
+      currentGasFeeRawAmount: requestData.data.gasFee,
+    }
+  }
+
   const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
@@ -187,6 +201,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
       await currentAccount.getAddress(defaultAddressPrefix),
+      requestData.data?.multisig,
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -247,22 +262,45 @@ const ApproveSignTransactionContainer: React.FC = () => {
     }
 
     const currentMemo = memo;
-    const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
-    const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
-    const updatedDocument: Document = {
-      ...document,
-      memo: currentMemo,
-      fee: {
-        amount: [
-          {
-            amount: currentGasPrice.toString(),
-            denom: GasToken.denom,
-          },
-        ],
-        gas: currentGasWanted.toString(),
-      },
-    };
+    let updatedDocument: Document
+    if (requestData?.data?.multisig) {
+      const currentGasPrice = requestData.data.gasFee
+      const currentGasWanted = requestData.data.gasWanted
+
+      updatedDocument = {
+        ...document,
+        memo: currentMemo,
+        account_number: requestData.data.accountNumber.toString(),
+        sequence: requestData.data.sequence.toString(),
+        fee: {
+          amount: [
+            {
+              amount: currentGasPrice.toString(),
+              denom: GasToken.denom,
+            },
+          ],
+          gas: currentGasWanted.toString(),
+        },
+      };
+    } else {
+      const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
+      const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
+
+      updatedDocument = {
+        ...document,
+        memo: currentMemo,
+        fee: {
+          amount: [
+            {
+              amount: currentGasPrice.toString(),
+              denom: GasToken.denom,
+            },
+          ],
+          gas: currentGasWanted.toString(),
+        },
+      };
+    }
 
     setDocument(updatedDocument);
     setTransactionData(mappedTransactionData(updatedDocument));
@@ -286,6 +324,10 @@ const ApproveSignTransactionContainer: React.FC = () => {
         wallet,
         currentAccount,
         document,
+        requestData?.data?.multisig && {
+          accountNumber: requestData.data.accountNumber,
+          sequence: requestData.data.sequence,
+        },
       );
       const encodedTransaction = transactionService.encodeTransaction(signed);
       setResponse(
@@ -406,6 +448,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
+      multisig={requestData?.data?.multisig}
     />
   );
 };

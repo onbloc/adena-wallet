@@ -51,6 +51,7 @@ export interface ApproveTransactionProps {
   onClickConfirm: () => void;
   onClickCancel: () => void;
   useNetworkFeeReturn: UseNetworkFeeReturn;
+  multisig?: boolean;
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -78,10 +79,15 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onClickConfirm,
   onClickCancel,
   openScannerLink,
+  multisig,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
+    if (multisig) {
+      return false
+    }
+
     if (useNetworkFeeReturn.isLoading) {
       return true;
     }

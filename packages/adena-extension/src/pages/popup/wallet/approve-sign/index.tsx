@@ -78,8 +78,22 @@ const ApproveSignContainer: React.FC = () => {
 
   const { data: currentBalance = null } = useGetGnotBalance();
 
-  const useNetworkFeeReturn = useNetworkFee(document, true);
-  const networkFee = useNetworkFeeReturn.networkFee;
+  let useNetworkFeeReturn = useNetworkFee(document, true); // XXX: prevent useless network calls
+
+  if (requestData?.data?.multisig) {
+    useNetworkFeeReturn = {
+      ...useNetworkFeeReturn,
+      networkFee: {
+        amount: requestData.data.gasFee.toString(),
+        denom: GasToken.denom,
+      },
+      isLoading: false,
+      isSimulateError: false,
+      currentGasFeeRawAmount: requestData.data.gasFee,
+    }
+  }
+
+    const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -186,6 +200,7 @@ const ApproveSignContainer: React.FC = () => {
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
       await currentAccount.getAddress('g'),
+      requestData.data?.multisig,
     );
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
@@ -246,22 +261,45 @@ const ApproveSignContainer: React.FC = () => {
     }
 
     const currentMemo = memo;
-    const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
-    const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
-    const updatedDocument: Document = {
-      ...document,
-      memo: currentMemo,
-      fee: {
-        amount: [
-          {
-            amount: currentGasPrice.toString(),
-            denom: GasToken.denom,
-          },
-        ],
-        gas: currentGasWanted.toString(),
-      },
-    };
+    let updatedDocument: Document
+    if (requestData?.data?.multisig) {
+      const currentGasPrice = requestData.data.gasFee
+      const currentGasWanted = requestData.data.gasWanted
+
+      updatedDocument = {
+        ...document,
+        memo: currentMemo,
+        account_number: requestData.data.accountNumber.toString(),
+        sequence: requestData.data.sequence.toString(),
+        fee: {
+          amount: [
+            {
+              amount: currentGasPrice.toString(),
+              denom: GasToken.denom,
+            },
+          ],
+          gas: currentGasWanted.toString(),
+        },
+      };
+    } else {
+      const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
+      const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
+
+      updatedDocument = {
+        ...document,
+        memo: currentMemo,
+        fee: {
+          amount: [
+            {
+              amount: currentGasPrice.toString(),
+              denom: GasToken.denom,
+            },
+          ],
+          gas: currentGasWanted.toString(),
+        },
+      };
+    }
 
     setDocument(updatedDocument);
     setTransactionData(mappedTransactionData(updatedDocument));
@@ -280,12 +318,20 @@ const ApproveSignContainer: React.FC = () => {
     }
 
     try {
-      const signature = await transactionService.createSignature(currentAccount, document);
+      const signature = await transactionService.createSignature(
+        currentAccount,
+        document,
+        requestData?.data?.multisig && {
+          accountNumber: requestData.data.accountNumber,
+          sequence: requestData.data.sequence,
+        },
+      );
+      const addr = await currentAccount?.getAddress('g')
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_SUCCESS,
-          { document, signature },
+          { document, signature, account:  addr},
           requestData?.key,
         ),
       );
@@ -306,7 +352,7 @@ const ApproveSignContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_FAILED,
-          {},
+          { error: { message: `${e}` } },
           requestData?.key,
         ),
       );
@@ -401,6 +447,7 @@ const ApproveSignContainer: React.FC = () => {
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(document, null, 2)}
+      multisig={requestData?.data?.multisig}
     />
   );
 };
