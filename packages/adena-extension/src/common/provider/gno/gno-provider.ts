@@ -111,6 +111,12 @@ export class GnoProvider extends GnoJSONRPCProvider {
         sequence,
       };
     } catch (e) {
+      if (
+        e instanceof Error &&
+        e.message.includes('account is not initialized')
+      ) {
+        return defaultAccount // XXX: is this what we want?
+      }
       console.info(e);
     }
 
