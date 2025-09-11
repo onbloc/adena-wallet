@@ -52,8 +52,6 @@ describe('Transaction Sign', () => {
         node_info: 'dev',
       },
     });
-    mockProvider.getAccountNumber = jest.fn().mockResolvedValue('0');
-    mockProvider.getAccountSequence = jest.fn().mockResolvedValue('1');
     const mockAccount: ABCIAccount = {
       BaseAccount: {
         address: '',
