@@ -57,8 +57,8 @@ describe('Transaction Sign', () => {
         address: '',
         coins: '',
         public_key: null,
-        account_number: '',
-        sequence: ''
+        account_number: '0',
+        sequence: '1'
       }
     }
     mockProvider.getAccount = jest.fn().mockResolvedValue(mockAccount);
