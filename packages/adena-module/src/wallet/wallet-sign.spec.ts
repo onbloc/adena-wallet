@@ -1,4 +1,4 @@
-import { JSONRPCProvider, Provider } from '@gnolang/tm2-js-client';
+import { ABCIAccount, JSONRPCProvider, Provider } from '@gnolang/tm2-js-client';
 import { AdenaWallet, Document, txToDocument } from './..';
 
 const mnemonic =
@@ -54,6 +54,16 @@ describe('Transaction Sign', () => {
     });
     mockProvider.getAccountNumber = jest.fn().mockResolvedValue('0');
     mockProvider.getAccountSequence = jest.fn().mockResolvedValue('1');
+    const mockAccount: ABCIAccount = {
+      BaseAccount: {
+        address: '',
+        coins: '',
+        public_key: null,
+        account_number: '',
+        sequence: ''
+      }
+    }
+    mockProvider.getAccount = jest.fn().mockResolvedValue(mockAccount);
   });
 
   it('default success', async () => {
