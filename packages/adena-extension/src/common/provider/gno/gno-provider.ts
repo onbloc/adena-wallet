@@ -23,7 +23,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
-import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -100,18 +100,33 @@ export class GnoProvider extends GnoJSONRPCProvider {
       accountNumber: '0',
       sequence: '0',
     };
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
+      `auth/accounts/${address}`,
+      '',
+      `${height ?? 0}`,
+      false,
+    ]);
+
+    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
+
+    const abciData = abciResponse?.result?.response.ResponseBase.Data;
+    // Make sure the response is initialized
+    if (!abciData) {
+      return defaultAccount;
+    }
 
     try {
-      const account = await this.getAccount(address, height)
+      // Parse the account
+      const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
       const {
-        address: accAddr,
+        address,
         coins,
         sequence,
         account_number: accountNumber,
         public_key: publicKey,
       } = account.BaseAccount;
       return {
-        address: accAddr,
+        address,
         coins,
         chainId: this.chainId ?? '',
         status: 'ACTIVE',
@@ -120,16 +135,12 @@ export class GnoProvider extends GnoJSONRPCProvider {
         sequence,
       };
     } catch (e) {
-      if (
-        e instanceof Error &&
-        e.message.includes('account is not initialized')
-      ) {
-        return defaultAccount // XXX: is this what we want?
-      }
       console.info(e);
     }
-
-    return {...defaultAccount, address};
+    return {
+      ...defaultAccount,
+      address,
+    };
   }
 
   public getValueByEvaluateExpression(
