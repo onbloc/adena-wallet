@@ -93,7 +93,7 @@ const ApproveSignContainer: React.FC = () => {
     }
   }
 
-    const networkFee = useNetworkFeeReturn.networkFee;
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
