@@ -47,13 +47,13 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
-    return this.getAccount(address, height)
+    return this.getAccountInfo(address, height)
       .then((account) => Number(account?.accountNumber ?? 0))
       .catch(() => 0);
   }
 
   public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
-    return this.getAccount(address, height)
+    return this.getAccountInfo(address, height)
       .then((account) => Number(account?.sequence ?? 0))
       .catch(() => 0);
   }
@@ -87,7 +87,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     return priceAmount / gasPrice.gas;
   }
 
-  public async getAccount(
+  public async getAccountInfo(
     address: string,
     height?: number | undefined,
   ): Promise<AccountInfo | null> {

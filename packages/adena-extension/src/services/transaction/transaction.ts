@@ -72,7 +72,7 @@ export class TransactionService {
   ): Promise<Document> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
-    const accountInfo = await provider.getAccount(address).catch(() => null);
+    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
     const accountNumber = accountInfo?.accountNumber ?? 0;
     const accountSequence = accountInfo?.sequence ?? 0;
     return {
