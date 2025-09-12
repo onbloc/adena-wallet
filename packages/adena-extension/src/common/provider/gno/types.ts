@@ -65,8 +65,8 @@ export interface GnoFunctionParam {
 }
 
 export enum StorageDepositEventType {
-  StorageDeposit = 'StorageDeposit',
-  UnlockDeposit = 'UnlockDeposit',
+  StorageDeposit = '/tm.StorageDepositEvent',
+  UnlockDeposit = '/tm.StorageUnlockEvent',
 }
 
 export enum StorageDepositAttributeKey {

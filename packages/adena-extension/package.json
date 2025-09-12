@@ -1,6 +1,6 @@
 {
   "name": "adena-extension",
-  "version": "1.17.7",
+  "version": "1.17.8",
   "private": true,
   "description": "Adena is a friendly browser extension wallet for the Gno.land blockchain.",
   "scripts": {
@@ -75,7 +75,7 @@
     "webpack-merge": "5.10.0"
   },
   "dependencies": {
-    "@adena-wallet/sdk": "0.0.11",
+    "@adena-wallet/sdk": "0.0.12",
     "@bufbuild/protobuf": "2.2.3",
     "@gnolang/gno-js-client": "1.4.4",
     "@gnolang/tm2-js-client": "1.3.3",
