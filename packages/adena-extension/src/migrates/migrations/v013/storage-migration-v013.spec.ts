@@ -42,7 +42,7 @@ describe('serialized wallet migration V013', () => {
       version: 1,
       data: mockStorageData,
     };
-    const password = '133';
+    const password = '123';
     const migration = new StorageMigration013();
     const result = await migration.up(mockData);
 
@@ -53,7 +53,6 @@ describe('serialized wallet migration V013', () => {
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);
-    console.log(decrypted);
     const wallet = JSON.parse(decrypted);
 
     expect(wallet.accounts).toHaveLength(0);
