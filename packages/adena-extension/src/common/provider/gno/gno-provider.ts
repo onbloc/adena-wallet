@@ -23,7 +23,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
-import { ABCIAccount, AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -91,55 +91,38 @@ export class GnoProvider extends GnoJSONRPCProvider {
     address: string,
     height?: number | undefined,
   ): Promise<AccountInfo | null> {
-    const defaultAccount: AccountInfo = {
-      address: '',
-      coins: '',
-      chainId: '',
-      status: 'IN_ACTIVE',
-      publicKey: null,
-      accountNumber: '0',
-      sequence: '0',
-    };
-    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
-      `auth/accounts/${address}`,
-      '',
-      `${height ?? 0}`,
-      false,
-    ]);
-
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
-
-    const abciData = abciResponse?.result?.response.ResponseBase.Data;
-    // Make sure the response is initialized
-    if (!abciData) {
-      return defaultAccount;
-    }
-
-    try {
-      // Parse the account
-      const account: ABCIAccount = parseABCI<ABCIAccount>(abciData);
-      const {
-        address,
-        coins,
-        sequence,
-        account_number: accountNumber,
-        public_key: publicKey,
-      } = account.BaseAccount;
-      return {
-        address,
-        coins,
-        chainId: this.chainId ?? '',
-        status: 'ACTIVE',
-        publicKey: publicKey,
-        accountNumber,
-        sequence,
-      };
-    } catch (e) {
+    const abciAccount = await this.getAccount(address, height).catch((e) => {
       console.info(e);
+      return null;
+    });
+
+    if (!abciAccount || !abciAccount.BaseAccount) {
+      return {
+        address: '',
+        coins: '',
+        chainId: '',
+        status: 'IN_ACTIVE',
+        publicKey: null,
+        accountNumber: '0',
+        sequence: '0',
+      };
     }
+
+    const {
+      coins,
+      public_key: publicKey,
+      account_number: accountNumber,
+      sequence,
+    } = abciAccount.BaseAccount;
+
     return {
-      ...defaultAccount,
       address,
+      coins,
+      chainId: this.chainId ?? '',
+      status: 'ACTIVE',
+      publicKey,
+      accountNumber,
+      sequence,
     };
   }
 
