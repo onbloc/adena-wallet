@@ -36,7 +36,6 @@ import {
   makeAllRealmsQuery,
   makeAllTransferEventsQueryBy,
   makeGRC721TransferEventsQuery,
-  makeGRC721TransferEventsQueryWithCursor,
 } from './token.queries';
 import { ITokenRepository } from './types';
 
@@ -431,59 +430,25 @@ export class TokenRepository implements ITokenRepository {
   }
 
   public async fetchGRC721TokensBy(packagePath: string, address: string): Promise<GRC721Model[]> {
-    if (!this.apiUrl && !this.queryUrl) {
+    if (this.apiUrl || !this.queryUrl) {
       return [];
     }
 
+    const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
     const events: {
       type: string;
       pkg_path: string;
       func: string;
       attrs: { [key in string]: string }[];
-    }[] = [];
-
-    if (this.apiUrl) {
-      const grc721TransferEventsQuery = makeGRC721TransferEventsQueryWithCursor(
-        packagePath,
-        address,
-      );
-      const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
-      }[] = await TokenRepository.postGraphQuery(
-        this.networkInstance,
-        this.queryUrl || this.apiUrl,
-        grc721TransferEventsQuery,
-      ).then((result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions?.edges.flatMap(
-              (edge: any) => edge.transaction.response.events,
-            )
-          : [],
-      );
-
-      events.push(...resultEvents);
-    } else {
-      const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
-      const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
-      }[] = await TokenRepository.postGraphQuery(
-        this.networkInstance,
-        this.queryUrl || '',
-        grc721TransferEventsQuery,
-      ).then((result) =>
-        result?.data?.transactions
-          ? result?.data?.transactions?.flatMap((transaction: any) => transaction?.response?.events)
-          : [],
-      );
-
-      events.push(...resultEvents);
-    }
+    }[] = await TokenRepository.postGraphQuery(
+      this.networkInstance,
+      this.queryUrl || '',
+      grc721TransferEventsQuery,
+    ).then((result) =>
+      result?.data?.transactions
+        ? result?.data?.transactions?.flatMap((transaction: any) => transaction?.response?.events)
+        : [],
+    );
 
     const receivedTokenIds: string[] = [];
     const sendedTokenIds: string[] = [];

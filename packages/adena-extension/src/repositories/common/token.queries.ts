@@ -1,11 +1,37 @@
 export const makeAllRealmsQuery = (): string => `
 {
-  transactions(filter: {
-    success: true
-    message: {
-      type_url: add_package
+  getTransactions(
+    where:{
+      success: {
+        eq: true
+      }
+      messages: {
+        typeUrl: {
+          eq: "add_package"
+        }
+        value: {
+          MsgAddPackage: {
+            package: {
+              files: {
+                _or: [
+                  {
+                    body: {
+                    	like: "gno.land/p/demo/tokens/grc20"
+                  	} 
+                  }
+                  {
+                    body: {
+                    	like: "gno.land/p/demo/tokens/grc721"
+                  	} 
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
-  }) {
+  ) {
     messages {
         value {
           ... on MsgAddPackage {
@@ -27,27 +53,50 @@ export const makeAllRealmsQuery = (): string => `
 
 export const makeGRC721TransferEventsQuery = (packagePath: string, address: string): string => `
 {
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        pkg_path: "${packagePath}"
-        attrs: [{
-          key: "from"
-          value: "${address}"
-        }, {
-          key:"to"
-          value: "${address}"
-        }]
+  getTransactions(
+    where:{
+      success: {
+        eq: true
       }
-      message: [
-        {
-          type_url: exec
+      messages: {
+        typeUrl: {
+          eq: "exec"
         }
-      ]
+      }
+      response: {
+        events: {
+          GnoEvent: {
+            type: {
+              eq: "Transfer"
+            }
+            pkg_path: {
+              eq: "${packagePath}"
+            }
+            attrs: {
+              _or: [
+                {
+                  key: {
+                    eq: "to"
+                  }
+                  value: {
+                    eq: "${address}"
+                  }
+                }
+                {
+                  key: {
+                    eq: "from"
+                  }
+                  value: {
+                    eq: "${address}"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
-  ) {
+) {
     hash
     index
     success
@@ -57,67 +106,9 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
         ...on GnoEvent {
           type
           pkg_path
-          func
           attrs {
             key
             value
-          }
-        }
-      }
-    }
-  }
-}
-`;
-export const makeGRC721TransferEventsQueryWithCursor = (
-  packagePath: string,
-  address: string,
-): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        pkg_path: "${packagePath}"
-        attrs: [{
-          key: "from"
-          value: "${address}"
-        }, {
-          key:"to"
-          value: "${address}"
-        }]
-      }
-      message: [
-        {
-          type_url: exec
-        }
-      ]
-    }
-    ascending: false
-    after: null
-  ) {
-    pageInfo {
-      last
-      hasNext
-    }
-    edges {
-      cursor
-      transaction {
-        hash
-        index
-        success
-        block_height
-        response {
-          events {
-            ...on GnoEvent {
-              type
-              pkg_path
-              func
-              attrs {
-                key
-                value
-              }
-            }
           }
         }
       }
@@ -128,18 +119,30 @@ export const makeGRC721TransferEventsQueryWithCursor = (
 
 export const makeAllTransferEventsQueryBy = (address: string): string => `
 {
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        attrs: [{
-          key: "to"
-          value: "${address}"
-        }]
+  getTransactions(
+    where:{
+      success: {
+        eq: true
+      }
+      response: {
+        events: {
+          GnoEvent: {
+            type: {
+              eq: "Transfer"
+            }
+            attrs: {
+              key: {
+                eq: "to"
+              }
+              value: {
+                eq: "${address}"
+              }
+            }
+          }
+        }
       }
     }
-  ) {
+) {
     hash
     index
     success
@@ -149,55 +152,9 @@ export const makeAllTransferEventsQueryBy = (address: string): string => `
         ...on GnoEvent {
           type
           pkg_path
-          func
           attrs {
             key
             value
-          }
-        }
-      }
-    }
-  }
-}`;
-
-export const makeAllTransferEventsQueryWithCursorBy = (address: string): string => `
-{
-  transactions(
-    filter: {
-      success: true
-      events: {
-        type: "Transfer"
-        attrs: [{
-          key: "to"
-          value: "${address}"
-        }]
-      }
-    }
-    ascending: false
-    after: null
-  ) {
-    pageInfo {
-      last
-      hasNext
-    }
-    edges {
-      cursor
-      transaction {
-        hash
-        index
-        success
-        block_height
-        response {
-          events {
-            ...on GnoEvent {
-              type
-              pkg_path
-              func
-              attrs {
-                key
-                value
-              }
-            }
           }
         }
       }
