@@ -91,39 +91,46 @@ export class GnoProvider extends GnoJSONRPCProvider {
     address: string,
     height?: number | undefined,
   ): Promise<AccountInfo | null> {
+    const inActiveAccount: AccountInfo = {
+      address,
+      coins: '',
+      chainId: '',
+      status: 'IN_ACTIVE',
+      publicKey: null,
+      accountNumber: '0',
+      sequence: '0',
+    };
+
     const abciAccount = await this.getAccount(address, height).catch((e) => {
       console.info(e);
       return null;
     });
 
     if (!abciAccount || !abciAccount.BaseAccount) {
-      return {
-        address: '',
-        coins: '',
-        chainId: '',
-        status: 'IN_ACTIVE',
-        publicKey: null,
-        accountNumber: '0',
-        sequence: '0',
-      };
+      return inActiveAccount;
     }
 
-    const {
-      coins,
-      public_key: publicKey,
-      account_number: accountNumber,
-      sequence,
-    } = abciAccount.BaseAccount;
+    try {
+      const {
+        coins,
+        public_key: publicKey,
+        account_number: accountNumber,
+        sequence,
+      } = abciAccount.BaseAccount;
 
-    return {
-      address,
-      coins,
-      chainId: this.chainId ?? '',
-      status: 'ACTIVE',
-      publicKey,
-      accountNumber,
-      sequence,
-    };
+      return {
+        address,
+        coins,
+        chainId: this.chainId ?? '',
+        status: 'ACTIVE',
+        publicKey,
+        accountNumber,
+        sequence,
+      };
+    } catch (e) {
+      console.info(e);
+      return inActiveAccount;
+    }
   }
 
   public getValueByEvaluateExpression(
