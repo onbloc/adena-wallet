@@ -33,8 +33,8 @@ describe('serialized wallet migration V013', () => {
     const migration = new StorageMigration013();
     const result = await migration.up(mockData);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test9');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test9');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('test9.1');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('test9.1');
   });
 
   it('up password success', async () => {
@@ -58,8 +58,8 @@ describe('serialized wallet migration V013', () => {
     expect(wallet.accounts).toHaveLength(0);
     expect(wallet.keyrings).toHaveLength(0);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test9');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test9');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('test9.1');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('test9.1');
   });
 
   it('up failed throw error', async () => {

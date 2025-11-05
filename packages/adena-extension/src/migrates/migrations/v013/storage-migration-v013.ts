@@ -85,8 +85,8 @@ export class StorageMigration013 implements Migration<StorageModelDataV013> {
   }
 
   private migrateCurrentChainId(currentChainId: CurrentChainIdModelV012): CurrentChainIdModelV013 {
-    if (currentChainId === 'test8') {
-      return 'test9';
+    if (currentChainId === 'test8' || currentChainId === 'test9') {
+      return 'test9.1';
     }
     return currentChainId;
   }
@@ -94,8 +94,8 @@ export class StorageMigration013 implements Migration<StorageModelDataV013> {
   private migrateCurrentNetworkId(
     currentNetworkId: CurrentNetworkIdModelV012,
   ): CurrentNetworkIdModelV013 {
-    if (currentNetworkId === 'test8') {
-      return 'test9';
+    if (currentNetworkId === 'test8' || currentNetworkId === 'test9') {
+      return 'test9.1';
     }
     return currentNetworkId;
   }
