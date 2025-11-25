@@ -1,6 +1,6 @@
 import { MsgAddPackage, MsgCall, MsgSend } from '@gnolang/gno-js-client';
 import { MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
-import { BroadcastTxCommitResult, TxSignPayload } from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { Signature } from '@adena-wallet/sdk';
 
@@ -39,7 +39,21 @@ export type TransactionParams = {
   arguments?: GnoArgumentInfo[] | null;
 };
 
-export interface SignedDocument extends TxSignPayload, Signature {}
+export interface SignedDocument {
+  chain_id: string;
+  account_number: string;
+  sequence: string;
+  fee: {
+    amount: {
+      amount: string;
+      denom: string;
+    }[];
+    gas: string;
+  };
+  msgs: any[];
+  memo: string;
+  signatures: Signature[];
+}
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
 export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;

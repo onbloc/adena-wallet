@@ -124,14 +124,9 @@ export class AdenaExecutor {
   public signDocument = (signedDocument: SignedDocument) => {
     console.log(signedDocument, '시작 2! signDocument 실행됨!@!@!');
 
-    const validationParams: TransactionParams = {
-      messages: signedDocument.msgs,
-    };
-
-    const result = this.validateContractMessage(validationParams);
-    console.log(validationParams, result, 'target SignDocument');
+    const result = this.validateSignedDocument(signedDocument);
+    console.log(result, 'target SignDocument');
     if (result) {
-      console.log('his');
       return this.sendEventMessage(result);
     }
 
@@ -158,11 +153,15 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
-    if (!validateDoContractRequest(params)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
-    for (const message of params.messages) {
+  /**
+   * Validates an array of transaction messages.
+   * Calls appropriate validation functions based on each message type to verify the format.
+   *
+   * @param messages - Array of transaction messages to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateMessages = (messages: any[]): InjectionMessage | undefined => {
+    for (const message of messages) {
       switch (message.type) {
         case '/bank.MsgSend':
           if (!validateTransactionMessageOfBankSend(message)) {
@@ -188,6 +187,60 @@ export class AdenaExecutor {
           return InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE);
       }
     }
+    return undefined;
+  };
+
+  /**
+   * Validates a signed document (SignedDocument).
+   * Verifies the existence and format of required fields (chain_id, account_number, sequence, memo),
+   * fee structure (gas and amount array), signatures array, and msgs array, then validates the included messages as well.
+   *
+   * @param signedDocument - The signed document object to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateSignedDocument = (
+    signedDocument: SignedDocument,
+  ): InjectionMessage | undefined => {
+    if (!signedDocument) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (
+      typeof signedDocument.chain_id !== 'string' ||
+      typeof signedDocument.account_number !== 'string' ||
+      typeof signedDocument.sequence !== 'string' ||
+      typeof signedDocument.memo !== 'string'
+    ) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (!Array.isArray(signedDocument.signatures)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (
+      !signedDocument.fee ||
+      typeof signedDocument.fee.gas !== 'string' ||
+      !Array.isArray(signedDocument.fee.amount) ||
+      signedDocument.fee.gas.length === 0 ||
+      signedDocument.fee.amount.length === 0
+    ) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (!Array.isArray(signedDocument.msgs) || signedDocument.msgs.length === 0) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    return this.validateMessages(signedDocument.msgs);
+  };
+
+  private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
+    if (!validateDoContractRequest(params)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    return this.validateMessages(params.messages);
   };
 
   private sendEventMessage = <T = unknown>(
