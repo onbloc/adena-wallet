@@ -11,6 +11,7 @@ import {
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
+  SignedDocument,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -53,8 +54,25 @@ const init = (): void => {
       return response;
     },
     async SignTx(message: TransactionParams): Promise<SignTxResponse> {
+      console.log('시작 1! SignTx');
       const executor = new AdenaExecutor();
       const response = await executor.signTx(message);
+      return response;
+    },
+    async SignDocument2(signedDocument: SignedDocument) {
+      console.log('시작 1! SignDocument2');
+      const executor = new AdenaExecutor();
+      console.log('1-1');
+      const response = await executor.signDocument2(signedDocument);
+      console.log('1-2');
+      return response;
+    },
+    async SignDocument(message: TransactionParams) {
+      console.log('시작 1! SignDocument');
+      const executor = new AdenaExecutor();
+      console.log('1-1');
+      const response = await executor.signDocument(message);
+      console.log('1-2');
       return response;
     },
     async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {

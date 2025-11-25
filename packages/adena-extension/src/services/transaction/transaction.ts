@@ -70,6 +70,7 @@ export class TransactionService {
     gasFee?: number,
     memo?: string | undefined,
   ): Promise<Document> => {
+    console.log(messages, 'messages!');
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
     const accountInfo = await provider.getAccountInfo(address).catch(() => null);

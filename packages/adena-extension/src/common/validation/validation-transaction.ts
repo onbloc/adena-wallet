@@ -37,14 +37,16 @@ export const validateInjectionDataWithAddress = (
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
   const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
-  return requestData.data?.messages.every((message: any) => messageTypes.includes(message?.type));
+
+  const msgs = requestData.data?.messages || requestData.data?.msgs || [];
+  return msgs.every((message: any) => messageTypes.includes(message?.type));
 };
 
 export const validateInjectionTransactionMessageWithAddress = (
   requestData: InjectionMessage,
   address: string,
 ): boolean => {
-  const messages = requestData.data?.messages;
+  const messages = requestData.data?.messages || requestData.data?.msgs || [];
   for (const message of messages) {
     let messageAddress = '';
     switch (message?.type) {

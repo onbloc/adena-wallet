@@ -21,6 +21,7 @@ import {
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
+  SignedDocument,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -94,7 +95,9 @@ export class AdenaExecutor {
   };
 
   public signAmino = (params: TransactionParams): Promise<WalletResponse<unknown>> => {
+    console.log('시작 2! signAmino 실행됨!@!@!');
     const result = this.validateContractMessage(params);
+    console.log(result, '시작 2-2');
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -106,6 +109,7 @@ export class AdenaExecutor {
   };
 
   public signTx = (params: TransactionParams): Promise<SignTxResponse> => {
+    console.log(params, '시작 2! signTx 실행됨!');
     const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -114,6 +118,44 @@ export class AdenaExecutor {
       WalletResponseExecuteType.SIGN_TX,
       params,
     );
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public signDocument = (params: TransactionParams) => {
+    console.log(params, '시작 2! signDocument 실행됨!@!@!');
+    const result = this.validateContractMessage(params);
+    console.log(params, result, 'target SignDocument');
+    if (result) {
+      return this.sendEventMessage(result);
+    }
+    const eventMessage = AdenaExecutor.createEventMessage(
+      'SIGN_DOCUMENT' as WalletResponseType,
+      params,
+    );
+    console.log(eventMessage, '2-2');
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public signDocument2 = (signedDocument: SignedDocument) => {
+    console.log(signedDocument, '시작 2! signDocument2 실행됨!@!@!');
+
+    const validationParams: TransactionParams = {
+      messages: signedDocument.msgs,
+      // memo: signedDocument.memo,
+    };
+
+    const result = this.validateContractMessage(validationParams);
+    console.log(validationParams, result, 'target SignDocument2');
+    if (result) {
+      console.log('his');
+      return this.sendEventMessage(result);
+    }
+
+    const eventMessage = AdenaExecutor.createEventMessage(
+      'SIGN_DOCUMENT' as WalletResponseType,
+      signedDocument,
+    );
+
     return this.sendEventMessage(eventMessage);
   };
 
@@ -167,6 +209,7 @@ export class AdenaExecutor {
   private sendEventMessage = <T = unknown>(
     eventMessage: InjectionMessage,
   ): Promise<WalletResponse<T>> => {
+    console.log(eventMessage, '시작 5!');
     this.listen();
     this.eventMessage = {
       ...eventMessage,
@@ -191,6 +234,7 @@ export class AdenaExecutor {
   };
 
   private listen = (): void => {
+    console.log('listen');
     if (this.isListen) {
       return;
     }
@@ -208,16 +252,19 @@ export class AdenaExecutor {
     params?: Params,
     withNotification?: boolean,
   ): InjectionMessage => {
+    console.log('시작 3!', type, params);
     return InjectionMessageInstance.request(type, params, undefined, withNotification);
   };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
+    console.log(event, 'messageHandler event');
     if (event.origin !== window.location.origin) {
       console.warn(`Untrusted origin: ${event.origin}`);
       return;
     }
 
     const eventData = event.data;
+    console.log(eventData, 'eventData');
     if (eventData.status) {
       const { key, status, data, code, message, type } = eventData;
       if (key === this.eventKey) {
