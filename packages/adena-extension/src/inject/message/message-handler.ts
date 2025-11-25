@@ -156,7 +156,7 @@ export class MessageHandler {
         console.log('시작 6! sign document');
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signDocument2(message, sendResponse);
+            HandlerMethod.signDocument(message, sendResponse);
           }
         });
       default:

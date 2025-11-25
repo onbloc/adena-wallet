@@ -59,19 +59,11 @@ const init = (): void => {
       const response = await executor.signTx(message);
       return response;
     },
-    async SignDocument2(signedDocument: SignedDocument) {
-      console.log('시작 1! SignDocument2');
-      const executor = new AdenaExecutor();
-      console.log('1-1');
-      const response = await executor.signDocument2(signedDocument);
-      console.log('1-2');
-      return response;
-    },
-    async SignDocument(message: TransactionParams) {
+    async SignDocument(signedDocument: SignedDocument) {
       console.log('시작 1! SignDocument');
       const executor = new AdenaExecutor();
       console.log('1-1');
-      const response = await executor.signDocument(message);
+      const response = await executor.signDocument(signedDocument);
       console.log('1-2');
       return response;
     },

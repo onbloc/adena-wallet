@@ -50,28 +50,7 @@ export const signDocument = async (
   requestData: InjectionMessageWithSignature,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  console.log('signDocument 실행@@@@@@@@@@@@@@@@@@@@@@@@@@');
-  const validationMessage = validateInjectionData(requestData);
-  console.log(validationMessage, 'validationMessage!!!!!!!!!!');
-  if (validationMessage) {
-    sendResponse(validationMessage);
-    return;
-  }
-
-  console.log('팝업생성');
-  HandlerMethod.createPopup(
-    RoutePath.ApproveSignDocument,
-    requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse,
-  );
-};
-
-export const signDocument2 = async (
-  requestData: InjectionMessageWithSignature,
-  sendResponse: (message: any) => void,
-): Promise<void> => {
-  console.log(requestData, 'signDocument2 실행@@@@@@@@@@@@@@@@@@@@@@@@@@');
+  console.log(requestData, 'signDocument 실행@@@@@@@@@@@@@@@@@@@@@@@@@@');
   const validationMessage = validateInjectionData(requestData);
   console.log(validationMessage, 'validationMessage!!!!!!!!!!');
   if (validationMessage) {

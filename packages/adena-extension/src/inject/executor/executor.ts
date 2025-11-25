@@ -121,31 +121,15 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signDocument = (params: TransactionParams) => {
-    console.log(params, '시작 2! signDocument 실행됨!@!@!');
-    const result = this.validateContractMessage(params);
-    console.log(params, result, 'target SignDocument');
-    if (result) {
-      return this.sendEventMessage(result);
-    }
-    const eventMessage = AdenaExecutor.createEventMessage(
-      'SIGN_DOCUMENT' as WalletResponseType,
-      params,
-    );
-    console.log(eventMessage, '2-2');
-    return this.sendEventMessage(eventMessage);
-  };
-
-  public signDocument2 = (signedDocument: SignedDocument) => {
-    console.log(signedDocument, '시작 2! signDocument2 실행됨!@!@!');
+  public signDocument = (signedDocument: SignedDocument) => {
+    console.log(signedDocument, '시작 2! signDocument 실행됨!@!@!');
 
     const validationParams: TransactionParams = {
       messages: signedDocument.msgs,
-      // memo: signedDocument.memo,
     };
 
     const result = this.validateContractMessage(validationParams);
-    console.log(validationParams, result, 'target SignDocument2');
+    console.log(validationParams, result, 'target SignDocument');
     if (result) {
       console.log('his');
       return this.sendEventMessage(result);
