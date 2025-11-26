@@ -27,7 +27,7 @@ import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
+import { ContractMessage, SignedDocument } from '@inject/types';
 import { RoutePath } from '@types';
 
 interface TransactionData {
@@ -207,17 +207,14 @@ const ApproveSignDocumentContainer: React.FC = () => {
     setFavicon(faviconData);
   };
   const initTransactionData = async (): Promise<boolean> => {
-    if (!currentAccount || !requestData || !currentNetwork) {
+    if (!currentAccount || !requestData || !currentNetwork || !requestData?.data) {
       return false;
     }
+
     try {
-      const document = await transactionService.createDocument(
-        currentAccount,
-        currentNetwork.networkId,
-        requestData?.data?.messages || requestData?.data?.msgs,
-        requestData?.data?.gasWanted,
-        requestData?.data?.gasFee,
-        requestData?.data?.memo,
+      const document = await transactionService.createSignedDocument(
+        currentNetwork.chainId,
+        requestData.data as SignedDocument,
       );
       setDocument(document);
       setTransactionData(mappedTransactionData(document));

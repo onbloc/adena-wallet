@@ -27,6 +27,12 @@ import {
   TransactionParams,
 } from '@inject/types';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
+import {
+  validateSignatures,
+  validateSignedDocumentFee,
+  validateSignedDocumentFields,
+  validateSignedDocumentMessages,
+} from '@common/validation';
 
 type Params = { [key in string]: any };
 
@@ -201,16 +207,12 @@ export class AdenaExecutor {
   private validateSignedDocument = (
     signedDocument: SignedDocument,
   ): InjectionMessage | undefined => {
+    console.log('new validation code');
     if (!signedDocument) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (
-      typeof signedDocument.chain_id !== 'string' ||
-      typeof signedDocument.account_number !== 'string' ||
-      typeof signedDocument.sequence !== 'string' ||
-      typeof signedDocument.memo !== 'string'
-    ) {
+    if (!validateSignedDocumentFields(signedDocument)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
@@ -218,17 +220,15 @@ export class AdenaExecutor {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (
-      !signedDocument.fee ||
-      typeof signedDocument.fee.gas !== 'string' ||
-      !Array.isArray(signedDocument.fee.amount) ||
-      signedDocument.fee.gas.length === 0 ||
-      signedDocument.fee.amount.length === 0
-    ) {
+    if (!validateSignatures(signedDocument.signatures)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!Array.isArray(signedDocument.msgs) || signedDocument.msgs.length === 0) {
+    if (!validateSignedDocumentFee(signedDocument.fee)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (!validateSignedDocumentMessages(signedDocument.msgs)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 

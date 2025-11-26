@@ -3,3 +3,5 @@ export * from './validation-message';
 export * from './validation-password';
 export * from './validation-token';
 export * from './validation-wallet';
+export * from './validation-signature';
+export * from './validation-signed-document';
