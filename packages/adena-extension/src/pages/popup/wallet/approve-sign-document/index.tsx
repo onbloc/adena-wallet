@@ -24,7 +24,6 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, SignedDocument } from '@inject/types';
@@ -79,8 +78,6 @@ const ApproveSignDocumentContainer: React.FC = () => {
 
   const { data: currentBalance = null } = useGetGnotBalance();
 
-  const useNetworkFeeReturn = useNetworkFee(document, true);
-
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!document?.fee?.amount?.[0]) {
       return null;
@@ -120,6 +117,10 @@ const ApproveSignDocumentContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [networkFee]);
+
+  const currentGasWanted = useMemo(() => {
+    return document?.fee?.gas || '0';
+  }, [document?.fee?.gas]);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -199,18 +200,13 @@ const ApproveSignDocumentContainer: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('target');
     if (currentAccount && requestData && gnoProvider) {
-      console.log('target1');
       if (isAirgapAccount(currentAccount)) {
-        console.log('target1-1');
         navigate(RoutePath.ApproveSignFailed);
         return;
       }
-      console.log(currentAccount, requestData, 'target2');
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
-          console.log('target2-2');
           initFavicon();
           initTransactionData();
         }
@@ -222,7 +218,6 @@ const ApproveSignDocumentContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    console.log(requestData, 'validate');
     const validationMessage = validateInjectionDataWithAddress(
       requestData,
       await currentAccount.getAddress('g'),
@@ -240,6 +235,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
     );
     setFavicon(faviconData);
   };
+
   const initTransactionData = async (): Promise<boolean> => {
     if (!currentAccount || !requestData || !currentNetwork || !requestData?.data) {
       return false;
@@ -276,14 +272,12 @@ const ApproveSignDocumentContainer: React.FC = () => {
     setMemo(memo);
   };
 
-  const updateTransactionData = (): void => {
-    if (!document) {
+  const updateTransactionData = useCallback((): void => {
+    if (!document || !rawNetworkFee) {
       return;
     }
 
     const currentMemo = memo;
-    const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
-    const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
     const updatedSignedDocument: SignedDocument = {
       ...document,
@@ -291,7 +285,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
       fee: {
         amount: [
           {
-            amount: currentGasPrice.toString(),
+            amount: rawNetworkFee.amount.toString(),
             denom: GasToken.denom,
           },
         ],
@@ -301,7 +295,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
 
     setDocument(updatedSignedDocument);
     setTransactionData(mappedTransactionData(updatedSignedDocument));
-  };
+  }, [document, rawNetworkFee, memo, currentGasWanted]);
 
   const createSignDocument = async (): Promise<boolean> => {
     if (!document || !currentAccount) {
@@ -410,12 +404,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
     }
 
     updateTransactionData();
-  }, [
-    memo,
-    transactionMessages,
-    useNetworkFeeReturn.currentGasInfo?.gasWanted,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-  ]);
+  }, [memo, transactionMessages, updateTransactionData]);
 
   return (
     <ApproveSignedDocument
@@ -430,9 +419,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
       logo={favicon}
       currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee}
-      isNetworkFeeLoading={false}
+      isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
-      useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}
       changeTransactionMessages={setTransactionMessages}

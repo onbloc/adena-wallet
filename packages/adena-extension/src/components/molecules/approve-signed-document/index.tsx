@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -6,19 +6,13 @@ import { BottomFixedLoadingButtonGroup } from '@components/molecules';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
-import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
-import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
-import StorageDeposit from '../storage-deposit/storage-deposit';
-import {
-  ApproveSignedDocumentNetworkFeeWrapper,
-  ApproveSignedDocumentWrapper,
-} from './approve-signed-document.styles';
+import { ApproveSignedDocumentWrapper } from './approve-signed-document.styles';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -51,7 +45,6 @@ export interface ApproveSignedDocumentProps {
   onTimeout: () => void;
   onClickConfirm: () => void;
   onClickCancel: () => void;
-  useNetworkFeeReturn: UseNetworkFeeReturn;
 }
 
 export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
@@ -70,7 +63,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   opened,
   processing,
   done,
-  useNetworkFeeReturn,
   argumentInfos,
   maxDepositAmount,
   changeTransactionMessages,
@@ -81,8 +73,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onClickCancel,
   openScannerLink,
 }) => {
-  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
-
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
       return true;
@@ -123,10 +113,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
     return '';
   }, [isErrorNetworkFee]);
 
-  const simulateErrorMessage = useMemo(() => {
-    return null;
-  }, [useNetworkFeeReturn]);
-
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (hasMemo) {
@@ -138,19 +124,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
     },
     [hasMemo, changeMemo],
   );
-
-  const onClickNetworkFeeSetting = useCallback(() => {
-    setOpenedNetworkFeeSetting(true);
-  }, []);
-
-  const onClickNetworkFeeClose = useCallback(() => {
-    setOpenedNetworkFeeSetting(false);
-  }, []);
-
-  const onClickNetworkFeeSave = useCallback(() => {
-    useNetworkFeeReturn.save();
-    setOpenedNetworkFeeSetting(false);
-  }, [useNetworkFeeReturn.save]);
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledApprove) {
@@ -168,18 +141,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
   if (loading) {
     return <ApproveTransactionLoading rightButtonText='Approve' />;
-  }
-
-  if (openedNetworkFeeSetting) {
-    return (
-      <ApproveSignedDocumentNetworkFeeWrapper>
-        <NetworkFeeSetting
-          {...useNetworkFeeReturn}
-          onClickBack={onClickNetworkFeeClose}
-          onClickSave={onClickNetworkFeeSave}
-        />
-      </ApproveSignedDocumentNetworkFeeWrapper>
-    );
   }
 
   return (
@@ -217,24 +178,12 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
       </div>
 
       <div className='fee-amount-wrapper'>
-        <StorageDeposit
-          storageDeposit={{
-            storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
-            unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
-          }}
-          isLoading={isNetworkFeeLoading}
-          isError={isMaxDepositError}
-          errorMessage={maxDepositErrorMessage}
-        />
-
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
           isLoading={isNetworkFeeLoading}
           errorMessage={networkFeeErrorMessage}
-          simulateErrorMessage={simulateErrorMessage}
-          onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
 
