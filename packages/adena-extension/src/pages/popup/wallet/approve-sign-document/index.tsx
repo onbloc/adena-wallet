@@ -69,7 +69,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [document, setDocument] = useState<Document>();
+  const [document, setDocument] = useState<SignedDocument>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
@@ -251,7 +251,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
     const currentGasPrice = useNetworkFeeReturn.currentGasFeeRawAmount;
     const currentGasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
 
-    const updatedDocument: Document = {
+    const updatedSignedDocument: SignedDocument = {
       ...document,
       memo: currentMemo,
       fee: {
@@ -265,8 +265,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
       },
     };
 
-    setDocument(updatedDocument);
-    setTransactionData(mappedTransactionData(updatedDocument));
+    setDocument(updatedSignedDocument);
+    setTransactionData(mappedTransactionData(updatedSignedDocument));
   };
 
   const createSignDocument = async (): Promise<boolean> => {
@@ -283,11 +283,19 @@ const ApproveSignDocumentContainer: React.FC = () => {
 
     try {
       const signature = await transactionService.createSignature(currentAccount, document);
+
+      const updateSignedDocument = {
+        ...document,
+        signatures: [...document.signatures, signature],
+      };
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
-          WalletResponseSuccessType.SIGN_SUCCESS,
-          { document, signature },
+          WalletResponseSuccessType.SIGN_DOCUMENT_SUCCESS,
+          {
+            document: updateSignedDocument,
+            signature,
+          },
           requestData?.key,
         ),
       );
@@ -299,7 +307,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
         }
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_FAILED,
+            WalletResponseFailureType.SIGN_DOCUMENT_FAILED,
             { error: { message } },
             requestData?.key,
           ),
@@ -307,7 +315,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
       }
       setResponse(
         InjectionMessageInstance.failure(
-          WalletResponseFailureType.SIGN_FAILED,
+          WalletResponseFailureType.SIGN_DOCUMENT_FAILED,
           {},
           requestData?.key,
         ),
@@ -333,7 +341,6 @@ const ApproveSignDocumentContainer: React.FC = () => {
       });
       return;
     }
-
     createSignDocument().finally(() => setProcessType('DONE'));
   };
 
