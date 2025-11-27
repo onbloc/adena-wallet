@@ -19,6 +19,7 @@ import {
 } from './approve-signed-document.styles';
 import { Signature } from '@adena-wallet/sdk';
 import { publicKeyToAddress } from 'adena-module';
+import DocumentSignerList from '@components/pages/document-signer-list/document-signer-list';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -184,7 +185,11 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   }
 
   if (openedSigners) {
-    return <ApproveSignedDocumentSignerWrapper></ApproveSignedDocumentSignerWrapper>;
+    return (
+      <ApproveSignedDocumentSignerWrapper>
+        <DocumentSignerList signerAddresses={signerAddresses} onClickBack={onClickSignersBack} />
+      </ApproveSignedDocumentSignerWrapper>
+    );
   }
 
   return (
