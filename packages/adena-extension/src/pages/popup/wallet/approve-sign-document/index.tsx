@@ -126,6 +126,14 @@ const ApproveSignDocumentContainer: React.FC = () => {
 
   const done = useMemo(() => processType === 'DONE', [processType]);
 
+  const signatures = useMemo(() => {
+    return document?.signatures || [];
+  }, [document?.signatures]);
+
+  const hasSignatures = useMemo(() => {
+    return signatures.length > 0;
+  }, [signatures]);
+
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
       return false;
@@ -411,6 +419,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
       title='Sign Document'
       domain={hostname}
       contracts={transactionData?.contracts || []}
+      signatures={signatures}
+      hasSignatures={hasSignatures}
       memo={memo}
       hasMemo={hasMemo}
       loading={transactionData === undefined}

@@ -13,6 +13,8 @@ import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import { ApproveSignedDocumentWrapper } from './approve-signed-document.styles';
+import { Signature } from '@adena-wallet/sdk';
+import { publicKeyToAddress } from 'adena-module';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -24,6 +26,8 @@ export interface ApproveSignedDocumentProps {
     function: string;
     value: string;
   }[];
+  signatures: Signature[];
+  hasSignatures: boolean;
   memo: string;
   hasMemo: boolean;
   currentBalance?: number;
@@ -52,9 +56,10 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   title,
   logo,
   domain,
+  signatures,
+  hasSignatures,
   transactionMessages,
   memo,
-  currentBalance,
   hasMemo,
   networkFee,
   isErrorNetworkFee,
@@ -64,7 +69,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   processing,
   done,
   argumentInfos,
-  maxDepositAmount,
   changeTransactionMessages,
   changeMemo,
   onToggleTransactionData,
@@ -73,6 +77,49 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onClickCancel,
   openScannerLink,
 }) => {
+  const [signerAddresses, setSignerAddresses] = React.useState<string[]>([]);
+
+  useEffect(() => {
+    const extractAddresses = async () => {
+      if (!signatures || signatures.length === 0) {
+        setSignerAddresses([]);
+
+        return;
+      }
+
+      try {
+        const addresses = await Promise.all(
+          signatures.map(async (signature) => {
+            if (!signature?.pubKey?.value) {
+              return '';
+            }
+
+            try {
+              const fullBytes = Uint8Array.from(atob(signature.pubKey.value), (c) =>
+                c.charCodeAt(0),
+              );
+
+              const pubKeyBytes = fullBytes.slice(2);
+
+              const address = await publicKeyToAddress(pubKeyBytes);
+              return address;
+            } catch (e) {
+              console.error('Failed to extract address from signature:', e);
+              return '';
+            }
+          }),
+        );
+
+        setSignerAddresses(addresses.filter((addr) => addr !== ''));
+      } catch (e) {
+        console.error('Failed to extract signer addresses:', e);
+        setSignerAddresses([]);
+      }
+    };
+
+    extractAddresses();
+  }, [signatures]);
+
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
       return true;
@@ -84,26 +131,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
     return Number(networkFee?.amount || 0) <= 0;
   }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee]);
-
-  const isMaxDepositError = useMemo(() => {
-    if (!maxDepositAmount || currentBalance === undefined) {
-      return false;
-    }
-
-    return currentBalance < maxDepositAmount;
-  }, [currentBalance, maxDepositAmount]);
-
-  const maxDepositErrorMessage = useMemo(() => {
-    if (isNetworkFeeLoading) {
-      return '';
-    }
-
-    if (isMaxDepositError) {
-      return 'Insufficient balance';
-    }
-
-    return '';
-  }, [isNetworkFeeLoading, isMaxDepositError]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -160,6 +187,20 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
         changeMessages={changeTransactionMessages}
         openScannerLink={openScannerLink}
       />
+
+      {/* Signer Addresses Section */}
+      {hasSignatures && (
+        <div className='signer-addresses-wrapper row'>
+          <span className='key'>Signers:</span>
+          <div className='addresses-list'>
+            {signerAddresses.map((address, index) => (
+              <span key={index} className='address-item'>
+                {address}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
