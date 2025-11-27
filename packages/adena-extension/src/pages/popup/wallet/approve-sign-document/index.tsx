@@ -28,7 +28,7 @@ import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, SignedDocument } from '@inject/types';
-import { RoutePath } from '@types';
+import { NetworkFee, RoutePath } from '@types';
 
 interface TransactionData {
   messages: readonly any[];
@@ -79,20 +79,38 @@ const ApproveSignDocumentContainer: React.FC = () => {
   const { data: currentBalance = null } = useGetGnotBalance();
 
   const useNetworkFeeReturn = useNetworkFee(document, true);
-  const networkFee = useNetworkFeeReturn.networkFee;
 
-  const processing = useMemo(() => processType !== 'INIT', [processType]);
-
-  const done = useMemo(() => processType === 'DONE', [processType]);
-
-  const hasMemo = useMemo(() => {
-    if (!requestData?.data?.memo) {
-      return false;
+  const rawNetworkFee: NetworkFee | null = useMemo(() => {
+    if (!document?.fee?.amount?.[0]) {
+      return null;
     }
-    return true;
-  }, [requestData?.data?.memo]);
 
-  const displayNetworkFee = useMemo(() => {
+    const feeAmount = document.fee.amount[0];
+
+    return {
+      amount: feeAmount.amount,
+      denom: feeAmount.denom,
+    };
+  }, [document?.fee]);
+
+  const networkFee: NetworkFee | null = useMemo(() => {
+    if (!rawNetworkFee) {
+      return null;
+    }
+
+    const networkFeeAmount = BigNumber(rawNetworkFee.amount)
+      .shiftedBy(-GasToken.decimals)
+      .toFixed(GasToken.decimals)
+      .replace(/(\.\d*?)0+$/, '$1')
+      .replace(/\.$/, '');
+
+    return {
+      amount: networkFeeAmount,
+      denom: GasToken.symbol,
+    };
+  }, [rawNetworkFee]);
+
+  const displayNetworkFee: NetworkFee = useMemo(() => {
     if (!networkFee) {
       return {
         amount: '',
@@ -105,6 +123,17 @@ const ApproveSignDocumentContainer: React.FC = () => {
       denom: GasToken.symbol,
     };
   }, [networkFee]);
+
+  const processing = useMemo(() => processType !== 'INIT', [processType]);
+
+  const done = useMemo(() => processType === 'DONE', [processType]);
+
+  const hasMemo = useMemo(() => {
+    if (!requestData?.data?.memo) {
+      return false;
+    }
+    return true;
+  }, [requestData?.data?.memo]);
 
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = document?.msgs.reduce((acc, msg) => {
