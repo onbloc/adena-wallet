@@ -404,7 +404,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
     }
 
     updateTransactionData();
-  }, [memo, transactionMessages, updateTransactionData]);
+  }, [memo, transactionMessages]);
 
   return (
     <ApproveSignedDocument
