@@ -17,7 +17,7 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { ApproveTransaction } from '@components/molecules';
+import { ApproveSignedDocument } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -29,6 +29,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, SignedDocument } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
+import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 
 interface TransactionData {
   messages: readonly any[];
@@ -98,11 +99,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
       return null;
     }
 
-    const networkFeeAmount = BigNumber(rawNetworkFee.amount)
-      .shiftedBy(-GasToken.decimals)
-      .toFixed(GasToken.decimals)
-      .replace(/(\.\d*?)0+$/, '$1')
-      .replace(/\.$/, '');
+    const networkFeeAmount = convertRawGasAmountToDisplayAmount(rawNetworkFee.amount);
 
     return {
       amount: networkFeeAmount,
@@ -413,7 +410,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
   ]);
 
   return (
-    <ApproveTransaction
+    <ApproveSignedDocument
       title='Sign Document'
       domain={hostname}
       contracts={transactionData?.contracts || []}

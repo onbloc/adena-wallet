@@ -1,5 +1,6 @@
 import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
 import { GasToken } from '@common/constants/token.constant';
+import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
 import { Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
@@ -169,11 +170,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const networkFeeAmount = BigNumber(currentGasInfo.gasFee)
-      .shiftedBy(-GasToken.decimals)
-      .toFixed(GasToken.decimals)
-      .replace(/(\.\d*?)0+$/, '$1')
-      .replace(/\.$/, '');
+    const networkFeeAmount = convertRawGasAmountToDisplayAmount(currentGasInfo.gasFee);
 
     return {
       amount: networkFeeAmount,
