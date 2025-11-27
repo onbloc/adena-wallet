@@ -152,9 +152,17 @@ const ApproveSignDocumentContainer: React.FC = () => {
     return consumedBN.toNumber();
   }, [document]);
 
+  const isNetworkFeeLoading = useMemo(() => {
+    return rawNetworkFee === null;
+  }, [rawNetworkFee]);
+
   const isErrorNetworkFee = useMemo(() => {
-    if (!networkFee) {
+    if (isNetworkFeeLoading) {
       return false;
+    }
+
+    if (!networkFee) {
+      return true;
     }
 
     const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
@@ -162,7 +170,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
     return BigNumber(currentBalance || 0)
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(resultConsumedAmount);
-  }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
+  }, [isNetworkFeeLoading, networkFee, currentBalance, consumedTokenAmount]);
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -421,7 +429,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
       done={done}
       logo={favicon}
       currentBalance={currentBalance || 0}
-      isErrorNetworkFee={isErrorNetworkFee || !networkFee}
+      isErrorNetworkFee={isErrorNetworkFee}
+      isNetworkFeeLoading={false}
       networkFee={displayNetworkFee}
       useNetworkFeeReturn={useNetworkFeeReturn}
       transactionMessages={transactionMessages}

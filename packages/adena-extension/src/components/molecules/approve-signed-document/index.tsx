@@ -34,6 +34,7 @@ export interface ApproveSignedDocumentProps {
   hasMemo: boolean;
   currentBalance?: number;
   isErrorNetworkFee?: boolean;
+  isNetworkFeeLoading: boolean;
   networkFee: NetworkFeeType | null;
   transactionData: string;
   opened: boolean;
@@ -64,6 +65,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   hasMemo,
   networkFee,
   isErrorNetworkFee,
+  isNetworkFeeLoading,
   transactionData,
   opened,
   processing,
@@ -82,21 +84,16 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
-    if (useNetworkFeeReturn.isLoading) {
+    if (isNetworkFeeLoading) {
       return true;
     }
 
-    if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
+    if (isErrorNetworkFee) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [
-    isErrorNetworkFee,
-    useNetworkFeeReturn.isLoading,
-    useNetworkFeeReturn.isSimulateError,
-    networkFee,
-  ]);
+  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee]);
 
   const isMaxDepositError = useMemo(() => {
     if (!maxDepositAmount || currentBalance === undefined) {
@@ -107,7 +104,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   }, [currentBalance, maxDepositAmount]);
 
   const maxDepositErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isLoading) {
+    if (isNetworkFeeLoading) {
       return '';
     }
 
@@ -116,29 +113,19 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
     }
 
     return '';
-  }, [useNetworkFeeReturn.isLoading, isMaxDepositError]);
+  }, [isNetworkFeeLoading, isMaxDepositError]);
 
   const networkFeeErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      if (currentBalance !== 0) {
-        return 'This transaction cannot be simulated. Try again.';
-      }
-    }
-
     if (isErrorNetworkFee) {
       return 'Insufficient network fee';
     }
 
     return '';
-  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
+  }, [isErrorNetworkFee]);
 
   const simulateErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      return useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
-    }
-
     return null;
-  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.currentGasInfo]);
+  }, [useNetworkFeeReturn]);
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,16 +222,16 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
             storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
             unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
           }}
-          isLoading={useNetworkFeeReturn.isLoading}
-          isError={useNetworkFeeReturn.isSimulateError || isMaxDepositError}
+          isLoading={isNetworkFeeLoading}
+          isError={isMaxDepositError}
           errorMessage={maxDepositErrorMessage}
         />
 
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isError={isErrorNetworkFee}
+          isLoading={isNetworkFeeLoading}
           errorMessage={networkFeeErrorMessage}
           simulateErrorMessage={simulateErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
