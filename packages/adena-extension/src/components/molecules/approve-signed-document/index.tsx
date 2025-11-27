@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -11,8 +11,12 @@ import { ContractMessage } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
+import DocumentSigner from '../document-signer/document-signer';
 import NetworkFee from '../network-fee/network-fee';
-import { ApproveSignedDocumentWrapper } from './approve-signed-document.styles';
+import {
+  ApproveSignedDocumentSignerWrapper,
+  ApproveSignedDocumentWrapper,
+} from './approve-signed-document.styles';
 import { Signature } from '@adena-wallet/sdk';
 import { publicKeyToAddress } from 'adena-module';
 
@@ -77,7 +81,8 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onClickCancel,
   openScannerLink,
 }) => {
-  const [signerAddresses, setSignerAddresses] = React.useState<string[]>([]);
+  const [signerAddresses, setSignerAddresses] = useState<string[]>([]);
+  const [openedSigners, setOpenedSigners] = useState(false);
 
   useEffect(() => {
     const extractAddresses = async () => {
@@ -160,6 +165,14 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
     onClickConfirm();
   }, [onClickConfirm, disabledApprove]);
 
+  const onClickSignersSetting = useCallback(() => {
+    setOpenedSigners(true);
+  }, []);
+
+  const onClickSignersBack = useCallback(() => {
+    setOpenedSigners(false);
+  }, []);
+
   useEffect(() => {
     if (done) {
       onResponse();
@@ -168,6 +181,10 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
   if (loading) {
     return <ApproveTransactionLoading rightButtonText='Approve' />;
+  }
+
+  if (openedSigners) {
+    return <ApproveSignedDocumentSignerWrapper></ApproveSignedDocumentSignerWrapper>;
   }
 
   return (
@@ -188,20 +205,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
         openScannerLink={openScannerLink}
       />
 
-      {/* Signer Addresses Section */}
-      {hasSignatures && (
-        <div className='signer-addresses-wrapper row'>
-          <span className='key'>Signers:</span>
-          <div className='addresses-list'>
-            {signerAddresses.map((address, index) => (
-              <span key={index} className='address-item'>
-                {address}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
         {hasMemo ? (
@@ -217,6 +220,15 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
           />
         )}
       </div>
+
+      {hasSignatures && (
+        <div className='fee-amount-wrapper'>
+          <DocumentSigner
+            signerCount={signerAddresses.length}
+            onClickSetting={onClickSignersSetting}
+          />
+        </div>
+      )}
 
       <div className='fee-amount-wrapper'>
         <NetworkFee
