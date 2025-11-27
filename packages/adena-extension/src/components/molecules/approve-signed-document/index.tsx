@@ -18,8 +18,8 @@ import {
   ApproveSignedDocumentWrapper,
 } from './approve-signed-document.styles';
 import { Signature } from '@adena-wallet/sdk';
-import { publicKeyToAddress } from 'adena-module';
-import DocumentSignerList from '@components/pages/document-signer-list/document-signer-list';
+import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
+import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -82,49 +82,9 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onClickCancel,
   openScannerLink,
 }) => {
-  const [signerAddresses, setSignerAddresses] = useState<string[]>([]);
   const [openedSigners, setOpenedSigners] = useState(false);
 
-  useEffect(() => {
-    const extractAddresses = async () => {
-      if (!signatures || signatures.length === 0) {
-        setSignerAddresses([]);
-
-        return;
-      }
-
-      try {
-        const addresses = await Promise.all(
-          signatures.map(async (signature) => {
-            if (!signature?.pubKey?.value) {
-              return '';
-            }
-
-            try {
-              const fullBytes = Uint8Array.from(atob(signature.pubKey.value), (c) =>
-                c.charCodeAt(0),
-              );
-
-              const pubKeyBytes = fullBytes.slice(2);
-
-              const address = await publicKeyToAddress(pubKeyBytes);
-              return address;
-            } catch (e) {
-              console.error('Failed to extract address from signature:', e);
-              return '';
-            }
-          }),
-        );
-
-        setSignerAddresses(addresses.filter((addr) => addr !== ''));
-      } catch (e) {
-        console.error('Failed to extract signer addresses:', e);
-        setSignerAddresses([]);
-      }
-    };
-
-    extractAddresses();
-  }, [signatures]);
+  const { signerAddresses } = useSignerAddresses(signatures);
 
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
@@ -187,7 +147,10 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   if (openedSigners) {
     return (
       <ApproveSignedDocumentSignerWrapper>
-        <DocumentSignerList signerAddresses={signerAddresses} onClickBack={onClickSignersBack} />
+        <DocumentSignerListScreen
+          signerAddresses={signerAddresses}
+          onClickBack={onClickSignersBack}
+        />
       </ApproveSignedDocumentSignerWrapper>
     );
   }
