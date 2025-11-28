@@ -138,7 +138,6 @@ export class MessageHandler {
           });
         break;
       case 'SIGN_AMINO':
-        console.log('시작 6! sign amino');
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.signAmino(message, sendResponse);
@@ -153,7 +152,6 @@ export class MessageHandler {
         });
         break;
       case 'SIGN_DOCUMENT':
-        console.log('시작 6! sign document');
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.signDocument(message, sendResponse);

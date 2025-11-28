@@ -101,9 +101,7 @@ export class AdenaExecutor {
   };
 
   public signAmino = (params: TransactionParams): Promise<WalletResponse<unknown>> => {
-    console.log('시작 2! signAmino 실행됨!@!@!');
     const result = this.validateContractMessage(params);
-    console.log(result, '시작 2-2');
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -115,7 +113,6 @@ export class AdenaExecutor {
   };
 
   public signTx = (params: TransactionParams): Promise<SignTxResponse> => {
-    console.log(params, '시작 2! signTx 실행됨!');
     const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -128,10 +125,7 @@ export class AdenaExecutor {
   };
 
   public signDocument = (signedDocument: SignedDocument) => {
-    console.log(signedDocument, '시작 2! signDocument 실행됨!@!@!');
-
     const result = this.validateSignedDocument(signedDocument);
-    console.log(result, 'target SignDocument');
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -207,7 +201,6 @@ export class AdenaExecutor {
   private validateSignedDocument = (
     signedDocument: SignedDocument,
   ): InjectionMessage | undefined => {
-    console.log('new validation code');
     if (!signedDocument) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
@@ -246,7 +239,6 @@ export class AdenaExecutor {
   private sendEventMessage = <T = unknown>(
     eventMessage: InjectionMessage,
   ): Promise<WalletResponse<T>> => {
-    console.log(eventMessage, '시작 5!');
     this.listen();
     this.eventMessage = {
       ...eventMessage,
@@ -271,7 +263,6 @@ export class AdenaExecutor {
   };
 
   private listen = (): void => {
-    console.log('listen');
     if (this.isListen) {
       return;
     }
@@ -289,19 +280,16 @@ export class AdenaExecutor {
     params?: Params,
     withNotification?: boolean,
   ): InjectionMessage => {
-    console.log('시작 3!', type, params);
     return InjectionMessageInstance.request(type, params, undefined, withNotification);
   };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
-    console.log(event, 'messageHandler event');
     if (event.origin !== window.location.origin) {
       console.warn(`Untrusted origin: ${event.origin}`);
       return;
     }
 
     const eventData = event.data;
-    console.log(eventData, 'eventData');
     if (eventData.status) {
       const { key, status, data, code, message, type } = eventData;
       if (key === this.eventKey) {

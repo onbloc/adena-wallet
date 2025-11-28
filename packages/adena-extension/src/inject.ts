@@ -54,17 +54,13 @@ const init = (): void => {
       return response;
     },
     async SignTx(message: TransactionParams): Promise<SignTxResponse> {
-      console.log('시작 1! SignTx');
       const executor = new AdenaExecutor();
       const response = await executor.signTx(message);
       return response;
     },
     async SignDocument(signedDocument: SignedDocument) {
-      console.log('시작 1! SignDocument');
       const executor = new AdenaExecutor();
-      console.log('1-1');
       const response = await executor.signDocument(signedDocument);
-      console.log('1-2');
       return response;
     },
     async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {

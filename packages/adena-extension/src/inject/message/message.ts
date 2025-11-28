@@ -41,12 +41,6 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ) {
-    console.log(
-      WalletMessageInfo[messageKey],
-      WalletMessageInfo,
-      messageKey,
-      'WalletMessageInfo[messageKey]',
-    );
     const { code, message, type } = WalletMessageInfo[messageKey];
     this.key = key ?? '';
     this.code = code || 0;
@@ -103,7 +97,6 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ): InjectionMessage => {
-    console.log('시작 4!', messageKey, data, key);
     return new InjectionMessageInstance(messageKey, 'request', data, key, withNotification).dataObj;
   };
 
