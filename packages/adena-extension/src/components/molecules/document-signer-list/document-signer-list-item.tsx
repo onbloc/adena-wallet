@@ -1,11 +1,45 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 
+import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
 
 import { DocumentSignerListItemWrapper } from './document-signer-list.styles';
 import { CopyIconButton } from '@components/atoms';
 import SuccessIcon from '@assets/success.svg';
 import IconShare from '@assets/icon-share';
+
+interface StatusStyle {
+  color: string;
+  className: string;
+  statusText: string;
+  showBadge: boolean;
+}
+
+function getStatusStyle(status: 'SIGNED' | 'PENDING'): StatusStyle {
+  switch (status) {
+    case 'SIGNED':
+      return {
+        color: theme.green._5,
+        className: 'signed',
+        statusText: 'Signed',
+        showBadge: true,
+      };
+    case 'PENDING':
+      return {
+        color: theme.neutral.a,
+        className: 'pending',
+        statusText: 'Pending',
+        showBadge: false,
+      };
+    default:
+      return {
+        color: theme.neutral.a,
+        className: 'pending',
+        statusText: 'Pending',
+        showBadge: false,
+      };
+  }
+}
 
 export interface DocumentSignerListItemProps {
   signerAddress: string;
@@ -24,25 +58,13 @@ const DocumentSignerListItem = ({
     return formatAddress(signerAddress, 8);
   }, [signerAddress]);
 
-  const getStatusClassName = useMemo(() => {
-    if (status === 'SIGNED') {
-      return 'signed';
-    }
-    if (status === 'PENDING') {
-      return 'pending';
-    }
-    return '';
-  }, [status]);
-
-  const statusText = useMemo(() => {
-    return status === 'SIGNED' ? 'Signed' : 'Pending';
-  }, [status]);
+  const statusStyle = useMemo(() => getStatusStyle(status), [status]);
 
   return (
-    <DocumentSignerListItemWrapper>
+    <DocumentSignerListItemWrapper borderColor={statusStyle.color}>
       <div className='logo-wrapper'>
         <div className='logo'>{order}</div>
-        <img className='badge' src={SuccessIcon} alt={'success badge'} />
+        {statusStyle.showBadge && <img className='badge' src={SuccessIcon} alt={'success badge'} />}
       </div>
 
       <div className='title-wrapper'>
@@ -58,8 +80,8 @@ const DocumentSignerListItem = ({
         </span>
       </div>
 
-      <div className={`value-wrapper ${getStatusClassName}`}>
-        <span className='value'>{statusText}</span>
+      <div className={`value-wrapper ${statusStyle.className}`}>
+        <span className='value'>{statusStyle.statusText}</span>
       </div>
     </DocumentSignerListItemWrapper>
   );

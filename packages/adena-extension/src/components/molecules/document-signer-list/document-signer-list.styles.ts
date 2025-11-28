@@ -9,12 +9,13 @@ export const DocumentSignerListWrapper = styled.div`
   height: auto;
 `;
 
-export const DocumentSignerListItemWrapper = styled.div`
+export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>`
   ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
   padding: 10px 14px;
   width: 100%;
   height: auto;
   background: ${getTheme('neutral', '_9')};
+  border: 1px solid ${({ borderColor }): string => borderColor};
   border-radius: 18px;
   transition: 0.2s;
 
