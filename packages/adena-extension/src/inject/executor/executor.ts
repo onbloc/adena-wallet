@@ -34,6 +34,11 @@ import {
   validateSignedDocumentFee,
   validateSignedDocumentFields,
   validateSignedDocumentMessages,
+  validateMultisigConfigExists,
+  validateMultisigSigners,
+  validateMultisigSignerAddresses,
+  validateMultisigThreshold,
+  validateChainId,
 } from '@common/validation';
 
 type Params = { [key in string]: any };
@@ -222,43 +227,32 @@ export class AdenaExecutor {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    // Validate multisigConfig existence
-    if (!params.multisigConfig) {
+    if (!validateMultisigConfigExists(params.multisigConfig)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
     const { signers, threshold } = params.multisigConfig;
 
-    // Validate signers
-    if (!Array.isArray(signers) || signers.length < 2) {
+    if (!validateMultisigSigners(signers)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
     }
 
-    // Validate each signer address
-    try {
-      for (const signer of signers) {
-        validateInvalidAddress(signer);
-      }
-    } catch (error) {
+    if (!validateMultisigSignerAddresses(signers)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_ADDRESS);
     }
 
-    // Validate threshold
-    if (typeof threshold !== 'number' || threshold < 1 || threshold > signers.length) {
+    if (!validateMultisigThreshold(threshold, signers.length)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD);
     }
 
-    // Validate chain_id
-    if (typeof params.chain_id !== 'string' || !params.chain_id) {
+    if (!validateChainId(params.chain_id)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    // Validate fee
     if (!validateSignedDocumentFee(params.fee)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    // Validate msgs
     if (!validateSignedDocumentMessages(params.msgs)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }

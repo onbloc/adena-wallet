@@ -5,3 +5,4 @@ export * from './validation-token';
 export * from './validation-wallet';
 export * from './validation-signature';
 export * from './validation-signed-document';
+export * from './validation-create-multisig-document';
