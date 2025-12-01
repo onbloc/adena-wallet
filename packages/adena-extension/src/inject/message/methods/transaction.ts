@@ -68,11 +68,9 @@ export const createMultisigDocument = async (
     sendResponse(validationMessage);
     return;
   }
-  console.log(validationMessage, 'validationMessage');
 
-  console.log('팝업생성');
   HandlerMethod.createPopup(
-    RoutePath.ApproveSignDocument,
+    RoutePath.CreateMultisigDocument,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,

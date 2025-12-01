@@ -17,7 +17,7 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { ApproveSignedDocument } from '@components/molecules';
+import { CreateMultisigDocument } from '@components/molecules/create-multisig-document';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -56,7 +56,7 @@ function mappedTransactionData(document: Document): TransactionData {
   };
 }
 
-const ApproveSignDocumentContainer: React.FC = () => {
+const CreateMultisigDocumentContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
@@ -209,6 +209,7 @@ const ApproveSignDocumentContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
+    console.log(parsedData, 'parsedData');
     setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
@@ -420,8 +421,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
   }, [memo, transactionMessages]);
 
   return (
-    <ApproveSignedDocument
-      title='Sign Document'
+    <CreateMultisigDocument
+      title='Create New Multisig'
       domain={hostname}
       contracts={transactionData?.contracts || []}
       signatures={signatures}
@@ -452,4 +453,4 @@ const ApproveSignDocumentContainer: React.FC = () => {
   );
 };
 
-export default ApproveSignDocumentContainer;
+export default CreateMultisigDocumentContainer;

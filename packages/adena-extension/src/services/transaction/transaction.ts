@@ -20,7 +20,7 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
-import { SignedDocument } from '@inject/types';
+import { CreateMultisigDocumentParams, SignedDocument } from '@inject/types';
 
 interface EncodeTxSignature {
   pubKey: {
@@ -124,6 +124,49 @@ export class TransactionService {
                 },
               ],
       },
+    };
+  };
+
+  /**
+   * Create a multisig document
+   *
+   * @param account - Account to get account info
+   * @param params - CreateMultisigDocumentParams
+   * @returns SignedDocument with empty signatures array
+   */
+  public createMultisigDocument = async (
+    account: Account,
+    params: CreateMultisigDocumentParams,
+  ): Promise<SignedDocument> => {
+    const provider = this.getGnoProvider();
+    const address = await account.getAddress(defaultAddressPrefix);
+    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
+    const accountNumber = accountInfo?.accountNumber ?? 0;
+    const accountSequence = accountInfo?.sequence ?? 0;
+
+    return {
+      msgs: params.msgs,
+      fee: {
+        gas: params.fee.gas || DEFAULT_GAS_WANTED.toString(),
+        amount:
+          params.fee.amount.length > 0
+            ? params.fee.amount.map((fee) => ({
+                ...fee,
+                amount: fee.amount || DEFAULT_GAS_FEE.toString(),
+                denom: fee.denom || GasToken.denom,
+              }))
+            : [
+                {
+                  amount: DEFAULT_GAS_FEE.toString(),
+                  denom: GasToken.denom,
+                },
+              ],
+      },
+      chain_id: params.chain_id,
+      memo: params.memo || '',
+      account_number: accountNumber.toString(),
+      sequence: accountSequence.toString(),
+      signatures: [],
     };
   };
 

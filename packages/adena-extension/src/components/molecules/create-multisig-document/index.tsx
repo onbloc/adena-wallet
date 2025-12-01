@@ -14,15 +14,15 @@ import ApproveTransactionMessageBox from '../approve-transaction-message-box/app
 import DocumentSigner from '../document-signer/document-signer';
 import NetworkFee from '../network-fee/network-fee';
 import {
-  ApproveSignedDocumentSignerWrapper,
-  ApproveSignedDocumentWrapper,
-} from './approve-signed-document.styles';
+  CreateMultisigDocumentSignerWrapper,
+  CreateMultisigDocumentWrapper,
+} from './create-multisig-document.styles';
 import { Signature } from '@adena-wallet/sdk';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
-import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
+import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
 
-export interface ApproveSignedDocumentProps {
+export interface CreateMultisigDocumentProps {
   loading: boolean;
   title: string;
   logo: string;
@@ -57,7 +57,7 @@ export interface ApproveSignedDocumentProps {
   onClickCancel: () => void;
 }
 
-export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
+export const CreateMultisigDocument: React.FC<CreateMultisigDocumentProps> = ({
   loading,
   title,
   logo,
@@ -178,14 +178,14 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
 
   if (openedSigners) {
     return (
-      <ApproveSignedDocumentSignerWrapper>
+      <CreateMultisigDocumentSignerWrapper>
         <DocumentSignerListScreen signerInfos={signerInfos} onClickBack={onClickSignersBack} />
-      </ApproveSignedDocumentSignerWrapper>
+      </CreateMultisigDocumentSignerWrapper>
     );
   }
 
   return (
-    <ApproveSignedDocumentWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <CreateMultisigDocumentWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>
@@ -286,6 +286,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
           onClick: onClickConfirmButton,
         }}
       />
-    </ApproveSignedDocumentWrapper>
+    </CreateMultisigDocumentWrapper>
   );
 };

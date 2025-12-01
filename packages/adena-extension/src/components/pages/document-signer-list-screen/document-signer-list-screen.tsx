@@ -4,13 +4,14 @@ import * as S from './document-signer-list-screen.styles';
 import { SubHeader } from '@components/atoms';
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import DocumentSignerList from '@components/molecules/document-signer-list/document-signer-list';
+import { SignerInfo } from '@inject/types';
 
 interface DocumentSignerListProps {
-  signerAddresses: string[];
+  signerInfos: SignerInfo[];
   onClickBack: () => void;
 }
 
-const DocumentSignerListScreen = ({ signerAddresses, onClickBack }: DocumentSignerListProps) => {
+const DocumentSignerListScreen = ({ signerInfos, onClickBack }: DocumentSignerListProps) => {
   return (
     <S.DocumentSignerListWrapper>
       <SubHeader
@@ -22,7 +23,7 @@ const DocumentSignerListScreen = ({ signerAddresses, onClickBack }: DocumentSign
       />
 
       <div className='content-wrapper'>
-        <DocumentSignerList signerAddresses={signerAddresses} />
+        <DocumentSignerList signerInfos={signerInfos} />
       </div>
     </S.DocumentSignerListWrapper>
   );
