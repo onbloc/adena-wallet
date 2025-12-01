@@ -18,6 +18,7 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  CreateMultisigDocumentParams,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
@@ -28,6 +29,7 @@ import {
 } from '@inject/types';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import {
+  validateInvalidAddress,
   validateSignatures,
   validateSignedDocumentFee,
   validateSignedDocumentFields,
@@ -124,6 +126,22 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public createMultisigDocument = (params: CreateMultisigDocumentParams) => {
+    const result = this.validateCreateMultisigDocument(params);
+    console.log(result, 'resulst');
+    if (result) {
+      return this.sendEventMessage(result);
+    }
+
+    const eventMessage = AdenaExecutor.createEventMessage(
+      'CREATE_MULTISIG_DOCUMENT' as WalletResponseType,
+      params,
+    );
+    console.log(eventMessage, 'eventMessageeventMessage');
+
+    return this.sendEventMessage(eventMessage);
+  };
+
   public signDocument = (signedDocument: SignedDocument) => {
     const result = this.validateSignedDocument(signedDocument);
     if (result) {
@@ -191,6 +209,64 @@ export class AdenaExecutor {
   };
 
   /**
+   * Validates CreateMultisigDocumentParams.
+   * Verifies signers array, threshold value, chain_id, fee structure, and msgs array.
+   *
+   * @param params - The CreateMultisigDocumentParams object to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateCreateMultisigDocument = (
+    params: CreateMultisigDocumentParams,
+  ): InjectionMessage | undefined => {
+    if (!params) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    // Validate multisigConfig existence
+    if (!params.multisigConfig) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    const { signers, threshold } = params.multisigConfig;
+
+    // Validate signers
+    if (!Array.isArray(signers) || signers.length < 2) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
+    }
+
+    // Validate each signer address
+    try {
+      for (const signer of signers) {
+        validateInvalidAddress(signer);
+      }
+    } catch (error) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_ADDRESS);
+    }
+
+    // Validate threshold
+    if (typeof threshold !== 'number' || threshold < 1 || threshold > signers.length) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD);
+    }
+
+    // Validate chain_id
+    if (typeof params.chain_id !== 'string' || !params.chain_id) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    // Validate fee
+    if (!validateSignedDocumentFee(params.fee)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    // Validate msgs
+    if (!validateSignedDocumentMessages(params.msgs)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    return this.validateMessages(params.msgs);
+  };
+
+  /**
    * Validates a signed document (SignedDocument).
    * Verifies the existence and format of required fields (chain_id, account_number, sequence, memo),
    * fee structure (gas and amount array), signatures array, and msgs array, then validates the included messages as well.
@@ -246,6 +322,7 @@ export class AdenaExecutor {
       hostname: window.location.hostname,
       key: this.eventKey,
     };
+    console.log(this.eventMessage, 'this.eventMessageeventMessageeventMessageeventMessage');
 
     try {
       window.postMessage(this.eventMessage, window.location.origin);

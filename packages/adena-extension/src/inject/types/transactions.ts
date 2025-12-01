@@ -39,18 +39,32 @@ export type TransactionParams = {
   arguments?: GnoArgumentInfo[] | null;
 };
 
-export interface SignedDocument {
+export interface Fee {
+  amount: {
+    amount: string;
+    denom: string;
+  }[];
+  gas: string;
+}
+
+export interface BaseDocument {
   chain_id: string;
+  fee: Fee;
+  msgs: any[];
+}
+
+export interface MultisigConfig {
+  signers: string[];
+  threshold: number;
+}
+export interface CreateMultisigDocumentParams extends BaseDocument {
+  multisigConfig: MultisigConfig;
+  memo?: string;
+}
+
+export interface SignedDocument extends BaseDocument {
   account_number: string;
   sequence: string;
-  fee: {
-    amount: {
-      amount: string;
-      denom: string;
-    }[];
-    gas: string;
-  };
-  msgs: any[];
   memo: string;
   signatures: Signature[];
 }

@@ -67,6 +67,7 @@ export class MessageHandler {
     if (isPopup) {
       await removePopups();
     }
+    console.log(message, 'message');
 
     switch (message.type) {
       case 'DO_CONTRACT':
@@ -155,6 +156,13 @@ export class MessageHandler {
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.signDocument(message, sendResponse);
+          }
+        });
+      case 'CREATE_MULTISIG_DOCUMENT':
+        console.log('hi');
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.createMultisigDocument(message, sendResponse);
           }
         });
       default:

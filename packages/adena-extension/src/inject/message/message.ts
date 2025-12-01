@@ -1,5 +1,4 @@
 import { WalletMessageInfo, WalletResponseType } from '@adena-wallet/sdk';
-import { TxSignature } from '@gnolang/tm2-js-client';
 
 export type StatusType = 'request' | 'response' | 'common' | 'success' | 'failure';
 
@@ -13,10 +12,6 @@ export interface InjectionMessage {
   status: StatusType;
   message: string;
   data: { [key in string]: any } | undefined;
-}
-
-export interface InjectionMessageWithSignature extends InjectionMessage {
-  signature?: TxSignature[];
 }
 
 export class InjectionMessageInstance {
@@ -41,7 +36,9 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ) {
+    console.trace(WalletMessageInfo[messageKey], messageKey, 'WalletMessageInfo[messageKey]');
     const { code, message, type } = WalletMessageInfo[messageKey];
+    console.log(code, message, type, '!!!!!!!!!!!!');
     this.key = key ?? '';
     this.code = code || 0;
     this.type = type;

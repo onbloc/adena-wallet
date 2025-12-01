@@ -8,6 +8,7 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  CreateMultisigDocumentParams,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
@@ -61,6 +62,11 @@ const init = (): void => {
     async SignDocument(signedDocument: SignedDocument) {
       const executor = new AdenaExecutor();
       const response = await executor.signDocument(signedDocument);
+      return response;
+    },
+    async CreateMultisigDocument(params: CreateMultisigDocumentParams) {
+      const executor = new AdenaExecutor();
+      const response = await executor.createMultisigDocument(params);
       return response;
     },
     async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {
