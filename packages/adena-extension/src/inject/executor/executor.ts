@@ -133,7 +133,6 @@ export class AdenaExecutor {
 
   public createMultisigDocument = (params: CreateMultisigDocumentParams) => {
     const result = this.validateCreateMultisigDocument(params);
-    console.log(result, 'resulst');
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -142,7 +141,6 @@ export class AdenaExecutor {
       'CREATE_MULTISIG_DOCUMENT' as WalletResponseType,
       params,
     );
-    console.log(eventMessage, 'eventMessageeventMessage');
 
     return this.sendEventMessage(eventMessage);
   };
@@ -316,7 +314,6 @@ export class AdenaExecutor {
       hostname: window.location.hostname,
       key: this.eventKey,
     };
-    console.log(this.eventMessage, 'this.eventMessageeventMessageeventMessageeventMessage');
 
     try {
       window.postMessage(this.eventMessage, window.location.origin);

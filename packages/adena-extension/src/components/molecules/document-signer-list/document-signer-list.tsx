@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useNetwork } from '@hooks/use-network';
 
 import { DocumentSignerListWrapper } from './document-signer-list.styles';
