@@ -44,7 +44,19 @@ export const validateMultisigSignerAddresses = (signers: string[]): boolean => {
  * Validates threshold value
  */
 export const validateMultisigThreshold = (threshold: any, signersCount: number): boolean => {
-  return typeof threshold === 'number' && threshold >= 1 && threshold <= signersCount;
+  if (typeof threshold !== 'number' || threshold <= 0) {
+    return false;
+  }
+
+  if (signersCount <= 0) {
+    return false;
+  }
+
+  if (threshold > signersCount) {
+    return false;
+  }
+
+  return true;
 };
 
 /**

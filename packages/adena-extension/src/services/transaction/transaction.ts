@@ -9,10 +9,12 @@ import {
   Account,
   AdenaLedgerConnector,
   Document,
+  fromBase64,
   LedgerAccount,
   LedgerKeyring,
   sha256,
   Wallet,
+  createMultisigPublicKey,
 } from 'adena-module';
 
 import { GasToken } from '@common/constants/token.constant';
@@ -20,7 +22,7 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
-import { CreateMultisigDocumentParams, SignedDocument } from '@inject/types';
+import { CreateMultisigDocumentParams, MultisigConfig, SignedDocument } from '@inject/types';
 
 interface EncodeTxSignature {
   pubKey: {
@@ -125,6 +127,38 @@ export class TransactionService {
               ],
       },
     };
+  };
+
+  /**
+   * Create a multisig account
+   * @param config - Multisig configuration (signers and threshold)
+   * @returns Multisig account address
+   */
+  public createMultisigAccount = async (config: MultisigConfig) => {
+    const { signers, threshold } = config;
+
+    const signerPublicKeys: Uint8Array[] = [];
+    for (const address of signers) {
+      const publicKeyInfo = await this.getPublicKeyFromChain(address);
+
+      if (!publicKeyInfo?.value) {
+        throw new Error(
+          `Public key not found for address: ${address}. ` +
+            `The account may not have sent any transactions yet.`,
+        );
+      }
+
+      const publicKeyBytes = fromBase64(publicKeyInfo.value);
+      signerPublicKeys.push(publicKeyBytes);
+    }
+
+    const { address: multisigAddress } = createMultisigPublicKey(
+      signerPublicKeys,
+      threshold,
+      defaultAddressPrefix,
+    );
+
+    return multisigAddress;
   };
 
   /**
@@ -311,5 +345,13 @@ export class TransactionService {
    */
   public encodeTransaction(transaction: Tx): string {
     return uint8ArrayToBase64(Tx.encode(transaction).finish());
+  }
+
+  private async getPublicKeyFromChain(address: string) {
+    const provider = this.getGnoProvider();
+    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
+    const accountPubKey = accountInfo?.publicKey;
+
+    return accountPubKey;
   }
 }

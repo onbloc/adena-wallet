@@ -18,6 +18,7 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  CreateMultisigAccountParams,
   CreateMultisigDocumentParams,
   DoContractResponse,
   GetAccountResponse,
@@ -131,6 +132,20 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
+  public createMultisigAccount = (params: CreateMultisigAccountParams) => {
+    const result = this.validateCreateMultisigAccount(params);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
+
+    const eventMessage = AdenaExecutor.createEventMessage(
+      'CREATE_MULTISIG_ACCOUNT' as WalletResponseType,
+      params,
+    );
+
+    return this.sendEventMessage(eventMessage);
+  };
+
   public createMultisigDocument = (params: CreateMultisigDocumentParams) => {
     const result = this.validateCreateMultisigDocument(params);
     if (result) {
@@ -208,6 +223,35 @@ export class AdenaExecutor {
           return InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE);
       }
     }
+    return undefined;
+  };
+
+  /**
+   * Validates CreateMultisigAccountParams.
+   * Verifies signers array and threshold value.
+   *
+   * @param params - The CreateMultisigAccountParams object to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateCreateMultisigAccount = (
+    params: CreateMultisigAccountParams,
+  ): InjectionMessage | undefined => {
+    if (!params) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (!validateMultisigSigners(params.signers)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
+    }
+
+    if (!validateMultisigSignerAddresses(params.signers)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_ADDRESS);
+    }
+
+    if (!validateMultisigThreshold(params.threshold, params.signers.length)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD);
+    }
+
     return undefined;
   };
 

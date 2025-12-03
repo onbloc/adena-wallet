@@ -12,7 +12,6 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
-import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
@@ -21,8 +20,7 @@ import { RoutePath } from '@types';
 
 const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate } = useAppNavigate();
-  const { walletService } = useAdenaContext();
+  const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const location = useLocation();
 
@@ -97,19 +95,17 @@ const CreateMultisigAccountContainer: React.FC = () => {
       );
       return;
     }
-
     try {
       setProcessType('PROCESSING');
 
-      // TODO: 실제 멀티시그 계정 생성 로직
-      // const multisigAddress = await walletService.createMultisigAccount(multisigConfig);
+      const multisigAddress = await transactionService.createMultisigAccount(multisigConfig);
 
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
           {
             multisigConfig,
-            // address: multisigAddress,
+            address: multisigAddress,
           },
           requestData?.key,
         ),

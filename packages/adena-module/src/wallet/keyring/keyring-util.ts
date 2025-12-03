@@ -7,6 +7,7 @@ import { Keyring } from './keyring';
 import { LedgerKeyring } from './ledger-keyring';
 import { PrivateKeyKeyring } from './private-key-keyring';
 import { Web3AuthKeyring } from './web3-auth-keyring';
+import { MultisigKeyring } from './multisig-keyring';
 
 export function isHDWalletKeyring(keyring: Keyring): keyring is HDWalletKeyring {
   return keyring.type === 'HD_WALLET';
@@ -26,6 +27,10 @@ export function isWeb3AuthKeyring(keyring: Keyring): keyring is Web3AuthKeyring 
 
 export function isAddressKeyring(keyring: Keyring): keyring is AddressKeyring {
   return keyring.type === 'AIRGAP';
+}
+
+export function isMultisigKeyring(keyring: Keyring): keyring is MultisigKeyring {
+  return keyring.type === 'MULTISIG';
 }
 
 export function hasPrivateKey(

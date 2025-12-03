@@ -58,6 +58,26 @@ export const signDocument = async (
   );
 };
 
+export const createMultisigAccount = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+) => {
+  // const validationMessage = validateInjectionData(requestData);
+  // if (validationMessage) {
+  //   console.log('if validationMessage');
+  //   sendResponse(validationMessage);
+  //   return;
+  // }
+  console.log(requestData, 'requestData');
+
+  HandlerMethod.createPopup(
+    RoutePath.CreateMultisigAccount,
+    requestData,
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    sendResponse,
+  );
+};
+
 export const createMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,

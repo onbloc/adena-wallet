@@ -151,6 +151,13 @@ export class MessageHandler {
           }
         });
         break;
+      case 'CREATE_MULTISIG_ACCOUNT':
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.createMultisigAccount(message, sendResponse);
+          }
+        });
+        break;
       case 'SIGN_DOCUMENT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
