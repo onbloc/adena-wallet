@@ -34,8 +34,8 @@ const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps) => {
           <DocumentSignerListItem
             key={`${i}:${signer.address}`}
             signerAddress={signer.address}
+            status={signer.status}
             order={i + 1}
-            status={signer.status as 'SIGNED' | 'PENDING'}
             onClickAddress={handleLinkClick}
           />
         );

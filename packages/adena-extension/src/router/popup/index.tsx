@@ -65,6 +65,7 @@ import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
 import CreateMultisigDocumentContainer from '@pages/popup/wallet/create-multisig-document';
+import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
 
 export const PopupRouter = (): JSX.Element => {
   const { failedNetwork } = useNetwork();
@@ -128,6 +129,10 @@ export const PopupRouter = (): JSX.Element => {
         />
         <Route path={RoutePath.ApproveSignFailed} element={<ApproveSignFailedScreen />} />
         <Route path={RoutePath.ApproveSignDocument} element={<ApproveSignDocument />} />
+        <Route
+          path={RoutePath.CreateMultisigAccount}
+          element={<CreateMultisigAccountContainer />}
+        />
         <Route
           path={RoutePath.CreateMultisigDocument}
           element={<CreateMultisigDocumentContainer />}
