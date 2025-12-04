@@ -60,7 +60,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, transactionService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
@@ -256,7 +256,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
     }
 
     try {
-      const document = await transactionService.createSignedDocument(
+      const document = await multisigService.createSignedDocument(
         currentNetwork.chainId,
         requestData.data as SignedDocument,
       );
@@ -333,7 +333,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
-          WalletResponseSuccessType.SIGN_DOCUMENT_SUCCESS,
+          WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
           {
             document: updateSignedDocument,
             signature,
@@ -349,7 +349,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
         }
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_DOCUMENT_FAILED,
+            WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
             { error: { message } },
             requestData?.key,
           ),
@@ -357,7 +357,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
       }
       setResponse(
         InjectionMessageInstance.failure(
-          WalletResponseFailureType.SIGN_DOCUMENT_FAILED,
+          WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
           {},
           requestData?.key,
         ),

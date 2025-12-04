@@ -36,9 +36,7 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ) {
-    console.trace(WalletMessageInfo[messageKey], messageKey, 'WalletMessageInfo[messageKey]');
     const { code, message, type } = WalletMessageInfo[messageKey];
-    console.log(code, message, type, '!!!!!!!!!!!!');
     this.key = key ?? '';
     this.code = code || 0;
     this.type = type;

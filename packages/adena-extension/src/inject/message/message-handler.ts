@@ -158,7 +158,7 @@ export class MessageHandler {
           }
         });
         break;
-      case 'SIGN_DOCUMENT':
+      case 'SIGN_MULTISIG_DOCUMENT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.signDocument(message, sendResponse);

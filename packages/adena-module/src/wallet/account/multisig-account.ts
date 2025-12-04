@@ -17,8 +17,8 @@ export class MultisigAccount implements Account {
   public readonly id: string;
   public readonly type = 'MULTISIG' as const;
   public readonly keyringId: string;
-  public readonly publicKey: Uint8Array; // ✅ Always empty (not used)
-  public readonly addressBytes: Uint8Array; // ✅ Like AirgapAccount
+  public readonly publicKey: Uint8Array;
+  public readonly addressBytes: Uint8Array;
   public readonly threshold: number;
 
   private _index: number;
@@ -29,8 +29,8 @@ export class MultisigAccount implements Account {
     this._index = accountInfo.index;
     this._name = accountInfo.name;
     this.keyringId = accountInfo.keyringId;
-    this.publicKey = new Uint8Array(); // ✅ Empty like AirgapAccount
-    this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []); // ✅ Like AirgapAccount
+    this.publicKey = new Uint8Array();
+    this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []);
     this.threshold = accountInfo.threshold || 0;
   }
 
@@ -60,8 +60,8 @@ export class MultisigAccount implements Account {
       type: this.type,
       name: this._name,
       keyringId: this.keyringId,
-      publicKey: Array.from(this.publicKey), // Empty array
-      addressBytes: Array.from(this.addressBytes), // ✅ Like AirgapAccount
+      publicKey: Array.from(this.publicKey),
+      addressBytes: Array.from(this.addressBytes),
       threshold: this.threshold,
       hdPath: undefined,
     };
@@ -72,7 +72,7 @@ export class MultisigAccount implements Account {
    * Converts addressBytes to bech32 format (like AirgapAccount)
    */
   async getAddress(prefix: string = defaultAddressPrefix): Promise<string> {
-    return toBech32(prefix, this.addressBytes); // ✅ Like AirgapAccount
+    return toBech32(prefix, this.addressBytes);
   }
 
   /**

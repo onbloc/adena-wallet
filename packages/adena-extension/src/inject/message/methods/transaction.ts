@@ -64,7 +64,6 @@ export const createMultisigAccount = async (
 ) => {
   // const validationMessage = validateInjectionData(requestData);
   // if (validationMessage) {
-  //   console.log('if validationMessage');
   //   sendResponse(validationMessage);
   //   return;
   // }
@@ -84,7 +83,6 @@ export const createMultisigDocument = async (
 ) => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
-    console.log('if validationMessage');
     sendResponse(validationMessage);
     return;
   }

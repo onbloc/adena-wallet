@@ -11,19 +11,18 @@ export const validateMultisigConfigExists = (
     return false;
   }
 
-  return (
-    'signers' in multisigConfig &&
-    'threshold' in multisigConfig &&
-    multisigConfig.signers !== undefined &&
-    multisigConfig.threshold !== undefined
-  );
+  return multisigConfig.signers !== undefined && multisigConfig.threshold !== undefined;
 };
 
 /**
  * Validates signers array format and minimum count
  */
 export const validateMultisigSigners = (signers: any): boolean => {
-  return Array.isArray(signers) && signers.length >= 2;
+  return (
+    Array.isArray(signers) &&
+    signers.length >= 2 &&
+    signers.every((signer) => typeof signer === 'string')
+  );
 };
 
 /**
@@ -36,6 +35,7 @@ export const validateMultisigSignerAddresses = (signers: string[]): boolean => {
     }
     return true;
   } catch (error) {
+    console.error('Invalid signer address:', error);
     return false;
   }
 };
@@ -44,11 +44,15 @@ export const validateMultisigSignerAddresses = (signers: string[]): boolean => {
  * Validates threshold value
  */
 export const validateMultisigThreshold = (threshold: any, signersCount: number): boolean => {
-  if (typeof threshold !== 'number' || threshold <= 0) {
+  if (typeof threshold !== 'number' || !Number.isInteger(threshold)) {
     return false;
   }
 
-  if (signersCount <= 0) {
+  if (signersCount < 2) {
+    return false;
+  }
+
+  if (threshold < 1) {
     return false;
   }
 

@@ -9,13 +9,10 @@ import {
   Account,
   AdenaLedgerConnector,
   Document,
-  fromBase64,
   LedgerAccount,
   LedgerKeyring,
   sha256,
   Wallet,
-  createMultisigPublicKey,
-  fromBech32,
 } from 'adena-module';
 
 import { GasToken } from '@common/constants/token.constant';
@@ -23,21 +20,7 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
-import { CreateMultisigDocumentParams, MultisigConfig, SignedDocument } from '@inject/types';
-import { AccountInfo } from '@common/provider/gno';
-
-const defaultAccountInfo: AccountInfo = {
-  address: '',
-  coins: '0ugnot',
-  chainId: '',
-  status: 'IN_ACTIVE',
-  publicKey: {
-    '@type': '',
-    value: '',
-  },
-  accountNumber: '',
-  sequence: '',
-};
+import { SignedDocument } from '@inject/types';
 
 interface EncodeTxSignature {
   pubKey: {
@@ -141,86 +124,6 @@ export class TransactionService {
                 },
               ],
       },
-    };
-  };
-
-  /**
-   * Create a multisig account
-   * @param config - Multisig configuration (signers and threshold)
-   * @returns Multisig account address and addressBytes
-   */
-  public createMultisigAccount = async (config: MultisigConfig) => {
-    const { signers, threshold } = config;
-
-    const signerPublicKeys: Uint8Array[] = [];
-    for (const address of signers) {
-      const publicKeyInfo = await this.getPublicKeyFromChain(address);
-
-      if (!publicKeyInfo?.value) {
-        throw new Error(
-          `Public key not found for address: ${address}. ` +
-            `The account may not have sent any transactions yet.`,
-        );
-      }
-
-      const publicKeyBytes = fromBase64(publicKeyInfo.value);
-      signerPublicKeys.push(publicKeyBytes);
-    }
-
-    const { address: multisigAddress } = createMultisigPublicKey(
-      signerPublicKeys,
-      threshold,
-      defaultAddressPrefix,
-    );
-
-    const { data: addressBytes } = fromBech32(multisigAddress);
-
-    return {
-      multisigAddress: multisigAddress,
-      multisigAddressBytes: addressBytes,
-    };
-  };
-
-  /**
-   * Create a multisig document
-   *
-   * @param account - Account to get account info
-   * @param params - CreateMultisigDocumentParams
-   * @returns SignedDocument with empty signatures array
-   */
-  public createMultisigDocument = async (
-    account: Account,
-    params: CreateMultisigDocumentParams,
-  ): Promise<SignedDocument> => {
-    const provider = this.getGnoProvider();
-    const address = await account.getAddress(defaultAddressPrefix);
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
-    const accountNumber = accountInfo?.accountNumber ?? 0;
-    const accountSequence = accountInfo?.sequence ?? 0;
-
-    return {
-      msgs: params.msgs,
-      fee: {
-        gas: params.fee.gas || DEFAULT_GAS_WANTED.toString(),
-        amount:
-          params.fee.amount.length > 0
-            ? params.fee.amount.map((fee) => ({
-                ...fee,
-                amount: fee.amount || DEFAULT_GAS_FEE.toString(),
-                denom: fee.denom || GasToken.denom,
-              }))
-            : [
-                {
-                  amount: DEFAULT_GAS_FEE.toString(),
-                  denom: GasToken.denom,
-                },
-              ],
-      },
-      chain_id: params.chain_id,
-      memo: params.memo || '',
-      account_number: accountNumber.toString(),
-      sequence: accountSequence.toString(),
-      signatures: [],
     };
   };
 
@@ -365,13 +268,5 @@ export class TransactionService {
    */
   public encodeTransaction(transaction: Tx): string {
     return uint8ArrayToBase64(Tx.encode(transaction).finish());
-  }
-
-  private async getPublicKeyFromChain(address: string) {
-    const provider = this.getGnoProvider();
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
-    const accountPubKey = accountInfo?.publicKey;
-
-    return accountPubKey;
   }
 }

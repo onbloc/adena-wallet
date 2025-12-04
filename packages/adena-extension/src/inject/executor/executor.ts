@@ -19,6 +19,7 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   CreateMultisigAccountParams,
+  CreateMultisigAccountResponse,
   CreateMultisigDocumentParams,
   DoContractResponse,
   GetAccountResponse,
@@ -132,7 +133,9 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public createMultisigAccount = (params: CreateMultisigAccountParams) => {
+  public createMultisigAccount = (
+    params: CreateMultisigAccountParams,
+  ): Promise<CreateMultisigAccountResponse> => {
     const result = this.validateCreateMultisigAccount(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -160,14 +163,14 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signDocument = (signedDocument: SignedDocument) => {
+  public signMultisigDocument = (signedDocument: SignedDocument) => {
     const result = this.validateSignedDocument(signedDocument);
     if (result) {
       return this.sendEventMessage(result);
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
-      'SIGN_DOCUMENT' as WalletResponseType,
+      'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
       signedDocument,
     );
 
