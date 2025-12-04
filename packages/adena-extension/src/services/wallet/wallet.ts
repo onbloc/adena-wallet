@@ -1,4 +1,4 @@
-import { AdenaWallet, Wallet } from 'adena-module';
+import { AdenaWallet, MultisigAccount, MultisigKeyring, Wallet } from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -146,6 +146,59 @@ export class WalletService {
       chrome?.action?.setPopup({ popup: 'popup.html' });
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  /**
+   * Add multisig account to wallet
+   *
+   * @param addressBytes - Multisig address bytes
+   * @param threshold - Threshold for multisig
+   * @param multisigAddress - Multisig bech32 address
+   * @returns The added or existing multisig account
+   * @throws Error if multisig account operations fail
+   */
+  public addMultisigAccount = async (
+    addressBytes: Uint8Array,
+    threshold: number,
+    multisigAddress: string,
+  ): Promise<MultisigAccount> => {
+    try {
+      const wallet = await this.loadWallet();
+
+      const isDuplicate = await wallet.hasAddress(multisigAddress);
+      if (isDuplicate) {
+        throw new Error(`Multisig account already exists: ${multisigAddress}`);
+      }
+
+      const multisigKeyring = new MultisigKeyring({
+        type: 'MULTISIG',
+        threshold: threshold,
+        addressBytes: Array.from(addressBytes),
+      });
+
+      const addedIndex = wallet.lastAccountIndex + 1;
+
+      const multisigAccount = await MultisigAccount.createBy(
+        multisigKeyring,
+        `Multisig ${addedIndex}`,
+        addressBytes,
+      );
+
+      multisigAccount.index = addedIndex;
+      multisigAccount.name = `Multisig ${addedIndex}`;
+
+      const clonedWallet = wallet.clone();
+
+      clonedWallet.addKeyring(multisigKeyring);
+      clonedWallet.addAccount(multisigAccount);
+
+      await this.updateWallet(clonedWallet);
+
+      return multisigAccount;
+    } catch (error) {
+      console.error('Failed to add multisig account:', error);
+      throw error;
     }
   };
 
