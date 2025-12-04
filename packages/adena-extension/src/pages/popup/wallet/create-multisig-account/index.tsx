@@ -89,6 +89,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
   const addMultisigAccountToWallet = async (
     addressBytes: Uint8Array,
     threshold: number,
+    multisigAddress: string,
   ): Promise<void> => {
     if (!multisigConfig) {
       throw new Error('Multisig config is not available');
@@ -97,7 +98,11 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       const wallet = await walletService.loadWallet();
 
-      // ✅ Create keyring from address (like AddressKeyring)
+      const isDuplicate = await wallet.hasAddress(multisigAddress);
+      if (isDuplicate) {
+        throw new Error(`Multisig account already exists: ${multisigAddress}`);
+      }
+
       const multisigKeyring = new MultisigKeyring({
         type: 'MULTISIG',
         threshold: threshold,
@@ -155,7 +160,11 @@ const CreateMultisigAccountContainer: React.FC = () => {
       const { multisigAddress, multisigAddressBytes } =
         await transactionService.createMultisigAccount(multisigConfig);
 
-      await addMultisigAccountToWallet(multisigAddressBytes, multisigConfig.threshold);
+      await addMultisigAccountToWallet(
+        multisigAddressBytes,
+        multisigConfig.threshold,
+        multisigAddress,
+      );
 
       setResponse(
         InjectionMessageInstance.success(

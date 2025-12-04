@@ -2,6 +2,7 @@ import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
+  defaultAddressPrefix,
   Provider,
   Tx,
   TxSignature,
@@ -371,6 +372,18 @@ export class AdenaWallet implements Wallet {
     const serialized = JSON.stringify(plain);
     const encryptedSerialize = await encryptAES(serialized, password);
     return encryptedSerialize;
+  }
+
+  /**
+   * Check if an account with the same address already exists
+   * @param address - Bech32 address to check
+   * @returns true if duplicate exists
+   */
+  async hasAddress(address: string): Promise<boolean> {
+    const addresses = await Promise.all(
+      this._accounts.map((account) => account.getAddress(defaultAddressPrefix)),
+    );
+    return addresses.includes(address);
   }
 
   clone() {
