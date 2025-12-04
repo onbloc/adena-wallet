@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import theme from '@styles/theme';
 import { formatAddress } from '@common/utils/client-utils';
+import { SignerStatusType } from '@inject/types';
 
 import { DocumentSignerListItemWrapper } from './document-signer-list.styles';
 import { CopyIconButton } from '@components/atoms';
@@ -12,16 +13,18 @@ interface StatusStyle {
   color: string;
   className: string;
   statusText: string;
+  showLabel: boolean;
   showBadge: boolean;
 }
 
-function getStatusStyle(status: 'SIGNED' | 'PENDING'): StatusStyle {
+function getStatusStyle(status: SignerStatusType): StatusStyle {
   switch (status) {
     case 'SIGNED':
       return {
         color: theme.green._5,
         className: 'signed',
         statusText: 'Signed',
+        showLabel: true,
         showBadge: true,
       };
     case 'PENDING':
@@ -29,13 +32,16 @@ function getStatusStyle(status: 'SIGNED' | 'PENDING'): StatusStyle {
         color: theme.neutral.a,
         className: 'pending',
         statusText: 'Pending',
+        showLabel: true,
         showBadge: false,
       };
+    case 'NONE':
     default:
       return {
-        color: theme.neutral.a,
+        color: 'transparent',
         className: 'pending',
-        statusText: 'Pending',
+        statusText: '',
+        showLabel: false,
         showBadge: false,
       };
   }
@@ -44,7 +50,7 @@ function getStatusStyle(status: 'SIGNED' | 'PENDING'): StatusStyle {
 export interface DocumentSignerListItemProps {
   signerAddress: string;
   order: number;
-  status: 'SIGNED' | 'PENDING';
+  status: SignerStatusType;
   onClickAddress: (address: string) => void;
 }
 
@@ -80,9 +86,11 @@ const DocumentSignerListItem = ({
         </span>
       </div>
 
-      <div className={`value-wrapper ${statusStyle.className}`}>
-        <span className='value'>{statusStyle.statusText}</span>
-      </div>
+      {statusStyle.showLabel && (
+        <div className={`value-wrapper ${statusStyle.className}`}>
+          <span className='value'>{statusStyle.statusText}</span>
+        </div>
+      )}
     </DocumentSignerListItemWrapper>
   );
 };

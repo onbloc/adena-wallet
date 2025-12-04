@@ -48,7 +48,7 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signerAddresses.map((address) => ({
       address,
-      status: SignerStatusType.PENDING,
+      status: SignerStatusType.NONE,
     }));
   }, [signerAddresses]);
 

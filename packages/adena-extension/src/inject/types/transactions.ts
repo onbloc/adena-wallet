@@ -73,6 +73,7 @@ export interface SignedDocument extends BaseDocument {
 export enum SignerStatusType {
   SIGNED = 'SIGNED',
   PENDING = 'PENDING',
+  NONE = 'NONE',
 }
 
 export type SignerInfo = {

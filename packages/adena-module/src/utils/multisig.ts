@@ -1,10 +1,11 @@
+import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import {
   pubkeyToAddress,
   encodeSecp256k1Pubkey,
   createMultisigThresholdPubkey,
   MultisigThresholdPubkey,
 } from '@cosmjs/amino';
-import { Secp256k1, sha256 } from '@cosmjs/crypto';
+import { Secp256k1 } from '@cosmjs/crypto';
 
 /**
  * Creates a multisig public key and address from signer public keys
@@ -17,7 +18,7 @@ import { Secp256k1, sha256 } from '@cosmjs/crypto';
 export function createMultisigPublicKey(
   publicKeys: Uint8Array[],
   threshold: number,
-  addressPrefix: string = 'g',
+  addressPrefix: string = defaultAddressPrefix,
 ): {
   publicKey: Uint8Array;
   address: string;
@@ -65,7 +66,7 @@ export function createMultisigPublicKey(
  */
 function sortPublicKeysByAddress(
   publicKeys: Uint8Array[],
-  addressPrefix: string = 'g',
+  addressPrefix: string = defaultAddressPrefix,
 ): Uint8Array[] {
   const pubKeysWithAddresses = publicKeys.map((pubKey) => {
     const compressedPubKey = Secp256k1.compressPubkey(pubKey);
