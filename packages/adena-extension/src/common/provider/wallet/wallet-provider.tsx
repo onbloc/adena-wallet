@@ -50,6 +50,45 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     }
   }, [wallet, networkMetainfos, tokenMetainfos]);
 
+  async function removeMultisigAccounts(wallet: Wallet): Promise<boolean> {
+    const multisigAccounts = wallet.accounts.filter((account) => account.type === 'MULTISIG');
+
+    if (multisigAccounts.length === 0) {
+      return false; // 제거할 MultisigAccount가 없음
+    }
+
+    console.log(`Found ${multisigAccounts.length} MultisigAccount(s) to remove`);
+
+    // MultisigAccount의 keyringId 수집
+    const multisigKeyringIds = new Set(multisigAccounts.map((account) => account.keyringId));
+
+    // 일반 계정만 필터링
+    const nonMultisigAccounts = wallet.accounts.filter((account) => account.type !== 'MULTISIG');
+
+    // 일반 계정이 사용하는 keyringId
+    const nonMultisigKeyringIds = new Set(nonMultisigAccounts.map((account) => account.keyringId));
+
+    // Multisig 전용 keyring만 필터링 (다른 계정이 사용하지 않는 keyring)
+    const keyringIdsToRemove = Array.from(multisigKeyringIds).filter(
+      (id) => !nonMultisigKeyringIds.has(id),
+    );
+
+    // 일반 keyring만 필터링
+    const nonMultisigKeyrings = wallet.keyrings.filter(
+      (keyring) => !keyringIdsToRemove.includes(keyring.id),
+    );
+
+    // Wallet 업데이트 (직접 private 속성 수정)
+    (wallet as any)._accounts = nonMultisigAccounts;
+    (wallet as any)._keyrings = nonMultisigKeyrings;
+
+    console.log(
+      `Removed ${multisigAccounts.length} MultisigAccount(s) and ${keyringIdsToRemove.length} Keyring(s)`,
+    );
+
+    return true;
+  }
+
   async function initWallet(): Promise<boolean> {
     const existWallet = await walletService.existsWallet();
     if (!existWallet) {
@@ -68,8 +107,28 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     setWalletStatus('LOADING');
     try {
       const wallet = await walletService.loadWallet();
+
+      const hasMultisig = await removeMultisigAccounts(wallet);
+      if (hasMultisig) {
+        // MultisigAccount가 제거되었으면 저장
+        await walletService.updateWallet(wallet);
+        console.log('MultisigAccounts removed and wallet updated');
+      }
+
       const currentAccountId = await accountService.getCurrentAccountId();
-      wallet.currentAccountId = currentAccountId;
+
+      const currentAccount = wallet.accounts.find((account) => account.id === currentAccountId);
+
+      if (!currentAccount && wallet.accounts.length > 0) {
+        // currentAccount가 없으면 (MultisigAccount였던 경우) 첫 번째 계정으로 변경
+        const newCurrentAccount = wallet.accounts[0];
+        wallet.currentAccountId = newCurrentAccount.id;
+        await accountService.changeCurrentAccount(newCurrentAccount);
+        console.log('Current account changed to:', newCurrentAccount.id);
+      } else {
+        wallet.currentAccountId = currentAccountId;
+      }
+
       setWallet(wallet);
       await initCurrentAccount(wallet);
     } catch (e) {

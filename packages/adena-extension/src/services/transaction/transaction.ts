@@ -23,6 +23,20 @@ import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-map
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 import { CreateMultisigDocumentParams, MultisigConfig, SignedDocument } from '@inject/types';
+import { AccountInfo } from '@common/provider/gno';
+
+const defaultAccountInfo: AccountInfo = {
+  address: '',
+  coins: '0ugnot',
+  chainId: '',
+  status: 'IN_ACTIVE',
+  publicKey: {
+    '@type': '',
+    value: '',
+  },
+  accountNumber: '',
+  sequence: '',
+};
 
 interface EncodeTxSignature {
   pubKey: {
@@ -136,6 +150,7 @@ export class TransactionService {
    */
   public createMultisigAccount = async (config: MultisigConfig) => {
     const { signers, threshold } = config;
+    const provider = this.getGnoProvider();
 
     const signerPublicKeys: Uint8Array[] = [];
     for (const address of signers) {
@@ -152,13 +167,31 @@ export class TransactionService {
       signerPublicKeys.push(publicKeyBytes);
     }
 
-    const { address: multisigAddress } = createMultisigPublicKey(
+    const { publicKey: multisigPublicKey, address: multisigAddress } = createMultisigPublicKey(
       signerPublicKeys,
       threshold,
       defaultAddressPrefix,
     );
 
-    return multisigAddress;
+    const account = await provider.getAccountInfo(multisigAddress).catch(() => null);
+
+    const accountInfo: AccountInfo = account
+      ? {
+          ...defaultAccountInfo,
+          ...account,
+          address: multisigAddress,
+        }
+      : {
+          ...defaultAccountInfo,
+          address: multisigAddress,
+        };
+
+    return {
+      address: multisigAddress,
+      publicKey: multisigPublicKey,
+      signerPublicKeys: signerPublicKeys,
+      accountInfo: accountInfo,
+    };
   };
 
   /**

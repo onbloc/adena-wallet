@@ -154,7 +154,7 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.ResetWallet} element={<ResetWallet />} />
       </Routes>
       <Navigation />
-      <LoadingMain />
+      {/* <LoadingMain /> */}
       <ToastContainer />
     </React.Fragment>
   );

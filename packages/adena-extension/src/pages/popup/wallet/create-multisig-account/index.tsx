@@ -17,11 +17,18 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { MultisigConfig } from '@inject/types';
 import { RoutePath } from '@types';
+import {
+  AddressKeyring,
+  AirgapAccount,
+  MultisigAccount,
+  MultisigKeyring,
+  SingleAccount,
+} from 'adena-module';
 
 const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { walletService, transactionService, accountService } = useAdenaContext();
+  const { currentAccount, changeCurrentAccount } = useCurrentAccount();
   const location = useLocation();
 
   const [hostname, setHostname] = useState('');
@@ -84,6 +91,58 @@ const CreateMultisigAccountContainer: React.FC = () => {
     setHostname(requestData?.hostname ?? '');
   };
 
+  const addMultisigAccountToWallet = async (
+    multisigPublicKey: Uint8Array,
+    signerPublicKeys: Uint8Array[],
+  ): Promise<void> => {
+    if (!multisigConfig) {
+      throw new Error('Multisig config is not available');
+    }
+
+    try {
+      const wallet = await walletService.loadWallet();
+
+      const multisigKeyring = await MultisigKeyring.fromPublicKeys(
+        signerPublicKeys,
+        multisigConfig.threshold,
+        multisigPublicKey,
+      );
+      console.log(multisigKeyring, 'multisigKeyring');
+
+      const addedIndex = wallet.lastAccountIndex + 1;
+      console.log(addedIndex, 'addedIndex');
+
+      const multisigAccount = await MultisigAccount.createBy(
+        multisigKeyring,
+        `Multisig ${addedIndex}`,
+      );
+      console.log(multisigAccount, 'multisigAccount');
+
+      multisigAccount.index = addedIndex;
+      multisigAccount.name = `Multisig ${addedIndex}`;
+
+      const clonedWallet = wallet.clone();
+
+      clonedWallet.addKeyring(multisigKeyring);
+      clonedWallet.addAccount(multisigAccount);
+
+      const storedAccount = clonedWallet.accounts.find(
+        (account) => account.id === multisigAccount.id,
+      );
+      if (storedAccount) {
+        await changeCurrentAccount(storedAccount);
+      }
+      console.log(clonedWallet, 'clonedWallet');
+
+      await walletService.updateWallet(clonedWallet);
+
+      console.log('Multisig account added successfully:', multisigAccount);
+    } catch (error) {
+      console.error('Failed to add multisig account:', error);
+      throw error;
+    }
+  };
+
   const createMultisigAccount = async (): Promise<void> => {
     if (!multisigConfig) {
       setResponse(
@@ -98,14 +157,20 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const multisigAddress = await transactionService.createMultisigAccount(multisigConfig);
+      const { address, publicKey, signerPublicKeys, accountInfo } =
+        await transactionService.createMultisigAccount(multisigConfig);
+
+      await addMultisigAccountToWallet(publicKey, signerPublicKeys);
+
+      // const multisigAccountInfo = await accountService.getAccountInfo(multisigAddress || '');
+      // return;
 
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
           {
             multisigConfig,
-            address: multisigAddress,
+            address,
           },
           requestData?.key,
         ),

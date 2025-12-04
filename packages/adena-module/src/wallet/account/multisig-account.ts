@@ -11,18 +11,19 @@ import { Account, AccountInfo } from './account';
  */
 export class MultisigAccount implements Account {
   public readonly id: string;
-  public readonly index: number;
   public readonly type = 'MULTISIG' as const;
-  public readonly name: string;
   public readonly keyringId: string;
   public readonly publicKey: Uint8Array;
   public readonly threshold: number;
   public readonly signerPublicKeys: Uint8Array[];
 
+  private _index: number;
+  private _name: string;
+
   constructor(accountInfo: AccountInfo) {
     this.id = accountInfo.id || uuidv4();
-    this.index = accountInfo.index;
-    this.name = accountInfo.name;
+    this._index = accountInfo.index;
+    this._name = accountInfo.name;
     this.keyringId = accountInfo.keyringId;
     this.publicKey = new Uint8Array(accountInfo.publicKey);
     this.threshold = accountInfo.threshold || 0;
@@ -31,12 +32,28 @@ export class MultisigAccount implements Account {
     );
   }
 
+  public get index() {
+    return this._index;
+  }
+
+  public set index(_index: number) {
+    this._index = _index;
+  }
+
+  public get name() {
+    return this._name;
+  }
+
+  public set name(_name: string) {
+    this._name = _name;
+  }
+
   toData(): AccountInfo {
     return {
       id: this.id,
-      index: this.index,
+      index: this._index,
       type: this.type,
-      name: this.name,
+      name: this._name,
       keyringId: this.keyringId,
       publicKey: Array.from(this.publicKey),
       threshold: this.threshold,
@@ -51,13 +68,9 @@ export class MultisigAccount implements Account {
   /**
    * Create a MultisigAccount from a keyring
    */
-  public static async createBy(
-    keyring: MultisigKeyring,
-    name: string,
-    index: number,
-  ): Promise<MultisigAccount> {
+  public static async createBy(keyring: MultisigKeyring, name: string): Promise<MultisigAccount> {
     return new MultisigAccount({
-      index,
+      index: 1,
       type: 'MULTISIG',
       name,
       keyringId: keyring.id,
