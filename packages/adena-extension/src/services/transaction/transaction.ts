@@ -15,6 +15,7 @@ import {
   sha256,
   Wallet,
   createMultisigPublicKey,
+  fromBech32,
 } from 'adena-module';
 
 import { GasToken } from '@common/constants/token.constant';
@@ -146,11 +147,10 @@ export class TransactionService {
   /**
    * Create a multisig account
    * @param config - Multisig configuration (signers and threshold)
-   * @returns Multisig account address
+   * @returns Multisig account address and addressBytes
    */
   public createMultisigAccount = async (config: MultisigConfig) => {
     const { signers, threshold } = config;
-    const provider = this.getGnoProvider();
 
     const signerPublicKeys: Uint8Array[] = [];
     for (const address of signers) {
@@ -167,30 +167,17 @@ export class TransactionService {
       signerPublicKeys.push(publicKeyBytes);
     }
 
-    const { publicKey: multisigPublicKey, address: multisigAddress } = createMultisigPublicKey(
+    const { address: multisigAddress } = createMultisigPublicKey(
       signerPublicKeys,
       threshold,
       defaultAddressPrefix,
     );
 
-    const account = await provider.getAccountInfo(multisigAddress).catch(() => null);
-
-    const accountInfo: AccountInfo = account
-      ? {
-          ...defaultAccountInfo,
-          ...account,
-          address: multisigAddress,
-        }
-      : {
-          ...defaultAccountInfo,
-          address: multisigAddress,
-        };
+    const { data: addressBytes } = fromBech32(multisigAddress);
 
     return {
-      address: multisigAddress,
-      publicKey: multisigPublicKey,
-      signerPublicKeys: signerPublicKeys,
-      accountInfo: accountInfo,
+      multisigAddress: multisigAddress,
+      multisigAddressBytes: addressBytes,
     };
   };
 

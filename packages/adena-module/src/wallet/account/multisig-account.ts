@@ -1,21 +1,25 @@
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { publicKeyToAddress } from './../../utils/address';
+import { toBech32 } from '../../encoding';
 import { MultisigKeyring } from '../keyring/multisig-keyring';
 import { Account, AccountInfo } from './account';
 
 /**
  * MultisigAccount class
  * Represents a multisig account with threshold signature requirement
+ *
+ * Note: Similar to AirgapAccount, this stores the address bytes directly
+ * instead of deriving it from a public key to avoid compression issues
+ * with threshold multisig public keys.
  */
 export class MultisigAccount implements Account {
   public readonly id: string;
   public readonly type = 'MULTISIG' as const;
   public readonly keyringId: string;
-  public readonly publicKey: Uint8Array;
+  public readonly publicKey: Uint8Array; // ✅ Always empty (not used)
+  public readonly addressBytes: Uint8Array; // ✅ Like AirgapAccount
   public readonly threshold: number;
-  public readonly signerPublicKeys: Uint8Array[];
 
   private _index: number;
   private _name: string;
@@ -25,11 +29,9 @@ export class MultisigAccount implements Account {
     this._index = accountInfo.index;
     this._name = accountInfo.name;
     this.keyringId = accountInfo.keyringId;
-    this.publicKey = new Uint8Array(accountInfo.publicKey);
+    this.publicKey = new Uint8Array(); // ✅ Empty like AirgapAccount
+    this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []); // ✅ Like AirgapAccount
     this.threshold = accountInfo.threshold || 0;
-    this.signerPublicKeys = (accountInfo.signerPublicKeys || []).map(
-      (pubKey) => new Uint8Array(pubKey),
-    );
   }
 
   public get index() {
@@ -48,6 +50,9 @@ export class MultisigAccount implements Account {
     this._name = _name;
   }
 
+  /**
+   * Serialize account data for storage
+   */
   toData(): AccountInfo {
     return {
       id: this.id,
@@ -55,28 +60,41 @@ export class MultisigAccount implements Account {
       type: this.type,
       name: this._name,
       keyringId: this.keyringId,
-      publicKey: Array.from(this.publicKey),
+      publicKey: Array.from(this.publicKey), // Empty array
+      addressBytes: Array.from(this.addressBytes), // ✅ Like AirgapAccount
       threshold: this.threshold,
-      signerPublicKeys: this.signerPublicKeys.map((pubKey) => Array.from(pubKey)),
+      hdPath: undefined,
     };
   }
 
+  /**
+   * Get the multisig address
+   * Converts addressBytes to bech32 format (like AirgapAccount)
+   */
   async getAddress(prefix: string = defaultAddressPrefix): Promise<string> {
-    return publicKeyToAddress(this.publicKey, prefix);
+    return toBech32(prefix, this.addressBytes); // ✅ Like AirgapAccount
   }
 
   /**
    * Create a MultisigAccount from a keyring
+   *
+   * @param keyring - MultisigKeyring instance
+   * @param name - Account name
+   * @param addressBytes - Multisig address bytes (20 bytes)
    */
-  public static async createBy(keyring: MultisigKeyring, name: string): Promise<MultisigAccount> {
+  public static async createBy(
+    keyring: MultisigKeyring,
+    name: string,
+    addressBytes: Uint8Array,
+  ): Promise<MultisigAccount> {
     return new MultisigAccount({
       index: 1,
       type: 'MULTISIG',
       name,
       keyringId: keyring.id,
-      publicKey: Array.from(keyring.publicKey),
+      publicKey: [],
+      addressBytes: Array.from(addressBytes),
       threshold: keyring.threshold,
-      signerPublicKeys: keyring.signerPublicKeys.map((pubKey) => Array.from(pubKey)),
     });
   }
 

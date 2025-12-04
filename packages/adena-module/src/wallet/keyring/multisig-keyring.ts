@@ -2,47 +2,43 @@ import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   Provider,
+  TransactionEndpoint,
   Tx,
   TxSignature,
+  uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Document } from './../..';
+import { Document, fromBech32 } from '../..';
 import { Keyring, KeyringData } from './keyring';
 
 /**
  * MultisigKeyring class
  *
- * Note: Multisig accounts cannot sign directly.
- * Individual signer accounts must sign separately.
+ * Note: Similar to AddressKeyring (AIRGAP), this stores the address bytes directly.
+ * Multisig accounts cannot sign directly - individual signers must sign separately.
  */
 export class MultisigKeyring implements Keyring {
   public readonly id: string;
   public readonly type = 'MULTISIG' as const;
   public readonly threshold: number;
-  public readonly signerPublicKeys: Uint8Array[];
-  private _publicKey: Uint8Array;
+  public readonly addressBytes: Uint8Array;
 
   constructor(keyringData: KeyringData) {
+    if (!keyringData.addressBytes) {
+      throw new Error('Invalid parameter values');
+    }
     this.id = keyringData.id || uuidv4();
     this.threshold = keyringData.threshold || 0;
-    this.signerPublicKeys = (keyringData.signerPublicKeys || []).map((pk) => new Uint8Array(pk));
-    this._publicKey = keyringData.publicKey
-      ? new Uint8Array(keyringData.publicKey)
-      : new Uint8Array();
-  }
-
-  get publicKey(): Uint8Array {
-    return this._publicKey;
+    this.addressBytes = Uint8Array.from(keyringData.addressBytes);
   }
 
   toData(): KeyringData {
     return {
       id: this.id,
       type: this.type,
-      publicKey: Array.from(this._publicKey),
       threshold: this.threshold,
-      signerPublicKeys: this.signerPublicKeys.map((pk) => Array.from(pk)),
+      addressBytes: Array.from(this.addressBytes),
     };
   }
 
@@ -53,7 +49,6 @@ export class MultisigKeyring implements Keyring {
   async sign(
     _provider: Provider,
     _document: Document,
-    _hdPath?: number,
   ): Promise<{
     signed: Tx;
     signature: TxSignature[];
@@ -62,46 +57,33 @@ export class MultisigKeyring implements Keyring {
   }
 
   /**
-   * Multisig cannot broadcast directly
-   * Use the multisig transaction service to broadcast
+   * Broadcast signed multisig transaction
    */
-  async broadcastTxSync(
-    _provider: Provider,
-    _signedTx: Tx,
-    _hdPath?: number,
-  ): Promise<BroadcastTxSyncResult> {
-    throw new Error(
-      'Multisig accounts cannot broadcast directly. Use multisig transaction service.',
-    );
+  async broadcastTxSync(provider: Provider, signedTx: Tx): Promise<BroadcastTxSyncResult> {
+    const encodedTx: string = uint8ArrayToBase64(Tx.encode(signedTx).finish());
+    return provider.sendTransaction(encodedTx, TransactionEndpoint.BROADCAST_TX_SYNC);
   }
 
   /**
-   * Multisig cannot broadcast directly
-   * Use the multisig transaction service to broadcast
+   * Broadcast signed multisig transaction
    */
-  async broadcastTxCommit(
-    _provider: Provider,
-    _signedTx: Tx,
-    _hdPath?: number,
-  ): Promise<BroadcastTxCommitResult> {
-    throw new Error(
-      'Multisig accounts cannot broadcast directly. Use multisig transaction service.',
-    );
+  async broadcastTxCommit(provider: Provider, signedTx: Tx): Promise<BroadcastTxCommitResult> {
+    const encodedTx: string = uint8ArrayToBase64(Tx.encode(signedTx).finish());
+    return provider.sendTransaction(encodedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
 
   /**
-   * Create a MultisigKeyring from public keys
+   * Create a MultisigKeyring from address
+   *
+   * @param address - Multisig address (bech32 format)
+   * @param threshold - Signature threshold
    */
-  public static async fromPublicKeys(
-    publicKeys: Uint8Array[],
-    threshold: number,
-    multisigPublicKey: Uint8Array,
-  ): Promise<MultisigKeyring> {
+  public static async fromAddress(address: string, threshold: number): Promise<MultisigKeyring> {
+    const { data: addressBytes } = fromBech32(address);
     return new MultisigKeyring({
       type: 'MULTISIG',
       threshold,
-      signerPublicKeys: publicKeys.map((pk) => Array.from(pk)),
-      publicKey: Array.from(multisigPublicKey),
+      addressBytes: [...addressBytes],
     });
   }
 }
