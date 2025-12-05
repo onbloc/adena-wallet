@@ -69,23 +69,6 @@ export interface SignedDocument extends BaseDocument {
   signatures: Signature[];
 }
 
-/**
- * Signer status for multisig transactions
- */
-export enum SignerStatusType {
-  SIGNED = 'SIGNED',
-  PENDING = 'PENDING',
-  NONE = 'NONE',
-}
-
-/**
- * Signer information
- */
-export type SignerInfo = {
-  address: string;
-  status: SignerStatusType;
-};
-
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
 export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;
 

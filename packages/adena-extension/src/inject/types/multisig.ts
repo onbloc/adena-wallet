@@ -4,6 +4,23 @@ import { BaseDocument } from './transactions';
 import { MultisigConfig } from 'adena-module';
 
 /**
+ * Signer status for multisig transactions
+ */
+export enum SignerStatusType {
+  SIGNED = 'SIGNED',
+  PENDING = 'PENDING',
+  NONE = 'NONE',
+}
+
+/**
+ * Signer information
+ */
+export type SignerInfo = {
+  address: string;
+  status: SignerStatusType;
+};
+
+/**
  * Multisig document - document with multisig configuration
  */
 export interface MultisigDocument extends BaseDocument {
