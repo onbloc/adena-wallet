@@ -1,4 +1,4 @@
-import { Account, Document, isMultisigAccount } from 'adena-module';
+import { Account, Document, isMultisigAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -26,7 +26,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigConfig, SignedDocument } from '@inject/types';
+import { ContractMessage, CreateMultisigDocumentParams, MultisigDocument } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 
@@ -60,7 +60,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService, multisigService } = useAdenaContext();
+  const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
@@ -69,7 +69,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [document, setDocument] = useState<SignedDocument>();
+  const [document, setDocument] = useState<MultisigDocument>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
@@ -79,13 +79,10 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   const { data: currentBalance = null } = useGetGnotBalance();
 
   const multisigConfig: MultisigConfig | null = useMemo(() => {
-    if (!document?.multisigConfig) return null;
+    if (!currentAccount || !isMultisigAccount(currentAccount)) return null;
 
-    return {
-      signers: document.multisigConfig.signers,
-      threshold: document.multisigConfig.threshold,
-    };
-  }, [document?.multisigConfig]);
+    return currentAccount.multisigConfig;
+  }, [currentAccount]);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!document?.fee?.amount?.[0]) {
@@ -250,20 +247,26 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   };
 
   const initTransactionData = async (): Promise<boolean> => {
-    if (!currentAccount || !requestData || !currentNetwork || !requestData?.data) {
+    if (
+      !currentAccount ||
+      !isMultisigAccount(currentAccount) ||
+      !requestData ||
+      !requestData?.data ||
+      !currentNetwork
+    ) {
       return false;
     }
 
     try {
-      const document = await multisigService.createSignedDocument(
-        currentNetwork.chainId,
-        requestData.data as SignedDocument,
+      const multisigDocument = await multisigService.createMultisigDocument(
+        currentAccount,
+        requestData.data as CreateMultisigDocumentParams,
       );
-      setDocument(document);
-      setTransactionData(mappedTransactionData(document));
+      setDocument(multisigDocument);
+      setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
-      setMemo(document.memo);
-      setTransactionMessages(mappedTransactionMessages(document.msgs));
+      setMemo(multisigDocument.memo);
+      setTransactionMessages(mappedTransactionMessages(multisigDocument.msgs));
       return true;
     } catch (e) {
       console.error(e);
@@ -292,7 +295,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
 
     const currentMemo = memo;
 
-    const updatedSignedDocument: SignedDocument = {
+    const updatedSignedDocument: MultisigDocument = {
       ...document,
       memo: currentMemo,
       fee: {
@@ -310,7 +313,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
     setTransactionData(mappedTransactionData(updatedSignedDocument));
   }, [document, rawNetworkFee, memo, currentGasWanted]);
 
-  const createSignDocument = async (): Promise<boolean> => {
+  const createMultisigDocument = async (): Promise<boolean> => {
     if (!document || !currentAccount) {
       setResponse(
         InjectionMessageInstance.failure(
@@ -326,7 +329,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          { message: 'Multisig Account가 아닙니다.' },
+          { error: { message: 'Please switch to a multisig account and try again.' } },
           requestData?.key,
         ),
       );
@@ -334,23 +337,19 @@ const CreateMultisigDocumentContainer: React.FC = () => {
     }
 
     try {
-      const signature = await transactionService.createSignature(currentAccount, document);
-
-      const updateSignedDocument = {
-        ...document,
-        signatures: [...document.signatures, signature],
-      };
       setProcessType('PROCESSING');
+
       setResponse(
         InjectionMessageInstance.success(
-          WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
+          WalletResponseSuccessType.CREATE_MULTISIG_DOCUMENT_SUCCESS,
           {
-            document: updateSignedDocument,
-            signature,
+            document,
           },
           requestData?.key,
         ),
       );
+
+      return true;
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
@@ -359,7 +358,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
         }
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
+            WalletResponseFailureType.CREATE_MULTISIG_DOCUMENT_FAILED,
             { error: { message } },
             requestData?.key,
           ),
@@ -393,7 +392,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
       });
       return;
     }
-    createSignDocument().finally(() => setProcessType('DONE'));
+    createMultisigDocument().finally(() => setProcessType('DONE'));
   };
 
   const onClickCancel = (): void => {

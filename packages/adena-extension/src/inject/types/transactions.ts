@@ -39,6 +39,9 @@ export type TransactionParams = {
   arguments?: GnoArgumentInfo[] | null;
 };
 
+/**
+ * Transaction fee structure
+ */
 export interface Fee {
   amount: {
     amount: string;
@@ -47,35 +50,37 @@ export interface Fee {
   gas: string;
 }
 
+/**
+ * Base document structure shared by all document types
+ */
 export interface BaseDocument {
   chain_id: string;
   fee: Fee;
   msgs: any[];
 }
 
-export interface MultisigConfig {
-  signers: string[];
-  threshold: number;
-}
-export interface CreateMultisigDocumentParams extends BaseDocument {
-  multisigConfig: MultisigConfig;
-  memo?: string;
-}
-
+/**
+ * Signed document - standard transaction document with signatures
+ */
 export interface SignedDocument extends BaseDocument {
   account_number: string;
   sequence: string;
   memo: string;
   signatures: Signature[];
-  multisigConfig?: MultisigConfig;
 }
 
+/**
+ * Signer status for multisig transactions
+ */
 export enum SignerStatusType {
   SIGNED = 'SIGNED',
   PENDING = 'PENDING',
   NONE = 'NONE',
 }
 
+/**
+ * Signer information
+ */
 export type SignerInfo = {
   address: string;
   status: SignerStatusType;

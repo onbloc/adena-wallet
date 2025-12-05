@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { MultisigConfig } from 'adena-module';
 
 import {
   WalletResponseFailureType,
@@ -15,7 +16,6 @@ import { CreateMultisigAccount } from '@components/molecules/create-multisig-acc
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { MultisigConfig } from '@inject/types';
 import { RoutePath } from '@types';
 
 const CreateMultisigAccountContainer: React.FC = () => {

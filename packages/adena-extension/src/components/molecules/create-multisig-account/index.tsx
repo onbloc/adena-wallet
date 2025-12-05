@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import * as S from './create-multisig-account.styles';
+import { MultisigConfig } from 'adena-module';
 
-import { MultisigConfig, SignerInfo, SignerStatusType } from '@inject/types';
+import { SignerInfo, SignerStatusType } from '@inject/types';
 
 import { Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';

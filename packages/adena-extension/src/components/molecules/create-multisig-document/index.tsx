@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { MultisigConfig } from 'adena-module';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -7,7 +8,7 @@ import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigConfig, SignerInfo, SignerStatusType } from '@inject/types';
+import { ContractMessage, SignerInfo, SignerStatusType } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';

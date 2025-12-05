@@ -21,6 +21,7 @@ import {
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigDocumentParams,
+  CreateMultisigDocumentResponse,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
@@ -31,12 +32,10 @@ import {
 } from '@inject/types';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import {
-  validateInvalidAddress,
   validateSignatures,
   validateSignedDocumentFee,
   validateSignedDocumentFields,
   validateSignedDocumentMessages,
-  validateMultisigConfigExists,
   validateMultisigSigners,
   validateMultisigSignerAddresses,
   validateMultisigThreshold,
@@ -149,7 +148,9 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public createMultisigDocument = (params: CreateMultisigDocumentParams) => {
+  public createMultisigDocument = (
+    params: CreateMultisigDocumentParams,
+  ): Promise<CreateMultisigDocumentResponse> => {
     const result = this.validateCreateMultisigDocument(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -270,24 +271,6 @@ export class AdenaExecutor {
   ): InjectionMessage | undefined => {
     if (!params) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
-
-    if (!validateMultisigConfigExists(params.multisigConfig)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
-
-    const { signers, threshold } = params.multisigConfig;
-
-    if (!validateMultisigSigners(signers)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
-    }
-
-    if (!validateMultisigSignerAddresses(signers)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_ADDRESS);
-    }
-
-    if (!validateMultisigThreshold(threshold, signers.length)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD);
     }
 
     if (!validateChainId(params.chain_id)) {

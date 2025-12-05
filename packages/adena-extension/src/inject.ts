@@ -11,6 +11,7 @@ import {
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigDocumentParams,
+  CreateMultisigDocumentResponse,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
@@ -68,7 +69,9 @@ const init = (): void => {
       const response = await executor.createMultisigAccount(params);
       return response;
     },
-    async CreateMultisigDocument(params: CreateMultisigDocumentParams) {
+    async CreateMultisigDocument(
+      params: CreateMultisigDocumentParams,
+    ): Promise<CreateMultisigDocumentResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigDocument(params);
       return response;

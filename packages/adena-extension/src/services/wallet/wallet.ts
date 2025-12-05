@@ -1,4 +1,10 @@
-import { AdenaWallet, MultisigAccount, MultisigKeyring, Wallet } from 'adena-module';
+import {
+  AdenaWallet,
+  MultisigAccount,
+  MultisigKeyring,
+  Wallet,
+  MultisigConfig,
+} from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -6,7 +12,6 @@ import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
 import { WalletRepository } from '@repositories/wallet';
-import { MultisigConfig } from '@inject/types';
 
 export class WalletService {
   private _id: string;
@@ -213,10 +218,8 @@ export class WalletService {
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
-      console.log('🔍 Serialized wallet:', serializedWallet); // ← 추가
 
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
-      console.log('✅ Deserialized successfully'); // ← 추가
 
       return walletInstance;
     } catch (e) {

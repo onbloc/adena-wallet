@@ -1,18 +1,4 @@
-import { MultisigConfig } from '@inject/types';
 import { validateInvalidAddress } from './validation-address-book';
-
-/**
- * Validates multisig config object and its required fields
- */
-export const validateMultisigConfigExists = (
-  multisigConfig: MultisigConfig | undefined,
-): boolean => {
-  if (!multisigConfig) {
-    return false;
-  }
-
-  return multisigConfig.signers !== undefined && multisigConfig.threshold !== undefined;
-};
 
 /**
  * Validates signers array format and minimum count

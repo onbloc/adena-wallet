@@ -3,9 +3,15 @@ import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
 
-import { CreateMultisigDocumentParams, MultisigConfig, SignedDocument } from '@inject/types';
+import { CreateMultisigDocumentParams, MultisigDocument, SignedDocument } from '@inject/types';
 
-import { Account, createMultisigPublicKey, fromBase64, fromBech32 } from 'adena-module';
+import {
+  MultisigAccount,
+  MultisigConfig,
+  createMultisigPublicKey,
+  fromBase64,
+  fromBech32,
+} from 'adena-module';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GasToken } from '@common/constants/token.constant';
 
@@ -65,19 +71,20 @@ export class MultisigService {
   /**
    * Create a multisig document
    *
-   * @param account - Account to get account info
+   * @param account - Account to get MultisigAccount info
    * @param params - CreateMultisigDocumentParams
-   * @returns SignedDocument with empty signatures array
+   * @returns MultisigDocument with empty signatures array
    */
   public createMultisigDocument = async (
-    account: Account,
+    account: MultisigAccount,
     params: CreateMultisigDocumentParams,
-  ): Promise<SignedDocument> => {
+  ): Promise<MultisigDocument> => {
     const provider = this.getGnoProvider();
     const address = await account.getAddress(defaultAddressPrefix);
     const accountInfo = await provider.getAccountInfo(address).catch(() => null);
     const accountNumber = accountInfo?.accountNumber ?? 0;
     const accountSequence = accountInfo?.sequence ?? 0;
+    const multisigConfig = account.multisigConfig;
 
     return {
       msgs: params.msgs,
@@ -102,6 +109,7 @@ export class MultisigService {
       account_number: accountNumber.toString(),
       sequence: accountSequence.toString(),
       signatures: [],
+      multisigConfig,
     };
   };
 
