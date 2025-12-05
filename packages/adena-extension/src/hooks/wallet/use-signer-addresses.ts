@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { Signature } from '@adena-wallet/sdk';
 import { extractSignerAddresses, serializeSignaturesKey } from '@common/utils/signer-utils';
+import { EncodeTxSignature } from '@services/index';
 
 export interface UseSignerAddressesReturn {
   signerAddresses: string[];
@@ -11,7 +11,7 @@ export interface UseSignerAddressesReturn {
   error: Error | null;
 }
 
-export const useSignerAddresses = (signatures?: Signature[]): UseSignerAddressesReturn => {
+export const useSignerAddresses = (signatures?: EncodeTxSignature[]): UseSignerAddressesReturn => {
   const signaturesKey = useMemo(() => serializeSignaturesKey(signatures), [signatures]);
 
   const {

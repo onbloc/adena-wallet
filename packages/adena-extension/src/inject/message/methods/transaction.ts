@@ -40,35 +40,10 @@ export const signTransaction = async (
   );
 };
 
-export const signDocument = async (
-  requestData: InjectionMessage,
-  sendResponse: (message: any) => void,
-): Promise<void> => {
-  const validationMessage = validateInjectionData(requestData);
-  if (validationMessage) {
-    sendResponse(validationMessage);
-    return;
-  }
-
-  HandlerMethod.createPopup(
-    RoutePath.ApproveSignDocument,
-    requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
-    sendResponse,
-  );
-};
-
 export const createMultisigAccount = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ) => {
-  // const validationMessage = validateInjectionData(requestData);
-  // if (validationMessage) {
-  //   sendResponse(validationMessage);
-  //   return;
-  // }
-  console.log(requestData, 'requestData');
-
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigAccount,
     requestData,
@@ -89,6 +64,24 @@ export const createMultisigDocument = async (
 
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigDocument,
+    requestData,
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    sendResponse,
+  );
+};
+
+export const signMultisigDocument = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+): Promise<void> => {
+  const validationMessage = validateInjectionData(requestData);
+  if (validationMessage) {
+    sendResponse(validationMessage);
+    return;
+  }
+
+  HandlerMethod.createPopup(
+    RoutePath.ApproveSignDocument,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,

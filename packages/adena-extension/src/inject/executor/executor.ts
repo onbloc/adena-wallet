@@ -25,6 +25,7 @@ import {
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
+  MultisigDocument,
   SignedDocument,
   SignTxResponse,
   SwitchNetworkResponse,
@@ -164,15 +165,15 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signMultisigDocument = (signedDocument: SignedDocument) => {
-    const result = this.validateSignedDocument(signedDocument);
+  public signMultisigDocument = (multisigDocument: MultisigDocument) => {
+    const result = this.validateSignedDocument(multisigDocument);
     if (result) {
       return this.sendEventMessage(result);
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
-      signedDocument,
+      multisigDocument,
     );
 
     return this.sendEventMessage(eventMessage);
@@ -289,41 +290,54 @@ export class AdenaExecutor {
   };
 
   /**
-   * Validates a signed document (SignedDocument).
-   * Verifies the existence and format of required fields (chain_id, account_number, sequence, memo),
-   * fee structure (gas and amount array), signatures array, and msgs array, then validates the included messages as well.
+   * Validates a multisig document (MultisigDocument).
+   * Verifies the document structure, signatures array, and multisig configuration.
+   * The document field contains the transaction data (msgs, fee, chain_id, etc.),
+   * signatures field contains the signature array, and multisigConfig contains
+   * the multisig account configuration (signers and threshold).
    *
-   * @param signedDocument - The signed document object to validate
+   * @param multisigDocument - The multisig document object to validate
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateSignedDocument = (
-    signedDocument: SignedDocument,
+    multisigDocument: MultisigDocument,
   ): InjectionMessage | undefined => {
-    if (!signedDocument) {
+    if (!multisigDocument) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignedDocumentFields(signedDocument)) {
+    if (!multisigDocument.document) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!Array.isArray(signedDocument.signatures)) {
+    const { document, signatures, multisigConfig } = multisigDocument;
+
+    if (!validateSignedDocumentFields(document)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignatures(signedDocument.signatures)) {
+    if (!Array.isArray(signatures)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignedDocumentFee(signedDocument.fee)) {
+    if (!validateSignatures(signatures)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignedDocumentMessages(signedDocument.msgs)) {
+    if (!validateSignedDocumentFee(document.fee)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    return this.validateMessages(signedDocument.msgs);
+    if (!validateSignedDocumentMessages(document.msgs)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    // Todo: multisigConfig -> multisigAddress -> caller와 비교. (multisigConfig 변조 방지)
+    // if (!validateMultisigConfig(multisigConfig)) {
+    //   return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    // }
+
+    return this.validateMessages(document.msgs);
   };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {

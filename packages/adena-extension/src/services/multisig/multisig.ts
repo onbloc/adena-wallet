@@ -123,34 +123,40 @@ export class MultisigService {
   };
 
   /**
-   * Create a signed document
+   * Create a multisig signed document from existing signed document
    *
-   * @param chainId
-   * @param signedDocument
-   * @returns
+   * This method is used when other signers need to add their signatures
+   * to a multisig document that was already created.
+   *
+   * @param chainId - Chain ID
+   * @param multisigDocument - Existing MultisigDocument with signatures
+   * @returns MultisigDocument with validated fee and chain_id
    */
-  public createSignedDocument = async (
+  public createMultisigSignedDocument = async (
     chainId: string,
-    signedDocument: SignedDocument,
-  ): Promise<SignedDocument> => {
+    multisigDocument: MultisigDocument,
+  ): Promise<MultisigDocument> => {
     return {
-      ...signedDocument,
-      chain_id: signedDocument.chain_id || chainId,
-      fee: {
-        gas: signedDocument.fee.gas || DEFAULT_GAS_WANTED.toString(),
-        amount:
-          signedDocument.fee.amount.length > 0
-            ? signedDocument.fee.amount.map((fee) => ({
-                ...fee,
-                amount: fee.amount || DEFAULT_GAS_FEE.toString(),
-                denom: fee.denom || GasToken.denom,
-              }))
-            : [
-                {
-                  amount: DEFAULT_GAS_FEE.toString(),
-                  denom: GasToken.denom,
-                },
-              ],
+      ...multisigDocument,
+      document: {
+        ...multisigDocument.document,
+        chain_id: multisigDocument.document.chain_id || chainId,
+        fee: {
+          gas: multisigDocument.document.fee.gas || DEFAULT_GAS_WANTED.toString(),
+          amount:
+            multisigDocument.document.fee.amount.length > 0
+              ? multisigDocument.document.fee.amount.map((fee) => ({
+                  ...fee,
+                  amount: fee.amount || DEFAULT_GAS_FEE.toString(),
+                  denom: fee.denom || GasToken.denom,
+                }))
+              : [
+                  {
+                    amount: DEFAULT_GAS_FEE.toString(),
+                    denom: GasToken.denom,
+                  },
+                ],
+        },
       },
     };
   };

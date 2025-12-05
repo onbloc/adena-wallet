@@ -1,7 +1,7 @@
-import { Signature } from '@adena-wallet/sdk';
 import { AdenaResponse } from './common';
 import { BaseDocument } from './transactions';
 import { MultisigConfig } from 'adena-module';
+import { EncodeTxSignature } from '@services/index';
 
 /**
  * Signer status for multisig transactions
@@ -31,7 +31,7 @@ export interface StandardDocument extends BaseDocument {
  */
 export interface MultisigDocument {
   document: StandardDocument;
-  signatures: Signature[];
+  signatures: EncodeTxSignature[];
   multisigConfig: MultisigConfig;
 }
 
@@ -77,7 +77,7 @@ export type CreateMultisigDocumentResponse = AdenaResponse<CreateMultisigDocumen
  */
 export type SignMultisigDocumentResponseData = {
   document: MultisigDocument;
-  signature: Signature;
+  signature: EncodeTxSignature;
 };
 
 /**

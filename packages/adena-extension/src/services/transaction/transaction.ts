@@ -22,7 +22,7 @@ import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 import { SignedDocument } from '@inject/types';
 
-interface EncodeTxSignature {
+export interface EncodeTxSignature {
   pubKey: {
     typeUrl: string | undefined;
     value: string | undefined;

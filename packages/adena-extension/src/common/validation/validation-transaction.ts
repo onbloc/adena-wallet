@@ -15,6 +15,7 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
 export const validateInjectionDataWithAddress = (
   requestData: InjectionMessage,
   address: string,
+  skipCallerCheck?: boolean,
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
@@ -24,7 +25,7 @@ export const validateInjectionDataWithAddress = (
     );
   }
 
-  if (!validateInjectionTransactionMessageWithAddress(requestData, address)) {
+  if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       { requestData, address },
@@ -45,6 +46,7 @@ export const validateInjectionTransactionType = (requestData: InjectionMessage):
 export const validateInjectionTransactionMessageWithAddress = (
   requestData: InjectionMessage,
   address: string,
+  skipCallerCheck?: boolean,
 ): boolean => {
   const messages = requestData.data?.messages || requestData.data?.msgs || [];
   for (const message of messages) {
@@ -66,7 +68,7 @@ export const validateInjectionTransactionMessageWithAddress = (
         break;
     }
 
-    if (!validateCallerAddress(messageAddress, address)) {
+    if (!validateCallerAddress(messageAddress, address, skipCallerCheck)) {
       return false;
     }
   }
@@ -74,8 +76,16 @@ export const validateInjectionTransactionMessageWithAddress = (
   return true;
 };
 
-const validateCallerAddress = (messageAddress: any, currentAddress: string): boolean => {
+const validateCallerAddress = (
+  messageAddress: any,
+  currentAddress: string,
+  skipCallerCheck?: boolean,
+): boolean => {
   if (messageAddress === '') {
+    return true;
+  }
+
+  if (skipCallerCheck) {
     return true;
   }
 

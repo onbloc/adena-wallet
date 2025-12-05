@@ -18,10 +18,10 @@ import {
   CreateMultisigDocumentSignerWrapper,
   CreateMultisigDocumentWrapper,
 } from './create-multisig-document.styles';
-import { Signature } from '@adena-wallet/sdk';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
+import { EncodeTxSignature } from '@services/index';
 
 export interface CreateMultisigDocumentProps {
   loading: boolean;
@@ -33,7 +33,7 @@ export interface CreateMultisigDocumentProps {
     function: string;
     value: string;
   }[];
-  signatures: Signature[];
+  signatures: EncodeTxSignature[];
   memo: string;
   hasMemo: boolean;
   currentBalance?: number;

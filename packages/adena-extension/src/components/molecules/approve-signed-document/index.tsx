@@ -18,10 +18,10 @@ import {
   ApproveSignedDocumentSignerWrapper,
   ApproveSignedDocumentWrapper,
 } from './approve-signed-document.styles';
-import { Signature } from '@adena-wallet/sdk';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
 import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
+import { EncodeTxSignature } from '@services/index';
 
 export interface ApproveSignedDocumentProps {
   loading: boolean;
@@ -33,7 +33,7 @@ export interface ApproveSignedDocumentProps {
     function: string;
     value: string;
   }[];
-  signatures: Signature[];
+  signatures: EncodeTxSignature[];
   memo: string;
   hasMemo: boolean;
   currentBalance?: number;

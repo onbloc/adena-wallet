@@ -1,4 +1,4 @@
-import { Signature } from '@adena-wallet/sdk';
+import { EncodeTxSignature } from '@services/index';
 import { publicKeyToAddress } from 'adena-module';
 
 /**
@@ -6,7 +6,9 @@ import { publicKeyToAddress } from 'adena-module';
  * @param signatures - Signature array
  * @returns
  */
-export const extractSignerAddresses = async (signatures: Signature[]): Promise<string[]> => {
+export const extractSignerAddresses = async (
+  signatures: EncodeTxSignature[],
+): Promise<string[]> => {
   if (!signatures || signatures.length === 0) {
     return [];
   }
@@ -43,6 +45,6 @@ export const extractSignerAddresses = async (signatures: Signature[]): Promise<s
  * @param signatures - Signature array
  * @returns
  */
-export const serializeSignaturesKey = (signatures?: Signature[]): string => {
+export const serializeSignaturesKey = (signatures?: EncodeTxSignature[]): string => {
   return signatures?.map((sig) => sig.pubKey?.value).join(',') || '';
 };
