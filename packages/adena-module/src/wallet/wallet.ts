@@ -22,6 +22,8 @@ import {
   makeAccount,
   SeedAccount,
   SingleAccount,
+  MultisigAccount,
+  isMultisigAccount,
 } from './account';
 import {
   AddressKeyring,
@@ -46,8 +48,11 @@ export interface Wallet {
   defaultHDWalletKeyring: HDWalletKeyring | null;
   nextAccountName: string;
   nextLedgerAccountName: string;
+  nextMultisigAccountName: string;
   lastAccountIndex: number;
   lastLedgerAccountIndex: number;
+  lastMultisigAccountIndex: number;
+  lastGlobalAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
@@ -158,6 +163,11 @@ export class AdenaWallet implements Wallet {
     return `Ledger ${nextIndex}`;
   }
 
+  get nextMultisigAccountName() {
+    const nextIndex = this.lastMultisigAccountIndex + 1;
+    return `Multisig ${nextIndex}`;
+  }
+
   set currentAccountId(currentAccountId: string) {
     this._currentAccountId = currentAccountId;
   }
@@ -166,15 +176,25 @@ export class AdenaWallet implements Wallet {
     return this._keyrings.filter(isHDWalletKeyring).find((_, index) => index === 0) || null;
   }
 
+  get lastGlobalAccountIndex() {
+    const indices = this.accounts.map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
   get lastAccountIndex() {
     const indices = this.accounts
-      .filter((account) => !isLedgerAccount(account))
+      .filter((account) => !isLedgerAccount(account) && !isMultisigAccount(account))
       .map((account) => account.index);
     return Math.max(0, ...indices);
   }
 
   get lastLedgerAccountIndex() {
     const indices = this.accounts.filter(isLedgerAccount).map((account) => account.index);
+    return Math.max(0, ...indices);
+  }
+
+  get lastMultisigAccountIndex() {
+    const indices = this.accounts.filter(isMultisigAccount).map((account) => account.index);
     return Math.max(0, ...indices);
   }
 

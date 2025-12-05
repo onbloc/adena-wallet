@@ -177,16 +177,17 @@ export class WalletService {
         addressBytes: Array.from(addressBytes),
       });
 
-      const addedIndex = wallet.lastAccountIndex + 1;
+      const addedIndex = wallet.lastGlobalAccountIndex + 1;
+      const multisigName = wallet.nextMultisigAccountName;
 
       const multisigAccount = await MultisigAccount.createBy(
         multisigKeyring,
-        `Multisig ${addedIndex}`,
+        multisigName,
         addressBytes,
       );
 
       multisigAccount.index = addedIndex;
-      multisigAccount.name = `Multisig ${addedIndex}`;
+      multisigAccount.name = multisigName;
 
       const clonedWallet = wallet.clone();
 
