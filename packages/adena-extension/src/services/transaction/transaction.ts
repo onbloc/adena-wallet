@@ -20,7 +20,6 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
-import { SignedDocument } from '@inject/types';
 
 export interface EncodeTxSignature {
   pubKey: {
@@ -91,39 +90,6 @@ export class TransactionService {
       memo: memo || '',
       account_number: accountNumber.toString(),
       sequence: accountSequence.toString(),
-    };
-  };
-
-  /**
-   * Create a signed document
-   *
-   * @param chainId
-   * @param signedDocument
-   * @returns
-   */
-  public createSignedDocument = async (
-    chainId: string,
-    signedDocument: SignedDocument,
-  ): Promise<SignedDocument> => {
-    return {
-      ...signedDocument,
-      chain_id: signedDocument.chain_id || chainId,
-      fee: {
-        gas: signedDocument.fee.gas || DEFAULT_GAS_WANTED.toString(),
-        amount:
-          signedDocument.fee.amount.length > 0
-            ? signedDocument.fee.amount.map((fee) => ({
-                ...fee,
-                amount: fee.amount || DEFAULT_GAS_FEE.toString(),
-                denom: fee.denom || GasToken.denom,
-              }))
-            : [
-                {
-                  amount: DEFAULT_GAS_FEE.toString(),
-                  denom: GasToken.denom,
-                },
-              ],
-      },
     };
   };
 

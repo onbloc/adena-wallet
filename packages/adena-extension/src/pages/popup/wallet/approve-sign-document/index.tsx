@@ -26,7 +26,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigDocument, SignedDocument } from '@inject/types';
+import { ContractMessage, MultisigDocument } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 
@@ -337,8 +337,8 @@ const ApproveSignDocumentContainer: React.FC = () => {
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
           {
-            document: updateSignedDocument,
-            signature,
+            signedDocument: updateSignedDocument,
+            addedSignature: signature,
           },
           requestData?.key,
         ),

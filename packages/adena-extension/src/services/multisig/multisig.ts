@@ -3,12 +3,7 @@ import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
 
-import {
-  CreateMultisigDocumentParams,
-  MultisigDocument,
-  SignedDocument,
-  StandardDocument,
-} from '@inject/types';
+import { CreateMultisigDocumentParams, MultisigDocument, StandardDocument } from '@inject/types';
 
 import {
   MultisigAccount,

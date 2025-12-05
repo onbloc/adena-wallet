@@ -76,8 +76,8 @@ export type CreateMultisigDocumentResponse = AdenaResponse<CreateMultisigDocumen
  * Response data for signing a multisig document
  */
 export type SignMultisigDocumentResponseData = {
-  document: MultisigDocument;
-  signature: EncodeTxSignature;
+  signedDocument: MultisigDocument;
+  addedSignature: EncodeTxSignature;
 };
 
 /**

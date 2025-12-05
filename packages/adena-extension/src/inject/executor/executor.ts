@@ -26,7 +26,7 @@ import {
   GetAccountResponse,
   GetNetworkResponse,
   MultisigDocument,
-  SignedDocument,
+  SignMultisigDocumentResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -165,7 +165,9 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signMultisigDocument = (multisigDocument: MultisigDocument) => {
+  public signMultisigDocument = (
+    multisigDocument: MultisigDocument,
+  ): Promise<SignMultisigDocumentResponse> => {
     const result = this.validateSignedDocument(multisigDocument);
     if (result) {
       return this.sendEventMessage(result);

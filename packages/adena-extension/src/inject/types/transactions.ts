@@ -59,16 +59,6 @@ export interface BaseDocument {
   msgs: any[];
 }
 
-/**
- * Signed document - standard transaction document with signatures
- */
-export interface SignedDocument extends BaseDocument {
-  account_number: string;
-  sequence: string;
-  memo: string;
-  signatures: Signature[];
-}
-
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
 export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;
 
