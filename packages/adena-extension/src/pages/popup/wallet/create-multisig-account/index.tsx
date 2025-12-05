@@ -103,7 +103,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
 
       const multisigAccount = await walletService.addMultisigAccount(
         multisigAddressBytes,
-        multisigConfig.threshold,
+        multisigConfig,
         multisigAddress,
       );
 

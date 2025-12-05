@@ -5,6 +5,11 @@ import { toBech32 } from '../../encoding';
 import { MultisigKeyring } from '../keyring/multisig-keyring';
 import { Account, AccountInfo } from './account';
 
+export interface MultisigConfig {
+  signers: string[];
+  threshold: number;
+}
+
 /**
  * MultisigAccount class
  * Represents a multisig account with threshold signature requirement
@@ -19,7 +24,7 @@ export class MultisigAccount implements Account {
   public readonly keyringId: string;
   public readonly publicKey: Uint8Array;
   public readonly addressBytes: Uint8Array;
-  public readonly threshold: number;
+  public readonly multisigConfig: MultisigConfig;
 
   private _index: number;
   private _name: string;
@@ -31,7 +36,11 @@ export class MultisigAccount implements Account {
     this.keyringId = accountInfo.keyringId;
     this.publicKey = new Uint8Array();
     this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []);
-    this.threshold = accountInfo.threshold || 0;
+
+    if (!accountInfo.multisigConfig) {
+      throw new Error('MultisigConfig is required for MultisigAccount');
+    }
+    this.multisigConfig = accountInfo.multisigConfig;
   }
 
   public get index() {
@@ -50,6 +59,14 @@ export class MultisigAccount implements Account {
     this._name = _name;
   }
 
+  public get threshold(): number {
+    return this.multisigConfig.threshold;
+  }
+
+  public get signers(): string[] {
+    return this.multisigConfig.signers;
+  }
+
   /**
    * Serialize account data for storage
    */
@@ -62,7 +79,7 @@ export class MultisigAccount implements Account {
       keyringId: this.keyringId,
       publicKey: Array.from(this.publicKey),
       addressBytes: Array.from(this.addressBytes),
-      threshold: this.threshold,
+      multisigConfig: this.multisigConfig,
       hdPath: undefined,
     };
   }
@@ -94,7 +111,7 @@ export class MultisigAccount implements Account {
       keyringId: keyring.id,
       publicKey: [],
       addressBytes: Array.from(addressBytes),
-      threshold: keyring.threshold,
+      multisigConfig: keyring.multisigConfig,
     });
   }
 

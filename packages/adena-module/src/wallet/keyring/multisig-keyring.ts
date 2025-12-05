@@ -9,7 +9,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Document, fromBech32 } from '../..';
+import { Document, fromBech32, MultisigConfig } from '../..';
 import { Keyring, KeyringData } from './keyring';
 
 /**
@@ -21,25 +21,33 @@ import { Keyring, KeyringData } from './keyring';
 export class MultisigKeyring implements Keyring {
   public readonly id: string;
   public readonly type = 'MULTISIG' as const;
-  public readonly threshold: number;
   public readonly addressBytes: Uint8Array;
+  public readonly multisigConfig: MultisigConfig;
 
   constructor(keyringData: KeyringData) {
-    if (!keyringData.addressBytes) {
+    if (!keyringData.addressBytes || !keyringData.multisigConfig) {
       throw new Error('Invalid parameter values');
     }
     this.id = keyringData.id || uuidv4();
-    this.threshold = keyringData.threshold || 0;
     this.addressBytes = Uint8Array.from(keyringData.addressBytes);
+    this.multisigConfig = keyringData.multisigConfig;
   }
 
   toData(): KeyringData {
     return {
       id: this.id,
       type: this.type,
-      threshold: this.threshold,
       addressBytes: Array.from(this.addressBytes),
+      multisigConfig: this.multisigConfig,
     };
+  }
+
+  public get threshold(): number {
+    return this.multisigConfig.threshold;
+  }
+
+  public get signers(): string[] {
+    return this.multisigConfig.signers;
   }
 
   /**
@@ -78,12 +86,15 @@ export class MultisigKeyring implements Keyring {
    * @param address - Multisig address (bech32 format)
    * @param threshold - Signature threshold
    */
-  public static async fromAddress(address: string, threshold: number): Promise<MultisigKeyring> {
+  public static async fromAddress(
+    address: string,
+    multisigConfig: MultisigConfig,
+  ): Promise<MultisigKeyring> {
     const { data: addressBytes } = fromBech32(address);
     return new MultisigKeyring({
       type: 'MULTISIG',
-      threshold,
       addressBytes: [...addressBytes],
+      multisigConfig,
     });
   }
 }

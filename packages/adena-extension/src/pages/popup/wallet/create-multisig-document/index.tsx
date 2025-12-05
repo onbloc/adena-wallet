@@ -1,4 +1,4 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import { Account, Document, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -209,13 +209,12 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    console.log(parsedData, 'parsedData');
     setRequestData({ ...parsedData, hostname: data['hostname'] });
   };
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (isAirgapAccount(currentAccount)) {
+      if (!isMultisigAccount(currentAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;
       }
@@ -323,6 +322,17 @@ const CreateMultisigDocumentContainer: React.FC = () => {
       return false;
     }
 
+    if (!isMultisigAccount(currentAccount)) {
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          { message: 'Multisig Account가 아닙니다.' },
+          requestData?.key,
+        ),
+      );
+      return false;
+    }
+
     try {
       const signature = await transactionService.createSignature(currentAccount, document);
 
@@ -374,7 +384,7 @@ const CreateMultisigDocumentContainer: React.FC = () => {
     if (!currentAccount) {
       return;
     }
-    if (isLedgerAccount(currentAccount)) {
+    if (!isMultisigAccount(currentAccount)) {
       navigate(RoutePath.ApproveSignLoading, {
         state: {
           document,

@@ -6,6 +6,7 @@ import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant
 import { WalletError } from '@common/errors/wallet/wallet-error';
 import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
 import { WalletRepository } from '@repositories/wallet';
+import { MultisigConfig } from '@inject/types';
 
 export class WalletService {
   private _id: string;
@@ -153,14 +154,14 @@ export class WalletService {
    * Add multisig account to wallet
    *
    * @param addressBytes - Multisig address bytes
-   * @param threshold - Threshold for multisig
+   * @param multisigConfig - Multisig Config (signers, threshold)
    * @param multisigAddress - Multisig bech32 address
    * @returns The added or existing multisig account
    * @throws Error if multisig account operations fail
    */
   public addMultisigAccount = async (
     addressBytes: Uint8Array,
-    threshold: number,
+    multisigConfig: MultisigConfig,
     multisigAddress: string,
   ): Promise<MultisigAccount> => {
     try {
@@ -173,8 +174,8 @@ export class WalletService {
 
       const multisigKeyring = new MultisigKeyring({
         type: 'MULTISIG',
-        threshold: threshold,
         addressBytes: Array.from(addressBytes),
+        multisigConfig,
       });
 
       const addedIndex = wallet.lastGlobalAccountIndex + 1;
@@ -212,7 +213,11 @@ export class WalletService {
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
+      console.log('🔍 Serialized wallet:', serializedWallet); // ← 추가
+
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
+      console.log('✅ Deserialized successfully'); // ← 추가
+
       return walletInstance;
     } catch (e) {
       console.error(e);
