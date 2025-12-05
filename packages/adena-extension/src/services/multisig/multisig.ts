@@ -3,7 +3,12 @@ import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
 
-import { CreateMultisigDocumentParams, MultisigDocument, SignedDocument } from '@inject/types';
+import {
+  CreateMultisigDocumentParams,
+  MultisigDocument,
+  SignedDocument,
+  StandardDocument,
+} from '@inject/types';
 
 import {
   MultisigAccount,
@@ -86,7 +91,7 @@ export class MultisigService {
     const accountSequence = accountInfo?.sequence ?? 0;
     const multisigConfig = account.multisigConfig;
 
-    return {
+    const document: StandardDocument = {
       msgs: params.msgs,
       fee: {
         gas: params.fee.gas || DEFAULT_GAS_WANTED.toString(),
@@ -108,6 +113,10 @@ export class MultisigService {
       memo: params.memo || '',
       account_number: accountNumber.toString(),
       sequence: accountSequence.toString(),
+    };
+
+    return {
+      document,
       signatures: [],
       multisigConfig,
     };

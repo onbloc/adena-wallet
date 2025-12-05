@@ -20,13 +20,17 @@ export type SignerInfo = {
   status: SignerStatusType;
 };
 
-/**
- * Multisig document - document with multisig configuration
- */
-export interface MultisigDocument extends BaseDocument {
+export interface StandardDocument extends BaseDocument {
   account_number: string;
   sequence: string;
   memo: string;
+}
+
+/**
+ * Multisig document - document with multisig configuration
+ */
+export interface MultisigDocument {
+  document: StandardDocument;
   signatures: Signature[];
   multisigConfig: MultisigConfig;
 }
