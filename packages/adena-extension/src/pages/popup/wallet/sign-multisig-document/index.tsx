@@ -57,7 +57,7 @@ function mappedTransactionData(multisigDocument: MultisigDocument): TransactionD
   };
 }
 
-const ApproveSignDocumentContainer: React.FC = () => {
+const SignMultisigDocumentContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
@@ -68,7 +68,6 @@ const ApproveSignDocumentContainer: React.FC = () => {
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
-  console.log(requestData, 'requestDatarequestData');
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [multisigDocument, setMultisigDocument] = useState<MultisigDocument>();
@@ -455,4 +454,4 @@ const ApproveSignDocumentContainer: React.FC = () => {
   );
 };
 
-export default ApproveSignDocumentContainer;
+export default SignMultisigDocumentContainer;
