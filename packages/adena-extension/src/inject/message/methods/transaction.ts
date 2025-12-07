@@ -81,7 +81,7 @@ export const signMultisigDocument = async (
   }
 
   HandlerMethod.createPopup(
-    RoutePath.ApproveSignDocument,
+    RoutePath.SignMultisigDocument,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,

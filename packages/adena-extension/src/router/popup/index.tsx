@@ -128,7 +128,6 @@ export const PopupRouter = (): JSX.Element => {
           element={<ApproveSignTransactionLedgerLoading />}
         />
         <Route path={RoutePath.ApproveSignFailed} element={<ApproveSignFailedScreen />} />
-        <Route path={RoutePath.ApproveSignDocument} element={<SignMultisigDocument />} />
         <Route
           path={RoutePath.CreateMultisigAccount}
           element={<CreateMultisigAccountContainer />}
@@ -137,6 +136,7 @@ export const PopupRouter = (): JSX.Element => {
           path={RoutePath.CreateMultisigDocument}
           element={<CreateMultisigDocumentContainer />}
         />
+        <Route path={RoutePath.SignMultisigDocument} element={<SignMultisigDocument />} />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
