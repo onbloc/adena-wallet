@@ -158,6 +158,13 @@ export class MessageHandler {
           }
         });
         break;
+      case 'CREATE_MULTISIG_DOCUMENT':
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.createMultisigDocument(message, sendResponse);
+          }
+        });
+        break;
       case 'SIGN_MULTISIG_DOCUMENT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
@@ -165,12 +172,18 @@ export class MessageHandler {
           }
         });
         break;
-      case 'CREATE_MULTISIG_DOCUMENT':
-        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
-          if (isEstablished) {
-            HandlerMethod.createMultisigDocument(message, sendResponse);
-          }
-        });
+      case 'BROADCAST_MULTISIG_TRANSACTION':
+        console.log('hi1');
+        HandlerMethod.checkEstablished(core, message, sendResponse)
+          .then((isEstablished) => {
+            if (isEstablished) {
+              HandlerMethod.broadcastMultisigTransaction(message, sendResponse);
+            }
+          })
+          .catch((e) => {
+            console.log(e, 'e');
+          });
+        break;
       default:
         break;
     }

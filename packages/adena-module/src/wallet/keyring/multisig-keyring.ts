@@ -77,6 +77,7 @@ export class MultisigKeyring implements Keyring {
    */
   async broadcastTxCommit(provider: Provider, signedTx: Tx): Promise<BroadcastTxCommitResult> {
     const encodedTx: string = uint8ArrayToBase64(Tx.encode(signedTx).finish());
+    console.log(encodedTx, 'encodedTx');
     return provider.sendTransaction(encodedTx, TransactionEndpoint.BROADCAST_TX_COMMIT);
   }
 

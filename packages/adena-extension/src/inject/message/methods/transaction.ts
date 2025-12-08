@@ -88,6 +88,24 @@ export const signMultisigDocument = async (
   );
 };
 
+export const broadcastMultisigTransaction = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+): Promise<void> => {
+  const validationMessage = validateInjectionData(requestData);
+  if (validationMessage) {
+    sendResponse(validationMessage);
+    return;
+  }
+
+  HandlerMethod.createPopup(
+    RoutePath.BroadcastMultisigTransaction,
+    requestData,
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    sendResponse,
+  );
+};
+
 export const doContract = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,

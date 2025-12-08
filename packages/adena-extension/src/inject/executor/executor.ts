@@ -18,6 +18,8 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  BroadcastMultisigTransactionParams,
+  BroadcastMultisigTransactionResponse,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigDocumentParams,
@@ -168,7 +170,7 @@ export class AdenaExecutor {
   public signMultisigDocument = (
     multisigDocument: MultisigDocument,
   ): Promise<SignMultisigDocumentResponse> => {
-    const result = this.validateSignedDocument(multisigDocument);
+    const result = this.validateMultisigSignedDocument(multisigDocument);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -176,6 +178,22 @@ export class AdenaExecutor {
     const eventMessage = AdenaExecutor.createEventMessage(
       'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
       multisigDocument,
+    );
+
+    return this.sendEventMessage(eventMessage);
+  };
+
+  public broadcastMultisigTransaction = (
+    params: BroadcastMultisigTransactionParams,
+  ): Promise<BroadcastMultisigTransactionResponse> => {
+    // const result = this.validateBroadcastMultisigTransaction(params);
+    // if (result) {
+    //   return this.sendEventMessage(result);
+    // }
+
+    const eventMessage = AdenaExecutor.createEventMessage(
+      'BROADCAST_MULTISIG_TRANSACTION' as WalletResponseType,
+      params,
     );
 
     return this.sendEventMessage(eventMessage);
@@ -301,7 +319,7 @@ export class AdenaExecutor {
    * @param multisigDocument - The multisig document object to validate
    * @returns InjectionMessage on validation failure, undefined on success
    */
-  private validateSignedDocument = (
+  private validateMultisigSignedDocument = (
     multisigDocument: MultisigDocument,
   ): InjectionMessage | undefined => {
     if (!multisigDocument) {
@@ -340,6 +358,39 @@ export class AdenaExecutor {
     // }
 
     return this.validateMessages(document.msgs);
+  };
+
+  /**
+   * Validates BroadcastMultisigTransactionParams.
+   * Verifies the multisig document and checks if enough signatures are collected.
+   *
+   * @param params - The BroadcastMultisigTransactionParams object to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateBroadcastMultisigTransaction = (
+    params: BroadcastMultisigTransactionParams,
+  ): InjectionMessage | undefined => {
+    if (!params) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    if (!params.multisigDocument) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    const documentValidation = this.validateMultisigSignedDocument(params.multisigDocument);
+
+    if (documentValidation) {
+      return documentValidation;
+    }
+
+    const { signatures, multisigConfig } = params.multisigDocument;
+
+    if (signatures.length < multisigConfig.threshold) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
+
+    return undefined;
   };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {

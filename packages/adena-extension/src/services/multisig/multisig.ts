@@ -1,7 +1,17 @@
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import {
+  defaultAddressPrefix,
+  Tx,
+  uint8ArrayToBase64,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
+  TransactionEndpoint,
+} from '@gnolang/tm2-js-client';
+import { TxSignature, Any } from '@gnolang/tm2-js-client';
 
 import { WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { GasToken } from '@common/constants/token.constant';
 
 import { CreateMultisigDocumentParams, MultisigDocument, StandardDocument } from '@inject/types';
 
@@ -11,9 +21,10 @@ import {
   createMultisigPublicKey,
   fromBase64,
   fromBech32,
+  documentToTx,
 } from 'adena-module';
-import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { GasToken } from '@common/constants/token.constant';
+
+import { Multisignature } from './multisignature';
 
 export class MultisigService {
   private walletService: WalletService;
@@ -153,6 +164,115 @@ export class MultisigService {
                 ],
         },
       },
+    };
+  };
+
+  /**
+   * Broadcast a multisig transaction
+   *
+   * @param multisigDocument - MultisigDocument with collected signatures
+   * @param commit - Use broadcastTxCommit (true) or broadcastTxSync (false)
+   * @returns Transaction hash and height
+   */
+  public broadcastMultisigTransaction = async (
+    multisigDocument: MultisigDocument,
+    commit: boolean = true,
+  ) => {
+    const provider = this.getGnoProvider();
+    const { document, signatures, multisigConfig } = multisigDocument;
+
+    // ✅ 1. Validate enough signatures
+    if (signatures.length < multisigConfig.threshold) {
+      throw new Error(
+        `Not enough signatures. Required: ${multisigConfig.threshold}, Got: ${signatures.length}`,
+      );
+    }
+
+    // ✅ 2. Get public keys for all signers
+    const signerPublicKeys: Uint8Array[] = [];
+    for (const address of multisigConfig.signers) {
+      const publicKeyInfo = await this.getPublicKeyFromChain(address);
+      if (!publicKeyInfo?.value) {
+        throw new Error(`Public key not found for address: ${address}`);
+      }
+      const publicKeyBytes = fromBase64(publicKeyInfo.value);
+      signerPublicKeys.push(publicKeyBytes);
+    }
+
+    // ✅ 3. Create multisig public key
+    const { publicKey: multisigPubKey } = createMultisigPublicKey(
+      signerPublicKeys,
+      multisigConfig.threshold,
+      defaultAddressPrefix,
+    );
+
+    // ✅ 4. Create Multisignature and add all signatures
+    const multisig = new Multisignature(signerPublicKeys.length);
+
+    for (const signature of signatures) {
+      if (!signature.pubKey.value) {
+        throw new Error('Signature missing public key value');
+      }
+
+      const sigPubKeyRaw = fromBase64(signature.pubKey.value);
+      const sigPubKey = sigPubKeyRaw.slice(2); // 0x0a21 제거
+      const sig = fromBase64(signature.signature);
+
+      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
+    }
+
+    // ✅ 5. Marshal multisig signature
+    const multisigSignature = multisig.marshal();
+
+    // ✅ 6. Convert Document to Tx (기존 함수 사용!)
+    const tx = documentToTx(document);
+
+    // ✅ 7. Add multisig signature to Tx
+    tx.signatures = [
+      TxSignature.create({
+        pub_key: Any.create({
+          type_url: '/tm.PubKeyMultisig',
+          value: multisigPubKey,
+        }),
+        signature: multisigSignature,
+      }),
+    ];
+
+    console.log('=== TX DEBUG ===');
+    console.log('tx messages:', tx.messages.length);
+    console.log('tx fee:', tx.fee);
+    console.log('tx signatures:', tx.signatures.length);
+    console.log('tx memo:', tx.memo);
+
+    // ✅ 8. Encode and broadcast transaction
+    let result: BroadcastTxCommitResult | BroadcastTxSyncResult;
+    try {
+      const txBase64 = uint8ArrayToBase64(Tx.encode(tx).finish());
+
+      console.log('txBase64:', txBase64);
+      console.log('txBase64 length:', Buffer.from(txBase64, 'base64').length);
+
+      const endpoint = commit ? 'broadcast_tx_commit' : 'broadcast_tx_sync';
+      result = await provider.sendTransaction(
+        txBase64,
+        endpoint as TransactionEndpoint.BROADCAST_TX_SYNC | TransactionEndpoint.BROADCAST_TX_COMMIT,
+      );
+    } catch (error) {
+      console.error('Broadcast error:', error);
+      throw error;
+    }
+
+    console.log('result:', result);
+
+    // ✅ 9. Check result
+    if ('error' in result && result.error) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result.error)}`);
+    }
+
+    // ✅ 10. Return hash and height
+    return {
+      hash: result.hash,
+      height: 'height' in result ? result.height : undefined,
     };
   };
 

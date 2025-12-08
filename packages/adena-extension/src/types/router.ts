@@ -50,6 +50,7 @@ export enum RoutePath {
   CreateMultisigAccount = 'approve/wallet/create-multisig-account',
   CreateMultisigDocument = 'approve/wallet/create-multisig-document',
   SignMultisigDocument = 'approve/wallet/sign-multisig-document',
+  BroadcastMultisigTransaction = 'approve/wallet/broadcast-multisig-transaction',
   ApproveEstablish = '/approve/wallet/establish',
   ApproveChangingNetwork = '/approve/wallet/network/change',
   ApproveAddingNetwork = '/approve/wallet/network/add',

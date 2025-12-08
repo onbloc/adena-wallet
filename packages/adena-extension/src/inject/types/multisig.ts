@@ -84,3 +84,25 @@ export type SignMultisigDocumentResponseData = {
  * Response for signing a multisig document
  */
 export type SignMultisigDocumentResponse = AdenaResponse<SignMultisigDocumentResponseData>;
+
+/**
+ * Parameters for broadcasting a multisig transaction
+ */
+export interface BroadcastMultisigTransactionParams {
+  multisigDocument: MultisigDocument;
+  commit?: boolean;
+}
+
+/**
+ * Response data for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponseData = {
+  hash: string;
+  height?: string;
+};
+
+/**
+ * Response for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponse =
+  AdenaResponse<BroadcastMultisigTransactionResponseData>;

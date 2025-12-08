@@ -27,7 +27,10 @@ import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
 import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
+import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
+import CreateMultisigDocumentContainer from '@pages/popup/wallet/create-multisig-document';
 import SignMultisigDocument from '@pages/popup/wallet/sign-multisig-document';
+import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
 import BroadcastTransactionScreen from '@pages/popup/wallet/broadcast-transaction-screen';
@@ -64,8 +67,6 @@ import { Header } from './header';
 import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
-import CreateMultisigDocumentContainer from '@pages/popup/wallet/create-multisig-document';
-import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
 
 export const PopupRouter = (): JSX.Element => {
   const { failedNetwork } = useNetwork();
@@ -137,6 +138,10 @@ export const PopupRouter = (): JSX.Element => {
           element={<CreateMultisigDocumentContainer />}
         />
         <Route path={RoutePath.SignMultisigDocument} element={<SignMultisigDocument />} />
+        <Route
+          path={RoutePath.BroadcastMultisigTransaction}
+          element={<BroadcastMultisigTransactionScreen />}
+        />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />
