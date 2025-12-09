@@ -5,7 +5,13 @@ import {
   defaultAddressPrefix,
   TM2Error,
 } from '@gnolang/tm2-js-client';
-import { Document, fromBase64, isAirgapAccount, publicKeyToAddress } from 'adena-module';
+import {
+  Document,
+  fromBase64,
+  isAirgapAccount,
+  isMultisigAccount,
+  publicKeyToAddress,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -94,7 +100,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 const BroadcastMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
-  const { gnoProvider, changeNetwork } = useWalletContext();
+  const { gnoProvider, changeNetwork, wallet } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
@@ -278,11 +284,22 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   };
 
   const broadcastTransaction = async (): Promise<boolean> => {
-    console.log('broadcastTransaction');
     if (isErrorNetworkFee) {
       return false;
     }
-    if (!multisigDocument || !currentNetwork) {
+    if (!multisigDocument || !currentNetwork || !currentAccount || !wallet) {
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          {},
+          requestData?.key,
+        ),
+      );
+      return false;
+    }
+
+    console.log(isMultisigAccount(currentAccount), '?');
+    if (!isMultisigAccount(currentAccount)) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -296,23 +313,22 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      // ✅ 직접 await로 받기
+      const walletInstance = wallet.clone();
+      walletInstance.currentAccountId = currentAccount.id;
+
+      // 직접 await로 받기
       let broadcastResult: { hash: string; height?: string } | null = null;
       let broadcastError: TM2Error | Error | null = null;
 
       try {
         broadcastResult = await multisigService.broadcastMultisigTransaction(
+          currentAccount,
           multisigDocument,
           true,
         );
       } catch (error) {
         broadcastError = error as TM2Error | Error;
       }
-
-      const pubKeyValue = fromBase64('CiEC0bIDqXdQitS6nnPvJej3RtcNxdQ6YuIrfhg99+BDqkA=');
-      const pubKeyBytes = pubKeyValue.slice(2); // 앞 2바이트 제거 (0x0a21)
-      console.log(publicKeyToAddress(pubKeyBytes), 'pubkey');
-      console.log(broadcastResult, broadcastError, '최종');
 
       // Health check (timeout)
       // const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);

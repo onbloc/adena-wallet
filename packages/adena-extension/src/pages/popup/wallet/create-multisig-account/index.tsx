@@ -98,27 +98,34 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const { multisigAddress, multisigAddressBytes } =
+      // multisigPubKey도 받아옴
+      const { multisigAddress, multisigAddressBytes, multisigPubKey } =
         await multisigService.createMultisigAccount(multisigConfig);
 
+      // Object를 Uint8Array로 변환
+      const publicKeyBytes = Uint8Array.from(Object.values(multisigPubKey));
+      const addressBytes = Uint8Array.from(Object.values(multisigAddressBytes));
+
+      // publicKey 전달
       const multisigAccount = await walletService.addMultisigAccount(
-        multisigAddressBytes,
+        publicKeyBytes,
+        addressBytes,
         multisigConfig,
         multisigAddress,
       );
 
-      await changeCurrentAccount(multisigAccount);
+      // await changeCurrentAccount(multisigAccount);
 
-      setResponse(
-        InjectionMessageInstance.success(
-          WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
-          {
-            multisigConfig,
-            multisigAddress,
-          },
-          requestData?.key,
-        ),
-      );
+      // setResponse(
+      //   InjectionMessageInstance.success(
+      //     WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
+      //     {
+      //       multisigConfig,
+      //       multisigAddress,
+      //     },
+      //     requestData?.key,
+      //   ),
+      // );
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
@@ -131,7 +138,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
         );
       }
     } finally {
-      setProcessType('DONE');
+      // setProcessType('DONE');
     }
   };
 

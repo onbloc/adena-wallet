@@ -13,10 +13,6 @@ export interface MultisigConfig {
 /**
  * MultisigAccount class
  * Represents a multisig account with threshold signature requirement
- *
- * Note: Similar to AirgapAccount, this stores the address bytes directly
- * instead of deriving it from a public key to avoid compression issues
- * with threshold multisig public keys.
  */
 export class MultisigAccount implements Account {
   public readonly id: string;
@@ -34,7 +30,7 @@ export class MultisigAccount implements Account {
     this._index = accountInfo.index;
     this._name = accountInfo.name;
     this.keyringId = accountInfo.keyringId;
-    this.publicKey = new Uint8Array();
+    this.publicKey = Uint8Array.from(accountInfo.publicKey ?? []);
     this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []);
 
     if (!accountInfo.multisigConfig) {
@@ -102,6 +98,7 @@ export class MultisigAccount implements Account {
   public static async createBy(
     keyring: MultisigKeyring,
     name: string,
+    publicKey: Uint8Array,
     addressBytes: Uint8Array,
   ): Promise<MultisigAccount> {
     return new MultisigAccount({
@@ -109,7 +106,7 @@ export class MultisigAccount implements Account {
       type: 'MULTISIG',
       name,
       keyringId: keyring.id,
-      publicKey: [],
+      publicKey: Array.from(publicKey),
       addressBytes: Array.from(addressBytes),
       multisigConfig: keyring.multisigConfig,
     });

@@ -1,12 +1,23 @@
 import {
   defaultAddressPrefix,
   Tx,
+  TxFee,
+  TxSignature,
+  Any,
   uint8ArrayToBase64,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  TransactionEndpoint,
+  BroadcastTransactionMap,
 } from '@gnolang/tm2-js-client';
-import { TxSignature, Any } from '@gnolang/tm2-js-client';
+import {
+  MsgEndpoint,
+  MsgSend,
+  MsgCall,
+  MsgAddPackage,
+  MsgRun,
+  MemFile,
+  MemPackage,
+} from '@gnolang/gno-js-client';
 
 import { WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
@@ -21,7 +32,6 @@ import {
   createMultisigPublicKey,
   fromBase64,
   fromBech32,
-  documentToTx,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -45,11 +55,12 @@ export class MultisigService {
   /**
    * Create a multisig account
    * @param config - Multisig configuration (signers and threshold)
-   * @returns Multisig account address and addressBytes
+   * @returns Multisig account address, addressBytes, and publicKey
    */
   public createMultisigAccount = async (config: MultisigConfig) => {
     const { signers, threshold } = config;
 
+    // Get signer public keys from chain
     const signerPublicKeys: Uint8Array[] = [];
     for (const address of signers) {
       const publicKeyInfo = await this.getPublicKeyFromChain(address);
@@ -65,17 +76,31 @@ export class MultisigService {
       signerPublicKeys.push(publicKeyBytes);
     }
 
-    const { address: multisigAddress } = createMultisigPublicKey(
+    // Create multisig public key (Amino encoded)
+    const { address: multisigAddress, publicKey: multisigPubKey } = createMultisigPublicKey(
       signerPublicKeys,
       threshold,
       defaultAddressPrefix,
     );
 
+    // Extract address bytes from bech32 address
     const { data: addressBytes } = fromBech32(multisigAddress);
+
+    // Convert Uint8Array to object format (for storage)
+    const publicKeyObj: Record<string, number> = {};
+    for (let i = 0; i < multisigPubKey.length; i++) {
+      publicKeyObj[i.toString()] = multisigPubKey[i];
+    }
+
+    const addressBytesObj: Record<string, number> = {};
+    for (let i = 0; i < addressBytes.length; i++) {
+      addressBytesObj[i.toString()] = addressBytes[i];
+    }
 
     return {
       multisigAddress: multisigAddress,
-      multisigAddressBytes: addressBytes,
+      multisigAddressBytes: addressBytesObj,
+      multisigPubKey: publicKeyObj,
     };
   };
 
@@ -175,20 +200,21 @@ export class MultisigService {
    * @returns Transaction hash and height
    */
   public broadcastMultisigTransaction = async (
+    currentAccount: MultisigAccount,
     multisigDocument: MultisigDocument,
     commit: boolean = true,
   ) => {
     const provider = this.getGnoProvider();
     const { document, signatures, multisigConfig } = multisigDocument;
 
-    // ✅ 1. Validate enough signatures
+    // 1. Validate enough signatures
     if (signatures.length < multisigConfig.threshold) {
       throw new Error(
         `Not enough signatures. Required: ${multisigConfig.threshold}, Got: ${signatures.length}`,
       );
     }
 
-    // ✅ 2. Get public keys for all signers
+    // 2. Get public keys for all signers
     const signerPublicKeys: Uint8Array[] = [];
     for (const address of multisigConfig.signers) {
       const publicKeyInfo = await this.getPublicKeyFromChain(address);
@@ -199,14 +225,15 @@ export class MultisigService {
       signerPublicKeys.push(publicKeyBytes);
     }
 
-    // ✅ 3. Create multisig public key
-    const { publicKey: multisigPubKey } = createMultisigPublicKey(
+    // 3. Create multisig public key (Amino encoded bytes)
+    const { publicKey: multisigPubKeyAmino } = createMultisigPublicKey(
       signerPublicKeys,
       multisigConfig.threshold,
       defaultAddressPrefix,
     );
 
-    // ✅ 4. Create Multisignature and add all signatures
+    console.log(currentAccount, multisigPubKeyAmino, 'currentAccount, multisigPubKeyAmino');
+    // 4. Create Multisignature and add all signatures
     const multisig = new Multisignature(signerPublicKeys.length);
 
     for (const signature of signatures) {
@@ -215,66 +242,164 @@ export class MultisigService {
       }
 
       const sigPubKeyRaw = fromBase64(signature.pubKey.value);
-      const sigPubKey = sigPubKeyRaw.slice(2); // 0x0a21 제거
+      const sigPubKey = sigPubKeyRaw.slice(2); // Remove 0x0a21 prefix
       const sig = fromBase64(signature.signature);
+
+      console.log(sigPubKeyRaw, sigPubKey, sig, 'sigsigsig');
 
       multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
     }
 
-    // ✅ 5. Marshal multisig signature
+    // 5. Marshal multisig signature (Amino encoded)
     const multisigSignature = multisig.marshal();
+    console.log(multisigSignature, 'multisigSignaturemultisigSignature');
 
-    // ✅ 6. Convert Document to Tx (기존 함수 사용!)
-    const tx = documentToTx(document);
+    // 6. Create Tx messages
+    const messages: Any[] = document.msgs.map((msg) => {
+      const msgType = msg['@type'] || msg.type;
+      const msgValue = this.encodeMessage(msg);
 
-    // ✅ 7. Add multisig signature to Tx
-    tx.signatures = [
-      TxSignature.create({
-        pub_key: Any.create({
-          type_url: '/tm.PubKeyMultisig',
-          value: multisigPubKey,
-        }),
-        signature: multisigSignature,
+      return Any.create({
+        type_url: msgType,
+        value: msgValue,
+      });
+    });
+    console.log(messages, 'messagesmessagesmessages');
+
+    // 7. Create Tx object
+    const tx: Tx = {
+      messages,
+      fee: TxFee.create({
+        gas_wanted: document.fee.gas,
+        gas_fee: document.fee.amount
+          .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
+          .join(','),
       }),
-    ];
+      signatures: [
+        TxSignature.create({
+          pub_key: Any.create({
+            type_url: '/tm.PubKeyMultisig',
+            value: multisigPubKeyAmino,
+          }),
+          signature: multisigSignature,
+        }),
+      ],
+      memo: document.memo || '',
+    };
 
     console.log('=== TX DEBUG ===');
     console.log('tx messages:', tx.messages.length);
     console.log('tx fee:', tx.fee);
     console.log('tx signatures:', tx.signatures.length);
     console.log('tx memo:', tx.memo);
+    console.log('multisig pubkey length:', multisigPubKeyAmino.length);
 
-    // ✅ 8. Encode and broadcast transaction
+    // 8. Encode and broadcast transaction
     let result: BroadcastTxCommitResult | BroadcastTxSyncResult;
+    let result2: BroadcastTxCommitResult | BroadcastTxSyncResult;
     try {
       const txBase64 = uint8ArrayToBase64(Tx.encode(tx).finish());
-
-      console.log('txBase64:', txBase64);
-      console.log('txBase64 length:', Buffer.from(txBase64, 'base64').length);
-
       const endpoint = commit ? 'broadcast_tx_commit' : 'broadcast_tx_sync';
-      result = await provider.sendTransaction(
-        txBase64,
-        endpoint as TransactionEndpoint.BROADCAST_TX_SYNC | TransactionEndpoint.BROADCAST_TX_COMMIT,
-      );
+      result = await provider.sendTransaction(txBase64, endpoint as keyof BroadcastTransactionMap);
+      result2 = await provider.sendTransactionSync(txBase64);
     } catch (error) {
       console.error('Broadcast error:', error);
       throw error;
     }
 
     console.log('result:', result);
+    console.log('result2:', result2);
 
-    // ✅ 9. Check result
+    // 9. Check result
     if ('error' in result && result.error) {
       throw new Error(`Transaction failed: ${JSON.stringify(result.error)}`);
     }
 
-    // ✅ 10. Return hash and height
+    // 10. Return hash and height
     return {
       hash: result.hash,
       height: 'height' in result ? result.height : undefined,
     };
   };
+
+  /**
+   * Encode message value to Uint8Array
+   */
+  private encodeMessage(msg: any): Uint8Array {
+    const msgType = msg['@type'] || msg.type;
+
+    switch (msgType) {
+      case MsgEndpoint.MSG_CALL:
+      case '/vm.m_call': {
+        const args: string[] = msg.value.args
+          ? msg.value.args.length === 0
+            ? null
+            : msg.value.args
+          : null;
+
+        const msgCall = MsgCall.create({
+          args: args,
+          caller: msg.value.caller,
+          func: msg.value.func,
+          pkg_path: msg.value.pkg_path,
+          send: msg.value.send || '',
+          max_deposit: msg.value.max_deposit || '',
+        });
+
+        return MsgCall.encode(msgCall).finish();
+      }
+
+      case MsgEndpoint.MSG_SEND:
+      case '/bank.MsgSend': {
+        const msgSend = MsgSend.create(msg.value);
+        return MsgSend.encode(msgSend).finish();
+      }
+
+      case MsgEndpoint.MSG_ADD_PKG:
+      case '/vm.m_addpkg': {
+        const msgAddPackage = MsgAddPackage.create({
+          creator: msg.value.creator,
+          send: msg.value.send || '',
+          max_deposit: msg.value?.max_deposit || '',
+          package: msg.value.package ? this.createMemPackage(msg.value.package) : undefined,
+        });
+
+        return MsgAddPackage.encode(msgAddPackage).finish();
+      }
+
+      case MsgEndpoint.MSG_RUN:
+      case '/vm.m_run': {
+        const msgRun = MsgRun.create({
+          caller: msg.value.caller,
+          send: msg.value.send || null,
+          package: msg.value.package ? this.createMemPackage(msg.value.package) : undefined,
+          max_deposit: msg.value?.max_deposit || '',
+        });
+
+        return MsgRun.encode(msgRun).finish();
+      }
+
+      default: {
+        throw new Error(`Unsupported message type: ${msgType}`);
+      }
+    }
+  }
+
+  /**
+   * Create MemPackage from raw package data
+   */
+  private createMemPackage(memPackage: any): any {
+    return MemPackage.create({
+      name: memPackage.name,
+      path: memPackage.path,
+      files: memPackage.files.map((file: any) =>
+        MemFile.create({
+          name: file.name,
+          body: file.body,
+        }),
+      ),
+    });
+  }
 
   private async getPublicKeyFromChain(address: string) {
     const provider = this.getGnoProvider();

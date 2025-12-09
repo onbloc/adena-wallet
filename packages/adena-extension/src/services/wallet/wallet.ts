@@ -158,13 +158,15 @@ export class WalletService {
   /**
    * Add multisig account to wallet
    *
-   * @param addressBytes - Multisig address bytes
+   * @param publicKey - Multisig public key (Amino encoded PubKeyMultisigThreshold)
+   * @param addressBytes - Multisig address bytes (20 bytes)
    * @param multisigConfig - Multisig Config (signers, threshold)
    * @param multisigAddress - Multisig bech32 address
-   * @returns The added or existing multisig account
+   * @returns The added multisig account
    * @throws Error if multisig account operations fail
    */
   public addMultisigAccount = async (
+    publicKey: Uint8Array,
     addressBytes: Uint8Array,
     multisigConfig: MultisigConfig,
     multisigAddress: string,
@@ -172,31 +174,36 @@ export class WalletService {
     try {
       const wallet = await this.loadWallet();
 
+      // Check for duplicate address
       const isDuplicate = await wallet.hasAddress(multisigAddress);
       if (isDuplicate) {
         throw new Error(`Multisig account already exists: ${multisigAddress}`);
       }
 
+      // Create multisig keyring
       const multisigKeyring = new MultisigKeyring({
         type: 'MULTISIG',
         addressBytes: Array.from(addressBytes),
         multisigConfig,
       });
 
+      // Get account index and name
       const addedIndex = wallet.lastGlobalAccountIndex + 1;
       const multisigName = wallet.nextMultisigAccountName;
 
+      // Create multisig account with publicKey
       const multisigAccount = await MultisigAccount.createBy(
         multisigKeyring,
         multisigName,
+        publicKey,
         addressBytes,
       );
 
       multisigAccount.index = addedIndex;
       multisigAccount.name = multisigName;
 
+      // Add to wallet
       const clonedWallet = wallet.clone();
-
       clonedWallet.addKeyring(multisigKeyring);
       clonedWallet.addAccount(multisigAccount);
 
