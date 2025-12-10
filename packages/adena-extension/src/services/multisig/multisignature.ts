@@ -1,11 +1,6 @@
+import { uint8ArrayToBase64 } from '@gnolang/tm2-js-client';
 import { CompactBitArray } from './compact-bit-array';
 
-/**
- * Multisignature implementation matching Go's multisig.Multisignature
- *
- * This class combines multiple signatures from different signers into a single
- * multisig signature that can be verified against a multisig public key.
- */
 export class Multisignature {
   public bitArray: CompactBitArray;
   public sigs: Uint8Array[];
@@ -15,43 +10,24 @@ export class Multisignature {
     this.sigs = [];
   }
 
-  /**
-   * AddSignature adds a signature at the given index
-   * This matches Go's AddSignature implementation exactly
-   *
-   * @param sig - The signature bytes
-   * @param index - The index of the signer in the multisig public key
-   */
   addSignature(sig: Uint8Array, index: number): void {
     const newSigIndex = this.bitArray.numTrueBitsBefore(index);
 
-    // Signature already exists, replace it
     if (this.bitArray.getIndex(index)) {
       this.sigs[newSigIndex] = sig;
       return;
     }
 
-    // Set bit in BitArray
     this.bitArray.setIndex(index, true);
 
-    // Optimization if the index is the greatest index
     if (newSigIndex === this.sigs.length) {
       this.sigs.push(sig);
       return;
     }
 
-    // Insert signature at the correct position
     this.sigs.splice(newSigIndex, 0, sig);
   }
 
-  /**
-   * AddSignatureFromPubKey adds a signature at the index corresponding to the pubkey
-   * This matches Go's AddSignatureFromPubKey implementation
-   *
-   * @param sig - The signature bytes
-   * @param pubkey - The public key of the signer
-   * @param keys - All public keys in the multisig (in order)
-   */
   addSignatureFromPubKey(sig: Uint8Array, pubkey: Uint8Array, keys: Uint8Array[]): void {
     console.log(pubkey, keys, '? pubkey keys');
     const index = this.getIndex(pubkey, keys);
@@ -64,13 +40,6 @@ export class Multisignature {
     this.addSignature(sig, index);
   }
 
-  /**
-   * ✅ NEW: Add signature using address instead of pubkey
-   *
-   * @param sig - The signature bytes
-   * @param signerAddress - The address of the signer (e.g., "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5")
-   * @param signerAddresses - All signer addresses in the multisig (in order)
-   */
   addSignatureFromAddress(sig: Uint8Array, signerAddress: string, signerAddresses: string[]): void {
     const index = signerAddresses.indexOf(signerAddress);
 
@@ -85,21 +54,39 @@ export class Multisignature {
     this.addSignature(sig, index);
   }
 
-  /**
-   * Get index of pubkey in keys array
-   */
   private getIndex(pubkey: Uint8Array, keys: Uint8Array[]): number {
+    console.log('🔍 getIndex:');
+    console.log('  Looking for:', Buffer.from(pubkey).toString('hex'), `(${pubkey.length} bytes)`);
+
     for (let i = 0; i < keys.length; i++) {
+      console.log(`  Key ${i}:`, Buffer.from(keys[i]).toString('hex'), `(${keys[i].length} bytes)`);
+
       if (this.areEqual(pubkey, keys[i])) {
+        console.log(`  ✅ Direct match at index ${i}`);
         return i;
       }
+
+      if (keys[i].length === 35 && pubkey.length === 33) {
+        const keyWithoutPrefix = keys[i].slice(2);
+        if (this.areEqual(pubkey, keyWithoutPrefix)) {
+          console.log(`  ✅ Match without prefix at index ${i}`);
+          return i;
+        }
+      }
+
+      if (pubkey.length === 35 && keys[i].length === 33) {
+        const pubkeyWithoutPrefix = pubkey.slice(2);
+        if (this.areEqual(pubkeyWithoutPrefix, keys[i])) {
+          console.log(`  ✅ Match with prefix at index ${i}`);
+          return i;
+        }
+      }
     }
+
+    console.log('  ❌ No match found');
     return -1;
   }
 
-  /**
-   * Compare two Uint8Arrays
-   */
   private areEqual(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
@@ -108,24 +95,30 @@ export class Multisignature {
     return true;
   }
 
-  /**
-   * Marshal to Amino format using Protobuf encoding
-   * This matches Go's amino.MustMarshal(mSig)
-   */
+  // ✅ Amino JSON 형식으로 변환 (브로드캐스트용)
+  toAmino(): { bitarray: any; signatures: string[] } {
+    const aminoBits = this.bitArray.toAmino();
+    return {
+      bitarray: {
+        extra_bits: aminoBits.extra_bits,
+        elems: uint8ArrayToBase64(aminoBits.bits),
+      },
+      signatures: this.sigs.map((sig) => uint8ArrayToBase64(sig)),
+    };
+  }
+
+  // ✅ Protobuf 형식으로 변환 (내부용)
   marshal(): Uint8Array {
-    const amino = this.toAmino();
-
-    // Encode bit array
+    const amino = this.toAminoInternal();
     const bitArrayBytes = this.encodeBitArray(amino.bit_array);
-
-    // Encode signatures
     const sigsBytes = this.encodeSignatures(amino.sigs);
-
-    // Combine
     return new Uint8Array([...bitArrayBytes, ...sigsBytes]);
   }
 
-  private toAmino(): { bit_array: { extra_bits: number; bits: Uint8Array }; sigs: Uint8Array[] } {
+  private toAminoInternal(): {
+    bit_array: { extra_bits: number; bits: Uint8Array };
+    sigs: Uint8Array[];
+  } {
     return {
       bit_array: this.bitArray.toAmino(),
       sigs: this.sigs,
@@ -133,31 +126,35 @@ export class Multisignature {
   }
 
   private encodeBitArray(bitArray: { extra_bits: number; bits: Uint8Array }): Uint8Array {
-    // Amino field 1: extra_bits (varint)
-    const field1 = new Uint8Array([
-      0x08, // field 1, wire type 0 (varint)
-      bitArray.extra_bits,
-    ]);
+    const bitArrayInner: number[] = [];
 
-    // Amino field 2: bits (bytes)
-    const bitsLength = this.encodeVarint(bitArray.bits.length);
-    const field2 = new Uint8Array([
-      0x12, // field 2, wire type 2 (length-delimited)
-      ...bitsLength,
-      ...bitArray.bits,
-    ]);
+    if (bitArray.extra_bits !== 0) {
+      bitArrayInner.push(0x08);
+      bitArrayInner.push(bitArray.extra_bits);
+    }
 
-    return new Uint8Array([...field1, ...field2]);
+    if (bitArray.bits.length > 0) {
+      bitArrayInner.push(0x12);
+      bitArrayInner.push(...this.encodeVarint(bitArray.bits.length));
+      bitArrayInner.push(...bitArray.bits);
+    }
+
+    const bitArrayBytes = new Uint8Array(bitArrayInner);
+    const result: number[] = [];
+
+    result.push(0x0a);
+    result.push(...this.encodeVarint(bitArrayBytes.length));
+    result.push(...bitArrayBytes);
+
+    return new Uint8Array(result);
   }
 
   private encodeSignatures(signatures: Uint8Array[]): Uint8Array {
     const result: number[] = [];
 
     for (const signature of signatures) {
-      // Amino field 3: sigs (repeated bytes)
-      result.push(0x1a); // field 3, wire type 2 (length-delimited)
-      const signatureLength = this.encodeVarint(signature.length);
-      result.push(...signatureLength);
+      result.push(0x12);
+      result.push(...this.encodeVarint(signature.length));
       result.push(...signature);
     }
 
@@ -172,5 +169,9 @@ export class Multisignature {
     }
     bytes.push(value);
     return bytes;
+  }
+
+  get signatures(): Uint8Array[] {
+    return this.sigs;
   }
 }

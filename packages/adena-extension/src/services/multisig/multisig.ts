@@ -215,71 +215,120 @@ export class MultisigService {
     }
 
     // 2. Get public keys for all signers
+    console.log('\n2️⃣ Getting Signer Public Keys:');
     const signerPublicKeys: Uint8Array[] = [];
+
     for (const address of multisigConfig.signers) {
       const publicKeyInfo = await this.getPublicKeyFromChain(address);
       if (!publicKeyInfo?.value) {
         throw new Error(`Public key not found for address: ${address}`);
       }
       const publicKeyBytes = fromBase64(publicKeyInfo.value);
-      signerPublicKeys.push(publicKeyBytes);
+
+      // ✅ Remove Amino prefix if present
+      const hasAminoPrefix =
+        publicKeyBytes.length === 35 && publicKeyBytes[0] === 0x0a && publicKeyBytes[1] === 0x21;
+
+      const cleanPubKey = hasAminoPrefix
+        ? publicKeyBytes.slice(2) // Remove prefix, get 33 bytes
+        : publicKeyBytes;
+
+      signerPublicKeys.push(cleanPubKey);
     }
 
-    // 3. Create multisig public key (Amino encoded bytes)
-    const { publicKey: multisigPubKeyAmino } = createMultisigPublicKey(
-      signerPublicKeys,
-      multisigConfig.threshold,
-      defaultAddressPrefix,
-    );
-
-    console.log(currentAccount, multisigPubKeyAmino, 'currentAccount, multisigPubKeyAmino');
-    // 4. Create Multisignature and add all signatures
+    // 3. Create Multisignature and add all signatures
+    console.log('\n3️⃣ Adding Signatures:');
     const multisig = new Multisignature(signerPublicKeys.length);
 
-    for (const signature of signatures) {
+    for (let i = 0; i < signatures.length; i++) {
+      const signature = signatures[i];
+
       if (!signature.pubKey.value) {
-        throw new Error('Signature missing public key value');
+        throw new Error(`Signature ${i + 1} missing public key value`);
       }
 
       const sigPubKeyRaw = fromBase64(signature.pubKey.value);
-      const sigPubKey = sigPubKeyRaw.slice(2); // Remove 0x0a21 prefix
+      const sigHasAminoPrefix =
+        sigPubKeyRaw.length === 35 && sigPubKeyRaw[0] === 0x0a && sigPubKeyRaw[1] === 0x21;
+      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
       const sig = fromBase64(signature.signature);
-
-      console.log(sigPubKeyRaw, sigPubKey, sig, 'sigsigsig');
 
       multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
     }
 
-    // 5. Marshal multisig signature (Amino encoded)
-    const multisigSignature = multisig.marshal();
-    console.log(multisigSignature, 'multisigSignaturemultisigSignature');
+    // 4. Check BitArray
+    console.log('\n4️⃣ BitArray Check:');
+    const bitArrayAmino = multisig.bitArray.toAmino();
+    console.log('  extra_bits:', bitArrayAmino.extra_bits);
+    console.log('  bits hex:', Buffer.from(bitArrayAmino.bits).toString('hex'));
 
-    // 6. Create Tx messages
-    const messages: Any[] = document.msgs.map((msg) => {
+    // 5. Encode multisig public key (Protobuf format)
+    console.log('\n5️⃣ Encoding Multisig PubKey (Protobuf):');
+    const multisigPubKeyProtobuf = this.encodeMultisigPublicKey(
+      multisigConfig.threshold,
+      signerPublicKeys,
+    );
+    console.log('  Protobuf length:', multisigPubKeyProtobuf.length);
+    console.log('  Protobuf hex:', Buffer.from(multisigPubKeyProtobuf).toString('hex'));
+
+    // ✅ Add Amino prefix (varint encoding)
+    function encodeVarint(value: number): Uint8Array {
+      const result: number[] = [];
+      while (value >= 0x80) {
+        result.push((value & 0x7f) | 0x80);
+        value >>>= 7;
+      }
+      result.push(value);
+      return new Uint8Array(result);
+    }
+
+    const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
+    const multisigPubKeyWithAmino = new Uint8Array([
+      0x0a, // Amino field tag
+      ...lengthBytes,
+      ...multisigPubKeyProtobuf,
+    ]);
+    console.log('  With Amino prefix length:', multisigPubKeyWithAmino.length);
+    console.log('  With Amino prefix hex:', Buffer.from(multisigPubKeyWithAmino).toString('hex'));
+
+    // 6. Marshal multisig signature (Protobuf format)
+    console.log('\n6️⃣ Marshaling Multisignature (Protobuf):');
+    const multisigSignature = multisig.marshal();
+    console.log('  Length:', multisigSignature.length);
+    console.log('  Hex:', Buffer.from(multisigSignature).toString('hex'));
+
+    // 7. Create Tx Messages
+    console.log('\n7️⃣ Creating Tx Messages:');
+    const messages: Any[] = [];
+    for (const msg of document.msgs) {
       const msgType = msg['@type'] || msg.type;
       const msgValue = this.encodeMessage(msg);
 
-      return Any.create({
-        type_url: msgType,
-        value: msgValue,
-      });
-    });
-    console.log(messages, 'messagesmessagesmessages');
+      messages.push(
+        Any.create({
+          type_url: msgType,
+          value: msgValue,
+        }),
+      );
+    }
+    console.log('  Messages count:', messages.length);
 
-    // 7. Create Tx object
+    // 8. Create Tx
+    console.log('\n8️⃣ Creating Tx:');
+
+    const gasWanted = parseInt(document.fee.gas, 10);
+
     const tx: Tx = {
-      messages,
+      messages: messages,
       fee: TxFee.create({
-        gas_wanted: document.fee.gas,
-        gas_fee: document.fee.amount
-          .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
-          .join(','),
+        gas_wanted: gasWanted,
+        gas_fee: document.fee.amount.map((coin) => `${coin.amount}${coin.denom}`).join(','),
       }),
       signatures: [
         TxSignature.create({
           pub_key: Any.create({
             type_url: '/tm.PubKeyMultisig',
-            value: multisigPubKeyAmino,
+            value: multisigPubKeyWithAmino, // ✅ Amino prefix 포함
           }),
           signature: multisigSignature,
         }),
@@ -287,40 +336,141 @@ export class MultisigService {
       memo: document.memo || '',
     };
 
-    console.log('=== TX DEBUG ===');
-    console.log('tx messages:', tx.messages.length);
-    console.log('tx fee:', tx.fee);
-    console.log('tx signatures:', tx.signatures.length);
-    console.log('tx memo:', tx.memo);
-    console.log('multisig pubkey length:', multisigPubKeyAmino.length);
+    console.log('  Fee:', tx.fee);
+    console.log('  Memo:', tx.memo);
 
-    // 8. Encode and broadcast transaction
-    let result: BroadcastTxCommitResult | BroadcastTxSyncResult;
-    let result2: BroadcastTxCommitResult | BroadcastTxSyncResult;
+    // 9. Encode Transaction (Protobuf → base64)
+    console.log('\n9️⃣ Encoding Transaction:');
+    const txBytes = Tx.encode(tx).finish();
+    console.log('  Tx bytes length:', txBytes.length);
+    console.log('  Tx bytes hex:', Buffer.from(txBytes).toString('hex'));
+
+    // ✅ Verify we can decode it locally
     try {
-      const txBase64 = uint8ArrayToBase64(Tx.encode(tx).finish());
-      const endpoint = commit ? 'broadcast_tx_commit' : 'broadcast_tx_sync';
-      result = await provider.sendTransaction(txBase64, endpoint as keyof BroadcastTransactionMap);
-      result2 = await provider.sendTransactionSync(txBase64);
+      const decodedTx = Tx.decode(txBytes);
+      console.log('  ✅ Tx can be decoded locally');
+      console.log('  Messages:', decodedTx.messages.length);
+      console.log('  Signatures:', decodedTx.signatures.length);
+      console.log('  Signature pubkey type:', decodedTx.signatures[0].pub_key?.type_url);
+      console.log('  Signature pubkey length:', decodedTx.signatures[0].pub_key?.value.length);
+      console.log(
+        '  Signature pubkey hex:',
+        Buffer.from(decodedTx.signatures[0].pub_key?.value || []).toString('hex'),
+      );
+      console.log('  Signature length:', decodedTx.signatures[0].signature.length);
     } catch (error) {
-      console.error('Broadcast error:', error);
+      console.error('  ❌ Failed to decode tx locally:', error);
       throw error;
     }
 
-    console.log('result:', result);
-    console.log('result2:', result2);
+    // 10. Broadcast transaction
+    console.log('\n🔟 Broadcasting Transaction:');
+    const txBase64 = uint8ArrayToBase64(txBytes);
+    console.log('  Tx base64 length:', txBase64.length);
+    console.log('  Tx base64 (first 100 chars):', txBase64.substring(0, 100));
 
-    // 9. Check result
+    let result: BroadcastTxCommitResult | BroadcastTxSyncResult;
+    try {
+      const endpoint = commit ? 'broadcast_tx_commit' : 'broadcast_tx_sync';
+      result = await provider.sendTransaction(txBase64, endpoint as keyof BroadcastTransactionMap);
+    } catch (error) {
+      console.error('  ❌ Broadcast error:', error);
+      throw error;
+    }
+
+    console.log('  ✅ Result:', result);
+
+    // 11. Check result
     if ('error' in result && result.error) {
       throw new Error(`Transaction failed: ${JSON.stringify(result.error)}`);
     }
 
-    // 10. Return hash and height
+    // 12. Return hash and height
     return {
       hash: result.hash,
       height: 'height' in result ? result.height : undefined,
     };
   };
+
+  /**
+   * Encode PubKeyMultisig to Protobuf format
+   *
+   * Protobuf structure:
+   * message PubKeyMultisig {
+   *   uint64 k = 1;              // threshold
+   *   repeated Any pub_keys = 2; // public keys
+   * }
+   */
+  private encodeMultisigPublicKey(threshold: number, pubKeys: Uint8Array[]): Uint8Array {
+    const result: number[] = [];
+
+    // Field 1: k (threshold) - uint64
+    if (threshold !== 0) {
+      result.push(0x08); // field 1, wire type 0 (varint)
+      result.push(...this.encodeVarint(threshold));
+    }
+
+    // Field 2: pub_keys (repeated Any)
+    for (const pubKey of pubKeys) {
+      // Each pubkey is wrapped in Any message
+      const anyBytes = this.encodeAny('/tm.PubKeySecp256k1', pubKey);
+      result.push(0x12); // field 2, wire type 2 (length-delimited)
+      result.push(...this.encodeVarint(anyBytes.length));
+      result.push(...anyBytes);
+    }
+
+    return new Uint8Array(result);
+  }
+
+  /**
+   * Encode Any message
+   *
+   * Protobuf structure:
+   * message Any {
+   *   string type_url = 1;
+   *   bytes value = 2;
+   * }
+   */
+  private encodeAny(typeUrl: string, value: Uint8Array): Uint8Array {
+    const result: number[] = [];
+
+    // Field 1: type_url (string)
+    if (typeUrl) {
+      result.push(0x0a); // field 1, wire type 2 (length-delimited)
+      result.push(...this.encodeVarint(typeUrl.length));
+      for (let i = 0; i < typeUrl.length; i++) {
+        result.push(typeUrl.charCodeAt(i));
+      }
+    }
+
+    // Field 2: value (bytes)
+    if (value.length > 0) {
+      // ✅ Wrap pubkey in PubKeySecp256k1 message
+      const wrappedValue: number[] = [];
+      wrappedValue.push(0x0a); // field 1 of PubKeySecp256k1, wire type 2
+      wrappedValue.push(...this.encodeVarint(value.length));
+      wrappedValue.push(...value);
+
+      result.push(0x12); // field 2, wire type 2 (length-delimited)
+      result.push(...this.encodeVarint(wrappedValue.length));
+      result.push(...wrappedValue);
+    }
+
+    return new Uint8Array(result);
+  }
+
+  /**
+   * Encode varint (variable-length integer)
+   */
+  private encodeVarint(value: number): number[] {
+    const bytes: number[] = [];
+    while (value > 127) {
+      bytes.push((value & 127) | 128);
+      value >>= 7;
+    }
+    bytes.push(value);
+    return bytes;
+  }
 
   /**
    * Encode message value to Uint8Array

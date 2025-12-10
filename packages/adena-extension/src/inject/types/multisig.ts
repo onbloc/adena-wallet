@@ -60,6 +60,48 @@ export interface CreateMultisigDocumentParams extends BaseDocument {
   memo?: string;
 }
 
+export interface CreateMultisigTransactionParams extends BaseDocument {
+  memo?: string;
+}
+
+export interface UnsignedTransaction {
+  msg: Array<{
+    '@type': string;
+    [key: string]: any;
+  }>;
+  fee: {
+    gas_wanted: string;
+    gas_fee: string;
+  };
+  signatures: null;
+  memo: string;
+}
+
+export interface SignedTransaction {
+  msg: Array<{
+    '@type': string;
+    [key: string]: any;
+  }>;
+  fee: {
+    gas_wanted: string;
+    gas_fee: string;
+  };
+  signatures: Array<{
+    pub_key: any;
+    signature: string;
+  }>;
+  memo: string;
+  account_number: string;
+  sequence: string;
+}
+
+export interface MultisigTransactionDocument {
+  tx: UnsignedTransaction;
+  chainId: string;
+  accountNumber: string;
+  sequence: string;
+}
+
 /**
  * Response data for creating a multisig document
  */

@@ -5,59 +5,83 @@
  * Each bit represents whether a signer at that index has signed.
  */
 export class CompactBitArray {
-  public extraBitsStored: number; // bits % 8
-  public elems: Uint8Array;
+  private numBits: number;
+  private elems: Uint8Array;
+  private extraBitsStored: number;
 
-  constructor(bits: number) {
-    this.extraBitsStored = bits % 8;
-    this.elems = new Uint8Array(Math.ceil(bits / 8));
-  }
+  constructor(numBits: number) {
+    this.numBits = numBits;
+    this.extraBitsStored = numBits % 8;
 
-  size(): number {
-    if (this.extraBitsStored === 0) {
-      return this.elems.length * 8;
-    }
-    return (this.elems.length - 1) * 8 + this.extraBitsStored;
-  }
-
-  getIndex(i: number): boolean {
-    if (i >= this.size()) {
-      return false;
-    }
-    // Big-endian bit order: 7 - (i % 8)
-    return (this.elems[i >> 3] & (1 << (7 - (i % 8)))) > 0;
-  }
-
-  setIndex(i: number, v: boolean): boolean {
-    if (i >= this.size()) {
-      return false;
-    }
-    if (v) {
-      this.elems[i >> 3] |= 1 << (7 - (i % 8));
-    } else {
-      this.elems[i >> 3] &= ~(1 << (7 - (i % 8)));
-    }
-    return true;
+    const numBytes = Math.ceil(numBits / 8);
+    this.elems = new Uint8Array(numBytes);
   }
 
   /**
-   * NumTrueBitsBefore returns the number of bits set to true before the given index
-   * This matches Go's implementation exactly
+   * Set bit at index (LSB first!)
    *
-   * Example: If bits are [1, 1, 0, 1, 0], numTrueBitsBefore(3) returns 2
+   * Example: For 3 signers, to set bit 1:
+   * - index = 1
+   * - byteIndex = 0
+   * - bitIndex = 1
+   * - Result: 0b00000010 = 0x02
+   */
+  setIndex(index: number, value: boolean): void {
+    if (index < 0 || index >= this.numBits) {
+      throw new Error(`Index ${index} out of bounds [0, ${this.numBits})`);
+    }
+
+    const byteIndex = Math.floor(index / 8);
+    const bitIndex = index % 8;
+
+    console.log(`🔧 CompactBitArray.setIndex(${index}, ${value}):`);
+    console.log(`  byteIndex: ${byteIndex}, bitIndex: ${bitIndex}`);
+    console.log(
+      `  Before: elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
+    );
+
+    if (value) {
+      // Set bit (LSB = bit 0, so bit 1 = 0x02)
+      this.elems[byteIndex] |= 1 << bitIndex;
+    } else {
+      // Clear bit
+      this.elems[byteIndex] &= ~(1 << bitIndex);
+    }
+
+    console.log(
+      `  After:  elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
+    );
+  }
+
+  /**
+   * Get bit at index
+   */
+  getIndex(index: number): boolean {
+    if (index < 0 || index >= this.numBits) {
+      return false;
+    }
+
+    const byteIndex = Math.floor(index / 8);
+    const bitIndex = index % 8;
+
+    return (this.elems[byteIndex] & (1 << bitIndex)) !== 0;
+  }
+
+  /**
+   * Count number of true bits before index
    */
   numTrueBitsBefore(index: number): number {
-    let numTrueValues = 0;
-    for (let i = 0; i < index; i++) {
+    let count = 0;
+    for (let i = 0; i < index && i < this.numBits; i++) {
       if (this.getIndex(i)) {
-        numTrueValues++;
+        count++;
       }
     }
-    return numTrueValues;
+    return count;
   }
 
   /**
-   * Encode to Amino format
+   * Convert to Amino format
    */
   toAmino(): { extra_bits: number; bits: Uint8Array } {
     return {
