@@ -93,16 +93,18 @@ export class MultisigAccount implements Account {
    *
    * @param keyring - MultisigKeyring instance
    * @param name - Account name
-   * @param addressBytes - Multisig address bytes (20 bytes)
+   * @param index - Account index
    */
   public static async createBy(
     keyring: MultisigKeyring,
     name: string,
-    publicKey: Uint8Array,
-    addressBytes: Uint8Array,
+    index: number,
   ): Promise<MultisigAccount> {
+    const publicKey = keyring.publicKey;
+    const addressBytes = keyring.addressBytes;
+
     return new MultisigAccount({
-      index: 1,
+      index: index,
       type: 'MULTISIG',
       name,
       keyringId: keyring.id,

@@ -156,6 +156,7 @@ export class WalletService {
   };
 
   /**
+   * @deprecated
    * Add multisig account to wallet
    *
    * @param publicKey - Multisig public key (Amino encoded PubKeyMultisigThreshold)
@@ -195,8 +196,7 @@ export class WalletService {
       const multisigAccount = await MultisigAccount.createBy(
         multisigKeyring,
         multisigName,
-        publicKey,
-        addressBytes,
+        addedIndex,
       );
 
       multisigAccount.index = addedIndex;
