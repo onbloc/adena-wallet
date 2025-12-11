@@ -24,7 +24,16 @@ import { GnoProvider } from '@common/provider/gno';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GasToken } from '@common/constants/token.constant';
 
-import { CreateMultisigDocumentParams, MultisigDocument, StandardDocument } from '@inject/types';
+import {
+  CreateMultisigDocumentParams,
+  CreateMultisigTransactionParams,
+  MultisigDocument,
+  MultisigTransactionDocument,
+  StandardDocument,
+  Message,
+  Fee,
+  UnsignedTransaction,
+} from '@inject/types';
 
 import {
   MultisigAccount,
@@ -102,6 +111,72 @@ export class MultisigService {
       multisigAddressBytes: addressBytesObj,
       multisigPubKey: publicKeyObj,
     };
+  };
+
+  /**
+   * Create an unsigned multisig transaction
+   *
+   * @param params - Transaction parameters (SDK format)
+   * @returns Transaction document (unsigned tx + metadata)
+   */
+  public createMultisigTransaction = async (
+    params: CreateMultisigTransactionParams,
+  ): Promise<MultisigTransactionDocument> => {
+    const {
+      chain_id,
+      msgs,
+      fee,
+      memo = '',
+      accountNumber: inputAccountNumber,
+      sequence: inputSequence,
+    } = params;
+
+    try {
+      if (!msgs || msgs.length === 0) {
+        throw new Error('At least one message is required');
+      }
+
+      const caller = this.extractCallerFromMessage(msgs[0]);
+      if (!caller) {
+        throw new Error('Caller address not found in message');
+      }
+
+      const provider = this.getGnoProvider();
+      const accountInfo = await provider.getAccountInfo(caller);
+
+      if (!accountInfo) {
+        throw new Error(`Account not found: ${caller}`);
+      }
+
+      const accountNumber = inputAccountNumber || accountInfo.accountNumber.toString();
+      const sequence = inputSequence || accountInfo.sequence.toString();
+
+      const convertedMsgs = msgs.map((msg) => this.convertMessageToGnokeyFormat(msg));
+
+      const gasFee = this.convertFeeToString(fee);
+
+      const unsignedTx: UnsignedTransaction = {
+        msg: convertedMsgs,
+        fee: {
+          gas_wanted: fee.gas,
+          gas_fee: gasFee,
+        },
+        signatures: null,
+        memo,
+      };
+
+      const txDocument: MultisigTransactionDocument = {
+        tx: unsignedTx,
+        accountNumber,
+        sequence,
+        chainId: chain_id,
+      };
+
+      return txDocument;
+    } catch (error) {
+      console.error('Failed to create multisig transaction: ', error);
+      throw error;
+    }
   };
 
   /**
@@ -558,4 +633,77 @@ export class MultisigService {
 
     return accountPubKey;
   }
+
+  /**
+   * Convert SDK message format to gnokey format
+   */
+  private convertMessageToGnokeyFormat = (msg: Message): any => {
+    const { type, value } = msg;
+
+    switch (type) {
+      case '/vm.m_call':
+        return {
+          '@type': '/vm.m_call',
+          caller: value.caller,
+          send: value.send || '',
+          max_deposit: '',
+          pkg_path: value.pkg_path,
+          func: value.func,
+          args: value.args || [],
+        };
+
+      case '/bank.MsgSend':
+        return {
+          '@type': '/bank.MsgSend',
+          from_address: value.from_address,
+          to_address: value.to_address,
+          amount: value.amount,
+        };
+
+      case '/vm.m_addpkg':
+        return {
+          '@type': '/vm.m_addpkg',
+          creator: value.creator,
+          package: value.package,
+          deposit: value.deposit || '',
+        };
+
+      default:
+        return {
+          '@type': type,
+          ...value,
+        };
+    }
+  };
+
+  /**
+   * Extract caller address from message
+   */
+  private extractCallerFromMessage = (msg: Message): string | null => {
+    const { type, value } = msg;
+
+    switch (type) {
+      case '/vm.m_call':
+      case '/vm.m_addpkg':
+        return value.caller || value.creator;
+
+      case '/bank.MsgSend':
+        return value.from_address;
+
+      default:
+        return value.caller || value.creator || value.from_address || null;
+    }
+  };
+
+  /**
+   * Convert fee object to string format (e.g., "6113ugnot")
+   */
+  private convertFeeToString = (fee: Fee): string => {
+    if (!fee.amount || fee.amount.length === 0) {
+      return '1ugnot';
+    }
+
+    const coin = fee.amount[0];
+    return `${coin.amount}${coin.denom}`;
+  };
 }
