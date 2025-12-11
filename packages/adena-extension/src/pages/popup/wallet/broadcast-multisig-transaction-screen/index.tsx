@@ -1,17 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  defaultAddressPrefix,
-  TM2Error,
-} from '@gnolang/tm2-js-client';
-import {
-  Document,
-  fromBase64,
-  isAirgapAccount,
-  isMultisigAccount,
-  publicKeyToAddress,
-} from 'adena-module';
+import { defaultAddressPrefix, TM2Error } from '@gnolang/tm2-js-client';
+import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -30,7 +19,6 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { CommonFullContentLayout } from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -38,7 +26,7 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigDocument } from '@inject/types';
+import { ContractMessage, MultisigTransactionDocument } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 
@@ -48,7 +36,6 @@ interface TransactionData {
   gasWanted: string;
   gasFee: string;
   memo: string;
-  document: Document;
 }
 
 function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
@@ -68,21 +55,33 @@ function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainf
   };
 }
 
-function mappedTransactionData(multisigDocument: MultisigDocument): TransactionData {
-  const { document } = multisigDocument;
+/**
+ * Convert Protobuf message (@type) to Amino message (type/value)
+ */
+function convertMessageToAmino(msg: any): { type: string; value: any } {
+  if (msg.type && msg.value) {
+    return msg;
+  }
+  const { '@type': type, ...value } = msg;
+  return { type, value };
+}
+
+/**
+ * Map MultisigTransactionDocument to TransactionData for UI
+ */
+function mappedTransactionData(doc: MultisigTransactionDocument): TransactionData {
+  const messages = doc.tx.msg.map(convertMessageToAmino);
+
   return {
-    messages: document.msgs,
-    contracts: document.msgs.map((message: any) => {
-      return {
-        type: message?.type || '',
-        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || '',
-      };
-    }),
-    gasWanted: document.fee.gas,
-    gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
-    memo: `${document.memo || ''}`,
-    document,
+    messages,
+    contracts: messages.map((message) => ({
+      type: message?.type || '',
+      function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
+      value: message?.value || '',
+    })),
+    gasWanted: doc.tx.fee.gas_wanted,
+    gasFee: doc.tx.fee.gas_fee,
+    memo: doc.tx.memo || '',
   };
 }
 
@@ -100,7 +99,7 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 const BroadcastMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
-  const { gnoProvider, changeNetwork, wallet } = useWalletContext();
+  const { gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
@@ -109,7 +108,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [multisigDocument, setMultisigDocument] = useState<MultisigDocument>();
+  const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
   const { currentNetwork: currentWalletNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
@@ -136,22 +135,27 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const done = useMemo(() => processType === 'DONE', [processType]);
 
   const hasMemo = useMemo(() => {
-    if (!requestData?.data?.memo) {
-      return false;
-    }
-    return true;
+    return !!requestData?.data?.memo;
   }, [requestData?.data?.memo]);
 
   const displayNetworkFee = useMemo(() => {
-    if (!multisigDocument?.document?.fee?.amount?.[0]) {
+    if (!multisigDocument?.tx?.fee?.gas_fee) {
       return {
         amount: '',
         denom: '',
       };
     }
 
-    const feeAmount = multisigDocument.document.fee.amount[0];
-    const amount = BigNumber(feeAmount.amount)
+    // Parse "6113ugnot" -> { amount: "0.006113", denom: "GNOT" }
+    const gasFeeMatch = multisigDocument.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
+    if (!gasFeeMatch) {
+      return {
+        amount: '',
+        denom: '',
+      };
+    }
+
+    const amount = BigNumber(gasFeeMatch[1])
       .shiftedBy(GasToken.decimals * -1)
       .toString();
 
@@ -162,9 +166,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [multisigDocument]);
 
   const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = multisigDocument?.document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.max_deposit;
+    const accumulatedAmount = multisigDocument?.tx?.msg.reduce((acc, msg) => {
+      const amountStr = msg.send || msg.amount || msg.max_deposit;
       if (!amountStr) {
         return acc;
       }
@@ -202,8 +205,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [requestData?.data?.arguments]);
 
   const signatures = useMemo(() => {
-    return multisigDocument?.signatures || [];
-  }, [multisigDocument?.signatures]);
+    return multisigDocument?.multisigSignatures || [];
+  }, [multisigDocument?.multisigSignatures]);
 
   const multisigConfig = useMemo(() => {
     return multisigDocument?.multisigConfig || null;
@@ -243,25 +246,27 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       });
   };
 
-  console.log(requestData, 'requestDatarequestData');
-
   const initMultisigDocument = async (): Promise<boolean> => {
     if (!currentNetwork || !currentAccount || !requestData) {
       return false;
     }
     try {
-      // const document = requestData?.data?.document as MultisigDocument;
-      const document = requestData?.data as MultisigDocument;
+      // Receive MultisigTransactionDocument (new format)
+      const document = requestData?.data as MultisigTransactionDocument;
 
-      if (!document) {
-        throw new Error('Multisig document not found');
+      if (!document || !document.tx) {
+        throw new Error('Multisig transaction document not found');
       }
 
       setMultisigDocument(document);
       setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
-      setMemo(document.document.memo);
-      setTransactionMessages(mappedTransactionMessages(document.document.msgs));
+      setMemo(document.tx.memo);
+
+      // Convert messages for display
+      const aminoMessages = document.tx.msg.map(convertMessageToAmino);
+      setTransactionMessages(mappedTransactionMessages(aminoMessages));
+
       return true;
     } catch (e) {
       const error: any = e;
@@ -287,7 +292,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     if (isErrorNetworkFee) {
       return false;
     }
-    if (!multisigDocument || !currentNetwork || !currentAccount || !wallet) {
+
+    if (!multisigDocument || !currentNetwork || !currentAccount) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -298,12 +304,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       return false;
     }
 
-    console.log(isMultisigAccount(currentAccount), '?');
     if (!isMultisigAccount(currentAccount)) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          {},
+          { error: { message: 'Current account is not a multisig account' } },
           requestData?.key,
         ),
       );
@@ -313,81 +318,78 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const walletInstance = wallet.clone();
-      walletInstance.currentAccountId = currentAccount.id;
+      // Health check timeout
+      const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);
 
-      // 직접 await로 받기
       let broadcastResult: { hash: string; height?: string } | null = null;
       let broadcastError: TM2Error | Error | null = null;
 
       try {
-        broadcastResult = await multisigService.broadcastMultisigTransaction(
+        // Use new API: broadcastMultisigTransaction2
+        broadcastResult = await multisigService.broadcastMultisigTransaction2(
           currentAccount,
           multisigDocument,
-          true,
+          true, // waitForCommit
         );
       } catch (error) {
         broadcastError = error as TM2Error | Error;
       }
 
-      // Health check (timeout)
-      // const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);
+      clearTimeout(healthCheckTimeout);
 
-      // if (broadcastError) {
-      //   clearTimeout(healthCheckTimeout);
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         error: broadcastError?.toString(),
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return true;
-      // }
+      if (broadcastError) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              error: { message: broadcastError.toString() },
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return false;
+      }
 
-      // if (!broadcastResult) {
-      //   clearTimeout(healthCheckTimeout);
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         error: null,
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return true;
-      // }
+      if (!broadcastResult) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              error: { message: 'No broadcast result' },
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return false;
+      }
 
-      // clearTimeout(healthCheckTimeout);
-      // setResponse(
-      //   InjectionMessageInstance.success(
-      //     WalletResponseSuccessType.TRANSACTION_SUCCESS,
-      //     {
-      //       hash: broadcastResult.hash,
-      //       height: broadcastResult.height,
-      //     },
-      //     requestData?.key,
-      //     requestData?.withNotification,
-      //   ),
-      // );
-      // return true;
+      setResponse(
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.TRANSACTION_SUCCESS,
+          {
+            hash: broadcastResult.hash,
+            height: broadcastResult.height,
+          },
+          requestData?.key,
+          requestData?.withNotification,
+        ),
+      );
+
+      return true;
     } catch (e) {
       console.error('Broadcast transaction error:', e);
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.TRANSACTION_FAILED,
-          { error: e instanceof Error ? e.message : 'Unknown error' },
+          { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
           requestData?.key,
           requestData?.withNotification,
         ),
       );
+      return false;
     }
-    return false;
   };
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
@@ -450,9 +452,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       ),
     );
   }, [requestData]);
-
-  console.log(transactionData, 'transactionData');
-  console.log(multisigDocument, 'multisigDocument');
 
   return (
     <BroadcastMultisigTransaction

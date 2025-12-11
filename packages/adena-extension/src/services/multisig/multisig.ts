@@ -33,6 +33,7 @@ import {
   Message,
   Fee,
   UnsignedTransaction,
+  Signature,
 } from '@inject/types';
 
 import {
@@ -41,6 +42,9 @@ import {
   createMultisigPublicKey,
   fromBase64,
   fromBech32,
+  Account,
+  isMultisigAccount,
+  publicKeyToAddress,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -268,11 +272,12 @@ export class MultisigService {
   };
 
   /**
-   * Broadcast a multisig transaction
+   * Broadcast a multisig transaction (Old API - Deprecated)
    *
    * @param multisigDocument - MultisigDocument with collected signatures
    * @param commit - Use broadcastTxCommit (true) or broadcastTxSync (false)
    * @returns Transaction hash and height
+   * @deprecated Use broadcastMultisigTransaction2 instead
    */
   public broadcastMultisigTransaction = async (
     currentAccount: MultisigAccount,
@@ -468,6 +473,190 @@ export class MultisigService {
   };
 
   /**
+   * Broadcast multisig transaction (New API)
+   * @param multisigAccount - The multisig account
+   * @param document - MultisigTransactionDocument with signatures
+   * @param waitForCommit - Wait for transaction to be committed
+   */
+  async broadcastMultisigTransaction2(
+    multisigAccount: Account,
+    document: MultisigTransactionDocument,
+    waitForCommit: boolean = true,
+  ): Promise<{ hash: string; height?: string }> {
+    console.log('\n🚀 Broadcasting Multisig Transaction (New API)');
+
+    // 1. Validate
+    this.validateMultisigAccount(multisigAccount);
+    this.validateMultisigTransactionDocument(document);
+
+    // 2. Check threshold
+    const threshold = document.multisigConfig?.threshold || 1;
+    const signatureCount = document.multisigSignatures?.length || 0;
+
+    console.log(`\n1️⃣ Threshold Check: ${signatureCount}/${threshold}`);
+    if (signatureCount < threshold) {
+      throw new Error(`Insufficient signatures: ${signatureCount}/${threshold} required`);
+    }
+
+    // 3. Get signer public keys from chain
+    console.log('\n2️⃣ Getting Signer Public Keys:');
+    const signerPublicKeys: Uint8Array[] = [];
+
+    for (const address of document.multisigConfig!.signers) {
+      const publicKeyInfo = await this.getPublicKeyFromChain(address);
+      if (!publicKeyInfo?.value) {
+        throw new Error(`Public key not found for address: ${address}`);
+      }
+      const publicKeyBytes = fromBase64(publicKeyInfo.value);
+
+      // Remove Amino prefix if present
+      const hasAminoPrefix =
+        publicKeyBytes.length === 35 && publicKeyBytes[0] === 0x0a && publicKeyBytes[1] === 0x21;
+
+      const cleanPubKey = hasAminoPrefix ? publicKeyBytes.slice(2) : publicKeyBytes;
+      signerPublicKeys.push(cleanPubKey);
+      console.log(`  Signer ${address}: ${cleanPubKey.length} bytes`);
+    }
+
+    // 4. Create Multisignature and add signatures
+    console.log('\n3️⃣ Adding Signatures:');
+    const multisig = new Multisignature(signerPublicKeys.length);
+
+    for (let i = 0; i < document.multisigSignatures!.length; i++) {
+      const signature = document.multisigSignatures![i];
+
+      if (!signature.pub_key.value) {
+        throw new Error(`Signature ${i + 1} missing public key value`);
+      }
+
+      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
+      const sigHasAminoPrefix =
+        sigPubKeyRaw.length === 35 && sigPubKeyRaw[0] === 0x0a && sigPubKeyRaw[1] === 0x21;
+      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
+      const sig = fromBase64(signature.signature);
+
+      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
+      console.log(`  Added signature ${i + 1}`);
+    }
+
+    // 5. Encode multisig public key (Protobuf format)
+    console.log('\n4️⃣ Encoding Multisig PubKey:');
+    const multisigPubKeyProtobuf = this.encodeMultisigPublicKey(threshold, signerPublicKeys);
+
+    // Add Amino prefix
+    function encodeVarint(value: number): Uint8Array {
+      const result: number[] = [];
+      while (value >= 0x80) {
+        result.push((value & 0x7f) | 0x80);
+        value >>>= 7;
+      }
+      result.push(value);
+      return new Uint8Array(result);
+    }
+
+    const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
+    const multisigPubKeyWithAmino = new Uint8Array([
+      0x0a,
+      ...lengthBytes,
+      ...multisigPubKeyProtobuf,
+    ]);
+    console.log(`  Multisig PubKey: ${multisigPubKeyWithAmino.length} bytes`);
+
+    // 6. Marshal multisig signature
+    console.log('\n5️⃣ Marshaling Multisignature:');
+    const multisigSignature = multisig.marshal();
+    console.log(`  Signature: ${multisigSignature.length} bytes`);
+
+    // 7. Create Tx Messages
+    console.log('\n6️⃣ Creating Tx Messages:');
+    const messages: Any[] = [];
+    for (const msg of document.tx.msg) {
+      const msgType = msg['@type'];
+      const msgValue = this.encodeMessage(msg);
+
+      messages.push(
+        Any.create({
+          type_url: msgType,
+          value: msgValue,
+        }),
+      );
+    }
+    console.log(`  Messages: ${messages.length}`);
+
+    // 8. Parse gas fee
+    const gasFeeMatch = document.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
+    if (!gasFeeMatch) {
+      throw new Error('Invalid gas fee format');
+    }
+
+    // 9. Create Tx
+    console.log('\n7️⃣ Creating Tx:');
+    const gasWanted = parseInt(document.tx.fee.gas_wanted, 10);
+    const gasFee = `${gasFeeMatch[1]}${gasFeeMatch[2]}`;
+
+    const tx: Tx = {
+      messages: messages,
+      fee: TxFee.create({
+        gas_wanted: gasWanted,
+        gas_fee: gasFee,
+      }),
+      signatures: [
+        TxSignature.create({
+          pub_key: Any.create({
+            type_url: '/tm.PubKeyMultisig',
+            value: multisigPubKeyWithAmino,
+          }),
+          signature: multisigSignature,
+        }),
+      ],
+      memo: document.tx.memo || '',
+    };
+
+    console.log(`  Gas: ${gasWanted}, Fee: ${gasFee}`);
+
+    // 10. Encode Transaction
+    console.log('\n8️⃣ Encoding Transaction:');
+    const txBytes = Tx.encode(tx).finish();
+    console.log(`  Tx bytes: ${txBytes.length}`);
+
+    // 11. Verify decoding
+    try {
+      const decodedTx = Tx.decode(txBytes);
+      console.log('  ✅ Tx can be decoded locally');
+    } catch (error) {
+      console.error('  ❌ Failed to decode tx locally:', error);
+      throw error;
+    }
+
+    // 12. Broadcast transaction
+    console.log('\n9️⃣ Broadcasting Transaction:');
+    const txBase64 = uint8ArrayToBase64(txBytes);
+    const provider = this.getGnoProvider();
+
+    let result: BroadcastTxCommitResult | BroadcastTxSyncResult;
+    try {
+      const endpoint = waitForCommit ? 'broadcast_tx_commit' : 'broadcast_tx_sync';
+      result = await provider.sendTransaction(txBase64, endpoint as keyof BroadcastTransactionMap);
+    } catch (error) {
+      console.error('  ❌ Broadcast error:', error);
+      throw error;
+    }
+
+    console.log('  ✅ Result:', result);
+
+    // 13. Check result
+    if ('error' in result && result.error) {
+      throw new Error(`Transaction failed: ${JSON.stringify(result.error)}`);
+    }
+
+    // 14. Return hash and height
+    return {
+      hash: result.hash,
+      height: 'height' in result ? result.height : undefined,
+    };
+  }
+
+  /**
    * Encode PubKeyMultisig to Protobuf format
    *
    * Protobuf structure:
@@ -556,19 +745,20 @@ export class MultisigService {
     switch (msgType) {
       case MsgEndpoint.MSG_CALL:
       case '/vm.m_call': {
-        const args: string[] = msg.value.args
-          ? msg.value.args.length === 0
-            ? null
-            : msg.value.args
-          : null;
+        const args: string[] =
+          msg.value?.args || msg.args
+            ? (msg.value?.args || msg.args).length === 0
+              ? null
+              : msg.value?.args || msg.args
+            : null;
 
         const msgCall = MsgCall.create({
           args: args,
-          caller: msg.value.caller,
-          func: msg.value.func,
-          pkg_path: msg.value.pkg_path,
-          send: msg.value.send || '',
-          max_deposit: msg.value.max_deposit || '',
+          caller: msg.value?.caller || msg.caller,
+          func: msg.value?.func || msg.func,
+          pkg_path: msg.value?.pkg_path || msg.pkg_path,
+          send: msg.value?.send || msg.send || '',
+          max_deposit: msg.value?.max_deposit || msg.max_deposit || '',
         });
 
         return MsgCall.encode(msgCall).finish();
@@ -576,17 +766,20 @@ export class MultisigService {
 
       case MsgEndpoint.MSG_SEND:
       case '/bank.MsgSend': {
-        const msgSend = MsgSend.create(msg.value);
+        const msgSend = MsgSend.create(msg.value || msg);
         return MsgSend.encode(msgSend).finish();
       }
 
       case MsgEndpoint.MSG_ADD_PKG:
       case '/vm.m_addpkg': {
         const msgAddPackage = MsgAddPackage.create({
-          creator: msg.value.creator,
-          send: msg.value.send || '',
-          max_deposit: msg.value?.max_deposit || '',
-          package: msg.value.package ? this.createMemPackage(msg.value.package) : undefined,
+          creator: msg.value?.creator || msg.creator,
+          send: msg.value?.send || msg.send || '',
+          max_deposit: msg.value?.max_deposit || msg.max_deposit || '',
+          package:
+            msg.value?.package || msg.package
+              ? this.createMemPackage(msg.value?.package || msg.package)
+              : undefined,
         });
 
         return MsgAddPackage.encode(msgAddPackage).finish();
@@ -595,10 +788,13 @@ export class MultisigService {
       case MsgEndpoint.MSG_RUN:
       case '/vm.m_run': {
         const msgRun = MsgRun.create({
-          caller: msg.value.caller,
-          send: msg.value.send || null,
-          package: msg.value.package ? this.createMemPackage(msg.value.package) : undefined,
-          max_deposit: msg.value?.max_deposit || '',
+          caller: msg.value?.caller || msg.caller,
+          send: msg.value?.send || msg.send || null,
+          package:
+            msg.value?.package || msg.package
+              ? this.createMemPackage(msg.value?.package || msg.package)
+              : undefined,
+          max_deposit: msg.value?.max_deposit || msg.max_deposit || '',
         });
 
         return MsgRun.encode(msgRun).finish();
@@ -706,4 +902,189 @@ export class MultisigService {
     const coin = fee.amount[0];
     return `${coin.amount}${coin.denom}`;
   };
+
+  /**
+   * Convert MultisigTransactionDocument to Amino transaction format
+   */
+  private convertToAminoTransaction(document: MultisigTransactionDocument): any {
+    // Convert messages from @type to type/value format
+    const aminoMessages = document.tx.msg.map((msg) => {
+      const { '@type': type, ...value } = msg;
+      return { type, value };
+    });
+
+    // Parse gas fee "6113ugnot" -> { amount: "6113", denom: "ugnot" }
+    const gasFeeMatch = document.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
+    if (!gasFeeMatch) {
+      throw new Error('Invalid gas fee format');
+    }
+
+    return {
+      msg: aminoMessages,
+      fee: {
+        amount: [
+          {
+            amount: gasFeeMatch[1],
+            denom: gasFeeMatch[2],
+          },
+        ],
+        gas: document.tx.fee.gas_wanted,
+      },
+      memo: document.tx.memo,
+    };
+  }
+
+  /**
+   * Convert Signature[] to Amino format
+   */
+  private convertSignaturesToAmino(signatures: Signature[]): any[] {
+    return signatures.map((sig) => ({
+      pubKey: {
+        typeUrl: sig.pub_key.type,
+        value: sig.pub_key.value,
+      },
+      signature: sig.signature,
+    }));
+  }
+
+  /**
+   * Combine multiple signatures into a single multisig signature
+   */
+  private combineSignatures(multisigAccount: Account, signatures: any[], multisigConfig: any): any {
+    // Get multisig public key
+    const multisigPubKey = multisigAccount.publicKey;
+
+    // Create multisig signature
+    // The signature field contains all individual signatures in order
+    const combinedSignatureData = this.encodeCombinedSignatures(signatures);
+
+    return {
+      pubKey: {
+        typeUrl: '/tm.PubKeyMultisigThreshold',
+        value: Buffer.from(multisigPubKey).toString('base64'),
+      },
+      signature: combinedSignatureData,
+    };
+  }
+
+  /**
+   * Encode multiple signatures into a single combined signature
+   * Format: Protobuf encoded list of signatures
+   */
+  private encodeCombinedSignatures(signatures: any[]): string {
+    // Sort signatures by public key to ensure consistent ordering
+    const sortedSignatures = [...signatures].sort((a, b) => {
+      return a.pubKey.value.localeCompare(b.pubKey.value);
+    });
+
+    // Create bitarray indicating which signers signed
+    const bitArray = this.createBitArray(sortedSignatures.length);
+
+    // Encode signatures
+    const encodedSignatures = sortedSignatures.map((sig) => sig.signature);
+
+    // Combine into multisig format
+    // Format: [bitarray_length][bitarray][signatures...]
+    const combined = {
+      bitarray: bitArray,
+      signatures: encodedSignatures,
+    };
+
+    return Buffer.from(JSON.stringify(combined)).toString('base64');
+  }
+
+  /**
+   * Create bit array for signature presence
+   */
+  private createBitArray(count: number): number[] {
+    const byteCount = Math.ceil(count / 8);
+    const bitArray = new Array(byteCount).fill(0);
+
+    for (let i = 0; i < count; i++) {
+      const byteIndex = Math.floor(i / 8);
+      const bitIndex = i % 8;
+      bitArray[byteIndex] |= 1 << bitIndex;
+    }
+
+    return bitArray;
+  }
+
+  /**
+   * Validate multisig account
+   */
+  private validateMultisigAccount(account: Account): void {
+    if (!account) {
+      throw new Error('Account is required');
+    }
+
+    if (!isMultisigAccount(account)) {
+      throw new Error('Account must be a multisig account');
+    }
+
+    if (!account.publicKey) {
+      throw new Error('Multisig account must have a public key');
+    }
+  }
+
+  /**
+   * Validate multisig document (Old API)
+   */
+  private validateMultisigDocument(document: MultisigDocument): void {
+    if (!document) {
+      throw new Error('Document is required');
+    }
+
+    if (!document.document) {
+      throw new Error('Document.document is required');
+    }
+
+    if (!document.signatures || document.signatures.length === 0) {
+      throw new Error('At least one signature is required');
+    }
+
+    if (!document.multisigConfig) {
+      throw new Error('Multisig config is required');
+    }
+
+    if (!document.multisigConfig.threshold) {
+      throw new Error('Threshold is required');
+    }
+
+    if (!document.multisigConfig.signers || document.multisigConfig.signers.length === 0) {
+      throw new Error('Signers are required');
+    }
+  }
+
+  /**
+   * Validate MultisigTransactionDocument (New API)
+   */
+  private validateMultisigTransactionDocument(document: MultisigTransactionDocument): void {
+    if (!document) {
+      throw new Error('Document is required');
+    }
+
+    if (!document.tx) {
+      throw new Error('Transaction is required');
+    }
+
+    if (!document.tx.msg || document.tx.msg.length === 0) {
+      throw new Error('At least one message is required');
+    }
+
+    if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
+      throw new Error('At least one signature is required');
+    }
+
+    if (!document.multisigConfig) {
+      throw new Error('Multisig config is required');
+    }
+
+    if (!document.multisigConfig.threshold) {
+      throw new Error('Threshold is required');
+    }
+
+    if (!document.multisigConfig.signers || document.multisigConfig.signers.length === 0) {
+      throw new Error('Signers are required');
+    }
+  }
 }

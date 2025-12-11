@@ -114,18 +114,18 @@ const CreateMultisigAccountContainer: React.FC = () => {
         multisigAddress,
       );
 
-      // await changeCurrentAccount(multisigAccount);
+      await changeCurrentAccount(multisigAccount);
 
-      // setResponse(
-      //   InjectionMessageInstance.success(
-      //     WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
-      //     {
-      //       multisigConfig,
-      //       multisigAddress,
-      //     },
-      //     requestData?.key,
-      //   ),
-      // );
+      setResponse(
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.CREATE_MULTISIG_ACCOUNT_SUCCESS,
+          {
+            multisigConfig,
+            multisigAddress,
+          },
+          requestData?.key,
+        ),
+      );
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
@@ -138,7 +138,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
         );
       }
     } finally {
-      // setProcessType('DONE');
+      setProcessType('DONE');
     }
   };
 
