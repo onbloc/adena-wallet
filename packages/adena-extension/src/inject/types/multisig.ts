@@ -133,6 +133,7 @@ export interface MultisigTransactionDocument {
   accountNumber: string;
   sequence: string;
   multisigSignatures?: Signature[];
+  multisigConfig?: MultisigConfig;
 }
 
 export interface SignedMultisigTransactionDocument {

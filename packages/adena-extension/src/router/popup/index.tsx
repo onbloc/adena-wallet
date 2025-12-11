@@ -30,6 +30,7 @@ import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sig
 import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
 import CreateMultisigDocumentContainer from '@pages/popup/wallet/create-multisig-document';
 import SignMultisigDocument from '@pages/popup/wallet/sign-multisig-document';
+import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
 import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
@@ -137,7 +138,10 @@ export const PopupRouter = (): JSX.Element => {
           path={RoutePath.CreateMultisigDocument}
           element={<CreateMultisigDocumentContainer />}
         />
-        <Route path={RoutePath.SignMultisigDocument} element={<SignMultisigDocument />} />
+        <Route
+          path={RoutePath.SignMultisigDocument}
+          element={<SignMultisigTransactionContainer />}
+        />
         <Route
           path={RoutePath.BroadcastMultisigTransaction}
           element={<BroadcastMultisigTransactionScreen />}

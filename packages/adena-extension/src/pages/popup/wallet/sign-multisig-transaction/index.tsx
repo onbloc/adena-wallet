@@ -1,4 +1,4 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount, MultisigConfig } from 'adena-module';
+import { Account, isAirgapAccount, isLedgerAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -26,7 +26,7 @@ import { useNetwork } from '@hooks/use-network';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigDocument } from '@inject/types';
+import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 
@@ -36,32 +36,43 @@ interface TransactionData {
   gasWanted: string;
   gasFee: string;
   memo: string;
-  document: Document;
 }
 
-function mappedTransactionData(multisigDocument: MultisigDocument): TransactionData {
-  const { document } = multisigDocument;
+/**
+ * Convert Protobuf message (@type) to Amino message (type/value)
+ */
+function convertMessageToAmino(msg: any): { type: string; value: any } {
+  if (msg.type && msg.value) {
+    return msg;
+  }
+  const { '@type': type, ...value } = msg;
+  return { type, value };
+}
+
+/**
+ * Map MultisigTransactionDocument to TransactionData for UI
+ */
+function mappedTransactionData(doc: MultisigTransactionDocument): TransactionData {
+  const messages = doc.tx.msg.map(convertMessageToAmino);
+
   return {
-    messages: document.msgs,
-    contracts: document.msgs.map((message) => {
-      return {
-        type: message?.type || '',
-        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || '',
-      };
-    }),
-    gasWanted: document.fee.gas,
-    gasFee: `${document.fee.amount[0].amount}${document.fee.amount[0].denom}`,
-    memo: `${document.memo || ''}`,
-    document,
+    messages,
+    contracts: messages.map((message) => ({
+      type: message?.type || '',
+      function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
+      value: message?.value || '',
+    })),
+    gasWanted: doc.tx.fee.gas_wanted,
+    gasFee: doc.tx.fee.gas_fee,
+    memo: doc.tx.memo || '',
   };
 }
 
-const SignMultisigDocumentContainer: React.FC = () => {
+const SignMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService, multisigService } = useAdenaContext();
+  const { walletService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
@@ -70,35 +81,37 @@ const SignMultisigDocumentContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [multisigDocument, setMultisigDocument] = useState<MultisigDocument>();
+  const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const { openScannerLink } = useLink();
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
-  console.log(requestData, 'requestData!');
-
   const { data: currentBalance = null } = useGetGnotBalance();
 
   const multisigConfig: MultisigConfig | null = useMemo(() => {
-    if (!multisigDocument?.multisigConfig) return null;
-
-    return multisigDocument.multisigConfig;
+    return multisigDocument?.multisigConfig || null;
   }, [multisigDocument?.multisigConfig]);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
-    if (!multisigDocument?.document?.fee?.amount?.[0]) {
+    if (!multisigDocument?.tx?.fee?.gas_fee) {
       return null;
     }
 
-    const feeAmount = multisigDocument?.document.fee.amount[0];
+    // Parse "6113ugnot" -> { amount: "6113", denom: "ugnot" }
+    const gasFee = multisigDocument.tx.fee.gas_fee;
+    const match = gasFee.match(/^(\d+)(\w+)$/);
+
+    if (!match) {
+      return null;
+    }
 
     return {
-      amount: feeAmount.amount,
-      denom: feeAmount.denom,
+      amount: match[1],
+      denom: match[2],
     };
-  }, [multisigDocument?.document?.fee]);
+  }, [multisigDocument?.tx?.fee]);
 
   const networkFee: NetworkFee | null = useMemo(() => {
     if (!rawNetworkFee) {
@@ -115,10 +128,7 @@ const SignMultisigDocumentContainer: React.FC = () => {
 
   const displayNetworkFee: NetworkFee = useMemo(() => {
     if (!networkFee) {
-      return {
-        amount: '',
-        denom: '',
-      };
+      return { amount: '', denom: '' };
     }
 
     return {
@@ -128,28 +138,23 @@ const SignMultisigDocumentContainer: React.FC = () => {
   }, [networkFee]);
 
   const currentGasWanted = useMemo(() => {
-    return multisigDocument?.document.fee?.gas || '0';
-  }, [multisigDocument?.document.fee?.gas]);
+    return multisigDocument?.tx.fee?.gas_wanted || '0';
+  }, [multisigDocument?.tx.fee?.gas_wanted]);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
-
   const done = useMemo(() => processType === 'DONE', [processType]);
 
   const signatures = useMemo(() => {
-    return multisigDocument?.signatures || [];
-  }, [multisigDocument?.signatures]);
+    return multisigDocument?.multisigSignatures || [];
+  }, [multisigDocument?.multisigSignatures]);
 
   const hasMemo = useMemo(() => {
-    if (!requestData?.data?.memo) {
-      return false;
-    }
-    return true;
+    return !!requestData?.data?.memo;
   }, [requestData?.data?.memo]);
 
   const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = multisigDocument?.document?.msgs.reduce((acc, msg) => {
-      const messageValue = msg.value;
-      const amountStr = messageValue?.amount || messageValue?.amount || messageValue?.max_deposit;
+    const accumulatedAmount = multisigDocument?.tx?.msg.reduce((acc, msg) => {
+      const amountStr = msg.send || msg.amount || msg.max_deposit;
       if (!amountStr) {
         return acc;
       }
@@ -256,15 +261,17 @@ const SignMultisigDocumentContainer: React.FC = () => {
     }
 
     try {
-      const multisigDocument = await multisigService.createMultisigSignedDocument(
-        currentNetwork.chainId,
-        requestData.data as MultisigDocument,
-      );
-      setMultisigDocument(multisigDocument);
-      setTransactionData(mappedTransactionData(multisigDocument));
+      const document = requestData.data as MultisigTransactionDocument;
+
+      setMultisigDocument(document);
+      setTransactionData(mappedTransactionData(document));
       setHostname(requestData?.hostname ?? '');
-      setMemo(multisigDocument.document.memo);
-      setTransactionMessages(mappedTransactionMessages(multisigDocument.document.msgs));
+      setMemo(document.tx.memo);
+
+      // Convert messages for display
+      const aminoMessages = document.tx.msg.map(convertMessageToAmino);
+      setTransactionMessages(mappedTransactionMessages(aminoMessages));
+
       return true;
     } catch (e) {
       console.error(e);
@@ -286,32 +293,7 @@ const SignMultisigDocumentContainer: React.FC = () => {
     setMemo(memo);
   };
 
-  const updateTransactionData = useCallback((): void => {
-    if (!multisigDocument || !rawNetworkFee) {
-      return;
-    }
-
-    const currentMemo = memo;
-
-    // const updatedSignedDocument: SignedDocument = {
-    //   ...document,
-    //   memo: currentMemo,
-    //   fee: {
-    //     amount: [
-    //       {
-    //         amount: rawNetworkFee.amount.toString(),
-    //         denom: GasToken.denom,
-    //       },
-    //     ],
-    //     gas: currentGasWanted.toString(),
-    //   },
-    // };
-
-    // setMultisigDocument(updatedSignedDocument);
-    // setTransactionData(mappedTransactionData(updatedSignedDocument));
-  }, [multisigDocument, rawNetworkFee, memo, currentGasWanted]);
-
-  const signMultisigDocument = async (): Promise<boolean> => {
+  const signMultisigTransaction = async (): Promise<boolean> => {
     if (!multisigDocument || !currentAccount) {
       setResponse(
         InjectionMessageInstance.failure(
@@ -324,27 +306,68 @@ const SignMultisigDocumentContainer: React.FC = () => {
     }
 
     try {
-      const signature = await transactionService.createSignature(
+      // Convert to Amino Document format for signing
+      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
+
+      // Parse gas fee "6113ugnot" -> { amount: "6113", denom: "ugnot" }
+      const gasFeeMatch = multisigDocument.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
+      if (!gasFeeMatch) {
+        throw new Error('Invalid gas fee format');
+      }
+
+      const aminoDocument = {
+        msgs: aminoMessages,
+        fee: {
+          amount: [
+            {
+              amount: gasFeeMatch[1],
+              denom: gasFeeMatch[2],
+            },
+          ],
+          gas: multisigDocument.tx.fee.gas_wanted,
+        },
+        chain_id: multisigDocument.chainId,
+        memo: multisigDocument.tx.memo,
+        account_number: multisigDocument.accountNumber,
+        sequence: multisigDocument.sequence,
+      };
+
+      // Sign using TransactionService
+      const encodedSignature = await transactionService.createSignature(
         currentAccount,
-        multisigDocument.document,
+        aminoDocument,
       );
 
-      const updateSignedDocument: MultisigDocument = {
-        ...multisigDocument,
-        signatures: [...multisigDocument.signatures, signature],
+      // Convert to Multisig Signature format
+      const signature: Signature = {
+        pub_key: {
+          type: '/tm.PubKeySecp256k1',
+          value: encodedSignature.pubKey.value || '',
+        },
+        signature: encodedSignature.signature,
       };
+
+      // Add signature to document
+      const updatedDocument: MultisigTransactionDocument = {
+        ...multisigDocument,
+        multisigSignatures: [...(multisigDocument.multisigSignatures || []), signature],
+      };
+
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
           {
-            signedDocument: updateSignedDocument,
+            signedDocument: updatedDocument,
             addedSignature: signature,
           },
           requestData?.key,
         ),
       );
+
+      return true;
     } catch (e) {
+      console.log(e, 'e');
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -380,13 +403,12 @@ const SignMultisigDocumentContainer: React.FC = () => {
     if (isLedgerAccount(currentAccount)) {
       navigate(RoutePath.ApproveSignLoading, {
         state: {
-          document: multisigDocument?.document,
           requestData,
         },
       });
       return;
     }
-    signMultisigDocument().finally(() => setProcessType('DONE'));
+    signMultisigTransaction().finally(() => setProcessType('DONE'));
   };
 
   const onClickCancel = (): void => {
@@ -415,20 +437,12 @@ const SignMultisigDocumentContainer: React.FC = () => {
     );
   }, [requestData]);
 
-  useEffect(() => {
-    if (transactionMessages.length === 0) {
-      return;
-    }
-
-    updateTransactionData();
-  }, [memo, transactionMessages]);
-
   return (
     <ApproveSignedDocument
-      title='Sign Document'
+      title='Sign Multisig Transaction'
       domain={hostname}
       contracts={transactionData?.contracts || []}
-      signatures={signatures}
+      signatures={[]}
       memo={memo}
       hasMemo={hasMemo}
       loading={transactionData === undefined}
@@ -451,9 +465,9 @@ const SignMultisigDocumentContainer: React.FC = () => {
       onToggleTransactionData={onToggleTransactionData}
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
-      transactionData={JSON.stringify(document, null, 2)}
+      transactionData={JSON.stringify(multisigDocument, null, 2)}
     />
   );
 };
 
-export default SignMultisigDocumentContainer;
+export default SignMultisigTransactionContainer;

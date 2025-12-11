@@ -170,10 +170,10 @@ export class AdenaExecutor {
   public signMultisigDocument = (
     multisigDocument: MultisigDocument,
   ): Promise<SignMultisigDocumentResponse> => {
-    const result = this.validateMultisigSignedDocument(multisigDocument);
-    if (result) {
-      return this.sendEventMessage(result);
-    }
+    // const result = this.validateMultisigSignedDocument(multisigDocument);
+    // if (result) {
+    //   return this.sendEventMessage(result);
+    // }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
