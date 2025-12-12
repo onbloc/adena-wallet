@@ -8,6 +8,7 @@ import { Account, AccountInfo } from './account';
 export interface MultisigConfig {
   signers: string[];
   threshold: number;
+  noSort?: boolean;
 }
 
 /**

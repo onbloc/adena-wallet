@@ -41,10 +41,11 @@ import {
   MultisigConfig,
   createMultisigPublicKey,
   fromBase64,
-  fromBech32,
   Account,
   isMultisigAccount,
-  publicKeyToAddress,
+  fromBase64Multisig,
+  fromBech32Multisig,
+  PublicKeyInfo,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -71,10 +72,11 @@ export class MultisigService {
    * @returns Multisig account address, addressBytes, and publicKey
    */
   public createMultisigAccount = async (config: MultisigConfig) => {
-    const { signers, threshold } = config;
+    const { signers, threshold, noSort = true } = config;
 
     // Get signer public keys from chain
-    const signerPublicKeys: Uint8Array[] = [];
+    const signerPublicKeys: PublicKeyInfo[] = [];
+
     for (const address of signers) {
       const publicKeyInfo = await this.getPublicKeyFromChain(address);
 
@@ -85,8 +87,12 @@ export class MultisigService {
         );
       }
 
-      const publicKeyBytes = fromBase64(publicKeyInfo.value);
-      signerPublicKeys.push(publicKeyBytes);
+      const publicKeyBytes = fromBase64Multisig(publicKeyInfo.value);
+
+      signerPublicKeys.push({
+        bytes: publicKeyBytes,
+        typeUrl: publicKeyInfo['@type'],
+      });
     }
 
     // Create multisig public key (Amino encoded)
@@ -94,10 +100,11 @@ export class MultisigService {
       signerPublicKeys,
       threshold,
       defaultAddressPrefix,
+      noSort,
     );
 
     // Extract address bytes from bech32 address
-    const { data: addressBytes } = fromBech32(multisigAddress);
+    const { data: addressBytes } = fromBech32Multisig(multisigAddress);
 
     // Convert Uint8Array to object format (for storage)
     const publicKeyObj: Record<string, number> = {};

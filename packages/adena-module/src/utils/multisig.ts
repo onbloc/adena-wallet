@@ -1,151 +1,290 @@
+import { sha256 } from 'src/crypto';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import {
-  pubkeyToAddress,
-  encodeSecp256k1Pubkey,
-  createMultisigThresholdPubkey,
-  MultisigThresholdPubkey,
-} from '@cosmjs/amino';
-import { Secp256k1 } from '@cosmjs/crypto';
+
+export interface PublicKeyInfo {
+  bytes: Uint8Array;
+  typeUrl: string;
+}
 
 /**
- * Creates a multisig public key and address from signer public keys
- *
- * @param publicKeys - Array of signer public keys (uncompressed, 65 bytes each)
- * @param threshold - Minimum number of signatures required (K of N)
- * @param addressPrefix - Address prefix (default: 'g')
- * @returns Object with multisig public key and address
+ * Bech32 디코딩
  */
-export function createMultisigPublicKey(
-  publicKeys: Uint8Array[],
-  threshold: number,
-  addressPrefix: string = defaultAddressPrefix,
-): {
-  publicKey: Uint8Array;
-  address: string;
-} {
-  // Validation
-  if (threshold <= 0) {
-    throw new Error('threshold k of n multisignature: k <= 0');
+function bech32Decode(str: string): Uint8Array {
+  const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  const [hrp, data] = str.split('1');
+
+  if (!data) {
+    throw new Error('Invalid bech32 string');
   }
-  if (publicKeys.length < threshold) {
-    throw new Error('threshold k of n multisignature: len(pubkeys) < k');
+
+  const decoded: number[] = [];
+  for (let i = 0; i < data.length - 6; i++) {
+    const index = CHARSET.indexOf(data[i]);
+    if (index === -1) {
+      throw new Error(`Invalid bech32 character: ${data[i]}`);
+    }
+    decoded.push(index);
   }
-  for (const pubkey of publicKeys) {
-    if (!pubkey || pubkey.length === 0) {
-      throw new Error('nil pubkey');
+
+  const bytes: number[] = [];
+  let acc = 0;
+  let bits = 0;
+
+  for (const value of decoded) {
+    acc = (acc << 5) | value;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((acc >> bits) & 0xff);
     }
   }
 
-  // Sort public keys by their addresses (matching Gno.land behavior)
-  const sortedPubKeys = sortPublicKeysByAddress(publicKeys, addressPrefix);
+  return new Uint8Array(bytes);
+}
 
-  // Convert to Secp256k1Pubkey format for @cosmjs
-  const secp256k1Pubkeys = sortedPubKeys.map((pubKey) => {
-    const compressedPubKey = Secp256k1.compressPubkey(pubKey);
-    return encodeSecp256k1Pubkey(compressedPubKey);
-  });
+/**
+ * Bech32 인코딩
+ */
+function bech32Encode(hrp: string, data: Uint8Array): string {
+  const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 
-  // Create multisig pubkey using @cosmjs
-  const multisigPubkey = createMultisigThresholdPubkey(secp256k1Pubkeys, threshold);
+  // Convert 8-bit data to 5-bit
+  const converted: number[] = [];
+  let acc = 0;
+  let bits = 0;
 
-  // Encode to bytes (Amino format)
-  const multisigPubkeyBytes = encodeMultisigPubkeyToBytes(multisigPubkey);
+  for (const byte of data) {
+    acc = (acc << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      converted.push((acc >> bits) & 0x1f);
+    }
+  }
 
-  // Generate address
-  const address = pubkeyToAddress(multisigPubkey, addressPrefix);
+  if (bits > 0) {
+    converted.push((acc << (5 - bits)) & 0x1f);
+  }
+
+  // Calculate checksum
+  const checksum = bech32Checksum(hrp, converted);
+  const combined = [...converted, ...checksum];
+
+  return hrp + '1' + combined.map((d) => CHARSET[d]).join('');
+}
+
+function bech32Checksum(hrp: string, data: number[]): number[] {
+  const values = bech32HrpExpand(hrp).concat(data).concat([0, 0, 0, 0, 0, 0]);
+  const polymod = bech32Polymod(values) ^ 1;
+  const checksum: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    checksum.push((polymod >> (5 * (5 - i))) & 0x1f);
+  }
+  return checksum;
+}
+
+function bech32HrpExpand(hrp: string): number[] {
+  const result: number[] = [];
+  for (let i = 0; i < hrp.length; i++) {
+    result.push(hrp.charCodeAt(i) >> 5);
+  }
+  result.push(0);
+  for (let i = 0; i < hrp.length; i++) {
+    result.push(hrp.charCodeAt(i) & 0x1f);
+  }
+  return result;
+}
+
+function bech32Polymod(values: number[]): number {
+  const GENERATOR = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+  let chk = 1;
+  for (const value of values) {
+    const top = chk >> 25;
+    chk = ((chk & 0x1ffffff) << 5) ^ value;
+    for (let i = 0; i < 5; i++) {
+      if ((top >> i) & 1) {
+        chk ^= GENERATOR[i];
+      }
+    }
+  }
+  return chk;
+}
+
+/**
+ * Protobuf varint 인코딩
+ */
+function encodeVarint(n: number): Uint8Array {
+  const bytes: number[] = [];
+  while (n > 0x7f) {
+    bytes.push((n & 0x7f) | 0x80);
+    n = Math.floor(n / 128);
+  }
+  bytes.push(n & 0x7f);
+  return new Uint8Array(bytes);
+}
+
+/**
+ * Protobuf field key 인코딩
+ */
+function encodeFieldKey(fieldNum: number, wireType: number): Uint8Array {
+  return encodeVarint((fieldNum << 3) | wireType);
+}
+
+/**
+ * Protobuf length-delimited 인코딩
+ */
+function encodeLengthDelimited(fieldNum: number, data: Uint8Array): Uint8Array {
+  const key = encodeFieldKey(fieldNum, 2); // wireType 2 = length-delimited
+  const length = encodeVarint(data.length);
+
+  const result = new Uint8Array(key.length + length.length + data.length);
+  result.set(key, 0);
+  result.set(length, key.length);
+  result.set(data, key.length + length.length);
+
+  return result;
+}
+
+/**
+ * Protobuf string 인코딩
+ */
+function encodeString(fieldNum: number, str: string): Uint8Array {
+  const encoder = new TextEncoder();
+  return encodeLengthDelimited(fieldNum, encoder.encode(str));
+}
+
+/**
+ * Amino Any 타입 인코딩
+ */
+function encodeAminoAny(typeUrl: string, value: Uint8Array): Uint8Array {
+  const typeUrlEncoded = encodeString(1, typeUrl);
+  const valueEncoded = encodeLengthDelimited(2, value);
+
+  const result = new Uint8Array(typeUrlEncoded.length + valueEncoded.length);
+  result.set(typeUrlEncoded, 0);
+  result.set(valueEncoded, typeUrlEncoded.length);
+
+  return result;
+}
+
+/**
+ * 단일 Public Key 인코딩 (Amino -> Protobuf Any)
+ */
+function encodePubKey(pubkeyBytes: Uint8Array, typeUrl: string): Uint8Array {
+  // Raw public key를 그대로 사용 (Amino prefix 제거 불필요)
+  // Protobuf 인코딩: field 1 = key (bytes)
+  const valueEncoded = encodeLengthDelimited(1, pubkeyBytes);
+
+  return encodeAminoAny(typeUrl, valueEncoded);
+}
+
+/**
+ * Multisig Public Key 인코딩
+ */
+function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint8Array {
+  const parts: Uint8Array[] = [];
+
+  // field 1: k (uint32) - threshold
+  const thresholdKey = encodeFieldKey(1, 0); // wireType 0 = varint
+  const thresholdValue = encodeVarint(threshold);
+  const thresholdEncoded = new Uint8Array(thresholdKey.length + thresholdValue.length);
+  thresholdEncoded.set(thresholdKey, 0);
+  thresholdEncoded.set(thresholdValue, thresholdKey.length);
+  parts.push(thresholdEncoded);
+
+  // field 2: pubkeys (repeated) - 각 pubkey를 Any로 인코딩
+  for (const pubkey of pubkeys) {
+    const encodedPubkey = encodePubKey(pubkey.bytes, pubkey.typeUrl);
+    parts.push(encodeLengthDelimited(2, encodedPubkey));
+  }
+
+  // 모든 parts 합치기
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const multisigValue = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const part of parts) {
+    multisigValue.set(part, offset);
+    offset += part.length;
+  }
+
+  // 전체를 Any로 감싸기
+  return encodeAminoAny('/tm.PubKeyMultisig', multisigValue);
+}
+
+/**
+ * Multisig 주소 생성
+ * @param signerPublicKeys - 서명자들의 public key 정보 (raw bytes + typeUrl)
+ * @param threshold - 필요한 서명 개수
+ * @param addressPrefix - 주소 prefix (기본값: 'g')
+ * @param noSort - 정렬하지 않음 (기본값: true)
+ * @returns { address, publicKey } - Bech32 주소와 Amino encoded public key
+ */
+export function createMultisigPublicKey(
+  signerPublicKeys: PublicKeyInfo[],
+  threshold: number,
+  addressPrefix: string = defaultAddressPrefix,
+  noSort: boolean = true,
+): { address: string; publicKey: Uint8Array } {
+  // 정렬 (noSort가 false인 경우)
+  let sortedPubKeys = signerPublicKeys;
+  if (!noSort) {
+    sortedPubKeys = [...signerPublicKeys].sort((a, b) => {
+      for (let i = 0; i < Math.min(a.bytes.length, b.bytes.length); i++) {
+        if (a.bytes[i] !== b.bytes[i]) {
+          return a.bytes[i] - b.bytes[i];
+        }
+      }
+      return a.bytes.length - b.bytes.length;
+    });
+  }
+
+  // Amino 인코딩
+  const aminoEncoded = encodeMultisigPubKey(threshold, sortedPubKeys);
+
+  // SHA256 해시
+  const hash = sha256(aminoEncoded);
+
+  // 앞 20바이트만 추출
+  const addressBytes = hash.slice(0, 20);
+
+  // Bech32 인코딩
+  const address = bech32Encode(addressPrefix, addressBytes);
 
   return {
-    publicKey: multisigPubkeyBytes,
     address,
+    publicKey: aminoEncoded,
   };
 }
 
 /**
- * Sorts public keys by their bech32 addresses (ascending order)
- * Matches Gno.land's sorting logic
+ * Bech32 주소를 바이트로 변환
  */
-function sortPublicKeysByAddress(
-  publicKeys: Uint8Array[],
-  addressPrefix: string = defaultAddressPrefix,
-): Uint8Array[] {
-  const pubKeysWithAddresses = publicKeys.map((pubKey) => {
-    const compressedPubKey = Secp256k1.compressPubkey(pubKey);
-    const encodedPubKey = encodeSecp256k1Pubkey(compressedPubKey);
-    const address = pubkeyToAddress(encodedPubKey, addressPrefix);
+export function fromBech32Multisig(address: string): { prefix: string; data: Uint8Array } {
+  const [prefix] = address.split('1');
+  const data = bech32Decode(address);
 
-    return { pubKey, address };
-  });
-
-  // Sort by address string comparison
-  pubKeysWithAddresses.sort((a, b) => a.address.localeCompare(b.address));
-
-  return pubKeysWithAddresses.map((item) => item.pubKey);
+  return { prefix, data };
 }
 
 /**
- * Encodes MultisigThresholdPubkey to Amino bytes
- * This matches tm2's PubKeyMultisigThreshold encoding
+ * Base64 디코딩 (multisig용)
  */
-function encodeMultisigPubkeyToBytes(pubkey: MultisigThresholdPubkey): Uint8Array {
-  // Amino type prefix for PubKeyMultisigThreshold
-  const MULTISIG_TYPE_PREFIX = new Uint8Array([0x22, 0xc1, 0xf7, 0xe2]);
-
-  const parts: Uint8Array[] = [];
-  parts.push(MULTISIG_TYPE_PREFIX);
-
-  // Field 1: threshold (varint)
-  parts.push(encodeFieldKey(1, 0));
-  parts.push(encodeVarint(parseInt(pubkey.value.threshold, 10)));
-
-  // Field 2: public keys (repeated)
-  for (const pk of pubkey.value.pubkeys) {
-    const pkBytes = encodeSecp256k1PubkeyToBytes(pk);
-    parts.push(encodeFieldKey(2, 2));
-    parts.push(encodeVarint(pkBytes.length));
-    parts.push(pkBytes);
+export function fromBase64Multisig(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
   }
-
-  return concatenateUint8Arrays(parts);
+  return bytes;
 }
 
 /**
- * Encodes Secp256k1Pubkey to Amino bytes
+ * Base64 인코딩 (multisig용)
  */
-function encodeSecp256k1PubkeyToBytes(pubkey: any): Uint8Array {
-  const SECP256K1_TYPE_PREFIX = new Uint8Array([0xeb, 0x5a, 0xe9, 0x87]);
-
-  const keyBytes = new Uint8Array(Buffer.from(pubkey.value, 'base64'));
-
-  const parts: Uint8Array[] = [];
-  parts.push(SECP256K1_TYPE_PREFIX);
-  parts.push(encodeFieldKey(1, 2));
-  parts.push(encodeVarint(keyBytes.length));
-  parts.push(keyBytes);
-
-  return concatenateUint8Arrays(parts);
-}
-
-function encodeFieldKey(fieldNumber: number, wireType: number): Uint8Array {
-  return encodeVarint((fieldNumber << 3) | wireType);
-}
-
-function encodeVarint(value: number): Uint8Array {
-  const bytes: number[] = [];
-  while (value >= 0x80) {
-    bytes.push((value & 0x7f) | 0x80);
-    value >>>= 7;
+export function toBase64Multisig(bytes: Uint8Array): string {
+  let binaryString = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binaryString += String.fromCharCode(bytes[i]);
   }
-  bytes.push(value & 0x7f);
-  return new Uint8Array(bytes);
-}
-
-function concatenateUint8Arrays(arrays: Uint8Array[]): Uint8Array {
-  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const arr of arrays) {
-    result.set(arr, offset);
-    offset += arr.length;
-  }
-  return result;
+  return btoa(binaryString);
 }

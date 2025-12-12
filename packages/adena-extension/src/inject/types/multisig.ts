@@ -71,6 +71,7 @@ export interface MultisigDocument {
 export interface CreateMultisigAccountParams {
   signers: string[];
   threshold: number;
+  noSort?: boolean;
 }
 
 /**
