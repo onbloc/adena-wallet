@@ -75,11 +75,12 @@ const CreateMultisigAccountContainer: React.FC = () => {
       return;
     }
 
-    const { signers, threshold } = requestData.data;
+    const { signers, threshold, noSort } = requestData.data;
 
     setMultisigConfig({
       signers,
       threshold,
+      noSort,
     });
     setHostname(requestData?.hostname ?? '');
   };
