@@ -99,9 +99,10 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 const BroadcastMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
-  const { gnoProvider, changeNetwork } = useWalletContext();
-  const { walletService, multisigService } = useAdenaContext();
+  const { wallet, gnoProvider, changeNetwork } = useWalletContext();
+  const { walletService, multisigService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
+  console.log(currentAccount, 'currentAccountcurrentAccount');
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
@@ -293,7 +294,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       return false;
     }
 
-    if (!multisigDocument || !currentNetwork || !currentAccount) {
+    if (!multisigDocument || !currentNetwork || !currentAccount || !wallet) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -321,61 +322,76 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       // Health check timeout
       const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);
 
-      let broadcastResult: { hash: string; height?: string } | null = null;
+      let broadcastResult: { tx: any; txBytes: Uint8Array; txBase64: string } | null = null;
       let broadcastError: TM2Error | Error | null = null;
 
       try {
-        // Use new API: broadcastMultisigTransaction2
-        broadcastResult = await multisigService.broadcastMultisigTransaction2(
+        const walletInstance = wallet.clone();
+
+        const prepared = await multisigService.prepareMultisigTransaction(
           currentAccount,
           multisigDocument,
-          true, // waitForCommit
         );
+        console.log(prepared, 'prepared');
+        // const preparedTx = await multisigService.broadcastMultisigTransaction3(
+        //   currentAccount,
+        //   multisigDocument,
+        //   true,
+        // );
+
+        const broadcastResponse = await transactionService
+          .sendTransaction(walletInstance, currentAccount, prepared.tx)
+          .catch((e) => {
+            console.error(e, '왜 안되니?');
+            return null;
+          });
+
+        console.log('Transaction broadcast result:', broadcastResponse);
       } catch (error) {
         broadcastError = error as TM2Error | Error;
       }
 
       clearTimeout(healthCheckTimeout);
 
-      if (broadcastError) {
-        setResponse(
-          InjectionMessageInstance.failure(
-            WalletResponseFailureType.TRANSACTION_FAILED,
-            {
-              error: { message: broadcastError.toString() },
-            },
-            requestData?.key,
-            requestData?.withNotification,
-          ),
-        );
-        return false;
-      }
+      // if (broadcastError) {
+      //   setResponse(
+      //     InjectionMessageInstance.failure(
+      //       WalletResponseFailureType.TRANSACTION_FAILED,
+      //       {
+      //         error: { message: broadcastError.toString() },
+      //       },
+      //       requestData?.key,
+      //       requestData?.withNotification,
+      //     ),
+      //   );
+      //   return false;
+      // }
 
-      if (!broadcastResult) {
-        setResponse(
-          InjectionMessageInstance.failure(
-            WalletResponseFailureType.TRANSACTION_FAILED,
-            {
-              error: { message: 'No broadcast result' },
-            },
-            requestData?.key,
-            requestData?.withNotification,
-          ),
-        );
-        return false;
-      }
+      // if (!broadcastResult) {
+      //   setResponse(
+      //     InjectionMessageInstance.failure(
+      //       WalletResponseFailureType.TRANSACTION_FAILED,
+      //       {
+      //         error: { message: 'No broadcast result' },
+      //       },
+      //       requestData?.key,
+      //       requestData?.withNotification,
+      //     ),
+      //   );
+      //   return false;
+      // }
 
-      setResponse(
-        InjectionMessageInstance.success(
-          WalletResponseSuccessType.TRANSACTION_SUCCESS,
-          {
-            hash: broadcastResult.hash,
-            height: broadcastResult.height,
-          },
-          requestData?.key,
-          requestData?.withNotification,
-        ),
-      );
+      // setResponse(
+      //   InjectionMessageInstance.success(
+      //     WalletResponseSuccessType.TRANSACTION_SUCCESS,
+      //     {
+      //       hash: broadcastResult.hash,
+      //       height: broadcastResult.height,
+      //     },
+      //     requestData?.key,
+      //     requestData?.withNotification,
+      //   ),
+      // );
 
       return true;
     } catch (e) {

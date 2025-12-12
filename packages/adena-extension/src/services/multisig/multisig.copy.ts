@@ -365,7 +365,7 @@ export class MultisigService {
     const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
     const multisigPubKeyWithAmino = new Uint8Array([
       0x0a, // Amino field tag
-      ...this.encodeVarint(multisigPubKeyProtobuf.length),
+      ...lengthBytes,
       ...multisigPubKeyProtobuf,
     ]);
     console.log('  With Amino prefix length:', multisigPubKeyWithAmino.length);
@@ -473,186 +473,17 @@ export class MultisigService {
   };
 
   /**
-   * Prepare multisig transaction without broadcasting
+   * Broadcast multisig transaction (New API)
    * @param multisigAccount - The multisig account
    * @param document - MultisigTransactionDocument with signatures
-   * @returns Prepared transaction data ready for broadcasting
-   */
-  async prepareMultisigTransaction(
-    multisigAccount: Account,
-    document: MultisigTransactionDocument,
-  ): Promise<{ tx: Tx; txBytes: Uint8Array; txBase64: string }> {
-    console.log('\n🚀 Preparing Multisig Transaction');
-
-    // 1. Validate
-    this.validateMultisigAccount(multisigAccount);
-    this.validateMultisigTransactionDocument(document);
-
-    // 2. Check threshold
-    const threshold = document.multisigConfig?.threshold || 1;
-    const signatureCount = document.multisigSignatures?.length || 0;
-
-    console.log(`\n1️⃣ Threshold Check: ${signatureCount}/${threshold}`);
-    if (signatureCount < threshold) {
-      throw new Error(`Insufficient signatures: ${signatureCount}/${threshold} required`);
-    }
-
-    // 3. Get signer public keys from chain
-    console.log('\n2️⃣ Getting Signer Public Keys:');
-    const signerPublicKeys: Uint8Array[] = [];
-
-    for (const address of document.multisigConfig!.signers) {
-      const publicKeyInfo = await this.getPublicKeyFromChain(address);
-      if (!publicKeyInfo?.value) {
-        throw new Error(`Public key not found for address: ${address}`);
-      }
-      const publicKeyBytes = fromBase64(publicKeyInfo.value);
-
-      // Remove Amino prefix if present
-      const hasAminoPrefix =
-        publicKeyBytes.length === 35 && publicKeyBytes[0] === 0x0a && publicKeyBytes[1] === 0x21;
-
-      const cleanPubKey = hasAminoPrefix ? publicKeyBytes.slice(2) : publicKeyBytes;
-      signerPublicKeys.push(cleanPubKey);
-    }
-
-    // 4. Create Multisignature and add signatures
-    console.log('\n3️⃣ Adding Signatures:');
-    const multisig = new Multisignature(signerPublicKeys.length);
-
-    for (let i = 0; i < document.multisigSignatures!.length; i++) {
-      const signature = document.multisigSignatures![i];
-
-      if (!signature.pub_key.value) {
-        throw new Error(`Signature ${i + 1} missing public key value`);
-      }
-
-      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
-      const sigHasAminoPrefix =
-        sigPubKeyRaw.length === 35 && sigPubKeyRaw[0] === 0x0a && sigPubKeyRaw[1] === 0x21;
-      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
-      const sig = fromBase64(signature.signature);
-
-      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
-    }
-
-    // 5. Encode multisig public key (Protobuf format)
-    console.log('\n4️⃣ Encoding Multisig PubKey:');
-    const multisigPubKeyProtobuf = this.encodeMultisigPublicKey(threshold, signerPublicKeys);
-
-    // Add Amino prefix
-    function encodeVarint(value: number): Uint8Array {
-      const result: number[] = [];
-      while (value >= 0x80) {
-        result.push((value & 0x7f) | 0x80);
-        value >>>= 7;
-      }
-      result.push(value);
-      return new Uint8Array(result);
-    }
-
-    const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
-    const multisigPubKeyWithAmino = new Uint8Array([
-      0x0a,
-      ...this.encodeVarint(multisigPubKeyProtobuf.length),
-      ...multisigPubKeyProtobuf,
-    ]);
-
-    // 6. Marshal multisig signature
-    console.log('\n5️⃣ Marshaling Multisignature:');
-    const multisigSignature = multisig.marshal();
-
-    // 7. Create Tx Messages
-    console.log('\n6️⃣ Creating Tx Messages:');
-    const messages: Any[] = [];
-    for (const msg of document.tx.msg) {
-      const msgType = msg['@type'];
-      const msgValue = this.encodeMessage(msg);
-
-      messages.push(
-        Any.create({
-          type_url: msgType,
-          value: msgValue,
-        }),
-      );
-    }
-
-    // 8. Parse gas fee
-    const gasFeeMatch = document.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
-    if (!gasFeeMatch) {
-      throw new Error('Invalid gas fee format');
-    }
-
-    // 9. Create Tx
-    console.log('\n7️⃣ Creating Tx:');
-    const gasWanted = parseInt(document.tx.fee.gas_wanted, 10);
-    const gasFee = `${gasFeeMatch[1]}${gasFeeMatch[2]}`;
-
-    // 완전히 유효한 Tx 객체 생성
-    const tx: Tx = Tx.create({
-      messages: messages,
-      fee: TxFee.create({
-        gas_wanted: gasWanted,
-        gas_fee: gasFee,
-      }),
-      signatures: [
-        TxSignature.create({
-          pub_key: Any.create({
-            type_url: '/tm.PubKeyMultisig',
-            value: multisigPubKeyWithAmino,
-          }),
-          signature: multisigSignature,
-        }),
-      ],
-      memo: document.tx.memo || '',
-    });
-
-    // 10. Encode Transaction
-    console.log('\n8️⃣ Encoding Transaction:');
-    const txBytes = Tx.encode(tx).finish();
-
-    // 11. Verify decoding
-    try {
-      const decodedTx = Tx.decode(txBytes);
-      console.log('  ✅ Tx can be decoded locally');
-      console.log(`  Messages: ${decodedTx.messages.length}`);
-      console.log(`  Signatures: ${decodedTx.signatures.length}`);
-      if (decodedTx.signatures.length > 0) {
-        console.log(`  Signature pubkey type: ${decodedTx.signatures[0]?.pub_key?.type_url}`);
-        console.log(`  Signature pubkey length: ${decodedTx.signatures[0]?.pub_key?.value.length}`);
-        console.log(`  Signature length: ${decodedTx.signatures[0]?.signature.length}`);
-      }
-    } catch (error) {
-      console.error('  ❌ Failed to decode tx locally:', error);
-      throw error;
-    }
-
-    // 12. Convert to base64
-    const txBase64 = uint8ArrayToBase64(txBytes);
-
-    // 트랜잭션 준비 완료
-    console.log('\n✅ Multisig transaction prepared successfully!');
-
-    return {
-      tx, // 완전히 유효한 Tx 객체
-      txBytes, // 바이트 형식
-      txBase64, // Base64 인코딩 (provider.sendTransaction에 사용)
-    };
-  }
-
-  /**
-   * Prepare multisig transaction for broadcasting
-   * @param multisigAccount - The multisig account
-   * @param document - MultisigTransactionDocument with signatures
-   * @param waitForCommit - Wait for transaction to be committed (for future use)
-   * @returns Prepared transaction data without broadcasting
+   * @param waitForCommit - Wait for transaction to be committed
    */
   async broadcastMultisigTransaction3(
     multisigAccount: Account,
     document: MultisigTransactionDocument,
     waitForCommit: boolean = true,
-  ): Promise<{ tx: any; txBytes: Uint8Array; txBase64: string }> {
-    console.log('\n🚀 Preparing Multisig Transaction');
+  ): Promise<{ hash: string; height?: string; tx?: any; txBytes?: Uint8Array; txBase64?: string }> {
+    console.log('\n🚀 Broadcasting Multisig Transaction (New API)');
 
     // 1. Validate
     this.validateMultisigAccount(multisigAccount);
@@ -685,7 +516,7 @@ export class MultisigService {
       const cleanPubKey = hasAminoPrefix ? publicKeyBytes.slice(2) : publicKeyBytes;
       signerPublicKeys.push(cleanPubKey);
 
-      // Log as base64 (gnokey format)
+      // ✅ Log as base64 (gnokey format)
       const base64PubKey = uint8ArrayToBase64(cleanPubKey);
       console.log(`  Signer ${address}:`);
       console.log(`    Length: ${cleanPubKey.length} bytes`);
@@ -731,7 +562,7 @@ export class MultisigService {
     const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
     const multisigPubKeyWithAmino = new Uint8Array([
       0x0a,
-      ...this.encodeVarint(multisigPubKeyProtobuf.length),
+      ...lengthBytes,
       ...multisigPubKeyProtobuf,
     ]);
     console.log(`  Multisig PubKey: ${multisigPubKeyWithAmino.length} bytes`);
@@ -788,6 +619,7 @@ export class MultisigService {
       memo: document.tx.memo || '',
     };
 
+    console.log(`tx: ${tx}`);
     console.log(`  Gas: ${gasWanted}, Fee: ${gasFee}`);
     console.log(`  Memo: ${tx.memo}`);
 
@@ -844,16 +676,18 @@ export class MultisigService {
     };
 
     console.log('\n📋 Gnokey Format Transaction:');
-    console.log(JSON.stringify(gnokeyFormatTx, null, 2), 'gnokeyFormat');
+    console.log(JSON.stringify(gnokeyFormatTx, null, 2));
 
-    // 반환값에서 hash와 height 제거
+    // ✅ Return combined transaction data (WITHOUT broadcasting)
     console.log('\n✅ Multisig transaction prepared successfully!');
-    console.log('📦 Returning transaction data for broadcasting...\n');
+    console.log('📦 Returning combined transaction document...\n');
 
     return {
-      tx: gnokeyFormatTx,
-      txBytes,
-      txBase64,
+      hash: '', // Empty for now (not broadcasted yet)
+      height: undefined,
+      tx: gnokeyFormatTx, // ✅ gnokey-compatible format
+      txBytes: txBytes, // Raw bytes
+      txBase64: txBase64, // Base64 encoded
     };
   }
 
@@ -942,7 +776,7 @@ export class MultisigService {
     const lengthBytes = encodeVarint(multisigPubKeyProtobuf.length);
     const multisigPubKeyWithAmino = new Uint8Array([
       0x0a,
-      ...this.encodeVarint(multisigPubKeyProtobuf.length),
+      ...lengthBytes,
       ...multisigPubKeyProtobuf,
     ]);
     console.log(`  Multisig PubKey: ${multisigPubKeyWithAmino.length} bytes`);
@@ -1061,16 +895,8 @@ export class MultisigService {
 
     // Field 2: pub_keys (repeated Any)
     for (const pubKey of pubKeys) {
-      // 각 pubKey는 /tm.PubKeySecp256k1 타입으로 인코딩
-      // PubKeySecp256k1 메시지에 pubKey 값 감싸기
-      const pubKeySecp256k1 = new Uint8Array([
-        0x0a, // field 1, wire type 2 (length-delimited)
-        pubKey.length, // 길이
-        ...pubKey, // 값
-      ]);
-
-      // Any 메시지에 PubKeySecp256k1 감싸기
-      const anyBytes = this.encodeAny('/tm.PubKeySecp256k1', pubKeySecp256k1);
+      // Each pubkey is wrapped in Any message
+      const anyBytes = this.encodeAny('/tm.PubKeySecp256k1', pubKey);
       result.push(0x12); // field 2, wire type 2 (length-delimited)
       result.push(...this.encodeVarint(anyBytes.length));
       result.push(...anyBytes);
@@ -1121,9 +947,9 @@ export class MultisigService {
    */
   private encodeVarint(value: number): number[] {
     const bytes: number[] = [];
-    while (value >= 0x80) {
-      bytes.push((value & 0x7f) | 0x80);
-      value >>>= 7;
+    while (value > 127) {
+      bytes.push((value & 127) | 128);
+      value >>= 7;
     }
     bytes.push(value);
     return bytes;
