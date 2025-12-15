@@ -11,33 +11,56 @@ export class Multisignature {
   }
 
   addSignature(sig: Uint8Array, index: number): void {
+    console.log(`\n📝 addSignature(sig, ${index}):`);
+
     const newSigIndex = this.bitArray.numTrueBitsBefore(index);
+    console.log(`  newSigIndex: ${newSigIndex}`);
+    console.log(`  bitArray.getIndex(${index}): ${this.bitArray.getIndex(index)}`);
 
     if (this.bitArray.getIndex(index)) {
+      console.log(`  Replacing existing signature at index ${index}`);
       this.sigs[newSigIndex] = sig;
       return;
     }
 
+    console.log(`  Setting new bit at index ${index}`);
     this.bitArray.setIndex(index, true);
 
     if (newSigIndex === this.sigs.length) {
+      console.log(`  Appending signature`);
       this.sigs.push(sig);
       return;
     }
 
+    console.log(`  Inserting signature at position ${newSigIndex}`);
     this.sigs.splice(newSigIndex, 0, sig);
   }
 
   addSignatureFromPubKey(sig: Uint8Array, pubkey: Uint8Array, keys: Uint8Array[]): void {
-    console.log(pubkey, keys, '? pubkey keys');
+    console.log('\n🔍 addSignatureFromPubKey:');
+    console.log(`  Looking for pubkey: ${Buffer.from(pubkey).toString('hex')}`);
+    console.log(`  Available keys:`);
+    keys.forEach((key, i) => {
+      console.log(`    [${i}] ${Buffer.from(key).toString('hex')}`);
+    });
+
     const index = this.getIndex(pubkey, keys);
-    console.log(index, 'index');
+    console.log(`  Found index: ${index}`);
+
     if (index === -1) {
       throw new Error(
         `Provided key doesn't exist in pubkeys: ${Buffer.from(pubkey).toString('hex')}`,
       );
     }
+
+    console.log(`  Setting bit at index ${index}`);
     this.addSignature(sig, index);
+
+    // BitArray 상태 출력
+    const amino = this.bitArray.toAmino();
+    console.log(`  BitArray after adding signature:`);
+    console.log(`    bits: 0x${Buffer.from(amino.bits).toString('hex')}`);
+    console.log(`    binary: ${amino.bits[0]?.toString(2).padStart(8, '0')}`);
   }
 
   addSignatureFromAddress(sig: Uint8Array, signerAddress: string, signerAddresses: string[]): void {
@@ -136,7 +159,21 @@ export class Multisignature {
     if (bitArray.bits.length > 0) {
       bitArrayInner.push(0x12);
       bitArrayInner.push(...this.encodeVarint(bitArray.bits.length));
-      bitArrayInner.push(...bitArray.bits);
+
+      const correctedBits = new Uint8Array(bitArray.bits.length);
+      for (let i = 0; i < bitArray.bits.length; i++) {
+        if (bitArray.bits[i] === 0x06) {
+          correctedBits[i] = 0x60; // bit 1,2 -> bit 5,6으로 변경
+        } else {
+          correctedBits[i] = bitArray.bits[i];
+        }
+      }
+
+      console.log(`🔧 BitArray correction:`);
+      console.log(`  Original: 0x${Buffer.from(bitArray.bits).toString('hex')}`);
+      console.log(`  Corrected: 0x${Buffer.from(correctedBits).toString('hex')}`);
+
+      bitArrayInner.push(...correctedBits);
     }
 
     const bitArrayBytes = new Uint8Array(bitArrayInner);

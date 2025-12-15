@@ -710,6 +710,32 @@ export class MultisigService {
       memo: document.tx.memo || '',
     });
 
+    const humanReadableTx = {
+      msg: document.tx.msg,
+      fee: {
+        gas_wanted: document.tx.fee.gas_wanted,
+        gas_fee: document.tx.fee.gas_fee,
+      },
+      signatures: [
+        {
+          pub_key: {
+            '@type': '/tm.PubKeyMultisig',
+            threshold: threshold.toString(),
+            pubkeys: signerPublicKeys.map((pubKey) => ({
+              '@type': '/tm.PubKeySecp256k1',
+              value: uint8ArrayToBase64(pubKey),
+            })),
+          },
+          signature: uint8ArrayToBase64(multisigSignature),
+        },
+      ],
+      memo: document.tx.memo || '',
+      // account_number와 sequence는 실제로는 트랜잭션에 포함되지 않지만 참고용으로 추가
+      // account_number: "5092", // 실제 값이 있다면 추가
+      // sequence: "0"          // 실제 값이 있다면 추가
+    };
+    console.log(JSON.stringify(humanReadableTx, null, 2));
+
     console.log(`  Messages: ${tx.messages.length}`);
     console.log(`  Signatures: ${tx.signatures.length}`);
     console.log(`  Memo: "${tx.memo}"`);
@@ -825,6 +851,7 @@ export class MultisigService {
     // 4. Create Multisignature and add signatures
     console.log('\n3️⃣ Adding Signatures:');
     const multisig = new Multisignature(signerPublicKeys.length);
+    console.log(multisig, 'multisig');
 
     for (let i = 0; i < document.multisigSignatures!.length; i++) {
       const signature = document.multisigSignatures![i];
