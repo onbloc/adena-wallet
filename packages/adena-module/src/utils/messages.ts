@@ -154,6 +154,46 @@ function encodeMessageValue(message: { type: string; value: any }) {
 
 export function documentToTx(document: Document): Tx {
   const messages: Any[] = document.msgs.map(encodeMessageValue);
+
+  const signatures: TxSignature[] =
+    document.signatures?.map((sig) => {
+      let pubKeyAny: Any;
+
+      if (sig.pub_key['@type'] === '/tm.PubKeyMultisig') {
+        const multisigPubKey = {
+          threshold: parseInt(sig.pub_key.threshold || '1'),
+          pubkeys:
+            sig.pub_key.pubkeys?.map((pk) => ({
+              type_url: pk['@type'],
+              value: PubKeySecp256k1.encode({
+                key: fromBase64(pk.value),
+              }).finish(),
+            })) || [],
+        };
+
+        pubKeyAny = {
+          type_url: sig.pub_key['@type'],
+          value: encodeMultisigPubKey(multisigPubKey),
+        };
+      } else {
+        const publicKeyBytes = fromBase64(sig.pub_key.value || '');
+        const wrappedPublicKeyValue: PubKeySecp256k1 = {
+          key: publicKeyBytes,
+        };
+        const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
+
+        pubKeyAny = {
+          type_url: sig.pub_key['@type'],
+          value: encodedPublicKeyBytes,
+        };
+      }
+
+      return TxSignature.create({
+        pub_key: pubKeyAny,
+        signature: fromBase64(sig.signature),
+      });
+    }) || [];
+
   return {
     messages,
     fee: TxFee.create({
@@ -162,7 +202,7 @@ export function documentToTx(document: Document): Tx {
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
     }),
-    signatures: [],
+    signatures,
     memo: document.memo,
   };
 }
@@ -316,3 +356,42 @@ export const strToSignedTx = (str: string): Tx | null => {
     return null;
   }
 };
+
+function encodeMultisigPubKey(multisigPubKey: {
+  threshold: number;
+  pubkeys: { type_url: string; value: Uint8Array }[];
+}): Uint8Array {
+  const result: number[] = [];
+
+  result.push(0x08);
+  result.push(...encodeVarint(multisigPubKey.threshold));
+
+  multisigPubKey.pubkeys.forEach((pubkey) => {
+    result.push(0x12);
+
+    const anyMessage: number[] = [];
+
+    anyMessage.push(0x0a);
+    anyMessage.push(...encodeVarint(pubkey.type_url.length));
+    anyMessage.push(...Array.from(new TextEncoder().encode(pubkey.type_url)));
+
+    anyMessage.push(0x12);
+    anyMessage.push(...encodeVarint(pubkey.value.length));
+    anyMessage.push(...pubkey.value);
+
+    result.push(...encodeVarint(anyMessage.length));
+    result.push(...anyMessage);
+  });
+
+  return new Uint8Array(result);
+}
+
+function encodeVarint(value: number): number[] {
+  const result: number[] = [];
+  while (value >= 0x80) {
+    result.push((value & 0xff) | 0x80);
+    value >>>= 7;
+  }
+  result.push(value & 0xff);
+  return result;
+}

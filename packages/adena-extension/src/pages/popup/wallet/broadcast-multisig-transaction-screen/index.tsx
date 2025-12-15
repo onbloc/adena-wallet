@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultAddressPrefix, TM2Error } from '@gnolang/tm2-js-client';
+import { BroadcastTxCommitResult, defaultAddressPrefix, TM2Error } from '@gnolang/tm2-js-client';
 import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -321,7 +321,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       // Health check timeout
       const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);
 
-      let broadcastResult: { tx: any; txBytes: Uint8Array; txBase64: string } | null = null;
+      let broadcastResult: BroadcastTxCommitResult | null = null;
       let broadcastError: TM2Error | Error | null = null;
 
       try {
@@ -332,79 +332,64 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
           multisigDocument!,
         );
 
-        const result = await multisigService.broadcastTxCommit(prepared.tx);
-        console.log(result, 'result');
-        // const preparedTx = await multisigService.broadcastMultisigTransaction3(
-        //   currentAccount,
-        //   multisigDocument,
-        //   true,
-        // );
-
-        // const broadcastResponse = await transactionService
-        //   .sendTransaction(walletInstance, currentAccount, prepared.tx)
-        //   .catch((e) => {
-        //     console.error(e, '왜 안되니?');
-        //     return null;
-        //   });
-
-        // console.log('Transaction broadcast result:', broadcastResponse);
+        const broadcastResponse = await multisigService.broadcastTxCommit(prepared.tx);
+        broadcastResult = broadcastResponse;
       } catch (error) {
         broadcastError = error as TM2Error | Error;
       }
 
       clearTimeout(healthCheckTimeout);
 
-      // if (broadcastError) {
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         error: { message: broadcastError.toString() },
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return false;
-      // }
+      if (broadcastError) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              error: { message: broadcastError.toString() },
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return false;
+      }
 
-      // if (!broadcastResult) {
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         error: { message: 'No broadcast result' },
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return false;
-      // }
+      if (!broadcastResult) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              error: { message: 'No broadcast result' },
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return false;
+      }
 
-      // setResponse(
-      //   InjectionMessageInstance.success(
-      //     WalletResponseSuccessType.TRANSACTION_SUCCESS,
-      //     {
-      //       hash: broadcastResult.hash,
-      //       height: broadcastResult.height,
-      //     },
-      //     requestData?.key,
-      //     requestData?.withNotification,
-      //   ),
-      // );
+      setResponse(
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.TRANSACTION_SUCCESS,
+          {
+            broadcastResult,
+          },
+          requestData?.key,
+          requestData?.withNotification,
+        ),
+      );
 
       return true;
     } catch (e) {
       console.error('Broadcast transaction error:', e);
-      // setResponse(
-      //   InjectionMessageInstance.failure(
-      //     WalletResponseFailureType.TRANSACTION_FAILED,
-      //     { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
-      //     requestData?.key,
-      //     requestData?.withNotification,
-      //   ),
-      // );
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.TRANSACTION_FAILED,
+          { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
+          requestData?.key,
+          requestData?.withNotification,
+        ),
+      );
       return false;
     }
   };
