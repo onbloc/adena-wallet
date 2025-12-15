@@ -223,31 +223,10 @@ export function createMultisigPublicKey(
   signerPublicKeys: PublicKeyInfo[],
   threshold: number,
   addressPrefix: string = defaultAddressPrefix,
-  noSort: boolean = true,
 ): { address: string; publicKey: Uint8Array } {
-  // 정렬 (noSort가 false인 경우)
-  let sortedPubKeys = signerPublicKeys;
-  if (!noSort) {
-    sortedPubKeys = [...signerPublicKeys].sort((a, b) => {
-      for (let i = 0; i < Math.min(a.bytes.length, b.bytes.length); i++) {
-        if (a.bytes[i] !== b.bytes[i]) {
-          return a.bytes[i] - b.bytes[i];
-        }
-      }
-      return a.bytes.length - b.bytes.length;
-    });
-  }
-
-  // Amino 인코딩
-  const aminoEncoded = encodeMultisigPubKey(threshold, sortedPubKeys);
-
-  // SHA256 해시
+  const aminoEncoded = encodeMultisigPubKey(threshold, signerPublicKeys);
   const hash = sha256(aminoEncoded);
-
-  // 앞 20바이트만 추출
   const addressBytes = hash.slice(0, 20);
-
-  // Bech32 인코딩
   const address = bech32Encode(addressPrefix, addressBytes);
 
   return {

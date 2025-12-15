@@ -50,6 +50,16 @@ import {
 
 import { Multisignature } from './multisignature';
 
+interface SignerInfo {
+  address: string;
+  publicKey: {
+    '@type': string;
+    value: string;
+  };
+  bytes: Uint8Array;
+  typeUrl: string;
+}
+
 export class MultisigService {
   private walletService: WalletService;
   private gnoProvider: GnoProvider | null;
@@ -74,8 +84,7 @@ export class MultisigService {
   public createMultisigAccount = async (config: MultisigConfig) => {
     const { signers, threshold, noSort = true } = config;
 
-    // Get signer public keys from chain
-    const signerPublicKeys: PublicKeyInfo[] = [];
+    const signerInfos: SignerInfo[] = [];
 
     for (const address of signers) {
       const publicKeyInfo = await this.getPublicKeyFromChain(address);
@@ -89,18 +98,36 @@ export class MultisigService {
 
       const publicKeyBytes = fromBase64Multisig(publicKeyInfo.value);
 
-      signerPublicKeys.push({
+      signerInfos.push({
+        address: address,
+        publicKey: publicKeyInfo,
         bytes: publicKeyBytes,
         typeUrl: publicKeyInfo['@type'],
       });
     }
 
+    let sortedSignerInfos = signerInfos;
+    if (!noSort) {
+      sortedSignerInfos = [...signerInfos].sort((a, b) => {
+        for (let i = 0; i < Math.min(a.bytes.length, b.bytes.length); i++) {
+          if (a.bytes[i] !== b.bytes[i]) {
+            return a.bytes[i] - b.bytes[i];
+          }
+        }
+        return a.bytes.length - b.bytes.length;
+      });
+    }
+
+    const sortedPublicKeyInfos: PublicKeyInfo[] = sortedSignerInfos.map((info) => ({
+      bytes: info.bytes,
+      typeUrl: info.typeUrl,
+    }));
+
     // Create multisig public key (Amino encoded)
     const { address: multisigAddress, publicKey: multisigPubKey } = createMultisigPublicKey(
-      signerPublicKeys,
+      sortedPublicKeyInfos,
       threshold,
       defaultAddressPrefix,
-      noSort,
     );
 
     // Extract address bytes from bech32 address
@@ -121,6 +148,10 @@ export class MultisigService {
       multisigAddress: multisigAddress,
       multisigAddressBytes: addressBytesObj,
       multisigPubKey: publicKeyObj,
+      signerPublicKeys: sortedSignerInfos.map((info) => ({
+        address: info.address,
+        publicKey: info.publicKey,
+      })),
     };
   };
 

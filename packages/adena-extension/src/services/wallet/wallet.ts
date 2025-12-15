@@ -4,6 +4,7 @@ import {
   MultisigKeyring,
   Wallet,
   MultisigConfig,
+  SignerPublicKeyInfo,
 } from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -171,6 +172,7 @@ export class WalletService {
     addressBytes: Uint8Array,
     multisigConfig: MultisigConfig,
     multisigAddress: string,
+    signerPublicKeys: SignerPublicKeyInfo[],
   ): Promise<MultisigAccount> => {
     try {
       const wallet = await this.loadWallet();
@@ -185,7 +187,9 @@ export class WalletService {
       const multisigKeyring = new MultisigKeyring({
         type: 'MULTISIG',
         addressBytes: Array.from(addressBytes),
+        publicKey: Array.from(publicKey),
         multisigConfig,
+        signerPublicKeys,
       });
 
       // Get account index and name

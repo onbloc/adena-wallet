@@ -11,6 +11,14 @@ export interface MultisigConfig {
   noSort?: boolean;
 }
 
+export interface SignerPublicKeyInfo {
+  address: string;
+  publicKey: {
+    '@type': string;
+    value: string;
+  };
+}
+
 /**
  * MultisigAccount class
  * Represents a multisig account with threshold signature requirement
@@ -22,6 +30,7 @@ export class MultisigAccount implements Account {
   public readonly publicKey: Uint8Array;
   public readonly addressBytes: Uint8Array;
   public readonly multisigConfig: MultisigConfig;
+  public readonly signerPublicKeys: SignerPublicKeyInfo[];
 
   private _index: number;
   private _name: string;
@@ -38,6 +47,11 @@ export class MultisigAccount implements Account {
       throw new Error('MultisigConfig is required for MultisigAccount');
     }
     this.multisigConfig = accountInfo.multisigConfig;
+
+    if (!accountInfo.signerPublicKeys || accountInfo.signerPublicKeys.length === 0) {
+      throw new Error('SignerPublicKeys is required for MultisigAccount');
+    }
+    this.signerPublicKeys = accountInfo.signerPublicKeys;
   }
 
   public get index() {
@@ -64,6 +78,10 @@ export class MultisigAccount implements Account {
     return this.multisigConfig.signers;
   }
 
+  public getSignerPublicKeys(): SignerPublicKeyInfo[] {
+    return this.signerPublicKeys;
+  }
+
   /**
    * Serialize account data for storage
    */
@@ -77,6 +95,7 @@ export class MultisigAccount implements Account {
       publicKey: Array.from(this.publicKey),
       addressBytes: Array.from(this.addressBytes),
       multisigConfig: this.multisigConfig,
+      signerPublicKeys: this.signerPublicKeys,
       hdPath: undefined,
     };
   }
@@ -112,6 +131,7 @@ export class MultisigAccount implements Account {
       publicKey: Array.from(publicKey),
       addressBytes: Array.from(addressBytes),
       multisigConfig: keyring.multisigConfig,
+      signerPublicKeys: keyring.signerPublicKeys,
     });
   }
 

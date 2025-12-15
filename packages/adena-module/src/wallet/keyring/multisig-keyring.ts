@@ -18,7 +18,14 @@ import { PubKeySecp256k1 } from '@gnolang/tm2-js-client/bin/proto/tm2/tx';
 import Long from 'long';
 import { v4 as uuidv4 } from 'uuid';
 
-import { decodeTxMessages, Document, documentToTx, fromBech32, MultisigConfig } from '../..';
+import {
+  decodeTxMessages,
+  Document,
+  documentToTx,
+  fromBech32,
+  MultisigConfig,
+  SignerPublicKeyInfo,
+} from '../..';
 import { Keyring, KeyringData } from './keyring';
 
 /**
@@ -33,6 +40,7 @@ export class MultisigKeyring implements Keyring {
   public readonly addressBytes: Uint8Array;
   public readonly publicKey: Uint8Array;
   public readonly multisigConfig: MultisigConfig;
+  public readonly signerPublicKeys?: SignerPublicKeyInfo[];
 
   constructor(keyringData: KeyringData) {
     if (!keyringData.addressBytes || !keyringData.multisigConfig) {
@@ -42,6 +50,7 @@ export class MultisigKeyring implements Keyring {
     this.addressBytes = Uint8Array.from(keyringData.addressBytes);
     this.publicKey = Uint8Array.from(keyringData.publicKey ?? []);
     this.multisigConfig = keyringData.multisigConfig;
+    this.signerPublicKeys = keyringData.signerPublicKeys;
   }
 
   toData(): KeyringData {
@@ -51,6 +60,7 @@ export class MultisigKeyring implements Keyring {
       addressBytes: Array.from(this.addressBytes),
       publicKey: Array.from(this.publicKey),
       multisigConfig: this.multisigConfig,
+      signerPublicKeys: this.signerPublicKeys,
     };
   }
 
@@ -218,6 +228,7 @@ export class MultisigKeyring implements Keyring {
     address: string,
     publicKey: Uint8Array,
     multisigConfig: MultisigConfig,
+    signerPublicKeys?: SignerPublicKeyInfo[],
   ): Promise<MultisigKeyring> {
     const { data: addressBytes } = fromBech32(address);
     return new MultisigKeyring({
@@ -225,6 +236,7 @@ export class MultisigKeyring implements Keyring {
       addressBytes: [...addressBytes],
       publicKey: [...publicKey],
       multisigConfig,
+      signerPublicKeys,
     });
   }
 }

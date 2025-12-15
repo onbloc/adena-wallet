@@ -99,20 +99,18 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      // multisigPubKey도 받아옴
-      const { multisigAddress, multisigAddressBytes, multisigPubKey } =
+      const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
         await multisigService.createMultisigAccount(multisigConfig);
 
-      // Object를 Uint8Array로 변환
-      const publicKeyBytes = Uint8Array.from(Object.values(multisigPubKey));
-      const addressBytes = Uint8Array.from(Object.values(multisigAddressBytes));
+      const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
+      const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));
 
-      // publicKey 전달
       const multisigAccount = await walletService.addMultisigAccount(
-        publicKeyBytes,
-        addressBytes,
+        publicKeyBytesArray,
+        addressBytesArray,
         multisigConfig,
         multisigAddress,
+        signerPublicKeys,
       );
 
       await changeCurrentAccount(multisigAccount);

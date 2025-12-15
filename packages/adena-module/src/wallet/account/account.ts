@@ -3,7 +3,7 @@ import { AirgapAccount } from './airgap-account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
 import { SingleAccount } from './single-account';
-import { MultisigAccount, MultisigConfig } from './multisig-account';
+import { MultisigAccount, MultisigConfig, SignerPublicKeyInfo } from './multisig-account';
 
 export interface Account {
   id: string;
@@ -26,6 +26,7 @@ export interface AccountInfo {
   publicKey: number[];
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;
+  signerPublicKeys?: SignerPublicKeyInfo[];
 }
 
 export function makeAccount(accountData: AccountInfo) {

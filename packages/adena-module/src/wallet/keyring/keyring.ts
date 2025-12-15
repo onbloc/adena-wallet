@@ -6,7 +6,7 @@ import {
   TxSignature,
 } from '@gnolang/tm2-js-client';
 
-import { Document, MultisigConfig } from './../..';
+import { Document, MultisigConfig, SignerPublicKeyInfo } from './../..';
 import { AddressKeyring } from './address-keyring';
 import { HDWalletKeyring } from './hd-wallet-keyring';
 import { LedgerKeyring } from './ledger-keyring';
@@ -55,6 +55,7 @@ export interface KeyringData {
   mnemonicEntropy?: number[];
   addressBytes?: number[];
   multisigConfig?: MultisigConfig;
+  signerPublicKeys?: SignerPublicKeyInfo[];
 }
 
 export function makeKeyring(keyringData: KeyringData) {
