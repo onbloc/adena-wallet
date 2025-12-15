@@ -57,16 +57,6 @@ export interface StandardDocument extends BaseDocument {
 }
 
 /**
- * Multisig document - document with multisig configuration
- * @deprecated Use MultisigTransactionDocument for new multisig flow
- */
-export interface MultisigDocument {
-  document: StandardDocument;
-  signatures: EncodeTxSignature[];
-  multisigConfig: MultisigConfig;
-}
-
-/**
  * Parameters for creating a multisig account
  */
 export interface CreateMultisigAccountParams {

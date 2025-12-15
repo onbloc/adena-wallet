@@ -29,7 +29,6 @@ import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
 import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
 import CreateMultisigDocumentContainer from '@pages/popup/wallet/create-multisig-document';
-import SignMultisigDocument from '@pages/popup/wallet/sign-multisig-document';
 import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
 import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';

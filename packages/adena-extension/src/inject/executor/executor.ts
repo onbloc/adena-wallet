@@ -27,7 +27,6 @@ import {
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
-  MultisigDocument,
   MultisigTransactionDocument,
   SignMultisigTransactionResponse,
   SignTxResponse,
