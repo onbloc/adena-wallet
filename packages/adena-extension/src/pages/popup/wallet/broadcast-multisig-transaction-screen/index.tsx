@@ -102,7 +102,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { wallet, gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, multisigService, transactionService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  console.log(currentAccount, 'currentAccountcurrentAccount');
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
@@ -330,23 +329,25 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
         const prepared = await multisigService.prepareMultisigTransaction(
           currentAccount,
-          multisigDocument,
+          multisigDocument!,
         );
-        console.log(prepared, 'prepared');
+
+        const result = await multisigService.broadcastTxCommit(prepared.tx);
+        console.log(result, 'result!!!!!!!!!!!!!!');
         // const preparedTx = await multisigService.broadcastMultisigTransaction3(
         //   currentAccount,
         //   multisigDocument,
         //   true,
         // );
 
-        const broadcastResponse = await transactionService
-          .sendTransaction(walletInstance, currentAccount, prepared.tx)
-          .catch((e) => {
-            console.error(e, '왜 안되니?');
-            return null;
-          });
+        // const broadcastResponse = await transactionService
+        //   .sendTransaction(walletInstance, currentAccount, prepared.tx)
+        //   .catch((e) => {
+        //     console.error(e, '왜 안되니?');
+        //     return null;
+        //   });
 
-        console.log('Transaction broadcast result:', broadcastResponse);
+        // console.log('Transaction broadcast result:', broadcastResponse);
       } catch (error) {
         broadcastError = error as TM2Error | Error;
       }
@@ -396,14 +397,14 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       return true;
     } catch (e) {
       console.error('Broadcast transaction error:', e);
-      setResponse(
-        InjectionMessageInstance.failure(
-          WalletResponseFailureType.TRANSACTION_FAILED,
-          { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
-          requestData?.key,
-          requestData?.withNotification,
-        ),
-      );
+      // setResponse(
+      //   InjectionMessageInstance.failure(
+      //     WalletResponseFailureType.TRANSACTION_FAILED,
+      //     { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
+      //     requestData?.key,
+      //     requestData?.withNotification,
+      //   ),
+      // );
       return false;
     }
   };
