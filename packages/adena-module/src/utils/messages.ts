@@ -22,6 +22,18 @@ export interface Document {
     value: any;
   }[];
   memo: string;
+  signatures?: {
+    pub_key: {
+      '@type': string;
+      threshold?: string;
+      pubkeys?: {
+        '@type': string;
+        value: string;
+      }[];
+      value?: string;
+    };
+    signature: string;
+  }[];
 }
 
 export const decodeTxMessages = (messages: Any[]): any[] => {

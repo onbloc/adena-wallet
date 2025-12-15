@@ -1,4 +1,4 @@
-import { Account, isAirgapAccount, isLedgerAccount, MultisigConfig } from 'adena-module';
+import { Account, isAirgapAccount, isLedgerAccount, MultisigConfig, Document } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';

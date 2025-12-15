@@ -48,6 +48,7 @@ import {
   PublicKeyInfo,
   publicKeyToAddress,
   Document,
+  documentToTx,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -734,6 +735,54 @@ export class MultisigService {
       // account_number: "5092", // 실제 값이 있다면 추가
       // sequence: "0"          // 실제 값이 있다면 추가
     };
+
+    function convertMessageToAmino(msg: any): { type: string; value: any } {
+      if (msg.type && msg.value) {
+        return msg;
+      }
+      const { '@type': type, ...value } = msg;
+      return { type, value };
+    }
+
+    const aminoMessages = document.tx.msg.map(convertMessageToAmino);
+
+    const aminoSignatures = [
+      {
+        pub_key: {
+          '@type': '/tm.PubKeyMultisig',
+          threshold: threshold.toString(),
+          pubkeys: signerPublicKeys.map((pubKey) => ({
+            '@type': '/tm.PubKeySecp256k1',
+            value: uint8ArrayToBase64(pubKey),
+          })),
+        },
+        signature: uint8ArrayToBase64(multisigSignature),
+      },
+    ];
+
+    const aminoDocument: Document = {
+      msgs: aminoMessages,
+      fee: {
+        amount: [
+          {
+            amount: gasFeeMatch[1],
+            denom: gasFeeMatch[2],
+          },
+        ],
+        gas: document.tx.fee.gas_wanted,
+      },
+      chain_id: document.chainId,
+      memo: document.tx.memo,
+      account_number: document.accountNumber,
+      sequence: document.sequence,
+      signatures: aminoSignatures,
+    };
+    const aminoDocumentToTx = documentToTx(aminoDocument);
+
+    console.log(aminoDocumentToTx, 'aminoDocumentToTxaminoDocumentToTx');
+    console.log(aminoDocument, aminoDocumentToTx, 'aminoDocumentToTx');
+    console.log(JSON.stringify(aminoDocument, null, 2), 'aminoDocument');
+    console.log(documentToTx(aminoDocument), 'documentToTx');
     console.log(JSON.stringify(humanReadableTx, null, 2));
 
     console.log(`  Messages: ${tx.messages.length}`);
@@ -790,7 +839,7 @@ export class MultisigService {
     console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
     return {
-      tx, // Complete Tx object for transactionService.sendTransaction()
+      tx: aminoDocumentToTx, // Complete Tx object for transactionService.sendTransaction()
       txBytes, // Raw bytes
       txBase64, // Base64 encoded (for direct RPC calls)
     };
