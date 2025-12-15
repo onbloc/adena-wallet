@@ -22,13 +22,14 @@ import {
   BroadcastMultisigTransactionResponse,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
-  CreateMultisigDocumentParams,
-  CreateMultisigDocumentResponse,
+  CreateMultisigTransactionParams,
+  CreateMultisigTransactionResponse,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
   MultisigDocument,
-  SignMultisigDocumentResponse,
+  MultisigTransactionDocument,
+  SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -151,9 +152,9 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public createMultisigDocument = (
-    params: CreateMultisigDocumentParams,
-  ): Promise<CreateMultisigDocumentResponse> => {
+  public createMultisigTransaction = (
+    params: CreateMultisigTransactionParams,
+  ): Promise<CreateMultisigTransactionResponse> => {
     const result = this.validateCreateMultisigDocument(params);
     if (result) {
       return this.sendEventMessage(result);
@@ -167,9 +168,9 @@ export class AdenaExecutor {
     return this.sendEventMessage(eventMessage);
   };
 
-  public signMultisigDocument = (
-    multisigDocument: MultisigDocument,
-  ): Promise<SignMultisigDocumentResponse> => {
+  public signMultisigTransaction = (
+    multisigDocument: MultisigTransactionDocument,
+  ): Promise<SignMultisigTransactionResponse> => {
     // const result = this.validateMultisigSignedDocument(multisigDocument);
     // if (result) {
     //   return this.sendEventMessage(result);
@@ -288,7 +289,7 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateCreateMultisigDocument = (
-    params: CreateMultisigDocumentParams,
+    params: CreateMultisigTransactionParams,
   ): InjectionMessage | undefined => {
     if (!params) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
@@ -319,46 +320,46 @@ export class AdenaExecutor {
    * @param multisigDocument - The multisig document object to validate
    * @returns InjectionMessage on validation failure, undefined on success
    */
-  private validateMultisigSignedDocument = (
-    multisigDocument: MultisigDocument,
-  ): InjectionMessage | undefined => {
-    if (!multisigDocument) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  // private validateMultisigSignedDocument = (
+  //   multisigDocument: MultisigDocument,
+  // ): InjectionMessage | undefined => {
+  //   if (!multisigDocument) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!multisigDocument.document) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!multisigDocument.document) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    const { document, signatures, multisigConfig } = multisigDocument;
+  //   const { document, signatures, multisigConfig } = multisigDocument;
 
-    if (!validateSignedDocumentFields(document)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!validateSignedDocumentFields(document)) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!Array.isArray(signatures)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!Array.isArray(signatures)) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!validateSignatures(signatures)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!validateSignatures(signatures)) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!validateSignedDocumentFee(document.fee)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!validateSignedDocumentFee(document.fee)) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!validateSignedDocumentMessages(document.msgs)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!validateSignedDocumentMessages(document.msgs)) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    // Todo: multisigConfig -> multisigAddress -> caller와 비교. (multisigConfig 변조 방지)
-    // if (!validateMultisigConfig(multisigConfig)) {
-    //   return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    // }
+  //   // Todo: multisigConfig -> multisigAddress -> caller와 비교. (multisigConfig 변조 방지)
+  //   // if (!validateMultisigConfig(multisigConfig)) {
+  //   //   return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   // }
 
-    return this.validateMessages(document.msgs);
-  };
+  //   return this.validateMessages(document.msgs);
+  // };
 
   /**
    * Validates BroadcastMultisigTransactionParams.
@@ -367,31 +368,31 @@ export class AdenaExecutor {
    * @param params - The BroadcastMultisigTransactionParams object to validate
    * @returns InjectionMessage on validation failure, undefined on success
    */
-  private validateBroadcastMultisigTransaction = (
-    params: BroadcastMultisigTransactionParams,
-  ): InjectionMessage | undefined => {
-    if (!params) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  // private validateBroadcastMultisigTransaction = (
+  //   params: BroadcastMultisigTransactionParams,
+  // ): InjectionMessage | undefined => {
+  //   if (!params) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    if (!params.multisigDocument) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (!params.multisigDocument) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    const documentValidation = this.validateMultisigSignedDocument(params.multisigDocument);
+  //   const documentValidation = this.validateMultisigSignedDocument(params.multisigDocument);
 
-    if (documentValidation) {
-      return documentValidation;
-    }
+  //   if (documentValidation) {
+  //     return documentValidation;
+  //   }
 
-    const { signatures, multisigConfig } = params.multisigDocument;
+  //   const { signatures, multisigConfig } = params.multisigDocument;
 
-    if (signatures.length < multisigConfig.threshold) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
+  //   if (signatures.length < multisigConfig.threshold) {
+  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+  //   }
 
-    return undefined;
-  };
+  //   return undefined;
+  // };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {

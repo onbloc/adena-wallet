@@ -25,7 +25,6 @@ import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.consta
 import { GasToken } from '@common/constants/token.constant';
 
 import {
-  CreateMultisigDocumentParams,
   CreateMultisigTransactionParams,
   MultisigDocument,
   MultisigTransactionDocument,
@@ -247,55 +246,6 @@ export class MultisigService {
       signature: uint8ArrayToBase64(s.signature),
     }));
     return signatures[0];
-  };
-
-  /**
-   * Create a multisig document
-   *
-   * @param account - Account to get MultisigAccount info
-   * @param params - CreateMultisigDocumentParams
-   * @returns MultisigDocument with empty signatures array
-   */
-  public createMultisigDocument = async (
-    account: MultisigAccount,
-    params: CreateMultisigDocumentParams,
-  ): Promise<MultisigDocument> => {
-    const provider = this.getGnoProvider();
-    const address = await account.getAddress(defaultAddressPrefix);
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
-    const accountNumber = accountInfo?.accountNumber ?? 0;
-    const accountSequence = accountInfo?.sequence ?? 0;
-    const multisigConfig = account.multisigConfig;
-
-    const document: StandardDocument = {
-      msgs: params.msgs,
-      fee: {
-        gas: params.fee.gas || DEFAULT_GAS_WANTED.toString(),
-        amount:
-          params.fee.amount.length > 0
-            ? params.fee.amount.map((fee) => ({
-                ...fee,
-                amount: fee.amount || DEFAULT_GAS_FEE.toString(),
-                denom: fee.denom || GasToken.denom,
-              }))
-            : [
-                {
-                  amount: DEFAULT_GAS_FEE.toString(),
-                  denom: GasToken.denom,
-                },
-              ],
-      },
-      chain_id: params.chain_id,
-      memo: params.memo || '',
-      account_number: accountNumber.toString(),
-      sequence: accountSequence.toString(),
-    };
-
-    return {
-      document,
-      signatures: [],
-      multisigConfig,
-    };
   };
 
   /**

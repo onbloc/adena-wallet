@@ -9,15 +9,16 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionParams,
+  BroadcastMultisigTransactionResponse,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
-  CreateMultisigDocumentParams,
-  CreateMultisigDocumentResponse,
+  CreateMultisigTransactionParams,
+  CreateMultisigTransactionResponse,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
-  MultisigDocument,
-  SignMultisigDocumentResponse,
+  MultisigTransactionDocument,
+  SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -64,28 +65,30 @@ const init = (): void => {
       const response = await executor.signTx(message);
       return response;
     },
-    async CreateMultisigAccount(
+    async createMultisigAccount(
       params: CreateMultisigAccountParams,
     ): Promise<CreateMultisigAccountResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigAccount(params);
       return response;
     },
-    async CreateMultisigDocument(
-      params: CreateMultisigDocumentParams,
-    ): Promise<CreateMultisigDocumentResponse> {
+    async createMultisigTransaction(
+      params: CreateMultisigTransactionParams,
+    ): Promise<CreateMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.createMultisigDocument(params);
+      const response = await executor.createMultisigTransaction(params);
       return response;
     },
-    async SignMultisigDocument(
-      multisigDocument: MultisigDocument,
-    ): Promise<SignMultisigDocumentResponse> {
+    async signMultisigTransaction(
+      multisigDocument: MultisigTransactionDocument,
+    ): Promise<SignMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.signMultisigDocument(multisigDocument);
+      const response = await executor.signMultisigTransaction(multisigDocument);
       return response;
     },
-    async BroadcastMultisigTransaction(params: BroadcastMultisigTransactionParams) {
+    async broadcastMultisigTransaction(
+      params: BroadcastMultisigTransactionParams,
+    ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.broadcastMultisigTransaction(params);
       return response;

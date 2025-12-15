@@ -2,6 +2,7 @@ import { AdenaResponse } from './common';
 import { BaseDocument } from './transactions';
 import { MultisigConfig } from 'adena-module';
 import { EncodeTxSignature } from '@services/index';
+import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 
 export interface Message {
   type: string;
@@ -88,17 +89,57 @@ export type CreateMultisigAccountResponseData = {
 export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountResponseData>;
 
 /**
- * @deprecated
+ * Parameters for creating a multisig transaction
  */
-export interface CreateMultisigDocumentParams extends BaseDocument {
-  memo?: string;
-}
-
 export interface CreateMultisigTransactionParams extends BaseDocument {
   memo?: string;
   accountNumber?: string;
   sequence?: string;
 }
+
+/**
+ * Response data for creating a multisig transaction document
+ */
+export type CreateMultisigTransactionResponseData = {
+  document: MultisigTransactionDocument;
+};
+
+/**
+ * Response for creating a multisig transaction document
+ */
+export type CreateMultisigTransactionResponse =
+  AdenaResponse<CreateMultisigTransactionResponseData>;
+
+/**
+ * Response data for signing a multisig document
+ */
+export type SignMultisigTransactionResponseData = {
+  signedDocument: MultisigTransactionDocument;
+  addedSignature: EncodeTxSignature;
+};
+
+/**
+ * Response for signing a multisig document
+ */
+export type SignMultisigTransactionResponse = AdenaResponse<SignMultisigTransactionResponseData>;
+
+/**
+ * Parameters for broadcasting a multisig transaction
+ */
+export interface BroadcastMultisigTransactionParams {
+  document: MultisigTransactionDocument;
+}
+
+/**
+ * Response data for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult;
+
+/**
+ * Response for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponse =
+  AdenaResponse<BroadcastMultisigTransactionResponseData>;
 
 export interface UnsignedTransaction {
   msg: Array<{
@@ -143,56 +184,3 @@ export interface SignedMultisigTransactionDocument {
   accountNumber: string;
   sequence: string;
 }
-
-/**
- * Response data for creating a multisig document
- * @deprecated Use CreateMultisigTransactionDocumentResponse instead
- */
-export type CreateMultisigDocumentResponseData = {
-  document: MultisigDocument;
-};
-
-/**
- * Response for creating a multisig document
- * @deprecated Use CreateMultisigTransactionDocumentResponse instead
-
- */
-export type CreateMultisigDocumentResponse = AdenaResponse<CreateMultisigDocumentResponseData>;
-
-/**
- * Response data for signing a multisig document
- * @deprecated Use SignMultisigTransactionDocumentResponse instead
- */
-export type SignMultisigDocumentResponseData = {
-  signedDocument: MultisigDocument;
-  addedSignature: EncodeTxSignature;
-};
-
-/**
- * Response for signing a multisig document
- *  @deprecated Use SignMultisigTransactionDocumentResponse instead
- */
-export type SignMultisigDocumentResponse = AdenaResponse<SignMultisigDocumentResponseData>;
-
-/**
- * Parameters for broadcasting a multisig transaction
- * @deprecated Use new broadcast flow with SignedMultisigTransactionDocument
- */
-export interface BroadcastMultisigTransactionParams {
-  multisigDocument: MultisigDocument;
-  commit?: boolean;
-}
-
-/**
- * Response data for broadcasting a multisig transaction
- */
-export type BroadcastMultisigTransactionResponseData = {
-  hash: string;
-  height?: string;
-};
-
-/**
- * Response for broadcasting a multisig transaction
- */
-export type BroadcastMultisigTransactionResponse =
-  AdenaResponse<BroadcastMultisigTransactionResponseData>;
