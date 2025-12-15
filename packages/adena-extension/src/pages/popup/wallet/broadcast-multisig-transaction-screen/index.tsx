@@ -331,10 +331,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
           currentAccount,
           multisigDocument!,
         );
-        console.log(prepared, 'prepared');
 
         const result = await multisigService.broadcastTxCommit(prepared.tx);
-        console.log(result, 'result!!!!!!!!!!!!!!');
+        console.log(result, 'result');
         // const preparedTx = await multisigService.broadcastMultisigTransaction3(
         //   currentAccount,
         //   multisigDocument,

@@ -37,15 +37,16 @@ export class Multisignature {
   }
 
   addSignatureFromPubKey(sig: Uint8Array, pubkey: Uint8Array, keys: Uint8Array[]): void {
-    console.log('\n🔍 addSignatureFromPubKey:');
-    console.log(`  Looking for pubkey: ${Buffer.from(pubkey).toString('hex')}`);
-    console.log(`  Available keys:`);
+    console.log('\n🔍 addSignatureFromPubKey DEBUG:');
+    console.log(`  Signature pubkey: ${Buffer.from(pubkey).toString('hex')}`);
+    console.log(`  Available signer keys:`);
+
     keys.forEach((key, i) => {
-      console.log(`    [${i}] ${Buffer.from(key).toString('hex')}`);
+      const hex = Buffer.from(key).toString('hex');
+      console.log(`    [${i}] ${hex}`);
     });
 
     const index = this.getIndex(pubkey, keys);
-    console.log(`  Found index: ${index}`);
 
     if (index === -1) {
       throw new Error(
@@ -53,14 +54,17 @@ export class Multisignature {
       );
     }
 
-    console.log(`  Setting bit at index ${index}`);
+    console.log(`  🎯 Setting bit at index: ${index}`);
     this.addSignature(sig, index);
 
-    // BitArray 상태 출력
+    // BitArray 상태 확인
     const amino = this.bitArray.toAmino();
-    console.log(`  BitArray after adding signature:`);
-    console.log(`    bits: 0x${Buffer.from(amino.bits).toString('hex')}`);
-    console.log(`    binary: ${amino.bits[0]?.toString(2).padStart(8, '0')}`);
+    console.log(`  📊 BitArray after setting:`);
+    console.log(`    Hex: 0x${Buffer.from(amino.bits).toString('hex')}`);
+    console.log(`    Binary: ${amino.bits[0]?.toString(2).padStart(8, '0')}`);
+    console.log(
+      `    Set bits: ${Array.from({ length: 8 }, (_, i) => (amino.bits[0] & (1 << i) ? i : null)).filter((x) => x !== null)}`,
+    );
   }
 
   addSignatureFromAddress(sig: Uint8Array, signerAddress: string, signerAddresses: string[]): void {
@@ -160,20 +164,10 @@ export class Multisignature {
       bitArrayInner.push(0x12);
       bitArrayInner.push(...this.encodeVarint(bitArray.bits.length));
 
-      const correctedBits = new Uint8Array(bitArray.bits.length);
-      for (let i = 0; i < bitArray.bits.length; i++) {
-        if (bitArray.bits[i] === 0x06) {
-          correctedBits[i] = 0x60; // bit 1,2 -> bit 5,6으로 변경
-        } else {
-          correctedBits[i] = bitArray.bits[i];
-        }
-      }
+      console.log(`🔍 Original BitArray: 0x${Buffer.from(bitArray.bits).toString('hex')}`);
+      console.log(`🔍 Binary: ${bitArray.bits[0]?.toString(2).padStart(8, '0')}`);
 
-      console.log(`🔧 BitArray correction:`);
-      console.log(`  Original: 0x${Buffer.from(bitArray.bits).toString('hex')}`);
-      console.log(`  Corrected: 0x${Buffer.from(correctedBits).toString('hex')}`);
-
-      bitArrayInner.push(...correctedBits);
+      bitArrayInner.push(...bitArray.bits);
     }
 
     const bitArrayBytes = new Uint8Array(bitArrayInner);

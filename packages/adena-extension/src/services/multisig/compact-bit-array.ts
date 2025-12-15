@@ -35,21 +35,19 @@ export class CompactBitArray {
     const bitIndex = index % 8;
 
     console.log(`🔧 CompactBitArray.setIndex(${index}, ${value}):`);
-    console.log(`  byteIndex: ${byteIndex}, bitIndex: ${bitIndex}`);
+    console.log(` byteIndex: ${byteIndex}, bitIndex: ${bitIndex}`);
     console.log(
-      `  Before: elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
+      ` Before: elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
     );
 
     if (value) {
-      // Set bit (LSB = bit 0, so bit 1 = 0x02)
-      this.elems[byteIndex] |= 1 << bitIndex;
+      this.elems[byteIndex] |= 1 << (7 - bitIndex);
     } else {
-      // Clear bit
-      this.elems[byteIndex] &= ~(1 << bitIndex);
+      this.elems[byteIndex] &= ~(1 << (7 - bitIndex));
     }
 
     console.log(
-      `  After:  elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
+      ` After: elems[${byteIndex}] = 0x${this.elems[byteIndex].toString(16).padStart(2, '0')} = 0b${this.elems[byteIndex].toString(2).padStart(8, '0')}`,
     );
   }
 
@@ -64,7 +62,7 @@ export class CompactBitArray {
     const byteIndex = Math.floor(index / 8);
     const bitIndex = index % 8;
 
-    return (this.elems[byteIndex] & (1 << bitIndex)) !== 0;
+    return (this.elems[byteIndex] & (1 << (7 - bitIndex))) !== 0;
   }
 
   /**
