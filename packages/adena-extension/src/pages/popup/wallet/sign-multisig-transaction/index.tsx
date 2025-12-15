@@ -72,7 +72,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
+  const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
@@ -333,10 +333,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       };
 
       // Sign using TransactionService
-      const encodedSignature = await transactionService.createSignature(
-        currentAccount,
-        aminoDocument,
-      );
+      const encodedSignature = await multisigService.createSignature(currentAccount, aminoDocument);
 
       // Convert to Multisig Signature format
       const signature: Signature = {

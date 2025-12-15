@@ -19,7 +19,7 @@ import {
   MemPackage,
 } from '@gnolang/gno-js-client';
 
-import { WalletService } from '..';
+import { EncodeTxSignature, WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
 import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
 import { GasToken } from '@common/constants/token.constant';
@@ -46,6 +46,8 @@ import {
   fromBase64Multisig,
   fromBech32Multisig,
   PublicKeyInfo,
+  publicKeyToAddress,
+  Document,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -219,6 +221,31 @@ export class MultisigService {
       console.error('Failed to create multisig transaction: ', error);
       throw error;
     }
+  };
+
+  /** Create a signature
+   *
+   * @param account
+   * @param document
+   * @returns
+   */
+  public createSignature = async (
+    account: Account,
+    document: Document,
+  ): Promise<EncodeTxSignature> => {
+    const provider = this.getGnoProvider();
+    const address = await account.getAddress(defaultAddressPrefix);
+    const accountInfo = await provider.getAccountInfo(address);
+    const wallet = await this.walletService.loadWallet();
+    const { signature } = await wallet.signByAccountId(provider, account.id, document);
+    const signatures = signature.map((s) => ({
+      pubKey: {
+        typeUrl: accountInfo?.publicKey?.['@type'],
+        value: accountInfo?.publicKey?.value ?? undefined,
+      },
+      signature: uint8ArrayToBase64(s.signature),
+    }));
+    return signatures[0];
   };
 
   /**

@@ -56,5 +56,8 @@ export function makeSignedTx(wallet: Tm2Wallet, document: Document): Promise<Tx>
   const tx = documentToTx(document);
   const decodeTxMessageFunction = decodeTxMessages;
 
-  return wallet.signTransaction(tx, decodeTxMessageFunction);
+  return wallet.signTransaction(tx, decodeTxMessageFunction, {
+    ...(document.account_number && { accountNumber: document.account_number }),
+    ...(document.sequence && { sequence: document.sequence }),
+  });
 }
