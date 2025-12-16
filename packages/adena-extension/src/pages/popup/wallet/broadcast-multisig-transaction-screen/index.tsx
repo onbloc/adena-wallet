@@ -100,7 +100,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { wallet, gnoProvider, changeNetwork } = useWalletContext();
-  const { walletService, multisigService, transactionService } = useAdenaContext();
+  const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
   const [hostname, setHostname] = useState('');
@@ -286,10 +286,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return false;
   };
 
-  const changeMemo = (memo: string): void => {
-    setMemo(memo);
-  };
-
   const broadcastMultisigTransaction = async (): Promise<boolean> => {
     if (isErrorNetworkFee) {
       return false;
@@ -458,7 +454,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   return (
     <BroadcastMultisigTransaction
       loading={transactionData === undefined}
-      title='Broadcast Multisig Transaction'
+      title='Broadcast Transaction'
       logo={favicon}
       domain={hostname}
       contracts={transactionData?.contracts || []}
@@ -475,7 +471,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       transactionMessages={transactionMessages}
       multisigConfig={multisigConfig}
       signatures={signatures}
-      changeMemo={changeMemo}
       openScannerLink={openScannerLink}
       onToggleTransactionData={onToggleTransactionData}
       onResponse={onResponseBroadcastTransaction}

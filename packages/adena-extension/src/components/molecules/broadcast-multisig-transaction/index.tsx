@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -38,7 +39,6 @@ export interface BroadcastMultisigTransactionProps {
   transactionMessages: ContractMessage[];
   multisigConfig: MultisigConfig | null;
   signatures: any[];
-  changeMemo: (memo: string) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
@@ -65,13 +65,14 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   argumentInfos,
   multisigConfig,
   signatures,
-  changeMemo,
   onToggleTransactionData,
   onResponse,
   onClickConfirm,
   onClickCancel,
   openScannerLink,
 }) => {
+  const theme = useTheme();
+
   const disabledBroadcast = useMemo(() => {
     if (isErrorNetworkFee) {
       return true;
@@ -111,18 +112,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
     return `Ready to broadcast (${collected}/${required})`;
   }, [multisigConfig, signatures]);
-
-  const onChangeMemo = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (hasMemo) {
-        return;
-      }
-
-      const value = e.target.value;
-      changeMemo(value);
-    },
-    [hasMemo, changeMemo],
-  );
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledBroadcast) {
@@ -169,7 +158,8 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
         <span
           className='value'
           style={{
-            color: signatures.length >= (multisigConfig?.threshold || 0) ? '#00D26B' : '#FF6B6B',
+            color:
+              signatures.length >= (multisigConfig?.threshold || 0) ? theme.green._5 : theme.red._5,
           }}
         >
           {signatureStatusMessage}
