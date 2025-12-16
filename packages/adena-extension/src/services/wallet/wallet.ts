@@ -157,7 +157,6 @@ export class WalletService {
   };
 
   /**
-   * @deprecated
    * Add multisig account to wallet
    *
    * @param publicKey - Multisig public key (Amino encoded PubKeyMultisigThreshold)

@@ -327,12 +327,12 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       let broadcastError: TM2Error | Error | null = null;
 
       try {
-        const prepared = await multisigService.prepareMultisigTransaction(
+        const combinedTx = await multisigService.combineMultisigSignatures(
           currentAccount,
-          multisigDocument!,
+          multisigDocument,
         );
 
-        const broadcastResponse = await multisigService.broadcastTxCommit(prepared.tx);
+        const broadcastResponse = await multisigService.broadcastTxCommit(combinedTx.tx);
         broadcastResult = broadcastResponse;
       } catch (error) {
         broadcastError = error as TM2Error | Error;
