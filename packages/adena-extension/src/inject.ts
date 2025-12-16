@@ -65,28 +65,28 @@ const init = (): void => {
       const response = await executor.signTx(message);
       return response;
     },
-    async createMultisigAccount(
+    async CreateMultisigAccount(
       params: CreateMultisigAccountParams,
     ): Promise<CreateMultisigAccountResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigAccount(params);
       return response;
     },
-    async createMultisigTransaction(
+    async CreateMultisigTransaction(
       params: CreateMultisigTransactionParams,
     ): Promise<CreateMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.createMultisigTransaction(params);
       return response;
     },
-    async signMultisigTransaction(
+    async SignMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
     ): Promise<SignMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.signMultisigTransaction(multisigDocument);
       return response;
     },
-    async broadcastMultisigTransaction(
+    async BroadcastMultisigTransaction(
       params: BroadcastMultisigTransactionParams,
     ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
