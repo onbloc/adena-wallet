@@ -181,11 +181,12 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
         argumentInfos={argumentInfos}
         changeMessages={() => {}} // Read-only for broadcast
         openScannerLink={openScannerLink}
+        editable={false}
       />
 
       <div className='memo-wrapper row'>
         <span className='key'>Memo:</span>
-        <span className='value'>{memo || '(None)'}</span>
+        {hasMemo ? <span className='value'>{memo}</span> : null}
       </div>
 
       <div className='fee-amount-wrapper'>

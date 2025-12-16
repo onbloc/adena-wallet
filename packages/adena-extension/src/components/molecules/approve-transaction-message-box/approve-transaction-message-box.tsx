@@ -10,6 +10,7 @@ export interface ApproveTransactionMessageBoxProps {
   argumentInfos?: GnoArgumentInfo[];
   changeMessages: (messages: ContractMessage[]) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
+  editable?: boolean;
 }
 
 const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> = ({
@@ -17,6 +18,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
   argumentInfos,
   changeMessages,
   openScannerLink,
+  editable = true,
 }) => {
   const argumentKeyMap = useMemo(() => {
     if (!argumentInfos) {
@@ -52,6 +54,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
           argumentKeyMap={argumentKeyMap}
           changeMessage={changeMessage}
           openScannerLink={openScannerLink}
+          editable={editable}
         />
       ))}
     </ApproveTransactionMessageBoxWrapper>

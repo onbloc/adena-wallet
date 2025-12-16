@@ -145,20 +145,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
     };
   }, [networkFee]);
 
-  const currentGasWanted = useMemo(() => {
-    return multisigDocument?.tx.fee?.gas_wanted || '0';
-  }, [multisigDocument?.tx.fee?.gas_wanted]);
-
   const processing = useMemo(() => processType !== 'INIT', [processType]);
   const done = useMemo(() => processType === 'DONE', [processType]);
 
-  const signatures = useMemo(() => {
-    return multisigDocument?.multisigSignatures || [];
-  }, [multisigDocument?.multisigSignatures]);
-
   const hasMemo = useMemo(() => {
-    return !!requestData?.data?.memo;
-  }, [requestData?.data?.memo]);
+    return !!requestData?.data?.tx?.memo;
+  }, [requestData?.data?.tx?.memo]);
 
   const consumedTokenAmount = useMemo(() => {
     const accumulatedAmount = multisigDocument?.tx?.msg.reduce((acc, msg) => {
@@ -295,10 +287,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
       }
     }
     return false;
-  };
-
-  const changeMemo = (memo: string): void => {
-    setMemo(memo);
   };
 
   const signMultisigTransaction = async (): Promise<boolean> => {
@@ -458,11 +446,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
-      multisigConfig={multisigConfig}
       transactionMessages={transactionMessages}
       argumentInfos={argumentInfos}
-      changeTransactionMessages={setTransactionMessages}
-      changeMemo={changeMemo}
       onClickConfirm={onClickConfirm}
       onClickCancel={onClickCancel}
       onResponse={onResponseSignTransaction}

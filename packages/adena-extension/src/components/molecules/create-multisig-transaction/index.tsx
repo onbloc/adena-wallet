@@ -200,6 +200,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         argumentInfos={argumentInfos}
         changeMessages={changeTransactionMessages}
         openScannerLink={openScannerLink}
+        editable={false}
       />
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
