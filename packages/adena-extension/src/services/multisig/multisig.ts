@@ -43,6 +43,9 @@ import {
   PublicKeyInfo,
   Document,
   documentToTx,
+  MultisigAccount,
+  SignerPublicKeyInfo,
+  convertMessageToAmino,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -250,122 +253,73 @@ export class MultisigService {
    * @returns Prepared transaction data ready for broadcasting
    */
   async prepareMultisigTransaction(
-    multisigAccount: Account,
+    multisigAccount: MultisigAccount,
     document: MultisigTransactionDocument,
   ): Promise<{ tx: Tx; txBytes: Uint8Array; txBase64: string }> {
     // 1. Validate inputs
-    console.log('\n1️⃣ Validating Inputs...');
     this.validateMultisigAccount(multisigAccount);
     this.validateMultisigTransactionDocument(document);
-    console.log('  ✅ Validation passed');
+
+    const { multisigConfig } = multisigAccount;
+    const { multisigSignatures } = document;
 
     // 2. Check threshold
-    const threshold = document.multisigConfig?.threshold || 1;
-    const signatureCount = document.multisigSignatures?.length || 0;
+    const signatureCount = multisigSignatures?.length || 0;
 
-    console.log(`\n2️⃣ Threshold Check:`);
-    console.log(`  Required: ${threshold}`);
-    console.log(`  Collected: ${signatureCount}`);
-
-    if (signatureCount < threshold) {
-      throw new Error(`Insufficient signatures: ${signatureCount}/${threshold} required`);
+    if (signatureCount < multisigConfig.threshold) {
+      throw new Error(
+        `Insufficient signatures: ${signatureCount}/${multisigConfig.threshold} required`,
+      );
     }
-    console.log('  ✅ Threshold satisfied');
 
-    // 3. Get signer public keys from chain
-    console.log(`\n3️⃣ Getting Signer Public Keys from Chain:`);
-    const signerPublicKeys: Uint8Array[] = [];
-
-    for (let i = 0; i < document.multisigConfig!.signers.length; i++) {
-      const address = document.multisigConfig!.signers[i];
-      console.log(`  [${i + 1}/${document.multisigConfig!.signers.length}] ${address}`);
-
-      const publicKeyInfo = await this.getPublicKeyFromChain(address);
-      if (!publicKeyInfo?.value) {
-        throw new Error(
-          `Public key not found for address: ${address}. ` +
-            `The account may not have sent any transactions yet.`,
-        );
-      }
-
-      console.log(publicKeyInfo.value, 'publicKeyInfo');
-      const publicKeyBytes = fromBase64(publicKeyInfo.value);
-
-      // Remove Amino prefix if present (0x0a 0x21 + 33 bytes = 35 bytes)
-      const hasAminoPrefix =
-        publicKeyBytes.length === 35 && publicKeyBytes[0] === 0x0a && publicKeyBytes[1] === 0x21;
-
-      const cleanPubKey = hasAminoPrefix ? publicKeyBytes.slice(2) : publicKeyBytes;
-
-      signerPublicKeys.push(cleanPubKey);
-
-      console.log(`      Length: ${cleanPubKey.length} bytes`);
-      console.log(`      Hex: ${Buffer.from(cleanPubKey).toString('hex').substring(0, 40)}...`);
-    }
-    console.log('  ✅ All signer public keys retrieved');
-    console.log(signerPublicKeys, 'signerPublicKeyssignerPublicKeys');
+    // 3. signer public keys to bytes
+    const signerPublicKeys: Uint8Array[] = multisigAccount.signerPublicKeys.map((signer) => {
+      return fromBase64(signer.publicKey.value);
+    });
 
     // 4. Create Multisignature and add collected signatures
-    console.log(`\n4️⃣ Combining Individual Signatures:`);
     const multisig = new Multisignature(signerPublicKeys.length);
+    const signatures = multisigSignatures ?? [];
 
-    for (let i = 0; i < document.multisigSignatures!.length; i++) {
-      const signature = document.multisigSignatures![i];
+    if (signatures.length === 0) {
+      throw new Error('No signatures provided');
+    }
 
+    signatures.forEach((signature, i) => {
       if (!signature.pub_key.value) {
         throw new Error(`Signature ${i + 1} missing public key value`);
       }
 
-      console.log(`  [${i + 1}/${document.multisigSignatures!.length}] Adding signature...`);
-
-      // Decode signature public key
       const sigPubKeyRaw = fromBase64(signature.pub_key.value);
       const sigHasAminoPrefix =
         sigPubKeyRaw.length === 35 && sigPubKeyRaw[0] === 0x0a && sigPubKeyRaw[1] === 0x21;
       const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
 
-      // Decode signature
       const sig = fromBase64(signature.signature);
 
-      // Add signature to multisig
       multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
-
-      console.log(`      PubKey: ${Buffer.from(sigPubKey).toString('hex').substring(0, 40)}...`);
-      console.log(`      Signature: ${signature.signature.substring(0, 40)}...`);
-    }
-    console.log('  ✅ All signatures combined');
+    });
 
     // 5. Check BitArray
-    console.log(`\n5️⃣ BitArray Status:`);
     const bitArrayAmino = multisig.bitArray.toAmino();
-    console.log(`  Extra bits: ${bitArrayAmino.extra_bits}`);
-    console.log(`  Bits hex: ${Buffer.from(bitArrayAmino.bits).toString('hex')}`);
-    console.log(`  Signatures count: ${multisig.sigs.length}`);
 
     // 6. Encode multisig public key (Protobuf format)
-    console.log(`\n6️⃣ Encoding Multisig Public Key:`);
-    const multisigPubKeyProtobuf = this.encodeMultisigPublicKey(threshold, signerPublicKeys);
-    console.log(`  Protobuf length: ${multisigPubKeyProtobuf.length} bytes`);
-    console.log(`  Protobuf hex: ${Buffer.from(multisigPubKeyProtobuf).toString('hex')}`);
+    const multisigPubKeyProtobuf = this.encodeMultisigPublicKey(
+      multisigConfig.threshold,
+      signerPublicKeys,
+    );
 
     // 7. Add Amino prefix (0x0a + varint length)
-    console.log(`\n7️⃣ Adding Amino Prefix:`);
     const multisigPubKeyWithAmino = new Uint8Array([
-      0x0a, // Amino field tag
+      0x0a,
       ...this.encodeVarint(multisigPubKeyProtobuf.length),
       ...multisigPubKeyProtobuf,
     ]);
-    console.log(`  With Amino length: ${multisigPubKeyWithAmino.length} bytes`);
-    console.log(`  With Amino hex: ${Buffer.from(multisigPubKeyWithAmino).toString('hex')}`);
 
     // 8. Marshal multisig signature (Protobuf format)
-    console.log(`\n8️⃣ Marshaling Combined Multisignature:`);
     const multisigSignature = multisig.marshal();
-    console.log(`  Signature length: ${multisigSignature.length} bytes`);
-    console.log(`  Signature hex: ${Buffer.from(multisigSignature).toString('hex')}`);
 
     // 9. Create Tx Messages
-    console.log(`\n9️⃣ Creating Transaction Messages:`);
     const messages: Any[] = [];
     for (let i = 0; i < document.tx.msg.length; i++) {
       const msg = document.tx.msg[i];
@@ -378,13 +332,9 @@ export class MultisigService {
           value: msgValue,
         }),
       );
-
-      console.log(`  [${i + 1}/${document.tx.msg.length}] ${msgType}`);
     }
-    console.log(`  ✅ ${messages.length} message(s) created`);
 
     // 10. Parse gas fee
-    console.log(`\n🔟 Parsing Gas Fee:`);
     const gasFeeMatch = document.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
     if (!gasFeeMatch) {
       throw new Error(`Invalid gas fee format: ${document.tx.fee.gas_fee}`);
@@ -393,11 +343,7 @@ export class MultisigService {
     const gasWanted = parseInt(document.tx.fee.gas_wanted, 10);
     const gasFee = `${gasFeeMatch[1]}${gasFeeMatch[2]}`;
 
-    console.log(`  Gas wanted: ${gasWanted}`);
-    console.log(`  Gas fee: ${gasFee}`);
-
     // 11. Create Tx
-    console.log(`\n1️⃣1️⃣ Creating Transaction:`);
     const tx: Tx = Tx.create({
       messages: messages,
       fee: TxFee.create({
@@ -426,7 +372,7 @@ export class MultisigService {
         {
           pub_key: {
             '@type': '/tm.PubKeyMultisig',
-            threshold: threshold.toString(),
+            threshold: multisigConfig.threshold.toString(),
             pubkeys: signerPublicKeys.map((pubKey) => ({
               '@type': '/tm.PubKeySecp256k1',
               value: uint8ArrayToBase64(pubKey),
@@ -436,18 +382,9 @@ export class MultisigService {
         },
       ],
       memo: document.tx.memo || '',
-      // account_number와 sequence는 실제로는 트랜잭션에 포함되지 않지만 참고용으로 추가
-      // account_number: "5092", // 실제 값이 있다면 추가
-      // sequence: "0"          // 실제 값이 있다면 추가
+      account_number: document.accountNumber,
+      sequence: document.sequence,
     };
-
-    function convertMessageToAmino(msg: any): { type: string; value: any } {
-      if (msg.type && msg.value) {
-        return msg;
-      }
-      const { '@type': type, ...value } = msg;
-      return { type, value };
-    }
 
     const aminoMessages = document.tx.msg.map(convertMessageToAmino);
 
@@ -455,7 +392,7 @@ export class MultisigService {
       {
         pub_key: {
           '@type': '/tm.PubKeyMultisig',
-          threshold: threshold.toString(),
+          threshold: multisigConfig.threshold.toString(),
           pubkeys: signerPublicKeys.map((pubKey) => ({
             '@type': '/tm.PubKeySecp256k1',
             value: uint8ArrayToBase64(pubKey),
@@ -483,40 +420,16 @@ export class MultisigService {
       signatures: aminoSignatures,
     };
     const aminoDocumentToTx = documentToTx(aminoDocument);
-
-    console.log(aminoDocumentToTx, 'aminoDocumentToTxaminoDocumentToTx');
-    console.log(aminoDocument, aminoDocumentToTx, 'aminoDocumentToTx');
-    console.log(JSON.stringify(aminoDocument, null, 2), 'aminoDocument');
-    console.log(documentToTx(aminoDocument), 'documentToTx');
     console.log(JSON.stringify(humanReadableTx, null, 2));
 
-    console.log(`  Messages: ${tx.messages.length}`);
-    console.log(`  Signatures: ${tx.signatures.length}`);
-    console.log(`  Memo: "${tx.memo}"`);
-    console.log('  ✅ Transaction created');
-
     // 12. Encode Transaction (Protobuf → bytes)
-    console.log(`\n1️⃣2️⃣ Encoding Transaction to Protobuf:`);
     const txBytes = Tx.encode(tx).finish();
-    console.log(`  Tx bytes length: ${txBytes.length}`);
-    console.log(
-      `  Tx bytes hex (first 200): ${Buffer.from(txBytes).toString('hex').substring(0, 200)}...`,
-    );
 
-    // 13. Verify decoding (local test)
-    console.log(`\n1️⃣3️⃣ Verifying Transaction Decoding:`);
     try {
       const decodedTx = Tx.decode(txBytes);
-      console.log('  ✅ Transaction can be decoded locally');
-      console.log(`  Messages: ${decodedTx.messages.length}`);
-      console.log(`  Signatures: ${decodedTx.signatures.length}`);
 
       if (decodedTx.signatures.length > 0) {
         const sig = decodedTx.signatures[0];
-        console.log(`  Signature details:`);
-        console.log(`    - PubKey type: ${sig.pub_key?.type_url}`);
-        console.log(`    - PubKey length: ${sig.pub_key?.value.length} bytes`);
-        console.log(`    - Signature length: ${sig.signature.length} bytes`);
       }
     } catch (error) {
       console.error('  ❌ Failed to decode transaction locally:', error);
@@ -524,29 +437,12 @@ export class MultisigService {
     }
 
     // 14. Convert to base64 (for RPC)
-    console.log(`\n1️⃣4️⃣ Converting to Base64:`);
     const txBase64 = uint8ArrayToBase64(txBytes);
-    console.log(`  Base64 length: ${txBase64.length} characters`);
-    console.log(`  Base64 (first 100): ${txBase64.substring(0, 100)}...`);
-
-    // 15. Summary
-    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log('✅ Multisig Transaction Prepared Successfully!');
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log(`📊 Summary:`);
-    console.log(`  - Threshold: ${threshold}`);
-    console.log(`  - Signatures collected: ${signatureCount}`);
-    console.log(`  - Messages: ${messages.length}`);
-    console.log(`  - Gas: ${gasWanted}`);
-    console.log(`  - Fee: ${gasFee}`);
-    console.log(`  - Tx size: ${txBytes.length} bytes`);
-    console.log(`  - Ready for broadcast via transactionService.sendTransaction()`);
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
     return {
-      tx: aminoDocumentToTx, // Complete Tx object for transactionService.sendTransaction()
-      txBytes, // Raw bytes
-      txBase64, // Base64 encoded (for direct RPC calls)
+      tx: aminoDocumentToTx,
+      txBytes,
+      txBase64,
     };
   }
 
@@ -840,18 +736,6 @@ export class MultisigService {
 
     if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
       throw new Error('At least one signature is required');
-    }
-
-    if (!document.multisigConfig) {
-      throw new Error('Multisig config is required');
-    }
-
-    if (!document.multisigConfig.threshold) {
-      throw new Error('Threshold is required');
-    }
-
-    if (!document.multisigConfig.signers || document.multisigConfig.signers.length === 0) {
-      throw new Error('Signers are required');
     }
   }
 

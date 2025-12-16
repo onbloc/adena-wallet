@@ -1,4 +1,10 @@
-import { Account, isAirgapAccount, isLedgerAccount, MultisigConfig, Document } from 'adena-module';
+import {
+  Account,
+  isAirgapAccount,
+  isLedgerAccount,
+  MultisigConfig,
+  isMultisigAccount,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -91,8 +97,10 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const { data: currentBalance = null } = useGetGnotBalance();
 
   const multisigConfig: MultisigConfig | null = useMemo(() => {
-    return multisigDocument?.multisigConfig || null;
-  }, [multisigDocument?.multisigConfig]);
+    if (!currentAccount) return null;
+
+    return isMultisigAccount(currentAccount) ? currentAccount.multisigConfig : null;
+  }, [currentAccount]);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!multisigDocument?.tx?.fee?.gas_fee) {

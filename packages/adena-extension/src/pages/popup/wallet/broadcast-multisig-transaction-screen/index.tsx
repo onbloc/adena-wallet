@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BroadcastTxCommitResult, defaultAddressPrefix, TM2Error } from '@gnolang/tm2-js-client';
-import { isAirgapAccount, isMultisigAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -208,9 +208,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return multisigDocument?.multisigSignatures || [];
   }, [multisigDocument?.multisigSignatures]);
 
-  const multisigConfig = useMemo(() => {
-    return multisigDocument?.multisigConfig || null;
-  }, [multisigDocument?.multisigConfig]);
+  const multisigConfig: MultisigConfig | null = useMemo(() => {
+    if (!currentAccount) return null;
+
+    return isMultisigAccount(currentAccount) ? currentAccount.multisigConfig : null;
+  }, [currentAccount]);
 
   const checkLockWallet = (): void => {
     walletService
@@ -288,7 +290,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     setMemo(memo);
   };
 
-  const broadcastTransaction = async (): Promise<boolean> => {
+  const broadcastMultisigTransaction = async (): Promise<boolean> => {
     if (isErrorNetworkFee) {
       return false;
     }
@@ -325,8 +327,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       let broadcastError: TM2Error | Error | null = null;
 
       try {
-        const walletInstance = wallet.clone();
-
         const prepared = await multisigService.prepareMultisigTransaction(
           currentAccount,
           multisigDocument!,
@@ -402,7 +402,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     if (isErrorNetworkFee) {
       return;
     }
-    broadcastTransaction().finally(() => {
+    broadcastMultisigTransaction().finally(() => {
       setProcessType('DONE');
     });
   };

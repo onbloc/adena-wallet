@@ -267,3 +267,11 @@ export function toBase64Multisig(bytes: Uint8Array): string {
   }
   return btoa(binaryString);
 }
+
+export function convertMessageToAmino(msg: any): { type: string; value: any } {
+  if (msg.type && msg.value) {
+    return msg;
+  }
+  const { '@type': type, ...value } = msg;
+  return { type, value };
+}
