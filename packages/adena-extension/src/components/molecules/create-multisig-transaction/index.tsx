@@ -15,15 +15,15 @@ import ApproveTransactionMessageBox from '../approve-transaction-message-box/app
 import DocumentSigner from '../document-signer/document-signer';
 import NetworkFee from '../network-fee/network-fee';
 import {
-  CreateMultisigDocumentSignerWrapper,
-  CreateMultisigDocumentWrapper,
-} from './create-multisig-document.styles';
+  CreateMultisigTransactionSignerWrapper,
+  CreateMultisigTransactionWrapper,
+} from './create-multisig-transaction.styles';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
 import { EncodeTxSignature } from '@services/index';
 
-export interface CreateMultisigDocumentProps {
+export interface CreateMultisigTransactionProps {
   loading: boolean;
   title: string;
   logo: string;
@@ -36,7 +36,6 @@ export interface CreateMultisigDocumentProps {
   signatures: EncodeTxSignature[];
   memo: string;
   hasMemo: boolean;
-  currentBalance?: number;
   isErrorNetworkFee?: boolean;
   isNetworkFeeLoading: boolean;
   networkFee: NetworkFeeType | null;
@@ -58,7 +57,7 @@ export interface CreateMultisigDocumentProps {
   onClickCancel: () => void;
 }
 
-export const CreateMultisigDocument: React.FC<CreateMultisigDocumentProps> = ({
+export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps> = ({
   loading,
   title,
   logo,
@@ -115,7 +114,7 @@ export const CreateMultisigDocument: React.FC<CreateMultisigDocumentProps> = ({
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signerAddresses.map((address) => ({
       address,
-      status: signedAddressSet.has(address) ? SignerStatusType.SIGNED : SignerStatusType.PENDING,
+      status: SignerStatusType.NONE,
     }));
   }, [signedAddressSet, signerAddresses]);
 
@@ -179,14 +178,14 @@ export const CreateMultisigDocument: React.FC<CreateMultisigDocumentProps> = ({
 
   if (openedSigners) {
     return (
-      <CreateMultisigDocumentSignerWrapper>
+      <CreateMultisigTransactionSignerWrapper>
         <DocumentSignerListScreen signerInfos={signerInfos} onClickBack={onClickSignersBack} />
-      </CreateMultisigDocumentSignerWrapper>
+      </CreateMultisigTransactionSignerWrapper>
     );
   }
 
   return (
-    <CreateMultisigDocumentWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <CreateMultisigTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>
@@ -287,6 +286,6 @@ export const CreateMultisigDocument: React.FC<CreateMultisigDocumentProps> = ({
           onClick: onClickConfirmButton,
         }}
       />
-    </CreateMultisigDocumentWrapper>
+    </CreateMultisigTransactionWrapper>
   );
 };

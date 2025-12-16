@@ -1,5 +1,4 @@
 import { Account, Document, isMultisigAccount, MultisigConfig } from 'adena-module';
-import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -10,20 +9,18 @@ import {
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { CreateMultisigDocument } from '@components/molecules/create-multisig-document';
+import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import {
@@ -96,8 +93,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const { openScannerLink } = useLink();
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
-  const { data: currentBalance = null } = useGetGnotBalance();
-
   const multisigConfig: MultisigConfig | null = useMemo(() => {
     if (!currentAccount || !isMultisigAccount(currentAccount)) return null;
 
@@ -165,25 +160,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     return true;
   }, [requestData?.data?.memo]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = txDocument?.tx?.msg.reduce((acc, msg) => {
-      const amountStr = msg?.amount || msg?.send || msg?.deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [txDocument]);
-
   const isNetworkFeeLoading = useMemo(() => {
     return rawNetworkFee === null;
   }, [rawNetworkFee]);
@@ -196,13 +172,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     if (!networkFee) {
       return true;
     }
-
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
-
-    return BigNumber(currentBalance || 0)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [isNetworkFeeLoading, networkFee, currentBalance, consumedTokenAmount]);
+  }, [isNetworkFeeLoading, networkFee]);
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -338,8 +308,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     setTransactionData(mappedTransactionData(updatedTxDocument));
   }, [txDocument, rawNetworkFee, memo, currentGasWanted]);
 
-  console.log(txDocument, 'txDocument');
-
   const createMultisigDocument = async (): Promise<boolean> => {
     if (!txDocument || !currentAccount) {
       setResponse(
@@ -461,8 +429,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   }, [memo, transactionMessages]);
 
   return (
-    <CreateMultisigDocument
-      title='Create New Multisig'
+    <CreateMultisigTransaction
+      title='Create New Transaction'
       domain={hostname}
       contracts={transactionData?.contracts || []}
       signatures={signatures}
@@ -472,7 +440,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}

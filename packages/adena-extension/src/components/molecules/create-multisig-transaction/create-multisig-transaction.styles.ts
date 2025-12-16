@@ -3,12 +3,12 @@ import styled from 'styled-components';
 import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 
-export const CreateMultisigDocumentSignerWrapper = styled.div`
+export const CreateMultisigTransactionSignerWrapper = styled.div`
   ${mixins.flex({ justify: 'flex-start' })};
   padding: 24px 20px;
 `;
 
-export const CreateMultisigDocumentWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
+export const CreateMultisigTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
   ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding: 0 20px;

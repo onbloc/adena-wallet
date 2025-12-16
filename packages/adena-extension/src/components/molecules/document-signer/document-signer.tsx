@@ -17,9 +17,7 @@ const DocumentSigner = ({ signerCount, signedCount, onClickSetting }: DocumentSi
         <span className='key'>{'Signer'}</span>
 
         <div className='document-signers-amount-wrapper'>
-          <span className='value'>
-            {signedCount} / {signerCount}
-          </span>
+          <span className='value'>{signerCount}</span>
           {hasSetting && (
             <button className='setting-button' onClick={onClickSetting}>
               <IconRight />
