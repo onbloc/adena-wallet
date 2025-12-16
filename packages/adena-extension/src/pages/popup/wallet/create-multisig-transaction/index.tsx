@@ -76,7 +76,7 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
   };
 }
 
-const CreateMultisigDocumentContainer: React.FC = () => {
+const CreateMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
@@ -493,4 +493,4 @@ const CreateMultisigDocumentContainer: React.FC = () => {
   );
 };
 
-export default CreateMultisigDocumentContainer;
+export default CreateMultisigTransactionContainer;

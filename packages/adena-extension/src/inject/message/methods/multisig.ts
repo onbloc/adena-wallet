@@ -4,28 +4,22 @@ import { RoutePath } from '@types';
 import { HandlerMethod } from '..';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 
-export const signAmino = async (
+export const createMultisigAccount = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-): Promise<void> => {
-  const validationMessage = validateInjectionData(requestData);
-  if (validationMessage) {
-    sendResponse(validationMessage);
-    return;
-  }
-
+) => {
   HandlerMethod.createPopup(
-    RoutePath.ApproveSign,
+    RoutePath.CreateMultisigAccount,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,
   );
 };
 
-export const signTransaction = async (
+export const createMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-): Promise<void> => {
+) => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
     sendResponse(validationMessage);
@@ -33,14 +27,14 @@ export const signTransaction = async (
   }
 
   HandlerMethod.createPopup(
-    RoutePath.ApproveSignTransaction,
+    RoutePath.CreateMultisigTransaction,
     requestData,
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,
   );
 };
 
-export const doContract = async (
+export const signMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
@@ -51,13 +45,27 @@ export const doContract = async (
   }
 
   HandlerMethod.createPopup(
-    RoutePath.ApproveTransaction,
+    RoutePath.SignMultisigDocument,
     requestData,
-    InjectionMessageInstance.failure(
-      WalletResponseRejectType.TRANSACTION_REJECTED,
-      {},
-      requestData.key,
-    ),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    sendResponse,
+  );
+};
+
+export const broadcastMultisigTransaction = async (
+  requestData: InjectionMessage,
+  sendResponse: (message: any) => void,
+): Promise<void> => {
+  const validationMessage = validateInjectionData(requestData);
+  if (validationMessage) {
+    sendResponse(validationMessage);
+    return;
+  }
+
+  HandlerMethod.createPopup(
+    RoutePath.BroadcastMultisigTransaction,
+    requestData,
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
     sendResponse,
   );
 };
