@@ -338,17 +338,6 @@ export class MultisigService {
   }
 
   /**
-   * Convert Uint8Array to Record<string, number> for storage
-   */
-  private uint8ArrayToRecord(array: Uint8Array): Record<string, number> {
-    const record: Record<string, number> = {};
-    for (let i = 0; i < array.length; i++) {
-      record[i.toString()] = array[i];
-    }
-    return record;
-  }
-
-  /**
    * Fetch public key information for all signers
    */
   private async fetchSignerInfos(signers: string[]): Promise<SignerInfo[]> {
@@ -391,6 +380,58 @@ export class MultisigService {
     });
   }
 
+  private addSignaturesToMultisig(
+    multisig: Multisignature,
+    signatures: any[],
+    signerPublicKeys: Uint8Array[],
+  ): void {
+    signatures.forEach((signature, i) => {
+      if (!signature.pub_key.value) {
+        throw new Error(`Signature ${i + 1} missing public key value`);
+      }
+
+      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
+      const sigHasAminoPrefix =
+        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
+        sigPubKeyRaw[0] === AMINO_PREFIX &&
+        sigPubKeyRaw[1] === AMINO_LENGTH;
+      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
+      const sig = fromBase64(signature.signature);
+
+      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
+    });
+  }
+
+  /**
+   * Convert Uint8Array to Record<string, number> for storage
+   */
+  private uint8ArrayToRecord(array: Uint8Array): Record<string, number> {
+    const record: Record<string, number> = {};
+    for (let i = 0; i < array.length; i++) {
+      record[i.toString()] = array[i];
+    }
+    return record;
+  }
+
+  /**
+   * Extract caller address from message
+   */
+  private extractCallerFromMessage = (msg: Message): string | null => {
+    const { type, value } = msg;
+
+    switch (type) {
+      case '/vm.m_call':
+      case '/vm.m_addpkg':
+        return value.caller || value.creator;
+
+      case '/bank.MsgSend':
+        return value.from_address;
+
+      default:
+        return value.caller || value.creator || value.from_address || null;
+    }
+  };
+
   /**
    * Convert SDK message format to gnokey format
    */
@@ -430,25 +471,6 @@ export class MultisigService {
           '@type': type,
           ...value,
         };
-    }
-  };
-
-  /**
-   * Extract caller address from message
-   */
-  private extractCallerFromMessage = (msg: Message): string | null => {
-    const { type, value } = msg;
-
-    switch (type) {
-      case '/vm.m_call':
-      case '/vm.m_addpkg':
-        return value.caller || value.creator;
-
-      case '/bank.MsgSend':
-        return value.from_address;
-
-      default:
-        return value.caller || value.creator || value.from_address || null;
     }
   };
 
@@ -500,28 +522,6 @@ export class MultisigService {
     if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
       throw new Error('At least one signature is required');
     }
-  }
-
-  private addSignaturesToMultisig(
-    multisig: Multisignature,
-    signatures: any[],
-    signerPublicKeys: Uint8Array[],
-  ): void {
-    signatures.forEach((signature, i) => {
-      if (!signature.pub_key.value) {
-        throw new Error(`Signature ${i + 1} missing public key value`);
-      }
-
-      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
-      const sigHasAminoPrefix =
-        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
-        sigPubKeyRaw[0] === AMINO_PREFIX &&
-        sigPubKeyRaw[1] === AMINO_LENGTH;
-      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
-      const sig = fromBase64(signature.signature);
-
-      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
-    });
   }
 
   private parseGasFee(gasFeeString: string): { amount: string; denom: string } {
