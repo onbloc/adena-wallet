@@ -439,6 +439,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       transactionMessages={transactionMessages}
       multisigConfig={multisigConfig}
       signatures={multisigSignatures}
+      currentAccount={currentAccount}
       openScannerLink={openScannerLink}
       onToggleTransactionData={onToggleTransactionData}
       onResponse={onResponseBroadcastTransaction}

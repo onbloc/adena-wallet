@@ -3,8 +3,12 @@ import { useTheme } from 'styled-components';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
 
-import { MultisigConfig } from 'adena-module';
+import {
+  ApproveTransactionWrapper,
+  ApproveTransactionNetworkFeeWrapper,
+} from '../approve-transaction/approve-transaction.styles';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
@@ -14,7 +18,9 @@ import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
-import { ApproveTransactionWrapper } from '../approve-transaction/approve-transaction.styles';
+import DocumentSigner from '../document-signer/document-signer';
+import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
+import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 
 export interface BroadcastMultisigTransactionProps {
   loading: boolean;
@@ -39,6 +45,7 @@ export interface BroadcastMultisigTransactionProps {
   transactionMessages: ContractMessage[];
   multisigConfig: MultisigConfig | null;
   signatures: any[];
+  currentAccount: Account | null;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   onToggleTransactionData: (opened: boolean) => void;
   onResponse: () => void;
@@ -65,6 +72,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   argumentInfos,
   multisigConfig,
   signatures,
+  currentAccount,
   onToggleTransactionData,
   onResponse,
   onClickConfirm,
@@ -72,6 +80,22 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   openScannerLink,
 }) => {
   const theme = useTheme();
+
+  const [openedSigners, setOpenedSigners] = React.useState(false);
+  const onClickSignersSetting = useCallback(() => {
+    setOpenedSigners(true);
+  }, []);
+  const onClickSignersBack = useCallback(() => {
+    setOpenedSigners(false);
+  }, []);
+
+  const signerPublicKeys = useMemo(() => {
+    if (!currentAccount) {
+      return null;
+    }
+
+    return isMultisigAccount(currentAccount) ? currentAccount.signerPublicKeys : null;
+  }, [currentAccount]);
 
   const disabledBroadcast = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -131,6 +155,14 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
     return <ApproveTransactionLoading rightButtonText='Broadcast' />;
   }
 
+  if (openedSigners) {
+    return (
+      <ApproveTransactionNetworkFeeWrapper>
+        <DocumentSignerListScreen signerInfos={[]} onClickBack={onClickSignersBack} />
+      </ApproveTransactionNetworkFeeWrapper>
+    );
+  }
+
   return (
     <ApproveTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
@@ -141,6 +173,14 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
         <img className='logo' src={logo || UnknownLogo} alt='logo img' />
         <span>{domain}</span>
       </div>
+
+      <div className='fee-amount-wrapper'>
+        <MultisigThreshold threshold={3} />
+      </div>
+
+      {/* <div className='fee-amount-wrapper'>
+        <DocumentSigner signedCount={3} signerCount={3} onClickSetting={onClickSignersSetting} />
+      </div> */}
 
       {/* Multisig Info */}
       {multisigConfig && (

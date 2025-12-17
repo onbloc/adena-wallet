@@ -195,6 +195,18 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         <span>{domain}</span>
       </div>
 
+      <div className='fee-amount-wrapper'>
+        <MultisigThreshold threshold={threshold} />
+      </div>
+
+      <div className='fee-amount-wrapper'>
+        <DocumentSigner
+          signedCount={signedCount}
+          signerCount={signerCount}
+          onClickSetting={onClickSignersSetting}
+        />
+      </div>
+
       <ApproveTransactionMessageBox
         messages={transactionMessages}
         argumentInfos={argumentInfos}
@@ -217,18 +229,6 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
             placeholder='(Optional)'
           />
         )}
-      </div>
-
-      <div className='fee-amount-wrapper'>
-        <DocumentSigner
-          signedCount={signedCount}
-          signerCount={signerCount}
-          onClickSetting={onClickSignersSetting}
-        />
-      </div>
-
-      <div className='fee-amount-wrapper'>
-        <MultisigThreshold threshold={threshold} />
       </div>
 
       <div className='fee-amount-wrapper'>
