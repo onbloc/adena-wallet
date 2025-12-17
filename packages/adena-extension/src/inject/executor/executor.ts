@@ -172,6 +172,7 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
   ): Promise<SignMultisigTransactionResponse> => {
+    // Todo
     // const result = this.validateMultisigSignedDocument(multisigDocument);
     // if (result) {
     //   return this.sendEventMessage(result);
@@ -189,6 +190,7 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
   ): Promise<BroadcastMultisigTransactionResponse> => {
+    // Todo
     // const result = this.validateBroadcastMultisigTransaction(params);
     // if (result) {
     //   return this.sendEventMessage(result);

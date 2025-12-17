@@ -1,8 +1,7 @@
+import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
+
 import { AdenaResponse } from './common';
 import { BaseDocument } from './transactions';
-import { MultisigConfig } from 'adena-module';
-import { EncodeTxSignature } from '@services/index';
-import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
 
 export interface Message {
   type: string;
@@ -167,7 +166,6 @@ export interface MultisigTransactionDocument {
   chainId: string;
   accountNumber: string;
   sequence: string;
-  multisigSignatures?: Signature[];
 }
 
 export interface SignedMultisigTransactionDocument {
