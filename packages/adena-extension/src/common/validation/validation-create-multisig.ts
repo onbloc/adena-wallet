@@ -55,3 +55,16 @@ export const validateMultisigThreshold = (threshold: any, signersCount: number):
 export const validateChainId = (chain_id: any): boolean => {
   return typeof chain_id === 'string' && chain_id.length > 0;
 };
+
+/**
+ * Validatres fee field
+ */
+export const validateFee = (fee: any): boolean => {
+  return (
+    fee &&
+    typeof fee.gas === 'string' &&
+    Array.isArray(fee.amount) &&
+    fee.gas.length > 0 &&
+    fee.amount.length > 0
+  );
+};

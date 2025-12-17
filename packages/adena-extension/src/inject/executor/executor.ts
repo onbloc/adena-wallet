@@ -37,13 +37,13 @@ import {
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import {
   validateSignatures,
-  validateSignedDocumentFee,
-  validateSignedDocumentFields,
-  validateSignedDocumentMessages,
+  validateTransactionDocumentFee,
+  validateTransactionDocumentMessages,
   validateMultisigSigners,
   validateMultisigSignerAddresses,
   validateMultisigThreshold,
   validateChainId,
+  validateFee,
 } from '@common/validation';
 
 type Params = { [key in string]: any };
@@ -155,7 +155,7 @@ export class AdenaExecutor {
   public createMultisigTransaction = (
     params: CreateMultisigTransactionParams,
   ): Promise<CreateMultisigTransactionResponse> => {
-    const result = this.validateCreateMultisigDocument(params);
+    const result = this.validateCreateMultisigTransaction(params);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -172,11 +172,10 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
   ): Promise<SignMultisigTransactionResponse> => {
-    // Todo
-    // const result = this.validateMultisigSignedDocument(multisigDocument);
-    // if (result) {
-    //   return this.sendEventMessage(result);
-    // }
+    const result = this.validateSignMultisigTransaction(multisigDocument);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
@@ -292,7 +291,7 @@ export class AdenaExecutor {
    * @param params - The CreateMultisigDocumentParams object to validate
    * @returns InjectionMessage on validation failure, undefined on success
    */
-  private validateCreateMultisigDocument = (
+  private validateCreateMultisigTransaction = (
     params: CreateMultisigTransactionParams,
   ): InjectionMessage | undefined => {
     if (!params) {
@@ -303,100 +302,62 @@ export class AdenaExecutor {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignedDocumentFee(params.fee)) {
+    if (!validateFee(params.fee)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateSignedDocumentMessages(params.msgs)) {
+    if (!validateTransactionDocumentMessages(params.msgs)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
     return this.validateMessages(params.msgs);
   };
 
-  /**
-   * Validates a multisig document (MultisigDocument).
-   * Verifies the document structure, signatures array, and multisig configuration.
-   * The document field contains the transaction data (msgs, fee, chain_id, etc.),
-   * signatures field contains the signature array, and multisigConfig contains
-   * the multisig account configuration (signers and threshold).
-   *
-   * @param multisigDocument - The multisig document object to validate
-   * @returns InjectionMessage on validation failure, undefined on success
-   */
-  // private validateMultisigSignedDocument = (
-  //   multisigDocument: MultisigDocument,
-  // ): InjectionMessage | undefined => {
-  //   if (!multisigDocument) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+  private validateSignMultisigTransaction = (
+    multisigDocument: MultisigTransactionDocument,
+  ): InjectionMessage | undefined => {
+    if (!multisigDocument) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '1',
+      });
+    }
 
-  //   if (!multisigDocument.document) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+    if (!multisigDocument.tx) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '2',
+      });
+    }
 
-  //   const { document, signatures, multisigConfig } = multisigDocument;
+    if (!validateChainId(multisigDocument.chainId)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '3',
+      });
+    }
 
-  //   if (!validateSignedDocumentFields(document)) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+    if (!multisigDocument.accountNumber || typeof multisigDocument.accountNumber !== 'string') {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '4',
+      });
+    }
 
-  //   if (!Array.isArray(signatures)) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+    if (!multisigDocument.sequence || typeof multisigDocument.sequence !== 'string') {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '5',
+      });
+    }
 
-  //   if (!validateSignatures(signatures)) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+    if (!validateTransactionDocumentFee(multisigDocument.tx.fee)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: '6',
+      });
+    }
 
-  //   if (!validateSignedDocumentFee(document.fee)) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
+    if (!validateTransactionDocumentMessages(multisigDocument.tx.msg)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    }
 
-  //   if (!validateSignedDocumentMessages(document.msgs)) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
-
-  //   // Todo: multisigConfig -> multisigAddress -> caller와 비교. (multisigConfig 변조 방지)
-  //   // if (!validateMultisigConfig(multisigConfig)) {
-  //   //   return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   // }
-
-  //   return this.validateMessages(document.msgs);
-  // };
-
-  /**
-   * Validates BroadcastMultisigTransactionParams.
-   * Verifies the multisig document and checks if enough signatures are collected.
-   *
-   * @param params - The BroadcastMultisigTransactionParams object to validate
-   * @returns InjectionMessage on validation failure, undefined on success
-   */
-  // private validateBroadcastMultisigTransaction = (
-  //   params: BroadcastMultisigTransactionParams,
-  // ): InjectionMessage | undefined => {
-  //   if (!params) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
-
-  //   if (!params.multisigDocument) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
-
-  //   const documentValidation = this.validateMultisigSignedDocument(params.multisigDocument);
-
-  //   if (documentValidation) {
-  //     return documentValidation;
-  //   }
-
-  //   const { signatures, multisigConfig } = params.multisigDocument;
-
-  //   if (signatures.length < multisigConfig.threshold) {
-  //     return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-  //   }
-
-  //   return undefined;
-  // };
+    return this.validateMessages(multisigDocument.tx.msg);
+  };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {
