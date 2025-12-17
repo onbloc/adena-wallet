@@ -28,6 +28,7 @@ import {
   GetAccountResponse,
   GetNetworkResponse,
   MultisigTransactionDocument,
+  Signature,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
@@ -169,6 +170,7 @@ export class AdenaExecutor {
 
   public signMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
+    multisigSignatures?: Signature[],
   ): Promise<SignMultisigTransactionResponse> => {
     // const result = this.validateMultisigSignedDocument(multisigDocument);
     // if (result) {
@@ -177,7 +179,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
-      multisigDocument,
+      { multisigDocument, multisigSignatures },
     );
 
     return this.sendEventMessage(eventMessage);

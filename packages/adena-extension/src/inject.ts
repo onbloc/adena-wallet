@@ -18,6 +18,7 @@ import {
   GetAccountResponse,
   GetNetworkResponse,
   MultisigTransactionDocument,
+  Signature,
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
@@ -81,9 +82,10 @@ const init = (): void => {
     },
     async SignMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
+      multisigSignatures?: Signature[],
     ): Promise<SignMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.signMultisigTransaction(multisigDocument);
+      const response = await executor.signMultisigTransaction(multisigDocument, multisigSignatures);
       return response;
     },
     async BroadcastMultisigTransaction(

@@ -1,14 +1,8 @@
-import {
-  Account,
-  isAirgapAccount,
-  isLedgerAccount,
-  MultisigConfig,
-  isMultisigAccount,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -35,6 +29,11 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
 import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
+
+interface SignMultisigTransactionRequestData {
+  multisigDocument: MultisigTransactionDocument;
+  multisigSignatures?: Signature[];
+}
 
 interface TransactionData {
   messages: readonly any[];
@@ -88,6 +87,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
+  const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
@@ -95,12 +95,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
   const { data: currentBalance = null } = useGetGnotBalance();
-
-  const multisigConfig: MultisigConfig | null = useMemo(() => {
-    if (!currentAccount) return null;
-
-    return isMultisigAccount(currentAccount) ? currentAccount.multisigConfig : null;
-  }, [currentAccount]);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!multisigDocument?.tx?.fee?.gas_fee) {
@@ -261,15 +255,17 @@ const SignMultisigTransactionContainer: React.FC = () => {
     }
 
     try {
-      const document = requestData.data as MultisigTransactionDocument;
+      const data = requestData.data as SignMultisigTransactionRequestData;
+      const { multisigDocument, multisigSignatures = [] } = data;
 
-      setMultisigDocument(document);
-      setTransactionData(mappedTransactionData(document));
+      setMultisigDocument(multisigDocument);
+      setMultisigSignatures(multisigSignatures);
+      setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
-      setMemo(document.tx.memo);
+      setMemo(multisigDocument.tx.memo);
 
       // Convert messages for display
-      const aminoMessages = document.tx.msg.map(convertMessageToAmino);
+      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
       setTransactionMessages(mappedTransactionMessages(aminoMessages));
 
       return true;
@@ -332,7 +328,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       const encodedSignature = await multisigService.createSignature(currentAccount, aminoDocument);
 
       // Convert to Multisig Signature format
-      const signature: Signature = {
+      const newSignature: Signature = {
         pub_key: {
           type: '/tm.PubKeySecp256k1',
           value: encodedSignature.pubKey.value || '',
@@ -340,19 +336,15 @@ const SignMultisigTransactionContainer: React.FC = () => {
         signature: encodedSignature.signature,
       };
 
-      // Add signature to document
-      const updatedDocument: MultisigTransactionDocument = {
-        ...multisigDocument,
-        multisigSignatures: [...(multisigDocument.multisigSignatures || []), signature],
-      };
+      const updatedSignatures = [...multisigSignatures, newSignature];
 
       setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
           {
-            signedDocument: updatedDocument,
-            addedSignature: signature,
+            result: { multisigDocument: multisigDocument, multisigSignatures: updatedSignatures },
+            signature: newSignature,
           },
           requestData?.key,
         ),

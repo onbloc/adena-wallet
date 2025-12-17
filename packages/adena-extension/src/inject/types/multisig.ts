@@ -104,8 +104,11 @@ export type CreateMultisigTransactionResponse =
  * Response data for signing a multisig document
  */
 export type SignMultisigTransactionResponseData = {
-  signedDocument: MultisigTransactionDocument;
-  addedSignature: EncodeTxSignature;
+  result: {
+    multisigDocument: MultisigTransactionDocument;
+    multisigSignatures: Signature[];
+  };
+  signature: Signature;
 };
 
 /**
