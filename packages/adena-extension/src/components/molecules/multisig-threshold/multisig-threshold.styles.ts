@@ -34,7 +34,15 @@ export const MultisigThresholdWrapper = styled.div`
     }
 
     .value {
-      ${fonts.body2Reg}
+      ${fonts.body2Reg};
+
+      &.status-insufficient {
+        color: ${getTheme('red', '_5')};
+      }
+
+      &.status-ready {
+        color: ${getTheme('green', '_5')};
+      }
     }
   }
 `;

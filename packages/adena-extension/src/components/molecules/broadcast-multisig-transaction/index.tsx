@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTheme } from 'styled-components';
+
+import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage, Signature } from '@inject/types';
+import { NetworkFee as NetworkFeeType } from '@types';
+import { filterValidSignatures } from '@common/utils/multisig-utils';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
 
 import {
   ApproveTransactionWrapper,
@@ -12,15 +16,12 @@ import {
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, Signature } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
-import MultisigThreshold from '../multisig-threshold/multisig-threshold';
-import { filterValidSignatures } from '@common/utils/multisig-utils';
+import MultisigBroadcastThreshold from '../multisig-threshold/multisig-broadcast-threshold';
+import DocumentBroadcastSigner from '../document-signer/document-broadcast-signer';
 
 export interface BroadcastMultisigTransactionProps {
   loading: boolean;
@@ -79,7 +80,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   onClickCancel,
   openScannerLink,
 }) => {
-  const theme = useTheme();
   const [openedSigners, setOpenedSigners] = React.useState(false);
 
   const signerPublicKeys: SignerPublicKeyInfo[] = useMemo(() => {
@@ -93,6 +93,15 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   const validSignatures: Signature[] = useMemo(() => {
     return filterValidSignatures(signatures, signerPublicKeys);
   }, [signatures, signerPublicKeys]);
+
+  const signedCount = useMemo(() => {
+    return validSignatures.length;
+  }, [validSignatures.length]);
+
+  const threshold = useMemo(() => {
+    if (!multisigConfig) return 0;
+    return multisigConfig.threshold ?? 0;
+  }, [multisigConfig]);
 
   const disabledBroadcast = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -118,21 +127,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
     return '';
   }, [isErrorNetworkFee, currentBalance]);
-
-  const signatureStatusMessage = useMemo(() => {
-    if (!multisigConfig) {
-      return '';
-    }
-
-    const collected = signatures.length;
-    const required = multisigConfig.threshold;
-
-    if (collected < required) {
-      return `Need ${required - collected} more signature(s)`;
-    }
-
-    return `Ready to broadcast (${collected}/${required})`;
-  }, [multisigConfig, signatures]);
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledBroadcast) {
@@ -179,35 +173,15 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
       </div>
 
       <div className='fee-amount-wrapper'>
-        <MultisigThreshold threshold={3} />
+        <MultisigBroadcastThreshold signedCount={signedCount} threshold={threshold} />
       </div>
 
-      {/* <div className='fee-amount-wrapper'>
-        <DocumentSigner signedCount={3} signerCount={3} onClickSetting={onClickSignersSetting} />
-      </div> */}
-
-      {/* Multisig Info */}
-      {multisigConfig && (
-        <div className='memo-wrapper row'>
-          <span className='key'>Multisig:</span>
-          <span className='value'>
-            {multisigConfig.threshold} of {multisigConfig.signers.length}
-          </span>
-        </div>
-      )}
-
-      {/* Signature Status */}
-      <div className='memo-wrapper row'>
-        <span className='key'>Signatures:</span>
-        <span
-          className='value'
-          style={{
-            color:
-              signatures.length >= (multisigConfig?.threshold || 0) ? theme.green._5 : theme.red._5,
-          }}
-        >
-          {signatureStatusMessage}
-        </span>
+      <div className='fee-amount-wrapper'>
+        <DocumentBroadcastSigner
+          signedCount={3}
+          signerCount={3}
+          onClickSetting={onClickSignersSetting}
+        />
       </div>
 
       <ApproveTransactionMessageBox
