@@ -28,7 +28,6 @@ export interface ApproveSignedDocumentProps {
   signatures: EncodeTxSignature[];
   memo: string;
   hasMemo: boolean;
-  currentBalance?: number;
   isErrorNetworkFee?: boolean;
   isNetworkFeeLoading: boolean;
   networkFee: NetworkFeeType | null;

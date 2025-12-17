@@ -184,6 +184,28 @@ export class MultisigService {
   };
 
   /**
+   * Sign a multisig transaction
+   * @param account - Current account (signer)
+   * @param multisigDocument - Transaction document to sign
+   * @returns New signature
+   */
+  public signMultisigTransaction = async (
+    account: Account,
+    multisigDocument: MultisigTransactionDocument,
+  ): Promise<Signature> => {
+    try {
+      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
+
+      const encodedSignature = await this.createSignature(account, aminoDocument);
+
+      return this.convertToMultisigSignature(encodedSignature);
+    } catch (error) {
+      console.error('Failed to sign multisig transaction:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Prepare multisig transaction without broadcasting
    * @param multisigAccount - The multisig account
    * @param document - MultisigTransactionDocument with collected signatures
@@ -200,7 +222,6 @@ export class MultisigService {
 
     const { multisigConfig } = multisigAccount;
 
-    console.log(multisigSignatures, 'multisigSignaturesmultisigSignatures');
     // 2. Check threshold
     const signatures = multisigSignatures ?? [];
     if (signatures.length === 0) {
@@ -487,6 +508,38 @@ export class MultisigService {
     const coin = fee.amount[0];
     return `${coin.amount}${coin.denom}`;
   };
+
+  /**
+   * Convert encoded signature to Multisig Signature format
+   */
+  private convertToMultisigSignature(encodedSignature: EncodeTxSignature): Signature {
+    return {
+      pub_key: {
+        type: '/tm.PubKeySecp256k1',
+        value: encodedSignature.pubKey.value || '',
+      },
+      signature: encodedSignature.signature,
+    };
+  }
+
+  private convertMultisigDocumentToAminoDocument(
+    multisigDocument: MultisigTransactionDocument,
+  ): Document {
+    const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
+    const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
+
+    return {
+      msgs: aminoMessages,
+      fee: {
+        amount: [{ amount, denom }],
+        gas: multisigDocument.tx.fee.gas_wanted,
+      },
+      chain_id: multisigDocument.chainId,
+      memo: multisigDocument.tx.memo,
+      account_number: multisigDocument.accountNumber,
+      sequence: multisigDocument.sequence,
+    };
+  }
 
   /**
    * Validate multisig account

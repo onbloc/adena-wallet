@@ -165,13 +165,15 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   }, [rawNetworkFee]);
 
   const isErrorNetworkFee = useMemo(() => {
+    if (!networkFee) {
+      return true;
+    }
+
     if (isNetworkFeeLoading) {
       return false;
     }
 
-    if (!networkFee) {
-      return true;
-    }
+    return false;
   }, [isNetworkFeeLoading, networkFee]);
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
@@ -308,7 +310,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     setTransactionData(mappedTransactionData(updatedTxDocument));
   }, [txDocument, rawNetworkFee, memo, currentGasWanted]);
 
-  const createMultisigDocument = async (): Promise<boolean> => {
+  const createMultisigTransaction = async (): Promise<boolean> => {
     if (!txDocument || !currentAccount) {
       setResponse(
         InjectionMessageInstance.failure(
@@ -391,7 +393,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       });
       return;
     }
-    createMultisigDocument().finally(() => setProcessType('DONE'));
+    createMultisigTransaction().finally(() => setProcessType('DONE'));
   };
 
   const onClickCancel = (): void => {

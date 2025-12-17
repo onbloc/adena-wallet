@@ -320,61 +320,18 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      // Health check timeout
-      const healthCheckTimeout = checkHealth(currentNetwork.rpcUrl, requestData?.key);
+      const combinedTx = await multisigService.combineMultisigSignatures(
+        currentAccount,
+        multisigDocument,
+        multisigSignatures,
+      );
 
-      let broadcastResult: BroadcastTxCommitResult | null = null;
-      let broadcastError: TM2Error | Error | null = null;
-
-      try {
-        const combinedTx = await multisigService.combineMultisigSignatures(
-          currentAccount,
-          multisigDocument,
-          multisigSignatures,
-        );
-
-        const broadcastResponse = await multisigService.broadcastTxCommit(combinedTx.tx);
-        broadcastResult = broadcastResponse;
-      } catch (error) {
-        broadcastError = error as TM2Error | Error;
-      }
-
-      clearTimeout(healthCheckTimeout);
-
-      if (broadcastError) {
-        setResponse(
-          InjectionMessageInstance.failure(
-            WalletResponseFailureType.TRANSACTION_FAILED,
-            {
-              error: { message: broadcastError.toString() },
-            },
-            requestData?.key,
-            requestData?.withNotification,
-          ),
-        );
-        return false;
-      }
-
-      if (!broadcastResult) {
-        setResponse(
-          InjectionMessageInstance.failure(
-            WalletResponseFailureType.TRANSACTION_FAILED,
-            {
-              error: { message: 'No broadcast result' },
-            },
-            requestData?.key,
-            requestData?.withNotification,
-          ),
-        );
-        return false;
-      }
+      const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
 
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
-          {
-            broadcastResult,
-          },
+          { broadcastResult },
           requestData?.key,
           requestData?.withNotification,
         ),
@@ -382,17 +339,24 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
       return true;
     } catch (e) {
-      console.error('Broadcast transaction error:', e);
-      setResponse(
-        InjectionMessageInstance.failure(
-          WalletResponseFailureType.TRANSACTION_FAILED,
-          { error: { message: e instanceof Error ? e.message : 'Unknown error' } },
-          requestData?.key,
-          requestData?.withNotification,
-        ),
-      );
+      handleBroadcastError(e);
       return false;
+    } finally {
+      setProcessType('DONE');
     }
+  };
+
+  const handleBroadcastError = (e: unknown): void => {
+    const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred';
+
+    setResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.TRANSACTION_FAILED,
+        { error: { message: errorMessage } },
+        requestData?.key,
+        requestData?.withNotification,
+      ),
+    );
   };
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {

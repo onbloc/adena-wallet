@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import BigNumber from 'bignumber.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
@@ -10,7 +9,6 @@ import {
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
@@ -23,7 +21,6 @@ import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
@@ -79,22 +76,22 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const { gnoProvider } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const [transactionData, setTransactionData] = useState<TransactionData>();
   const { currentNetwork } = useNetwork();
-  const [hostname, setHostname] = useState('');
   const location = useLocation();
+  const { openScannerLink } = useLink();
+
   const [requestData, setRequestData] = useState<InjectionMessage>();
-  const [favicon, setFavicon] = useState<any>(null);
-  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
+  const [transactionData, setTransactionData] = useState<TransactionData>();
   const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
   const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
+  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
+
+  const [hostname, setHostname] = useState('');
+  const [favicon, setFavicon] = useState<any>(null);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
-  const { openScannerLink } = useLink();
-  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
-
-  const { data: currentBalance = null } = useGetGnotBalance();
+  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!multisigDocument?.tx?.fee?.gas_fee) {
@@ -146,44 +143,21 @@ const SignMultisigTransactionContainer: React.FC = () => {
     return !!requestData?.data?.tx?.memo;
   }, [requestData?.data?.tx?.memo]);
 
-  const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = multisigDocument?.tx?.msg.reduce((acc, msg) => {
-      const amountStr = msg.send || msg.amount || msg.max_deposit;
-      if (!amountStr) {
-        return acc;
-      }
-
-      try {
-        const amount = parseTokenAmount(amountStr);
-        return BigNumber(acc).plus(amount).toNumber();
-      } catch {
-        return acc;
-      }
-    }, 0);
-
-    const consumedBN = BigNumber(accumulatedAmount || 0).shiftedBy(GasToken.decimals * -1);
-    return consumedBN.toNumber();
-  }, [multisigDocument]);
-
   const isNetworkFeeLoading = useMemo(() => {
     return rawNetworkFee === null;
   }, [rawNetworkFee]);
 
   const isErrorNetworkFee = useMemo(() => {
-    if (isNetworkFeeLoading) {
-      return false;
-    }
-
     if (!networkFee) {
       return true;
     }
 
-    const resultConsumedAmount = BigNumber(consumedTokenAmount).plus(networkFee.amount);
+    if (isNetworkFeeLoading) {
+      return false;
+    }
 
-    return BigNumber(currentBalance || 0)
-      .shiftedBy(GasToken.decimals * -1)
-      .isLessThan(resultConsumedAmount);
-  }, [isNetworkFeeLoading, networkFee, currentBalance, consumedTokenAmount]);
+    return false;
+  }, [isNetworkFeeLoading, networkFee]);
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -298,47 +272,15 @@ const SignMultisigTransactionContainer: React.FC = () => {
     }
 
     try {
-      // Convert to Amino Document format for signing
-      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
+      setProcessType('PROCESSING');
 
-      // Parse gas fee "6113ugnot" -> { amount: "6113", denom: "ugnot" }
-      const gasFeeMatch = multisigDocument.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
-      if (!gasFeeMatch) {
-        throw new Error('Invalid gas fee format');
-      }
-
-      const aminoDocument = {
-        msgs: aminoMessages,
-        fee: {
-          amount: [
-            {
-              amount: gasFeeMatch[1],
-              denom: gasFeeMatch[2],
-            },
-          ],
-          gas: multisigDocument.tx.fee.gas_wanted,
-        },
-        chain_id: multisigDocument.chainId,
-        memo: multisigDocument.tx.memo,
-        account_number: multisigDocument.accountNumber,
-        sequence: multisigDocument.sequence,
-      };
-
-      // Sign using TransactionService
-      const encodedSignature = await multisigService.createSignature(currentAccount, aminoDocument);
-
-      // Convert to Multisig Signature format
-      const newSignature: Signature = {
-        pub_key: {
-          type: '/tm.PubKeySecp256k1',
-          value: encodedSignature.pubKey.value || '',
-        },
-        signature: encodedSignature.signature,
-      };
+      const newSignature = await multisigService.signMultisigTransaction(
+        currentAccount,
+        multisigDocument,
+      );
 
       const updatedSignatures = [...multisigSignatures, newSignature];
 
-      setProcessType('PROCESSING');
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
@@ -352,29 +294,38 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       return true;
     } catch (e) {
-      console.log(e, 'e');
-      if (e instanceof Error) {
-        const message = e.message;
-        if (message.includes('Ledger')) {
-          return false;
-        }
-        setResponse(
-          InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
-            { error: { message } },
-            requestData?.key,
-          ),
-        );
+      handleSignError(e);
+      return false;
+    } finally {
+      setProcessType('DONE');
+    }
+  };
+
+  const handleSignError = (e: unknown): void => {
+    if (e instanceof Error) {
+      const message = e.message;
+
+      if (message.includes('Ledger')) {
+        return;
       }
+
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
-          {},
+          { error: { message } },
           requestData?.key,
         ),
       );
+      return;
     }
-    return false;
+
+    setResponse(
+      InjectionMessageInstance.failure(
+        WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
+        { error: { message: 'Unknown error occurred' } },
+        requestData?.key,
+      ),
+    );
   };
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
@@ -434,7 +385,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
       processing={processing}
       done={done}
       logo={favicon}
-      currentBalance={currentBalance || 0}
       isErrorNetworkFee={isErrorNetworkFee}
       isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
