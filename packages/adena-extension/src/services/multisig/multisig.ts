@@ -137,7 +137,7 @@ export class MultisigService {
       );
 
       const unsignedTx: UnsignedTransaction = {
-        msg: msgs.map((msg) => this.convertMessageToGnokeyFormat(msg)),
+        msgs: msgs,
         fee: {
           gas_wanted: fee.gas,
           gas_fee: this.convertFeeToString(fee),
@@ -248,7 +248,7 @@ export class MultisigService {
 
     // 6. Build Amino document
     const aminoDocument: Document = {
-      msgs: multisigDocument.tx.msg.map(convertMessageToAmino),
+      msgs: multisigDocument.tx.msgs.map(convertMessageToAmino),
       fee: {
         amount: [{ amount, denom }],
         gas: multisigDocument.tx.fee.gas_wanted,
@@ -525,7 +525,7 @@ export class MultisigService {
   private convertMultisigDocumentToAminoDocument(
     multisigDocument: MultisigTransactionDocument,
   ): Document {
-    const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
+    const aminoMessages = multisigDocument.tx.msgs.map(convertMessageToAmino);
     const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
 
     return {
@@ -570,7 +570,7 @@ export class MultisigService {
       throw new Error('Transaction is required');
     }
 
-    if (!document.tx.msg || document.tx.msg.length === 0) {
+    if (!document.tx.msgs || document.tx.msgs.length === 0) {
       throw new Error('At least one message is required');
     }
 

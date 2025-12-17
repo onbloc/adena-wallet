@@ -37,39 +37,24 @@ interface TransactionData {
   gasWanted: string;
   gasFee: string;
   memo: string;
-  document: Document;
+  document: MultisigTransactionDocument;
 }
 
 function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
   const { tx } = txDocument;
   return {
-    messages: tx.msg,
-    contracts: tx.msg.map((message) => {
+    messages: tx.msgs,
+    contracts: tx.msgs.map((message) => {
       return {
-        type: message?.['@type'] || '',
-        function: message?.['@type'] === '/bank.MsgSend' ? 'Transfer' : message?.func || '',
-        value: message || {},
+        type: message?.type || '',
+        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
+        value: message?.value || '',
       };
     }),
     gasWanted: tx.fee.gas_wanted,
     gasFee: tx.fee.gas_fee,
     memo: tx.memo || '',
-    document: {
-      msgs: tx.msg.map((msg) => ({
-        type: msg['@type'],
-        value: msg,
-      })),
-      fee: {
-        gas: tx.fee.gas_wanted,
-        amount: [
-          {
-            amount: tx.fee.gas_fee.replace(/[^0-9]/g, ''),
-            denom: tx.fee.gas_fee.replace(/[0-9]/g, ''),
-          },
-        ],
-      },
-      memo: tx.memo,
-    } as Document,
+    document: txDocument,
   };
 }
 
@@ -251,20 +236,15 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     }
 
     try {
-      const txDocument = await multisigService.createMultisigTransaction(
+      const data = await multisigService.createMultisigTransaction(
         requestData.data as CreateMultisigTransactionParams,
       );
 
-      setTxDocument(txDocument);
-      setTransactionData(mappedTransactionData(txDocument));
+      setTxDocument(data);
+      setTransactionData(mappedTransactionData(data));
       setHostname(requestData?.hostname ?? '');
-      setMemo(txDocument.tx.memo);
-
-      const messages = txDocument.tx.msg.map((msg) => ({
-        type: msg['@type'],
-        value: msg,
-      }));
-      setTransactionMessages(mappedTransactionMessages(messages));
+      setMemo(data.tx.memo);
+      setTransactionMessages(mappedTransactionMessages(data.tx.msgs));
 
       return true;
     } catch (e) {
@@ -387,7 +367,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     if (!isMultisigAccount(currentAccount)) {
       navigate(RoutePath.ApproveSignLoading, {
         state: {
-          document: transactionData?.document,
           requestData,
         },
       });

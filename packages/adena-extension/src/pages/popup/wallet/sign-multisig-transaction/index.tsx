@@ -41,32 +41,22 @@ interface TransactionData {
 }
 
 /**
- * Convert Protobuf message (@type) to Amino message (type/value)
- */
-function convertMessageToAmino(msg: any): { type: string; value: any } {
-  if (msg.type && msg.value) {
-    return msg;
-  }
-  const { '@type': type, ...value } = msg;
-  return { type, value };
-}
-
-/**
  * Map MultisigTransactionDocument to TransactionData for UI
  */
-function mappedTransactionData(doc: MultisigTransactionDocument): TransactionData {
-  const messages = doc.tx.msg.map(convertMessageToAmino);
-
+function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
+  const { tx } = txDocument;
   return {
-    messages,
-    contracts: messages.map((message) => ({
-      type: message?.type || '',
-      function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-      value: message?.value || '',
-    })),
-    gasWanted: doc.tx.fee.gas_wanted,
-    gasFee: doc.tx.fee.gas_fee,
-    memo: doc.tx.memo || '',
+    messages: tx.msgs,
+    contracts: tx.msgs.map((message) => {
+      return {
+        type: message?.type || '',
+        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
+        value: message?.value || '',
+      };
+    }),
+    gasWanted: tx.fee.gas_wanted,
+    gasFee: tx.fee.gas_fee,
+    memo: tx.memo || '',
   };
 }
 
@@ -237,10 +227,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
       setMemo(multisigDocument.tx.memo);
-
-      // Convert messages for display
-      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
-      setTransactionMessages(mappedTransactionMessages(aminoMessages));
+      setTransactionMessages(mappedTransactionMessages(data.multisigDocument.tx.msgs));
 
       return true;
     } catch (e) {

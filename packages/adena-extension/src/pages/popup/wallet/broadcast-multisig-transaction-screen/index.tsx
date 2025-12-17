@@ -74,19 +74,21 @@ function convertMessageToAmino(msg: any): { type: string; value: any } {
 /**
  * Map MultisigTransactionDocument to TransactionData for UI
  */
-function mappedTransactionData(doc: MultisigTransactionDocument): TransactionData {
-  const messages = doc.tx.msg.map(convertMessageToAmino);
+function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
+  const { tx } = txDocument;
 
   return {
-    messages,
-    contracts: messages.map((message) => ({
-      type: message?.type || '',
-      function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-      value: message?.value || '',
-    })),
-    gasWanted: doc.tx.fee.gas_wanted,
-    gasFee: doc.tx.fee.gas_fee,
-    memo: doc.tx.memo || '',
+    messages: tx.msgs,
+    contracts: tx.msgs.map((message) => {
+      return {
+        type: message?.type || '',
+        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
+        value: message?.value || '',
+      };
+    }),
+    gasWanted: tx.fee.gas_wanted,
+    gasFee: tx.fee.gas_fee,
+    memo: tx.memo || '',
   };
 }
 
@@ -172,8 +174,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [multisigDocument]);
 
   const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = multisigDocument?.tx?.msg.reduce((acc, msg) => {
-      const amountStr = msg.send || msg.amount || msg.max_deposit;
+    const accumulatedAmount = multisigDocument?.tx?.msgs.reduce((acc, msg) => {
+      const amountStr = msg.value?.send || msg.value?.amount || msg.value?.max_deposit;
       if (!amountStr) {
         return acc;
       }
@@ -268,10 +270,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
       setMemo(multisigDocument.tx.memo);
-
-      // Convert messages for display
-      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
-      setTransactionMessages(mappedTransactionMessages(aminoMessages));
+      setTransactionMessages(mappedTransactionMessages(data.multisigDocument.tx.msgs));
 
       return true;
     } catch (e) {

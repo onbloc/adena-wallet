@@ -134,9 +134,11 @@ export type BroadcastMultisigTransactionResponse =
   AdenaResponse<BroadcastMultisigTransactionResponseData>;
 
 export interface UnsignedTransaction {
-  msg: Array<{
-    '@type': string;
-    [key: string]: any;
+  msgs: Array<{
+    type: string;
+    value: {
+      [key: string]: any;
+    };
   }>;
   fee: {
     gas_wanted: string;

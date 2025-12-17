@@ -172,7 +172,7 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
   ): Promise<SignMultisigTransactionResponse> => {
-    const result = this.validateSignMultisigTransaction(multisigDocument);
+    const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
       return this.sendEventMessage(result);
     }
@@ -189,11 +189,10 @@ export class AdenaExecutor {
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
   ): Promise<BroadcastMultisigTransactionResponse> => {
-    // Todo
-    // const result = this.validateBroadcastMultisigTransaction(params);
-    // if (result) {
-    //   return this.sendEventMessage(result);
-    // }
+    const result = this.validateMultisigTransaction(multisigDocument);
+    if (result) {
+      return this.sendEventMessage(result);
+    }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'BROADCAST_MULTISIG_TRANSACTION' as WalletResponseType,
@@ -313,50 +312,60 @@ export class AdenaExecutor {
     return this.validateMessages(params.msgs);
   };
 
-  private validateSignMultisigTransaction = (
+  /**
+   * Validates SignMultisigTransactionDocument.
+   * Verifies multisig document structure, transaction data,
+   * chainId, accountNumber, sequence, fee structure, and msgs array.
+   *
+   * @param multisigDocument - The MultisigTransactionDocument object to validate
+   * @returns InjectionMessage on validation failure, undefined on success
+   */
+  private validateMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
   ): InjectionMessage | undefined => {
     if (!multisigDocument) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '1',
+        message: 'Multisig document is missing.',
       });
     }
 
     if (!multisigDocument.tx) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '2',
+        message: 'Transaction (tx) is missing in multisig document.',
       });
     }
 
     if (!validateChainId(multisigDocument.chainId)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '3',
+        message: 'Invalid or unsupported chainId.',
       });
     }
 
     if (!multisigDocument.accountNumber || typeof multisigDocument.accountNumber !== 'string') {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '4',
+        message: 'accountNumber is missing or not a string.',
       });
     }
 
     if (!multisigDocument.sequence || typeof multisigDocument.sequence !== 'string') {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '5',
+        message: 'sequence is missing or not a string.',
       });
     }
 
     if (!validateTransactionDocumentFee(multisigDocument.tx.fee)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: '6',
+        message: 'Invalid transaction fee format.',
       });
     }
 
-    if (!validateTransactionDocumentMessages(multisigDocument.tx.msg)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
+    if (!validateTransactionDocumentMessages(multisigDocument.tx.msgs)) {
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
+        message: 'Invalid or missing transaction messages (msgs).',
+      });
     }
 
-    return this.validateMessages(multisigDocument.tx.msg);
+    return this.validateMessages(multisigDocument.tx.msgs);
   };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
