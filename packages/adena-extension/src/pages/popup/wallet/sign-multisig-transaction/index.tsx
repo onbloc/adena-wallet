@@ -75,12 +75,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
   const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
+  const [memo, setMemo] = useState('');
 
   const [hostname, setHostname] = useState('');
   const [favicon, setFavicon] = useState<any>(null);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
-  const [memo, setMemo] = useState('');
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {

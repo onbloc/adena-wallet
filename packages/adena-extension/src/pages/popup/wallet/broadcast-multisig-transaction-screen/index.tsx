@@ -61,17 +61,6 @@ function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainf
 }
 
 /**
- * Convert Protobuf message (@type) to Amino message (type/value)
- */
-function convertMessageToAmino(msg: any): { type: string; value: any } {
-  if (msg.type && msg.value) {
-    return msg;
-  }
-  const { '@type': type, ...value } = msg;
-  return { type, value };
-}
-
-/**
  * Map MultisigTransactionDocument to TransactionData for UI
  */
 function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
@@ -109,21 +98,23 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { wallet, gnoProvider, changeNetwork } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
-  const [transactionData, setTransactionData] = useState<TransactionData>();
-  const [hostname, setHostname] = useState('');
   const location = useLocation();
+  const { currentNetwork: currentWalletNetwork } = useNetwork();
+  const { openScannerLink } = useLink();
+
   const [requestData, setRequestData] = useState<InjectionMessage>();
-  const [favicon, setFavicon] = useState<any>(null);
-  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
+  const [transactionData, setTransactionData] = useState<TransactionData>();
   const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
   const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
-  const { currentNetwork: currentWalletNetwork } = useNetwork();
+  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [memo, setMemo] = useState('');
+
+  const [hostname, setHostname] = useState('');
+  const [favicon, setFavicon] = useState<any>(null);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
-  const [memo, setMemo] = useState('');
-  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
-  const { openScannerLink } = useLink();
+  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
 
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;

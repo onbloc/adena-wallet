@@ -3,7 +3,7 @@ import { useTheme } from 'styled-components';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
+import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
 
 import {
   ApproveTransactionWrapper,
@@ -13,14 +13,14 @@ import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
+import { ContractMessage, Signature } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
 import { ApproveTransactionLoading } from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
-import DocumentSigner from '../document-signer/document-signer';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
+import { filterValidSignatures } from '@common/utils/multisig-utils';
 
 export interface BroadcastMultisigTransactionProps {
   loading: boolean;
@@ -44,7 +44,7 @@ export interface BroadcastMultisigTransactionProps {
   done: boolean;
   transactionMessages: ContractMessage[];
   multisigConfig: MultisigConfig | null;
-  signatures: any[];
+  signatures: Signature[];
   currentAccount: Account | null;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   onToggleTransactionData: (opened: boolean) => void;
@@ -80,22 +80,19 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   openScannerLink,
 }) => {
   const theme = useTheme();
-
   const [openedSigners, setOpenedSigners] = React.useState(false);
-  const onClickSignersSetting = useCallback(() => {
-    setOpenedSigners(true);
-  }, []);
-  const onClickSignersBack = useCallback(() => {
-    setOpenedSigners(false);
-  }, []);
 
-  const signerPublicKeys = useMemo(() => {
+  const signerPublicKeys: SignerPublicKeyInfo[] = useMemo(() => {
     if (!currentAccount) {
-      return null;
+      return [];
     }
 
-    return isMultisigAccount(currentAccount) ? currentAccount.signerPublicKeys : null;
+    return isMultisigAccount(currentAccount) ? currentAccount.signerPublicKeys : [];
   }, [currentAccount]);
+
+  const validSignatures: Signature[] = useMemo(() => {
+    return filterValidSignatures(signatures, signerPublicKeys);
+  }, [signatures, signerPublicKeys]);
 
   const disabledBroadcast = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -144,6 +141,13 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
     onClickConfirm();
   }, [onClickConfirm, disabledBroadcast]);
+
+  const onClickSignersSetting = useCallback(() => {
+    setOpenedSigners(true);
+  }, []);
+  const onClickSignersBack = useCallback(() => {
+    setOpenedSigners(false);
+  }, []);
 
   useEffect(() => {
     if (done) {
