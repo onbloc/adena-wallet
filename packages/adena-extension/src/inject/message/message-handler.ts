@@ -173,7 +173,6 @@ export class MessageHandler {
         });
         break;
       case 'BROADCAST_MULTISIG_TRANSACTION':
-        console.log('hi1');
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {

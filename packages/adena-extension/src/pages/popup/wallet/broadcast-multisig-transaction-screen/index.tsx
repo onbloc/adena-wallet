@@ -26,9 +26,14 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigTransactionDocument } from '@inject/types';
+import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
+
+interface BroadcastMultisigTransactionRequestData {
+  multisigDocument: MultisigTransactionDocument;
+  multisigSignatures?: Signature[];
+}
 
 interface TransactionData {
   messages: readonly any[];
@@ -109,6 +114,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
   const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
+  const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
   const { currentNetwork: currentWalletNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
@@ -204,10 +210,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return requestData?.data?.arguments || [];
   }, [requestData?.data?.arguments]);
 
-  const signatures = useMemo(() => {
-    return multisigDocument?.multisigSignatures || [];
-  }, [multisigDocument?.multisigSignatures]);
-
   const multisigConfig: MultisigConfig | null = useMemo(() => {
     if (!currentAccount) return null;
 
@@ -254,19 +256,21 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     }
     try {
       // Receive MultisigTransactionDocument (new format)
-      const document = requestData?.data as MultisigTransactionDocument;
+      const data = requestData?.data as BroadcastMultisigTransactionRequestData;
+      const { multisigDocument, multisigSignatures = [] } = data;
 
-      if (!document || !document.tx) {
+      if (!data || !multisigDocument.tx) {
         throw new Error('Multisig transaction document not found');
       }
 
-      setMultisigDocument(document);
-      setTransactionData(mappedTransactionData(document));
+      setMultisigDocument(multisigDocument);
+      setMultisigSignatures(multisigSignatures);
+      setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
-      setMemo(document.tx.memo);
+      setMemo(multisigDocument.tx.memo);
 
       // Convert messages for display
-      const aminoMessages = document.tx.msg.map(convertMessageToAmino);
+      const aminoMessages = multisigDocument.tx.msg.map(convertMessageToAmino);
       setTransactionMessages(mappedTransactionMessages(aminoMessages));
 
       return true;
@@ -326,6 +330,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         const combinedTx = await multisigService.combineMultisigSignatures(
           currentAccount,
           multisigDocument,
+          multisigSignatures,
         );
 
         const broadcastResponse = await multisigService.broadcastTxCommit(combinedTx.tx);
@@ -470,7 +475,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       done={done}
       transactionMessages={transactionMessages}
       multisigConfig={multisigConfig}
-      signatures={signatures}
+      signatures={multisigSignatures}
       openScannerLink={openScannerLink}
       onToggleTransactionData={onToggleTransactionData}
       onResponse={onResponseBroadcastTransaction}

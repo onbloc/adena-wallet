@@ -186,7 +186,8 @@ export class AdenaExecutor {
   };
 
   public broadcastMultisigTransaction = (
-    params: BroadcastMultisigTransactionParams,
+    multisigDocument: MultisigTransactionDocument,
+    multisigSignatures?: Signature[],
   ): Promise<BroadcastMultisigTransactionResponse> => {
     // const result = this.validateBroadcastMultisigTransaction(params);
     // if (result) {
@@ -195,7 +196,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       'BROADCAST_MULTISIG_TRANSACTION' as WalletResponseType,
-      params,
+      { multisigDocument, multisigSignatures },
     );
 
     return this.sendEventMessage(eventMessage);

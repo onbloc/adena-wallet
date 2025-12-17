@@ -89,10 +89,14 @@ const init = (): void => {
       return response;
     },
     async BroadcastMultisigTransaction(
-      params: BroadcastMultisigTransactionParams,
+      multisigDocument: MultisigTransactionDocument,
+      multisigSignatures?: Signature[],
     ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.broadcastMultisigTransaction(params);
+      const response = await executor.broadcastMultisigTransaction(
+        multisigDocument,
+        multisigSignatures,
+      );
       return response;
     },
     async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {

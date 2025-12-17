@@ -16,6 +16,7 @@ import {
   Message,
   Fee,
   UnsignedTransaction,
+  Signature,
 } from '@inject/types';
 
 import {
@@ -190,15 +191,16 @@ export class MultisigService {
    */
   async combineMultisigSignatures(
     multisigAccount: MultisigAccount,
-    document: MultisigTransactionDocument,
+    multisigDocument: MultisigTransactionDocument,
+    multisigSignatures: Signature[],
   ): Promise<{ tx: Tx; txBytes: Uint8Array; txBase64: string }> {
     // 1. Validate inputs
     this.validateMultisigAccount(multisigAccount);
-    this.validateMultisigTransactionDocument(document);
+    this.validateMultisigTransactionDocument(multisigDocument);
 
     const { multisigConfig } = multisigAccount;
-    const { multisigSignatures } = document;
 
+    console.log(multisigSignatures, 'multisigSignaturesmultisigSignatures');
     // 2. Check threshold
     const signatures = multisigSignatures ?? [];
     if (signatures.length === 0) {
@@ -221,19 +223,19 @@ export class MultisigService {
     const multisigSignature = multisig.marshal();
 
     // 5. Parse gas fee
-    const { amount, denom } = this.parseGasFee(document.tx.fee.gas_fee);
+    const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
 
     // 6. Build Amino document
     const aminoDocument: Document = {
-      msgs: document.tx.msg.map(convertMessageToAmino),
+      msgs: multisigDocument.tx.msg.map(convertMessageToAmino),
       fee: {
         amount: [{ amount, denom }],
-        gas: document.tx.fee.gas_wanted,
+        gas: multisigDocument.tx.fee.gas_wanted,
       },
-      chain_id: document.chainId,
-      memo: document.tx.memo,
-      account_number: document.accountNumber,
-      sequence: document.sequence,
+      chain_id: multisigDocument.chainId,
+      memo: multisigDocument.tx.memo,
+      account_number: multisigDocument.accountNumber,
+      sequence: multisigDocument.sequence,
       signatures: [
         {
           pub_key: {
@@ -519,9 +521,9 @@ export class MultisigService {
       throw new Error('At least one message is required');
     }
 
-    if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
-      throw new Error('At least one signature is required');
-    }
+    // if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
+    //   throw new Error('At least one signature is required');
+    // }
   }
 
   private parseGasFee(gasFeeString: string): { amount: string; denom: string } {
