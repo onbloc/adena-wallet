@@ -27,11 +27,11 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         showLabel: true,
         showBadge: true,
       };
-    case 'PENDING':
+    case 'UNSIGNED':
       return {
         color: theme.neutral.a,
-        className: 'pending',
-        statusText: 'Pending',
+        className: 'unsigned',
+        statusText: 'Unsigned',
         showLabel: true,
         showBadge: false,
       };
@@ -39,7 +39,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
     default:
       return {
         color: 'transparent',
-        className: 'pending',
+        className: 'unsigned',
         statusText: '',
         showLabel: false,
         showBadge: false,

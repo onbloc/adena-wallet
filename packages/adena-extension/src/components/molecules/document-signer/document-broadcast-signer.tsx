@@ -21,7 +21,9 @@ const DocumentBroadcastSigner = ({
         <span className='key'>{'Signer'}</span>
 
         <div className='document-signers-amount-wrapper'>
-          <span className='value'>{signerCount}</span>
+          <span className='value'>
+            {signedCount} of {signerCount}
+          </span>
           {hasSetting && (
             <button className='setting-button' onClick={onClickSetting}>
               <IconRight />

@@ -110,7 +110,7 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
       color: ${getTheme('green', '_5')};
     }
 
-    &.pending .value {
+    &.unsigned .value {
       color: ${getTheme('neutral', 'a')};
     }
   }

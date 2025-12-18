@@ -1,5 +1,5 @@
 import { SignerPublicKeyInfo } from 'adena-module';
-import { Signature } from '@inject/types';
+import { Signature, SignerInfo, SignerStatusType } from '@inject/types';
 
 /**
  * Filter valid signatures based on multisig account's signer public keys
@@ -15,10 +15,47 @@ export const filterValidSignatures = (
     return [];
   }
 
-  const validPublicKeyValues = new Set(signerPublicKeys.map((signer) => signer.publicKey.value));
+  if (!signatures || signatures.length === 0) {
+    return [];
+  }
+
+  const validPublicKeyValues = new Set(
+    signerPublicKeys
+      .filter((signer) => signer?.publicKey?.value)
+      .map((signer) => signer.publicKey.value),
+  );
 
   return signatures.filter((signature) => {
-    const signaturePubKeyValue = signature.pub_key.value;
-    return validPublicKeyValues.has(signaturePubKeyValue);
+    const signaturePubKeyValue = signature?.pub_key?.value;
+    return signaturePubKeyValue && validPublicKeyValues.has(signaturePubKeyValue);
   });
+};
+
+/**
+ * Create signer info list with signature status
+ * @param signerPublicKeys - Multisig account's signer public keys
+ * @param signatures - Collected signatures
+ * @returns Signer info array with status
+ */
+export const createMultisigSignerInfoList = (
+  signerPublicKeys: SignerPublicKeyInfo[],
+  signatures: Signature[],
+): SignerInfo[] => {
+  if (!signerPublicKeys || signerPublicKeys.length === 0) {
+    return [];
+  }
+
+  const signedPublicKeys = new Set(
+    (signatures || [])
+      .filter((signature) => signature?.pub_key?.value)
+      .map((signature) => signature.pub_key.value),
+  );
+
+  return signerPublicKeys.map((signer) => ({
+    address: signer.address,
+    publicKey: signer.publicKey.value,
+    status: signedPublicKeys.has(signer.publicKey.value)
+      ? SignerStatusType.SIGNED
+      : SignerStatusType.UNSIGNED,
+  }));
 };

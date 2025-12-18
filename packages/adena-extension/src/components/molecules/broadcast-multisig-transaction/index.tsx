@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 
 import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, Signature } from '@inject/types';
+import { ContractMessage, Signature, SignerInfo } from '@inject/types';
 import { NetworkFee as NetworkFeeType } from '@types';
-import { filterValidSignatures } from '@common/utils/multisig-utils';
+import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
 
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';
@@ -62,7 +62,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   domain,
   transactionMessages,
   memo,
-  currentBalance,
   hasMemo,
   networkFee,
   isErrorNetworkFee,
@@ -94,13 +93,15 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
     return filterValidSignatures(signatures, signerPublicKeys);
   }, [signatures, signerPublicKeys]);
 
-  const signedCount = useMemo(() => {
-    return validSignatures.length;
-  }, [validSignatures.length]);
+  const signerInfos: SignerInfo[] = useMemo(() => {
+    return createMultisigSignerInfoList(signerPublicKeys, validSignatures);
+  }, [signerPublicKeys, validSignatures]);
+
+  const signerCount = signerPublicKeys.length;
+  const signedCount = validSignatures.length;
 
   const threshold = useMemo(() => {
-    if (!multisigConfig) return 0;
-    return multisigConfig.threshold ?? 0;
+    return multisigConfig?.threshold ?? 0;
   }, [multisigConfig]);
 
   const disabledBroadcast = useMemo(() => {
@@ -112,13 +113,12 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
       return true;
     }
 
-    // Check if we have enough signatures
-    if (signatures.length < multisigConfig.threshold) {
+    if (validSignatures.length < threshold) {
       return true;
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, networkFee, multisigConfig, signatures]);
+  }, [isErrorNetworkFee, networkFee, multisigConfig, validSignatures, threshold]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -126,7 +126,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
     }
 
     return '';
-  }, [isErrorNetworkFee, currentBalance]);
+  }, [isErrorNetworkFee]);
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledBroadcast) {
@@ -156,7 +156,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   if (openedSigners) {
     return (
       <ApproveTransactionNetworkFeeWrapper>
-        <DocumentSignerListScreen signerInfos={[]} onClickBack={onClickSignersBack} />
+        <DocumentSignerListScreen signerInfos={signerInfos} onClickBack={onClickSignersBack} />
       </ApproveTransactionNetworkFeeWrapper>
     );
   }
@@ -178,8 +178,8 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
 
       <div className='fee-amount-wrapper'>
         <DocumentBroadcastSigner
-          signedCount={3}
-          signerCount={3}
+          signedCount={signedCount}
+          signerCount={signerCount}
           onClickSetting={onClickSignersSetting}
         />
       </div>
@@ -219,12 +219,12 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           {opened ? (
             <>
               <>Hide Transaction Data</>
-              <img src={IconArraowUp} />
+              <img src={IconArraowUp} alt='collapse' />
             </>
           ) : (
             <>
               <>View Transaction Data</>
-              <img src={IconArraowDown} />
+              <img src={IconArraowDown} alt='expand' />
             </>
           )}
         </Button>
