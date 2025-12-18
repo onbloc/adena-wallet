@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BroadcastTxCommitResult, defaultAddressPrefix, TM2Error } from '@gnolang/tm2-js-client';
+import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { isAirgapAccount, isMultisigAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -29,6 +29,8 @@ import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -99,7 +101,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const { walletService, multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
   const location = useLocation();
-  const { currentNetwork: currentWalletNetwork } = useNetwork();
+  const { currentNetwork: currentWalletNetwork, scannerParameters } = useNetwork();
   const { openScannerLink } = useLink();
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -280,6 +282,16 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return false;
   };
 
+  const createTxExplorerUrl = (txHash: string): string => {
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
+    const params = {
+      ...(scannerParameters || {}),
+      txhash: txHash,
+    };
+
+    return `${scannerUrl}/transactions/details?${makeQueryString(params)}`;
+  };
+
   const broadcastMultisigTransaction = async (): Promise<boolean> => {
     if (isErrorNetworkFee) {
       return false;
@@ -318,10 +330,12 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
       const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
 
+      const txExplorerUrl = createTxExplorerUrl(broadcastResult.hash);
+
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
-          { broadcastResult },
+          { broadcastResult, txExplorerUrl },
           requestData?.key,
           requestData?.withNotification,
         ),
