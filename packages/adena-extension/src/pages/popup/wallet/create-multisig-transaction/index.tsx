@@ -134,10 +134,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   const done = useMemo(() => processType === 'DONE', [processType]);
 
-  const signatures = useMemo(() => {
-    return txDocument?.tx?.signatures || [];
-  }, [txDocument?.tx?.signatures]);
-
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
       return false;
@@ -414,7 +410,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       title='Create New Transaction'
       domain={hostname}
       contracts={transactionData?.contracts || []}
-      signatures={signatures}
       memo={memo}
       hasMemo={hasMemo}
       loading={transactionData === undefined}

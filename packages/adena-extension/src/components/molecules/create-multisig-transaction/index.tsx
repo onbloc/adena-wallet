@@ -20,8 +20,6 @@ import {
 } from './create-multisig-transaction.styles';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
 import MultisigThreshold from '../multisig-threshold/multisig-threshold';
-import { useSignerAddresses } from '@hooks/wallet/use-signer-addresses';
-import { EncodeTxSignature } from '@services/index';
 
 export interface CreateMultisigTransactionProps {
   loading: boolean;
@@ -33,7 +31,6 @@ export interface CreateMultisigTransactionProps {
     function: string;
     value: string;
   }[];
-  signatures: EncodeTxSignature[];
   memo: string;
   hasMemo: boolean;
   isErrorNetworkFee?: boolean;
@@ -62,7 +59,6 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   title,
   logo,
   domain,
-  signatures,
   transactionMessages,
   memo,
   hasMemo,
@@ -85,38 +81,17 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
 }) => {
   const [openedSigners, setOpenedSigners] = useState(false);
 
-  const { signerAddresses: signedAddressesFromPubKey } = useSignerAddresses(signatures);
-
-  const { signedAddressSet } = useMemo(() => {
-    const signers = multisigConfig?.signers || [];
-    const signerSet = new Set(signers);
-
-    const validSigned = signedAddressesFromPubKey.filter((address) => signerSet.has(address));
-
-    const signedSet = new Set(validSigned);
-
-    return {
-      signedAddressSet: signedSet,
-    };
-  }, [multisigConfig, signedAddressesFromPubKey]);
-
-  const { signedCount, signerCount, threshold, signerAddresses } = useMemo(() => {
-    const signers = multisigConfig?.signers || [];
-
-    return {
-      signedCount: signedAddressSet.size,
-      signerCount: signers.length,
-      threshold: multisigConfig?.threshold || 0,
-      signerAddresses: signers,
-    };
-  }, [multisigConfig, signedAddressSet]);
+  const threshold = multisigConfig?.threshold || 0;
+  const signers = multisigConfig?.signers || [];
+  const signerCount = signers.length;
+  const signedCount = 0;
 
   const signerInfos: SignerInfo[] = useMemo(() => {
-    return signerAddresses.map((address) => ({
+    return signers.map((address) => ({
       address,
       status: SignerStatusType.NONE,
     }));
-  }, [signedAddressSet, signerAddresses]);
+  }, [signers]);
 
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {

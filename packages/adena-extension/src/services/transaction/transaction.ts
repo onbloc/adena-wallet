@@ -182,41 +182,6 @@ export class TransactionService {
     commit?: boolean,
   ): Promise<BroadcastTxCommitResult | BroadcastTxSyncResult> => {
     const provider = this.getGnoProvider();
-
-    // ✅ 디버깅: 일반 트랜잭션 hex 출력
-    console.log('\n🔍 NORMAL TRANSACTION DEBUG:');
-    const txBytes = Tx.encode(transaction).finish();
-    console.log('  Tx bytes length:', txBytes.length);
-    console.log('  Tx bytes hex:', Buffer.from(txBytes).toString('hex'));
-    console.log('  Tx base64:', Buffer.from(txBytes).toString('base64'));
-    console.log('  Tx base64 length:', Buffer.from(txBytes).toString('base64').length);
-
-    // Decode locally to check structure
-    try {
-      const decodedTx = Tx.decode(txBytes);
-      console.log('  ✅ Can decode locally');
-      console.log('  Messages:', decodedTx.messages.length);
-      console.log('  Signatures:', decodedTx.signatures.length);
-      if (decodedTx.signatures.length > 0) {
-        console.log('  Signature pubkey type:', decodedTx.signatures[0]?.pub_key?.type_url);
-        console.log('  Signature pubkey length:', decodedTx.signatures[0]?.pub_key?.value.length);
-        console.log(
-          '  Signature pubkey hex:',
-          Buffer.from(decodedTx.signatures[0]?.pub_key?.value || []).toString('hex'),
-        );
-        console.log('  Signature length:', decodedTx.signatures[0]?.signature.length);
-        console.log(
-          '  Signature hex:',
-          Buffer.from(decodedTx.signatures[0]?.signature || []).toString('hex'),
-        );
-      }
-      console.log('  Fee gas_wanted:', decodedTx.fee?.gas_wanted);
-      console.log('  Fee gas_fee:', decodedTx.fee?.gas_fee);
-      console.log('  Memo:', decodedTx.memo);
-    } catch (error) {
-      console.error('  ❌ Failed to decode locally:', error);
-    }
-
     const broadcastTx = commit
       ? wallet.broadcastTxCommit.bind(wallet)
       : wallet.broadcastTxSync.bind(wallet);

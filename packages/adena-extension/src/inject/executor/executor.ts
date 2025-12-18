@@ -18,7 +18,6 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
-  BroadcastMultisigTransactionParams,
   BroadcastMultisigTransactionResponse,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
@@ -36,7 +35,6 @@ import {
 } from '@inject/types';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import {
-  validateSignatures,
   validateTransactionDocumentFee,
   validateTransactionDocumentMessages,
   validateMultisigSigners,

@@ -8,7 +8,6 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
-  BroadcastMultisigTransactionParams,
   BroadcastMultisigTransactionResponse,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,

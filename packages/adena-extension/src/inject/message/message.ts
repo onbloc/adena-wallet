@@ -38,7 +38,7 @@ export class InjectionMessageInstance {
   ) {
     const { code, message, type } = WalletMessageInfo[messageKey];
     this.key = key ?? '';
-    this.code = code || 0;
+    this.code = code;
     this.type = type;
     this.status = status ?? 'common';
     this.description = message;

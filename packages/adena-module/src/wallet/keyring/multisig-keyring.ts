@@ -8,7 +8,6 @@ import {
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
-  CompactBitArray,
   createCompactBitArray,
   compactBitArraySetIndex,
   Multisignature,

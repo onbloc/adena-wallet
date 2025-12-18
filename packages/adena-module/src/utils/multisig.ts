@@ -7,7 +7,7 @@ export interface PublicKeyInfo {
 }
 
 /**
- * Bech32 디코딩
+ * Bech32 decoding
  */
 function bech32Decode(str: string): Uint8Array {
   const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -43,7 +43,7 @@ function bech32Decode(str: string): Uint8Array {
 }
 
 /**
- * Bech32 인코딩
+ * Bech32 encoding
  */
 function bech32Encode(hrp: string, data: Uint8Array): string {
   const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -111,7 +111,7 @@ function bech32Polymod(values: number[]): number {
 }
 
 /**
- * Protobuf varint 인코딩
+ * Protobuf varint encoding
  */
 function encodeVarint(n: number): Uint8Array {
   const bytes: number[] = [];
@@ -124,14 +124,14 @@ function encodeVarint(n: number): Uint8Array {
 }
 
 /**
- * Protobuf field key 인코딩
+ * Protobuf field key encoding
  */
 function encodeFieldKey(fieldNum: number, wireType: number): Uint8Array {
   return encodeVarint((fieldNum << 3) | wireType);
 }
 
 /**
- * Protobuf length-delimited 인코딩
+ * Protobuf length-delimited encoding
  */
 function encodeLengthDelimited(fieldNum: number, data: Uint8Array): Uint8Array {
   const key = encodeFieldKey(fieldNum, 2); // wireType 2 = length-delimited
@@ -146,7 +146,7 @@ function encodeLengthDelimited(fieldNum: number, data: Uint8Array): Uint8Array {
 }
 
 /**
- * Protobuf string 인코딩
+ * Protobuf string encoding
  */
 function encodeString(fieldNum: number, str: string): Uint8Array {
   const encoder = new TextEncoder();
@@ -154,7 +154,7 @@ function encodeString(fieldNum: number, str: string): Uint8Array {
 }
 
 /**
- * Amino Any 타입 인코딩
+ * Amino Any type encoding
  */
 function encodeAminoAny(typeUrl: string, value: Uint8Array): Uint8Array {
   const typeUrlEncoded = encodeString(1, typeUrl);
@@ -168,18 +168,18 @@ function encodeAminoAny(typeUrl: string, value: Uint8Array): Uint8Array {
 }
 
 /**
- * 단일 Public Key 인코딩 (Amino -> Protobuf Any)
+ * Single Public Key encoding (Amino -> Protobuf Any)
  */
 function encodePubKey(pubkeyBytes: Uint8Array, typeUrl: string): Uint8Array {
-  // Raw public key를 그대로 사용 (Amino prefix 제거 불필요)
-  // Protobuf 인코딩: field 1 = key (bytes)
+  // Use raw public key as is (no need to remove Amino prefix)
+  // Protobuf encoding: field 1 = key (bytes)
   const valueEncoded = encodeLengthDelimited(1, pubkeyBytes);
 
   return encodeAminoAny(typeUrl, valueEncoded);
 }
 
 /**
- * Multisig Public Key 인코딩
+ * Multisig Public Key encoding
  */
 function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint8Array {
   const parts: Uint8Array[] = [];
@@ -192,13 +192,13 @@ function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint
   thresholdEncoded.set(thresholdValue, thresholdKey.length);
   parts.push(thresholdEncoded);
 
-  // field 2: pubkeys (repeated) - 각 pubkey를 Any로 인코딩
+  // field 2: pubkeys (repeated) - encode each pubkey as Any
   for (const pubkey of pubkeys) {
     const encodedPubkey = encodePubKey(pubkey.bytes, pubkey.typeUrl);
     parts.push(encodeLengthDelimited(2, encodedPubkey));
   }
 
-  // 모든 parts 합치기
+  // Combine all parts
   const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
   const multisigValue = new Uint8Array(totalLength);
   let offset = 0;
@@ -207,17 +207,17 @@ function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint
     offset += part.length;
   }
 
-  // 전체를 Any로 감싸기
+  // Wrap everything in Any
   return encodeAminoAny('/tm.PubKeyMultisig', multisigValue);
 }
 
 /**
- * Multisig 주소 생성
- * @param signerPublicKeys - 서명자들의 public key 정보 (raw bytes + typeUrl)
- * @param threshold - 필요한 서명 개수
- * @param addressPrefix - 주소 prefix (기본값: 'g')
- * @param noSort - 정렬하지 않음 (기본값: true)
- * @returns { address, publicKey } - Bech32 주소와 Amino encoded public key
+ * Create multisig address
+ * @param signerPublicKeys - Public key information of signers (raw bytes + typeUrl)
+ * @param threshold - Number of required signatures
+ * @param addressPrefix - Address prefix (default: 'g')
+ * @param noSort - Do not sort (default: true)
+ * @returns { address, publicKey } - Bech32 address and Amino encoded public key
  */
 export function createMultisigPublicKey(
   signerPublicKeys: PublicKeyInfo[],
@@ -236,7 +236,7 @@ export function createMultisigPublicKey(
 }
 
 /**
- * Bech32 주소를 바이트로 변환
+ * Convert Bech32 address to bytes
  */
 export function fromBech32Multisig(address: string): { prefix: string; data: Uint8Array } {
   const [prefix] = address.split('1');
@@ -246,7 +246,7 @@ export function fromBech32Multisig(address: string): { prefix: string; data: Uin
 }
 
 /**
- * Base64 디코딩 (multisig용)
+ * Base64 decoding (for multisig)
  */
 export function fromBase64Multisig(base64: string): Uint8Array {
   const binaryString = atob(base64);
@@ -258,7 +258,7 @@ export function fromBase64Multisig(base64: string): Uint8Array {
 }
 
 /**
- * Base64 인코딩 (multisig용)
+ * Base64 encoding (for multisig)
  */
 export function toBase64Multisig(bytes: Uint8Array): string {
   let binaryString = '';

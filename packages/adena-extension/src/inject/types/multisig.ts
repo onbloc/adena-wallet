@@ -116,13 +116,6 @@ export type SignMultisigTransactionResponseData = {
 export type SignMultisigTransactionResponse = AdenaResponse<SignMultisigTransactionResponseData>;
 
 /**
- * Parameters for broadcasting a multisig transaction
- */
-export interface BroadcastMultisigTransactionParams {
-  document: MultisigTransactionDocument;
-}
-
-/**
  * Response data for broadcasting a multisig transaction
  */
 export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult;
@@ -165,13 +158,6 @@ export interface SignedTransaction {
 
 export interface MultisigTransactionDocument {
   tx: UnsignedTransaction;
-  chainId: string;
-  accountNumber: string;
-  sequence: string;
-}
-
-export interface SignedMultisigTransactionDocument {
-  tx: SignedTransaction;
   chainId: string;
   accountNumber: string;
   sequence: string;

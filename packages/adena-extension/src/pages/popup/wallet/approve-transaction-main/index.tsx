@@ -371,44 +371,44 @@ const ApproveTransactionContainer: React.FC = () => {
 
         checkHealth(currentNetwork.rpcUrl, requestData?.key);
       });
-      // if (!response) {
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         hash,
-      //         error: null,
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return true;
-      // }
-      // if (response instanceof TM2Error || response instanceof Error) {
-      //   setResponse(
-      //     InjectionMessageInstance.failure(
-      //       WalletResponseFailureType.TRANSACTION_FAILED,
-      //       {
-      //         hash,
-      //         error: response?.toString(),
-      //       },
-      //       requestData?.key,
-      //       requestData?.withNotification,
-      //     ),
-      //   );
-      //   return true;
-      // }
+      if (!response) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              hash,
+              error: null,
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return true;
+      }
+      if (response instanceof TM2Error || response instanceof Error) {
+        setResponse(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.TRANSACTION_FAILED,
+            {
+              hash,
+              error: response?.toString(),
+            },
+            requestData?.key,
+            requestData?.withNotification,
+          ),
+        );
+        return true;
+      }
 
-      // setResponse(
-      //   InjectionMessageInstance.success(
-      //     WalletResponseSuccessType.TRANSACTION_SUCCESS,
-      //     response,
-      //     requestData?.key,
-      //     requestData?.withNotification,
-      //   ),
-      // );
-      // return true;
+      setResponse(
+        InjectionMessageInstance.success(
+          WalletResponseSuccessType.TRANSACTION_SUCCESS,
+          response,
+          requestData?.key,
+          requestData?.withNotification,
+        ),
+      );
+      return true;
     } catch (e) {
       if (e instanceof Error) {
         const message = e.message;
