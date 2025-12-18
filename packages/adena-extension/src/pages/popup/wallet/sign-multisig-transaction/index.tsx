@@ -270,7 +270,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       setResponse(
         InjectionMessageInstance.success(
-          WalletResponseSuccessType.SIGN_MULTISIG_DOCUMENT_SUCCESS,
+          WalletResponseSuccessType.SIGN_MULTISIG_TRANSACTION_SUCCESS,
           {
             result: { multisigDocument: multisigDocument, multisigSignatures: updatedSignatures },
             signature: newSignature,
@@ -298,7 +298,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       setResponse(
         InjectionMessageInstance.failure(
-          WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
+          WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
           { error: { message } },
           requestData?.key,
         ),
@@ -308,7 +308,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
     setResponse(
       InjectionMessageInstance.failure(
-        WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
+        WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
         { error: { message: 'Unknown error occurred' } },
         requestData?.key,
       ),

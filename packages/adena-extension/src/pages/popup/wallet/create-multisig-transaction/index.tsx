@@ -314,7 +314,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
       setResponse(
         InjectionMessageInstance.success(
-          WalletResponseSuccessType.CREATE_MULTISIG_DOCUMENT_SUCCESS,
+          WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
           {
             tx: txDocument.tx,
             chainId: txDocument.chainId,
@@ -334,7 +334,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         }
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.CREATE_MULTISIG_DOCUMENT_FAILED,
+            WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
             { error: { message } },
             requestData?.key,
           ),
@@ -342,7 +342,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       } else {
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_MULTISIG_DOCUMENT_FAILED,
+            WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
             {},
             requestData?.key,
           ),

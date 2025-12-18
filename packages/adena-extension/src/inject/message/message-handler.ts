@@ -158,14 +158,14 @@ export class MessageHandler {
           }
         });
         break;
-      case 'CREATE_MULTISIG_DOCUMENT':
+      case 'CREATE_MULTISIG_TRANSACTION':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.createMultisigDocument(message, sendResponse);
           }
         });
         break;
-      case 'SIGN_MULTISIG_DOCUMENT':
+      case 'SIGN_MULTISIG_TRANSACTION':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
             HandlerMethod.signMultisigDocument(message, sendResponse);

@@ -143,7 +143,7 @@ export class AdenaExecutor {
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
-      'CREATE_MULTISIG_ACCOUNT' as WalletResponseType,
+      WalletResponseExecuteType.CREATE_MULTISIG_ACCOUNT,
       params,
     );
 
@@ -159,7 +159,7 @@ export class AdenaExecutor {
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
-      'CREATE_MULTISIG_DOCUMENT' as WalletResponseType,
+      WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
       params,
     );
 
@@ -176,7 +176,7 @@ export class AdenaExecutor {
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
-      'SIGN_MULTISIG_DOCUMENT' as WalletResponseType,
+      WalletResponseExecuteType.SIGN_MULTISIG_TRANSACTION,
       { multisigDocument, multisigSignatures },
     );
 
@@ -193,7 +193,7 @@ export class AdenaExecutor {
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
-      'BROADCAST_MULTISIG_TRANSACTION' as WalletResponseType,
+      WalletResponseExecuteType.BROADCAST_MULTISIG_TRANSACTION,
       { multisigDocument, multisigSignatures },
     );
 
