@@ -48,7 +48,11 @@ export const validateInjectionTransactionMessageWithAddress = (
   address: string,
   skipCallerCheck?: boolean,
 ): boolean => {
-  const messages = requestData.data?.messages || requestData.data?.msgs || [];
+  const messages =
+    requestData.data?.msgs ||
+    requestData.data?.messages ||
+    requestData.data?.multisigDocument?.tx?.msgs ||
+    [];
   for (const message of messages) {
     let messageAddress = '';
     switch (message?.type) {

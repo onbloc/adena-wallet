@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { isAirgapAccount, isMultisigAccount, MultisigConfig } from 'adena-module';
+import { Account, isAirgapAccount, isMultisigAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -31,6 +31,7 @@ import { NetworkMetainfo, RoutePath } from '@types';
 import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
+import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -250,7 +251,6 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       return false;
     }
     try {
-      // Receive MultisigTransactionDocument (new format)
       const data = requestData?.data as BroadcastMultisigTransactionRequestData;
       const { multisigDocument, multisigSignatures = [] } = data;
 
@@ -280,6 +280,26 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       );
     }
     return false;
+  };
+
+  const validate = async (
+    currentAccount: Account,
+    requestData: InjectionMessage,
+  ): Promise<boolean> => {
+    if (!isMultisigAccount(currentAccount)) {
+      return false;
+    }
+
+    const validationMessage = validateInjectionDataWithAddress(
+      requestData,
+      await currentAccount.getAddress(defaultAddressPrefix),
+      false,
+    );
+    if (validationMessage) {
+      chrome.runtime.sendMessage(validationMessage);
+      return false;
+    }
+    return true;
   };
 
   const createTxExplorerUrl = (txHash: string): string => {
@@ -388,12 +408,16 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (isAirgapAccount(currentAccount)) {
+      if (!isMultisigAccount(currentAccount)) {
         navigate(RoutePath.ApproveSignFailed);
         return;
       }
-      initFavicon();
-      initMultisigDocument();
+      validate(currentAccount, requestData).then((validated) => {
+        if (validated) {
+          initFavicon();
+          initMultisigDocument();
+        }
+      });
       currentAccount.getAddress(currentNetwork.addressPrefix).then(initBalance);
     }
   }, [currentAccount, requestData, gnoProvider]);
