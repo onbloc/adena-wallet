@@ -3,8 +3,8 @@ import { StorageMigration014 } from './storage-migration-v014';
 
 const mockStorageData = {
   NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test8',
-  CURRENT_NETWORK_ID: 'test8',
+  CURRENT_CHAIN_ID: 'test9.1',
+  CURRENT_NETWORK_ID: 'test9.1',
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
