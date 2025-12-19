@@ -15,6 +15,7 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
 export const validateInjectionDataWithAddress = (
   requestData: InjectionMessage,
   address: string,
+  multisig?: boolean,
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
@@ -24,7 +25,7 @@ export const validateInjectionDataWithAddress = (
     );
   }
 
-  if (!validateInjectionTransactionMessageWithAddress(requestData, address)) {
+  if (!multisig && !validateInjectionTransactionMessageWithAddress(requestData, address)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       { requestData, address },
