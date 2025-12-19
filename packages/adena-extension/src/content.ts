@@ -8,6 +8,8 @@ import {
   shouldIntercept,
   shouldRegisterAnchorIntercept,
 } from '@inject/message/methods/gno-connect';
+import { GnoDOMWatcher } from '@inject/message/methods/gno-dom-watcher';
+import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
 
 const loadScript = (): void => {
   const container = document.head || document.documentElement;
@@ -130,7 +132,6 @@ const initAnchorIntercept = (): void => {
       }
 
       e.preventDefault();
-      console.info('[AdenaExtension] Interceptor tx link:', url.href);
 
       CommandHandler.createContentHandler(
         CommandMessage.command('checkMetadata', {
@@ -143,7 +144,55 @@ const initAnchorIntercept = (): void => {
   );
 };
 
+/**
+ * Initializes GnoDOMWatcher for real-time parameter tracking.
+ * This watches Gnoweb ActionFunctionController DOM elements and sends
+ * updates to the background script when parameters change.
+ */
+const initGnoDOMWatcher = (): void => {
+  if (!shouldRegisterAnchorIntercept()) {
+    return;
+  }
+
+  const watcher = new GnoDOMWatcher((message: GnoSessionUpdateMessage) => {
+    // Send update to background
+    sendGnoSessionUpdate(message);
+  });
+
+  // Start watching after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => watcher.start());
+  } else {
+    watcher.start();
+  }
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => watcher.stop());
+};
+
+/**
+ * Sends GnoSessionUpdateMessage to the background script.
+ */
+const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<void> => {
+  try {
+    const isConnected = await new Promise<boolean>((resolve) => {
+      chrome.runtime.sendMessage({ type: 'ping' }, () => {
+        resolve(!chrome.runtime.lastError);
+      });
+    }).catch(() => false);
+
+    if (!isConnected) {
+      return;
+    }
+
+    chrome.runtime.sendMessage(message);
+  } catch {
+    console.warn('Failed to send GnoSessionUpdateMessage to background');
+  }
+};
+
 initAnchorIntercept();
+initGnoDOMWatcher();
 loadScript();
 initListener();
 initExtensionListener();

@@ -11,6 +11,11 @@ import {
 } from '@inject/message/command-message';
 import { clearInMemoryKey } from '@inject/message/commands/encrypt';
 import {
+  GnoSessionState,
+  GnoSessionUpdateMessage,
+  PopupSessionUpdateMessage,
+} from '@inject/message/methods/gno-session';
+import {
   addTransactionEvent,
   isTransactionNotification,
   parseTransactionScannerUrl,
@@ -23,6 +28,192 @@ inMemoryProvider.init();
 const transactionEventStore = new TransactionEventStore();
 
 let transactionEventInterval: NodeJS.Timeout | undefined = undefined;
+
+// Gno Session Management
+// Maps sessionId to session state
+const gnoSessions = new Map<string, GnoSessionState>();
+// Maps funcKey (pkgPath:funcName) to sessionId for lookup by function
+const funcKeyToSessionId = new Map<string, string>();
+// Maps sessionId to popup windowId (if popup is open for this session)
+const sessionPopupMap = new Map<string, number>();
+// Maps popup windowId to sessionId for reverse lookup
+const popupSessionMap = new Map<number, string>();
+
+function makeFuncKey(pkgPath: string, funcName: string): string {
+  return `${pkgPath}:${funcName}`;
+}
+
+/**
+ * Cleans up all data related to a session.
+ * This includes removing from gnoSessions, funcKeyToSessionId, and popup mappings.
+ */
+function cleanupSession(sessionId: string): void {
+  const session = gnoSessions.get(sessionId);
+  if (!session) return;
+
+  // Remove from gnoSessions
+  gnoSessions.delete(sessionId);
+
+  // Remove from funcKeyToSessionId if this session is the current one for the funcKey
+  const funcKey = makeFuncKey(session.pkgPath, session.funcName);
+  if (funcKeyToSessionId.get(funcKey) === sessionId) {
+    funcKeyToSessionId.delete(funcKey);
+  }
+
+  // Remove popup mappings
+  const popupId = sessionPopupMap.get(sessionId);
+  if (popupId) {
+    sessionPopupMap.delete(sessionId);
+    popupSessionMap.delete(popupId);
+  }
+}
+
+function isGnoSessionUpdateMessage(message: unknown): message is GnoSessionUpdateMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
+  );
+}
+
+interface RegisterPopupSessionMessage {
+  type: 'REGISTER_POPUP_SESSION';
+  sessionId: string;
+}
+
+function isRegisterPopupSessionMessage(message: unknown): message is RegisterPopupSessionMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
+  );
+}
+
+async function handleRegisterPopupSession(
+  message: RegisterPopupSessionMessage,
+  sender: chrome.runtime.MessageSender,
+): Promise<{ success: boolean; session?: GnoSessionState }> {
+  const { sessionId } = message;
+
+  // Get popup window ID
+  let popupId: number | undefined;
+
+  if (sender.tab?.windowId) {
+    popupId = sender.tab.windowId;
+  } else {
+    try {
+      const currentWindow = await chrome.windows.getCurrent();
+      if (currentWindow.type === 'popup') {
+        popupId = currentWindow.id;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (popupId) {
+    sessionPopupMap.set(sessionId, popupId);
+    popupSessionMap.set(popupId, sessionId);
+  }
+
+  const session = gnoSessions.get(sessionId);
+
+  return {
+    success: true,
+    session,
+  };
+}
+
+function handleGnoSessionUpdate(
+  message: GnoSessionUpdateMessage,
+  sender: chrome.runtime.MessageSender,
+): void {
+  const { data } = message;
+  const { sessionId, funcName, pkgPath, chainId, rpc, updateType } = data;
+  const funcKey = makeFuncKey(pkgPath, funcName);
+
+  // Get or create session state
+  let session = gnoSessions.get(sessionId);
+
+  if (!session) {
+    // Clean up old session for this function if exists
+    const oldSessionId = funcKeyToSessionId.get(funcKey);
+    if (oldSessionId && oldSessionId !== sessionId) {
+      cleanupSession(oldSessionId);
+    }
+
+    session = {
+      sessionId,
+      funcName,
+      pkgPath,
+      chainId,
+      rpc,
+      address: '',
+      mode: 'secure',
+      params: {},
+      tabId: sender.tab?.id || 0,
+    };
+    gnoSessions.set(sessionId, session);
+    funcKeyToSessionId.set(funcKey, sessionId);
+  }
+
+  // Update session based on update type
+  switch (updateType) {
+    case 'init':
+    case 'params':
+      if (data.allParams) {
+        session.params = data.allParams;
+      }
+      break;
+    case 'mode':
+      if (data.mode) {
+        session.mode = data.mode;
+      }
+      break;
+    case 'address':
+      if (data.address !== undefined) {
+        session.address = data.address;
+      }
+      break;
+  }
+
+  // Forward update to popup - broadcast to all extension contexts
+  // Popup will filter by funcName/pkgPath
+  const popupMessage: PopupSessionUpdateMessage = {
+    type: 'POPUP_SESSION_UPDATE',
+    sessionId,
+    updateType,
+    data,
+  };
+
+  // Broadcast to all extension pages (including popup)
+  chrome.runtime.sendMessage(popupMessage).catch(() => {
+    // No receivers - popup might not be open, this is normal
+  });
+}
+
+// Clean up sessions when tab is closed
+chrome.tabs.onRemoved.addListener((tabId) => {
+  // Collect session IDs to clean up (avoid modifying map during iteration)
+  const sessionsToCleanup: string[] = [];
+
+  gnoSessions.forEach((session, sessionId) => {
+    if (session.tabId === tabId) {
+      sessionsToCleanup.push(sessionId);
+    }
+  });
+
+  sessionsToCleanup.forEach(cleanupSession);
+});
+
+// Clean up popup mapping when popup window is closed
+chrome.windows.onRemoved.addListener((windowId) => {
+  const sessionId = popupSessionMap.get(windowId);
+  if (sessionId) {
+    popupSessionMap.delete(windowId);
+    sessionPopupMap.delete(sessionId);
+  }
+});
 
 initAlarms();
 
@@ -135,6 +326,19 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Handle Gno session updates from content script
+  if (isGnoSessionUpdateMessage(message)) {
+    handleGnoSessionUpdate(message, sender);
+    sendResponse({ success: true });
+    return true;
+  }
+
+  // Handle popup session registration
+  if (isRegisterPopupSessionMessage(message)) {
+    handleRegisterPopupSession(message, sender).then(sendResponse).catch(console.warn);
+    return true;
+  }
+
   if (isCommandMessageData(message)) {
     CommandHandler.createHandler(inMemoryProvider, message, sender, sendResponse);
     return true;
