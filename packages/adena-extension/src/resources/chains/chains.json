@@ -8,10 +8,10 @@
     "networkId": "test10",
     "networkName": "Testnet 10",
     "addressPrefix": "g",
-    "rpcUrl": "https://test9.onbloc.xyz:443",
-    "indexerUrl": "https://test9.indexer.onbloc.xyz",
-    "gnoUrl": "https://test9.testnets.gno.land",
-    "apiUrl": "https://test9.api.onbloc.xyz",
+    "rpcUrl": "https://test10.onbloc.xyz:443",
+    "indexerUrl": "https://test10.indexer.onbloc.xyz",
+    "gnoUrl": "https://test10.testnets.gno.land",
+    "apiUrl": "https://test10.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
