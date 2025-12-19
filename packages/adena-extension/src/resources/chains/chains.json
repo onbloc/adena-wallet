@@ -1,12 +1,12 @@
 [
   {
-    "id": "test9.1",
+    "id": "test10",
     "default": true,
     "main": true,
-    "chainId": "test9.1",
+    "chainId": "test10",
     "chainName": "Gno.land",
-    "networkId": "test9.1",
-    "networkName": "Testnet 9.1",
+    "networkId": "test10",
+    "networkName": "Testnet 10",
     "addressPrefix": "g",
     "rpcUrl": "https://test9.onbloc.xyz:443",
     "indexerUrl": "https://test9.indexer.onbloc.xyz",
