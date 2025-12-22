@@ -1,5 +1,5 @@
-import { sha256 } from 'src/crypto';
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import { sha256 } from '../crypto';
 
 export interface PublicKeyInfo {
   bytes: Uint8Array;
