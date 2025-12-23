@@ -1,46 +1,6 @@
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import { Any, defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { sha256 } from '../crypto';
-
-export interface PublicKeyInfo {
-  bytes: Uint8Array;
-  typeUrl: string;
-}
-
-/**
- * Bech32 decoding
- */
-function bech32Decode(str: string): Uint8Array {
-  const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-  const [hrp, data] = str.split('1');
-
-  if (!data) {
-    throw new Error('Invalid bech32 string');
-  }
-
-  const decoded: number[] = [];
-  for (let i = 0; i < data.length - 6; i++) {
-    const index = CHARSET.indexOf(data[i]);
-    if (index === -1) {
-      throw new Error(`Invalid bech32 character: ${data[i]}`);
-    }
-    decoded.push(index);
-  }
-
-  const bytes: number[] = [];
-  let acc = 0;
-  let bits = 0;
-
-  for (const value of decoded) {
-    acc = (acc << 5) | value;
-    bits += 5;
-    if (bits >= 8) {
-      bits -= 8;
-      bytes.push((acc >> bits) & 0xff);
-    }
-  }
-
-  return new Uint8Array(bytes);
-}
+import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 
 /**
  * Bech32 encoding
@@ -181,7 +141,7 @@ function encodePubKey(pubkeyBytes: Uint8Array, typeUrl: string): Uint8Array {
 /**
  * Multisig Public Key encoding
  */
-function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint8Array {
+function encodeMultisigPubKey(threshold: number, pubkeys: Any[]): Uint8Array {
   const parts: Uint8Array[] = [];
 
   // field 1: k (uint32) - threshold
@@ -194,7 +154,7 @@ function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint
 
   // field 2: pubkeys (repeated) - encode each pubkey as Any
   for (const pubkey of pubkeys) {
-    const encodedPubkey = encodePubKey(pubkey.bytes, pubkey.typeUrl);
+    const encodedPubkey = encodePubKey(pubkey.value, pubkey.type_url);
     parts.push(encodeLengthDelimited(2, encodedPubkey));
   }
 
@@ -212,19 +172,16 @@ function encodeMultisigPubKey(threshold: number, pubkeys: PublicKeyInfo[]): Uint
 }
 
 /**
- * Create multisig address
- * @param signerPublicKeys - Public key information of signers (raw bytes + typeUrl)
- * @param threshold - Number of required signatures
+ * Convert Proto object to Amino and generate multisig public key
+ * @param multisigPubKey - PubKeyMultisig object
  * @param addressPrefix - Address prefix (default: 'g')
- * @param noSort - Do not sort (default: true)
  * @returns { address, publicKey } - Bech32 address and Amino encoded public key
  */
 export function createMultisigPublicKey(
-  signerPublicKeys: PublicKeyInfo[],
-  threshold: number,
+  multisigPubKey: PubKeyMultisig,
   addressPrefix: string = defaultAddressPrefix,
 ): { address: string; publicKey: Uint8Array } {
-  const aminoEncoded = encodeMultisigPubKey(threshold, signerPublicKeys);
+  const aminoEncoded = encodeMultisigPubKey(multisigPubKey.k.toNumber(), multisigPubKey.pub_keys);
   const hash = sha256(aminoEncoded);
   const addressBytes = hash.slice(0, 20);
   const address = bech32Encode(addressPrefix, addressBytes);
@@ -233,16 +190,6 @@ export function createMultisigPublicKey(
     address,
     publicKey: aminoEncoded,
   };
-}
-
-/**
- * Convert Bech32 address to bytes
- */
-export function fromBech32Multisig(address: string): { prefix: string; data: Uint8Array } {
-  const [prefix] = address.split('1');
-  const data = bech32Decode(address);
-
-  return { prefix, data };
 }
 
 /**

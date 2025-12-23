@@ -6,6 +6,9 @@ import {
   BroadcastTxSyncResult,
   BroadcastTransactionMap,
 } from '@gnolang/tm2-js-client';
+import Long from 'long';
+import { PubKeyMultisig } from '../../../../../src/proto/tm2/multisig';
+import { Any } from '../../../../../src/proto/google/protobuf/any';
 
 import { EncodeTxSignature, WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
@@ -21,17 +24,16 @@ import {
 
 import {
   MultisigConfig,
-  createMultisigPublicKey,
   fromBase64,
   Account,
   isMultisigAccount,
   fromBase64Multisig,
-  fromBech32Multisig,
-  PublicKeyInfo,
   Document,
   documentToTx,
   MultisigAccount,
   convertMessageToAmino,
+  fromBech32,
+  createMultisigPublicKey,
 } from 'adena-module';
 
 import { Multisignature } from './multisignature';
@@ -68,7 +70,6 @@ export class MultisigService {
     }
     return this.gnoProvider;
   }
-
   /**
    * Create a multisig account
    * @param config - Multisig configuration (signers and threshold)
@@ -78,22 +79,30 @@ export class MultisigService {
     const { signers, threshold, noSort = true } = config;
 
     const signerInfos: SignerInfo[] = await this.fetchSignerInfos(signers);
-
     const sortedSignerInfos = noSort ? signerInfos : this.sortSignerInfos(signerInfos);
 
-    const sortedPublicKeyInfos: PublicKeyInfo[] = sortedSignerInfos.map((info) => ({
-      bytes: info.bytes,
-      typeUrl: info.typeUrl,
-    }));
+    // Create Any objects for each public key
+    const pubKeysAny = sortedSignerInfos.map((info) => {
+      return Any.create({
+        type_url: info.typeUrl,
+        value: info.bytes,
+      });
+    });
 
+    // Create PubKeyMultisig proto object
+    const multisigPublicKeyProto = PubKeyMultisig.create({
+      k: Long.fromNumber(threshold),
+      pub_keys: pubKeysAny,
+    });
+
+    // Generate address and public key using Proto to Amino conversion
     const { address: multisigAddress, publicKey: multisigPubKey } = createMultisigPublicKey(
-      sortedPublicKeyInfos,
-      threshold,
+      multisigPublicKeyProto,
       defaultAddressPrefix,
     );
 
     // Extract address bytes from bech32 address
-    const { data: addressBytes } = fromBech32Multisig(multisigAddress);
+    const { data: addressBytes } = fromBech32(multisigAddress);
 
     // Convert Uint8Array to object format (for storage)
     return {
