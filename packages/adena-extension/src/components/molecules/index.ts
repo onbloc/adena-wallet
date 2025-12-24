@@ -18,9 +18,6 @@ export * from './title-with-desc';
 export * from './token-balance';
 export * from './transaction-history';
 export * from './underline-text-button';
-export * from './broadcast-multisig-transaction';
-export * from './create-multisig-account';
-export * from './create-multisig-transaction';
 // web
 export * from './web-seed-box';
 export * from './web-seed-input';

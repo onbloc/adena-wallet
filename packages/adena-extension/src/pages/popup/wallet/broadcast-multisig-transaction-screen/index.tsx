@@ -28,7 +28,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
-import { BroadcastMultisigTransaction } from '@components/molecules';
+import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { makeQueryString } from '@common/utils/string-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
