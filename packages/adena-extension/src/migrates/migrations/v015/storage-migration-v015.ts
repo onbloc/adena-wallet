@@ -136,18 +136,29 @@ export class StorageMigration015 implements Migration<StorageModelDataV015> {
       return serialized;
     }
 
-    const decrypted = await decryptAES(serialized, password);
-    const wallet: WalletModelV014 = JSON.parse(decrypted);
+    try {
+      const decrypted = await decryptAES(serialized, password);
 
-    const migrated: WalletModelV015 = {
-      ...wallet,
-      accounts: wallet.accounts.map((account) => this.migrateAccount(account)),
-      keyrings: wallet.keyrings.map((keyring) => this.migrateKeyring(keyring)),
-    };
+      if (!decrypted || decrypted.trim() === '') {
+        console.warn('Decryption resulted in empty string');
+        return serialized;
+      }
 
-    const json = JSON.stringify(migrated);
-    const encrypted = await encryptAES(json, password);
-    return encrypted;
+      const wallet: WalletModelV014 = JSON.parse(decrypted);
+
+      const migrated: WalletModelV015 = {
+        ...wallet,
+        accounts: wallet.accounts.map((account) => this.migrateAccount(account)),
+        keyrings: wallet.keyrings.map((keyring) => this.migrateKeyring(keyring)),
+      };
+
+      const json = JSON.stringify(migrated);
+      const encrypted = await encryptAES(json, password);
+      return encrypted;
+    } catch (error) {
+      console.error('Failed to migrate wallet:', error);
+      return serialized;
+    }
   }
 
   private migrateAccount(account: AccountDataModelV014): AccountDataModelV015 {
