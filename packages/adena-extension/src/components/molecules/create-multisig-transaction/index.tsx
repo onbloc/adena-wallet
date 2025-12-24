@@ -84,7 +84,6 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   const threshold = multisigConfig?.threshold || 0;
   const signers = multisigConfig?.signers || [];
   const signerCount = signers.length;
-  const signedCount = 0;
 
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signers.map((address) => ({
@@ -175,11 +174,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
       </div>
 
       <div className='fee-amount-wrapper'>
-        <DocumentSigner
-          signedCount={signedCount}
-          signerCount={signerCount}
-          onClickSetting={onClickSignersSetting}
-        />
+        <DocumentSigner signerCount={signerCount} onClickSetting={onClickSignersSetting} />
       </div>
 
       <ApproveTransactionMessageBox

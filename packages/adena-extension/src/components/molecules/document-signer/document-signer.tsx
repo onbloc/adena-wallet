@@ -5,11 +5,13 @@ import IconRight from '@assets/icon-right';
 
 interface DocumentSignerProps {
   signerCount: number;
-  signedCount: number;
   onClickSetting?: () => void;
 }
 
-const DocumentSigner = ({ signerCount, signedCount, onClickSetting }: DocumentSignerProps) => {
+const DocumentSigner = ({
+  signerCount,
+  onClickSetting,
+}: DocumentSignerProps): React.ReactElement => {
   const hasSetting = !!onClickSetting;
   return (
     <S.DocumentSignersContainer>

@@ -24,6 +24,7 @@ import {
   Fee,
   UnsignedTransaction,
   Signature,
+  MultisigAccountResult,
 } from '@inject/types';
 
 import {
@@ -78,7 +79,7 @@ export class MultisigService {
    * @param config - Multisig configuration (signers and threshold)
    * @returns Multisig account address, addressBytes, and publicKey
    */
-  public createMultisigAccount = async (config: MultisigConfig) => {
+  public createMultisigAccount = async (config: MultisigConfig): Promise<MultisigAccountResult> => {
     const { signers, threshold, noSort = true } = config;
 
     const signerInfos: SignerInfo[] = await this.fetchSignerInfos(signers);

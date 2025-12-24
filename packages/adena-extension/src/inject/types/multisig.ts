@@ -64,6 +64,19 @@ export interface CreateMultisigAccountParams {
   noSort?: boolean;
 }
 
+export interface MultisigAccountResult {
+  multisigAddress: string;
+  multisigAddressBytes: Record<number, number>;
+  multisigPubKey: Record<number, number>;
+  signerPublicKeys: Array<{
+    address: string;
+    publicKey: {
+      '@type': string;
+      value: string;
+    };
+  }>;
+}
+
 /**
  * Response data for creating a multisig account
  */

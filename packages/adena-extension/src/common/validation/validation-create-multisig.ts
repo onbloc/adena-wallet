@@ -1,3 +1,4 @@
+import { validateAddress } from 'adena-module';
 import { validateInvalidAddress } from './validation-address-book';
 
 /**
@@ -7,23 +8,8 @@ export const validateMultisigSigners = (signers: any): boolean => {
   return (
     Array.isArray(signers) &&
     signers.length >= 2 &&
-    signers.every((signer) => typeof signer === 'string')
+    signers.every((signer) => typeof signer === 'string' && validateAddress(signer))
   );
-};
-
-/**
- * Validates all signer addresses
- */
-export const validateMultisigSignerAddresses = (signers: string[]): boolean => {
-  try {
-    for (const signer of signers) {
-      validateInvalidAddress(signer);
-    }
-    return true;
-  } catch (error) {
-    console.error('Invalid signer address:', error);
-    return false;
-  }
 };
 
 /**

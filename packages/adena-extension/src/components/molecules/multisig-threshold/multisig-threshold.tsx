@@ -5,7 +5,7 @@ interface MultisigThresholdProps {
   threshold: number;
 }
 
-const MultisigThreshold = ({ threshold }: MultisigThresholdProps) => {
+const MultisigThreshold = ({ threshold }: MultisigThresholdProps): React.ReactElement => {
   return (
     <S.MultisigThresholdContainer>
       <S.MultisigThresholdWrapper>

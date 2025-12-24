@@ -11,7 +11,10 @@ interface DocumentSignerListProps {
   onClickBack: () => void;
 }
 
-const DocumentSignerListScreen = ({ signerInfos, onClickBack }: DocumentSignerListProps) => {
+const DocumentSignerListScreen = ({
+  signerInfos,
+  onClickBack,
+}: DocumentSignerListProps): React.ReactElement => {
   return (
     <S.DocumentSignerListWrapper>
       <SubHeader

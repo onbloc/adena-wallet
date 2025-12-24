@@ -38,7 +38,6 @@ import {
   validateTransactionDocumentFee,
   validateTransactionDocumentMessages,
   validateMultisigSigners,
-  validateMultisigSignerAddresses,
   validateMultisigThreshold,
   validateChainId,
   validateFee,
@@ -268,10 +267,6 @@ export class AdenaExecutor {
 
     if (!validateMultisigSigners(params.signers)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
-    }
-
-    if (!validateMultisigSignerAddresses(params.signers)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_ADDRESS);
     }
 
     if (!validateMultisigThreshold(params.threshold, params.signers.length)) {

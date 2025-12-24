@@ -11,7 +11,7 @@ interface MultisigBroadcastThresholdProps {
 const MultisigBroadcastThreshold = ({
   signedCount,
   threshold,
-}: MultisigBroadcastThresholdProps) => {
+}: MultisigBroadcastThresholdProps): React.ReactElement => {
   const status: SignatureStatus = React.useMemo(() => {
     return signedCount >= threshold ? 'ready' : 'insufficient';
   }, [signedCount, threshold]);

@@ -15,7 +15,7 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
+import { CreateMultisigTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';

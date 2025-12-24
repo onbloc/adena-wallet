@@ -12,7 +12,7 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
+import { CreateMultisigAccount } from '@components/molecules';
 import { useAdenaContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
