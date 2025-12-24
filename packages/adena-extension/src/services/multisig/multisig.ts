@@ -7,7 +7,11 @@ import {
   BroadcastTransactionMap,
 } from '@gnolang/tm2-js-client';
 import Long from 'long';
-import { PubKeyMultisig } from '../../../../../src/proto/tm2/multisig';
+import {
+  PubKeyMultisig,
+  Multisignature,
+  CompactBitArray,
+} from '../../../../../src/proto/tm2/multisig';
 import { Any } from '../../../../../src/proto/google/protobuf/any';
 
 import { EncodeTxSignature, WalletService } from '..';
@@ -35,8 +39,6 @@ import {
   fromBech32,
   createMultisigPublicKey,
 } from 'adena-module';
-
-import { Multisignature } from './multisignature';
 
 const AMINO_PREFIX = 0x0a;
 const AMINO_LENGTH = 0x21;
@@ -70,6 +72,7 @@ export class MultisigService {
     }
     return this.gnoProvider;
   }
+
   /**
    * Create a multisig account
    * @param config - Multisig configuration (signers and threshold)
@@ -167,7 +170,8 @@ export class MultisigService {
     }
   };
 
-  /** Create a signature
+  /**
+   * Create a signature
    *
    * @param account
    * @param document
@@ -215,9 +219,10 @@ export class MultisigService {
   };
 
   /**
-   * Prepare multisig transaction without broadcasting
+   * Combine multisig signatures and prepare transaction for broadcasting
    * @param multisigAccount - The multisig account
-   * @param document - MultisigTransactionDocument with collected signatures
+   * @param multisigDocument - MultisigTransactionDocument
+   * @param multisigSignatures - Collected signatures
    * @returns Prepared transaction data ready for broadcasting
    */
   async combineMultisigSignatures(
@@ -242,15 +247,25 @@ export class MultisigService {
       );
     }
 
-    // 3. signer public keys to bytes
+    // 3. Signer public keys to bytes
     const signerPublicKeys = multisigAccount.signerPublicKeys.map((signer) =>
       fromBase64(signer.publicKey.value),
     );
 
-    // 4. Build multisignature
-    const multisig = new Multisignature(signerPublicKeys.length);
-    this.addSignaturesToMultisig(multisig, signatures, signerPublicKeys);
-    const multisigSignature = multisig.marshal();
+    // 4. Build multisignature using Proto types
+    const bitArray = this.createProtoBitArray(
+      signerPublicKeys.length,
+      signatures,
+      signerPublicKeys,
+    );
+    const sigs = this.extractSignaturesInOrder(signatures, signerPublicKeys);
+
+    const protoMultisig = Multisignature.create({
+      bit_array: bitArray,
+      sigs: sigs,
+    });
+
+    const multisigSignature = Multisignature.encode(protoMultisig).finish();
 
     // 5. Parse gas fee
     const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
@@ -335,6 +350,140 @@ export class MultisigService {
     }
   }
 
+  /**
+   * Create Proto CompactBitArray from signatures
+   * Matches Go implementation: github.com/gnolang/gno/tm2/pkg/crypto/multisig/bitarray
+   */
+  private createProtoBitArray(
+    numSigners: number,
+    signatures: Signature[],
+    signerPublicKeys: Uint8Array[],
+  ): CompactBitArray {
+    const numBits = numSigners;
+    const extraBitsStored = numBits % 8;
+    const numBytes = Math.ceil(numBits / 8);
+    const elems = new Uint8Array(numBytes);
+
+    // Set bits for each signature
+    for (let i = 0; i < signatures.length; i++) {
+      const signature = signatures[i];
+
+      if (!signature.pub_key.value) {
+        throw new Error(`Signature ${i + 1} missing public key value`);
+      }
+
+      // Extract public key (handle Amino prefix if present)
+      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
+      const sigHasAminoPrefix =
+        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
+        sigPubKeyRaw[0] === AMINO_PREFIX &&
+        sigPubKeyRaw[1] === AMINO_LENGTH;
+      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
+
+      // Find index in signerPublicKeys
+      const index = this.findPublicKeyIndex(sigPubKey, signerPublicKeys);
+      if (index === -1) {
+        throw new Error(
+          `Public key not found in multisig signers: ${uint8ArrayToBase64(sigPubKey)}`,
+        );
+      }
+
+      // Set bit at index (MSB first, matching Go implementation)
+      // Go: bA.Elems[i>>3] |= (uint8(1) << uint8(7-(i%8)))
+      const byteIndex = Math.floor(index / 8);
+      const bitIndex = index % 8;
+      elems[byteIndex] |= 1 << (7 - bitIndex);
+    }
+
+    return CompactBitArray.create({
+      extra_bits_stored: extraBitsStored,
+      elems: elems,
+    });
+  }
+
+  /**
+   * Extract signatures in the correct order matching the bit array
+   */
+  private extractSignaturesInOrder(
+    signatures: Signature[],
+    signerPublicKeys: Uint8Array[],
+  ): Uint8Array[] {
+    // Create a map of public key -> signature
+    const sigMap = new Map<string, Uint8Array>();
+
+    for (const signature of signatures) {
+      if (!signature.pub_key.value) {
+        throw new Error('Signature missing public key value');
+      }
+
+      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
+      const sigHasAminoPrefix =
+        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
+        sigPubKeyRaw[0] === AMINO_PREFIX &&
+        sigPubKeyRaw[1] === AMINO_LENGTH;
+      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
+
+      const pubKeyBase64 = uint8ArrayToBase64(sigPubKey);
+      const sig = fromBase64(signature.signature);
+
+      sigMap.set(pubKeyBase64, sig);
+    }
+
+    // Extract signatures in order
+    const orderedSigs: Uint8Array[] = [];
+
+    for (const pubKey of signerPublicKeys) {
+      const pubKeyBase64 = uint8ArrayToBase64(pubKey);
+      const sig = sigMap.get(pubKeyBase64);
+
+      if (sig) {
+        orderedSigs.push(sig);
+      }
+    }
+
+    return orderedSigs;
+  }
+
+  /**
+   * Find the index of a public key in the signers list
+   * Handles both raw and Amino-prefixed public keys
+   */
+  private findPublicKeyIndex(pubkey: Uint8Array, keys: Uint8Array[]): number {
+    for (let i = 0; i < keys.length; i++) {
+      if (this.arePublicKeysEqual(pubkey, keys[i])) {
+        return i;
+      }
+
+      // Handle Amino prefix differences
+      if (keys[i].length === AMINO_PREFIXED_LENGTH && pubkey.length === 33) {
+        const keyWithoutPrefix = keys[i].slice(2);
+        if (this.arePublicKeysEqual(pubkey, keyWithoutPrefix)) {
+          return i;
+        }
+      }
+
+      if (pubkey.length === AMINO_PREFIXED_LENGTH && keys[i].length === 33) {
+        const pubkeyWithoutPrefix = pubkey.slice(2);
+        if (this.arePublicKeysEqual(pubkeyWithoutPrefix, keys[i])) {
+          return i;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * Compare two Uint8Arrays for equality
+   */
+  private arePublicKeysEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
   private async getPublicKeyFromChain(address: string) {
     const provider = this.getGnoProvider();
     const accountInfo = await provider.getAccountInfo(address).catch(() => null);
@@ -409,28 +558,6 @@ export class MultisigService {
         }
       }
       return a.bytes.length - b.bytes.length;
-    });
-  }
-
-  private addSignaturesToMultisig(
-    multisig: Multisignature,
-    signatures: any[],
-    signerPublicKeys: Uint8Array[],
-  ): void {
-    signatures.forEach((signature, i) => {
-      if (!signature.pub_key.value) {
-        throw new Error(`Signature ${i + 1} missing public key value`);
-      }
-
-      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
-      const sigHasAminoPrefix =
-        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
-        sigPubKeyRaw[0] === AMINO_PREFIX &&
-        sigPubKeyRaw[1] === AMINO_LENGTH;
-      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
-      const sig = fromBase64(signature.signature);
-
-      multisig.addSignatureFromPubKey(sig, sigPubKey, signerPublicKeys);
     });
   }
 
@@ -568,7 +695,7 @@ export class MultisigService {
   }
 
   /**
-   * Validate MultisigTransactionDocument (New API)
+   * Validate MultisigTransactionDocument
    */
   private validateMultisigTransactionDocument(document: MultisigTransactionDocument): void {
     if (!document) {
@@ -582,10 +709,6 @@ export class MultisigService {
     if (!document.tx.msgs || document.tx.msgs.length === 0) {
       throw new Error('At least one message is required');
     }
-
-    // if (!document.multisigSignatures || document.multisigSignatures.length === 0) {
-    //   throw new Error('At least one signature is required');
-    // }
   }
 
   private parseGasFee(gasFeeString: string): { amount: string; denom: string } {
