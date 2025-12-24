@@ -1,6 +1,7 @@
 export * from './approve-ledger-loading';
 export * from './approve-loading';
 export * from './approve-transaction';
+export * from './approve-signed-document';
 export * from './bottom-fixed-button';
 export * from './bottom-fixed-button-group';
 export * from './bottom-fixed-loading-button-group';

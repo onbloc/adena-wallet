@@ -21,6 +21,7 @@ import {
   TransactionHistoryService,
   TransactionService,
 } from '@services/transaction';
+import { MultisigService } from '@services/multisig';
 import {
   WalletAccountService,
   WalletAddressBookService,
@@ -46,6 +47,7 @@ export interface AdenaContextProps {
   transactionHistoryService: TransactionHistoryService;
   faucetService: FaucetService;
   transactionGasService: TransactionGasService | null;
+  multisigService: MultisigService;
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
@@ -155,6 +157,10 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new TransactionGasService(transactionGasRepository);
   }, [transactionGasRepository]);
 
+  const multisigService = useMemo(() => {
+    return new MultisigService(walletService, gnoProvider);
+  }, [walletService, gnoProvider]);
+
   const faucetRepository = useMemo(() => new FaucetRepository(axios), [axiosInstance]);
 
   const faucetService = useMemo(() => new FaucetService(faucetRepository), [faucetRepository]);
@@ -175,6 +181,7 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
         transactionHistoryService,
         faucetService,
         transactionGasService,
+        multisigService,
       }}
     >
       {children}
