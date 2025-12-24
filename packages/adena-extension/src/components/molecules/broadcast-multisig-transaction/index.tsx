@@ -37,6 +37,7 @@ export interface BroadcastMultisigTransactionProps {
   hasMemo: boolean;
   currentBalance?: number;
   isErrorNetworkFee?: boolean;
+  isNetworkFeeLoading?: boolean;
   networkFee: NetworkFeeType;
   transactionData: string;
   opened: boolean;
@@ -65,6 +66,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   hasMemo,
   networkFee,
   isErrorNetworkFee,
+  isNetworkFeeLoading,
   transactionData,
   opened,
   processing,
@@ -105,7 +107,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   }, [multisigConfig]);
 
   const disabledBroadcast = useMemo(() => {
-    if (isErrorNetworkFee) {
+    if (isErrorNetworkFee || isNetworkFeeLoading) {
       return true;
     }
 
@@ -118,7 +120,14 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, networkFee, multisigConfig, validSignatures, threshold]);
+  }, [
+    isErrorNetworkFee,
+    isNetworkFeeLoading,
+    networkFee,
+    multisigConfig,
+    validSignatures,
+    threshold,
+  ]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -202,7 +211,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
-          isLoading={false}
+          isLoading={isNetworkFeeLoading}
           errorMessage={networkFeeErrorMessage}
           simulateErrorMessage={null}
           onClickSetting={() => {}} // No setting for broadcast

@@ -111,6 +111,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
+  const [isBalanceLoading, setIsBalanceLoading] = useState(true);
   const [memo, setMemo] = useState('');
 
   const [hostname, setHostname] = useState('');
@@ -187,8 +188,16 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return consumedBN.toNumber();
   }, [multisigDocument]);
 
+  const isNetworkFeeLoading = useMemo(() => {
+    return isBalanceLoading;
+  }, [isBalanceLoading]);
+
   const isErrorNetworkFee = useMemo(() => {
     if (!displayNetworkFee.amount) {
+      return false;
+    }
+
+    if (isBalanceLoading) {
       return false;
     }
 
@@ -201,7 +210,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     return BigNumber(currentBalance)
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(resultConsumedAmount);
-  }, [displayNetworkFee.amount, currentBalance, consumedTokenAmount]);
+  }, [displayNetworkFee.amount, currentBalance, consumedTokenAmount, isBalanceLoading]);
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
     return requestData?.data?.arguments || [];
@@ -237,6 +246,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       return;
     }
 
+    setIsBalanceLoading(true);
     gnoProvider
       .getBalance(address, GNOT_TOKEN.denom)
       .then((balance) => {
@@ -244,6 +254,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       })
       .catch((error) => {
         console.log(error);
+      })
+      .finally(() => {
+        setIsBalanceLoading(false);
       });
   };
 
@@ -460,6 +473,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       hasMemo={hasMemo}
       currentBalance={currentBalance}
       isErrorNetworkFee={isErrorNetworkFee}
+      isNetworkFeeLoading={isNetworkFeeLoading}
       networkFee={displayNetworkFee}
       transactionData={JSON.stringify(multisigDocument, null, 2)}
       opened={visibleTransactionInfo}
