@@ -58,7 +58,7 @@ export type WalletModelV015 = {
   currentAccountId?: string;
 };
 
-type AccountDataModelV015 = {
+export type AccountDataModelV015 = {
   id?: string;
   index: number;
   type: 'HD_WALLET' | 'PRIVATE_KEY' | 'LEDGER' | 'WEB3_AUTH' | 'AIRGAP' | 'MULTISIG';
