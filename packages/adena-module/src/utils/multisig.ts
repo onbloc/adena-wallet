@@ -1,7 +1,7 @@
 import { Any, defaultAddressPrefix } from '@gnolang/tm2-js-client';
 import { sha256 } from '../crypto';
 import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
-import { toBech32 } from 'src/encoding';
+import { toBech32 } from '../encoding';
 
 /**
  * Protobuf varint encoding
