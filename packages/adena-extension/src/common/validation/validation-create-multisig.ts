@@ -1,5 +1,4 @@
 import { validateAddress } from 'adena-module';
-import { validateInvalidAddress } from './validation-address-book';
 
 /**
  * Validates signers array format and minimum count

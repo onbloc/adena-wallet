@@ -148,7 +148,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       };
     }
 
-    // Parse "6113ugnot" -> { amount: "0.006113", denom: "GNOT" }
+    // Parse amount string with denomination into structured format
+    // Example: "6113ugnot" -> { amount: "0.006113", denom: "GNOT" }
     const gasFeeMatch = multisigDocument.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
     if (!gasFeeMatch) {
       return {
