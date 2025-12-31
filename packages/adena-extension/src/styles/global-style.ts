@@ -11,7 +11,7 @@ export const GlobalWebStyle = createGlobalStyle`
   html,
   body,
   #web {
-    height: 100%;
+    min-height: 100vh;
   }
 
   html {

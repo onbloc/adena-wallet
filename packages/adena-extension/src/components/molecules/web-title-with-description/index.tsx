@@ -12,6 +12,7 @@ export interface WebTitleWithDescriptionProps {
   isCenter?: boolean;
   marginTop?: CSSProperties['marginTop'];
   marginBottom?: CSSProperties['marginBottom'];
+  descriptionLetterSpacing?: CSSProperties['letterSpacing'];
 }
 
 export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = ({
@@ -20,6 +21,7 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
   isCenter,
   marginTop = 0,
   marginBottom = 0,
+  descriptionLetterSpacing,
 }) => {
   const theme = useTheme();
 
@@ -34,7 +36,12 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
       <WebText type='headline2' textCenter={isCenter}>
         {title}
       </WebText>
-      <WebText type='body4' color={theme.webNeutral._500} textCenter={isCenter}>
+      <WebText
+        type='body4'
+        color={theme.webNeutral._500}
+        textCenter={isCenter}
+        style={{ letterSpacing: descriptionLetterSpacing }}
+      >
         {description}
       </WebText>
     </StyledContainer>

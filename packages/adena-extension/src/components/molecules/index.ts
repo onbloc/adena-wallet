@@ -22,3 +22,5 @@ export * from './underline-text-button';
 export * from './web-seed-box';
 export * from './web-seed-input';
 export * from './web-title-with-description';
+export * from './web-multisig-signer-input';
+export * from './web-multisig-threshold-input';

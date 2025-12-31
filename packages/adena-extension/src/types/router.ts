@@ -89,6 +89,7 @@ export enum RoutePath {
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
   WebSetupAirgap = '/web/airgap',
+  WebSetupMultisig = 'web/multisig',
   WebWalletCreate = '/web/wallet-create',
   WebWalletImport = '/web/wallet-import',
   WebWalletExport = '/web/wallet-export',
@@ -234,6 +235,7 @@ export type RouteParams = {
     doneQuestionnaire: boolean;
   } | null;
   [RoutePath.WebSetupAirgap]: null;
+  [RoutePath.WebSetupMultisig]: null;
   [RoutePath.WebWalletCreate]: {
     doneQuestionnaire: boolean;
   } | null;
