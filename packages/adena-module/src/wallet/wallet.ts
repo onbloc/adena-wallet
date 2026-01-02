@@ -51,7 +51,6 @@ export interface Wallet {
   lastAccountIndex: number;
   lastLedgerAccountIndex: number;
   lastMultisigAccountIndex: number;
-  lastGlobalAccountIndex: number;
 
   addAccount: (account: Account) => number;
   removeAccount: (account: Account) => boolean;
@@ -173,11 +172,6 @@ export class AdenaWallet implements Wallet {
 
   get defaultHDWalletKeyring() {
     return this._keyrings.filter(isHDWalletKeyring).find((_, index) => index === 0) || null;
-  }
-
-  get lastGlobalAccountIndex() {
-    const indices = this.accounts.map((account) => account.index);
-    return Math.max(0, ...indices);
   }
 
   get lastAccountIndex() {

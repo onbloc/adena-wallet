@@ -192,7 +192,7 @@ export class WalletService {
       });
 
       // Get account index and name
-      const addedIndex = wallet.lastGlobalAccountIndex + 1;
+      const addedIndex = wallet.lastAccountIndex + 1;
       const multisigName = wallet.nextMultisigAccountName;
 
       // Create multisig account with publicKey
