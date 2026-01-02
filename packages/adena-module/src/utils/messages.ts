@@ -1,7 +1,16 @@
-import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
+import {
+  MsgEndpoint,
+  MsgSend,
+  Any,
+  MemFile,
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgRun,
+} from '@gnolang/gno-js-client';
 import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 
-import { Any, MemFile, MemPackage, MsgAddPackage, MsgCall, MsgRun } from '@gnolang/gno-js-client';
 import { fromBase64 } from '../encoding';
 
 export interface Document {
@@ -171,10 +180,18 @@ export function documentToTx(document: Document): Tx {
             })) || [],
         };
 
-        pubKeyAny = {
+        pubKeyAny = Any.create({
           type_url: sig.pub_key['@type'],
-          value: encodeMultisigPubKey(multisigPubKey),
-        };
+          value: PubKeyMultisig.encode({
+            k: Long.fromNumber(multisigPubKey.threshold),
+            pub_keys: multisigPubKey.pubkeys.map((pk) =>
+              Any.create({
+                type_url: pk.type_url,
+                value: pk.value,
+              }),
+            ),
+          }).finish(),
+        });
       } else {
         const publicKeyBytes = fromBase64(sig.pub_key.value || '');
         const wrappedPublicKeyValue: PubKeySecp256k1 = {
@@ -356,42 +373,3 @@ export const strToSignedTx = (str: string): Tx | null => {
     return null;
   }
 };
-
-function encodeMultisigPubKey(multisigPubKey: {
-  threshold: number;
-  pubkeys: { type_url: string; value: Uint8Array }[];
-}): Uint8Array {
-  const result: number[] = [];
-
-  result.push(0x08);
-  result.push(...encodeVarint(multisigPubKey.threshold));
-
-  multisigPubKey.pubkeys.forEach((pubkey) => {
-    result.push(0x12);
-
-    const anyMessage: number[] = [];
-
-    anyMessage.push(0x0a);
-    anyMessage.push(...encodeVarint(pubkey.type_url.length));
-    anyMessage.push(...Array.from(new TextEncoder().encode(pubkey.type_url)));
-
-    anyMessage.push(0x12);
-    anyMessage.push(...encodeVarint(pubkey.value.length));
-    anyMessage.push(...pubkey.value);
-
-    result.push(...encodeVarint(anyMessage.length));
-    result.push(...anyMessage);
-  });
-
-  return new Uint8Array(result);
-}
-
-function encodeVarint(value: number): number[] {
-  const result: number[] = [];
-  while (value >= 0x80) {
-    result.push((value & 0xff) | 0x80);
-    value >>>= 7;
-  }
-  result.push(value & 0xff);
-  return result;
-}
