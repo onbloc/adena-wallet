@@ -124,6 +124,7 @@ const config = {
     new NodePolyfillPlugin(),
     new ProvidePlugin({
       process: 'process/browser.js',
+      Long: ['long', 'default'],
     }),
   ],
 };
