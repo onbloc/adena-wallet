@@ -45,11 +45,7 @@ export const WebMultisigSignerInput = ({
               value={signer}
               onChange={(value) => onSignerChange(index, value)}
               disabled={index === 0 && isFirstInputDisabled}
-              placeholder={
-                index === 0 && isFirstInputDisabled
-                  ? 'Your address (auto-filled)'
-                  : 'Enter signer address'
-              }
+              placeholder={'Account Address'}
               error={hasError}
             />
             {index >= 2 && (

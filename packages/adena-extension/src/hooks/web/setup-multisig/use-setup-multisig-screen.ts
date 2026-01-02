@@ -11,14 +11,13 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 export type UseSetupMultisigScreenReturn = {
   setupMultisigState: SetupMultisigStateType;
   setSetupMultisigState: (setupMultisigState: SetupMultisigStateType) => void;
-  initSetup: () => void;
+  initSetup: (mode: MultisigAccountMode) => void;
   indicatorInfo: UseIndicatorStepReturn;
   multisigConfig: MultisigConfig;
   updateSigner: (index: number, address: string) => void;
   addSigner: () => void;
   removeSigner: (index: number) => void;
   validateMultisigConfig: () => boolean;
-  initMultisigConfig: (currentAddress?: string, mode?: MultisigAccountMode) => void;
   multisigAccountMode: MultisigAccountMode;
   setMultisigAccountMode: (mode: MultisigAccountMode) => void;
   multisigConfigError: string | null;
@@ -58,7 +57,7 @@ export const MAX_SIGNERS = 7;
 
 const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
   const { multisigService, walletService } = useAdenaContext();
-  const { changeCurrentAccount } = useCurrentAccount();
+  const { changeCurrentAccount, currentAddress } = useCurrentAccount();
 
   const [setupMultisigState, setSetupMultisigState] =
     React.useState<SetupMultisigStateType>('INIT');
@@ -79,30 +78,23 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     currentState: setupMultisigState,
   });
 
-  const initSetup = React.useCallback(() => {
-    setMultisigConfigError(null);
-    setSetupMultisigState('ENTER_MULTISIG_CONFIG');
-  }, []);
-
-  const initMultisigConfig = React.useCallback(
-    (currentAddress?: string, mode: MultisigAccountMode = 'CREATE') => {
+  const initSetup = React.useCallback(
+    (mode: MultisigAccountMode) => {
+      setMultisigConfigError(null);
       setMultisigAccountMode(mode);
-
-      if (multisigConfigError !== null) {
-        return;
-      }
 
       if (mode === 'CREATE' && currentAddress) {
         setMultisigConfig({
+          ...DEFAULT_MULTISIG_CONFIG,
           signers: [currentAddress, ''],
-          threshold: 1,
-          noSort: false,
         });
       } else {
         setMultisigConfig({ ...DEFAULT_MULTISIG_CONFIG });
       }
+
+      setSetupMultisigState('ENTER_MULTISIG_CONFIG');
     },
-    [multisigConfigError],
+    [currentAddress],
   );
 
   const updateSigner = React.useCallback((index: number, address: string) => {
@@ -265,7 +257,6 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     addSigner,
     removeSigner,
     validateMultisigConfig,
-    initMultisigConfig,
     multisigAccountMode,
     setMultisigAccountMode,
     multisigConfigError,

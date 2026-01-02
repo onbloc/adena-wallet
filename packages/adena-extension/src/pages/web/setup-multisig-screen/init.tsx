@@ -1,28 +1,30 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { View, WebButton, WebImg } from '@components/atoms';
+import { validateAddress } from 'adena-module';
+import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+
+import { Row, View, WebImg } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
-
+import WebMainButton from '@components/atoms/web-main-button';
 import IconAirgap from '@assets/web/airgap-green.svg';
-
-const StyledContainer = styled(View)`
-  width: 100%;
-  row-gap: 24px;
-`;
-
-const StyledButtonWrapper = styled(View)`
-  align-items: flex-start;
-`;
+import IconCreate from '@assets/web/icon-create';
+import IconImport from '@assets/web/icon-import';
 
 const description = `Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.`;
 
 interface SetupMultisigInitProps {
-  initSetup: () => void;
+  initSetup: (mode: MultisigAccountMode) => void;
+  currentAddress: string | null;
 }
 
-const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup }) => {
+const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup, currentAddress }) => {
+  const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
+  const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
+
+  const isCreateDisabled = !currentAddress || !validateAddress(currentAddress);
+
   return (
     <StyledContainer>
       <View style={{ marginBottom: 8 }}>
@@ -37,17 +39,30 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup }) => {
 
       <WebWarningDescriptionBox description={description} />
 
-      <StyledButtonWrapper>
-        <WebButton
+      <Row style={{ width: '100%', columnGap: 12 }}>
+        <WebMainButton
+          buttonRef={createMultisigAccountButtonRef}
           figure='primary'
-          size='small'
-          onClick={initSetup}
-          text='Next'
-          rightIcon='chevronRight'
+          iconElement={<IconCreate />}
+          text='Create Multisig Account'
+          onClick={() => initSetup('CREATE')}
+          disabled={isCreateDisabled}
         />
-      </StyledButtonWrapper>
+        <WebMainButton
+          buttonRef={importMultisigAccountButtonRef}
+          figure='secondary'
+          iconElement={<IconImport />}
+          text='Import Multisig Account'
+          onClick={() => initSetup('IMPORT')}
+        />
+      </Row>
     </StyledContainer>
   );
 };
 
 export default SetupMultisigInit;
+
+const StyledContainer = styled(View)`
+  width: 100%;
+  row-gap: 24px;
+`;
