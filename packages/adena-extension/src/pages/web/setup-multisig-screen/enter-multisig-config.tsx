@@ -15,13 +15,13 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 interface SetupMultisigConfigProps {
   currentAddress: string;
   multisigConfig: MultisigConfig;
-  initMultisigConfig: (currentAddress?: string, mode?: MultisigAccountMode) => void;
   onSignerChange: (index: number, value: string) => void;
   onAddSigner: () => void;
   onRemoveSigner: (index: number) => void;
   onThresholdChange: (threshold: number) => void;
   onCreateMultisigAccount: () => Promise<void>;
   multisigConfigError: string | null;
+  multisigAccountMode: MultisigAccountMode;
 }
 
 const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
@@ -30,10 +30,10 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
   onSignerChange,
   onAddSigner,
   onRemoveSigner,
-  initMultisigConfig,
   onThresholdChange,
   multisigConfigError,
   onCreateMultisigAccount,
+  multisigAccountMode,
 }) => {
   const { signers, threshold } = multisigConfig;
 
@@ -67,14 +67,6 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
     return false;
   }, [signers, threshold, multisigConfigError, validSignersCount]);
 
-  React.useEffect(() => {
-    const hasNoSigners = multisigConfig.signers.every((signer) => signer === '');
-
-    if (hasNoSigners) {
-      initMultisigConfig(currentAddress, 'CREATE');
-    }
-  }, [currentAddress, multisigConfig.signers, initMultisigConfig]);
-
   return (
     <StyledContainer>
       <View style={{ marginBottom: 8 }}>
@@ -90,7 +82,7 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
 
       <StyledInputBox>
         <WebMultisigSignerInput
-          mode={'CREATE'}
+          mode={multisigAccountMode}
           currentAddress={currentAddress}
           signers={signers}
           onAddSigner={onAddSigner}
@@ -105,7 +97,9 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
             onThresholdChange={onThresholdChange}
             multisigConfigError={multisigConfigError}
           />
-          {multisigConfigError && <WebErrorText text={multisigConfigError} />}
+          {multisigConfigError && (
+            <WebErrorText text={multisigConfigError} alignItems='flex-start' />
+          )}
         </View>
       </StyledInputBox>
 
@@ -127,7 +121,6 @@ export default SetupMultisigConfig;
 
 const StyledContainer = styled(View)`
   width: 100%;
-  /* height: 350px; */
   row-gap: 24px;
 `;
 

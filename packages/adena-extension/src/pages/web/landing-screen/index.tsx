@@ -31,6 +31,7 @@ const LandingScreen = (): ReactElement => {
   const theme = useTheme();
   const hardwareWalletButtonRef = useRef<HTMLButtonElement>(null);
   const airgapAccountButtonRef = useRef<HTMLButtonElement>(null);
+  const multisigAccountButtonRef = useRef<HTMLButtonElement>(null);
   const advancedOptionButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: existWallet, isLoading } = useQuery(
@@ -129,7 +130,7 @@ const LandingScreen = (): ReactElement => {
           onClick={moveSetupAirgapScreen}
         />
         <WebMainButton
-          buttonRef={airgapAccountButtonRef}
+          buttonRef={multisigAccountButtonRef}
           figure='quinary'
           iconElement={<IconMultisig />}
           text='Multi-sig Account'

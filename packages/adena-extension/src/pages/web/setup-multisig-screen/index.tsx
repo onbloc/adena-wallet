@@ -27,13 +27,13 @@ const SetupMultisigScreen: React.FC = () => {
     multisigConfig,
     addSigner,
     removeSigner,
-    initMultisigConfig,
     updateSigner,
     updateThreshold,
     multisigConfigError,
     createMultisigAccount,
     createdMultisigAddress,
     resetMultisigConfig,
+    multisigAccountMode,
   } = useSetupMultisigScreen();
 
   const topSpacing = useMemo(() => {
@@ -84,18 +84,20 @@ const SetupMultisigScreen: React.FC = () => {
         />
       )}
 
-      {setupMultisigState === 'INIT' && <SetupMultisigInit initSetup={initSetup} />}
+      {setupMultisigState === 'INIT' && (
+        <SetupMultisigInit initSetup={initSetup} currentAddress={currentAddress} />
+      )}
       {setupMultisigState === 'ENTER_MULTISIG_CONFIG' && (
         <SetupMultisigConfig
           currentAddress={currentAddress || ''}
           multisigConfig={multisigConfig}
-          initMultisigConfig={initMultisigConfig}
           multisigConfigError={multisigConfigError}
           onAddSigner={addSigner}
           onRemoveSigner={removeSigner}
           onSignerChange={updateSigner}
           onThresholdChange={updateThreshold}
           onCreateMultisigAccount={createMultisigAccount}
+          multisigAccountMode={multisigAccountMode}
         />
       )}
       {setupMultisigState === 'COMPLETE' && (
