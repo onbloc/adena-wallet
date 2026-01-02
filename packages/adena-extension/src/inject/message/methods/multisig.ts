@@ -7,7 +7,7 @@ import { InjectionMessage, InjectionMessageInstance } from '../message';
 export const createMultisigAccount = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigAccount,
     requestData,
@@ -19,7 +19,7 @@ export const createMultisigAccount = async (
 export const createMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
-) => {
+): Promise<void> => {
   const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
     sendResponse(validationMessage);

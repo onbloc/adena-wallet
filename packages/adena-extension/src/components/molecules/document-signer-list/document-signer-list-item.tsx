@@ -59,7 +59,7 @@ const DocumentSignerListItem = ({
   order,
   status,
   onClickAddress,
-}: DocumentSignerListItemProps) => {
+}: DocumentSignerListItemProps): React.ReactElement => {
   const displaySignerAddress = useMemo(() => {
     return formatAddress(signerAddress, 8);
   }, [signerAddress]);
@@ -76,7 +76,7 @@ const DocumentSignerListItem = ({
       <div className='title-wrapper'>
         <span className='title'>
           <span className='info'>Signer {order}</span>
-          <button className='link-button' onClick={() => onClickAddress(signerAddress)}>
+          <button className='link-button' onClick={(): void => onClickAddress(signerAddress)}>
             <IconShare />
           </button>
         </span>

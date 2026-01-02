@@ -12,7 +12,7 @@ interface DocumentSignerListProps {
   signerInfos: SignerInfo[];
 }
 
-const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps) => {
+const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.ReactElement => {
   const { openLink } = useLink();
   const { currentNetwork, scannerParameters } = useNetwork();
 

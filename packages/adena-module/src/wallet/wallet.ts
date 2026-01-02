@@ -22,9 +22,7 @@ import {
   makeAccount,
   SeedAccount,
   SingleAccount,
-  MultisigAccount,
   isMultisigAccount,
-  MultisigConfig,
 } from './account';
 import {
   AddressKeyring,
@@ -38,7 +36,6 @@ import {
   LedgerKeyring,
   makeKeyring,
   Web3AuthKeyring,
-  MultisigKeyring,
 } from './keyring';
 import { decryptAES, encryptAES } from './wallet-crypto-util';
 

@@ -1,4 +1,4 @@
-import { Account, Document, isMultisigAccount, MultisigConfig } from 'adena-module';
+import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 

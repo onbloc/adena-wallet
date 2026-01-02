@@ -5,14 +5,14 @@ import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   BroadcastTransactionMap,
+  Any,
 } from '@gnolang/tm2-js-client';
 import Long from 'long';
 import {
   PubKeyMultisig,
   Multisignature,
   CompactBitArray,
-} from '../../../../../src/proto/tm2/multisig';
-import { Any } from '../../../../../src/proto/google/protobuf/any';
+} from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 
 import { EncodeTxSignature, WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
@@ -485,7 +485,14 @@ export class MultisigService {
     return true;
   }
 
-  private async getPublicKeyFromChain(address: string) {
+  private async getPublicKeyFromChain(address: string): Promise<
+    | {
+        '@type': string;
+        value: string;
+      }
+    | null
+    | undefined
+  > {
     const provider = this.getGnoProvider();
     const accountInfo = await provider.getAccountInfo(address).catch(() => null);
     const accountPubKey = accountInfo?.publicKey;
@@ -531,7 +538,7 @@ export class MultisigService {
       if (!publicKeyInfo?.value) {
         throw new Error(
           `Public key not found for address: ${address}. ` +
-            `The account may not have sent any transactions yet.`,
+            'The account may not have sent any transactions yet.',
         );
       }
 

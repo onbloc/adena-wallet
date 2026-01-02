@@ -196,7 +196,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
       <ApproveTransactionMessageBox
         messages={transactionMessages}
         argumentInfos={argumentInfos}
-        changeMessages={() => {}} // Read-only for broadcast
         openScannerLink={openScannerLink}
         editable={false}
       />
@@ -214,7 +213,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           isLoading={isNetworkFeeLoading}
           errorMessage={networkFeeErrorMessage}
           simulateErrorMessage={null}
-          onClickSetting={() => {}} // No setting for broadcast
         />
       </div>
 

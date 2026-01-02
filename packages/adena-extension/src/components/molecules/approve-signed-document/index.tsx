@@ -120,7 +120,6 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
       <ApproveTransactionMessageBox
         messages={transactionMessages}
         argumentInfos={argumentInfos}
-        changeMessages={() => {}} // Read-only for sign
         openScannerLink={openScannerLink}
         editable={false}
       />

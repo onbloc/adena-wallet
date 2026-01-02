@@ -5,7 +5,7 @@ __metadata:
   version: 6
   cacheKey: 8
 
-"@adena-wallet/sdk@npm:^0.0.14":
+"@adena-wallet/sdk@npm:0.0.14":
   version: 0.0.14
   resolution: "@adena-wallet/sdk@npm:0.0.14"
   dependencies:
@@ -1818,13 +1818,6 @@ __metadata:
   version: 2.2.3
   resolution: "@bufbuild/protobuf@npm:2.2.3"
   checksum: 567ca0497669a8944fe84a9fdfa236e4a91d5879190c0ec0c8727d5220cbc21a85d06a114ac1eb35387fc5cb1dcbb7adc583c4d4f6a2ecb34fbe61dcaa7e7e9b
-  languageName: node
-  linkType: hard
-
-"@bufbuild/protobuf@npm:^2.0.0, @bufbuild/protobuf@npm:^2.10.2":
-  version: 2.10.2
-  resolution: "@bufbuild/protobuf@npm:2.10.2"
-  checksum: 41285a327392ac1704c3a021a9315cf56b03e38ec790c78988658eaac8b15b596e7acf702d36412636a50573c19367722d500ced4fb86be44e1c6e68c284fb42
   languageName: node
   linkType: hard
 
@@ -6092,7 +6085,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "adena-extension@workspace:packages/adena-extension"
   dependencies:
-    "@adena-wallet/sdk": ^0.0.14
+    "@adena-wallet/sdk": 0.0.14
     "@babel/core": 7.23.9
     "@babel/preset-env": 7.23.9
     "@babel/preset-react": 7.23.3
@@ -6265,7 +6258,6 @@ __metadata:
     jest: 29.7.0
     lint-staged: 15.4.3
     prettier: 3.2.5
-    ts-proto: ^2.10.0
     tsconfig-paths-webpack-plugin: 4.1.0
     typescript: 4.9.5
   languageName: unknown
@@ -7463,13 +7455,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"case-anything@npm:^2.1.13":
-  version: 2.1.13
-  resolution: "case-anything@npm:2.1.13"
-  checksum: c39c69d7e418337b6006a9692f13c2b257e907e867149a102e9beb7e9d2d52da14e754da1f4e4ce82a866d86d93047e522f64360bda54e7d7c308f4cdd736c3d
-  languageName: node
-  linkType: hard
-
 "case-sensitive-paths-webpack-plugin@npm:^2.4.0":
   version: 2.4.0
   resolution: "case-sensitive-paths-webpack-plugin@npm:2.4.0"
@@ -8619,15 +8604,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"detect-libc@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "detect-libc@npm:1.0.3"
-  bin:
-    detect-libc: ./bin/detect-libc.js
-  checksum: daaaed925ffa7889bd91d56e9624e6c8033911bb60f3a50a74a87500680652969dbaab9526d1e200a4c94acf80fc862a22131841145a0a8482d60a99c24f4a3e
-  languageName: node
-  linkType: hard
-
 "detect-newline@npm:^3.0.0":
   version: 3.1.0
   resolution: "detect-newline@npm:3.1.0"
@@ -8832,15 +8808,6 @@ __metadata:
   version: 16.6.1
   resolution: "dotenv@npm:16.6.1"
   checksum: e8bd63c9a37f57934f7938a9cf35de698097fadf980cb6edb61d33b3e424ceccfe4d10f37130b904a973b9038627c2646a3365a904b4406514ea94d7f1816b69
-  languageName: node
-  linkType: hard
-
-"dprint-node@npm:^1.0.8":
-  version: 1.0.8
-  resolution: "dprint-node@npm:1.0.8"
-  dependencies:
-    detect-libc: ^1.0.3
-  checksum: ac53b71296d155664319877f0e8c9fe94e084457ce9aae68081b9dd7165916f2829222923c59b1399d95680362f18a8da5994e7f76a8f52035e02bbd14ba76bc
   languageName: node
   linkType: hard
 
@@ -17002,38 +16969,6 @@ __metadata:
     typescript: "*"
     webpack: ^5.0.0
   checksum: 7cf396e656d905388ea2a9b5e82f16d3c955fda8d3df2fbf219f4bee16ff50a3c995c44ae3e584634e9443f056cec70bb3151add3917ffb4588ecd7394bac0ec
-  languageName: node
-  linkType: hard
-
-"ts-poet@npm:^6.12.0":
-  version: 6.12.0
-  resolution: "ts-poet@npm:6.12.0"
-  dependencies:
-    dprint-node: ^1.0.8
-  checksum: 05fec86d188a0727433ae2deea950161c43ee433526702b75cc19858b90a20642b075d99e1029efcafccb59d9e98492c8e41fbbc945615bbff0e58922f820e1c
-  languageName: node
-  linkType: hard
-
-"ts-proto-descriptors@npm:2.1.0":
-  version: 2.1.0
-  resolution: "ts-proto-descriptors@npm:2.1.0"
-  dependencies:
-    "@bufbuild/protobuf": ^2.0.0
-  checksum: 5d2fb092273c5ca5d31294a51714d14d1c4ceeaa8abadf8ec9fb98eeb6a0d11b8ead287f1bb496c5abeef30784319eae7b27a91ba46e5ee9f8c2eb92efe39f12
-  languageName: node
-  linkType: hard
-
-"ts-proto@npm:^2.10.0":
-  version: 2.10.0
-  resolution: "ts-proto@npm:2.10.0"
-  dependencies:
-    "@bufbuild/protobuf": ^2.10.2
-    case-anything: ^2.1.13
-    ts-poet: ^6.12.0
-    ts-proto-descriptors: 2.1.0
-  bin:
-    protoc-gen-ts_proto: protoc-gen-ts_proto
-  checksum: 380431df00069ef2272d3cdcca243fcd971c99e22da3f30e26f94cc7dd21541a9786a1552456f4be6f918cdc98657f5401aae92f2eb084237bbd39652a65f32b
   languageName: node
   linkType: hard
 

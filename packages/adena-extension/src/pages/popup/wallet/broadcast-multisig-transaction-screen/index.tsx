@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { Account, isAirgapAccount, isMultisigAccount, MultisigConfig } from 'adena-module';
+import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';

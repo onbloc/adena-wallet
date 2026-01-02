@@ -1,5 +1,3 @@
-import { MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
-
 export type StorageModelV015 = {
   version: 15;
   data: StorageModelDataV015;
@@ -67,8 +65,8 @@ export type AccountDataModelV015 = {
   hdPath?: number;
   publicKey: number[];
   addressBytes?: number[];
-  multisigConfig?: MultisigConfig;
-  signerPublicKeys?: SignerPublicKeyInfo[];
+  multisigConfig?: MultisigConfigModelV015;
+  signerPublicKeys?: SignerPublicKeyInfoModelV015[];
 };
 
 export type KeyringDataModelV015 = {
@@ -79,8 +77,8 @@ export type KeyringDataModelV015 = {
   seed?: number[];
   mnemonic?: string;
   addressBytes?: number[];
-  multsigConfig?: MultisigConfig;
-  signerPublicKeys?: SignerPublicKeyInfo[];
+  multsigConfig?: MultisigConfigModelV015;
+  signerPublicKeys?: SignerPublicKeyInfoModelV015[];
 };
 
 export type EncryptedStoredPasswordModelV015 = string;
@@ -149,3 +147,16 @@ export type AccountGRC721CollectionsV015 = {
 export type AccountGRC721PinnedPackagesV015 = {
   [key in AccountId]: { [key in NetworkId]: string[] };
 };
+
+export interface MultisigConfigModelV015 {
+  signers: string[];
+  threshold: number;
+  noSort?: boolean;
+}
+export interface SignerPublicKeyInfoModelV015 {
+  address: string;
+  publicKey: {
+    '@type': string;
+    value: string;
+  };
+}
