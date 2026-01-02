@@ -32,7 +32,6 @@ import {
   fromBase64,
   Account,
   isMultisigAccount,
-  fromBase64Multisig,
   Document,
   documentToTx,
   MultisigAccount,
@@ -542,7 +541,7 @@ export class MultisigService {
         );
       }
 
-      const publicKeyBytes = fromBase64Multisig(publicKeyInfo.value);
+      const publicKeyBytes = fromBase64(publicKeyInfo.value);
 
       signerInfos.push({
         address,

@@ -125,29 +125,6 @@ export function createMultisigPublicKey(
   };
 }
 
-/**
- * Base64 decoding (for multisig)
- */
-export function fromBase64Multisig(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-/**
- * Base64 encoding (for multisig)
- */
-export function toBase64Multisig(bytes: Uint8Array): string {
-  let binaryString = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binaryString += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binaryString);
-}
-
 export function convertMessageToAmino(msg: any): { type: string; value: any } {
   if (msg.type && msg.value) {
     return msg;
