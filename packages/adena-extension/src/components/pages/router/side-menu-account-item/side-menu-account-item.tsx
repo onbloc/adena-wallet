@@ -43,6 +43,8 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
         return 'Imported';
       case 'LEDGER':
         return 'Ledger';
+      case 'MULTISIG':
+        return 'Multsig';
       default:
         return null;
     }

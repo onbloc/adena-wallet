@@ -4,7 +4,9 @@ import { ThemeProvider } from 'styled-components';
 import { render } from '@testing-library/react';
 import theme from '@styles/theme';
 import { GlobalPopupStyle } from '@styles/global-style';
-import ApproveTransactionMessage, { ApproveTransactionMessageProps } from './approve-transaction-message';
+import ApproveTransactionMessage, {
+  ApproveTransactionMessageProps,
+} from './approve-transaction-message';
 
 describe('ApproveTransactionMessage Component', () => {
   it('ApproveTransactionMessage render', () => {
@@ -12,6 +14,7 @@ describe('ApproveTransactionMessage Component', () => {
       changeMessage: jest.fn(),
       openScannerLink: jest.fn(),
       index: 0,
+      editable: true,
       message: {
         type: '/vm.m_call',
         value: {

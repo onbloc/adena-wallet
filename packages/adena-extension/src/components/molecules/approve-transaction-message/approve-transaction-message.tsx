@@ -44,6 +44,7 @@ export interface ApproveTransactionMessageProps {
   argumentKeyMap?: Record<number, string>;
   changeMessage: (index: number, messages: ContractMessage) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
+  editable: boolean;
 }
 
 const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
@@ -52,6 +53,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   argumentKeyMap,
   changeMessage,
   openScannerLink,
+  editable,
 }) => {
   const { type } = message;
 
@@ -63,6 +65,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         argumentKeyMap={argumentKeyMap}
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
+        editable={editable}
       />
     );
   }
@@ -74,6 +77,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         message={message}
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
+        editable={editable}
       />
     );
   }
@@ -85,6 +89,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         message={message}
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
+        editable={editable}
       />
     );
   }
@@ -95,6 +100,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       message={message}
       changeMessage={changeMessage}
       openScannerLink={openScannerLink}
+      editable={editable}
     />
   );
 };
@@ -140,6 +146,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   argumentKeyMap,
   changeMessage,
   openScannerLink,
+  editable,
 }) => {
   const { func, pkg_path, args, send, max_deposit } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
@@ -277,6 +284,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <ArgumentEditBox
               value={sendAmount}
               onChange={(value): void => changeSendAmount(value)}
+              editable={editable}
             />
           </div>
           {displayArguments.map((arg, argumentIndex) => (
@@ -287,6 +295,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
               <ArgumentEditBox
                 value={arg}
                 onChange={(value): void => changeArgument(argumentIndex, value)}
+                editable={editable}
               />
             </div>
           ))}
@@ -298,6 +307,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
+              editable={editable}
             />
           </div>
         </MessageRowWrapper>
@@ -310,6 +320,7 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
   changeMessage,
+  editable,
 }) => {
   const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
     useMaxDepositMessage(index, message, changeMessage);
@@ -336,6 +347,7 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
+              editable={editable}
             />
           </div>
         </MessageRowWrapper>
@@ -348,6 +360,7 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
   changeMessage,
+  editable,
 }) => {
   const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
     useMaxDepositMessage(index, message, changeMessage);
@@ -374,6 +387,7 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
             <ArgumentEditBox
               value={maxDeposit}
               onChange={(value): void => changeMaxDeposit(value)}
+              editable={editable}
             />
           </div>
         </MessageRowWrapper>

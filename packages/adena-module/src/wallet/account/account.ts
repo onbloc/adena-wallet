@@ -3,6 +3,7 @@ import { AirgapAccount } from './airgap-account';
 import { LedgerAccount } from './ledger-account';
 import { SeedAccount } from './seed-account';
 import { SingleAccount } from './single-account';
+import { MultisigAccount, MultisigConfig, SignerPublicKeyInfo } from './multisig-account';
 
 export interface Account {
   id: string;
@@ -24,6 +25,8 @@ export interface AccountInfo {
   hdPath?: number;
   publicKey: number[];
   addressBytes?: number[];
+  multisigConfig?: MultisigConfig;
+  signerPublicKeys?: SignerPublicKeyInfo[];
 }
 
 export function makeAccount(accountData: AccountInfo) {
@@ -37,6 +40,8 @@ export function makeAccount(accountData: AccountInfo) {
       return new SingleAccount(accountData);
     case 'AIRGAP':
       return new AirgapAccount(accountData);
+    case 'MULTISIG':
+      return new MultisigAccount(accountData);
     default:
       throw new Error('Invalid account type');
   }

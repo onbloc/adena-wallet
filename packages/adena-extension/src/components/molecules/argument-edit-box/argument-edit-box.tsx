@@ -11,6 +11,7 @@ export interface ArgumentEditBoxProps {
   editRightMargin?: number;
   value: string;
   onChange: (value: string) => void;
+  editable?: boolean;
 }
 
 type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none';
@@ -19,8 +20,9 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   value,
   onChange,
   editRightMargin = -18,
+  editable = true,
 }) => {
-  const [editable, setEditable] = useState(false);
+  const [editableValue, setEditableValue] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [editState, setEditState] = useState<EditStateType>('none');
 
@@ -33,15 +35,15 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   }, [value]);
 
   const activateEditMode = (): void => {
-    setEditable(true);
+    setEditableValue(true);
   };
 
   const deactivateEditMode = (): void => {
-    setEditable(false);
+    setEditableValue(false);
   };
 
   const saveEdit = (): void => {
-    if (!editable) {
+    if (!editableValue) {
       return;
     }
 
@@ -55,7 +57,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   };
 
   const changeEditValue = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    if (!editable) {
+    if (!editableValue) {
       return;
     }
 
@@ -63,7 +65,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (!editable) {
+    if (!editableValue) {
       return;
     }
 
@@ -104,20 +106,20 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
     }
 
     setEditState('none');
-    setEditable(false);
+    setEditableValue(false);
   }, [editState]);
 
   const marginRight = useMemo(() => {
-    if (editable) {
+    if (editableValue) {
       return editRightMargin;
     }
 
     return 0;
-  }, [editable, editRightMargin]);
+  }, [editableValue, editRightMargin]);
 
   return (
     <ArgumentEditBoxWrapper marginRight={marginRight}>
-      {editable ? (
+      {editableValue ? (
         <div className='editable-wrapper'>
           <input
             className='edit-input'
@@ -138,9 +140,11 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
       ) : (
         <div className='display-wrapper'>
           <span className='display-value'>{displayValue}</span>
-          <div className='icon-wrapper' onClick={activateEditMode}>
-            <IconPencil className='edit-icon' />
-          </div>
+          {editable && (
+            <div className='icon-wrapper' onClick={activateEditMode}>
+              <IconPencil className='edit-icon' />
+            </div>
+          )}
         </div>
       )}
     </ArgumentEditBoxWrapper>
