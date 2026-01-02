@@ -1,43 +1,42 @@
 import {
+  BroadcastTransactionMap,
+  BroadcastTxCommitResult,
+  BroadcastTxSyncResult,
   defaultAddressPrefix,
   Tx,
   uint8ArrayToBase64,
-  BroadcastTxCommitResult,
-  BroadcastTxSyncResult,
-  BroadcastTransactionMap,
-  Any,
 } from '@gnolang/tm2-js-client';
-import Long from 'long';
 import {
-  PubKeyMultisig,
-  Multisignature,
   CompactBitArray,
+  compactBitArraySetIndex,
+  createCompactBitArray,
+  Multisignature,
 } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 
-import { EncodeTxSignature, WalletService } from '..';
 import { GnoProvider } from '@common/provider/gno';
+import { EncodeTxSignature, WalletService } from '..';
 
 import {
   CreateMultisigTransactionParams,
-  MultisigTransactionDocument,
-  Message,
   Fee,
-  UnsignedTransaction,
-  Signature,
+  Message,
   MultisigAccountResult,
+  MultisigTransactionDocument,
+  Signature,
+  UnsignedTransaction,
 } from '@inject/types';
 
 import {
-  MultisigConfig,
-  fromBase64,
   Account,
-  isMultisigAccount,
+  convertMessageToAmino,
+  createMultisigPublicKey,
   Document,
   documentToTx,
-  MultisigAccount,
-  convertMessageToAmino,
+  fromBase64,
   fromBech32,
-  createMultisigPublicKey,
+  isMultisigAccount,
+  MultisigAccount,
+  MultisigConfig,
 } from 'adena-module';
 
 const AMINO_PREFIX = 0x0a;
@@ -54,7 +53,6 @@ interface SignerInfo {
     value: string;
   };
   bytes: Uint8Array;
-  typeUrl: string;
 }
 
 export class MultisigService {
@@ -84,23 +82,13 @@ export class MultisigService {
     const signerInfos: SignerInfo[] = await this.fetchSignerInfos(signers);
     const sortedSignerInfos = noSort ? signerInfos : this.sortSignerInfos(signerInfos);
 
-    // Create Any objects for each public key
-    const pubKeysAny = sortedSignerInfos.map((info) => {
-      return Any.create({
-        type_url: info.typeUrl,
-        value: info.bytes,
-      });
-    });
-
-    // Create PubKeyMultisig proto object
-    const multisigPublicKeyProto = PubKeyMultisig.create({
-      k: Long.fromNumber(threshold),
-      pub_keys: pubKeysAny,
-    });
-
     // Generate address and public key using Proto to Amino conversion
     const { address: multisigAddress, publicKey: multisigPubKey } = createMultisigPublicKey(
-      multisigPublicKeyProto,
+      threshold,
+      sortedSignerInfos.map((info) => ({
+        '@type': info.publicKey['@type'],
+        value: info.bytes,
+      })),
       defaultAddressPrefix,
     );
 
@@ -114,7 +102,10 @@ export class MultisigService {
       multisigPubKey: this.uint8ArrayToRecord(multisigPubKey),
       signerPublicKeys: sortedSignerInfos.map((info) => ({
         address: info.address,
-        publicKey: info.publicKey,
+        publicKey: {
+          '@type': info.publicKey['@type'],
+          value: info.publicKey.value,
+        },
       })),
     };
   };
@@ -352,17 +343,14 @@ export class MultisigService {
 
   /**
    * Create Proto CompactBitArray from signatures
-   * Matches Go implementation: github.com/gnolang/gno/tm2/pkg/crypto/multisig/bitarray
    */
   private createProtoBitArray(
     numSigners: number,
     signatures: Signature[],
     signerPublicKeys: Uint8Array[],
   ): CompactBitArray {
-    const numBits = numSigners;
-    const extraBitsStored = numBits % 8;
-    const numBytes = Math.ceil(numBits / 8);
-    const elems = new Uint8Array(numBytes);
+    // Create CompactBitArray using utility function from tm2-js-client
+    const bitArray = createCompactBitArray(numSigners);
 
     // Set bits for each signature
     for (let i = 0; i < signatures.length; i++) {
@@ -373,12 +361,7 @@ export class MultisigService {
       }
 
       // Extract public key (handle Amino prefix if present)
-      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
-      const sigHasAminoPrefix =
-        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
-        sigPubKeyRaw[0] === AMINO_PREFIX &&
-        sigPubKeyRaw[1] === AMINO_LENGTH;
-      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
+      const sigPubKey = this.stripAminoPrefix(fromBase64(signature.pub_key.value));
 
       // Find index in signerPublicKeys
       const index = this.findPublicKeyIndex(sigPubKey, signerPublicKeys);
@@ -388,17 +371,11 @@ export class MultisigService {
         );
       }
 
-      // Set bit at index (MSB first, matching Go implementation)
-      // Go: bA.Elems[i>>3] |= (uint8(1) << uint8(7-(i%8)))
-      const byteIndex = Math.floor(index / 8);
-      const bitIndex = index % 8;
-      elems[byteIndex] |= 1 << (7 - bitIndex);
+      // Set bit at index using compactBitArraySetIndex (MSB first, matching Go implementation)
+      compactBitArraySetIndex(bitArray, index, true);
     }
 
-    return CompactBitArray.create({
-      extra_bits_stored: extraBitsStored,
-      elems: elems,
-    });
+    return bitArray;
   }
 
   /**
@@ -416,13 +393,7 @@ export class MultisigService {
         throw new Error('Signature missing public key value');
       }
 
-      const sigPubKeyRaw = fromBase64(signature.pub_key.value);
-      const sigHasAminoPrefix =
-        sigPubKeyRaw.length === AMINO_PREFIXED_LENGTH &&
-        sigPubKeyRaw[0] === AMINO_PREFIX &&
-        sigPubKeyRaw[1] === AMINO_LENGTH;
-      const sigPubKey = sigHasAminoPrefix ? sigPubKeyRaw.slice(2) : sigPubKeyRaw;
-
+      const sigPubKey = this.stripAminoPrefix(fromBase64(signature.pub_key.value));
       const pubKeyBase64 = uint8ArrayToBase64(sigPubKey);
       const sig = fromBase64(signature.signature);
 
@@ -449,24 +420,12 @@ export class MultisigService {
    * Handles both raw and Amino-prefixed public keys
    */
   private findPublicKeyIndex(pubkey: Uint8Array, keys: Uint8Array[]): number {
+    const normalizedPubkey = this.stripAminoPrefix(pubkey);
+
     for (let i = 0; i < keys.length; i++) {
-      if (this.arePublicKeysEqual(pubkey, keys[i])) {
+      const normalizedKey = this.stripAminoPrefix(keys[i]);
+      if (this.isEqualsPublicKeys(normalizedPubkey, normalizedKey)) {
         return i;
-      }
-
-      // Handle Amino prefix differences
-      if (keys[i].length === AMINO_PREFIXED_LENGTH && pubkey.length === 33) {
-        const keyWithoutPrefix = keys[i].slice(2);
-        if (this.arePublicKeysEqual(pubkey, keyWithoutPrefix)) {
-          return i;
-        }
-      }
-
-      if (pubkey.length === AMINO_PREFIXED_LENGTH && keys[i].length === 33) {
-        const pubkeyWithoutPrefix = pubkey.slice(2);
-        if (this.arePublicKeysEqual(pubkeyWithoutPrefix, keys[i])) {
-          return i;
-        }
       }
     }
 
@@ -476,12 +435,23 @@ export class MultisigService {
   /**
    * Compare two Uint8Arrays for equality
    */
-  private arePublicKeysEqual(a: Uint8Array, b: Uint8Array): boolean {
+  private isEqualsPublicKeys(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
       if (a[i] !== b[i]) return false;
     }
     return true;
+  }
+
+  /**
+   * Strip Amino prefix from public key if present
+   */
+  private stripAminoPrefix(pubKeyBytes: Uint8Array): Uint8Array {
+    const hasAminoPrefix =
+      pubKeyBytes.length === AMINO_PREFIXED_LENGTH &&
+      pubKeyBytes[0] === AMINO_PREFIX &&
+      pubKeyBytes[1] === AMINO_LENGTH;
+    return hasAminoPrefix ? pubKeyBytes.slice(2) : pubKeyBytes;
   }
 
   private async getPublicKeyFromChain(address: string): Promise<
@@ -541,13 +511,10 @@ export class MultisigService {
         );
       }
 
-      const publicKeyBytes = fromBase64(publicKeyInfo.value);
-
       signerInfos.push({
         address,
         publicKey: publicKeyInfo,
-        bytes: publicKeyBytes,
-        typeUrl: publicKeyInfo['@type'],
+        bytes: fromBase64(publicKeyInfo.value),
       });
     }
 
@@ -595,48 +562,6 @@ export class MultisigService {
 
       default:
         return value.caller || value.creator || value.from_address || null;
-    }
-  };
-
-  /**
-   * Convert SDK message format to gnokey format
-   */
-  private convertMessageToGnokeyFormat = (msg: Message): any => {
-    const { type, value } = msg;
-
-    switch (type) {
-      case '/vm.m_call':
-        return {
-          '@type': '/vm.m_call',
-          caller: value.caller,
-          send: value.send || '',
-          max_deposit: '',
-          pkg_path: value.pkg_path,
-          func: value.func,
-          args: value.args || [],
-        };
-
-      case '/bank.MsgSend':
-        return {
-          '@type': '/bank.MsgSend',
-          from_address: value.from_address,
-          to_address: value.to_address,
-          amount: value.amount,
-        };
-
-      case '/vm.m_addpkg':
-        return {
-          '@type': '/vm.m_addpkg',
-          creator: value.creator,
-          package: value.package,
-          deposit: value.deposit || '',
-        };
-
-      default:
-        return {
-          '@type': type,
-          ...value,
-        };
     }
   };
 
