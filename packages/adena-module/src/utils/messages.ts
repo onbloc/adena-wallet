@@ -10,6 +10,7 @@ import {
 } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
+import Long from 'long';
 
 import { fromBase64 } from '../encoding';
 
