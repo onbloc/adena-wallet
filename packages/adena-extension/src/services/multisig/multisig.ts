@@ -162,6 +162,60 @@ export class MultisigService {
   };
 
   /**
+   * Save multisig transaction document to file
+   * @param txDocument - Transaction document to save
+   * @param fileName - File name (default: 'multisig-transaction.tx')
+   * @returns true if saved successfully, false if user cancelled
+   */
+  public saveTransactionToFile = async (
+    txDocument: MultisigTransactionDocument,
+    fileName: string = 'multisig-transaction.tx',
+  ): Promise<boolean> => {
+    try {
+      const jsonString = JSON.stringify(txDocument, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+
+      if ('showSaveFilePicker' in window) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: 'Multisig Transaction File',
+              accept: {
+                'application/json': ['.tx'],
+              },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        return true;
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        return true;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('User cancelled file save');
+        return false;
+      }
+      console.error('Failed to save transaction file:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Create a signature
    *
    * @param account

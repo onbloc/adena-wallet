@@ -312,6 +312,13 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
+      const fileSaved = await multisigService.saveTransactionToFile(txDocument);
+
+      if (!fileSaved) {
+        setProcessType('INIT');
+        return false;
+      }
+
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
@@ -327,6 +334,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
       return true;
     } catch (e) {
+      setProcessType('INIT');
+
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -342,21 +351,21 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       } else {
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
+            WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
             {},
             requestData?.key,
           ),
         );
       }
+      return false;
     }
-    return false;
   };
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
     setVisibleTransactionInfo(visibleTransactionInfo);
   };
 
-  const onClickConfirm = (): void => {
+  const onClickConfirm = async (): Promise<void> => {
     if (!currentAccount || !txDocument) {
       return;
     }
@@ -368,7 +377,12 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       });
       return;
     }
-    createMultisigTransaction().finally(() => setProcessType('DONE'));
+
+    const success = await createMultisigTransaction();
+
+    if (success) {
+      setProcessType('DONE');
+    }
   };
 
   const onClickCancel = (): void => {
