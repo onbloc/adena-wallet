@@ -216,6 +216,60 @@ export class MultisigService {
   };
 
   /**
+   * Save signature to file
+   * @param signature - Signature to save
+   * @param fileName - File name (default: 'multisig-signature.sig')
+   * @returns true if saved successfully, false if user cancelled
+   */
+  public saveSignatureToFile = async (
+    signature: Signature,
+    fileName: string = 'multisig-signature.sig',
+  ): Promise<boolean> => {
+    try {
+      const jsonString = JSON.stringify(signature, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+
+      if ('showSaveFilePicker' in window) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: 'Multisig Signature File',
+              accept: {
+                'application/json': ['.sig'],
+              },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        return true;
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        return true;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('User cancelled file save');
+        return false;
+      }
+      console.error('Failed to save signature file:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Create a signature
    *
    * @param account

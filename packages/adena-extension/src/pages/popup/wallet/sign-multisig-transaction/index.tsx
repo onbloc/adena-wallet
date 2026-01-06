@@ -266,6 +266,13 @@ const SignMultisigTransactionContainer: React.FC = () => {
         multisigDocument,
       );
 
+      const fileSaved = await multisigService.saveSignatureToFile(newSignature);
+
+      if (!fileSaved) {
+        setProcessType('INIT');
+        return false;
+      }
+
       const updatedSignatures = [...multisigSignatures, newSignature];
 
       setResponse(
@@ -279,12 +286,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
         ),
       );
 
+      setProcessType('DONE');
       return true;
     } catch (e) {
+      setProcessType('INIT');
       handleSignError(e);
       return false;
-    } finally {
-      setProcessType('DONE');
     }
   };
 
@@ -319,7 +326,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
     setVisibleTransactionInfo(visibleTransactionInfo);
   };
 
-  const onClickConfirm = (): void => {
+  const onClickConfirm = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
@@ -331,7 +338,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
       });
       return;
     }
-    signMultisigTransaction().finally(() => setProcessType('DONE'));
+
+    const success = await signMultisigTransaction();
+
+    if (success) {
+      setProcessType('DONE');
+    }
   };
 
   const onClickCancel = (): void => {
