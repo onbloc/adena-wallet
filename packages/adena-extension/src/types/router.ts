@@ -65,6 +65,7 @@ export enum RoutePath {
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
+  BroadcastMultisigTransactionScreen = '/wallet/broadcast-multiig-transaction',
 
   // settings
   Setting = '/settings',
@@ -196,6 +197,7 @@ export type RouteParams = {
   };
   [RoutePath.TransferLedgerReject]: null;
   [RoutePath.BroadcastTransaction]: null;
+  [RoutePath.BroadcastMultisigTransactionScreen]: null;
 
   [RoutePath.Setting]: null;
   [RoutePath.SettingChangePassword]: null;

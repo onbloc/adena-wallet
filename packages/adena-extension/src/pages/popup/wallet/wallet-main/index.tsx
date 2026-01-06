@@ -1,4 +1,4 @@
-import { isAirgapAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
@@ -92,7 +92,7 @@ export const WalletMain = (): JSX.Element => {
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
 
-  const onClickSendButton = (): void => {
+  const onClickActionButton = (): void => {
     if (!currentAccount) {
       return;
     }
@@ -100,8 +100,24 @@ export const WalletMain = (): JSX.Element => {
       navigate(RoutePath.BroadcastTransaction);
       return;
     }
+    if (isMultisigAccount(currentAccount)) {
+      navigate(RoutePath.BroadcastMultisigTransactionScreen);
+      return;
+    }
     navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
   };
+
+  const actionButtonText: string | null = useMemo(() => {
+    if (!currentAccount) {
+      return null;
+    }
+
+    if (isMultisigAccount(currentAccount)) {
+      return 'Broadcast';
+    }
+
+    return 'Send';
+  }, [isMultisigAccount, currentAccount]);
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -202,8 +218,8 @@ export const WalletMain = (): JSX.Element => {
             <Text type={'body1Bold'}>Deposit</Text>
           </Button>
         )}
-        <Button fullWidth onClick={onClickSendButton}>
-          <Text type={'body1Bold'}>Send</Text>
+        <Button fullWidth onClick={onClickActionButton}>
+          <Text type={'body1Bold'}>{actionButtonText}</Text>
         </Button>
       </div>
 
