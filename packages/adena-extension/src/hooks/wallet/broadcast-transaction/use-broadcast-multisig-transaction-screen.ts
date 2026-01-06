@@ -1,9 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 
-import { MultisigTransactionDocument, Signature } from '@inject/types';
+import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { RoutePath } from '@types';
+import useAppNavigate from '@hooks/use-app-navigate';
+
+import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
+import { isMultisigAccount } from 'adena-module';
 
 export type BroadcastTransactionState = 'UPLOAD_TRANSACTION' | 'LOADING' | 'FAILED' | 'SUCCESS';
 
@@ -148,10 +153,15 @@ export interface UseBroadcastMultisigTransactionScreenReturn {
   removeSignature: (pubKeyValue: string) => void;
   clearSignatures: () => void;
   broadcastTransactionState: BroadcastTransactionState;
+  broadcast: () => Promise<boolean>;
 }
 
 const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactionScreenReturn => {
+  const { wallet } = useWalletContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
+  const { multisigService } = useAdenaContext();
+  const { navigate } = useAppNavigate();
+
   const [multisigTransactionDocument, setMultisigTransactionDocument] =
     useState<MultisigTransactionDocument | null>(null);
   const [signatures, setSignatures] = useState<Signature[]>([]);
@@ -270,6 +280,44 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     setSignatures([]);
   };
 
+  const broadcast = useCallback(async () => {
+    if (!multisigTransactionDocument || !signatures || !wallet || !currentAccount) {
+      return false;
+    }
+    if (!isMultisigAccount(currentAccount)) {
+      return false;
+    }
+
+    setBroadcastTransactionState('LOADING');
+    try {
+      const combinedTx = await multisigService.combineMultisigSignatures(
+        currentAccount,
+        multisigTransactionDocument,
+        signatures,
+      );
+
+      const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
+
+      const isSuccessBroadcasting =
+        broadcastResult?.hash &&
+        broadcastResult.check_tx?.ResponseBase?.Error === null &&
+        broadcastResult.deliver_tx?.ResponseBase?.Error === null;
+
+      if (isSuccessBroadcasting) {
+        setBroadcastTransactionState('SUCCESS');
+        navigate(RoutePath.History);
+        return true;
+      } else {
+        setBroadcastTransactionState('FAILED');
+        return false;
+      }
+    } catch (e) {
+      console.error(e);
+      setBroadcastTransactionState('FAILED');
+      return false;
+    }
+  }, [currentAccount, multisigTransactionDocument, signatures]);
+
   return {
     multisigTransactionDocument,
     transactionInfos,
@@ -280,6 +328,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     removeSignature,
     clearSignatures,
     broadcastTransactionState,
+    broadcast,
   };
 };
 

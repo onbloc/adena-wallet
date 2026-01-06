@@ -20,6 +20,7 @@ interface BroadcastMultisigTransactionUploadProps {
   signatures: Signature[];
   uploadSignature: (text: string) => boolean;
   removeSignature: (pubKeyValue: string) => void;
+  broadcast: () => Promise<boolean>;
 }
 
 const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
@@ -30,10 +31,10 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   signatures,
   uploadSignature,
   removeSignature,
+  broadcast,
 }) => {
   const theme = useTheme();
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
-  console.log(isBroadcasting, 'isBroadcastingisBroadcasting');
   const { openLink } = useLink();
   const { goBack } = useAppNavigate();
 
@@ -46,13 +47,13 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     event.stopPropagation();
   };
 
-  const onClickBroadcast = React.useCallback(() => {
+  const onClickBroadcast = () => {
     if (isBroadcasting) {
       return;
     }
     setIsBroadcasting(true);
-    // broadcast().finally(() => setIsBroadcasting(false));
-  }, []);
+    broadcast().finally(() => setIsBroadcasting(false));
+  };
 
   const onClickCancel = React.useCallback(() => {
     goBack();

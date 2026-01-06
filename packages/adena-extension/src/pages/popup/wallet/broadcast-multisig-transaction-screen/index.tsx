@@ -17,6 +17,7 @@ const BroadcastMultisigTransactionScreen: React.FC = () => {
     signatures,
     uploadSignature,
     removeSignature,
+    broadcast,
   } = useBroadcastMultisigTransactionScreen();
 
   return (
@@ -30,6 +31,7 @@ const BroadcastMultisigTransactionScreen: React.FC = () => {
           signatures={signatures}
           uploadSignature={uploadSignature}
           removeSignature={removeSignature}
+          broadcast={broadcast}
         />
       )}
       {broadcastTransactionState === 'LOADING' && <BroadcastTransactionLoading />}
