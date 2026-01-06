@@ -1,7 +1,17 @@
-import { MsgEndpoint, MsgSend } from '@gnolang/gno-js-client';
+import {
+  MsgEndpoint,
+  MsgSend,
+  Any,
+  MemFile,
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgRun,
+} from '@gnolang/gno-js-client';
 import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
+import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
+import Long from 'long';
 
-import { Any, MemFile, MemPackage, MsgAddPackage, MsgCall, MsgRun } from '@gnolang/gno-js-client';
 import { fromBase64 } from '../encoding';
 
 export interface Document {
@@ -22,6 +32,18 @@ export interface Document {
     value: any;
   }[];
   memo: string;
+  signatures?: {
+    pub_key: {
+      '@type': string;
+      threshold?: string;
+      pubkeys?: {
+        '@type': string;
+        value: string;
+      }[];
+      value?: string;
+    };
+    signature: string;
+  }[];
 }
 
 export const decodeTxMessages = (messages: Any[]): any[] => {
@@ -142,6 +164,54 @@ function encodeMessageValue(message: { type: string; value: any }) {
 
 export function documentToTx(document: Document): Tx {
   const messages: Any[] = document.msgs.map(encodeMessageValue);
+
+  const signatures: TxSignature[] =
+    document.signatures?.map((sig) => {
+      let pubKeyAny: Any;
+
+      if (sig.pub_key['@type'] === '/tm.PubKeyMultisig') {
+        const multisigPubKey = {
+          threshold: parseInt(sig.pub_key.threshold || '1'),
+          pubkeys:
+            sig.pub_key.pubkeys?.map((pk) => ({
+              type_url: pk['@type'],
+              value: PubKeySecp256k1.encode({
+                key: fromBase64(pk.value),
+              }).finish(),
+            })) || [],
+        };
+
+        pubKeyAny = Any.create({
+          type_url: sig.pub_key['@type'],
+          value: PubKeyMultisig.encode({
+            k: Long.fromNumber(multisigPubKey.threshold),
+            pub_keys: multisigPubKey.pubkeys.map((pk) =>
+              Any.create({
+                type_url: pk.type_url,
+                value: pk.value,
+              }),
+            ),
+          }).finish(),
+        });
+      } else {
+        const publicKeyBytes = fromBase64(sig.pub_key.value || '');
+        const wrappedPublicKeyValue: PubKeySecp256k1 = {
+          key: publicKeyBytes,
+        };
+        const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
+
+        pubKeyAny = {
+          type_url: sig.pub_key['@type'],
+          value: encodedPublicKeyBytes,
+        };
+      }
+
+      return TxSignature.create({
+        pub_key: pubKeyAny,
+        signature: fromBase64(sig.signature),
+      });
+    }) || [];
+
   return {
     messages,
     fee: TxFee.create({
@@ -150,7 +220,7 @@ export function documentToTx(document: Document): Tx {
         .map((feeAmount) => `${feeAmount.amount}${feeAmount.denom}`)
         .join(','),
     }),
-    signatures: [],
+    signatures,
     memo: document.memo,
   };
 }

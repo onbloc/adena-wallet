@@ -8,9 +8,17 @@ import {
   AddEstablishResponse,
   AddNetworkParams,
   AddNetworkResponse,
+  BroadcastMultisigTransactionResponse,
+  CreateMultisigAccountParams,
+  CreateMultisigAccountResponse,
+  CreateMultisigTransactionParams,
+  CreateMultisigTransactionResponse,
   DoContractResponse,
   GetAccountResponse,
   GetNetworkResponse,
+  MultisigTransactionDocument,
+  Signature,
+  SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
   TransactionParams,
@@ -55,6 +63,39 @@ const init = (): void => {
     async SignTx(message: TransactionParams): Promise<SignTxResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.signTx(message);
+      return response;
+    },
+    async CreateMultisigAccount(
+      params: CreateMultisigAccountParams,
+    ): Promise<CreateMultisigAccountResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.createMultisigAccount(params);
+      return response;
+    },
+    async CreateMultisigTransaction(
+      params: CreateMultisigTransactionParams,
+    ): Promise<CreateMultisigTransactionResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.createMultisigTransaction(params);
+      return response;
+    },
+    async SignMultisigTransaction(
+      multisigDocument: MultisigTransactionDocument,
+      multisigSignatures?: Signature[],
+    ): Promise<SignMultisigTransactionResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.signMultisigTransaction(multisigDocument, multisigSignatures);
+      return response;
+    },
+    async BroadcastMultisigTransaction(
+      multisigDocument: MultisigTransactionDocument,
+      multisigSignatures?: Signature[],
+    ): Promise<BroadcastMultisigTransactionResponse> {
+      const executor = new AdenaExecutor();
+      const response = await executor.broadcastMultisigTransaction(
+        multisigDocument,
+        multisigSignatures,
+      );
       return response;
     },
     async AddNetwork(chain: AddNetworkParams): Promise<AddNetworkResponse> {

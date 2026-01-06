@@ -38,6 +38,26 @@ export type TransactionParams = {
   arguments?: GnoArgumentInfo[] | null;
 };
 
+/**
+ * Transaction fee structure
+ */
+export interface Fee {
+  amount: {
+    amount: string;
+    denom: string;
+  }[];
+  gas: string;
+}
+
+/**
+ * Base document structure shared by all document types
+ */
+export interface BaseDocument {
+  chain_id: string;
+  fee: Fee;
+  msgs: any[];
+}
+
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
 export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;
 

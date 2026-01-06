@@ -1,4 +1,11 @@
-import { AdenaWallet, Wallet } from 'adena-module';
+import {
+  AdenaWallet,
+  MultisigAccount,
+  MultisigKeyring,
+  Wallet,
+  MultisigConfig,
+  SignerPublicKeyInfo,
+} from 'adena-module';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -150,6 +157,69 @@ export class WalletService {
   };
 
   /**
+   * Add multisig account to wallet
+   *
+   * @param publicKey - Multisig public key (Amino encoded PubKeyMultisigThreshold)
+   * @param addressBytes - Multisig address bytes (20 bytes)
+   * @param multisigConfig - Multisig Config (signers, threshold)
+   * @param multisigAddress - Multisig bech32 address
+   * @returns The added multisig account
+   * @throws Error if multisig account operations fail
+   */
+  public addMultisigAccount = async (
+    publicKey: Uint8Array,
+    addressBytes: Uint8Array,
+    multisigConfig: MultisigConfig,
+    multisigAddress: string,
+    signerPublicKeys: SignerPublicKeyInfo[],
+  ): Promise<MultisigAccount> => {
+    try {
+      const wallet = await this.loadWallet();
+
+      // Check for duplicate address
+      const isDuplicate = await wallet.hasAddress(multisigAddress);
+      if (isDuplicate) {
+        throw new Error(`Multisig account already exists: ${multisigAddress}`);
+      }
+
+      // Create multisig keyring
+      const multisigKeyring = new MultisigKeyring({
+        type: 'MULTISIG',
+        addressBytes: Array.from(addressBytes),
+        publicKey: Array.from(publicKey),
+        multisigConfig,
+        signerPublicKeys,
+      });
+
+      // Get account index and name
+      const addedIndex = wallet.lastAccountIndex + 1;
+      const multisigName = wallet.nextMultisigAccountName;
+
+      // Create multisig account with publicKey
+      const multisigAccount = await MultisigAccount.createBy(
+        multisigKeyring,
+        multisigName,
+        addedIndex,
+      );
+
+      multisigAccount.index = addedIndex;
+      multisigAccount.name = multisigName;
+
+      // Add to wallet
+      const clonedWallet = wallet.clone();
+      clonedWallet.addKeyring(multisigKeyring);
+      clonedWallet.addAccount(multisigAccount);
+
+      await this.updateWallet(clonedWallet);
+
+      return multisigAccount;
+    } catch (error) {
+      console.error('Failed to add multisig account:', error);
+      throw error;
+    }
+  };
+
+  /**
    * This function deserializes the wallet with the password.
    *
    * @throws WalletError 'FAILED_TO_LOAD'
@@ -158,7 +228,9 @@ export class WalletService {
   public deserializeWallet = async (password: string): Promise<AdenaWallet> => {
     try {
       const serializedWallet = await this.walletRepository.getSerializedWallet();
+
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
+
       return walletInstance;
     } catch (e) {
       console.error(e);

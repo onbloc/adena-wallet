@@ -151,6 +151,38 @@ export class MessageHandler {
           }
         });
         break;
+      case 'CREATE_MULTISIG_ACCOUNT':
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.createMultisigAccount(message, sendResponse);
+          }
+        });
+        break;
+      case 'CREATE_MULTISIG_TRANSACTION':
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.createMultisigDocument(message, sendResponse);
+          }
+        });
+        break;
+      case 'SIGN_MULTISIG_TRANSACTION':
+        HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
+          if (isEstablished) {
+            HandlerMethod.signMultisigDocument(message, sendResponse);
+          }
+        });
+        break;
+      case 'BROADCAST_MULTISIG_TRANSACTION':
+        HandlerMethod.checkEstablished(core, message, sendResponse)
+          .then((isEstablished) => {
+            if (isEstablished) {
+              HandlerMethod.broadcastMultisigTransaction(message, sendResponse);
+            }
+          })
+          .catch((e) => {
+            console.log(e, 'e');
+          });
+        break;
       default:
         break;
     }

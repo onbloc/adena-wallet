@@ -1,0 +1,177 @@
+import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
+
+import { AdenaResponse } from './common';
+import { BaseDocument } from './transactions';
+
+export interface Message {
+  type: string;
+  value: any;
+}
+
+export interface Signature {
+  pub_key: {
+    type: '/tm.PubKeySecp256k1';
+    value: string;
+  };
+  signature: string;
+}
+
+export interface MultisigPubKey {
+  type: '/tm.PubKeyMultisig';
+  value: {
+    threshold: string;
+    pubkeys: Array<{
+      type: '/tm.PubKeySecp256k1';
+      value: string;
+    }>;
+  };
+}
+
+export interface MultisigSignature {
+  pub_key: MultisigPubKey;
+  signature: string;
+}
+
+/**
+ * Signer status for multisig transactions
+ */
+export enum SignerStatusType {
+  SIGNED = 'SIGNED',
+  UNSIGNED = 'UNSIGNED',
+  NONE = 'NONE',
+}
+
+/**
+ * Signer information
+ */
+export type SignerInfo = {
+  address: string;
+  status: SignerStatusType;
+};
+
+export interface StandardDocument extends BaseDocument {
+  account_number: string;
+  sequence: string;
+  memo: string;
+}
+
+/**
+ * Parameters for creating a multisig account
+ */
+export interface CreateMultisigAccountParams {
+  signers: string[];
+  threshold: number;
+  noSort?: boolean;
+}
+
+export interface MultisigAccountResult {
+  multisigAddress: string;
+  multisigAddressBytes: Record<number, number>;
+  multisigPubKey: Record<number, number>;
+  signerPublicKeys: Array<{
+    address: string;
+    publicKey: {
+      '@type': string;
+      value: string;
+    };
+  }>;
+}
+
+/**
+ * Response data for creating a multisig account
+ */
+export type CreateMultisigAccountResponseData = {
+  multisigAddress: string;
+  multisigAddressBytes: Uint8Array;
+};
+
+/**
+ * Response for creating a multisig account
+ */
+export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountResponseData>;
+
+/**
+ * Parameters for creating a multisig transaction
+ */
+export interface CreateMultisigTransactionParams extends BaseDocument {
+  memo?: string;
+  accountNumber?: string;
+  sequence?: string;
+}
+
+/**
+ * Response data for creating a multisig transaction document
+ */
+export type CreateMultisigTransactionResponseData = {
+  document: MultisigTransactionDocument;
+};
+
+/**
+ * Response for creating a multisig transaction document
+ */
+export type CreateMultisigTransactionResponse =
+  AdenaResponse<CreateMultisigTransactionResponseData>;
+
+/**
+ * Response data for signing a multisig document
+ */
+export type SignMultisigTransactionResponseData = {
+  result: {
+    multisigDocument: MultisigTransactionDocument;
+    multisigSignatures: Signature[];
+  };
+  signature: Signature;
+};
+
+/**
+ * Response for signing a multisig document
+ */
+export type SignMultisigTransactionResponse = AdenaResponse<SignMultisigTransactionResponseData>;
+
+/**
+ * Response data for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult;
+
+/**
+ * Response for broadcasting a multisig transaction
+ */
+export type BroadcastMultisigTransactionResponse =
+  AdenaResponse<BroadcastMultisigTransactionResponseData>;
+
+export interface UnsignedTransaction {
+  msgs: Array<{
+    type: string;
+    value: {
+      [key: string]: any;
+    };
+  }>;
+  fee: {
+    gas_wanted: string;
+    gas_fee: string;
+  };
+  signatures: null;
+  memo: string;
+}
+
+export interface SignedTransaction {
+  msg: Array<{
+    '@type': string;
+    [key: string]: any;
+  }>;
+  fee: {
+    gas_wanted: string;
+    gas_fee: string;
+  };
+  signatures: MultisigSignature[];
+  memo: string;
+  account_number: string;
+  sequence: string;
+}
+
+export interface MultisigTransactionDocument {
+  tx: UnsignedTransaction;
+  chainId: string;
+  accountNumber: string;
+  sequence: string;
+}

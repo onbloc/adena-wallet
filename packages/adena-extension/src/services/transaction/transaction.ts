@@ -21,7 +21,7 @@ import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-map
 import { GnoProvider } from '@common/provider/gno/gno-provider';
 import { WalletService } from '..';
 
-interface EncodeTxSignature {
+export interface EncodeTxSignature {
   pubKey: {
     typeUrl: string | undefined;
     value: string | undefined;

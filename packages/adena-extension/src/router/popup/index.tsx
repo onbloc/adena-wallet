@@ -27,6 +27,10 @@ import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
 import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
+import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
+import CreateMultisigTransactionContainer from '@pages/popup/wallet/create-multisig-transaction';
+import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
+import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
 import BroadcastTransactionScreen from '@pages/popup/wallet/broadcast-transaction-screen';
@@ -125,6 +129,22 @@ export const PopupRouter = (): JSX.Element => {
           element={<ApproveSignTransactionLedgerLoading />}
         />
         <Route path={RoutePath.ApproveSignFailed} element={<ApproveSignFailedScreen />} />
+        <Route
+          path={RoutePath.CreateMultisigAccount}
+          element={<CreateMultisigAccountContainer />}
+        />
+        <Route
+          path={RoutePath.CreateMultisigTransaction}
+          element={<CreateMultisigTransactionContainer />}
+        />
+        <Route
+          path={RoutePath.SignMultisigDocument}
+          element={<SignMultisigTransactionContainer />}
+        />
+        <Route
+          path={RoutePath.BroadcastMultisigTransaction}
+          element={<BroadcastMultisigTransactionScreen />}
+        />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />
         <Route path={RoutePath.ApproveChangingNetwork} element={<ApproveChangingNetworkPage />} />

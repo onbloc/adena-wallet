@@ -75,7 +75,7 @@
     "webpack-merge": "5.10.0"
   },
   "dependencies": {
-    "@adena-wallet/sdk": "0.0.13",
+    "@adena-wallet/sdk": "0.0.14",
     "@bufbuild/protobuf": "2.2.3",
     "@gnolang/gno-js-client": "1.4.5",
     "@gnolang/tm2-js-client": "1.3.3",

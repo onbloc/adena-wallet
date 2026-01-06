@@ -15,6 +15,7 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
 export const validateInjectionDataWithAddress = (
   requestData: InjectionMessage,
   address: string,
+  skipCallerCheck?: boolean,
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
@@ -24,7 +25,7 @@ export const validateInjectionDataWithAddress = (
     );
   }
 
-  if (!validateInjectionTransactionMessageWithAddress(requestData, address)) {
+  if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       { requestData, address },
@@ -37,14 +38,21 @@ export const validateInjectionDataWithAddress = (
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
   const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
-  return requestData.data?.messages.every((message: any) => messageTypes.includes(message?.type));
+
+  const msgs = requestData.data?.messages || requestData.data?.msgs || [];
+  return msgs.every((message: any) => messageTypes.includes(message?.type));
 };
 
 export const validateInjectionTransactionMessageWithAddress = (
   requestData: InjectionMessage,
   address: string,
+  skipCallerCheck?: boolean,
 ): boolean => {
-  const messages = requestData.data?.messages;
+  const messages =
+    requestData.data?.msgs ||
+    requestData.data?.messages ||
+    requestData.data?.multisigDocument?.tx?.msgs ||
+    [];
   for (const message of messages) {
     let messageAddress = '';
     switch (message?.type) {
@@ -64,7 +72,7 @@ export const validateInjectionTransactionMessageWithAddress = (
         break;
     }
 
-    if (!validateCallerAddress(messageAddress, address)) {
+    if (!validateCallerAddress(messageAddress, address, skipCallerCheck)) {
       return false;
     }
   }
@@ -72,8 +80,16 @@ export const validateInjectionTransactionMessageWithAddress = (
   return true;
 };
 
-const validateCallerAddress = (messageAddress: any, currentAddress: string): boolean => {
+const validateCallerAddress = (
+  messageAddress: any,
+  currentAddress: string,
+  skipCallerCheck?: boolean,
+): boolean => {
   if (messageAddress === '') {
+    return true;
+  }
+
+  if (skipCallerCheck) {
     return true;
   }
 
