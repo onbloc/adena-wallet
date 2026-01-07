@@ -113,6 +113,8 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
               signatures={signatures}
               uploadSignature={uploadSignature}
               removeSignature={removeSignature}
+              signerPublicKeys={signerPublicKeys}
+              threshold={threshold}
             />
           )}
 
