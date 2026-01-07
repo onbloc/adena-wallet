@@ -15,7 +15,8 @@ const SignMultisigTransactionScreen: React.FC = () => {
   const { uploadMultisigTransaction, transactionInfos, rawTransaction } =
     useBroadcastMultisigTransactionScreen();
 
-  const { signTransaction, signTransactionState } = useSignMultisigTransactionScreen();
+  const { signTransaction, signTransactionState, errorMessage } =
+    useSignMultisigTransactionScreen();
 
   return (
     <CommonFullContentLayout>
@@ -31,7 +32,9 @@ const SignMultisigTransactionScreen: React.FC = () => {
       )}
       {signTransactionState === 'SIGNING' && <SignTransactionLoading />}
       {signTransactionState === 'SUCCESS' && <SignTransactionResult status='SUCCESS' />}
-      {signTransactionState === 'FAILED' && <SignTransactionResult status='FAILED' />}
+      {signTransactionState === 'FAILED' && (
+        <SignTransactionResult status='FAILED' errorMessage={errorMessage} />
+      )}
     </CommonFullContentLayout>
   );
 };

@@ -65,7 +65,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const location = useLocation();
   const { openScannerLink } = useLink();
@@ -247,7 +247,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   };
 
   const signMultisigTransaction = async (): Promise<boolean> => {
-    if (!multisigDocument || !currentAccount) {
+    if (!multisigDocument || !currentAccount || !currentAddress) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -263,6 +263,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
+        currentAddress,
         multisigDocument,
       );
 

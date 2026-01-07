@@ -11,15 +11,24 @@ import IconAccountInitializeSuccess from '@assets/icon-account-initialize-succes
 
 interface SignMultisigTransactionResultProps {
   status: 'SUCCESS' | 'FAILED';
+  errorMessage?: string | null;
 }
 
 const SignMultisigTransactionResult: React.FC<SignMultisigTransactionResultProps> = ({
   status,
+  errorMessage,
 }) => {
   const theme = useTheme();
   const { navigate } = useAppNavigate();
 
   const isSuccess = status === 'SUCCESS';
+
+  const getFailureMessage = () => {
+    if (errorMessage) {
+      return errorMessage;
+    }
+    return 'Your signature has failed. Please\ncheck your transaction details and\ntry again.';
+  };
 
   const onClickClose = useCallback(() => {
     navigate(RoutePath.Wallet);
@@ -36,7 +45,7 @@ const SignMultisigTransactionResult: React.FC<SignMultisigTransactionResultProps
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {isSuccess
               ? 'Your transaction has been successfully\nsigned. The signed transaction is ready\nto be broadcast to the network.'
-              : 'Your signature has failed. Please\ncheck your transaction details and\ntry again.'}
+              : getFailureMessage()}
           </Text>
         </StyledDescriptionWrapper>
       </StyledWrapper>

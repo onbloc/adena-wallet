@@ -303,11 +303,13 @@ export class MultisigService {
    */
   public signMultisigTransaction = async (
     account: Account,
+    address: string,
     multisigDocument: MultisigTransactionDocument,
   ): Promise<Signature> => {
     try {
-      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
+      await this.validatePublicKeyExists(address);
 
+      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
       const encodedSignature = await this.createSignature(account, aminoDocument);
 
       return this.convertToMultisigSignature(encodedSignature);
@@ -575,6 +577,19 @@ export class MultisigService {
     const accountPubKey = accountInfo?.publicKey;
 
     return accountPubKey;
+  }
+
+  /**
+   * Validate that public key exists for the given address
+   * @param address - Account address to validate
+   * @throws Error if public key not found
+   */
+  private async validatePublicKeyExists(address: string): Promise<void> {
+    const publicKeyInfo = await this.getPublicKeyFromChain(address);
+
+    if (!publicKeyInfo?.value) {
+      throw new Error('Public key not found. This account has not sent any transactions yet.');
+    }
   }
 
   /**

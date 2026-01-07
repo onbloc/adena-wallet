@@ -7,8 +7,6 @@ import {
   useMultisigTransactionContext,
 } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
-import useAppNavigate from '@hooks/use-app-navigate';
 
 import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
@@ -147,7 +145,6 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   const { wallet } = useWalletContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { multisigService } = useAdenaContext();
-  const { navigate } = useAppNavigate();
 
   const { multisigTransactionDocument, setMultisigTransactionDocument, signatures, addSignature } =
     useMultisigTransactionContext();
@@ -288,7 +285,6 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
       if (isSuccessBroadcasting) {
         setBroadcastTransactionState('SUCCESS');
-        navigate(RoutePath.Home);
         return true;
       } else {
         setBroadcastTransactionState('FAILED');
@@ -299,7 +295,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
       setBroadcastTransactionState('FAILED');
       return false;
     }
-  }, [currentAccount, multisigTransactionDocument, signatures, wallet, multisigService, navigate]);
+  }, [currentAccount, multisigTransactionDocument, signatures, wallet, multisigService]);
 
   return {
     broadcastTransactionState,
