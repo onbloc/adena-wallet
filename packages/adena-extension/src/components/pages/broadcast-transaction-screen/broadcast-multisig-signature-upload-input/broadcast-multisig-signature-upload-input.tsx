@@ -1,21 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { useTheme } from 'styled-components';
 
-import { ErrorText, Text, View, WebImg, CopyIconButton } from '@components/atoms';
-import {
-  StyledHiddenInput,
-  StyledInputLabel,
-  StyledWrapper,
-  StyledSignerListWrapper,
-  StyledSignerItemWrapper,
-  StyledRemoveButton,
-} from './broadcast-multisig-signature-upload-input.styles';
-import IconUpload from '@assets/icon-upload';
-import IconFile from '@assets/file.svg';
-import SuccessIcon from '@assets/success.svg';
 import { Signature } from '@inject/types';
 import { SignerPublicKeyInfo } from 'adena-module';
-import { formatAddress } from '@common/utils/client-utils';
+
+import { ErrorText } from '@components/atoms';
+import {
+  StyledHiddenInput,
+  StyledWrapper,
+  StyledSignerListWrapper,
+} from './broadcast-multisig-signature-upload-input.styles';
+import { SignatureUploadLabel, SignerListItem } from '@components/pages/signature-upload';
 
 export interface BroadcastMultisigSignatureUploadInputProps {
   signatures: Signature[];
@@ -28,23 +22,8 @@ export interface BroadcastMultisigSignatureUploadInputProps {
 const BroadcastMultisigSignatureUploadInput: React.FC<
   BroadcastMultisigSignatureUploadInputProps
 > = ({ signatures, uploadSignature, removeSignature, signerPublicKeys, threshold }) => {
-  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const hasError = useMemo(() => {
-    return errorMessage !== null;
-  }, [errorMessage]);
-
-  const uploadState = useMemo(() => {
-    if (loading) {
-      return 'LOADING';
-    }
-    if (signatures.length > 0) {
-      return 'SUCCESS';
-    }
-    return 'NONE';
-  }, [signatures, loading]);
 
   const signersWithStatus = useMemo(() => {
     return signerPublicKeys.map((signer, index) => {
@@ -63,28 +42,6 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
   const signedCount = useMemo(() => {
     return signersWithStatus.filter((s) => s.isSigned).length;
   }, [signersWithStatus]);
-
-  const onDropFile = useCallback(
-    async (event: React.DragEvent<HTMLLabelElement>) => {
-      event.preventDefault();
-      if (event.dataTransfer.files.length > 0) {
-        const files = Array.from(event.dataTransfer.files);
-        uploadFiles(files);
-      }
-    },
-    [uploadSignature],
-  );
-
-  const onChangeFileInput = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (files && files.length > 0) {
-        const fileArray = Array.from(files);
-        uploadFiles(fileArray);
-      }
-    },
-    [uploadSignature],
-  );
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -124,77 +81,45 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
     [uploadSignature],
   );
 
+  const onDropFile = useCallback(
+    async (event: React.DragEvent<HTMLLabelElement>) => {
+      event.preventDefault();
+      if (event.dataTransfer.files.length > 0) {
+        const files = Array.from(event.dataTransfer.files);
+        uploadFiles(files);
+      }
+    },
+    [uploadFiles],
+  );
+
+  const onChangeFileInput = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        const fileArray = Array.from(files);
+        uploadFiles(fileArray);
+      }
+    },
+    [uploadFiles],
+  );
+
   return (
     <StyledWrapper>
-      <StyledInputLabel htmlFor='signatureUpload' onDrop={onDropFile}>
-        {uploadState === 'NONE' && (
-          <React.Fragment>
-            <IconUpload fill='inherit' />
-            <Text type='body2Reg' color='inherit'>
-              {'Drag & drop signature files or click to upload'}
-            </Text>
-          </React.Fragment>
-        )}
-        {uploadState === 'LOADING' && (
-          <React.Fragment>
-            <IconUpload fill='inherit' />
-            <Text type='body2Reg' color={theme.neutral.a}>
-              {'Uploading signatures...'}
-            </Text>
-          </React.Fragment>
-        )}
-        {uploadState === 'SUCCESS' && (
-          <React.Fragment>
-            <WebImg src={IconFile} size={32} />
-            <Text type='body2Reg' color={theme.neutral._1}>
-              {`${signedCount} of ${threshold} required signatures uploaded`}
-            </Text>
-            <Text type='body3Reg' color={theme.neutral.a}>
-              {'Click to upload more'}
-            </Text>
-          </React.Fragment>
-        )}
-      </StyledInputLabel>
+      <SignatureUploadLabel
+        loading={loading}
+        signedCount={signedCount}
+        threshold={threshold}
+        hasSignatures={signatures.length > 0}
+        onDrop={onDropFile}
+      />
 
-      {hasError && <ErrorText text={errorMessage || ''} />}
+      {errorMessage && <ErrorText text={errorMessage} />}
 
       {signerPublicKeys.length > 0 && (
         <StyledSignerListWrapper>
-          {signersWithStatus.map((signer) => {
-            const borderColor = signer.isSigned ? theme.green._5 : 'transparent';
-            const displayAddress = formatAddress(signer.address, 8);
-
-            return (
-              <StyledSignerItemWrapper key={signer.publicKey} borderColor={borderColor}>
-                <div className='logo-wrapper'>
-                  <div className='logo'>{signer.index}</div>
-                  {signer.isSigned && (
-                    <img className='badge' src={SuccessIcon} alt={'success badge'} />
-                  )}
-                </div>
-
-                <div className='title-wrapper'>
-                  <span className='title'>
-                    <span className='info'>Signer {signer.index}</span>
-                  </span>
-                  <span className='description'>
-                    <span>{displayAddress}</span>
-                    <CopyIconButton
-                      className='copy-button'
-                      copyText={signer.address || ''}
-                      size={14}
-                    />
-                  </span>
-                </div>
-
-                {signer.isSigned && (
-                  <StyledRemoveButton onClick={() => removeSignature(signer.publicKey)}>
-                    ✕
-                  </StyledRemoveButton>
-                )}
-              </StyledSignerItemWrapper>
-            );
-          })}
+          {signersWithStatus.map((signer) => (
+            <SignerListItem key={signer.publicKey} signer={signer} onRemove={removeSignature} />
+          ))}
         </StyledSignerListWrapper>
       )}
 
