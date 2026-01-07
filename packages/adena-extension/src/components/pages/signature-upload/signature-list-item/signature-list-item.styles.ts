@@ -21,8 +21,8 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background-color: ${({ theme }): string => theme.neutral._8};
-      color: ${({ theme }): string => theme.neutral.a};
+      background-color: ${({ theme }): string => theme.neutral._5};
+      color: ${({ theme }): string => theme.white};
       display: flex;
       align-items: center;
       justify-content: center;
