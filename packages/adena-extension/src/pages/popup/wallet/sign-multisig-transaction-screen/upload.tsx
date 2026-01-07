@@ -5,34 +5,30 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import { SignMultisigTransactionState } from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
-import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
 
-interface BroadcastMultisigTransactionUploadProps {
+interface SignMultisigTransactionUploadProps {
   multisigTransactionDocument: MultisigTransactionDocument | null;
   transactionInfos: TransactionDisplayInfo[];
   uploadTransaction: (text: string) => boolean;
   rawTransaction: string;
-  signatures: Signature[];
-  uploadSignature: (text: string) => boolean;
-  removeSignature: (pubKeyValue: string) => void;
-  broadcast: () => Promise<boolean>;
+  signTransaction: () => Promise<boolean>;
+  signTransactionState: SignMultisigTransactionState;
   reset: () => void;
 }
 
-const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
+const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps> = ({
   multisigTransactionDocument,
   transactionInfos,
   uploadTransaction,
   rawTransaction,
-  signatures,
-  uploadSignature,
-  removeSignature,
-  broadcast,
+  signTransaction,
+  signTransactionState,
   reset,
 }) => {
   const theme = useTheme();
@@ -49,12 +45,12 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     event.stopPropagation();
   };
 
-  const onClickBroadcast = () => {
+  const onClickSign = () => {
     if (isBroadcasting) {
       return;
     }
     setIsBroadcasting(true);
-    broadcast().finally(() => setIsBroadcasting(false));
+    signTransaction().finally(() => setIsBroadcasting(false));
   };
 
   const onClickCancel = React.useCallback(() => {
@@ -76,7 +72,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
       <StyledWrapper>
         <StyledHeaderWrapper>
           <Text type='header4' textAlign='center'>
-            {'Broadcast Transaction'}
+            {'Sign Transaction'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'Upload a signed transaction file to\nAdena to broadcast it.'}
@@ -88,14 +84,6 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
             multisigTransactionDocument={multisigTransactionDocument}
             uploadMultisigTransaction={uploadTransaction}
           />
-
-          {loadedTransaction && (
-            <BroadcastMultisigSignatureUploadInput
-              signatures={signatures}
-              uploadSignature={uploadSignature}
-              removeSignature={removeSignature}
-            />
-          )}
 
           {loadedTransaction && (
             <BroadcastTransactionUploadResult
@@ -115,15 +103,15 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         rightButton={{
           primary: true,
           disabled: !loadedTransaction,
-          text: 'Broadcast',
-          onClick: onClickBroadcast,
+          text: 'Sign',
+          onClick: onClickSign,
         }}
       />
     </CommonFullContentLayout>
   );
 };
 
-export default BroadcastMultisigTransactionUpload;
+export default SignMultisigTransactionUpload;
 
 const StyledWrapper = styled(View)`
   width: 100%;

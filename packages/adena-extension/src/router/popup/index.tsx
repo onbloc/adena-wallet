@@ -68,6 +68,7 @@ import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
 import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
+import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 
 export const PopupRouter = (): JSX.Element => {
   const { failedNetwork } = useNetwork();
@@ -118,6 +119,10 @@ export const PopupRouter = (): JSX.Element => {
         <Route
           path={RoutePath.BroadcastMultisigTransactionScreen}
           element={<BroadcastMultisigTransactionScreen />}
+        />
+        <Route
+          path={RoutePath.SignMultisigTransactionScreen}
+          element={<SignMultisigTransactionScreen />}
         />
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />

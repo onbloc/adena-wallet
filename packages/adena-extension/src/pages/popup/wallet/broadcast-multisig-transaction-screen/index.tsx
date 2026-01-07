@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { useMultisigTransactionContext } from '@hooks/use-context';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 
 import { CommonFullContentLayout } from '@components/atoms';
@@ -8,21 +9,21 @@ import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading
 import BroadcastTransactionFailed from '../broadcast-transaction-screen/failed';
 
 const BroadcastMultisigTransactionScreen: React.FC = () => {
+  const { multisigTransactionDocument, signatures, removeSignature, resetMultisigTransaction } =
+    useMultisigTransactionContext();
+
   const {
-    multisigTransactionDocument,
+    broadcastTransactionState,
+    broadcast,
     uploadMultisigTransaction,
+    uploadSignature,
     transactionInfos,
     rawTransaction,
-    broadcastTransactionState,
-    signatures,
-    uploadSignature,
-    removeSignature,
-    broadcast,
   } = useBroadcastMultisigTransactionScreen();
 
   return (
     <CommonFullContentLayout>
-      {broadcastTransactionState === 'UPLOAD_TRANSACTION' && (
+      {broadcastTransactionState === 'IDLE' && (
         <BroadcastMultisigTransactionUpload
           multisigTransactionDocument={multisigTransactionDocument}
           transactionInfos={transactionInfos || []}
@@ -32,6 +33,7 @@ const BroadcastMultisigTransactionScreen: React.FC = () => {
           uploadSignature={uploadSignature}
           removeSignature={removeSignature}
           broadcast={broadcast}
+          reset={resetMultisigTransaction}
         />
       )}
       {broadcastTransactionState === 'LOADING' && <BroadcastTransactionLoading />}

@@ -1,7 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
 
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
+import {
+  useAdenaContext,
+  useWalletContext,
+  useMultisigTransactionContext,
+} from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -10,7 +14,7 @@ import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
 import { isMultisigAccount } from 'adena-module';
 
-export type BroadcastTransactionState = 'UPLOAD_TRANSACTION' | 'LOADING' | 'FAILED' | 'SUCCESS';
+export type BroadcastTransactionState = 'IDLE' | 'LOADING' | 'SUCCESS' | 'FAILED';
 
 export interface TransactionDisplayInfo {
   name: string;
@@ -58,7 +62,6 @@ function mapMultisigTransactionInfo(
   const firstMessage = messages[0];
   const infos: TransactionDisplayInfo[] = [];
 
-  // Type
   infos.push(makeTransactionInfo('Type', makeTypeName(firstMessage.type), 'TEXT', extraInfo));
 
   switch (firstMessage.type) {
@@ -66,26 +69,22 @@ function mapMultisigTransactionInfo(
       const { to_address, amount } = firstMessage.value;
       const amountValue = makeGnotAmountByRaw(amount);
       const amountStr = `${amountValue?.value} ${amountValue?.denom}`;
-
       infos.push(makeTransactionInfo('To', to_address, 'ADDRESS'));
       infos.push(makeTransactionInfo('Amount', amountStr));
       break;
     }
-
     case MsgEndpoint.MSG_CALL: {
       const { pkg_path, func } = firstMessage.value;
       infos.push(makeTransactionInfo('Path', pkg_path));
       infos.push(makeTransactionInfo('Function', func));
       break;
     }
-
     case MsgEndpoint.MSG_ADD_PKG: {
       const { package: pkg } = firstMessage.value;
       infos.push(makeTransactionInfo('Path', pkg.path || pkg.Path));
       infos.push(makeTransactionInfo('Name', pkg.name || pkg.Name));
       break;
     }
-
     case MsgEndpoint.MSG_RUN: {
       const { package: pkg } = firstMessage.value;
       if (pkg) {
@@ -96,7 +95,6 @@ function mapMultisigTransactionInfo(
     }
   }
 
-  // Network Fee
   const networkFee = makeGnotAmountByRaw(tx.fee.gas_fee);
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   infos.push(makeTransactionInfo('Network Fee', networkFeeStr));
@@ -114,29 +112,22 @@ function matchMultisigTransactionCaller(
     switch (message.type) {
       case MsgEndpoint.MSG_SEND: {
         const { from_address } = message.value;
-        if (!from_address) {
-          return true;
-        }
+        if (!from_address) return true;
         return from_address !== caller;
       }
       case MsgEndpoint.MSG_CALL:
       case MsgEndpoint.MSG_RUN: {
         const { caller: msgCaller } = message.value;
-        if (!msgCaller) {
-          return true;
-        }
+        if (!msgCaller) return true;
         return msgCaller !== caller;
       }
       case MsgEndpoint.MSG_ADD_PKG: {
         const { creator } = message.value;
-        if (!creator) {
-          return true;
-        }
+        if (!creator) return true;
         return creator !== caller;
       }
-      default: {
+      default:
         return true;
-      }
     }
   });
 
@@ -144,16 +135,12 @@ function matchMultisigTransactionCaller(
 }
 
 export interface UseBroadcastMultisigTransactionScreenReturn {
-  multisigTransactionDocument: MultisigTransactionDocument | null;
-  transactionInfos: TransactionDisplayInfo[] | null;
-  rawTransaction: string;
-  uploadMultisigTransaction: (text: string) => boolean;
-  signatures: Signature[];
-  uploadSignature: (text: string) => boolean;
-  removeSignature: (pubKeyValue: string) => void;
-  clearSignatures: () => void;
   broadcastTransactionState: BroadcastTransactionState;
   broadcast: () => Promise<boolean>;
+  uploadMultisigTransaction: (text: string) => boolean;
+  uploadSignature: (text: string) => boolean;
+  transactionInfos: TransactionDisplayInfo[] | null;
+  rawTransaction: string;
 }
 
 const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactionScreenReturn => {
@@ -162,12 +149,11 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   const { multisigService } = useAdenaContext();
   const { navigate } = useAppNavigate();
 
-  const [multisigTransactionDocument, setMultisigTransactionDocument] =
-    useState<MultisigTransactionDocument | null>(null);
-  const [signatures, setSignatures] = useState<Signature[]>([]);
+  const { multisigTransactionDocument, setMultisigTransactionDocument, signatures, addSignature } =
+    useMultisigTransactionContext();
 
   const [broadcastTransactionState, setBroadcastTransactionState] =
-    useState<BroadcastTransactionState>('UPLOAD_TRANSACTION');
+    useState<BroadcastTransactionState>('IDLE');
 
   const transactionInfos = useMemo(() => {
     if (!multisigTransactionDocument || multisigTransactionDocument.tx.msgs.length === 0) {
@@ -176,7 +162,6 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     return mapMultisigTransactionInfo(multisigTransactionDocument);
   }, [multisigTransactionDocument]);
 
-  // Raw Transaction (JSON string)
   const rawTransaction = useMemo(() => {
     if (!multisigTransactionDocument) {
       return '';
@@ -184,101 +169,99 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     return JSON.stringify(multisigTransactionDocument, null, 2);
   }, [multisigTransactionDocument]);
 
-  const uploadMultisigTransaction = (text: string): boolean => {
-    if (!currentAddress) {
-      return false;
-    }
-
-    try {
-      const multisigTxDoc = JSON.parse(text) as MultisigTransactionDocument;
-
-      if (
-        !multisigTxDoc.tx ||
-        !multisigTxDoc.chainId ||
-        !multisigTxDoc.accountNumber ||
-        !multisigTxDoc.sequence
-      ) {
+  const uploadMultisigTransaction = useCallback(
+    (text: string): boolean => {
+      if (!currentAddress) {
         return false;
       }
 
-      const { tx } = multisigTxDoc;
+      try {
+        const multisigTxDoc = JSON.parse(text) as MultisigTransactionDocument;
 
-      if (
-        !tx.msgs ||
-        !Array.isArray(tx.msgs) ||
-        tx.msgs.length === 0 ||
-        !tx.fee ||
-        !tx.fee.gas_wanted ||
-        !tx.fee.gas_fee ||
-        tx.signatures !== null
-      ) {
-        return false;
-      }
-
-      const validMessages = tx.msgs.every((msg) => {
-        if (!msg.type || !msg.value) {
+        if (
+          !multisigTxDoc.tx ||
+          !multisigTxDoc.chainId ||
+          !multisigTxDoc.accountNumber ||
+          !multisigTxDoc.sequence
+        ) {
           return false;
         }
 
-        return (
-          msg.type === MsgEndpoint.MSG_SEND ||
-          msg.type === MsgEndpoint.MSG_CALL ||
-          msg.type === MsgEndpoint.MSG_ADD_PKG ||
-          msg.type === MsgEndpoint.MSG_RUN
-        );
-      });
+        const { tx } = multisigTxDoc;
 
-      if (!validMessages) {
+        if (
+          !tx.msgs ||
+          !Array.isArray(tx.msgs) ||
+          tx.msgs.length === 0 ||
+          !tx.fee ||
+          !tx.fee.gas_wanted ||
+          !tx.fee.gas_fee ||
+          tx.signatures !== null
+        ) {
+          return false;
+        }
+
+        const validMessages = tx.msgs.every((msg) => {
+          if (!msg.type || !msg.value) {
+            return false;
+          }
+          return (
+            msg.type === MsgEndpoint.MSG_SEND ||
+            msg.type === MsgEndpoint.MSG_CALL ||
+            msg.type === MsgEndpoint.MSG_ADD_PKG ||
+            msg.type === MsgEndpoint.MSG_RUN
+          );
+        });
+
+        if (!validMessages) {
+          return false;
+        }
+
+        if (!matchMultisigTransactionCaller(multisigTxDoc, currentAddress)) {
+          console.log('Caller mismatch warning');
+        }
+
+        setMultisigTransactionDocument(multisigTxDoc);
+        return true;
+      } catch (error) {
+        console.error(error);
+        setMultisigTransactionDocument(null);
         return false;
       }
+    },
+    [currentAddress, setMultisigTransactionDocument],
+  );
 
-      if (!matchMultisigTransactionCaller(multisigTxDoc, currentAddress)) {
+  //
+  const uploadSignature = useCallback(
+    (text: string): boolean => {
+      try {
+        const signature = JSON.parse(text) as Signature;
+
+        if (
+          !signature.pub_key ||
+          signature.pub_key.type !== '/tm.PubKeySecp256k1' ||
+          !signature.pub_key.value ||
+          !signature.signature
+        ) {
+          return false;
+        }
+
+        const isDuplicate = signatures.some((sig) => sig.pub_key.value === signature.pub_key.value);
+
+        if (isDuplicate) {
+          return false;
+        }
+
+        addSignature(signature);
+        return true;
+      } catch (error) {
+        console.error(error);
         return false;
       }
-
-      setMultisigTransactionDocument(multisigTxDoc);
-      return true;
-    } catch (error) {
-      console.error(error);
-      setMultisigTransactionDocument(null);
-      return false;
-    }
-  };
-
-  const uploadSignature = (text: string): boolean => {
-    try {
-      const signature = JSON.parse(text) as Signature;
-
-      if (
-        !signature.pub_key ||
-        signature.pub_key.type !== '/tm.PubKeySecp256k1' ||
-        !signature.pub_key.value ||
-        !signature.signature
-      ) {
-        return false;
-      }
-
-      const isDuplicate = signatures.some((sig) => sig.pub_key.value === signature.pub_key.value);
-
-      if (isDuplicate) {
-        return false;
-      }
-
-      setSignatures((prev) => [...prev, signature]);
-      return true;
-    } catch (error) {
-      console.error(error);
-      return false;
-    }
-  };
-
-  const removeSignature = (pubKeyValue: string): void => {
-    setSignatures((prev) => prev.filter((sig) => sig.pub_key.value !== pubKeyValue));
-  };
-
-  const clearSignatures = (): void => {
-    setSignatures([]);
-  };
+    },
+    [signatures, addSignature],
+  );
 
   const broadcast = useCallback(async () => {
     if (!multisigTransactionDocument || !signatures || !wallet || !currentAccount) {
@@ -305,7 +288,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
       if (isSuccessBroadcasting) {
         setBroadcastTransactionState('SUCCESS');
-        navigate(RoutePath.History);
+        navigate(RoutePath.Home);
         return true;
       } else {
         setBroadcastTransactionState('FAILED');
@@ -316,19 +299,15 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
       setBroadcastTransactionState('FAILED');
       return false;
     }
-  }, [currentAccount, multisigTransactionDocument, signatures]);
+  }, [currentAccount, multisigTransactionDocument, signatures, wallet, multisigService, navigate]);
 
   return {
-    multisigTransactionDocument,
-    transactionInfos,
-    rawTransaction,
-    uploadMultisigTransaction,
-    signatures,
-    uploadSignature,
-    removeSignature,
-    clearSignatures,
     broadcastTransactionState,
     broadcast,
+    uploadMultisigTransaction,
+    uploadSignature,
+    transactionInfos,
+    rawTransaction,
   };
 };
 

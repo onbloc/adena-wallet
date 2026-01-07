@@ -5,6 +5,8 @@ import {
   AdenaContextProps,
   WalletContext,
   WalletContextProps,
+  MultisigTransactionContext,
+  MultisigTransactionContextProps,
 } from '@common/provider';
 
 export const useAdenaContext = (): AdenaContextProps => {
@@ -17,6 +19,14 @@ export const useAdenaContext = (): AdenaContextProps => {
 
 export const useWalletContext = (): WalletContextProps => {
   const context = useContext(WalletContext);
+  if (context === null) {
+    throw new CommonError('FAILED_INITIALIZE_PROVIDER');
+  }
+  return context;
+};
+
+export const useMultisigTransactionContext = (): MultisigTransactionContextProps => {
+  const context = useContext(MultisigTransactionContext);
   if (context === null) {
     throw new CommonError('FAILED_INITIALIZE_PROVIDER');
   }
