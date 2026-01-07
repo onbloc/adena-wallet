@@ -68,7 +68,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     return validSignatures.length < threshold;
   }, [isBroadcasting, validSignatures, threshold]);
 
-  const onClickBroadcast = () => {
+  const onClickBroadcast = (): void => {
     if (disableBroadcast) {
       return;
     }

@@ -52,7 +52,7 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
   gap: 12px;
   padding: 16px;
   border-radius: 18px;
-  border: 2px solid ${({ borderColor }) => borderColor};
+  border: 2px solid ${({ borderColor }): string => borderColor};
   background-color: ${({ theme }): string => theme.neutral._9};
   transition: border-color 0.2s;
 

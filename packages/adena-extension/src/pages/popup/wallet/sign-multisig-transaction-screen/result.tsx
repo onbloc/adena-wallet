@@ -23,7 +23,7 @@ const SignMultisigTransactionResult: React.FC<SignMultisigTransactionResultProps
 
   const isSuccess = status === 'SUCCESS';
 
-  const getFailureMessage = () => {
+  const getFailureMessage = (): string => {
     if (errorMessage) {
       return errorMessage;
     }

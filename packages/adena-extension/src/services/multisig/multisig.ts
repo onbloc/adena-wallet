@@ -169,7 +169,7 @@ export class MultisigService {
    */
   public saveTransactionToFile = async (
     txDocument: MultisigTransactionDocument,
-    fileName: string = 'multisig-transaction.tx',
+    fileName = 'multisig-transaction.tx',
   ): Promise<boolean> => {
     try {
       const jsonString = JSON.stringify(txDocument, null, 2);
@@ -223,7 +223,7 @@ export class MultisigService {
    */
   public saveSignatureToFile = async (
     signature: Signature,
-    fileName: string = 'multisig-signature.sig',
+    fileName = 'multisig-signature.sig',
   ): Promise<boolean> => {
     try {
       const jsonString = JSON.stringify(signature, null, 2);

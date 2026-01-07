@@ -12,7 +12,8 @@ import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
 
-const description = `Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.`;
+const description =
+  'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.';
 
 interface SetupMultisigInitProps {
   initSetup: (mode: MultisigAccountMode) => void;
@@ -45,7 +46,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup, curren
           figure='primary'
           iconElement={<IconCreate />}
           text='Create Multisig Account'
-          onClick={() => initSetup('CREATE')}
+          onClick={(): void => initSetup('CREATE')}
           disabled={isCreateDisabled}
         />
         <WebMainButton
@@ -53,7 +54,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup, curren
           figure='secondary'
           iconElement={<IconImport />}
           text='Import Multisig Account'
-          onClick={() => initSetup('IMPORT')}
+          onClick={(): void => initSetup('IMPORT')}
         />
       </Row>
     </StyledContainer>

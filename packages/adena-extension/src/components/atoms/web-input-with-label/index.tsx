@@ -23,7 +23,7 @@ const StyledContainer = styled(Row).withConfig({
   border: 1px solid ${({ theme }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
-  ${({ theme, hover, focus, filled, disabled }): RuleSet | string =>
+  ${({ theme, hover, focus, filled }): RuleSet | string =>
     hover || focus || filled
       ? css`
           border-color: ${theme.webNeutral._600};
@@ -138,8 +138,8 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
       filled={filled}
       error={error && !disabled}
       disabled={disabled}
-      onMouseOver={() => !disabled && setHover(true)}
-      onMouseOut={() => !disabled && setHover(false)}
+      onMouseOver={(): false | void => !disabled && setHover(true)}
+      onMouseOut={(): false | void => !disabled && setHover(false)}
     >
       <StyledLabel
         hover={hover && !disabled}
@@ -157,9 +157,9 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
         value={value}
         placeholder={placeholder}
         spellCheck={false}
-        onFocus={() => !disabled && setFocus(true)}
-        onBlur={() => !disabled && setFocus(false)}
-        onChange={(e) => !disabled && onChange(e.target.value)}
+        onFocus={(): false | void => !disabled && setFocus(true)}
+        onBlur={(): false | void => !disabled && setFocus(false)}
+        onChange={(e): false | void => !disabled && onChange(e.target.value)}
         error={error && !disabled}
         disabled={disabled}
       />

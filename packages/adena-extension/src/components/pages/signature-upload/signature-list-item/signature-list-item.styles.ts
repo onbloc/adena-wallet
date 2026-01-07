@@ -8,7 +8,7 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
   gap: 12px;
   padding: 10px 14px;
   border-radius: 18px;
-  border: 2px solid ${({ borderColor }) => borderColor};
+  border: 2px solid ${({ borderColor }): string => borderColor};
   background-color: ${({ theme }): string => theme.neutral._9};
   transition: border-color 0.2s;
 
@@ -85,14 +85,14 @@ export const StyledRemoveButton = styled.button`
 
     line {
       transition: 0.2s;
-      stroke: ${({ theme }) => theme.neutral.a};
+      stroke: ${({ theme }): string => theme.neutral.a};
     }
   }
 
   &:hover {
     svg {
       line {
-        stroke: ${({ theme }) => theme.neutral._1};
+        stroke: ${({ theme }): string => theme.neutral._1};
       }
     }
   }

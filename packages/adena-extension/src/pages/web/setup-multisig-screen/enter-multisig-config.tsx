@@ -91,7 +91,6 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
         <View style={{ rowGap: 12 }}>
           <WebMultisigThresholdInput
             threshold={threshold}
-            maxThreshold={validSignersCount}
             onThresholdChange={onThresholdChange}
             multisigConfigError={multisigConfigError}
           />

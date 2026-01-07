@@ -43,7 +43,7 @@ const SignerListItem: React.FC<SignerListItemProps> = ({ signer, onRemove }) => 
       </div>
 
       {signer.isSigned && (
-        <StyledRemoveButton onClick={() => onRemove(signer.publicKey)}>
+        <StyledRemoveButton onClick={(): void => onRemove(signer.publicKey)}>
           <Icon name='iconCancel' />
         </StyledRemoveButton>
       )}

@@ -38,18 +38,17 @@ export const WebMultisigSignerInput = ({
     <StyledContainer style={{ alignItems: 'center' }}>
       <View style={{ rowGap: 16, width: '100%' }}>
         {signers.map((signer, index) => (
-          <StyledInputRow>
+          <StyledInputRow key={`signer-${index}`}>
             <WebInputWithLabel
-              key={`signer-${index}`}
               label={`Signer #${index + 1}`}
               value={signer}
-              onChange={(value) => onSignerChange(index, value)}
+              onChange={(value): void => onSignerChange(index, value)}
               disabled={index === 0 && isFirstInputDisabled}
               placeholder={'Account Address'}
               error={hasError}
             />
             {index >= 2 && (
-              <StyledCloseButton type='button' onClick={() => onRemoveSigner(index)}>
+              <StyledCloseButton type='button' onClick={(): void => onRemoveSigner(index)}>
                 <Icon name='iconCancel' />
               </StyledCloseButton>
             )}
@@ -80,13 +79,13 @@ const StyledAddButton = styled(Pressable)<{ isDisabled: boolean }>`
   align-items: center;
   gap: 4px;
   border-radius: 8px;
-  background: ${({ isDisabled }) =>
+  background: ${({ isDisabled }): string =>
     isDisabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.12)'};
   position: relative;
   transition: all 0.2s;
-  cursor: ${({ isDisabled }) => (isDisabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({ isDisabled }) => (isDisabled ? '0.5' : '1')};
-  pointer-events: ${({ isDisabled }) => (isDisabled ? 'none' : 'auto')};
+  cursor: ${({ isDisabled }): string => (isDisabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ isDisabled }): string => (isDisabled ? '0.5' : '1')};
+  pointer-events: ${({ isDisabled }): string => (isDisabled ? 'none' : 'auto')};
 
   &::before {
     content: '';
@@ -94,7 +93,7 @@ const StyledAddButton = styled(Pressable)<{ isDisabled: boolean }>`
     inset: 0;
     border-radius: 8px;
     padding: 1px;
-    background: ${({ isDisabled }) =>
+    background: ${({ isDisabled }): string =>
       isDisabled
         ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%)'
         : 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%)'};
@@ -106,7 +105,7 @@ const StyledAddButton = styled(Pressable)<{ isDisabled: boolean }>`
   }
 
   &:hover {
-    background: ${({ isDisabled }) =>
+    background: ${({ isDisabled }): string =>
       isDisabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)'};
   }
 `;
@@ -126,14 +125,14 @@ const StyledCloseButton = styled.button`
 
     line {
       transition: 0.2s;
-      stroke: ${({ theme }) => theme.webNeutral._500};
+      stroke: ${({ theme }): string => theme.webNeutral._500};
     }
   }
 
   &:hover {
     svg {
       line {
-        stroke: ${({ theme }) => theme.webNeutral._100};
+        stroke: ${({ theme }): string => theme.webNeutral._100};
       }
     }
   }

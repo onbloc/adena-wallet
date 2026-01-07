@@ -5,18 +5,16 @@ import { View, WebInputWithLabel } from '@components/atoms';
 
 interface WebMultisigThresholdInputProps {
   threshold: number;
-  maxThreshold: number;
   onThresholdChange: (threshold: number) => void;
   multisigConfigError: string | null;
 }
 
 export const WebMultisigThresholdInput = ({
   threshold,
-  maxThreshold,
   onThresholdChange,
   multisigConfigError,
 }: WebMultisigThresholdInputProps): React.ReactElement => {
-  const handleChange = (value: string) => {
+  const handleChange = (value: string): void => {
     const numericValue = value.replace(/[^0-9]/g, '');
     onThresholdChange(numericValue === '' ? 0 : Number(numericValue));
   };

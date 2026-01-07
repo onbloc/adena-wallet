@@ -40,7 +40,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
     event.stopPropagation();
   };
 
-  const onClickSign = () => {
+  const onClickSign = (): void => {
     if (isSigning) {
       return;
     }
@@ -51,7 +51,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
     });
   };
 
-  const onClickCancel = React.useCallback(() => {
+  const onClickCancel = React.useCallback((): void => {
     goBack();
     reset();
   }, [goBack, reset]);
