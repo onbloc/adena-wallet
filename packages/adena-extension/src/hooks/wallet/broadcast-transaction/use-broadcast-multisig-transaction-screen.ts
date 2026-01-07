@@ -10,7 +10,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 
 import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
-import { isMultisigAccount } from 'adena-module';
+import { isMultisigAccount, SignerPublicKeyInfo } from 'adena-module';
 
 export type BroadcastTransactionState = 'IDLE' | 'LOADING' | 'SUCCESS' | 'FAILED';
 
@@ -139,6 +139,8 @@ export interface UseBroadcastMultisigTransactionScreenReturn {
   uploadSignature: (text: string) => boolean;
   transactionInfos: TransactionDisplayInfo[] | null;
   rawTransaction: string;
+  signerPublicKeys: SignerPublicKeyInfo[];
+  threshold: number;
 }
 
 const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactionScreenReturn => {
@@ -151,6 +153,22 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
   const [broadcastTransactionState, setBroadcastTransactionState] =
     useState<BroadcastTransactionState>('IDLE');
+
+  const signerPublicKeys = useMemo((): SignerPublicKeyInfo[] => {
+    if (!currentAccount || !isMultisigAccount(currentAccount)) {
+      return [];
+    }
+
+    return currentAccount.signerPublicKeys;
+  }, [currentAccount]);
+
+  const threshold = useMemo((): number => {
+    if (!currentAccount || !isMultisigAccount(currentAccount)) {
+      return 1;
+    }
+
+    return currentAccount.threshold;
+  }, [currentAccount]);
 
   const transactionInfos = useMemo(() => {
     if (!multisigTransactionDocument || multisigTransactionDocument.tx.msgs.length === 0) {
@@ -229,7 +247,6 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     [currentAddress, setMultisigTransactionDocument],
   );
 
-  //
   const uploadSignature = useCallback(
     (text: string): boolean => {
       try {
@@ -247,6 +264,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         const isDuplicate = signatures.some((sig) => sig.pub_key.value === signature.pub_key.value);
 
         if (isDuplicate) {
+          console.warn('Duplicate signature');
           return false;
         }
 
@@ -257,7 +275,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         return false;
       }
     },
-    [signatures, addSignature],
+    [signatures, addSignature, signerPublicKeys],
   );
 
   const broadcast = useCallback(async () => {
@@ -304,6 +322,8 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     uploadSignature,
     transactionInfos,
     rawTransaction,
+    signerPublicKeys,
+    threshold,
   };
 };
 

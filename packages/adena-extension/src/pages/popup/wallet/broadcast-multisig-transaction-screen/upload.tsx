@@ -4,6 +4,7 @@ import styled, { useTheme } from 'styled-components';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import { SignerPublicKeyInfo } from 'adena-module';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
@@ -21,6 +22,8 @@ interface BroadcastMultisigTransactionUploadProps {
   removeSignature: (pubKeyValue: string) => void;
   broadcast: () => Promise<boolean>;
   reset: () => void;
+  signerPublicKeys: SignerPublicKeyInfo[];
+  threshold: number;
 }
 
 const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
@@ -33,10 +36,18 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   removeSignature,
   broadcast,
   reset,
+  signerPublicKeys,
+  threshold,
 }) => {
   const theme = useTheme();
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
   const { goBack } = useAppNavigate();
+
+  const validSignatures = React.useMemo(() => {
+    return signatures.filter((signature) =>
+      signerPublicKeys.some((signer) => signer.publicKey.value === signature.pub_key.value),
+    );
+  }, [signatures, signerPublicKeys]);
 
   const loadedTransaction = React.useMemo(() => {
     return Boolean(multisigTransactionDocument);
@@ -47,8 +58,15 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     event.stopPropagation();
   };
 
-  const onClickBroadcast = () => {
+  const disableBroadcast = React.useMemo(() => {
     if (isBroadcasting) {
+      return true;
+    }
+    return validSignatures.length < threshold;
+  }, [isBroadcasting, validSignatures, threshold]);
+
+  const onClickBroadcast = () => {
+    if (disableBroadcast) {
       return;
     }
     setIsBroadcasting(true);
@@ -115,7 +133,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         }}
         rightButton={{
           primary: true,
-          disabled: !loadedTransaction,
+          disabled: !loadedTransaction || disableBroadcast,
           text: 'Broadcast',
           onClick: onClickBroadcast,
         }}
