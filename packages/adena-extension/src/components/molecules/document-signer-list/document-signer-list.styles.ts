@@ -32,7 +32,7 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background-color: ${({ theme }) => theme.neutral._5};
+      background-color: ${({ theme }): string => theme.neutral._5};
     }
 
     .badge {

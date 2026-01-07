@@ -1,4 +1,4 @@
-import { isAirgapAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
@@ -24,6 +24,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
+import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
 
 const REFETCH_INTERVAL = 3_000;
 
@@ -71,7 +72,8 @@ export const WalletMain = (): JSX.Element => {
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { data: currentAccountInfo } = useGetAccountInfo(currentAddress);
   const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { refetchBalances } = useTokenBalance();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
@@ -79,6 +81,10 @@ export const WalletMain = (): JSX.Element => {
   const { show } = useToast();
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
+
+  const canSignTransaction = useMemo(() => {
+    return Boolean(currentAccountInfo?.publicKey?.value);
+  }, [currentAccountInfo]);
 
   const onClickFaucetButton = (): void => {
     if (isFaucetLoading) {
@@ -92,7 +98,7 @@ export const WalletMain = (): JSX.Element => {
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
 
-  const onClickSendButton = (): void => {
+  const onClickActionButton = (): void => {
     if (!currentAccount) {
       return;
     }
@@ -100,8 +106,33 @@ export const WalletMain = (): JSX.Element => {
       navigate(RoutePath.BroadcastTransaction);
       return;
     }
+    if (isMultisigAccount(currentAccount)) {
+      navigate(RoutePath.BroadcastMultisigTransactionScreen);
+      return;
+    }
     navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
   };
+
+  const onClickSignButton = (): void => {
+    if (!currentAccount || !canSignTransaction) {
+      return;
+    }
+
+    navigate(RoutePath.SignMultisigTransactionScreen);
+    return;
+  };
+
+  const actionButtonText: string | null = useMemo(() => {
+    if (!currentAccount) {
+      return null;
+    }
+
+    if (isMultisigAccount(currentAccount)) {
+      return 'Broadcast';
+    }
+
+    return 'Send';
+  }, [isMultisigAccount, currentAccount]);
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -202,9 +233,14 @@ export const WalletMain = (): JSX.Element => {
             <Text type={'body1Bold'}>Deposit</Text>
           </Button>
         )}
-        <Button fullWidth onClick={onClickSendButton}>
-          <Text type={'body1Bold'}>Send</Text>
+        <Button fullWidth onClick={onClickActionButton}>
+          <Text type={'body1Bold'}>{actionButtonText}</Text>
         </Button>
+        {canSignTransaction && (
+          <Button fullWidth onClick={onClickSignButton}>
+            <Text type={'body1Bold'}>Sign</Text>
+          </Button>
+        )}
       </div>
 
       <div className='token-list-wrapper'>

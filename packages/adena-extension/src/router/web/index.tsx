@@ -15,6 +15,7 @@ import LandingScreen from '@pages/web/landing-screen';
 import QuestionnaireScreen from '@pages/web/questionnaire-screen';
 import SelectHardWalletScreen from '@pages/web/select-hard-wallet-screen';
 import SetupAirgapScreen from '@pages/web/setup-airgap-screen';
+import SetupMultisigScreen from '@pages/web/setup-multisig-screen';
 import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
 import WalletCreateScreen from '@pages/web/wallet-create-screen';
 import WalletExportScreen from '@pages/web/wallet-export-screen';
@@ -63,6 +64,7 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.WebCreatePassword} element={<CreatePasswordScreen />} />
           <Route path={RoutePath.WebGoogleLogin} element={<GoogleLoginScreen />} />
           <Route path={RoutePath.WebSetupAirgap} element={<SetupAirgapScreen />} />
+          <Route path={RoutePath.WebSetupMultisig} element={<SetupMultisigScreen />} />
           <Route path={RoutePath.WebWalletCreate} element={<WalletCreateScreen />} />
           <Route path={RoutePath.WebAccountAdd} element={<AccountAddScreen />} />
           <Route path={RoutePath.WebAccountImport} element={<AccountImportScreen />} />

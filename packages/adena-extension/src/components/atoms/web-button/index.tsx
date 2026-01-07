@@ -12,7 +12,7 @@ type WebButtonProps = {
   buttonRef?: React.RefObject<HTMLButtonElement>;
   size: 'full' | 'large' | 'small';
   textType?: WebFontType;
-  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary';
+  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
   fixed?: boolean;
 } & (
   | { text: string; rightIcon?: 'chevronRight' }
@@ -212,6 +212,26 @@ const StyledButtonQuaternary = styled(StyledButtonBase)`
   }
 `;
 
+const StyledButtonQuinary = styled(StyledButtonBase)`
+  & {
+    color: #adcaff;
+    outline: 1px solid #0a1b39;
+    background: rgba(0, 89, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid #212429;
+
+    &:hover {
+      color: #adcaff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    &:active {
+      color: #adcaff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+`;
+
 export const WebButton: React.FC<WebButtonProps> = ({
   buttonRef,
   figure,
@@ -235,8 +255,10 @@ export const WebButton: React.FC<WebButtonProps> = ({
     case 'quaternary':
       StyledComponent = StyledButtonQuaternary;
       break;
-
-    // primary
+    case 'quinary':
+      StyledComponent = StyledButtonQuinary;
+      break;
+    case 'primary':
     default:
       StyledComponent = StyledButtonPrimary;
   }

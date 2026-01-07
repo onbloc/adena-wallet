@@ -1,6 +1,10 @@
 import React from 'react';
 
-const useExtensionWindowManager = () => {
+interface UseExtensionWindowManagerReturn {
+  closeAllExtensionWindows: () => Promise<void>;
+}
+
+const useExtensionWindowManager = (): UseExtensionWindowManagerReturn => {
   const closeAllExtensionWindows = React.useCallback(async () => {
     const windows = await chrome.windows.getAll();
     for (const window of windows) {
