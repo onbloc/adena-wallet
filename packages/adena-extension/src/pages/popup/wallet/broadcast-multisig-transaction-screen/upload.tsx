@@ -3,7 +3,10 @@ import styled, { useTheme } from 'styled-components';
 
 import useAppNavigate from '@hooks/use-app-navigate';
 import { MultisigTransactionDocument, Signature } from '@inject/types';
-import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import {
+  TransactionDisplayInfo,
+  SignatureUploadResult,
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { SignerPublicKeyInfo } from 'adena-module';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
@@ -18,7 +21,7 @@ interface BroadcastMultisigTransactionUploadProps {
   uploadTransaction: (text: string) => boolean;
   rawTransaction: string;
   signatures: Signature[];
-  uploadSignature: (text: string) => boolean;
+  uploadSignature: (text: string) => SignatureUploadResult;
   removeSignature: (pubKeyValue: string) => void;
   broadcast: () => Promise<boolean>;
   reset: () => void;

@@ -14,6 +14,13 @@ import { isMultisigAccount, SignerPublicKeyInfo } from 'adena-module';
 
 export type BroadcastTransactionState = 'IDLE' | 'LOADING' | 'SUCCESS' | 'FAILED';
 
+export type SignatureUploadError = 'INVALID_FORMAT' | 'INVALID_SIGNER' | 'DUPLICATE' | null;
+
+export interface SignatureUploadResult {
+  success: boolean;
+  error: SignatureUploadError;
+}
+
 export interface TransactionDisplayInfo {
   name: string;
   value: string;
@@ -136,7 +143,7 @@ export interface UseBroadcastMultisigTransactionScreenReturn {
   broadcastTransactionState: BroadcastTransactionState;
   broadcast: () => Promise<boolean>;
   uploadMultisigTransaction: (text: string) => boolean;
-  uploadSignature: (text: string) => boolean;
+  uploadSignature: (text: string) => SignatureUploadResult;
   transactionInfos: TransactionDisplayInfo[] | null;
   rawTransaction: string;
   signerPublicKeys: SignerPublicKeyInfo[];
@@ -248,7 +255,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   );
 
   const uploadSignature = useCallback(
-    (text: string): boolean => {
+    (text: string): SignatureUploadResult => {
       try {
         const signature = JSON.parse(text) as Signature;
 
@@ -258,21 +265,30 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
           !signature.pub_key.value ||
           !signature.signature
         ) {
-          return false;
+          return { success: false, error: 'INVALID_FORMAT' };
+        }
+
+        const isValidSigner = signerPublicKeys.some(
+          (signer) => signer.publicKey.value === signature.pub_key?.value,
+        );
+
+        if (!isValidSigner) {
+          console.warn('Invalid signer: not in signerPublicKeys');
+          return { success: false, error: 'INVALID_SIGNER' };
         }
 
         const isDuplicate = signatures.some((sig) => sig.pub_key.value === signature.pub_key.value);
 
         if (isDuplicate) {
           console.warn('Duplicate signature');
-          return false;
+          return { success: false, error: 'DUPLICATE' };
         }
 
         addSignature(signature);
-        return true;
+        return { success: true, error: null };
       } catch (error) {
         console.error(error);
-        return false;
+        return { success: false, error: 'INVALID_FORMAT' };
       }
     },
     [signatures, addSignature, signerPublicKeys],

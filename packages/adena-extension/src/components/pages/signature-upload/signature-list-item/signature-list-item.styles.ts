@@ -6,7 +6,7 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
   flex-direction: row;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 10px 14px;
   border-radius: 18px;
   border: 2px solid ${({ borderColor }) => borderColor};
   background-color: ${({ theme }): string => theme.neutral._9};
@@ -18,8 +18,8 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
 
     .logo {
       ${fonts.body2Bold};
-      width: 48px;
-      height: 48px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       background-color: ${({ theme }): string => theme.neutral._8};
       color: ${({ theme }): string => theme.neutral.a};
@@ -32,15 +32,14 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
       position: absolute;
       bottom: -2px;
       right: -2px;
-      width: 20px;
-      height: 20px;
+      width: 12px;
+      height: 12px;
     }
   }
 
   .title-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 4px;
     flex: 1;
     min-width: 0;
 
@@ -71,20 +70,30 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
 `;
 
 export const StyledRemoveButton = styled.button`
-  background: ${({ theme }): string => theme.red.a};
-  color: white;
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  background: none;
   border: none;
-  border-radius: 4px;
-  width: 24px;
-  height: 24px;
+  padding: 0;
   cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
 
+  svg {
+    width: 100%;
+    height: 100%;
+
+    line {
+      transition: 0.2s;
+      stroke: ${({ theme }) => theme.neutral.a};
+    }
+  }
+
   &:hover {
-    opacity: 0.8;
+    svg {
+      line {
+        stroke: ${({ theme }) => theme.neutral._1};
+      }
+    }
   }
 `;

@@ -2,10 +2,11 @@
 import React from 'react';
 import { useTheme } from 'styled-components';
 
-import { CopyIconButton } from '@components/atoms';
-import { StyledSignerItemWrapper, StyledRemoveButton } from './signature-list-item.styles';
-import SuccessIcon from '@assets/success.svg';
 import { formatAddress } from '@common/utils/client-utils';
+
+import { StyledSignerItemWrapper, StyledRemoveButton } from './signature-list-item.styles';
+import { CopyIconButton, Icon } from '@components/atoms';
+import SuccessIcon from '@assets/success.svg';
 
 interface SignerInfo {
   index: number;
@@ -42,7 +43,9 @@ const SignerListItem: React.FC<SignerListItemProps> = ({ signer, onRemove }) => 
       </div>
 
       {signer.isSigned && (
-        <StyledRemoveButton onClick={() => onRemove(signer.publicKey)}>✕</StyledRemoveButton>
+        <StyledRemoveButton onClick={() => onRemove(signer.publicKey)}>
+          <Icon name='iconCancel' />
+        </StyledRemoveButton>
       )}
     </StyledSignerItemWrapper>
   );

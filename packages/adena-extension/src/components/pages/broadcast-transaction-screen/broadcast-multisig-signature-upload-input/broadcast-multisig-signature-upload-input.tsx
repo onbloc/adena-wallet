@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { Signature } from '@inject/types';
 import { SignerPublicKeyInfo } from 'adena-module';
+import { SignatureUploadResult } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 
 import { ErrorText } from '@components/atoms';
 import {
@@ -13,7 +14,7 @@ import { SignatureUploadLabel, SignerListItem } from '@components/pages/signatur
 
 export interface BroadcastMultisigSignatureUploadInputProps {
   signatures: Signature[];
-  uploadSignature: (text: string) => boolean;
+  uploadSignature: (text: string) => SignatureUploadResult;
   removeSignature: (pubKeyValue: string) => void;
   signerPublicKeys: SignerPublicKeyInfo[];
   threshold: number;
@@ -49,31 +50,73 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
       setErrorMessage(null);
 
       let successCount = 0;
-      let failCount = 0;
+      let invalidFormatCount = 0;
+      let invalidSignerCount = 0;
+      let duplicateCount = 0;
 
       for (const file of files) {
-        const isUploadSuccess = await file
-          .text()
-          .then(uploadSignature)
-          .catch(() => false);
+        try {
+          const text = await file.text();
+          const result = uploadSignature(text);
 
-        if (isUploadSuccess) {
-          successCount++;
-        } else {
-          failCount++;
+          if (result.success) {
+            successCount++;
+          } else {
+            switch (result.error) {
+              case 'INVALID_FORMAT':
+                invalidFormatCount++;
+                break;
+              case 'INVALID_SIGNER':
+                invalidSignerCount++;
+                break;
+              case 'DUPLICATE':
+                duplicateCount++;
+                break;
+            }
+          }
+        } catch {
+          invalidFormatCount++;
         }
       }
 
       setLoading(false);
 
+      const failCount = invalidFormatCount + invalidSignerCount + duplicateCount;
+
       if (failCount > 0) {
-        if (successCount > 0) {
-          setErrorMessage(
-            `${successCount} signature(s) uploaded, ${failCount} failed (invalid format or duplicate)`,
-          );
-        } else {
-          setErrorMessage('Invalid signature format or duplicate signature');
+        if (files.length === 1) {
+          if (invalidFormatCount > 0) {
+            setErrorMessage('Invalid signature format');
+          } else if (invalidSignerCount > 0) {
+            setErrorMessage('Not a valid signer for this account');
+          } else if (duplicateCount > 0) {
+            setErrorMessage('Duplicate signature');
+          }
+          return;
         }
+
+        const messageParts: string[] = [];
+
+        if (successCount > 0) {
+          messageParts.push(`${successCount} uploaded`);
+        }
+
+        const failDetails: string[] = [];
+        if (invalidFormatCount > 0) {
+          failDetails.push(`invalid format: ${invalidFormatCount}`);
+        }
+        if (invalidSignerCount > 0) {
+          failDetails.push(`not a signer: ${invalidSignerCount}`);
+        }
+        if (duplicateCount > 0) {
+          failDetails.push(`duplicate: ${duplicateCount}`);
+        }
+
+        if (failDetails.length > 0) {
+          messageParts.push(`${failCount} failed (${failDetails.join(', ')})`);
+        }
+
+        setErrorMessage(messageParts.join(', '));
       } else {
         setErrorMessage(null);
       }
