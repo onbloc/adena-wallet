@@ -2,10 +2,8 @@ import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import { MultisigTransactionDocument, Signature } from '@inject/types';
+import { MultisigTransactionDocument } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
-import { SignMultisigTransactionState } from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
@@ -18,7 +16,6 @@ interface SignMultisigTransactionUploadProps {
   uploadTransaction: (text: string) => boolean;
   rawTransaction: string;
   signTransaction: () => Promise<boolean>;
-  signTransactionState: SignMultisigTransactionState;
   reset: () => void;
 }
 
@@ -28,12 +25,10 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   uploadTransaction,
   rawTransaction,
   signTransaction,
-  signTransactionState,
   reset,
 }) => {
   const theme = useTheme();
-  const [isBroadcasting, setIsBroadcasting] = React.useState(false);
-  const { openLink } = useLink();
+  const [isSigning, setIsSigning] = React.useState(false);
   const { goBack } = useAppNavigate();
 
   const loadedTransaction = React.useMemo(() => {
@@ -46,11 +41,14 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   };
 
   const onClickSign = () => {
-    if (isBroadcasting) {
+    if (isSigning) {
       return;
     }
-    setIsBroadcasting(true);
-    signTransaction().finally(() => setIsBroadcasting(false));
+    setIsSigning(true);
+    signTransaction().finally(() => {
+      setIsSigning(false);
+      reset();
+    });
   };
 
   const onClickCancel = React.useCallback(() => {

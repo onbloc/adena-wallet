@@ -2,17 +2,16 @@ import { useState, useCallback } from 'react';
 import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 
-export type SignMultisigTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
+export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
 
 export interface UseSignMultisigTransactionScreenReturn {
-  signMultisigTransactionState: SignMultisigTransactionState;
+  signTransactionState: SignTransactionState;
   signTransaction: () => Promise<boolean>;
   resetSignState: () => void;
 }
 
 const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenReturn => {
-  const [signMultisigTransactionState, setSignMultisigTransactionState] =
-    useState<SignMultisigTransactionState>('IDLE');
+  const [signTransactionState, setSignTransactionState] = useState<SignTransactionState>('IDLE');
 
   const { multisigService } = useAdenaContext();
   const { currentAccount } = useCurrentAccount();
@@ -24,7 +23,7 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
     }
 
     try {
-      setSignMultisigTransactionState('SIGNING');
+      setSignTransactionState('SIGNING');
 
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
@@ -34,26 +33,26 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);
 
       if (!fileSaved) {
-        setSignMultisigTransactionState('IDLE');
+        setSignTransactionState('IDLE');
         return false;
       }
 
       addSignature(newSignature);
-      setSignMultisigTransactionState('SUCCESS');
+      setSignTransactionState('SUCCESS');
       return true;
     } catch (e) {
       console.error('Sign failed:', e);
-      setSignMultisigTransactionState('FAILED');
+      setSignTransactionState('FAILED');
       return false;
     }
   }, [currentAccount, multisigTransactionDocument, multisigService, addSignature]);
 
   const resetSignState = useCallback(() => {
-    setSignMultisigTransactionState('IDLE');
+    setSignTransactionState('IDLE');
   }, []);
 
   return {
-    signMultisigTransactionState,
+    signTransactionState,
     signTransaction,
     resetSignState,
   };

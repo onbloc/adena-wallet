@@ -6,7 +6,7 @@ import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-trans
 import { CommonFullContentLayout } from '@components/atoms';
 import BroadcastMultisigTransactionUpload from './upload';
 import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
-import BroadcastTransactionFailed from '../broadcast-transaction-screen/failed';
+import BroadcastTransactionResult from './result';
 
 const BroadcastMultisigTransactionScreen: React.FC = () => {
   const { multisigTransactionDocument, signatures, removeSignature, resetMultisigTransaction } =
@@ -37,7 +37,8 @@ const BroadcastMultisigTransactionScreen: React.FC = () => {
         />
       )}
       {broadcastTransactionState === 'LOADING' && <BroadcastTransactionLoading />}
-      {broadcastTransactionState === 'FAILED' && <BroadcastTransactionFailed />}
+      {broadcastTransactionState === 'SUCCESS' && <BroadcastTransactionResult status='SUCCESS' />}
+      {broadcastTransactionState === 'FAILED' && <BroadcastTransactionResult status='FAILED' />}
     </CommonFullContentLayout>
   );
 };

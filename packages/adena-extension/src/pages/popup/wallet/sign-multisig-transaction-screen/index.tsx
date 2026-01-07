@@ -6,6 +6,8 @@ import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use
 
 import { CommonFullContentLayout } from '@components/atoms';
 import SignMultisigTransactionUpload from './upload';
+import SignTransactionLoading from './loading';
+import SignTransactionResult from './result';
 
 const SignMultisigTransactionScreen: React.FC = () => {
   const { multisigTransactionDocument, resetMultisigTransaction } = useMultisigTransactionContext();
@@ -13,19 +15,23 @@ const SignMultisigTransactionScreen: React.FC = () => {
   const { uploadMultisigTransaction, transactionInfos, rawTransaction } =
     useBroadcastMultisigTransactionScreen();
 
-  const { signTransaction, signMultisigTransactionState } = useSignMultisigTransactionScreen();
+  const { signTransaction, signTransactionState } = useSignMultisigTransactionScreen();
 
   return (
     <CommonFullContentLayout>
-      <SignMultisigTransactionUpload
-        multisigTransactionDocument={multisigTransactionDocument}
-        transactionInfos={transactionInfos || []}
-        rawTransaction={rawTransaction}
-        uploadTransaction={uploadMultisigTransaction}
-        signTransaction={signTransaction}
-        signTransactionState={signMultisigTransactionState}
-        reset={resetMultisigTransaction}
-      />
+      {signTransactionState === 'IDLE' && (
+        <SignMultisigTransactionUpload
+          multisigTransactionDocument={multisigTransactionDocument}
+          transactionInfos={transactionInfos || []}
+          rawTransaction={rawTransaction}
+          uploadTransaction={uploadMultisigTransaction}
+          signTransaction={signTransaction}
+          reset={resetMultisigTransaction}
+        />
+      )}
+      {signTransactionState === 'SIGNING' && <SignTransactionLoading />}
+      {signTransactionState === 'SUCCESS' && <SignTransactionResult status='SUCCESS' />}
+      {signTransactionState === 'FAILED' && <SignTransactionResult status='FAILED' />}
     </CommonFullContentLayout>
   );
 };

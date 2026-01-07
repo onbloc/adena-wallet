@@ -2,7 +2,6 @@ import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
 import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 
@@ -37,7 +36,6 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
 }) => {
   const theme = useTheme();
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
-  const { openLink } = useLink();
   const { goBack } = useAppNavigate();
 
   const loadedTransaction = React.useMemo(() => {
@@ -54,7 +52,10 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
       return;
     }
     setIsBroadcasting(true);
-    broadcast().finally(() => setIsBroadcasting(false));
+    broadcast().finally(() => {
+      setIsBroadcasting(false);
+      reset();
+    });
   };
 
   const onClickCancel = React.useCallback(() => {
