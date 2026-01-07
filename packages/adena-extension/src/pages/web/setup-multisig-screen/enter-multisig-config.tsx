@@ -5,11 +5,9 @@ import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisi
 import { MultisigConfig } from 'adena-module';
 
 import { View, WebButton, WebErrorText, WebImg } from '@components/atoms';
-import {
-  WebTitleWithDescription,
-  WebMultisigSignerInput,
-  WebMultisigThresholdInput,
-} from '@components/molecules';
+import { WebTitleWithDescription } from '@components/molecules';
+import { WebMultisigSignerInput } from '@components/molecules/web-multisig-signer-input';
+import { WebMultisigThresholdInput } from '@components/molecules/web-multisig-threshold-input';
 import IconAirgap from '@assets/web/airgap-green.svg';
 
 interface SetupMultisigConfigProps {
