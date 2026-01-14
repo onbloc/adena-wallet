@@ -1,15 +1,14 @@
 import React from 'react';
-
+import { MultisigTransactionProvider } from '@common/provider';
 import { useMultisigTransactionContext } from '@hooks/use-context';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
-
 import { CommonFullContentLayout } from '@components/atoms';
 import SignMultisigTransactionUpload from './upload';
 import SignTransactionLoading from './loading';
 import SignTransactionResult from './result';
 
-const SignMultisigTransactionScreen: React.FC = () => {
+const SignMultisigTransactionContent: React.FC = () => {
   const { multisigTransactionDocument, resetMultisigTransaction } = useMultisigTransactionContext();
 
   const { uploadMultisigTransaction, transactionInfos, rawTransaction } =
@@ -36,6 +35,14 @@ const SignMultisigTransactionScreen: React.FC = () => {
         <SignTransactionResult status='FAILED' errorMessage={errorMessage} />
       )}
     </CommonFullContentLayout>
+  );
+};
+
+const SignMultisigTransactionScreen: React.FC = () => {
+  return (
+    <MultisigTransactionProvider>
+      <SignMultisigTransactionContent />
+    </MultisigTransactionProvider>
   );
 };
 
