@@ -91,7 +91,7 @@ export enum RoutePath {
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
   WebSetupAirgap = '/web/airgap',
-  WebSetupMultisig = 'web/multisig',
+  WebSetupMultisig = '/web/multisig',
   WebWalletCreate = '/web/wallet-create',
   WebWalletImport = '/web/wallet-import',
   WebWalletExport = '/web/wallet-export',
