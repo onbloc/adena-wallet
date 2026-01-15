@@ -622,23 +622,38 @@ export class MultisigService {
    * Fetch public key information for all signers
    */
   private async fetchSignerInfos(signers: string[]): Promise<SignerInfo[]> {
+    const results = await Promise.allSettled(
+      signers.map((address) => this.getPublicKeyFromChain(address)),
+    );
+
+    const uninitializedAccounts: string[] = [];
     const signerInfos: SignerInfo[] = [];
 
-    for (const address of signers) {
-      const publicKeyInfo = await this.getPublicKeyFromChain(address);
+    results.forEach((result, index) => {
+      const address = signers[index];
+
+      const publicKeyInfo = result.status === 'fulfilled' ? result.value : null;
 
       if (!publicKeyInfo?.value) {
-        throw new Error(
-          `Public key not found for address: ${address}. ` +
-            'The account may not have sent any transactions yet.',
-        );
+        uninitializedAccounts.push(address);
+      } else {
+        signerInfos.push({
+          address,
+          publicKey: publicKeyInfo,
+          bytes: fromBase64(publicKeyInfo.value),
+        });
       }
+    });
 
-      signerInfos.push({
-        address,
-        publicKey: publicKeyInfo,
-        bytes: fromBase64(publicKeyInfo.value),
-      });
+    if (uninitializedAccounts.length > 0) {
+      const accountList =
+        uninitializedAccounts.length > 1
+          ? `${uninitializedAccounts.join(', ')}`
+          : uninitializedAccounts[0];
+
+      throw new Error(
+        `Initialize ${accountList} by sending any transaction once before using it as a signer.`,
+      );
     }
 
     return signerInfos;
