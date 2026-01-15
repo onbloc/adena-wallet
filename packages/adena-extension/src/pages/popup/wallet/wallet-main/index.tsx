@@ -124,7 +124,7 @@ export const WalletMain = (): JSX.Element => {
   };
 
   const onClickSignButton = (): void => {
-    if (!currentAccount || !canSignTransaction) {
+    if (!currentAccount) {
       return;
     }
 

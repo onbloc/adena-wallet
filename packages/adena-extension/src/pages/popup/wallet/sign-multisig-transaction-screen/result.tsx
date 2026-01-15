@@ -44,7 +44,7 @@ const SignMultisigTransactionResult: React.FC<SignMultisigTransactionResultProps
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {isSuccess
-              ? 'Your transaction has been successfully\nsigned. The signed transaction is ready\nto be broadcast to the network.'
+              ? 'You have signed the transaction successfully signed. Share your downloaded Tx file to other signers or the multisig operator to broadcast it.'
               : getFailureMessage()}
           </Text>
         </StyledDescriptionWrapper>

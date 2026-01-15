@@ -584,7 +584,7 @@ export class MultisigService {
    * @param address - Account address to validate
    * @throws Error if public key not found
    */
-  private async validatePublicKeyExists(address: string): Promise<void> {
+  public async validatePublicKeyExists(address: string): Promise<void> {
     const publicKeyInfo = await this.getPublicKeyFromChain(address);
 
     if (!publicKeyInfo?.value) {

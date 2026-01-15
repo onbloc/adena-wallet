@@ -16,6 +16,7 @@ import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast
 import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
 
 interface BroadcastMultisigTransactionUploadProps {
+  currentAddress: string | null;
   multisigTransactionDocument: MultisigTransactionDocument | null;
   transactionInfos: TransactionDisplayInfo[];
   uploadTransaction: (text: string) => boolean;
@@ -30,6 +31,7 @@ interface BroadcastMultisigTransactionUploadProps {
 }
 
 const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
+  currentAddress,
   multisigTransactionDocument,
   transactionInfos,
   uploadTransaction,
@@ -107,8 +109,9 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
 
         <StyledInputWrapper>
           <BroadcastMultisigTransactionUploadInput
+            currentAddress={currentAddress}
             multisigTransactionDocument={multisigTransactionDocument}
-            uploadMultisigTransaction={uploadTransaction}
+            uploadTransaction={uploadTransaction}
           />
 
           {loadedTransaction && (

@@ -2,12 +2,14 @@ import React from 'react';
 import { MultisigTransactionProvider } from '@common/provider';
 import { useMultisigTransactionContext } from '@hooks/use-context';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
 import BroadcastMultisigTransactionUpload from './upload';
 import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
 import BroadcastTransactionResult from './result';
 
 const BroadcastMultisigTransactionContent: React.FC = () => {
+  const { currentAddress } = useCurrentAccount();
   const { multisigTransactionDocument, signatures, removeSignature, resetMultisigTransaction } =
     useMultisigTransactionContext();
 
@@ -26,6 +28,7 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
     <CommonFullContentLayout>
       {broadcastTransactionState === 'IDLE' && (
         <BroadcastMultisigTransactionUpload
+          currentAddress={currentAddress}
           multisigTransactionDocument={multisigTransactionDocument}
           transactionInfos={transactionInfos || []}
           rawTransaction={rawTransaction}

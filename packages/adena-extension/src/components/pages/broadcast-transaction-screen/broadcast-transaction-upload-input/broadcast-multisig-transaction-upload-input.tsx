@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTheme } from 'styled-components';
 
+import { useAdenaContext } from '@hooks/use-context';
+
 import { ErrorText, Text, WebImg } from '@components/atoms';
 import {
   StyledHiddenInput,
@@ -12,14 +14,17 @@ import { MultisigTransactionDocument } from '@inject/types';
 import IconUpload from '@assets/icon-upload';
 
 export interface BroadcastMultisigTransactionUploadInputProps {
+  currentAddress: string | null;
   multisigTransactionDocument: MultisigTransactionDocument | null;
-  uploadMultisigTransaction: (text: string) => boolean;
+  uploadTransaction: (text: string) => boolean;
 }
 
 const BroadcastMultisigTransactionUploadInput: React.FC<
   BroadcastMultisigTransactionUploadInputProps
-> = ({ multisigTransactionDocument, uploadMultisigTransaction }) => {
+> = ({ currentAddress, multisigTransactionDocument, uploadTransaction }) => {
   const theme = useTheme();
+  const { multisigService } = useAdenaContext();
+
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -46,7 +51,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<
         uploadFile(file);
       }
     },
-    [uploadMultisigTransaction],
+    [uploadTransaction],
   );
 
   const onChangeFileInput = useCallback(
@@ -57,27 +62,51 @@ const BroadcastMultisigTransactionUploadInput: React.FC<
         uploadFile(file);
       }
     },
-    [uploadMultisigTransaction],
+    [uploadTransaction],
   );
 
   const uploadFile = useCallback(
     async (file: File) => {
       setLoading(true);
-      const isUploadSuccess = await file
-        .text()
-        .then(uploadMultisigTransaction)
-        .catch(() => false);
-      setLoading(false);
+      setErrorMessage(null);
 
-      if (isUploadSuccess) {
+      try {
+        if (!currentAddress) {
+          throw new Error('Current address not found');
+        }
+
+        await multisigService.validatePublicKeyExists(currentAddress);
+
+        const text = await file.text();
+        const isUploadSuccess = uploadTransaction(text);
+
+        if (!isUploadSuccess) {
+          throw new Error('Invalid transaction format');
+        }
+
         setErrorMessage(null);
         setFileName(file.name);
-      } else {
-        setErrorMessage('Invalid transaction format');
+      } catch (error) {
+        console.error('Upload failed:', error);
+
+        if (error instanceof Error) {
+          if (error.message.includes('Public key not found')) {
+            setErrorMessage('Your account has not been initialized.');
+          } else if (error.message.includes('not sent any transactions')) {
+            setErrorMessage('Your account has not been initialized.');
+          } else {
+            setErrorMessage(error.message);
+          }
+        } else {
+          setErrorMessage('Upload failed. Please try again.');
+        }
+
         setFileName(null);
+      } finally {
+        setLoading(false);
       }
     },
-    [uploadMultisigTransaction],
+    [currentAddress, multisigService, uploadTransaction],
   );
 
   return (
