@@ -63,6 +63,10 @@ const Wrapper = styled.main`
   }
 `;
 
+const MainButton = styled(Button)`
+  border-radius: 15px;
+`;
+
 const StyledFaucetButtonContent = styled(Row)`
   gap: 8px;
 `;
@@ -217,8 +221,9 @@ export const WalletMain = (): JSX.Element => {
 
       <div className='main-button-wrapper'>
         {supportedFaucet ? (
-          <LoadingButton
+          <MainButton
             hierarchy='dark'
+            as={LoadingButton}
             loading={isFaucetLoading}
             fullWidth
             onClick={onClickFaucetButton}
@@ -227,19 +232,19 @@ export const WalletMain = (): JSX.Element => {
               <IconThunder />
               <Text type={'body1Bold'}>Faucet</Text>
             </StyledFaucetButtonContent>
-          </LoadingButton>
+          </MainButton>
         ) : (
-          <Button hierarchy='dark' fullWidth onClick={onClickDepositButton}>
+          <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
             <Text type={'body1Bold'}>Deposit</Text>
-          </Button>
+          </MainButton>
         )}
-        <Button fullWidth onClick={onClickActionButton}>
+        <MainButton fullWidth onClick={onClickActionButton}>
           <Text type={'body1Bold'}>{actionButtonText}</Text>
-        </Button>
+        </MainButton>
         {canSignTransaction && (
-          <Button fullWidth onClick={onClickSignButton}>
+          <MainButton fullWidth onClick={onClickSignButton}>
             <Text type={'body1Bold'}>Sign</Text>
-          </Button>
+          </MainButton>
         )}
       </div>
 
