@@ -18,7 +18,7 @@ const DocumentSignerListScreen = ({
   return (
     <S.DocumentSignerListWrapper>
       <SubHeader
-        title='Document Signer'
+        title='Multisig Signers'
         leftElement={{
           onClick: onClickBack,
           element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,

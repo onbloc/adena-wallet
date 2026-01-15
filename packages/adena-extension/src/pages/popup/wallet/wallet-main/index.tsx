@@ -51,7 +51,7 @@ const Wrapper = styled.main`
   .main-button-wrapper {
     ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     width: 100%;
-    gap: 10px;
+    gap: 8px;
     margin: 14px 0px 30px;
   }
 
@@ -64,7 +64,7 @@ const Wrapper = styled.main`
 `;
 
 const MainButton = styled(Button)`
-  border-radius: 15px;
+  border-radius: 18px;
 `;
 
 const StyledFaucetButtonContent = styled(Row)`
@@ -89,6 +89,12 @@ export const WalletMain = (): JSX.Element => {
   const canSignTransaction = useMemo(() => {
     return Boolean(currentAccountInfo?.publicKey?.value);
   }, [currentAccountInfo]);
+
+  const showSignTxButton = useMemo(() => {
+    if (!currentAccount) return false;
+
+    return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount);
+  }, [currentAccount]);
 
   const onClickFaucetButton = (): void => {
     if (isFaucetLoading) {
@@ -238,11 +244,11 @@ export const WalletMain = (): JSX.Element => {
             <Text type={'body1Bold'}>Deposit</Text>
           </MainButton>
         )}
-        <MainButton fullWidth onClick={onClickActionButton}>
+        <MainButton hierarchy='dark' fullWidth onClick={onClickActionButton}>
           <Text type={'body1Bold'}>{actionButtonText}</Text>
         </MainButton>
-        {canSignTransaction && (
-          <MainButton fullWidth onClick={onClickSignButton}>
+        {showSignTxButton && (
+          <MainButton hierarchy='dark' fullWidth onClick={onClickSignButton}>
             <Text type={'body1Bold'}>Sign</Text>
           </MainButton>
         )}

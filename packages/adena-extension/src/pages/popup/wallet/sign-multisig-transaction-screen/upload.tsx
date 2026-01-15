@@ -73,7 +73,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
             {'Sign Transaction'}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-            {'Upload a signed transaction file to\nAdena to broadcast it.'}
+            {'Upload an unsigned transaction file to Adena to sign it.'}
           </Text>
         </StyledHeaderWrapper>
 

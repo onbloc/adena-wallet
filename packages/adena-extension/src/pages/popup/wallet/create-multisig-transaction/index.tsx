@@ -14,7 +14,7 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
 import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -185,10 +185,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (!isMultisigAccount(currentAccount)) {
-        navigate(RoutePath.ApproveSignFailed);
-        return;
-      }
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();
@@ -202,14 +198,17 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const validationMessage = validateInjectionDataWithAddress(
+    const validationMessage = validateInjectionDataForMultisig(
       requestData,
+      currentAccount,
       await currentAccount.getAddress('g'),
     );
+
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
     }
+
     return true;
   };
 
@@ -421,7 +420,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   return (
     <CreateMultisigTransaction
-      title='Create New Transaction'
+      title='Create Multi-sig Tx'
       domain={hostname}
       contracts={transactionData?.contracts || []}
       memo={memo}
