@@ -151,6 +151,7 @@ const LandingScreen = (): ReactElement => {
         <WalletCreationHelpOverlay
           hardwareWalletButtonRef={hardwareWalletButtonRef}
           airgapAccountButtonRef={airgapAccountButtonRef}
+          multisigAccountButtonRef={multisigAccountButtonRef}
           advancedOptionButtonRef={advancedOptionButtonRef}
           onFinish={confirmWalletGuide}
         />
