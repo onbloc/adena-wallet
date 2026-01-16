@@ -17,11 +17,17 @@ export interface BroadcastMultisigTransactionUploadInputProps {
   currentAddress: string | null;
   multisigTransactionDocument: MultisigTransactionDocument | null;
   uploadTransaction: (text: string) => boolean;
+  validatePublicKey?: boolean;
 }
 
 const BroadcastMultisigTransactionUploadInput: React.FC<
   BroadcastMultisigTransactionUploadInputProps
-> = ({ currentAddress, multisigTransactionDocument, uploadTransaction }) => {
+> = ({
+  currentAddress,
+  multisigTransactionDocument,
+  uploadTransaction,
+  validatePublicKey = true,
+}) => {
   const theme = useTheme();
   const { multisigService } = useAdenaContext();
 
@@ -75,7 +81,9 @@ const BroadcastMultisigTransactionUploadInput: React.FC<
           throw new Error('Current address not found');
         }
 
-        await multisigService.validatePublicKeyExists(currentAddress);
+        if (validatePublicKey) {
+          await multisigService.validatePublicKeyExists(currentAddress);
+        }
 
         const text = await file.text();
         const isUploadSuccess = uploadTransaction(text);

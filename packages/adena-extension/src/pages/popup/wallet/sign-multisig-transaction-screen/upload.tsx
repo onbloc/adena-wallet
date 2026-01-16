@@ -84,6 +84,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
             currentAddress={currentAddress}
             multisigTransactionDocument={multisigTransactionDocument}
             uploadTransaction={uploadTransaction}
+            validatePublicKey={true}
           />
 
           {loadedTransaction && (

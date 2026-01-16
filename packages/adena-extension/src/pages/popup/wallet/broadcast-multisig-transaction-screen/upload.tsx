@@ -112,6 +112,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
             currentAddress={currentAddress}
             multisigTransactionDocument={multisigTransactionDocument}
             uploadTransaction={uploadTransaction}
+            validatePublicKey={false}
           />
 
           {loadedTransaction && (
