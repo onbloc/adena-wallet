@@ -8,7 +8,8 @@
       "@types/react",
       "@types/react-dom",
       "@types/styled-components",
-      "@types/chrome"
+      "@types/chrome",
+      "wicg-file-system-access"
     ],
     "noImplicitAny": true,
     "module": "esnext",

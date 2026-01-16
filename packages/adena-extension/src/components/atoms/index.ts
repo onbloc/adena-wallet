@@ -32,4 +32,5 @@ export * from './web-button';
 export * from './web-main';
 export * from './web-check-box';
 export * from './web-input';
+export * from './web-input-with-label';
 export * from './web-error-text';

@@ -6,11 +6,21 @@ import {
   MsgRunValue,
 } from '@repositories/transaction/response/transaction-history-query-response';
 
+interface UseMaxDepositMessageReturn {
+  type: string;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  maxDeposit: string;
+  functionName: string;
+  title: string;
+  changeMaxDeposit: (maxDeposit: string) => void;
+}
+
 export const useMaxDepositMessage = (
   index: number,
   message: ContractMessage,
   changeMessage: (index: number, messages: ContractMessage) => void,
-) => {
+): UseMaxDepositMessageReturn => {
   const { type } = message;
   const [isOpen, setIsOpen] = React.useState(true);
 

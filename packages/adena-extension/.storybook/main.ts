@@ -1,6 +1,7 @@
 import type { StorybookConfig } from '@storybook/react-webpack5';
 import { merge } from 'webpack-merge';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+import webpack from 'webpack';
 
 const storybookConfig: StorybookConfig = {
   stories: ['templates/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -26,10 +27,18 @@ module.exports = {
       loader: require.resolve('babel-loader'),
       options: {},
     });
+
     return merge(config, {
       resolve: {
         plugins: [new TsconfigPathsPlugin()],
       },
+      plugins: [
+        ...(config.plugins || []),
+        new webpack.ProvidePlugin({
+          Buffer: ['buffer', 'Buffer'],
+          process: 'process/browser',
+        }),
+      ],
     });
   },
 };

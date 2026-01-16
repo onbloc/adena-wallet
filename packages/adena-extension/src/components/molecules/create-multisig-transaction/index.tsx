@@ -252,7 +252,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         rightButton={{
           primary: true,
           disabled: disabledApprove,
-          text: 'Approve',
+          text: 'Save',
           loading: processing,
           onClick: onClickConfirmButton,
         }}

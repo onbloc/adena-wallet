@@ -162,6 +162,114 @@ export class MultisigService {
   };
 
   /**
+   * Save multisig transaction document to file
+   * @param txDocument - Transaction document to save
+   * @param fileName - File name (default: 'multisig-transaction.tx')
+   * @returns true if saved successfully, false if user cancelled
+   */
+  public saveTransactionToFile = async (
+    txDocument: MultisigTransactionDocument,
+    fileName = 'multisig-transaction.tx',
+  ): Promise<boolean> => {
+    try {
+      const jsonString = JSON.stringify(txDocument, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+
+      if ('showSaveFilePicker' in window) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: 'Multisig Transaction File',
+              accept: {
+                'application/json': ['.tx'],
+              },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        return true;
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        return true;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('User cancelled file save');
+        return false;
+      }
+      console.error('Failed to save transaction file:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Save signature to file
+   * @param signature - Signature to save
+   * @param fileName - File name (default: 'multisig-signature.sig')
+   * @returns true if saved successfully, false if user cancelled
+   */
+  public saveSignatureToFile = async (
+    signature: Signature,
+    fileName = 'multisig-signature.sig',
+  ): Promise<boolean> => {
+    try {
+      const jsonString = JSON.stringify(signature, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+
+      if ('showSaveFilePicker' in window) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: 'Multisig Signature File',
+              accept: {
+                'application/json': ['.sig'],
+              },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+
+        return true;
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        return true;
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('User cancelled file save');
+        return false;
+      }
+      console.error('Failed to save signature file:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Create a signature
    *
    * @param account
@@ -195,11 +303,13 @@ export class MultisigService {
    */
   public signMultisigTransaction = async (
     account: Account,
+    address: string,
     multisigDocument: MultisigTransactionDocument,
   ): Promise<Signature> => {
     try {
-      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
+      await this.validatePublicKeyExists(address);
 
+      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
       const encodedSignature = await this.createSignature(account, aminoDocument);
 
       return this.convertToMultisigSignature(encodedSignature);
@@ -470,6 +580,19 @@ export class MultisigService {
   }
 
   /**
+   * Validate that public key exists for the given address
+   * @param address - Account address to validate
+   * @throws Error if public key not found
+   */
+  public async validatePublicKeyExists(address: string): Promise<void> {
+    const publicKeyInfo = await this.getPublicKeyFromChain(address);
+
+    if (!publicKeyInfo?.value) {
+      throw new Error('Public key not found. This account has not sent any transactions yet.');
+    }
+  }
+
+  /**
    * Get account number and sequence from chain or use provided values
    */
   private async getAccountInfo(
@@ -499,23 +622,38 @@ export class MultisigService {
    * Fetch public key information for all signers
    */
   private async fetchSignerInfos(signers: string[]): Promise<SignerInfo[]> {
+    const results = await Promise.allSettled(
+      signers.map((address) => this.getPublicKeyFromChain(address)),
+    );
+
+    const uninitializedAccounts: string[] = [];
     const signerInfos: SignerInfo[] = [];
 
-    for (const address of signers) {
-      const publicKeyInfo = await this.getPublicKeyFromChain(address);
+    results.forEach((result, index) => {
+      const address = signers[index];
+
+      const publicKeyInfo = result.status === 'fulfilled' ? result.value : null;
 
       if (!publicKeyInfo?.value) {
-        throw new Error(
-          `Public key not found for address: ${address}. ` +
-            'The account may not have sent any transactions yet.',
-        );
+        uninitializedAccounts.push(address);
+      } else {
+        signerInfos.push({
+          address,
+          publicKey: publicKeyInfo,
+          bytes: fromBase64(publicKeyInfo.value),
+        });
       }
+    });
 
-      signerInfos.push({
-        address,
-        publicKey: publicKeyInfo,
-        bytes: fromBase64(publicKeyInfo.value),
-      });
+    if (uninitializedAccounts.length > 0) {
+      const accountList =
+        uninitializedAccounts.length > 1
+          ? `${uninitializedAccounts.join(', ')}`
+          : uninitializedAccounts[0];
+
+      throw new Error(
+        `Initialize ${accountList} by sending any transaction once before using it as a signer.`,
+      );
     }
 
     return signerInfos;

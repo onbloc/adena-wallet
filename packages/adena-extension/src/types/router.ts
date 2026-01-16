@@ -65,6 +65,8 @@ export enum RoutePath {
   TransferLedgerLoading = '/wallet/transfer-ledger/loading',
   TransferLedgerReject = '/wallet/transfer-ledger/reject',
   BroadcastTransaction = '/wallet/broadcast-transaction',
+  BroadcastMultisigTransactionScreen = '/wallet/broadcast-multiig-transaction',
+  SignMultisigTransactionScreen = '/wallet/sign-multisig-transaction',
 
   // settings
   Setting = '/settings',
@@ -89,6 +91,7 @@ export enum RoutePath {
   WebCreatePassword = '/web/create-password',
   WebGoogleLogin = '/web/google-login',
   WebSetupAirgap = '/web/airgap',
+  WebSetupMultisig = '/web/multisig',
   WebWalletCreate = '/web/wallet-create',
   WebWalletImport = '/web/wallet-import',
   WebWalletExport = '/web/wallet-export',
@@ -195,6 +198,8 @@ export type RouteParams = {
   };
   [RoutePath.TransferLedgerReject]: null;
   [RoutePath.BroadcastTransaction]: null;
+  [RoutePath.BroadcastMultisigTransactionScreen]: null;
+  [RoutePath.SignMultisigTransactionScreen]: null;
 
   [RoutePath.Setting]: null;
   [RoutePath.SettingChangePassword]: null;
@@ -234,6 +239,7 @@ export type RouteParams = {
     doneQuestionnaire: boolean;
   } | null;
   [RoutePath.WebSetupAirgap]: null;
+  [RoutePath.WebSetupMultisig]: null;
   [RoutePath.WebWalletCreate]: {
     doneQuestionnaire: boolean;
   } | null;
