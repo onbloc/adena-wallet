@@ -187,8 +187,7 @@ export class AdenaWallet implements Wallet {
   }
 
   get lastMultisigAccountIndex() {
-    const indices = this.accounts.filter(isMultisigAccount).map((account) => account.index);
-    return Math.max(0, ...indices);
+    return this.accounts.filter(isMultisigAccount).length;
   }
 
   isEmpty() {
