@@ -50,10 +50,6 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
       return true;
     }
 
-    if (new Set(validSigners).size !== validSigners.length) {
-      return true;
-    }
-
     if (threshold < 1 || threshold > validSignersCount) {
       return true;
     }

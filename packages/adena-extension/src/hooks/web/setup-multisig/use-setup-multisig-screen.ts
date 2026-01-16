@@ -222,6 +222,10 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
       return;
     }
 
+    if (!validateMultisigConfig()) {
+      return;
+    }
+
     try {
       setBlockedEvent(true);
       setSetupMultisigState('LOADING');
@@ -240,7 +244,13 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     } finally {
       setBlockedEvent(false);
     }
-  }, [blockedEvent, _createMultisigAccount, setSetupMultisigState, setMultisigConfigError]);
+  }, [
+    blockedEvent,
+    _createMultisigAccount,
+    setSetupMultisigState,
+    setMultisigConfigError,
+    validateMultisigConfig,
+  ]);
 
   const resetMultisigConfig = React.useCallback(() => {
     setMultisigConfig({ ...DEFAULT_MULTISIG_CONFIG });

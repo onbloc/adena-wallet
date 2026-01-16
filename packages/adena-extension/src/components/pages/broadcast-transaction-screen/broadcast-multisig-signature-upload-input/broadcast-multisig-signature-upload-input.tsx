@@ -88,7 +88,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
           if (invalidFormatCount > 0) {
             setErrorMessage('Invalid signature format');
           } else if (invalidSignerCount > 0) {
-            setErrorMessage('Not a valid signer for this account');
+            setErrorMessage('Not a valid signer for the multisig transaction file');
           } else if (duplicateCount > 0) {
             setErrorMessage('Duplicate signature');
           }

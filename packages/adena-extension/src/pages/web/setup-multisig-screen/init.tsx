@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 
-import { validateAddress } from 'adena-module';
+import { Account, validateAddress, isMultisigAccount, isAirgapAccount } from 'adena-module';
 import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
 
 import { Row, View, WebImg } from '@components/atoms';
@@ -17,14 +17,23 @@ const description =
 
 interface SetupMultisigInitProps {
   initSetup: (mode: MultisigAccountMode) => void;
+  currentAccount: Account | null;
   currentAddress: string | null;
 }
 
-const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({ initSetup, currentAddress }) => {
+const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
+  initSetup,
+  currentAccount,
+  currentAddress,
+}) => {
   const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
   const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  const isCreateDisabled = !currentAddress || !validateAddress(currentAddress);
+  const cannotBeUsedAsSigner =
+    !!currentAccount && (isMultisigAccount(currentAccount) || isAirgapAccount(currentAccount));
+
+  const isCreateDisabled =
+    !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
 
   return (
     <StyledContainer>

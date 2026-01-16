@@ -18,7 +18,7 @@ import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 
 const SetupMultisigScreen: React.FC = () => {
   const { navigate } = useAppNavigate();
-  const { currentAddress } = useCurrentAccount();
+  const { currentAddress, currentAccount } = useCurrentAccount();
   const {
     setupMultisigState,
     setSetupMultisigState,
@@ -85,7 +85,11 @@ const SetupMultisigScreen: React.FC = () => {
       )}
 
       {setupMultisigState === 'INIT' && (
-        <SetupMultisigInit initSetup={initSetup} currentAddress={currentAddress} />
+        <SetupMultisigInit
+          initSetup={initSetup}
+          currentAccount={currentAccount}
+          currentAddress={currentAddress}
+        />
       )}
       {setupMultisigState === 'ENTER_MULTISIG_CONFIG' && (
         <SetupMultisigConfig
