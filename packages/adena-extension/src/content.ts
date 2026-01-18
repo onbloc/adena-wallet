@@ -9,6 +9,7 @@ import {
   shouldRegisterAnchorIntercept,
 } from '@inject/message/methods/gno-connect';
 import { GnoDOMWatcher } from '@inject/message/methods/gno-dom-watcher';
+import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
 import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
 
 const loadScript = (): void => {
@@ -171,6 +172,33 @@ const initGnoDOMWatcher = (): void => {
 };
 
 /**
+ * 🆕 Initialize GnoWebEventWatcher
+ * Subscribes to Gnoweb custom events and forwards to background
+ */
+const initGnoWebEventWatcher = (): void => {
+  if (!shouldRegisterAnchorIntercept()) {
+    console.log('[Adena] GnoWebEventWatcher skipped (no gno:connect meta tag)');
+    return;
+  }
+
+  const watcher = new GnoWebEventWatcher((message: GnoSessionUpdateMessage) => {
+    sendGnoSessionUpdate(message);
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      watcher.start();
+    });
+  } else {
+    watcher.start();
+  }
+
+  window.addEventListener('beforeunload', () => {
+    watcher.stop();
+  });
+};
+
+/**
  * Sends GnoSessionUpdateMessage to the background script.
  */
 const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<void> => {
@@ -193,6 +221,7 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
 
 initAnchorIntercept();
 initGnoDOMWatcher();
+initGnoWebEventWatcher();
 loadScript();
 initListener();
 initExtensionListener();

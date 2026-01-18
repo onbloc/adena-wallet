@@ -45,6 +45,7 @@ export interface GnoSessionUpdateData {
   paramName?: string;
   paramValue?: string;
   allParams?: Record<string, string>;
+  send?: string;
   mode?: GnoActionMode;
   address?: string;
 }

@@ -30,6 +30,7 @@ const transactionEventStore = new TransactionEventStore();
 let transactionEventInterval: NodeJS.Timeout | undefined = undefined;
 
 // Gno Session Management
+
 // Maps sessionId to session state
 const gnoSessions = new Map<string, GnoSessionState>();
 // Maps funcKey (pkgPath:funcName) to sessionId for lookup by function
@@ -89,11 +90,52 @@ function isRegisterPopupSessionMessage(message: unknown): message is RegisterPop
   );
 }
 
+interface GetGnoSessionMessage {
+  type: 'GET_GNO_SESSION';
+  sessionId: string;
+}
+
+interface GetActiveSessionMessage {
+  type: 'GET_ACTIVE_SESSION';
+  funcName: string;
+  pkgPath: string;
+}
+
+interface GetAllGnoSessionsMessage {
+  type: 'GET_ALL_GNO_SESSIONS';
+}
+
+function isGetGnoSessionMessage(message: unknown): message is GetGnoSessionMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
+  );
+}
+
+function isGetActiveSessionMessage(message: unknown): message is GetActiveSessionMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
+  );
+}
+
+function isGetAllGnoSessionsMessage(message: unknown): message is GetAllGnoSessionsMessage {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
+  );
+}
+
 async function handleRegisterPopupSession(
   message: RegisterPopupSessionMessage,
   sender: chrome.runtime.MessageSender,
 ): Promise<{ success: boolean; session?: GnoSessionState }> {
   const { sessionId } = message;
+
+  console.log('[Background] Registering popup session:', sessionId);
 
   // Get popup window ID
   let popupId: number | undefined;
@@ -114,6 +156,7 @@ async function handleRegisterPopupSession(
   if (popupId) {
     sessionPopupMap.set(sessionId, popupId);
     popupSessionMap.set(popupId, sessionId);
+    console.log('[Background] Popup registered:', { sessionId, popupId });
   }
 
   const session = gnoSessions.get(sessionId);
@@ -132,6 +175,14 @@ function handleGnoSessionUpdate(
   const { sessionId, funcName, pkgPath, chainId, rpc, updateType } = data;
   const funcKey = makeFuncKey(pkgPath, funcName);
 
+  console.log('[Background] Received GNO_SESSION_UPDATE:', {
+    sessionId,
+    funcName,
+    pkgPath,
+    updateType,
+    tabId: sender.tab?.id,
+  });
+
   // Get or create session state
   let session = gnoSessions.get(sessionId);
 
@@ -139,6 +190,7 @@ function handleGnoSessionUpdate(
     // Clean up old session for this function if exists
     const oldSessionId = funcKeyToSessionId.get(funcKey);
     if (oldSessionId && oldSessionId !== sessionId) {
+      console.log('[Background] Replacing old session:', oldSessionId, '→', sessionId);
       cleanupSession(oldSessionId);
     }
 
@@ -155,6 +207,8 @@ function handleGnoSessionUpdate(
     };
     gnoSessions.set(sessionId, session);
     funcKeyToSessionId.set(funcKey, sessionId);
+
+    console.log('[Background] New session created:', sessionId);
   }
 
   // Update session based on update type
@@ -163,22 +217,24 @@ function handleGnoSessionUpdate(
     case 'params':
       if (data.allParams) {
         session.params = data.allParams;
+        console.log('[Background] Session params updated:', data.allParams);
       }
       break;
     case 'mode':
       if (data.mode) {
         session.mode = data.mode;
+        console.log('[Background] Session mode updated:', data.mode);
       }
       break;
     case 'address':
       if (data.address !== undefined) {
         session.address = data.address;
+        console.log('[Background] Session address updated:', data.address);
       }
       break;
   }
 
   // Forward update to popup - broadcast to all extension contexts
-  // Popup will filter by funcName/pkgPath
   const popupMessage: PopupSessionUpdateMessage = {
     type: 'POPUP_SESSION_UPDATE',
     sessionId,
@@ -190,10 +246,46 @@ function handleGnoSessionUpdate(
   chrome.runtime.sendMessage(popupMessage).catch(() => {
     // No receivers - popup might not be open, this is normal
   });
+
+  console.log('[Background] Session update broadcasted to popup');
+}
+
+// Session handler
+function handleGetGnoSession(message: GetGnoSessionMessage): GnoSessionState | null {
+  const session = gnoSessions.get(message.sessionId);
+  console.log('[Background] GET_GNO_SESSION:', message.sessionId, session ? 'found' : 'not found');
+  return session || null;
+}
+
+function handleGetActiveSession(message: GetActiveSessionMessage): GnoSessionState | null {
+  const funcKey = makeFuncKey(message.pkgPath, message.funcName);
+  const sessionId = funcKeyToSessionId.get(funcKey);
+  const session = sessionId ? gnoSessions.get(sessionId) : null;
+
+  console.log('[Background] GET_ACTIVE_SESSION:', {
+    funcKey,
+    sessionId,
+    found: !!session,
+  });
+
+  return session || null;
+}
+
+function handleGetAllGnoSessions(): Array<{ id: string; data: GnoSessionState }> {
+  const allSessions = Array.from(gnoSessions.entries()).map(([id, data]) => ({
+    id,
+    data,
+  }));
+
+  console.log('[Background] GET_ALL_GNO_SESSIONS:', allSessions.length, 'sessions');
+
+  return allSessions;
 }
 
 // Clean up sessions when tab is closed
 chrome.tabs.onRemoved.addListener((tabId) => {
+  console.log('[Background] Tab closed:', tabId);
+
   // Collect session IDs to clean up (avoid modifying map during iteration)
   const sessionsToCleanup: string[] = [];
 
@@ -203,17 +295,34 @@ chrome.tabs.onRemoved.addListener((tabId) => {
     }
   });
 
-  sessionsToCleanup.forEach(cleanupSession);
+  if (sessionsToCleanup.length > 0) {
+    console.log('[Background] Cleaning up sessions for tab:', tabId, sessionsToCleanup);
+    sessionsToCleanup.forEach(cleanupSession);
+  }
 });
 
 // Clean up popup mapping when popup window is closed
 chrome.windows.onRemoved.addListener((windowId) => {
   const sessionId = popupSessionMap.get(windowId);
   if (sessionId) {
+    console.log('[Background] Popup window closed:', windowId, 'session:', sessionId);
     popupSessionMap.delete(windowId);
     sessionPopupMap.delete(sessionId);
   }
 });
+
+if (process.env.NODE_ENV === 'development') {
+  setInterval(() => {
+    if (gnoSessions.size > 0) {
+      console.log('[Background] Active sessions:', {
+        total: gnoSessions.size,
+        sessions: Array.from(gnoSessions.keys()),
+        funcKeys: Array.from(funcKeyToSessionId.entries()),
+        popups: Array.from(sessionPopupMap.entries()),
+      });
+    }
+  }, 30000);
+}
 
 initAlarms();
 
@@ -336,6 +445,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Handle popup session registration
   if (isRegisterPopupSessionMessage(message)) {
     handleRegisterPopupSession(message, sender).then(sendResponse).catch(console.warn);
+    return true;
+  }
+
+  // Handle session queries
+  if (isGetGnoSessionMessage(message)) {
+    const session = handleGetGnoSession(message);
+    sendResponse(session);
+    return true;
+  }
+
+  if (isGetActiveSessionMessage(message)) {
+    const session = handleGetActiveSession(message);
+    sendResponse(session);
+    return true;
+  }
+
+  if (isGetAllGnoSessionsMessage(message)) {
+    const sessions = handleGetAllGnoSessions();
+    sendResponse(sessions);
     return true;
   }
 
