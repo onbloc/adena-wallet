@@ -7,7 +7,7 @@ import {
   parseGnoMessageInfo,
   parseGnoFormInfo,
   shouldIntercept,
-  shouldRegisterAnchorIntercept,
+  shouldRegisterInterceptor,
   shouldInterceptForm,
 } from '@inject/message/methods/gno-connect';
 import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
@@ -111,7 +111,7 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
  * @returns void
  */
 const initAnchorIntercept = (): void => {
-  if (!shouldRegisterAnchorIntercept()) {
+  if (!shouldRegisterInterceptor()) {
     return;
   }
 
@@ -151,7 +151,7 @@ const initAnchorIntercept = (): void => {
  * Subscribes to Gnoweb custom events and forwards to background
  */
 const initGnoWebEventWatcher = (): void => {
-  if (!shouldRegisterAnchorIntercept()) {
+  if (!shouldRegisterInterceptor()) {
     return;
   }
 
@@ -180,7 +180,7 @@ const initGnoWebEventWatcher = (): void => {
  */
 const initFormSubmitIntercept = (): void => {
   // Check if gno:connect meta tag exists
-  if (!shouldRegisterAnchorIntercept()) {
+  if (!shouldRegisterInterceptor()) {
     return;
   }
 
@@ -194,9 +194,6 @@ const initFormSubmitIntercept = (): void => {
         return;
       }
 
-      e.preventDefault();
-      e.stopPropagation();
-
       const form = e.target as HTMLFormElement;
 
       // Parse form data into GnoMessageInfo
@@ -204,6 +201,9 @@ const initFormSubmitIntercept = (): void => {
       if (gnoMessageInfo === null) {
         return;
       }
+
+      e.preventDefault();
+      e.stopPropagation();
 
       CommandHandler.createContentHandler(
         CommandMessage.command('checkMetadata', {

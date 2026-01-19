@@ -225,7 +225,7 @@ export function shouldIntercept(href: string): boolean {
   return true;
 }
 
-export function shouldRegisterAnchorIntercept(): boolean {
+export function shouldRegisterInterceptor(): boolean {
   const gnoMessageInfo = parseGnoConnectInfo();
   if (!gnoMessageInfo) {
     return false;
