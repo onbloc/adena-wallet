@@ -7,7 +7,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -115,6 +115,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const [requiresHoldConfirmation, setRequiresHoldConfirmation] = useState(false);
+  const isInitialRenderRef = useRef(true);
 
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -240,6 +241,11 @@ const ApproveTransactionContainer: React.FC = () => {
     pkgPath: pkgPath || undefined,
     onParamsChange: useCallback(
       (newParams: Record<string, string>) => {
+        if (isInitialRenderRef.current) {
+          isInitialRenderRef.current = false;
+          return;
+        }
+
         setTransactionMessages((prevMessages) => {
           return prevMessages.map((msg) => {
             if (msg.type !== '/vm.m_call') return msg;
@@ -381,7 +387,6 @@ const ApproveTransactionContainer: React.FC = () => {
 
     setDocument(updatedDocument);
     setTransactionData(mappedTransactionData(updatedDocument));
-    setRequiresHoldConfirmation(true);
   };
 
   const changeMemo = (memo: string): void => {
