@@ -8,7 +8,6 @@ import {
   shouldIntercept,
   shouldRegisterAnchorIntercept,
 } from '@inject/message/methods/gno-connect';
-import { GnoDOMWatcher } from '@inject/message/methods/gno-dom-watcher';
 import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
 import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
 
@@ -146,33 +145,7 @@ const initAnchorIntercept = (): void => {
 };
 
 /**
- * Initializes GnoDOMWatcher for real-time parameter tracking.
- * This watches Gnoweb ActionFunctionController DOM elements and sends
- * updates to the background script when parameters change.
- */
-const initGnoDOMWatcher = (): void => {
-  if (!shouldRegisterAnchorIntercept()) {
-    return;
-  }
-
-  const watcher = new GnoDOMWatcher((message: GnoSessionUpdateMessage) => {
-    // Send update to background
-    sendGnoSessionUpdate(message);
-  });
-
-  // Start watching after DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => watcher.start());
-  } else {
-    watcher.start();
-  }
-
-  // Cleanup on page unload
-  window.addEventListener('beforeunload', () => watcher.stop());
-};
-
-/**
- * 🆕 Initialize GnoWebEventWatcher
+ * Initialize GnoWebEventWatcher
  * Subscribes to Gnoweb custom events and forwards to background
  */
 const initGnoWebEventWatcher = (): void => {
@@ -220,7 +193,6 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
 };
 
 initAnchorIntercept();
-initGnoDOMWatcher();
 initGnoWebEventWatcher();
 loadScript();
 initListener();
