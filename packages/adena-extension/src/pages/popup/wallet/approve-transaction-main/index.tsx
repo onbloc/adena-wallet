@@ -37,6 +37,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
+
 interface TransactionData {
   messages: readonly any[];
   contracts: { type: string; function: string; value: any }[];
@@ -113,6 +114,7 @@ const ApproveTransactionContainer: React.FC = () => {
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
+  const [requiresHoldConfirmation, setRequiresHoldConfirmation] = useState(false);
 
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -226,6 +228,12 @@ const ApproveTransactionContainer: React.FC = () => {
     return { funcName: '', pkgPath: '' };
   }, [requestData?.data?.messages]);
 
+  const handleFinishHold = useCallback((finished: boolean) => {
+    if (finished) {
+      setRequiresHoldConfirmation(false);
+    }
+  }, []);
+
   // Subscribe to Gno session updates for real-time parameter changes
   useGnoSessionUpdates({
     funcName: funcName || undefined,
@@ -256,6 +264,8 @@ const ApproveTransactionContainer: React.FC = () => {
             };
           });
         });
+
+        setRequiresHoldConfirmation(true);
       },
       [argumentInfos],
     ),
@@ -371,6 +381,7 @@ const ApproveTransactionContainer: React.FC = () => {
 
     setDocument(updatedDocument);
     setTransactionData(mappedTransactionData(updatedDocument));
+    setRequiresHoldConfirmation(true);
   };
 
   const changeMemo = (memo: string): void => {
@@ -480,7 +491,7 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const onClickConfirm = (): void => {
-    if (!currentAccount || isErrorNetworkFee) {
+    if (!currentAccount || isErrorNetworkFee || requiresHoldConfirmation) {
       return;
     }
 
@@ -592,6 +603,8 @@ const ApproveTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
+      requiresHoldConfirmation={requiresHoldConfirmation}
+      onFinishHold={handleFinishHold}
     />
   );
 };

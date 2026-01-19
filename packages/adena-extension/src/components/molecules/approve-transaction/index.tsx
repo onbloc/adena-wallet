@@ -51,6 +51,8 @@ export interface ApproveTransactionProps {
   onClickConfirm: () => void;
   onClickCancel: () => void;
   useNetworkFeeReturn: UseNetworkFeeReturn;
+  requiresHoldConfirmation?: boolean;
+  onFinishHold?: (finished: boolean) => void;
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -78,10 +80,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   onClickConfirm,
   onClickCancel,
   openScannerLink,
+  requiresHoldConfirmation = false,
+  onFinishHold,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
 
   const disabledApprove = useMemo(() => {
+    if (requiresHoldConfirmation) {
+      return true;
+    }
+
     if (useNetworkFeeReturn.isLoading) {
       return true;
     }
@@ -92,6 +100,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
     return Number(networkFee?.amount || 0) <= 0;
   }, [
+    requiresHoldConfirmation,
     isErrorNetworkFee,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.isSimulateError,
@@ -166,12 +175,12 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [useNetworkFeeReturn.save]);
 
   const onClickConfirmButton = useCallback(() => {
-    if (disabledApprove) {
+    if (disabledApprove || requiresHoldConfirmation) {
       return;
     }
 
     onClickConfirm();
-  }, [onClickConfirm, disabledApprove]);
+  }, [onClickConfirm, disabledApprove, requiresHoldConfirmation]);
 
   useEffect(() => {
     if (done) {
@@ -289,13 +298,22 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           text: 'Cancel',
           onClick: onClickCancel,
         }}
-        rightButton={{
-          primary: true,
-          disabled: disabledApprove,
-          text: 'Approve',
-          loading: processing,
-          onClick: onClickConfirmButton,
-        }}
+        rightButton={
+          requiresHoldConfirmation && onFinishHold
+            ? {
+                type: 'hold',
+                holdProps: {
+                  onFinishHold: onFinishHold,
+                },
+              }
+            : {
+                primary: true,
+                disabled: disabledApprove,
+                text: 'Approve',
+                loading: processing,
+                onClick: onClickConfirmButton,
+              }
+        }
       />
     </ApproveTransactionWrapper>
   );
