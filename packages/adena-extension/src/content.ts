@@ -5,8 +5,10 @@ import { CommandMessage, CommandMessageData } from '@inject/message/command-mess
 import {
   parseGnoConnectInfo,
   parseGnoMessageInfo,
+  parseGnoFormInfo,
   shouldIntercept,
   shouldRegisterAnchorIntercept,
+  shouldInterceptForm,
 } from '@inject/message/methods/gno-connect';
 import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
 import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
@@ -150,7 +152,6 @@ const initAnchorIntercept = (): void => {
  */
 const initGnoWebEventWatcher = (): void => {
   if (!shouldRegisterAnchorIntercept()) {
-    console.log('[Adena] GnoWebEventWatcher skipped (no gno:connect meta tag)');
     return;
   }
 
@@ -169,6 +170,50 @@ const initGnoWebEventWatcher = (): void => {
   window.addEventListener('beforeunload', () => {
     watcher.stop();
   });
+};
+
+/**
+ * Initializes form submit intercept for Gnoweb action functions.
+ * This function intercepts form submissions and opens Adena popup instead.
+ *
+ * @returns void
+ */
+const initFormSubmitIntercept = (): void => {
+  // Check if gno:connect meta tag exists
+  if (!shouldRegisterAnchorIntercept()) {
+    return;
+  }
+
+  const gnoConnectInfo = parseGnoConnectInfo();
+
+  document.addEventListener(
+    'submit',
+    (e) => {
+      // Check if it's a Gnoweb action function form
+      if (!shouldInterceptForm(e.target)) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const form = e.target as HTMLFormElement;
+
+      // Parse form data into GnoMessageInfo
+      const gnoMessageInfo = parseGnoFormInfo(form);
+      if (gnoMessageInfo === null) {
+        return;
+      }
+
+      CommandHandler.createContentHandler(
+        CommandMessage.command('checkMetadata', {
+          gnoMessageInfo,
+          gnoConnectInfo,
+        }),
+      );
+    },
+    true,
+  );
 };
 
 /**
@@ -193,6 +238,7 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
 };
 
 initAnchorIntercept();
+initFormSubmitIntercept();
 initGnoWebEventWatcher();
 loadScript();
 initListener();

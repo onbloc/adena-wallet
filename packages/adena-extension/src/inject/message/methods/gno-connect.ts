@@ -161,6 +161,76 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
   return messageInfo;
 }
 
+/**
+ * Parses GnoMessageInfo from a form element.
+ * Extracts function information from article data attributes
+ * and parameters from form inputs.
+ *
+ * @param form - The form element to parse
+ * @returns GnoMessageInfo object if valid; otherwise returns null
+ */
+export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
+  const article = form.closest('article.b-action-function') as HTMLElement;
+
+  if (!article) {
+    return null;
+  }
+
+  // Extract function information from article data attributes
+  const funcName = article.dataset.actionFunctionNameValue;
+  const pkgPath = article.dataset.actionFunctionPkgpathValue;
+
+  if (!funcName || !pkgPath) {
+    return null;
+  }
+
+  const messageInfo: GnoMessageInfo = {
+    packagePath: pkgPath,
+    functionName: funcName,
+    send: '',
+    maxDeposit: '',
+    args: null,
+  };
+
+  // Extract parameters from form inputs
+  const args: GnoArgumentInfo[] = [];
+  const paramInputs = form.querySelectorAll('input[data-action-function-param-value]');
+
+  paramInputs.forEach((input, index) => {
+    const paramName = (input as HTMLInputElement).dataset.actionFunctionParamValue;
+    const paramValue = (input as HTMLInputElement).value;
+
+    if (paramName) {
+      args.push({
+        index,
+        key: paramName,
+        value: paramValue,
+      });
+    }
+  });
+
+  // Extract send parameter (optional)
+  const sendInput = form.querySelector('[data-action-function-send-value]') as HTMLInputElement;
+  if (sendInput) {
+    messageInfo.send = sendInput.dataset.actionFunctionSendValue || sendInput.value || '';
+  }
+
+  // Extract maxDeposit parameter (optional)
+  const maxDepositInput = form.querySelector(
+    '[data-action-function-max-deposit-value]',
+  ) as HTMLInputElement;
+  if (maxDepositInput) {
+    messageInfo.maxDeposit =
+      maxDepositInput.dataset.actionFunctionMaxDepositValue || maxDepositInput.value || '';
+  }
+
+  if (args.length > 0) {
+    messageInfo.args = args;
+  }
+
+  return messageInfo;
+}
+
 export function shouldIntercept(href: string): boolean {
   const gnoMessageInfo = parseGnoMessageInfo(href);
   if (!gnoMessageInfo) {
@@ -173,6 +243,26 @@ export function shouldIntercept(href: string): boolean {
 export function shouldRegisterAnchorIntercept(): boolean {
   const gnoMessageInfo = parseGnoConnectInfo();
   if (!gnoMessageInfo) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks if a form element is a valid Gnoweb action function form.
+ *
+ * @param target - The event target to check
+ * @returns true if the target is a valid Gnoweb form; otherwise false
+ */
+export function shouldInterceptForm(target: EventTarget | null): boolean {
+  if (!target) {
+    return false;
+  }
+
+  const element = target as HTMLElement;
+
+  if (!element.matches('article.b-action-function form.params')) {
     return false;
   }
 
