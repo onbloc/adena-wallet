@@ -209,21 +209,6 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
     }
   });
 
-  // Extract send parameter (optional)
-  const sendInput = form.querySelector('[data-action-function-send-value]') as HTMLInputElement;
-  if (sendInput) {
-    messageInfo.send = sendInput.dataset.actionFunctionSendValue || sendInput.value || '';
-  }
-
-  // Extract maxDeposit parameter (optional)
-  const maxDepositInput = form.querySelector(
-    '[data-action-function-max-deposit-value]',
-  ) as HTMLInputElement;
-  if (maxDepositInput) {
-    messageInfo.maxDeposit =
-      maxDepositInput.dataset.actionFunctionMaxDepositValue || maxDepositInput.value || '';
-  }
-
   if (args.length > 0) {
     messageInfo.args = args;
   }
