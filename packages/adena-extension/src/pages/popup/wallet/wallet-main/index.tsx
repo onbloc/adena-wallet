@@ -86,10 +86,6 @@ export const WalletMain = (): JSX.Element => {
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
 
-  const canSignTransaction = useMemo(() => {
-    return Boolean(currentAccountInfo?.publicKey?.value);
-  }, [currentAccountInfo]);
-
   const showSignTxButton = useMemo(() => {
     if (!currentAccount) return false;
 
