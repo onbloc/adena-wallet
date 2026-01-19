@@ -38,8 +38,6 @@ export class GnoWebEventWatcher {
    * Start listening to Gnoweb events
    */
   public start(): void {
-    console.log('[Adena] GnoWebEventWatcher started');
-
     this.registerEventListener('params:changed', this.handleParamsChanged.bind(this));
     this.registerEventListener('mode:changed', this.handleModeChanged.bind(this));
     this.registerEventListener('address:changed', this.handleAddressChanged.bind(this));
@@ -49,8 +47,6 @@ export class GnoWebEventWatcher {
    * Stop listening and cleanup
    */
   public stop(): void {
-    console.log('[Adena] GnoWebEventWatcher stopped');
-
     this.eventHandlers.forEach((handler, eventType) => {
       document.removeEventListener(eventType, handler);
     });
@@ -76,16 +72,8 @@ export class GnoWebEventWatcher {
 
     // Validate event data
     if (!detail || !detail.funcName || !detail.pkgPath) {
-      console.warn('[Adena] Invalid params:changed event:', detail);
       return;
     }
-
-    console.log('[Adena] params:changed:', {
-      pkgPath: detail.pkgPath,
-      funcName: detail.funcName,
-      params: detail.params,
-      send: detail.send,
-    });
 
     // Get or create session
     const sessionId = this.getOrCreateSessionId(detail.funcName, detail.pkgPath);
@@ -117,11 +105,8 @@ export class GnoWebEventWatcher {
     const mode = customEvent.detail?.mode;
 
     if (!mode) {
-      console.warn('[Adena] Invalid mode:changed event');
       return;
     }
-
-    console.log('[Adena] mode:changed:', { mode });
 
     // Broadcast to all active sessions
     const connectInfo = this.getConnectInfo();
@@ -150,11 +135,8 @@ export class GnoWebEventWatcher {
     const address = customEvent.detail?.address;
 
     if (!address) {
-      console.warn('[Adena] Invalid address:changed event');
       return;
     }
-
-    console.log('[Adena] address:changed:', { address });
 
     // Broadcast to all active sessions
     const connectInfo = this.getConnectInfo();
@@ -190,8 +172,6 @@ export class GnoWebEventWatcher {
         pkgPath,
       };
       this.sessions.set(key, session);
-
-      console.log('[Adena] New session created:', sessionId);
     }
 
     return session.sessionId;

@@ -126,14 +126,12 @@ export function useGnoSessionUpdates(
 
       if (activeSessionId) {
         // Get specific session by ID
-        console.log('[useGnoSessionUpdates] Loading session by ID:', activeSessionId);
         session = await chrome.runtime.sendMessage({
           type: 'GET_GNO_SESSION',
           sessionId: activeSessionId,
         });
       } else if (funcName && pkgPath) {
         // Get active session by function
-        console.log('[useGnoSessionUpdates] Loading active session:', { funcName, pkgPath });
         session = await chrome.runtime.sendMessage({
           type: 'GET_ACTIVE_SESSION',
           funcName,
@@ -167,8 +165,6 @@ export function useGnoSessionUpdates(
         if (session.address) {
           onAddressChange?.(session.address);
         }
-      } else {
-        console.log('[useGnoSessionUpdates] No initial session found');
       }
     } catch (error) {
       console.error('[useGnoSessionUpdates] Failed to load initial session:', error);
@@ -189,7 +185,6 @@ export function useGnoSessionUpdates(
    * Register this popup for a specific session
    */
   const registerSession = useCallback((sessionId: string) => {
-    console.log('[useGnoSessionUpdates] Registering session:', sessionId);
     setActiveSessionId(sessionId);
 
     // Register this popup for the session
@@ -197,12 +192,6 @@ export function useGnoSessionUpdates(
       .sendMessage({
         type: 'REGISTER_POPUP_SESSION',
         sessionId,
-      })
-      .then(() => {
-        console.log('[useGnoSessionUpdates] Session registered successfully');
-      })
-      .catch((error) => {
-        console.warn('[useGnoSessionUpdates] Failed to register session:', error);
       });
   }, []);
 
@@ -218,26 +207,17 @@ export function useGnoSessionUpdates(
 
       const { data, updateType } = message;
 
-      console.log('[useGnoSessionUpdates] Received update:', {
-        updateType,
-        sessionId: data.sessionId,
-        funcName: data.funcName,
-        pkgPath: data.pkgPath,
-      });
-
       // Filter by sessionId if specified
       if (activeSessionId && data.sessionId !== activeSessionId) {
-        console.log('[useGnoSessionUpdates] Ignoring update for different session');
         return;
       }
 
       // Filter by funcName/pkgPath if specified
       if (funcName && data.funcName !== funcName) {
-        console.log('[useGnoSessionUpdates] Ignoring update for different function');
         return;
       }
+
       if (pkgPath && data.pkgPath !== pkgPath) {
-        console.log('[useGnoSessionUpdates] Ignoring update for different package');
         return;
       }
 
@@ -258,24 +238,18 @@ export function useGnoSessionUpdates(
           case 'params':
             if (data.allParams) {
               newUpdates.params = data.allParams;
-              console.log('[useGnoSessionUpdates] Parameters updated:', {
-                all: data.allParams,
-                changed: data.paramName ? `${data.paramName}=${data.paramValue}` : 'all',
-              });
               onParamsChange?.(data.allParams, data.paramName, data.paramValue);
             }
             break;
           case 'mode':
             if (data.mode) {
               newUpdates.mode = data.mode;
-              console.log('[useGnoSessionUpdates] Mode updated:', data.mode);
               onModeChange?.(data.mode);
             }
             break;
           case 'address':
             if (data.address !== undefined) {
               newUpdates.address = data.address;
-              console.log('[useGnoSessionUpdates] Address updated:', data.address);
               onAddressChange?.(data.address);
             }
             break;
@@ -305,12 +279,9 @@ export function useGnoSessionUpdates(
     chrome.runtime.onMessage.addListener(listener);
     setIsConnected(true);
 
-    console.log('[useGnoSessionUpdates] Message listener registered');
-
     return () => {
       chrome.runtime.onMessage.removeListener(listener);
       setIsConnected(false);
-      console.log('[useGnoSessionUpdates] Message listener removed');
     };
   }, [handleMessage]);
 
@@ -369,7 +340,6 @@ export function useUpdatedTransactionParams(
     funcName,
     pkgPath,
     onParamsChange: (newParams) => {
-      console.log('[useUpdatedTransactionParams] Parameters updated:', newParams);
       setParams(newParams);
       setUpdateCount((prev) => prev + 1);
     },
