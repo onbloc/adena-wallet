@@ -2,10 +2,10 @@ import React, { ReactElement, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 
 import { Button, Text } from '@components/atoms';
-import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
 import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
+import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
 
 interface ButtonProps {
   primary?: boolean;
@@ -16,12 +16,13 @@ interface ButtonProps {
 }
 
 interface HoldButtonProps {
+  type: 'hold';
   onFinishHold: (finished: boolean) => void;
 }
 
 interface BottomFixedLoadingButtonGroupProps {
   leftButton: ButtonProps;
-  rightButton: ButtonProps | { type: 'hold'; holdProps: HoldButtonProps };
+  rightButton: ButtonProps | HoldButtonProps;
   filled?: boolean;
 }
 
@@ -68,7 +69,7 @@ export const BottomFixedLoadingButtonGroup = ({
       {isHoldButton ? (
         <ApproveHoldButton
           onFinishHold={
-            (rightButton as { type: 'hold'; holdProps: HoldButtonProps }).holdProps.onFinishHold
+            (rightButton as HoldButtonProps).onFinishHold
           }
         />
       ) : (

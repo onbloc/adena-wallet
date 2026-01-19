@@ -302,9 +302,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           requiresHoldConfirmation && onFinishHold
             ? {
                 type: 'hold',
-                holdProps: {
-                  onFinishHold: onFinishHold,
-                },
+                onFinishHold,
               }
             : {
                 primary: true,
