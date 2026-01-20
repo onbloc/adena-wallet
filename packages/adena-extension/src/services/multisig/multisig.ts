@@ -37,6 +37,7 @@ import {
   isMultisigAccount,
   MultisigAccount,
   MultisigConfig,
+  secp256k1PubKeyToAddressBytes,
 } from 'adena-module';
 
 const AMINO_PREFIX = 0x0a;
@@ -660,17 +661,33 @@ export class MultisigService {
   }
 
   /**
-   * Sort signer infos by public key bytes
+   * Sort signer infos by public key bytes using lexicographic comparison
    */
   private sortSignerInfos(signerInfos: SignerInfo[]): SignerInfo[] {
     return [...signerInfos].sort((a, b) => {
-      for (let i = 0; i < Math.min(a.bytes.length, b.bytes.length); i++) {
-        if (a.bytes[i] !== b.bytes[i]) {
-          return a.bytes[i] - b.bytes[i];
-        }
-      }
-      return a.bytes.length - b.bytes.length;
+      const sliceA = secp256k1PubKeyToAddressBytes(a.bytes);
+      const sliceB = secp256k1PubKeyToAddressBytes(b.bytes);
+
+      return this.compareUint8Arrays(sliceA, sliceB);
     });
+  }
+
+  /**
+   * Compare two Uint8Arrays lexicographically
+   * Returns: negative if a < b, positive if a > b, zero if equal
+   */
+  private compareUint8Arrays(a: Uint8Array, b: Uint8Array): number {
+    const minLength = Math.min(a.length, b.length);
+
+    // Compare byte by byte
+    for (let i = 0; i < minLength; i++) {
+      const diff = a[i] - b[i];
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+
+    return a.length - b.length;
   }
 
   /**
