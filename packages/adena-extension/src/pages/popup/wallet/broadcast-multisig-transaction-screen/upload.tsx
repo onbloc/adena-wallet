@@ -8,12 +8,14 @@ import {
   SignatureUploadResult,
 } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { SignerPublicKeyInfo } from 'adena-module';
+import useLink from '@hooks/use-link';
 
-import { CommonFullContentLayout, Text, View } from '@components/atoms';
+import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
 import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
+import IconHelp from '@assets/help.svg';
 
 interface BroadcastMultisigTransactionUploadProps {
   currentAddress: string | null;
@@ -45,6 +47,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   threshold,
 }) => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
   const { goBack } = useAppNavigate();
 
@@ -85,6 +88,10 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     goBack();
     reset();
   }, [goBack, reset]);
+
+  const onClickHelp = React.useCallback(() => {
+    openLink('');
+  }, []);
 
   React.useEffect(() => {
     window.addEventListener('drop', blockEvent, false);
@@ -132,6 +139,15 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
             />
           )}
         </StyledInputWrapper>
+
+        {!loadedTransaction && (
+          <StyledHelpWrapper onClick={onClickHelp}>
+            <Text type='body1Reg' color={theme.neutral.a}>
+              {'How does it work'}
+            </Text>
+            <img src={IconHelp} alt='help icon' />
+          </StyledHelpWrapper>
+        )}
       </StyledWrapper>
 
       <BottomFixedButtonGroup
@@ -167,4 +183,11 @@ const StyledHeaderWrapper = styled(View)`
 
 const StyledInputWrapper = styled(View)`
   gap: 12px;
+`;
+
+const StyledHelpWrapper = styled(Pressable)`
+  flex-direction: row;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
 `;
