@@ -23,7 +23,9 @@ const useApp = (): void => {
   useEffect(() => {
     try {
       chrome?.runtime?.connect({ name: ADENA_WALLET_EXTENSION_ID });
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to connect to chrome runtime:', error);
+    }
   }, []);
 
   useEffect(() => {

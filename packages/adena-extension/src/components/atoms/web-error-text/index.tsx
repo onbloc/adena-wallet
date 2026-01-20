@@ -10,10 +10,16 @@ const StyledText = styled(WebText)`
   width: 100%;
 `;
 
-export const WebErrorText = ({ text }: { text: string }): JSX.Element => {
+export const WebErrorText = ({
+  text,
+  alignItems = 'center',
+}: {
+  text: string;
+  alignItems?: React.CSSProperties['alignItems'];
+}): JSX.Element => {
   const theme = useTheme();
   return (
-    <Row style={{ gap: 6 }}>
+    <Row style={{ gap: 6, alignItems }}>
       <WebImg src={IconError} size={20} />
       <StyledText type='body5' color={theme.webError._100}>
         {text}

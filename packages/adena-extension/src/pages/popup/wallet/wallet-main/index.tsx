@@ -1,4 +1,4 @@
-import { isAirgapAccount } from 'adena-module';
+import { isAirgapAccount, isMultisigAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useRecoilState } from 'recoil';
@@ -24,6 +24,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
+import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
 
 const REFETCH_INTERVAL = 3_000;
 
@@ -50,7 +51,7 @@ const Wrapper = styled.main`
   .main-button-wrapper {
     ${mixins.flex({ direction: 'row', justify: 'space-between' })};
     width: 100%;
-    gap: 10px;
+    gap: 8px;
     margin: 14px 0px 30px;
   }
 
@@ -62,6 +63,10 @@ const Wrapper = styled.main`
   }
 `;
 
+const MainButton = styled(Button)`
+  border-radius: 18px;
+`;
+
 const StyledFaucetButtonContent = styled(Row)`
   gap: 8px;
 `;
@@ -71,7 +76,8 @@ export const WalletMain = (): JSX.Element => {
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
+  const { data: currentAccountInfo } = useGetAccountInfo(currentAddress);
   const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { refetchBalances } = useTokenBalance();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
@@ -79,6 +85,12 @@ export const WalletMain = (): JSX.Element => {
   const { show } = useToast();
 
   const { addLoadingImages, completeImageLoading } = useLoadImages();
+
+  const showSignTxButton = useMemo(() => {
+    if (!currentAccount) return false;
+
+    return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount);
+  }, [currentAccount]);
 
   const onClickFaucetButton = (): void => {
     if (isFaucetLoading) {
@@ -92,7 +104,7 @@ export const WalletMain = (): JSX.Element => {
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
 
-  const onClickSendButton = (): void => {
+  const onClickActionButton = (): void => {
     if (!currentAccount) {
       return;
     }
@@ -100,8 +112,33 @@ export const WalletMain = (): JSX.Element => {
       navigate(RoutePath.BroadcastTransaction);
       return;
     }
+    if (isMultisigAccount(currentAccount)) {
+      navigate(RoutePath.BroadcastMultisigTransactionScreen);
+      return;
+    }
     navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
   };
+
+  const onClickSignButton = (): void => {
+    if (!currentAccount) {
+      return;
+    }
+
+    navigate(RoutePath.SignMultisigTransactionScreen);
+    return;
+  };
+
+  const actionButtonText: string | null = useMemo(() => {
+    if (!currentAccount) {
+      return null;
+    }
+
+    if (isMultisigAccount(currentAccount)) {
+      return 'Broadcast';
+    }
+
+    return 'Send';
+  }, [isMultisigAccount, currentAccount]);
 
   useEffect(() => {
     if (state === 'CREATE') {
@@ -186,8 +223,9 @@ export const WalletMain = (): JSX.Element => {
 
       <div className='main-button-wrapper'>
         {supportedFaucet ? (
-          <LoadingButton
+          <MainButton
             hierarchy='dark'
+            as={LoadingButton}
             loading={isFaucetLoading}
             fullWidth
             onClick={onClickFaucetButton}
@@ -196,15 +234,20 @@ export const WalletMain = (): JSX.Element => {
               <IconThunder />
               <Text type={'body1Bold'}>Faucet</Text>
             </StyledFaucetButtonContent>
-          </LoadingButton>
+          </MainButton>
         ) : (
-          <Button hierarchy='dark' fullWidth onClick={onClickDepositButton}>
+          <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
             <Text type={'body1Bold'}>Deposit</Text>
-          </Button>
+          </MainButton>
         )}
-        <Button fullWidth onClick={onClickSendButton}>
-          <Text type={'body1Bold'}>Send</Text>
-        </Button>
+        <MainButton hierarchy='dark' fullWidth onClick={onClickActionButton}>
+          <Text type={'body1Bold'}>{actionButtonText}</Text>
+        </MainButton>
+        {showSignTxButton && (
+          <MainButton hierarchy='dark' fullWidth onClick={onClickSignButton}>
+            <Text type={'body1Bold'}>Sign</Text>
+          </MainButton>
+        )}
       </div>
 
       <div className='token-list-wrapper'>

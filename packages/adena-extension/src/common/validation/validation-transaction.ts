@@ -1,4 +1,5 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { Account, isMultisigAccount } from 'adena-module';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 
 export const validateInjectionData = (requestData: InjectionMessage): InjectionMessage | null => {
@@ -34,6 +35,23 @@ export const validateInjectionDataWithAddress = (
   }
 
   return null;
+};
+
+export const validateInjectionDataForMultisig = (
+  requestData: InjectionMessage,
+  currentAccount: Account,
+  address: string,
+  skipCallerCheck?: boolean,
+): InjectionMessage | null => {
+  if (!isMultisigAccount(currentAccount)) {
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
+      { error: 'The current account is not a multisig account.' },
+      requestData?.key,
+    );
+  }
+
+  return validateInjectionDataWithAddress(requestData, address, skipCallerCheck);
 };
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {

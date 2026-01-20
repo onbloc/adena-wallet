@@ -14,7 +14,7 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
 import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -185,10 +185,6 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
-      if (!isMultisigAccount(currentAccount)) {
-        navigate(RoutePath.ApproveSignFailed);
-        return;
-      }
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();
@@ -202,14 +198,17 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const validationMessage = validateInjectionDataWithAddress(
+    const validationMessage = validateInjectionDataForMultisig(
       requestData,
+      currentAccount,
       await currentAccount.getAddress('g'),
     );
+
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
     }
+
     return true;
   };
 
@@ -312,6 +311,13 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
+      const fileSaved = await multisigService.saveTransactionToFile(txDocument);
+
+      if (!fileSaved) {
+        setProcessType('INIT');
+        return false;
+      }
+
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
@@ -327,6 +333,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
       return true;
     } catch (e) {
+      setProcessType('INIT');
+
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -342,21 +350,21 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       } else {
         setResponse(
           InjectionMessageInstance.failure(
-            WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
+            WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
             {},
             requestData?.key,
           ),
         );
       }
+      return false;
     }
-    return false;
   };
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
     setVisibleTransactionInfo(visibleTransactionInfo);
   };
 
-  const onClickConfirm = (): void => {
+  const onClickConfirm = async (): Promise<void> => {
     if (!currentAccount || !txDocument) {
       return;
     }
@@ -368,7 +376,12 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       });
       return;
     }
-    createMultisigTransaction().finally(() => setProcessType('DONE'));
+
+    const success = await createMultisigTransaction();
+
+    if (success) {
+      setProcessType('DONE');
+    }
   };
 
   const onClickCancel = (): void => {
@@ -407,7 +420,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
   return (
     <CreateMultisigTransaction
-      title='Create New Transaction'
+      title='Create Multi-sig Tx'
       domain={hostname}
       contracts={transactionData?.contracts || []}
       memo={memo}

@@ -30,7 +30,7 @@ import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sig
 import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
 import CreateMultisigTransactionContainer from '@pages/popup/wallet/create-multisig-transaction';
 import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
-import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
+import BroadcastMultisigTransactionContainer from '@pages/popup/wallet/broadcast-multisig-transaction';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
 import BroadcastTransactionScreen from '@pages/popup/wallet/broadcast-transaction-screen';
@@ -67,6 +67,8 @@ import { Header } from './header';
 import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
+import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
+import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 
 export const PopupRouter = (): JSX.Element => {
   const { failedNetwork } = useNetwork();
@@ -114,6 +116,14 @@ export const PopupRouter = (): JSX.Element => {
         <Route path={RoutePath.TransferLedgerLoading} element={<TransferLedgerLoading />} />
         <Route path={RoutePath.TransferLedgerReject} element={<TransferLedgerReject />} />
         <Route path={RoutePath.BroadcastTransaction} element={<BroadcastTransactionScreen />} />
+        <Route
+          path={RoutePath.BroadcastMultisigTransactionScreen}
+          element={<BroadcastMultisigTransactionScreen />}
+        />
+        <Route
+          path={RoutePath.SignMultisigTransactionScreen}
+          element={<SignMultisigTransactionScreen />}
+        />
         <Route path={RoutePath.Deposit} element={<Deposit />} />
         <Route path={RoutePath.TokenDetails} element={<TokenDetails />} />
         <Route path={RoutePath.ApproveTransaction} element={<ApproveTransactionMain />} />
@@ -143,7 +153,7 @@ export const PopupRouter = (): JSX.Element => {
         />
         <Route
           path={RoutePath.BroadcastMultisigTransaction}
-          element={<BroadcastMultisigTransactionScreen />}
+          element={<BroadcastMultisigTransactionContainer />}
         />
         <Route path={RoutePath.ApproveLogin} element={<ApproveLogin />} />
         <Route path={RoutePath.ApproveEstablish} element={<ApproveEstablish />} />

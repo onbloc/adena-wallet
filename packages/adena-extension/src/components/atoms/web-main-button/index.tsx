@@ -5,7 +5,7 @@ import { WebButton } from '../web-button';
 import { WebText } from '../web-text';
 export interface WebMainButtonProps {
   buttonRef?: React.RefObject<HTMLButtonElement>;
-  figure: 'primary' | 'secondary' | 'tertiary';
+  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
   text: string;
   width?: CSSProperties['width'];
   iconElement: JSX.Element;

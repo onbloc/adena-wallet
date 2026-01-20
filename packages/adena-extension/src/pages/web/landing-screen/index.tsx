@@ -2,11 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useMemo, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 
-import { Row, View, WebMain, WebText } from '@components/atoms';
+import { useAdenaContext } from '@hooks/use-context';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { RoutePath } from '@types';
+import { WEB_LARGE_CONTENT_WIDTH } from '@common/constants/ui.constant';
 
+import { Row, View, WebMain, WebText } from '@components/atoms';
 import IconAirgap from '@assets/icon-airgap';
+import IconMultisig from '@assets/icon-multisig';
 import IconHardwareWallet from '@assets/icon-hardware-wallet';
 import IconThunder from '@assets/icon-thunder';
 import AnimationAddAccount from '@assets/web/lottie/add-account.json';
@@ -14,7 +17,6 @@ import welcomeJson from '@assets/web/lottie/welcome.json';
 import Lottie from '@components/atoms/lottie';
 import WebMainButton from '@components/atoms/web-main-button';
 import WalletCreationHelpOverlay from '@components/pages/web/wallet-creation-help-overlay/wallet-creation-help-overlay';
-import { useAdenaContext } from '@hooks/use-context';
 
 const StyledAnimationWrapper = styled.div`
   display: block;
@@ -29,6 +31,7 @@ const LandingScreen = (): ReactElement => {
   const theme = useTheme();
   const hardwareWalletButtonRef = useRef<HTMLButtonElement>(null);
   const airgapAccountButtonRef = useRef<HTMLButtonElement>(null);
+  const multisigAccountButtonRef = useRef<HTMLButtonElement>(null);
   const advancedOptionButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: existWallet, isLoading } = useQuery(
@@ -60,6 +63,10 @@ const LandingScreen = (): ReactElement => {
     navigate(RoutePath.WebSetupAirgap);
   }, []);
 
+  const moveSetupMultisigScreen = useCallback(() => {
+    navigate(RoutePath.WebSetupMultisig);
+  }, []);
+
   const confirmWalletGuide = useCallback(() => {
     if (existWallet === undefined) {
       return;
@@ -72,7 +79,7 @@ const LandingScreen = (): ReactElement => {
   }
 
   return (
-    <WebMain>
+    <WebMain width={`${WEB_LARGE_CONTENT_WIDTH}px`}>
       {existWallet ? (
         <React.Fragment>
           <StyledAnimationWrapper>
@@ -123,6 +130,13 @@ const LandingScreen = (): ReactElement => {
           onClick={moveSetupAirgapScreen}
         />
         <WebMainButton
+          buttonRef={multisigAccountButtonRef}
+          figure='quinary'
+          iconElement={<IconMultisig />}
+          text='Multi-sig Account'
+          onClick={moveSetupMultisigScreen}
+        />
+        <WebMainButton
           buttonRef={advancedOptionButtonRef}
           figure='tertiary'
           iconElement={<IconThunder />}
@@ -137,6 +151,7 @@ const LandingScreen = (): ReactElement => {
         <WalletCreationHelpOverlay
           hardwareWalletButtonRef={hardwareWalletButtonRef}
           airgapAccountButtonRef={airgapAccountButtonRef}
+          multisigAccountButtonRef={multisigAccountButtonRef}
           advancedOptionButtonRef={advancedOptionButtonRef}
           onFinish={confirmWalletGuide}
         />

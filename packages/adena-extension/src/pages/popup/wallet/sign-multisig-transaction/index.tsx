@@ -65,7 +65,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const { navigate } = useAppNavigate();
   const { gnoProvider } = useWalletContext();
   const { walletService, multisigService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
   const location = useLocation();
   const { openScannerLink } = useLink();
@@ -247,7 +247,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   };
 
   const signMultisigTransaction = async (): Promise<boolean> => {
-    if (!multisigDocument || !currentAccount) {
+    if (!multisigDocument || !currentAccount || !currentAddress) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -263,8 +263,16 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
+        currentAddress,
         multisigDocument,
       );
+
+      const fileSaved = await multisigService.saveSignatureToFile(newSignature);
+
+      if (!fileSaved) {
+        setProcessType('INIT');
+        return false;
+      }
 
       const updatedSignatures = [...multisigSignatures, newSignature];
 
@@ -279,12 +287,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
         ),
       );
 
+      setProcessType('DONE');
       return true;
     } catch (e) {
+      setProcessType('INIT');
       handleSignError(e);
       return false;
-    } finally {
-      setProcessType('DONE');
     }
   };
 
@@ -319,7 +327,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
     setVisibleTransactionInfo(visibleTransactionInfo);
   };
 
-  const onClickConfirm = (): void => {
+  const onClickConfirm = async (): Promise<void> => {
     if (!currentAccount) {
       return;
     }
@@ -331,7 +339,12 @@ const SignMultisigTransactionContainer: React.FC = () => {
       });
       return;
     }
-    signMultisigTransaction().finally(() => setProcessType('DONE'));
+
+    const success = await signMultisigTransaction();
+
+    if (success) {
+      setProcessType('DONE');
+    }
   };
 
   const onClickCancel = (): void => {
