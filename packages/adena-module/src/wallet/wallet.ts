@@ -17,12 +17,12 @@ import {
   AirgapAccount,
   hasHDPath,
   isLedgerAccount,
+  isMultisigAccount,
   isSeedAccount,
   LedgerAccount,
   makeAccount,
   SeedAccount,
   SingleAccount,
-  isMultisigAccount,
 } from './account';
 import {
   AddressKeyring,

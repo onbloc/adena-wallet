@@ -3,28 +3,26 @@ import { useTheme } from 'styled-components';
 
 import { useAdenaContext } from '@hooks/use-context';
 
+import IconFile from '@assets/file.svg';
+import IconUpload from '@assets/icon-upload';
 import { ErrorText, Text, WebImg } from '@components/atoms';
+import { RawTx } from 'adena-module';
 import {
   StyledHiddenInput,
   StyledInputLabel,
   StyledWrapper,
 } from './broadcast-transaction-upload-input.styles';
-import IconFile from '@assets/file.svg';
-import { MultisigTransactionDocument } from '@inject/types';
-import IconUpload from '@assets/icon-upload';
 
 export interface BroadcastMultisigTransactionUploadInputProps {
   currentAddress: string | null;
-  multisigTransactionDocument: MultisigTransactionDocument | null;
+  transaction: RawTx | null;
   uploadTransaction: (text: string) => boolean;
   validatePublicKey?: boolean;
 }
 
-const BroadcastMultisigTransactionUploadInput: React.FC<
-  BroadcastMultisigTransactionUploadInputProps
-> = ({
+const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransactionUploadInputProps> = ({
   currentAddress,
-  multisigTransactionDocument,
+  transaction,
   uploadTransaction,
   validatePublicKey = true,
 }) => {
@@ -40,14 +38,14 @@ const BroadcastMultisigTransactionUploadInput: React.FC<
   }, [errorMessage]);
 
   const uploadState = useMemo(() => {
-    if (multisigTransactionDocument) {
+    if (transaction) {
       return 'SUCCESS';
     }
     if (loading) {
       return 'LOADING';
     }
     return 'NONE';
-  }, [multisigTransactionDocument, loading]);
+  }, [transaction, loading]);
 
   const onDropFile = useCallback(
     async (event: React.DragEvent<HTMLLabelElement>) => {

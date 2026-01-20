@@ -2,27 +2,37 @@ import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import useAppNavigate from '@hooks/use-app-navigate';
-import { MultisigTransactionDocument } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
-import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
+import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
+import { RawTx } from 'adena-module';
 
 interface SignMultisigTransactionUploadProps {
   currentAddress: string | null;
-  multisigTransactionDocument: MultisigTransactionDocument | null;
+  transaction: RawTx | null;
+  chainId: string;
+  accountNumber: string;
+  sequence: string;
   transactionInfos: TransactionDisplayInfo[];
   uploadTransaction: (text: string) => boolean;
   rawTransaction: string;
+  setAccountNumber: (accountNumber: string) => void;
+  setSequence: (sequence: string) => void;
   signTransaction: () => Promise<boolean>;
   reset: () => void;
 }
 
 const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps> = ({
   currentAddress,
-  multisigTransactionDocument,
+  transaction,
+  chainId,
+  accountNumber,
+  sequence,
+  setAccountNumber,
+  setSequence,
   transactionInfos,
   uploadTransaction,
   rawTransaction,
@@ -34,8 +44,8 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   const { goBack } = useAppNavigate();
 
   const loadedTransaction = React.useMemo(() => {
-    return Boolean(multisigTransactionDocument);
-  }, [multisigTransactionDocument]);
+    return Boolean(transaction);
+  }, [transaction]);
 
   const blockEvent = (event: DragEvent): void => {
     event.preventDefault();
@@ -82,13 +92,20 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
         <StyledInputWrapper>
           <BroadcastMultisigTransactionUploadInput
             currentAddress={currentAddress}
-            multisigTransactionDocument={multisigTransactionDocument}
+            transaction={transaction}
             uploadTransaction={uploadTransaction}
             validatePublicKey={true}
           />
 
           {loadedTransaction && (
             <BroadcastTransactionUploadResult
+              signInfo={{
+                chainId,
+                accountNumber,
+                sequence,
+                setAccountNumber,
+                setSequence,
+              }}
               rawTransaction={rawTransaction}
               transactionInfos={transactionInfos}
             />

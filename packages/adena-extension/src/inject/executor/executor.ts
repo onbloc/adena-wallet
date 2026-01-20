@@ -223,24 +223,30 @@ export class AdenaExecutor {
    */
   private validateMessages = (messages: any[]): InjectionMessage | undefined => {
     for (const message of messages) {
-      switch (message.type) {
+      const messageData = message?.type
+        ? message
+        : {
+            type: message['@type'],
+            value: message,
+          };
+      switch (messageData.type) {
         case '/bank.MsgSend':
-          if (!validateTransactionMessageOfBankSend(message)) {
+          if (!validateTransactionMessageOfBankSend(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
         case '/vm.m_call':
-          if (!validateTransactionMessageOfVmCall(message)) {
+          if (!validateTransactionMessageOfVmCall(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
         case '/vm.m_addpkg':
-          if (!validateTransactionMessageOfAddPkg(message)) {
+          if (!validateTransactionMessageOfAddPkg(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
         case '/vm.m_run':
-          if (!validateTransactionMessageOfRun(message)) {
+          if (!validateTransactionMessageOfRun(messageData)) {
             return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
           break;
@@ -348,13 +354,13 @@ export class AdenaExecutor {
       });
     }
 
-    if (!validateTransactionDocumentMessages(multisigDocument.tx.msgs)) {
+    if (!validateTransactionDocumentMessages(multisigDocument.tx.msg)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
         message: 'Invalid or missing transaction messages (msgs).',
       });
     }
 
-    return this.validateMessages(multisigDocument.tx.msgs);
+    return this.validateMessages(multisigDocument.tx.msg);
   };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {

@@ -11,7 +11,7 @@ export interface Message {
 
 export interface Signature {
   pub_key: {
-    type: '/tm.PubKeySecp256k1';
+    '@type': '/tm.PubKeySecp256k1';
     value: string;
   };
   signature: string;
@@ -174,7 +174,7 @@ export interface SignedTransaction {
 }
 
 export interface MultisigTransactionDocument {
-  tx: UnsignedTransaction;
+  tx: RawTx;
   chainId: string;
   accountNumber: string;
   sequence: string;

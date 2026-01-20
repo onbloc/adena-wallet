@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
-import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
+import { mappedRawTxMessages } from '@common/mapper/transaction-mapper';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveSignedDocument } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -25,7 +25,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
-import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
+import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
 
 interface SignMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -46,12 +46,19 @@ interface TransactionData {
 function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
   const { tx } = txDocument;
   return {
-    messages: tx.msgs,
-    contracts: tx.msgs.map((message) => {
+    messages: tx.msg,
+    contracts: tx.msg.map((message: any) => {
+      const messageType = message?.['@type'];
+      let functionName = '';
+      if (messageType === '/bank.MsgSend') {
+        functionName = 'Transfer';
+      } else if (messageType === '/vm.m_call') {
+        functionName = message?.func || '';
+      }
       return {
-        type: message?.type || '',
-        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || '',
+        type: messageType,
+        function: functionName,
+        value: message || '',
       };
     }),
     gasWanted: tx.fee.gas_wanted,
@@ -88,7 +95,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
       return null;
     }
 
-    // Parse "6113ugnot" -> { amount: "6113", denom: "ugnot" }
     const gasFee = multisigDocument.tx.fee.gas_fee;
     const match = gasFee.match(/^(\d+)(\w+)$/);
 
@@ -227,7 +233,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
       setMemo(multisigDocument.tx.memo);
-      setTransactionMessages(mappedTransactionMessages(data.multisigDocument.tx.msgs));
+      setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
 
       return true;
     } catch (e) {
@@ -264,11 +270,13 @@ const SignMultisigTransactionContainer: React.FC = () => {
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
         currentAddress,
-        multisigDocument,
+        currentNetwork?.chainId ?? '',
+        multisigDocument.tx,
+        multisigDocument.accountNumber,
+        multisigDocument.sequence,
       );
 
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);
-
       if (!fileSaved) {
         setProcessType('INIT');
         return false;
@@ -290,7 +298,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setProcessType('DONE');
       return true;
     } catch (e) {
-      setProcessType('INIT');
+      setProcessType('DONE');
       handleSignError(e);
       return false;
     }
@@ -299,7 +307,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const handleSignError = (e: unknown): void => {
     if (e instanceof Error) {
       const message = e.message;
-
       if (message.includes('Ledger')) {
         return;
       }
@@ -341,7 +348,6 @@ const SignMultisigTransactionContainer: React.FC = () => {
     }
 
     const success = await signMultisigTransaction();
-
     if (success) {
       setProcessType('DONE');
     }

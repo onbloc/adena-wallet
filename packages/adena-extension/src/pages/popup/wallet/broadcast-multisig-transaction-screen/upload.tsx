@@ -2,22 +2,22 @@ import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import useAppNavigate from '@hooks/use-app-navigate';
-import { MultisigTransactionDocument, Signature } from '@inject/types';
 import {
-  TransactionDisplayInfo,
   SignatureUploadResult,
+  TransactionDisplayInfo,
 } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
-import { SignerPublicKeyInfo } from 'adena-module';
+import { Signature } from '@inject/types';
+import { RawTx, SignerPublicKeyInfo } from 'adena-module';
 
 import { CommonFullContentLayout, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
-import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
-import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
 import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
+import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
+import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
 
 interface BroadcastMultisigTransactionUploadProps {
   currentAddress: string | null;
-  multisigTransactionDocument: MultisigTransactionDocument | null;
+  transaction: RawTx | null;
   transactionInfos: TransactionDisplayInfo[];
   uploadTransaction: (text: string) => boolean;
   rawTransaction: string;
@@ -32,7 +32,7 @@ interface BroadcastMultisigTransactionUploadProps {
 
 const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
   currentAddress,
-  multisigTransactionDocument,
+  transaction,
   transactionInfos,
   uploadTransaction,
   rawTransaction,
@@ -55,8 +55,8 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   }, [signatures, signerPublicKeys]);
 
   const loadedTransaction = React.useMemo(() => {
-    return Boolean(multisigTransactionDocument);
-  }, [multisigTransactionDocument]);
+    return Boolean(transaction);
+  }, [transaction]);
 
   const blockEvent = (event: DragEvent): void => {
     event.preventDefault();
@@ -110,7 +110,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         <StyledInputWrapper>
           <BroadcastMultisigTransactionUploadInput
             currentAddress={currentAddress}
-            multisigTransactionDocument={multisigTransactionDocument}
+            transaction={transaction}
             uploadTransaction={uploadTransaction}
             validatePublicKey={false}
           />

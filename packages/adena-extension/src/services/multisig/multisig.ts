@@ -16,37 +16,30 @@ import {
 import { GnoProvider } from '@common/provider/gno';
 import { EncodeTxSignature, WalletService } from '..';
 
-import {
-  ContractMessage,
-  Fee,
-  Message,
-  MultisigAccountResult,
-  MultisigTransactionDocument,
-  Signature,
-} from '@inject/types';
+import { ContractMessage, Fee, Message, MultisigAccountResult, Signature } from '@inject/types';
 
 import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
 import {
   Account,
-  convertMessageToAmino,
+  combineMultisigPublicKey,
   createMultisigPublicKey,
   Document,
-  documentToTx,
   fromBase64,
   fromBech32,
   isMultisigAccount,
   MultisigAccount,
   MultisigConfig,
   RawMemPackage,
+  RawPubKey,
   RawTx,
   RawTxMessageType,
+  rawTxToTx,
   toBase64,
 } from 'adena-module';
 
 const AMINO_PREFIX = 0x0a;
 const AMINO_LENGTH = 0x21;
 const AMINO_PREFIXED_LENGTH = 35;
-const MULTISIG_TYPE = '/tm.PubKeyMultisig';
 const SECP256K1_TYPE = '/tm.PubKeySecp256k1';
 const DEFAULT_GAS_FEE = '1ugnot';
 
@@ -276,15 +269,28 @@ export class MultisigService {
   public signMultisigTransaction = async (
     account: Account,
     address: string,
-    multisigDocument: MultisigTransactionDocument,
+    chainId: string,
+    transaction: RawTx,
+    accountNumber: string,
+    sequence: string,
   ): Promise<Signature> => {
     try {
       await this.validatePublicKeyExists(address);
 
-      const aminoDocument = this.convertMultisigDocumentToAminoDocument(multisigDocument);
+      const aminoDocument = this.convertMultisigDocumentToAminoDocument(
+        transaction,
+        accountNumber,
+        sequence,
+        chainId,
+      );
       const encodedSignature = await this.createSignature(account, aminoDocument);
-
-      return this.convertToMultisigSignature(encodedSignature);
+      return {
+        pub_key: {
+          '@type': '/tm.PubKeySecp256k1',
+          value: encodedSignature.pubKey.value || '',
+        },
+        signature: encodedSignature.signature,
+      };
     } catch (error) {
       console.error('Failed to sign multisig transaction:', error);
       throw error;
@@ -300,16 +306,16 @@ export class MultisigService {
    */
   async combineMultisigSignatures(
     multisigAccount: MultisigAccount,
-    multisigDocument: MultisigTransactionDocument,
+    transaction: RawTx,
     multisigSignatures: Signature[],
   ): Promise<{ tx: Tx; txBytes: Uint8Array; txBase64: string }> {
-    // 1. Validate inputs
+    // Validate inputs
     this.validateMultisigAccount(multisigAccount);
-    this.validateMultisigTransactionDocument(multisigDocument);
+    this.validateMultisigTransactionDocument(transaction);
 
     const { multisigConfig } = multisigAccount;
 
-    // 2. Check threshold
+    // Check threshold
     const signatures = multisigSignatures ?? [];
     if (signatures.length === 0) {
       throw new Error('No signatures provided');
@@ -320,12 +326,12 @@ export class MultisigService {
       );
     }
 
-    // 3. Signer public keys to bytes
+    // Signer public keys to bytes
     const signerPublicKeys = multisigAccount.signerPublicKeys.map((signer) =>
       fromBase64(signer.publicKey.value),
     );
 
-    // 4. Build multisignature using Proto types
+    // Build multisignature using Proto types
     const bitArray = this.createProtoBitArray(
       signerPublicKeys.length,
       signatures,
@@ -340,36 +346,30 @@ export class MultisigService {
 
     const multisigSignature = Multisignature.encode(protoMultisig).finish();
 
-    // 5. Parse gas fee
-    const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
+    const pubKeys = signerPublicKeys.map((pubKey) => ({
+      '@type': SECP256K1_TYPE,
+      value: uint8ArrayToBase64(pubKey),
+    }));
+    const multisigPublicKey: RawPubKey = combineMultisigPublicKey(
+      pubKeys,
+      multisigConfig.threshold,
+    );
 
-    // 6. Build Amino document
-    const aminoDocument: Document = {
-      msgs: multisigDocument.tx.msgs.map(convertMessageToAmino),
-      fee: {
-        amount: [{ amount, denom }],
-        gas: multisigDocument.tx.fee.gas_wanted,
-      },
-      chain_id: multisigDocument.chainId,
-      memo: multisigDocument.tx.memo,
-      account_number: multisigDocument.accountNumber,
-      sequence: multisigDocument.sequence,
+    const signedRawTx: RawTx = {
+      ...transaction,
       signatures: [
         {
-          pub_key: {
-            '@type': MULTISIG_TYPE,
-            threshold: multisigConfig.threshold.toString(),
-            pubkeys: signerPublicKeys.map((pubKey) => ({
-              '@type': SECP256K1_TYPE,
-              value: uint8ArrayToBase64(pubKey),
-            })),
-          },
+          pub_key: multisigPublicKey,
           signature: uint8ArrayToBase64(multisigSignature),
         },
       ],
     };
 
-    const tx = documentToTx(aminoDocument);
+    const tx = rawTxToTx(signedRawTx);
+    if (!tx) {
+      throw new Error('Failed to convert raw transaction to transaction');
+    }
+
     const txBytes = Tx.encode(tx).finish();
     const txBase64 = uint8ArrayToBase64(txBytes);
 
@@ -687,35 +687,27 @@ export class MultisigService {
     return `${coin.amount}${coin.denom}`;
   };
 
-  /**
-   * Convert encoded signature to Multisig Signature format
-   */
-  private convertToMultisigSignature(encodedSignature: EncodeTxSignature): Signature {
-    return {
-      pub_key: {
-        type: '/tm.PubKeySecp256k1',
-        value: encodedSignature.pubKey.value || '',
-      },
-      signature: encodedSignature.signature,
-    };
-  }
-
   private convertMultisigDocumentToAminoDocument(
-    multisigDocument: MultisigTransactionDocument,
+    rawTx: RawTx,
+    accountNumber: string,
+    sequence: string,
+    chainId: string,
   ): Document {
-    const aminoMessages = multisigDocument.tx.msgs.map(convertMessageToAmino);
-    const { amount, denom } = this.parseGasFee(multisigDocument.tx.fee.gas_fee);
+    const { amount, denom } = this.parseGasFee(rawTx.fee.gas_fee);
 
     return {
-      msgs: aminoMessages,
+      msgs: rawTx.msg.map((rawMessage) => ({
+        type: rawMessage['@type'],
+        value: rawMessage,
+      })),
       fee: {
         amount: [{ amount, denom }],
-        gas: multisigDocument.tx.fee.gas_wanted,
+        gas: rawTx.fee.gas_wanted,
       },
-      chain_id: multisigDocument.chainId,
-      memo: multisigDocument.tx.memo,
-      account_number: multisigDocument.accountNumber,
-      sequence: multisigDocument.sequence,
+      chain_id: chainId,
+      memo: rawTx.memo,
+      account_number: accountNumber,
+      sequence: sequence,
     };
   }
 
@@ -739,16 +731,8 @@ export class MultisigService {
   /**
    * Validate MultisigTransactionDocument
    */
-  private validateMultisigTransactionDocument(document: MultisigTransactionDocument): void {
-    if (!document) {
-      throw new Error('Document is required');
-    }
-
-    if (!document.tx) {
-      throw new Error('Transaction is required');
-    }
-
-    if (!document.tx.msgs || document.tx.msgs.length === 0) {
+  private validateMultisigTransactionDocument(rawTx: RawTx): void {
+    if (!rawTx.msg || rawTx.msg.length === 0) {
       throw new Error('At least one message is required');
     }
   }

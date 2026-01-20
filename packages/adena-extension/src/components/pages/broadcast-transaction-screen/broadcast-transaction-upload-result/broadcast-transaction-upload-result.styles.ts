@@ -28,6 +28,7 @@ export const StyledResultRow = styled(Row)`
 `;
 
 export const StyledResultColumnName = styled(Row)`
+  flex-shrink: 0;
   color: ${({ theme }): string => theme.neutral.a};
   justify-content: flex-start;
   align-items: center;
