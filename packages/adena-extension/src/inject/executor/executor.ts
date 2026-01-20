@@ -8,6 +8,14 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 import {
+  validateChainId,
+  validateFee,
+  validateMultisigSigners,
+  validateMultisigThreshold,
+  validateTransactionDocumentFee,
+  validateTransactionDocumentMessages,
+} from '@common/validation';
+import {
   validateDoContractRequest,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
@@ -34,14 +42,6 @@ import {
   TransactionParams,
 } from '@inject/types';
 import { InjectionMessage, InjectionMessageInstance } from '../message';
-import {
-  validateTransactionDocumentFee,
-  validateTransactionDocumentMessages,
-  validateMultisigSigners,
-  validateMultisigThreshold,
-  validateChainId,
-  validateFee,
-} from '@common/validation';
 
 type Params = { [key in string]: any };
 
@@ -290,19 +290,15 @@ export class AdenaExecutor {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateChainId(params.chain_id)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
-    }
-
     if (!validateFee(params.fee)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    if (!validateTransactionDocumentMessages(params.msgs)) {
+    if (!validateTransactionDocumentMessages(params.messages)) {
       return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    return this.validateMessages(params.msgs);
+    return this.validateMessages(params.messages);
   };
 
   /**

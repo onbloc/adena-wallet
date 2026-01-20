@@ -17,15 +17,15 @@ import { GnoProvider } from '@common/provider/gno';
 import { EncodeTxSignature, WalletService } from '..';
 
 import {
-  CreateMultisigTransactionParams,
+  ContractMessage,
   Fee,
   Message,
   MultisigAccountResult,
   MultisigTransactionDocument,
   Signature,
-  UnsignedTransaction,
 } from '@inject/types';
 
+import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
 import {
   Account,
   convertMessageToAmino,
@@ -37,6 +37,10 @@ import {
   isMultisigAccount,
   MultisigAccount,
   MultisigConfig,
+  RawMemPackage,
+  RawTx,
+  RawTxMessageType,
+  toBase64,
 } from 'adena-module';
 
 const AMINO_PREFIX = 0x0a;
@@ -116,63 +120,31 @@ export class MultisigService {
    * @param params - Transaction parameters (SDK format)
    * @returns Transaction document (unsigned tx + metadata)
    */
-  public createMultisigTransaction = async (
-    params: CreateMultisigTransactionParams,
-  ): Promise<MultisigTransactionDocument> => {
-    const {
-      chain_id,
-      msgs,
-      fee,
-      memo = '',
-      accountNumber: inputAccountNumber,
-      sequence: inputSequence,
-    } = params;
-
-    try {
-      if (!msgs || msgs.length === 0) {
-        throw new Error('At least one message is required');
-      }
-
-      const { accountNumber, sequence } = await this.getAccountInfo(
-        msgs[0],
-        inputAccountNumber,
-        inputSequence,
-      );
-
-      const unsignedTx: UnsignedTransaction = {
-        msgs: msgs,
-        fee: {
-          gas_wanted: fee.gas,
-          gas_fee: this.convertFeeToString(fee),
-        },
-        signatures: null,
-        memo,
-      };
-
-      return {
-        tx: unsignedTx,
-        accountNumber,
-        sequence,
-        chainId: chain_id,
-      };
-    } catch (error) {
-      console.error('Failed to create multisig transaction: ', error);
-      throw error;
+  public createRawTransaction = async (
+    messages: ContractMessage[],
+    memo: string,
+    gasWanted: string,
+    gasFee: string,
+  ): Promise<RawTx> => {
+    if (!messages || messages.length === 0) {
+      throw new Error('At least one message is required');
     }
+
+    return mapRawTransactionByParams(messages, memo, gasWanted, gasFee);
   };
 
   /**
    * Save multisig transaction document to file
-   * @param txDocument - Transaction document to save
+   * @param tx - Transaction document to save
    * @param fileName - File name (default: 'multisig-transaction.tx')
    * @returns true if saved successfully, false if user cancelled
    */
   public saveTransactionToFile = async (
-    txDocument: MultisigTransactionDocument,
+    tx: RawTx,
     fileName = 'multisig-transaction.tx',
   ): Promise<boolean> => {
     try {
-      const jsonString = JSON.stringify(txDocument, null, 2);
+      const jsonString = JSON.stringify(tx, null, 2);
       const blob = new Blob([jsonString], { type: 'application/json' });
 
       if ('showSaveFilePicker' in window) {
@@ -413,10 +385,9 @@ export class MultisigService {
    * Waits for transaction to be included in a block
    */
   async broadcastTxCommit(signedTx: Tx): Promise<BroadcastTxCommitResult> {
-    return this.broadcastTransaction(
-      signedTx,
-      'broadcast_tx_commit',
-    ) as Promise<BroadcastTxCommitResult>;
+    return this.broadcastTransaction(signedTx, 'broadcast_tx_commit') as Promise<
+      BroadcastTxCommitResult
+    >;
   }
 
   /**
@@ -424,10 +395,9 @@ export class MultisigService {
    * Returns immediately after transaction is accepted into mempool
    */
   async broadcastTxSync(signedTx: Tx): Promise<BroadcastTxSyncResult> {
-    return this.broadcastTransaction(
-      signedTx,
-      'broadcast_tx_sync',
-    ) as Promise<BroadcastTxSyncResult>;
+    return this.broadcastTransaction(signedTx, 'broadcast_tx_sync') as Promise<
+      BroadcastTxSyncResult
+    >;
   }
 
   /**
@@ -564,7 +534,9 @@ export class MultisigService {
     return hasAminoPrefix ? pubKeyBytes.slice(2) : pubKeyBytes;
   }
 
-  private async getPublicKeyFromChain(address: string): Promise<
+  private async getPublicKeyFromChain(
+    address: string,
+  ): Promise<
     | {
         '@type': string;
         value: string;
@@ -788,4 +760,94 @@ export class MultisigService {
     }
     return { amount: match[1], denom: match[2] };
   }
+}
+
+function mapRawTransactionByParams(
+  messages: ContractMessage[],
+  memo: string,
+  gasWanted: string,
+  gasFee: string,
+): RawTx {
+  return {
+    msg: messages.map((message) => mapRawTransactionMessage(message)),
+    fee: {
+      gas_wanted: gasWanted,
+      gas_fee: gasFee,
+    },
+    signatures: [],
+    memo: memo || '',
+  };
+}
+
+function mapRawTransactionMessage(message: ContractMessage): RawTxMessageType {
+  switch (message.type) {
+    case '/vm.m_call': {
+      const callMessage = message.value as MsgCall;
+      return {
+        '@type': message.type,
+        func: callMessage.func,
+        pkg_path: callMessage.pkg_path,
+        args: callMessage.args,
+        max_deposit: callMessage.max_deposit,
+        caller: callMessage.caller,
+        send: callMessage.send,
+      };
+    }
+    case '/vm.m_addpkg': {
+      const addpkgMessage = message.value as MsgAddPackage;
+      if (!addpkgMessage.package) {
+        throw new Error('Package is required');
+      }
+
+      return {
+        '@type': message.type,
+        creator: addpkgMessage.creator,
+        send: addpkgMessage.send,
+        max_deposit: addpkgMessage.max_deposit,
+        package: mapRawMemPackage(addpkgMessage.package),
+      };
+    }
+    case '/vm.m_run': {
+      const runMessage = message.value as MsgRun;
+      if (!runMessage.package) {
+        throw new Error('Package is required');
+      }
+
+      return {
+        '@type': message.type,
+        caller: runMessage.caller,
+        send: runMessage.send,
+        max_deposit: runMessage.max_deposit,
+        package: mapRawMemPackage(runMessage.package),
+      };
+    }
+    case '/bank.MsgSend': {
+      const sendMessage = message.value as MsgSend;
+      return {
+        '@type': message.type,
+        from_address: sendMessage.from_address,
+        to_address: sendMessage.to_address,
+        amount: sendMessage.amount,
+      };
+    }
+  }
+
+  throw new Error(`Unsupported message type: ${message.type}`);
+}
+
+function mapRawMemPackage(memPackage: MemPackage): RawMemPackage {
+  return {
+    name: memPackage.name,
+    path: memPackage.path,
+    info: memPackage.info
+      ? {
+          type_url: memPackage.info.type_url || '',
+          value: toBase64(memPackage.info.value) || '',
+        }
+      : undefined,
+    files: memPackage.files.map((file) => ({
+      name: file.name,
+      body: file.body,
+    })),
+  };
 }

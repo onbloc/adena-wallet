@@ -1,4 +1,13 @@
-import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
+import {
+  Account,
+  isMultisigAccount,
+  MultisigConfig,
+  RawBankSendMessage,
+  RawTx,
+  RawTxMessageType,
+  RawVmAddPackageMessage,
+  RawVmRunMessage,
+} from 'adena-module';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,12 +17,12 @@ import {
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
 import { GasToken } from '@common/constants/token.constant';
-import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
+import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 import { validateInjectionDataForMultisig } from '@common/validation/validation-transaction';
 import { CreateMultisigTransaction } from '@components/molecules/create-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -23,13 +32,8 @@ import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import {
-  ContractMessage,
-  CreateMultisigTransactionParams,
-  MultisigTransactionDocument,
-} from '@inject/types';
+import { ContractMessage } from '@inject/types';
 import { NetworkFee, RoutePath } from '@types';
-import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
 
 interface TransactionData {
   messages: readonly any[];
@@ -37,24 +41,47 @@ interface TransactionData {
   gasWanted: string;
   gasFee: string;
   memo: string;
-  document: MultisigTransactionDocument;
 }
 
-function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
-  const { tx } = txDocument;
+function isBankSendMessage(message: RawTxMessageType): message is RawBankSendMessage {
+  return message['@type'] === '/bank.MsgSend';
+}
+
+function isAddPackageMessage(message: RawTxMessageType): message is RawVmAddPackageMessage {
+  return message['@type'] === '/vm.m_addpkg';
+}
+
+function isRunMessage(message: RawTxMessageType): message is RawVmRunMessage {
+  return message['@type'] === '/vm.m_run';
+}
+
+function parseFunctionName(message: RawTxMessageType): string {
+  if (isBankSendMessage(message)) {
+    return 'Transfer';
+  }
+  if (isAddPackageMessage(message)) {
+    return 'AddPackage';
+  }
+  if (isRunMessage(message)) {
+    return 'Run';
+  }
+  return message.func;
+}
+
+function mappedTransactionData(rawTx: RawTx): TransactionData {
+  const { msg, fee, memo } = rawTx;
   return {
-    messages: tx.msgs,
-    contracts: tx.msgs.map((message) => {
+    messages: msg,
+    contracts: msg.map((message) => {
       return {
-        type: message?.type || '',
-        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || '',
+        type: message?.['@type'] || '',
+        function: parseFunctionName(message),
+        value: message,
       };
     }),
-    gasWanted: tx.fee.gas_wanted,
-    gasFee: tx.fee.gas_fee,
-    memo: tx.memo || '',
-    document: txDocument,
+    gasWanted: fee.gas_wanted,
+    gasFee: fee.gas_fee,
+    memo: memo || '',
   };
 }
 
@@ -71,7 +98,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [favicon, setFavicon] = useState<any>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [txDocument, setTxDocument] = useState<MultisigTransactionDocument>();
+  const [tx, setTx] = useState<RawTx>();
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
@@ -85,11 +112,11 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   }, [currentAccount]);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
-    if (!txDocument?.tx?.fee?.gas_fee) {
+    if (!tx?.fee?.gas_fee) {
       return null;
     }
 
-    const gasFee = txDocument.tx.fee.gas_fee;
+    const gasFee = tx.fee.gas_fee;
     const amount = gasFee.replace(/[^0-9]/g, '');
     const denom = gasFee.replace(/[0-9]/g, '');
 
@@ -97,7 +124,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       amount,
       denom,
     };
-  }, [txDocument?.tx?.fee]);
+  }, [tx?.fee]);
 
   const networkFee: NetworkFee | null = useMemo(() => {
     if (!rawNetworkFee) {
@@ -127,8 +154,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   }, [networkFee]);
 
   const currentGasWanted = useMemo(() => {
-    return txDocument?.tx?.fee?.gas_wanted || '0';
-  }, [txDocument?.tx?.fee?.gas_wanted]);
+    return tx?.fee?.gas_wanted || '0';
+  }, [tx?.fee?.gas_wanted]);
 
   const processing = useMemo(() => processType !== 'INIT', [processType]);
 
@@ -231,15 +258,22 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     }
 
     try {
-      const data = await multisigService.createMultisigTransaction(
-        requestData.data as CreateMultisigTransactionParams,
+      const messages = requestData.data.messages as ContractMessage[];
+      const gas = requestData.data.fee;
+      const data = await multisigService.createRawTransaction(
+        messages,
+        requestData.data?.memo || '',
+        gas?.gasWanted || '',
+        gas?.gasFee || '',
       );
 
-      setTxDocument(data);
-      setTransactionData(mappedTransactionData(data));
+      const transactionData = mappedTransactionData(data);
+
+      setTx(data);
+      setTransactionData(transactionData);
       setHostname(requestData?.hostname ?? '');
-      setMemo(data.tx.memo);
-      setTransactionMessages(mappedTransactionMessages(data.tx.msgs));
+      setMemo(data.memo);
+      setTransactionMessages(messages);
 
       return true;
     } catch (e) {
@@ -263,30 +297,27 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   };
 
   const updateTransactionData = useCallback((): void => {
-    if (!txDocument || !rawNetworkFee) {
+    if (!tx || !rawNetworkFee) {
       return;
     }
 
     const currentMemo = memo;
 
-    const updatedTxDocument: MultisigTransactionDocument = {
-      ...txDocument,
-      tx: {
-        ...txDocument.tx,
-        memo: currentMemo,
-        fee: {
-          gas_wanted: currentGasWanted.toString(),
-          gas_fee: `${rawNetworkFee.amount}${rawNetworkFee.denom}`,
-        },
+    const updatedTx: RawTx = {
+      ...tx,
+      memo: currentMemo,
+      fee: {
+        gas_wanted: currentGasWanted.toString(),
+        gas_fee: `${rawNetworkFee.amount}${rawNetworkFee.denom}`,
       },
     };
 
-    setTxDocument(updatedTxDocument);
-    setTransactionData(mappedTransactionData(updatedTxDocument));
-  }, [txDocument, rawNetworkFee, memo, currentGasWanted]);
+    setTx(updatedTx);
+    setTransactionData(mappedTransactionData(updatedTx));
+  }, [tx, rawNetworkFee, memo, currentGasWanted]);
 
   const createMultisigTransaction = async (): Promise<boolean> => {
-    if (!txDocument || !currentAccount) {
+    if (!tx || !currentAccount) {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
@@ -311,7 +342,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const fileSaved = await multisigService.saveTransactionToFile(txDocument);
+      const fileSaved = await multisigService.saveTransactionToFile(tx);
 
       if (!fileSaved) {
         setProcessType('INIT');
@@ -322,10 +353,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.success(
           WalletResponseSuccessType.CREATE_MULTISIG_TRANSACTION_SUCCESS,
           {
-            tx: txDocument.tx,
-            chainId: txDocument.chainId,
-            accountNumber: txDocument.accountNumber,
-            sequence: txDocument.sequence,
+            tx: tx,
           },
           requestData?.key,
         ),
@@ -365,7 +393,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   };
 
   const onClickConfirm = async (): Promise<void> => {
-    if (!currentAccount || !txDocument) {
+    if (!currentAccount || !tx) {
       return;
     }
     if (!isMultisigAccount(currentAccount)) {
@@ -444,7 +472,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       onToggleTransactionData={onToggleTransactionData}
       openScannerLink={openScannerLink}
       opened={visibleTransactionInfo}
-      transactionData={JSON.stringify(txDocument?.tx, null, 2)}
+      transactionData={JSON.stringify(tx, null, 2)}
     />
   );
 };

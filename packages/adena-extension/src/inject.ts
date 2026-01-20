@@ -112,7 +112,7 @@ const init = (): void => {
       switch (eventName) {
         case 'changedAccount':
         case 'changedNetwork':
-          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
+          window.addEventListener<typeof EVENT_KEYS[typeof eventName]>(
             EVENT_KEYS[eventName],
             (event) => callbackCustomEvent<string>(event, callback),
             true,
@@ -125,7 +125,7 @@ const init = (): void => {
     },
   };
 
-  window.adena = adena as unknown as AdenaWallet;
+  window.adena = (adena as unknown) as AdenaWallet;
 };
 
 init();

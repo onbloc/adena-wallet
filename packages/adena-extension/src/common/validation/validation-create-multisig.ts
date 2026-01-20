@@ -1,3 +1,4 @@
+import { parseTokenAmount } from '@common/utils/amount-utils';
 import { validateAddress } from 'adena-module';
 
 /**
@@ -45,11 +46,22 @@ export const validateChainId = (chain_id: any): boolean => {
  * Validatres fee field
  */
 export const validateFee = (fee: any): boolean => {
-  return (
-    fee &&
-    typeof fee.gas === 'string' &&
-    Array.isArray(fee.amount) &&
-    fee.gas.length > 0 &&
-    fee.amount.length > 0
-  );
+  if (!fee || typeof fee !== 'object') {
+    return false;
+  }
+
+  if (!fee.gasFee || typeof fee.gasFee !== 'string') {
+    return false;
+  }
+
+  if (!fee.gasWanted || typeof fee.gasWanted !== 'string') {
+    return false;
+  }
+
+  const amount = parseTokenAmount(fee.gasFee);
+  if (amount === 0) {
+    return false;
+  }
+
+  return true;
 };
