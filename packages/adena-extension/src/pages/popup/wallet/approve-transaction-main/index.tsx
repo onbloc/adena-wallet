@@ -7,7 +7,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -29,6 +29,7 @@ import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useGnoSessionUpdates } from '@hooks/use-gno-session-updates';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
@@ -36,6 +37,7 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
+
 interface TransactionData {
   messages: readonly any[];
   contracts: { type: string; function: string; value: any }[];
@@ -112,6 +114,8 @@ const ApproveTransactionContainer: React.FC = () => {
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
   const useNetworkFeeReturn = useNetworkFee(document, true);
+  const [requiresHoldConfirmation, setRequiresHoldConfirmation] = useState(false);
+  const isInitialRenderRef = useRef(true);
 
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -212,6 +216,67 @@ const ApproveTransactionContainer: React.FC = () => {
     return requestData?.data?.arguments || [];
   }, [requestData?.data?.arguments]);
 
+  // Extract funcName and pkgPath from the first message for session tracking
+  const { funcName, pkgPath } = useMemo(() => {
+    const firstMessage = requestData?.data?.messages?.[0];
+    if (firstMessage?.type === '/vm.m_call') {
+      return {
+        funcName: firstMessage.value?.func || '',
+        pkgPath: firstMessage.value?.pkg_path || '',
+      };
+    }
+
+    return { funcName: '', pkgPath: '' };
+  }, [requestData?.data?.messages]);
+
+  const handleFinishHold = useCallback((finished: boolean) => {
+    if (finished) {
+      setRequiresHoldConfirmation(false);
+    }
+  }, []);
+
+  // Subscribe to Gno session updates for real-time parameter changes
+  useGnoSessionUpdates({
+    funcName: funcName || undefined,
+    pkgPath: pkgPath || undefined,
+    onParamsChange: useCallback(
+      (newParams: Record<string, string>) => {
+        if (isInitialRenderRef.current) {
+          isInitialRenderRef.current = false;
+          return;
+        }
+
+        setTransactionMessages((prevMessages) => {
+          return prevMessages.map((msg) => {
+            if (msg.type !== '/vm.m_call') return msg;
+
+            // Update args based on new params
+            const msgValue = msg.value as { args?: string[] };
+            const currentArgs = msgValue.args || [];
+            const updatedArgs = currentArgs.map((arg: string, index: number) => {
+              const argInfo = argumentInfos[index];
+              if (argInfo && newParams[argInfo.key] !== undefined) {
+                return newParams[argInfo.key];
+              }
+              return arg;
+            });
+
+            return {
+              ...msg,
+              value: {
+                ...msg.value,
+                args: updatedArgs,
+              },
+            };
+          });
+        });
+
+        setRequiresHoldConfirmation(true);
+      },
+      [argumentInfos],
+    ),
+  });
+
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
@@ -228,10 +293,8 @@ const ApproveTransactionContainer: React.FC = () => {
     currentAccount: Account,
     requestData: InjectionMessage,
   ): Promise<boolean> => {
-    const validationMessage = validateInjectionDataWithAddress(
-      requestData,
-      await currentAccount.getAddress('g'),
-    );
+    const address = await currentAccount.getAddress('g');
+    const validationMessage = validateInjectionDataWithAddress(requestData, address);
     if (validationMessage) {
       chrome.runtime.sendMessage(validationMessage);
       return false;
@@ -433,7 +496,7 @@ const ApproveTransactionContainer: React.FC = () => {
   };
 
   const onClickConfirm = (): void => {
-    if (!currentAccount || isErrorNetworkFee) {
+    if (!currentAccount || isErrorNetworkFee || requiresHoldConfirmation) {
       return;
     }
 
@@ -545,6 +608,8 @@ const ApproveTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       argumentInfos={argumentInfos}
       transactionData={JSON.stringify(document, null, 2)}
+      requiresHoldConfirmation={requiresHoldConfirmation}
+      onFinishHold={handleFinishHold}
     />
   );
 };

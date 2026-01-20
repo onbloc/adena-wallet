@@ -5,9 +5,13 @@ import { CommandMessage, CommandMessageData } from '@inject/message/command-mess
 import {
   parseGnoConnectInfo,
   parseGnoMessageInfo,
+  parseGnoFormInfo,
   shouldIntercept,
-  shouldRegisterAnchorIntercept,
+  shouldRegisterInterceptor,
+  shouldInterceptForm,
 } from '@inject/message/methods/gno-connect';
+import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
+import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
 
 const loadScript = (): void => {
   const container = document.head || document.documentElement;
@@ -107,7 +111,7 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
  * @returns void
  */
 const initAnchorIntercept = (): void => {
-  if (!shouldRegisterAnchorIntercept()) {
+  if (!shouldRegisterInterceptor()) {
     return;
   }
 
@@ -130,7 +134,6 @@ const initAnchorIntercept = (): void => {
       }
 
       e.preventDefault();
-      console.info('[AdenaExtension] Interceptor tx link:', url.href);
 
       CommandHandler.createContentHandler(
         CommandMessage.command('checkMetadata', {
@@ -143,7 +146,100 @@ const initAnchorIntercept = (): void => {
   );
 };
 
+/**
+ * Initialize GnoWebEventWatcher
+ * Subscribes to Gnoweb custom events and forwards to background
+ */
+const initGnoWebEventWatcher = (): void => {
+  if (!shouldRegisterInterceptor()) {
+    return;
+  }
+
+  const watcher = new GnoWebEventWatcher((message: GnoSessionUpdateMessage) => {
+    sendGnoSessionUpdate(message);
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      watcher.start();
+    });
+  } else {
+    watcher.start();
+  }
+
+  window.addEventListener('beforeunload', () => {
+    watcher.stop();
+  });
+};
+
+/**
+ * Initializes form submit intercept for Gnoweb action functions.
+ * This function intercepts form submissions and opens Adena popup instead.
+ *
+ * @returns void
+ */
+const initFormSubmitIntercept = (): void => {
+  // Check if gno:connect meta tag exists
+  if (!shouldRegisterInterceptor()) {
+    return;
+  }
+
+  const gnoConnectInfo = parseGnoConnectInfo();
+
+  document.addEventListener(
+    'submit',
+    (e) => {
+      // Check if it's a Gnoweb action function form
+      if (!shouldInterceptForm(e.target)) {
+        return;
+      }
+
+      const form = e.target as HTMLFormElement;
+
+      // Parse form data into GnoMessageInfo
+      const gnoMessageInfo = parseGnoFormInfo(form);
+      if (gnoMessageInfo === null) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      CommandHandler.createContentHandler(
+        CommandMessage.command('checkMetadata', {
+          gnoMessageInfo,
+          gnoConnectInfo,
+        }),
+      );
+    },
+    true,
+  );
+};
+
+/**
+ * Sends GnoSessionUpdateMessage to the background script.
+ */
+const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<void> => {
+  try {
+    const isConnected = await new Promise<boolean>((resolve) => {
+      chrome.runtime.sendMessage({ type: 'ping' }, () => {
+        resolve(!chrome.runtime.lastError);
+      });
+    }).catch(() => false);
+
+    if (!isConnected) {
+      return;
+    }
+
+    chrome.runtime.sendMessage(message);
+  } catch {
+    console.warn('Failed to send GnoSessionUpdateMessage to background');
+  }
+};
+
 initAnchorIntercept();
+initFormSubmitIntercept();
+initGnoWebEventWatcher();
 loadScript();
 initListener();
 initExtensionListener();

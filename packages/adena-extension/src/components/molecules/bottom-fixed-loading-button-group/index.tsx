@@ -1,10 +1,11 @@
 import React, { ReactElement, useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 import { Button, Text } from '@components/atoms';
 import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
-import styled from 'styled-components';
+import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
 
 interface ButtonProps {
   primary?: boolean;
@@ -14,9 +15,14 @@ interface ButtonProps {
   onClick: () => void;
 }
 
+interface HoldButtonProps {
+  type: 'hold';
+  onFinishHold: (finished: boolean) => void;
+}
+
 interface BottomFixedLoadingButtonGroupProps {
   leftButton: ButtonProps;
-  rightButton: ButtonProps;
+  rightButton: ButtonProps | HoldButtonProps;
   filled?: boolean;
 }
 
@@ -33,17 +39,23 @@ export const BottomFixedLoadingButtonGroup = ({
     return mapClassName(leftButton);
   }, [leftButton]);
 
-  const rightClassName = useMemo(() => {
-    return mapClassName(rightButton);
-  }, [rightButton]);
-
   const onClickLeftButton = useCallback(() => {
     leftButton.onClick();
   }, [leftButton]);
 
+  // Check if rightButton is hold type
+  const isHoldButton = 'type' in rightButton && rightButton.type === 'hold';
+
+  const rightClassName = useMemo(() => {
+    if (isHoldButton) return '';
+    return mapClassName(rightButton as ButtonProps);
+  }, [rightButton, isHoldButton]);
+
   const onClickRightButton = useCallback(() => {
-    rightButton.onClick();
-  }, [rightButton]);
+    if (!isHoldButton) {
+      (rightButton as ButtonProps).onClick();
+    }
+  }, [rightButton, isHoldButton]);
 
   return (
     <ButtonWrap filled={filled}>
@@ -53,12 +65,21 @@ export const BottomFixedLoadingButtonGroup = ({
         text={leftButton.text}
         onClick={onClickLeftButton}
       />
-      <LoadingButton
-        className={rightClassName}
-        loading={rightButton.loading}
-        text={rightButton.text}
-        onClick={onClickRightButton}
-      />
+
+      {isHoldButton ? (
+        <ApproveHoldButton
+          onFinishHold={
+            (rightButton as HoldButtonProps).onFinishHold
+          }
+        />
+      ) : (
+        <LoadingButton
+          className={rightClassName}
+          loading={(rightButton as ButtonProps).loading}
+          text={(rightButton as ButtonProps).text}
+          onClick={onClickRightButton}
+        />
+      )}
     </ButtonWrap>
   );
 };

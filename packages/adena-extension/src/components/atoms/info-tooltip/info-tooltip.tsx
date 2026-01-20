@@ -4,7 +4,8 @@ import IconHelp from '@assets/icon-help';
 import { InfoTooltipContainer, InfoTooltipTooltipBoxWrapper } from './info-tooltip.styles';
 
 export interface InfoTooltipProps {
-  content: string;
+  content: React.ReactNode;
+  iconColor?: string;
 }
 
 interface TooltipPosition {
@@ -19,7 +20,7 @@ interface ArrowPosition {
   transform: string;
 }
 
-const InfoTooltip: React.FC<InfoTooltipProps> = ({ content }) => {
+const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({});
   const [arrowPosition, setArrowPosition] = useState<ArrowPosition>({
@@ -83,7 +84,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content }) => {
       onMouseOver={(): void => setIsTooltipOpen(true)}
       onMouseLeave={(): void => setIsTooltipOpen(false)}
     >
-      <IconHelp />
+      <IconHelp color={iconColor} />
       {isTooltipOpen && (
         <InfoTooltipTooltipBoxWrapper
           ref={tooltipRef}
