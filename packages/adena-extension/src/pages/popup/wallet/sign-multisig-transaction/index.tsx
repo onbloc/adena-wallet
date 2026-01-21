@@ -89,6 +89,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
+  const [withSaveFile, setWithSaveFile] = useState<boolean>(false);
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!multisigDocument?.tx?.fee?.gas_fee) {
@@ -234,7 +235,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setHostname(requestData?.hostname ?? '');
       setMemo(multisigDocument.tx.memo);
       setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
-
+      setWithSaveFile(!!requestData.data?.withSaveFile);
       return true;
     } catch (e) {
       console.error(e);
@@ -276,10 +277,13 @@ const SignMultisigTransactionContainer: React.FC = () => {
         multisigDocument.sequence,
       );
 
-      const fileSaved = await multisigService.saveSignatureToFile(newSignature);
-      if (!fileSaved) {
-        setProcessType('INIT');
-        return false;
+      // Save signature to file if enabled
+      if (withSaveFile) {
+        const fileSaved = await multisigService.saveSignatureToFile(newSignature);
+        if (!fileSaved) {
+          setProcessType('INIT');
+          return false;
+        }
       }
 
       const updatedSignatures = [...multisigSignatures, newSignature];

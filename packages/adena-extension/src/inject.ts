@@ -74,17 +74,23 @@ const init = (): void => {
     },
     async CreateMultisigTransaction(
       params: CreateMultisigTransactionParams,
+      withSaveFile = false,
     ): Promise<CreateMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.createMultisigTransaction(params);
+      const response = await executor.createMultisigTransaction(params, withSaveFile);
       return response;
     },
     async SignMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
       multisigSignatures?: Signature[],
+      withSaveFile = false,
     ): Promise<SignMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.signMultisigTransaction(multisigDocument, multisigSignatures);
+      const response = await executor.signMultisigTransaction(
+        multisigDocument,
+        multisigSignatures,
+        withSaveFile,
+      );
       return response;
     },
     async BroadcastMultisigTransaction(

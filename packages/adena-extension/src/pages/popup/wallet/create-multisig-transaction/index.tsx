@@ -104,6 +104,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
   const [memo, setMemo] = useState('');
   const { openScannerLink } = useLink();
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
+  const [withSaveFile, setWithSaveFile] = useState<boolean>(false);
 
   const multisigConfig: MultisigConfig | null = useMemo(() => {
     if (!currentAccount || !isMultisigAccount(currentAccount)) return null;
@@ -269,6 +270,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
 
       const transactionData = mappedTransactionData(data);
 
+      setWithSaveFile(!!requestData.data?.withSaveFile);
       setTx(data);
       setTransactionData(transactionData);
       setHostname(requestData?.hostname ?? '');
@@ -342,11 +344,13 @@ const CreateMultisigTransactionContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const fileSaved = await multisigService.saveTransactionToFile(tx);
-
-      if (!fileSaved) {
-        setProcessType('INIT');
-        return false;
+      // Save transaction to file if enabled
+      if (withSaveFile) {
+        const fileSaved = await multisigService.saveTransactionToFile(tx);
+        if (!fileSaved) {
+          setProcessType('INIT');
+          return false;
+        }
       }
 
       setResponse(

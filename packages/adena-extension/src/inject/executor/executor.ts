@@ -151,6 +151,7 @@ export class AdenaExecutor {
 
   public createMultisigTransaction = (
     params: CreateMultisigTransactionParams,
+    withSaveFile = false,
   ): Promise<CreateMultisigTransactionResponse> => {
     const result = this.validateCreateMultisigTransaction(params);
     if (result) {
@@ -159,7 +160,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
-      params,
+      { ...params, withSaveFile },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -168,6 +169,7 @@ export class AdenaExecutor {
   public signMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
+    withSaveFile = false,
   ): Promise<SignMultisigTransactionResponse> => {
     const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
@@ -176,7 +178,7 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_MULTISIG_TRANSACTION,
-      { multisigDocument, multisigSignatures },
+      { multisigDocument, multisigSignatures, withSaveFile },
     );
 
     return this.sendEventMessage(eventMessage);
