@@ -1,4 +1,5 @@
 import { ContractMessage } from '@inject/types';
+import { RawTxMessageType } from 'adena-module';
 
 export function mappedTransactionMessages(
   messages: {
@@ -87,6 +88,41 @@ export function mappedDocumentMessagesWithCaller(
               ...message.value,
               caller: message.value.caller || currentAddress,
             },
+          };
+      }
+      return null;
+    })
+    .filter((message) => message !== null) as any[];
+}
+
+export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessage[] {
+  if (!messages) {
+    return [];
+  }
+
+  return messages
+    .map((message) => {
+      const type = message['@type'];
+      switch (type) {
+        case '/bank.MsgSend':
+          return {
+            type: '/bank.MsgSend',
+            value: message,
+          };
+        case '/vm.m_call':
+          return {
+            type: '/vm.m_call',
+            value: message,
+          };
+        case '/vm.m_addpkg':
+          return {
+            type: '/vm.m_addpkg',
+            value: message,
+          };
+        case '/vm.m_run':
+          return {
+            type: '/vm.m_run',
+            value: message,
           };
       }
       return null;

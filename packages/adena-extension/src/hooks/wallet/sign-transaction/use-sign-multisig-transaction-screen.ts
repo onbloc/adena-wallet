@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
 import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import { useCallback, useState } from 'react';
 
 export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
 
@@ -17,10 +17,16 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
 
   const { multisigService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
-  const { multisigTransactionDocument, addSignature } = useMultisigTransactionContext();
+  const {
+    transaction,
+    chainId,
+    accountNumber,
+    sequence,
+    addSignature,
+  } = useMultisigTransactionContext();
 
   const signTransaction = useCallback(async (): Promise<boolean> => {
-    if (!multisigTransactionDocument || !currentAccount || !currentAddress) {
+    if (!transaction || !currentAccount || !currentAddress) {
       return false;
     }
 
@@ -30,7 +36,10 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
         currentAddress,
-        multisigTransactionDocument,
+        chainId,
+        transaction,
+        accountNumber,
+        sequence,
       );
 
       const fileSaved = await multisigService.saveSignatureToFile(newSignature);
@@ -51,7 +60,16 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
       setSignTransactionState('FAILED');
       return false;
     }
-  }, [currentAccount, currentAddress, multisigTransactionDocument, multisigService, addSignature]);
+  }, [
+    currentAccount,
+    currentAddress,
+    chainId,
+    transaction,
+    accountNumber,
+    sequence,
+    multisigService,
+    addSignature,
+  ]);
 
   const resetSignState = useCallback(() => {
     setSignTransactionState('IDLE');

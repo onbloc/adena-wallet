@@ -24,7 +24,6 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { WalletState } from '@states';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
-import { useGetAccountInfo } from '@hooks/wallet/use-get-account-info';
 
 const REFETCH_INTERVAL = 3_000;
 
@@ -76,8 +75,7 @@ export const WalletMain = (): JSX.Element => {
   const { navigate } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const { currentNetwork } = useNetwork();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { data: currentAccountInfo } = useGetAccountInfo(currentAddress);
+  const { currentAccount } = useCurrentAccount();
   const { mainTokenBalance, currentBalances } = useTokenBalance();
   const { refetchBalances } = useTokenBalance();
   const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();

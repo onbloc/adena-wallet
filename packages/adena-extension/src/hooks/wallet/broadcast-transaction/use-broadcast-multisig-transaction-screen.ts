@@ -1,16 +1,24 @@
-import { useState, useMemo, useCallback } from 'react';
 import { MsgEndpoint } from '@gnolang/gno-js-client';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   useAdenaContext,
-  useWalletContext,
   useMultisigTransactionContext,
+  useWalletContext,
 } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
 
-import { MultisigTransactionDocument, Signature } from '@inject/types';
 import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
-import { isMultisigAccount, SignerPublicKeyInfo } from 'adena-module';
+import { Signature } from '@inject/types';
+import {
+  isMultisigAccount,
+  RawBankSendMessage,
+  RawTx,
+  RawVmAddPackageMessage,
+  RawVmCallMessage,
+  RawVmRunMessage,
+  SignerPublicKeyInfo,
+} from 'adena-module';
 
 export type BroadcastTransactionState = 'IDLE' | 'LOADING' | 'SUCCESS' | 'FAILED';
 
@@ -57,21 +65,19 @@ function makeTypeName(msgType: string): string {
   }
 }
 
-function mapMultisigTransactionInfo(
-  multisigTxDoc: MultisigTransactionDocument,
-): TransactionDisplayInfo[] {
-  const { tx } = multisigTxDoc;
-  const messages = tx.msgs;
+function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[] {
+  const messages = transaction.msg;
   const extraInfo = messages.length > 1 ? `${messages.length}` : null;
 
   const firstMessage = messages[0];
+  const firstMessageType = firstMessage['@type'];
   const infos: TransactionDisplayInfo[] = [];
 
-  infos.push(makeTransactionInfo('Type', makeTypeName(firstMessage.type), 'TEXT', extraInfo));
+  infos.push(makeTransactionInfo('Type', makeTypeName(firstMessageType), 'TEXT', extraInfo));
 
-  switch (firstMessage.type) {
+  switch (firstMessageType) {
     case MsgEndpoint.MSG_SEND: {
-      const { to_address, amount } = firstMessage.value;
+      const { to_address, amount } = firstMessage as RawBankSendMessage;
       const amountValue = makeGnotAmountByRaw(amount);
       const amountStr = `${amountValue?.value} ${amountValue?.denom}`;
       infos.push(makeTransactionInfo('To', to_address, 'ADDRESS'));
@@ -79,64 +85,32 @@ function mapMultisigTransactionInfo(
       break;
     }
     case MsgEndpoint.MSG_CALL: {
-      const { pkg_path, func } = firstMessage.value;
+      const { pkg_path, func } = firstMessage as RawVmCallMessage;
       infos.push(makeTransactionInfo('Path', pkg_path));
       infos.push(makeTransactionInfo('Function', func));
       break;
     }
     case MsgEndpoint.MSG_ADD_PKG: {
-      const { package: pkg } = firstMessage.value;
-      infos.push(makeTransactionInfo('Path', pkg.path || pkg.Path));
-      infos.push(makeTransactionInfo('Name', pkg.name || pkg.Name));
+      const { package: pkg } = firstMessage as RawVmAddPackageMessage;
+      infos.push(makeTransactionInfo('Path', pkg.path));
+      infos.push(makeTransactionInfo('Name', pkg.name));
       break;
     }
     case MsgEndpoint.MSG_RUN: {
-      const { package: pkg } = firstMessage.value;
+      const { package: pkg } = firstMessage as RawVmRunMessage;
       if (pkg) {
-        infos.push(makeTransactionInfo('Path', pkg.path || pkg.Path));
-        infos.push(makeTransactionInfo('Name', pkg.name || pkg.Name));
+        infos.push(makeTransactionInfo('Path', pkg.path));
+        infos.push(makeTransactionInfo('Name', pkg.name));
       }
       break;
     }
   }
 
-  const networkFee = makeGnotAmountByRaw(tx.fee.gas_fee);
+  const networkFee = makeGnotAmountByRaw(transaction.fee.gas_fee);
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   infos.push(makeTransactionInfo('Network Fee', networkFeeStr));
 
   return infos;
-}
-
-function matchMultisigTransactionCaller(
-  multisigTxDoc: MultisigTransactionDocument,
-  caller: string,
-): boolean {
-  const messages = multisigTxDoc.tx.msgs;
-
-  const invalidedMatch = messages.some((message) => {
-    switch (message.type) {
-      case MsgEndpoint.MSG_SEND: {
-        const { from_address } = message.value;
-        if (!from_address) return true;
-        return from_address !== caller;
-      }
-      case MsgEndpoint.MSG_CALL:
-      case MsgEndpoint.MSG_RUN: {
-        const { caller: msgCaller } = message.value;
-        if (!msgCaller) return true;
-        return msgCaller !== caller;
-      }
-      case MsgEndpoint.MSG_ADD_PKG: {
-        const { creator } = message.value;
-        if (!creator) return true;
-        return creator !== caller;
-      }
-      default:
-        return true;
-    }
-  });
-
-  return !invalidedMatch;
 }
 
 export interface UseBroadcastMultisigTransactionScreenReturn {
@@ -155,11 +129,11 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { multisigService } = useAdenaContext();
 
-  const { multisigTransactionDocument, setMultisigTransactionDocument, signatures, addSignature } =
-    useMultisigTransactionContext();
+  const { transaction, setTransaction, signatures, addSignature } = useMultisigTransactionContext();
 
-  const [broadcastTransactionState, setBroadcastTransactionState] =
-    useState<BroadcastTransactionState>('IDLE');
+  const [broadcastTransactionState, setBroadcastTransactionState] = useState<
+    BroadcastTransactionState
+  >('IDLE');
 
   const signerPublicKeys = useMemo((): SignerPublicKeyInfo[] => {
     if (!currentAccount || !isMultisigAccount(currentAccount)) {
@@ -178,18 +152,18 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   }, [currentAccount]);
 
   const transactionInfos = useMemo(() => {
-    if (!multisigTransactionDocument || multisigTransactionDocument.tx.msgs.length === 0) {
+    if (!transaction || transaction.msg.length === 0) {
       return null;
     }
-    return mapMultisigTransactionInfo(multisigTransactionDocument);
-  }, [multisigTransactionDocument]);
+    return mapMultisigTransactionInfo(transaction);
+  }, [transaction]);
 
   const rawTransaction = useMemo(() => {
-    if (!multisigTransactionDocument) {
+    if (!transaction) {
       return '';
     }
-    return JSON.stringify(multisigTransactionDocument, null, 2);
-  }, [multisigTransactionDocument]);
+    return JSON.stringify(transaction, null, 2);
+  }, [transaction]);
 
   const uploadMultisigTransaction = useCallback(
     (text: string): boolean => {
@@ -198,40 +172,22 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
       }
 
       try {
-        const multisigTxDoc = JSON.parse(text) as MultisigTransactionDocument;
+        const rawTx = JSON.parse(text) as RawTx;
 
-        if (
-          !multisigTxDoc.tx ||
-          !multisigTxDoc.chainId ||
-          !multisigTxDoc.accountNumber ||
-          !multisigTxDoc.sequence
-        ) {
+        if (!rawTx.msg || !rawTx.fee || !rawTx.fee.gas_wanted || !rawTx.fee.gas_fee) {
           return false;
         }
 
-        const { tx } = multisigTxDoc;
-
-        if (
-          !tx.msgs ||
-          !Array.isArray(tx.msgs) ||
-          tx.msgs.length === 0 ||
-          !tx.fee ||
-          !tx.fee.gas_wanted ||
-          !tx.fee.gas_fee ||
-          tx.signatures !== null
-        ) {
-          return false;
-        }
-
-        const validMessages = tx.msgs.every((msg) => {
-          if (!msg.type || !msg.value) {
+        const validMessages = rawTx.msg.every((msg) => {
+          const msgType = msg['@type'];
+          if (!msgType) {
             return false;
           }
           return (
-            msg.type === MsgEndpoint.MSG_SEND ||
-            msg.type === MsgEndpoint.MSG_CALL ||
-            msg.type === MsgEndpoint.MSG_ADD_PKG ||
-            msg.type === MsgEndpoint.MSG_RUN
+            msgType === MsgEndpoint.MSG_SEND ||
+            msgType === MsgEndpoint.MSG_CALL ||
+            msgType === MsgEndpoint.MSG_ADD_PKG ||
+            msgType === MsgEndpoint.MSG_RUN
           );
         });
 
@@ -239,19 +195,15 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
           return false;
         }
 
-        if (!matchMultisigTransactionCaller(multisigTxDoc, currentAddress)) {
-          console.log('Caller mismatch warning');
-        }
-
-        setMultisigTransactionDocument(multisigTxDoc);
+        setTransaction(rawTx);
         return true;
       } catch (error) {
         console.error(error);
-        setMultisigTransactionDocument(null);
+        setTransaction(null);
         return false;
       }
     },
-    [currentAddress, setMultisigTransactionDocument],
+    [currentAddress, setTransaction],
   );
 
   const uploadSignature = useCallback(
@@ -261,9 +213,9 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
         if (
           !signature.pub_key ||
-          signature.pub_key.type !== '/tm.PubKeySecp256k1' ||
           !signature.pub_key.value ||
-          !signature.signature
+          !signature.signature ||
+          signature.pub_key['@type'] !== '/tm.PubKeySecp256k1'
         ) {
           return { success: false, error: 'INVALID_FORMAT' };
         }
@@ -295,7 +247,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   );
 
   const broadcast = useCallback(async () => {
-    if (!multisigTransactionDocument || !signatures || !wallet || !currentAccount) {
+    if (!transaction || !signatures || !wallet || !currentAccount) {
       return false;
     }
     if (!isMultisigAccount(currentAccount)) {
@@ -306,7 +258,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     try {
       const combinedTx = await multisigService.combineMultisigSignatures(
         currentAccount,
-        multisigTransactionDocument,
+        transaction,
         signatures,
       );
 
@@ -329,7 +281,7 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
       setBroadcastTransactionState('FAILED');
       return false;
     }
-  }, [currentAccount, multisigTransactionDocument, signatures, wallet, multisigService]);
+  }, [currentAccount, transaction, signatures, wallet, multisigService]);
 
   return {
     broadcastTransactionState,

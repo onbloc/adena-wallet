@@ -1,21 +1,40 @@
 import React, { useCallback, useState } from 'react';
 
-import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
-import { CopyIconButton, Text } from '@components/atoms';
-import { formatAddress } from '@common/utils/client-utils';
-import { StyledInfoButton, StyledInfoWrapper, StyledResultColumnName, StyledResultColumnValue, StyledResultRow, StyledTableWrapper, StyledTransactionArea, StyledTransactionAreaWrapper, StyledWrapper } from './broadcast-transaction-upload-result.styles';
-import { useTheme } from 'styled-components';
 import IconArrowDown from '@assets/arrowS-down-gray.svg';
 import IconArrowUp from '@assets/arrowS-up-gray.svg';
+import { formatAddress } from '@common/utils/client-utils';
+import { CopyIconButton, Text } from '@components/atoms';
+import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
+import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+import { useTheme } from 'styled-components';
+import {
+  StyledInfoButton,
+  StyledInfoWrapper,
+  StyledResultColumnName,
+  StyledResultColumnValue,
+  StyledResultRow,
+  StyledTableWrapper,
+  StyledTransactionArea,
+  StyledTransactionAreaWrapper,
+  StyledWrapper,
+} from './broadcast-transaction-upload-result.styles';
 
 export interface BroadcastTransactionUploadResultProps {
   transactionInfos: TransactionDisplayInfo[];
   rawTransaction: string;
+  signInfo?: {
+    accountNumber: string;
+    sequence: string;
+    chainId: string;
+    setAccountNumber: (accountNumber: string) => void;
+    setSequence: (sequence: string) => void;
+  };
 }
 
 const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResultProps> = ({
   transactionInfos,
   rawTransaction,
+  signInfo,
 }) => {
   const theme = useTheme();
   const [visibleInfo, setVisibleInfo] = useState(false);
@@ -38,11 +57,31 @@ const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResul
   return (
     <StyledWrapper>
       <StyledTableWrapper>
+        {signInfo && (
+          <React.Fragment>
+            <StyledResultRow>
+              <StyledResultColumnName>Account Number</StyledResultColumnName>
+              <ArgumentEditBox
+                value={signInfo.accountNumber}
+                onChange={(value): void => signInfo.setAccountNumber(value)}
+              />
+            </StyledResultRow>
+            <StyledResultRow>
+              <StyledResultColumnName>Sequence</StyledResultColumnName>
+              <ArgumentEditBox
+                value={signInfo.sequence}
+                onChange={(value): void => signInfo.setSequence(value)}
+              />
+            </StyledResultRow>
+            <StyledResultRow>
+              <StyledResultColumnName>Chain ID</StyledResultColumnName>
+              <StyledResultColumnValue>{signInfo.chainId}</StyledResultColumnValue>
+            </StyledResultRow>
+          </React.Fragment>
+        )}
         {transactionInfos.map((transactionInfo, index) => (
           <StyledResultRow key={index}>
-            <StyledResultColumnName>
-              {transactionInfo.name}
-            </StyledResultColumnName>
+            <StyledResultColumnName>{transactionInfo.name}</StyledResultColumnName>
 
             <StyledResultColumnValue>
               {getValue(transactionInfo)}
@@ -67,11 +106,7 @@ const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResul
 
         {visibleInfo && (
           <StyledTransactionAreaWrapper>
-            <StyledTransactionArea
-              value={rawTransaction}
-              readOnly
-              draggable={false}
-            />
+            <StyledTransactionArea value={rawTransaction} readOnly draggable={false} />
           </StyledTransactionAreaWrapper>
         )}
       </StyledInfoWrapper>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { Account, isMultisigAccount, MultisigConfig } from 'adena-module';
+import { Account, isMultisigAccount, MultisigConfig, RawTx } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -10,8 +10,9 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
+import { SCANNER_URL } from '@common/constants/resource.constant';
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
+import { mappedRawTxMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
@@ -19,6 +20,9 @@ import {
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
+import { makeQueryString } from '@common/utils/string-utils';
+import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
+import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
@@ -28,10 +32,6 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
-import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 
 interface BroadcastMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument;
@@ -70,12 +70,12 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
   const { tx } = txDocument;
 
   return {
-    messages: tx.msgs,
-    contracts: tx.msgs.map((message) => {
+    messages: tx.msg,
+    contracts: tx.msg.map((message: any) => {
       return {
-        type: message?.type || '',
-        function: message?.type === '/bank.MsgSend' ? 'Transfer' : message?.value?.func || '',
-        value: message?.value || '',
+        type: message?.['@type'] || '',
+        function: message?.['@type'] === '/bank.MsgSend' ? 'Transfer' : message?.func || '',
+        value: message || '',
       };
     }),
     gasWanted: tx.fee.gas_wanted,
@@ -107,7 +107,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [transactionData, setTransactionData] = useState<TransactionData>();
-  const [multisigDocument, setMultisigDocument] = useState<MultisigTransactionDocument>();
+  const [multisigDocument, setMultisigDocument] = useState<RawTx>();
   const [multisigSignatures, setMultisigSignatures] = useState<Signature[]>([]);
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const [currentBalance, setCurrentBalance] = useState(0);
@@ -142,7 +142,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [requestData?.data?.memo]);
 
   const displayNetworkFee = useMemo(() => {
-    if (!multisigDocument?.tx?.fee?.gas_fee) {
+    if (!multisigDocument?.fee?.gas_fee) {
       return {
         amount: '',
         denom: '',
@@ -151,7 +151,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
 
     // Parse amount string with denomination into structured format
     // Example: "6113ugnot" -> { amount: "0.006113", denom: "GNOT" }
-    const gasFeeMatch = multisigDocument.tx.fee.gas_fee.match(/^(\d+)(\w+)$/);
+    const gasFeeMatch = multisigDocument.fee.gas_fee.match(/^(\d+)(\w+)$/);
     if (!gasFeeMatch) {
       return {
         amount: '',
@@ -170,7 +170,7 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   }, [multisigDocument]);
 
   const consumedTokenAmount = useMemo(() => {
-    const accumulatedAmount = multisigDocument?.tx?.msgs.reduce((acc, msg) => {
+    const accumulatedAmount = multisigDocument?.msg.reduce((acc: number, msg: any) => {
       const amountStr = msg.value?.send || msg.value?.amount || msg.value?.max_deposit;
       if (!amountStr) {
         return acc;
@@ -272,12 +272,12 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
         throw new Error('Multisig transaction document not found');
       }
 
-      setMultisigDocument(multisigDocument);
+      setMultisigDocument(multisigDocument.tx);
       setMultisigSignatures(multisigSignatures);
       setTransactionData(mappedTransactionData(multisigDocument));
       setHostname(requestData?.hostname ?? '');
       setMemo(multisigDocument.tx.memo);
-      setTransactionMessages(mappedTransactionMessages(data.multisigDocument.tx.msgs));
+      setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
 
       return true;
     } catch (e) {

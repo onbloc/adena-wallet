@@ -7,7 +7,9 @@ export {
   isArgon2idOptions,
   xchacha20NonceLength,
   Xchacha20poly1305Ietf,
-  type Argon2idOptions,
+  type Argon2idOptions
 } from './libsodium';
 export { Random } from './random';
+export { Ripemd160, ripemd160 } from './ripemd160';
 export { Sha256, sha256, Sha512, sha512 } from './sha';
+
