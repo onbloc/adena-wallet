@@ -40,8 +40,12 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   const isCreateDisabled =
     !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
 
-  const moveGnoCliHelp = React.useCallback(() => {
+  const moveSetupMultisigAccountHelp = React.useCallback(() => {
     openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT);
+  }, [openLink]);
+
+  const moveCreateMultisigTransactionHelp = React.useCallback(() => {
+    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION);
   }, [openLink]);
 
   return (
@@ -76,14 +80,25 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
         />
       </Row>
 
-      <Pressable onClick={moveGnoCliHelp}>
-        <StyledLinkWrapper>
-          <WebText type='title6' color='#6C717A'>
-            How to use the Multi-sig accounts on Adena
-          </WebText>
-          <WebImg src={IconLink} size={16} />
-        </StyledLinkWrapper>
-      </Pressable>
+      <View style={{ gap: 8 }}>
+        <Pressable onClick={moveSetupMultisigAccountHelp}>
+          <StyledLinkWrapper>
+            <WebText type='title6' color='#6C717A'>
+              How to set up a multi-sig account on Adena
+            </WebText>
+            <WebImg src={IconLink} size={16} />
+          </StyledLinkWrapper>
+        </Pressable>
+
+        <Pressable onClick={moveCreateMultisigTransactionHelp}>
+          <StyledLinkWrapper>
+            <WebText type='title6' color='#6C717A'>
+              How to create a multi-sig transaction file on Adena
+            </WebText>
+            <WebImg src={IconLink} size={16} />
+          </StyledLinkWrapper>
+        </Pressable>
+      </View>
     </StyledContainer>
   );
 };

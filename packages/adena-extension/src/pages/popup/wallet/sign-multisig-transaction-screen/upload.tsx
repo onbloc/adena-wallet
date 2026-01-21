@@ -63,7 +63,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   }, [goBack, reset]);
 
   const onClickHelp = React.useCallback(() => {
-    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION);
+    openLink(ADENA_MULTISIG_GUIDE_LINK.SIGN_TRANSACTION);
   }, []);
 
   React.useEffect(() => {
