@@ -1,7 +1,9 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
 
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
 import {
   SignatureUploadResult,
   TransactionDisplayInfo,
@@ -9,7 +11,8 @@ import {
 import { Signature } from '@inject/types';
 import { RawTx, SignerPublicKeyInfo } from 'adena-module';
 
-import { CommonFullContentLayout, Text, View } from '@components/atoms';
+import IconHelp from '@assets/help.svg';
+import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
 import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
 import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
@@ -45,6 +48,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   threshold,
 }) => {
   const theme = useTheme();
+  const { openLink } = useLink();
   const [isBroadcasting, setIsBroadcasting] = React.useState(false);
   const { goBack } = useAppNavigate();
 
@@ -85,6 +89,10 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
     goBack();
     reset();
   }, [goBack, reset]);
+
+  const onClickHelp = React.useCallback(() => {
+    openLink(ADENA_MULTISIG_GUIDE_LINK.BROADCAST_TRANSACTION);
+  }, []);
 
   React.useEffect(() => {
     window.addEventListener('drop', blockEvent, false);
@@ -132,6 +140,15 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
             />
           )}
         </StyledInputWrapper>
+
+        {!loadedTransaction && (
+          <StyledHelpWrapper onClick={onClickHelp}>
+            <Text type='body1Reg' color={theme.neutral.a}>
+              {'How does it work'}
+            </Text>
+            <img src={IconHelp} alt='help icon' />
+          </StyledHelpWrapper>
+        )}
       </StyledWrapper>
 
       <BottomFixedButtonGroup
@@ -167,4 +184,11 @@ const StyledHeaderWrapper = styled(View)`
 
 const StyledInputWrapper = styled(View)`
   gap: 12px;
+`;
+
+const StyledHelpWrapper = styled(Pressable)`
+  flex-direction: row;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
 `;

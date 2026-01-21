@@ -3,14 +3,17 @@ import styled from 'styled-components';
 
 import { Account, validateAddress, isMultisigAccount, isAirgapAccount } from 'adena-module';
 import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 
-import { Row, View, WebImg } from '@components/atoms';
+import { Pressable, Row, View, WebImg, WebText } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
 import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 import WebMainButton from '@components/atoms/web-main-button';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
+import IconLink from '@assets/web/link.svg';
+import useLink from '@hooks/use-link';
 
 const description =
   'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.';
@@ -26,6 +29,8 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   currentAccount,
   currentAddress,
 }) => {
+  const { openLink } = useLink();
+
   const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
   const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -34,6 +39,14 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
 
   const isCreateDisabled =
     !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
+
+  const moveSetupMultisigAccountHelp = React.useCallback(() => {
+    openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT);
+  }, [openLink]);
+
+  const moveCreateMultisigTransactionHelp = React.useCallback(() => {
+    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION);
+  }, [openLink]);
 
   return (
     <StyledContainer>
@@ -66,6 +79,26 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
           onClick={(): void => initSetup('IMPORT')}
         />
       </Row>
+
+      <View style={{ gap: 8 }}>
+        <Pressable onClick={moveSetupMultisigAccountHelp}>
+          <StyledLinkWrapper>
+            <WebText type='title6' color='#6C717A'>
+              How to set up a multi-sig account on Adena
+            </WebText>
+            <WebImg src={IconLink} size={16} />
+          </StyledLinkWrapper>
+        </Pressable>
+
+        <Pressable onClick={moveCreateMultisigTransactionHelp}>
+          <StyledLinkWrapper>
+            <WebText type='title6' color='#6C717A'>
+              How to create a multi-sig transaction file on Adena
+            </WebText>
+            <WebImg src={IconLink} size={16} />
+          </StyledLinkWrapper>
+        </Pressable>
+      </View>
     </StyledContainer>
   );
 };
@@ -75,4 +108,13 @@ export default SetupMultisigInit;
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
+`;
+
+const StyledLinkWrapper = styled(Row)`
+  gap: 6px;
+  align-items: flex-start;
+
+  & > * {
+    color: #6c717a;
+  }
 `;
