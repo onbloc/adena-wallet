@@ -9,6 +9,7 @@ import {
 } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import { SignerPublicKeyInfo } from 'adena-module';
 import useLink from '@hooks/use-link';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 
 import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
@@ -90,7 +91,7 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   }, [goBack, reset]);
 
   const onClickHelp = React.useCallback(() => {
-    openLink('');
+    openLink(ADENA_MULTISIG_GUIDE_LINK.BROADCAST_TRANSACTION);
   }, []);
 
   React.useEffect(() => {

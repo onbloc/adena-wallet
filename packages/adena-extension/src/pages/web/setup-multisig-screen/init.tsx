@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import { Account, validateAddress, isMultisigAccount, isAirgapAccount } from 'adena-module';
 import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 
 import { Pressable, Row, View, WebImg, WebText } from '@components/atoms';
 import { WebTitleWithDescription } from '@components/molecules';
@@ -40,7 +41,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
     !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
 
   const moveGnoCliHelp = React.useCallback(() => {
-    openLink('');
+    openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT);
   }, [openLink]);
 
   return (

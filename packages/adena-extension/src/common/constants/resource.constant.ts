@@ -8,3 +8,10 @@ export const HARDWARE_WALLET_LEARN_PAGE =
 export const GNO_CLI_HELP_PAGE =
   'https://docs.gno.land/gno-tooling/cli/gnokey/working-with-key-pairs' as const;
 export const SCANNER_URL = 'https://gnoscan.io' as const;
+export const ADENA_MULTISIG_GUIDE_LINK = {
+  SETUP_ACCOUNT: 'https://docs.adena.app/user-guide/sign-in/set-up-multi-sig-account',
+  CREATE_TRANSACTION:
+    'https://docs.adena.app/integrations/transactions/create-and-sign-multisig-transactions',
+  BROADCAST_TRANSACTION:
+    'https://docs.adena.app/integrations/transactions/send-a-multisig-transactions',
+} as const;

@@ -5,6 +5,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { MultisigTransactionDocument } from '@inject/types';
 import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import useLink from '@hooks/use-link';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 
 import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';
@@ -62,7 +63,7 @@ const SignMultisigTransactionUpload: React.FC<SignMultisigTransactionUploadProps
   }, [goBack, reset]);
 
   const onClickHelp = React.useCallback(() => {
-    openLink('');
+    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION);
   }, []);
 
   React.useEffect(() => {
