@@ -16,7 +16,7 @@ import {
 import { GnoProvider } from '@common/provider/gno';
 import { EncodeTxSignature, WalletService } from '..';
 
-import { ContractMessage, Fee, Message, MultisigAccountResult, Signature } from '@inject/types';
+import { ContractMessage, MultisigAccountResult, Signature } from '@inject/types';
 
 import { MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
 import {
@@ -34,6 +34,7 @@ import {
   RawTx,
   RawTxMessageType,
   rawTxToTx,
+  secp256k1PubKeyToAddressBytes,
   toBase64,
 } from 'adena-module';
 
@@ -41,7 +42,6 @@ const AMINO_PREFIX = 0x0a;
 const AMINO_LENGTH = 0x21;
 const AMINO_PREFIXED_LENGTH = 35;
 const SECP256K1_TYPE = '/tm.PubKeySecp256k1';
-const DEFAULT_GAS_FEE = '1ugnot';
 
 interface SignerInfo {
   address: string;
@@ -565,32 +565,6 @@ export class MultisigService {
   }
 
   /**
-   * Get account number and sequence from chain or use provided values
-   */
-  private async getAccountInfo(
-    firstMsg: Message,
-    inputAccountNumber?: string,
-    inputSequence?: string,
-  ): Promise<{ accountNumber: string; sequence: string }> {
-    const caller = this.extractCallerFromMessage(firstMsg);
-    if (!caller) {
-      throw new Error('Caller address not found in message');
-    }
-
-    const provider = this.getGnoProvider();
-    const accountInfo = await provider.getAccountInfo(caller);
-
-    if (!accountInfo) {
-      throw new Error(`Account not found: ${caller}`);
-    }
-
-    return {
-      accountNumber: inputAccountNumber || accountInfo.accountNumber.toString(),
-      sequence: inputSequence || accountInfo.sequence.toString(),
-    };
-  }
-
-  /**
    * Fetch public key information for all signers
    */
   private async fetchSignerInfos(signers: string[]): Promise<SignerInfo[]> {
@@ -632,17 +606,33 @@ export class MultisigService {
   }
 
   /**
-   * Sort signer infos by public key bytes
+   * Sort signer infos by public key bytes using lexicographic comparison
    */
   private sortSignerInfos(signerInfos: SignerInfo[]): SignerInfo[] {
     return [...signerInfos].sort((a, b) => {
-      for (let i = 0; i < Math.min(a.bytes.length, b.bytes.length); i++) {
-        if (a.bytes[i] !== b.bytes[i]) {
-          return a.bytes[i] - b.bytes[i];
-        }
-      }
-      return a.bytes.length - b.bytes.length;
+      const sliceA = secp256k1PubKeyToAddressBytes(a.bytes);
+      const sliceB = secp256k1PubKeyToAddressBytes(b.bytes);
+
+      return this.compareUint8Arrays(sliceA, sliceB);
     });
+  }
+
+  /**
+   * Compare two Uint8Arrays lexicographically
+   * Returns: negative if a < b, positive if a > b, zero if equal
+   */
+  private compareUint8Arrays(a: Uint8Array, b: Uint8Array): number {
+    const minLength = Math.min(a.length, b.length);
+
+    // Compare byte by byte
+    for (let i = 0; i < minLength; i++) {
+      const diff = a[i] - b[i];
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+
+    return a.length - b.length;
   }
 
   /**
@@ -655,37 +645,6 @@ export class MultisigService {
     }
     return record;
   }
-
-  /**
-   * Extract caller address from message
-   */
-  private extractCallerFromMessage = (msg: Message): string | null => {
-    const { type, value } = msg;
-
-    switch (type) {
-      case '/vm.m_call':
-      case '/vm.m_addpkg':
-        return value.caller || value.creator;
-
-      case '/bank.MsgSend':
-        return value.from_address;
-
-      default:
-        return value.caller || value.creator || value.from_address || null;
-    }
-  };
-
-  /**
-   * Convert fee object to string format (e.g., "6113ugnot")
-   */
-  private convertFeeToString = (fee: Fee): string => {
-    if (!fee.amount || fee.amount.length === 0) {
-      return DEFAULT_GAS_FEE;
-    }
-
-    const coin = fee.amount[0];
-    return `${coin.amount}${coin.denom}`;
-  };
 
   private convertMultisigDocumentToAminoDocument(
     rawTx: RawTx,
