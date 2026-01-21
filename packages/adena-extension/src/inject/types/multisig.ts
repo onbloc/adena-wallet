@@ -1,7 +1,8 @@
 import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
+import { RawTx } from 'adena-module';
 
 import { AdenaResponse } from './common';
-import { BaseDocument } from './transactions';
+import { BaseDocument, TransactionParams } from './transactions';
 
 export interface Message {
   type: string;
@@ -10,7 +11,7 @@ export interface Message {
 
 export interface Signature {
   pub_key: {
-    type: '/tm.PubKeySecp256k1';
+    '@type': '/tm.PubKeySecp256k1';
     value: string;
   };
   signature: string;
@@ -93,24 +94,26 @@ export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountR
 /**
  * Parameters for creating a multisig transaction
  */
-export interface CreateMultisigTransactionParams extends BaseDocument {
-  memo?: string;
-  accountNumber?: string;
-  sequence?: string;
+export interface CreateMultisigTransactionParams extends TransactionParams {
+  fee: {
+    gasFee: string;
+    gasWanted: string;
+  };
 }
 
 /**
  * Response data for creating a multisig transaction document
  */
 export type CreateMultisigTransactionResponseData = {
-  document: MultisigTransactionDocument;
+  tx: RawTx;
 };
 
 /**
  * Response for creating a multisig transaction document
  */
-export type CreateMultisigTransactionResponse =
-  AdenaResponse<CreateMultisigTransactionResponseData>;
+export type CreateMultisigTransactionResponse = AdenaResponse<
+  CreateMultisigTransactionResponseData
+>;
 
 /**
  * Response data for signing a multisig document
@@ -136,8 +139,9 @@ export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult;
 /**
  * Response for broadcasting a multisig transaction
  */
-export type BroadcastMultisigTransactionResponse =
-  AdenaResponse<BroadcastMultisigTransactionResponseData>;
+export type BroadcastMultisigTransactionResponse = AdenaResponse<
+  BroadcastMultisigTransactionResponseData
+>;
 
 export interface UnsignedTransaction {
   msgs: Array<{
@@ -170,7 +174,7 @@ export interface SignedTransaction {
 }
 
 export interface MultisigTransactionDocument {
-  tx: UnsignedTransaction;
+  tx: RawTx;
   chainId: string;
   accountNumber: string;
   sequence: string;

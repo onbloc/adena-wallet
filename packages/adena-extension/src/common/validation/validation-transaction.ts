@@ -1,6 +1,6 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { Account, isMultisigAccount } from 'adena-module';
 import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { Account, isMultisigAccount, RawTxMessageType } from 'adena-module';
 
 export const validateInjectionData = (requestData: InjectionMessage): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
@@ -10,6 +10,30 @@ export const validateInjectionData = (requestData: InjectionMessage): InjectionM
       requestData?.key,
     );
   }
+  return null;
+};
+
+export const validateInjectionDataWithAddressByRawTx = (
+  requestData: InjectionMessage,
+  address: string,
+  skipCallerCheck?: boolean,
+): InjectionMessage | null => {
+  if (!validateInjectionTransactionTypeByRawTx(requestData)) {
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.UNSUPPORTED_TYPE,
+      { message: 'Unsupported transaction type' },
+      requestData?.key,
+    );
+  }
+
+  if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
+    return InjectionMessageInstance.failure(
+      WalletResponseFailureType.ACCOUNT_MISMATCH,
+      { requestData, address },
+      requestData?.key,
+    );
+  }
+
   return null;
 };
 
@@ -51,7 +75,7 @@ export const validateInjectionDataForMultisig = (
     );
   }
 
-  return validateInjectionDataWithAddress(requestData, address, skipCallerCheck);
+  return validateInjectionDataWithAddressByRawTx(requestData, address, skipCallerCheck);
 };
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
@@ -59,6 +83,13 @@ export const validateInjectionTransactionType = (requestData: InjectionMessage):
 
   const msgs = requestData.data?.messages || requestData.data?.msgs || [];
   return msgs.every((message: any) => messageTypes.includes(message?.type));
+};
+
+export const validateInjectionTransactionTypeByRawTx = (requestData: InjectionMessage): any => {
+  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
+
+  const msgs = requestData.data?.msg || [];
+  return msgs.every((message: RawTxMessageType) => messageTypes.includes(message['@type']));
 };
 
 export const validateInjectionTransactionMessageWithAddress = (

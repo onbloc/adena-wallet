@@ -1,18 +1,18 @@
 import {
-  MsgEndpoint,
-  MsgSend,
   Any,
   MemFile,
   MemPackage,
   MsgAddPackage,
   MsgCall,
+  MsgEndpoint,
   MsgRun,
+  MsgSend,
 } from '@gnolang/gno-js-client';
 import { PubKeySecp256k1, Tx, TxFee, TxSignature } from '@gnolang/tm2-js-client';
 import { PubKeyMultisig } from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
 import Long from 'long';
 
-import { fromBase64 } from '../encoding';
+import { fromBase64, toBase64 } from '../encoding';
 
 export interface Document {
   chain_id: string;
@@ -160,6 +160,45 @@ function encodeMessageValue(message: { type: string; value: any }) {
       });
     }
   }
+}
+
+export function combineMultisigPublicKey(pubKeys: RawPubKey[], threshold: number): RawPubKey {
+  if (pubKeys.length === 0) {
+    throw new Error('No public keys provided');
+  }
+
+  if (pubKeys.length < threshold) {
+    throw new Error('Insufficient public keys provided');
+  }
+
+  const multisigPubKey = {
+    threshold: threshold,
+    pubkeys:
+      pubKeys?.map((pk) => ({
+        type_url: pk['@type'],
+        value: PubKeySecp256k1.encode({
+          key: fromBase64(pk.value),
+        }).finish(),
+      })) || [],
+  };
+
+  const resultPubKey = Any.create({
+    type_url: '/tm.PubKeyMultisig',
+    value: PubKeyMultisig.encode({
+      k: Long.fromNumber(multisigPubKey.threshold),
+      pub_keys: multisigPubKey.pubkeys.map((pk) =>
+        Any.create({
+          type_url: pk.type_url,
+          value: pk.value,
+        }),
+      ),
+    }).finish(),
+  });
+
+  return {
+    '@type': resultPubKey.type_url,
+    value: toBase64(resultPubKey.value),
+  };
 }
 
 export function documentToTx(document: Document): Tx {
@@ -311,14 +350,18 @@ export type RawTxMessageType =
 export interface RawTx {
   msg: RawTxMessageType[];
   fee: { gas_wanted: string; gas_fee: string };
-  signatures: {
-    pub_key: {
-      '@type': string;
-      value: string;
-    };
-    signature: string;
-  }[];
+  signatures: RawSignature[] | null;
   memo: string;
+}
+
+export interface RawPubKey {
+  '@type': string;
+  value: string;
+}
+
+export interface RawSignature {
+  pub_key: RawPubKey;
+  signature: string;
 }
 
 /**
@@ -337,8 +380,12 @@ export const strToSignedTx = (str: string): Tx | null => {
 
   if (rawTx === null) return null;
 
+  return rawTxToTx(rawTx);
+};
+
+export const rawTxToTx = (rawTx: RawTx): Tx | null => {
   try {
-    const document = rawTx as RawTx;
+    const document = rawTx;
     const messages: Any[] = document.msg
       .map((msg) => ({
         type: msg['@type'],
@@ -347,30 +394,44 @@ export const strToSignedTx = (str: string): Tx | null => {
       .map(encodeMessageValue);
     return {
       messages,
+
       fee: TxFee.create({
         gas_wanted: document.fee.gas_wanted,
         gas_fee: document.fee.gas_fee,
       }),
-      signatures: document.signatures.map((signature) => {
-        const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
-        const wrappedPublicKeyValue: PubKeySecp256k1 = {
-          key: publicKeyBytes,
-        };
-        const publicKeyTypeUrl = signature?.pub_key['@type'] || '';
-        const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
-        const signatureBytes = fromBase64(signature?.signature || '');
-        return TxSignature.create({
-          pub_key: {
-            type_url: publicKeyTypeUrl,
-            value: encodedPublicKeyBytes,
-          },
-          signature: signatureBytes,
-        });
-      }),
+      signatures: (document.signatures || []).map(rawSignatureToTxSignature),
       memo: document.memo,
     };
   } catch (e) {
     console.error(e);
     return null;
   }
+};
+
+const rawSignatureToTxSignature = (signature: RawSignature): TxSignature => {
+  const signatureType = signature.pub_key['@type'];
+
+  if (signatureType === '/tm.PubKeyMultisig') {
+    return TxSignature.create({
+      pub_key: {
+        type_url: signatureType,
+        value: fromBase64(signature.pub_key.value),
+      },
+      signature: fromBase64(signature.signature),
+    });
+  }
+
+  const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
+  const wrappedPublicKeyValue: PubKeySecp256k1 = {
+    key: publicKeyBytes,
+  };
+  const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
+  const signatureBytes = fromBase64(signature?.signature || '');
+  return TxSignature.create({
+    pub_key: {
+      type_url: signatureType,
+      value: encodedPublicKeyBytes,
+    },
+    signature: signatureBytes,
+  });
 };

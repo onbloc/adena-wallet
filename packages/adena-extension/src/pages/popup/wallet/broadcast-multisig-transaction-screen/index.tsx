@@ -1,17 +1,21 @@
-import React from 'react';
 import { MultisigTransactionProvider } from '@common/provider';
-import { useMultisigTransactionContext } from '@hooks/use-context';
-import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
-import { useCurrentAccount } from '@hooks/use-current-account';
 import { CommonFullContentLayout } from '@components/atoms';
-import BroadcastMultisigTransactionUpload from './upload';
+import { useMultisigTransactionContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import React from 'react';
 import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
 import BroadcastTransactionResult from './result';
+import BroadcastMultisigTransactionUpload from './upload';
 
 const BroadcastMultisigTransactionContent: React.FC = () => {
   const { currentAddress } = useCurrentAccount();
-  const { multisigTransactionDocument, signatures, removeSignature, resetMultisigTransaction } =
-    useMultisigTransactionContext();
+  const {
+    transaction,
+    signatures,
+    removeSignature,
+    resetMultisigTransaction,
+  } = useMultisigTransactionContext();
 
   const {
     broadcastTransactionState,
@@ -29,7 +33,7 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
       {broadcastTransactionState === 'IDLE' && (
         <BroadcastMultisigTransactionUpload
           currentAddress={currentAddress}
-          multisigTransactionDocument={multisigTransactionDocument}
+          transaction={transaction}
           transactionInfos={transactionInfos || []}
           rawTransaction={rawTransaction}
           uploadTransaction={uploadMultisigTransaction}
