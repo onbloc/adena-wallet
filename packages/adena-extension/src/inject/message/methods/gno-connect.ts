@@ -5,10 +5,10 @@ import {
   GNO_RPC_META_TAG,
 } from '@common/constants/metatag.constant';
 import {
-  GNO_HELP_MARKER,
   GNO_FUNC_PARAM,
-  GNO_SEND_PARAM,
+  GNO_HELP_MARKER,
   GNO_MAX_DEPOSIT_PARAM,
+  GNO_SEND_PARAM,
 } from '@common/constants/url.constant';
 import { hasHttpProtocol } from '@common/provider/gno/utils';
 
@@ -216,6 +216,76 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
   return messageInfo;
 }
 
+/**
+ * Parses GnoMessageInfo from a form element.
+ * Extracts function information from action-function div data attributes
+ * and parameters from form inputs.
+ *
+ * @param form - The form element to parse
+ * @returns GnoMessageInfo object if valid; otherwise returns null
+ */
+export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
+  // Check if this is a form-exec form
+  if (form.dataset.controller !== 'form-exec') {
+    return null;
+  }
+
+  // Find the action-function container for function metadata
+  const actionFunctionDiv = form.querySelector<HTMLElement>('[data-controller="action-function"]');
+
+  if (!actionFunctionDiv) {
+    return null;
+  }
+
+  const pkgPath = actionFunctionDiv.dataset.actionFunctionPkgpathValue;
+  const funcName = actionFunctionDiv.dataset.actionFunctionNameValue;
+
+  if (!pkgPath || !funcName) {
+    return null;
+  }
+
+  const messageInfo: GnoMessageInfo = {
+    packagePath: pkgPath,
+    functionName: funcName,
+    send: '',
+    maxDeposit: '',
+    args: null,
+  };
+
+  // Extract parameters from form inputs
+  const args: GnoArgumentInfo[] = [];
+  const paramInputs = form.querySelectorAll<HTMLInputElement>('[data-action-function-param-value]');
+
+  const processedParams = new Set<string>();
+
+  paramInputs.forEach((input) => {
+    const paramName = input.dataset.actionFunctionParamValue;
+    if (!paramName) {
+      return;
+    }
+
+    if (processedParams.has(paramName)) {
+      return;
+    }
+
+    processedParams.add(paramName);
+
+    const paramValue = input.value || '';
+
+    args.push({
+      index: args.length,
+      key: paramName,
+      value: paramValue,
+    });
+  });
+
+  if (args.length > 0) {
+    messageInfo.args = args;
+  }
+
+  return messageInfo;
+}
+
 export function shouldIntercept(href: string): boolean {
   const gnoMessageInfo = parseGnoMessageInfo(href);
   if (!gnoMessageInfo) {
@@ -247,11 +317,33 @@ export function shouldInterceptForm(target: EventTarget | null): boolean {
 
   const element = target as HTMLElement;
 
-  if (!element.matches('article.b-action-function form.params')) {
+  // Check for action function form (params form inside action-function article)
+  if (element.matches('form.params') && element.closest('article.b-action-function')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Checks if a form element is a valid Gnoweb action function form.
+ *
+ * @param target - The event target to check
+ * @returns true if the target is a valid Gnoweb form; otherwise false
+ */
+export function shouldInterceptExecForm(target: EventTarget | null): boolean {
+  if (!target) {
     return false;
   }
 
-  return true;
+  const element = target as HTMLElement;
+
+  // Check for form-exec controller (gnoweb exec form)
+  if (element.matches('form[data-controller="form-exec"]')) {
+    return true;
+  }
+
+  return false;
 }
 
 export function getUrlPathWithoutProtocol(url: string): string {

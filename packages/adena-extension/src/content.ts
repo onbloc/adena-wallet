@@ -3,15 +3,18 @@ import { EventMessageData } from '@inject/message';
 import { CommandHandler } from '@inject/message/command-handler';
 import { CommandMessage, CommandMessageData } from '@inject/message/command-message';
 import {
+  GnoMessageInfo,
   parseGnoConnectInfo,
-  parseGnoMessageInfo,
+  parseGnoExecFormInfo,
   parseGnoFormInfo,
+  parseGnoMessageInfo,
   shouldIntercept,
-  shouldRegisterInterceptor,
+  shouldInterceptExecForm,
   shouldInterceptForm,
+  shouldRegisterInterceptor,
 } from '@inject/message/methods/gno-connect';
-import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
 import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
+import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
 
 const loadScript = (): void => {
   const container = document.head || document.documentElement;
@@ -189,15 +192,10 @@ const initFormSubmitIntercept = (): void => {
   document.addEventListener(
     'submit',
     (e) => {
-      // Check if it's a Gnoweb action function form
-      if (!shouldInterceptForm(e.target)) {
-        return;
-      }
-
       const form = e.target as HTMLFormElement;
 
       // Parse form data into GnoMessageInfo
-      const gnoMessageInfo = parseGnoFormInfo(form);
+      const gnoMessageInfo = handleGnoFormSubmit(form);
       if (gnoMessageInfo === null) {
         return;
       }
@@ -214,6 +212,18 @@ const initFormSubmitIntercept = (): void => {
     },
     true,
   );
+};
+
+const handleGnoFormSubmit = (form: HTMLFormElement): GnoMessageInfo | null => {
+  if (shouldInterceptForm(form)) {
+    return parseGnoFormInfo(form);
+  }
+
+  if (shouldInterceptExecForm(form)) {
+    return parseGnoExecFormInfo(form);
+  }
+
+  return null;
 };
 
 /**
