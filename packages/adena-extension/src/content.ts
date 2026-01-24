@@ -1,16 +1,8 @@
 import { EVENT_KEYS } from '@common/constants/event-key.constant';
 import { EventMessageData } from '@inject/message';
 import { CommandHandler } from '@inject/message/command-handler';
-import { CommandMessage, CommandMessageData } from '@inject/message/command-message';
-import {
-  parseGnoConnectInfo,
-  parseGnoMessageInfo,
-  parseGnoFormInfo,
-  shouldIntercept,
-  shouldRegisterInterceptor,
-  shouldInterceptForm,
-} from '@inject/message/methods/gno-connect';
-import { GnoWebEventWatcher } from '@inject/message/methods/gno-web-event-watcher';
+import { CommandMessageData } from '@inject/message/command-message';
+import { GnoInterceptorManager } from '@inject/message/methods/gno-interceptor-manager';
 import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
 
 const loadScript = (): void => {
@@ -104,116 +96,15 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
 };
 
 /**
- * Initializes anchor intercept for gno web tx link.
- * This function checks if the current page is a gno web tx link
- * and if so, intercepts anchor clicks to handle gno web tx link.
- *
- * @returns void
+ * Initialize GNO interceptors
+ * Uses GnoInterceptorManager to register anchor, form submit, and event watcher interceptors
  */
-const initAnchorIntercept = (): void => {
-  if (!shouldRegisterInterceptor()) {
-    return;
-  }
+const initGnoInterceptors = (): void => {
+  const manager = GnoInterceptorManager.getInstance();
 
-  const gnoConnectInfo = parseGnoConnectInfo();
-
-  document.addEventListener(
-    'click',
-    (e) => {
-      const anchor = (e.target as HTMLElement).closest('a');
-      if (!anchor?.href) return;
-
-      const url = new URL(anchor.href, location.origin);
-      if (!shouldIntercept(url.href)) {
-        return;
-      }
-
-      const gnoMessageInfo = parseGnoMessageInfo(url.href);
-      if (gnoMessageInfo === null) {
-        return;
-      }
-
-      e.preventDefault();
-
-      CommandHandler.createContentHandler(
-        CommandMessage.command('checkMetadata', {
-          gnoMessageInfo,
-          gnoConnectInfo,
-        }),
-      );
-    },
-    true,
-  );
-};
-
-/**
- * Initialize GnoWebEventWatcher
- * Subscribes to Gnoweb custom events and forwards to background
- */
-const initGnoWebEventWatcher = (): void => {
-  if (!shouldRegisterInterceptor()) {
-    return;
-  }
-
-  const watcher = new GnoWebEventWatcher((message: GnoSessionUpdateMessage) => {
+  manager.initialize((message: GnoSessionUpdateMessage) => {
     sendGnoSessionUpdate(message);
   });
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      watcher.start();
-    });
-  } else {
-    watcher.start();
-  }
-
-  window.addEventListener('beforeunload', () => {
-    watcher.stop();
-  });
-};
-
-/**
- * Initializes form submit intercept for Gnoweb action functions.
- * This function intercepts form submissions and opens Adena popup instead.
- *
- * @returns void
- */
-const initFormSubmitIntercept = (): void => {
-  // Check if gno:connect meta tag exists
-  if (!shouldRegisterInterceptor()) {
-    return;
-  }
-
-  const gnoConnectInfo = parseGnoConnectInfo();
-
-  document.addEventListener(
-    'submit',
-    (e) => {
-      // Check if it's a Gnoweb action function form
-      if (!shouldInterceptForm(e.target)) {
-        return;
-      }
-
-      const form = e.target as HTMLFormElement;
-
-      // Parse form data into GnoMessageInfo
-      const gnoMessageInfo = parseGnoFormInfo(form);
-      if (gnoMessageInfo === null) {
-        return;
-      }
-
-      e.preventDefault();
-      e.stopPropagation();
-
-      CommandHandler.createContentHandler(
-        CommandMessage.command('checkMetadata', {
-          gnoMessageInfo,
-          gnoConnectInfo,
-        }),
-      );
-    },
-    true,
-  );
 };
 
 /**
@@ -237,9 +128,7 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
   }
 };
 
-initAnchorIntercept();
-initFormSubmitIntercept();
-initGnoWebEventWatcher();
+initGnoInterceptors();
 loadScript();
 initListener();
 initExtensionListener();
