@@ -1,6 +1,6 @@
 // packages/adena-extension/src/inject/message/methods/gno-web-event-watcher.ts
 
-import { parseGnoConnectInfo } from './gno-connect';
+import { GnoConnectInfoProvider } from './gno-connect-info-provider';
 import { GnoSessionUpdateMessage } from './gno-session';
 
 /**
@@ -29,9 +29,11 @@ export class GnoWebEventWatcher {
   private onUpdate: UpdateCallback;
   private sessions: Map<string, SessionState> = new Map();
   private eventHandlers: Map<string, EventListener> = new Map();
+  private readonly connectInfoProvider: GnoConnectInfoProvider;
 
   constructor(onUpdate: UpdateCallback) {
     this.onUpdate = onUpdate;
+    this.connectInfoProvider = GnoConnectInfoProvider.getInstance();
   }
 
   /**
@@ -181,7 +183,7 @@ export class GnoWebEventWatcher {
    * Extract gno-connect info from meta tag
    */
   private getConnectInfo(): { chainId: string; rpc: string } {
-    const connectInfo = parseGnoConnectInfo();
+    const connectInfo = this.connectInfoProvider.getConnectInfo();
     return {
       chainId: connectInfo?.chainId || '',
       rpc: connectInfo?.rpc || '',

@@ -286,22 +286,32 @@ export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | nu
   return messageInfo;
 }
 
+/**
+ * Checks if a URL should be intercepted based on GNO help marker presence
+ * This is a lightweight check that doesn't parse the full message info
+ *
+ * @param href - The URL to check
+ * @returns true if the URL contains GNO help marker; otherwise false
+ */
 export function shouldIntercept(href: string): boolean {
-  const gnoMessageInfo = parseGnoMessageInfo(href);
-  if (!gnoMessageInfo) {
+  try {
+    const url = new URL(href);
+    return url.pathname.includes(GNO_HELP_MARKER);
+  } catch {
     return false;
   }
-
-  return true;
 }
 
+/**
+ * Checks if interceptors should be registered
+ * This checks if GNO connect info is available in the document
+ *
+ * @returns true if GNO connect info is available; otherwise false
+ * @deprecated Use GnoConnectInfoProvider.shouldRegister() instead
+ */
 export function shouldRegisterInterceptor(): boolean {
-  const gnoMessageInfo = parseGnoConnectInfo();
-  if (!gnoMessageInfo) {
-    return false;
-  }
-
-  return true;
+  const gnoConnectInfo = parseGnoConnectInfo();
+  return gnoConnectInfo !== null;
 }
 
 /**
