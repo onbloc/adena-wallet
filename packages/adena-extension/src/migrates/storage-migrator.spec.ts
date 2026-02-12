@@ -67,7 +67,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(15);
+    expect(migrated?.version).toBe(16);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.NETWORKS).toHaveLength(3);
     expect(migrated?.data.CURRENT_CHAIN_ID).toBe('');
@@ -85,7 +85,7 @@ describe('StorageMigrator', () => {
     const migrated = await migrator.migrate(current, '123');
 
     expect(migrated).not.toBeNull();
-    expect(migrated?.version).toBe(15);
+    expect(migrated?.version).toBe(16);
     expect(migrated?.data).not.toBeNull();
     expect(migrated?.data.SERIALIZED).not.toBe('');
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
