@@ -8,7 +8,7 @@
     "networkId": "test11",
     "networkName": "Testnet 11",
     "addressPrefix": "g",
-    "rpcUrl": "https://test11.onbloc.xyz:443",
+    "rpcUrl": "https://rpc.test11.testnets.gno.land:443",
     "indexerUrl": "https://test11.indexer.onbloc.xyz",
     "gnoUrl": "https://test11.testnets.gno.land",
     "apiUrl": "https://test11.api.onbloc.xyz",
