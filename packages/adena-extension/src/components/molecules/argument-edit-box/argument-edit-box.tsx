@@ -118,7 +118,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   }, [editableValue, editRightMargin]);
 
   return (
-    <ArgumentEditBoxWrapper marginRight={marginRight}>
+    <ArgumentEditBoxWrapper $marginRight={marginRight}>
       {editableValue ? (
         <div className='editable-wrapper'>
           <input

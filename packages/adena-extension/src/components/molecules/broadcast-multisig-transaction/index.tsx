@@ -171,7 +171,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
   }
 
   return (
-    <ApproveTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <ApproveTransactionWrapper $isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>

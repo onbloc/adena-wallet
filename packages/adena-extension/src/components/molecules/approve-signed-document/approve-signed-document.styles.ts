@@ -8,7 +8,7 @@ export const ApproveSignedDocumentSignerWrapper = styled.div`
   padding: 24px 20px;
 `;
 
-export const ApproveSignedDocumentWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
+export const ApproveSignedDocumentWrapper = styled.div<{ $isErrorNetworkFee: boolean }>`
   ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding: 0 20px;

@@ -107,7 +107,7 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   }
 
   return (
-    <ApproveSignedDocumentWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <ApproveSignedDocumentWrapper $isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>
