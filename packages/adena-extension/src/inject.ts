@@ -9,6 +9,7 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionResponse,
+  ContractOptions,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigTransactionParams,
@@ -39,10 +40,11 @@ const init = (): void => {
     },
     async DoContract(
       message: TransactionParams,
-      withNotification = true,
+      options?: ContractOptions,
     ): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.doContract(message, withNotification);
+      const { withNotification = true, isVisibleResult = true } = options ?? {};
+      const response = await executor.doContract(message, { withNotification, isVisibleResult });
       return response;
     },
     async GetAccount(): Promise<GetAccountResponse> {
@@ -96,11 +98,13 @@ const init = (): void => {
     async BroadcastMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
       multisigSignatures?: Signature[],
+      options?: ContractOptions,
     ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.broadcastMultisigTransaction(
         multisigDocument,
         multisigSignatures,
+        options,
       );
       return response;
     },

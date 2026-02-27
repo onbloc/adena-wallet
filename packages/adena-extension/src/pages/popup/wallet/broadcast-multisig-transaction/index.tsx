@@ -446,11 +446,21 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     );
   };
 
+  const isVisibleResult = useMemo(() => {
+    return requestData?.data?.isVisibleResult === true;
+  }, [requestData?.data?.isVisibleResult]);
+
   const onResponseBroadcastTransaction = useCallback(() => {
     if (response) {
+      if (isVisibleResult) {
+        navigate(RoutePath.ApproveTransactionResult, {
+          state: { response },
+        });
+        return;
+      }
       chrome.runtime.sendMessage(response);
     }
-  }, [response]);
+  }, [response, isVisibleResult, navigate]);
 
   const onTimeoutBroadcastTransaction = useCallback(() => {
     chrome.runtime.sendMessage(

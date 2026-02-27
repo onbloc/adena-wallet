@@ -20,6 +20,8 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
   const {
     broadcastTransactionState,
     broadcast,
+    txHash,
+    errorMessage,
     uploadMultisigTransaction,
     uploadSignature,
     transactionInfos,
@@ -47,8 +49,12 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
         />
       )}
       {broadcastTransactionState === 'LOADING' && <BroadcastTransactionLoading />}
-      {broadcastTransactionState === 'SUCCESS' && <BroadcastTransactionResult status='SUCCESS' />}
-      {broadcastTransactionState === 'FAILED' && <BroadcastTransactionResult status='FAILED' />}
+      {broadcastTransactionState === 'SUCCESS' && (
+        <BroadcastTransactionResult status='SUCCESS' txHash={txHash} errorMessage={errorMessage} />
+      )}
+      {broadcastTransactionState === 'FAILED' && (
+        <BroadcastTransactionResult status='FAILED' txHash={txHash} errorMessage={errorMessage} />
+      )}
     </CommonFullContentLayout>
   );
 };

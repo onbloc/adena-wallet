@@ -41,6 +41,7 @@ export enum RoutePath {
   ApproveSignFailed = '/approve/wallet/sign-failed',
   ApproveTransaction = '/approve/wallet/transaction',
   ApproveTransactionLoading = '/approve/wallet/transaction/loading',
+  ApproveTransactionResult = '/approve/wallet/transaction/result',
   ApproveSign = '/approve/wallet/sign',
   ApproveSignLoading = '/approve/wallet/sign/loading',
   ApproveSignTransaction = '/approve/wallet/sign-tx',
@@ -148,6 +149,9 @@ export type RouteParams = {
   [RoutePath.ApproveTransactionLoading]: {
     document?: Document;
     requestData?: InjectionMessage;
+  };
+  [RoutePath.ApproveTransactionResult]: {
+    response: InjectionMessage;
   };
   [RoutePath.ApproveSign]: null;
   [RoutePath.ApproveSignLoading]: {

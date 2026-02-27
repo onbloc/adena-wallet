@@ -38,6 +38,11 @@ export type TransactionParams = {
   arguments?: GnoArgumentInfo[] | null;
 };
 
+export interface ContractOptions {
+  withNotification?: boolean;
+  isVisibleResult?: boolean;
+}
+
 /**
  * Transaction fee structure
  */
