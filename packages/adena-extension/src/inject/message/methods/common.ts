@@ -25,32 +25,32 @@ export const createPopup = async (
   };
 
   chrome.windows.create(popupOption, async (windowResponse) => {
-    chrome.tabs.onUpdated.addListener((tabId, info) => {
-      if (!windowResponse) {
-        return;
+    if (!windowResponse) {
+      return;
+    }
+
+    chrome.windows.onRemoved.addListener((removeWindowId) => {
+      if (windowResponse.id === removeWindowId) {
+        sendResponse(closeMessage);
       }
-      chrome.windows.onRemoved.addListener((removeWindowId) => {
-        if (windowResponse.id === removeWindowId) {
-          sendResponse(closeMessage);
-        }
-      });
+    });
+
+    const onMessageListener = (popupMessage: InjectionMessage): void => {
+      popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
+    };
+
+    chrome.tabs.onUpdated.addListener((tabId, info) => {
       if (info.status === 'complete' && windowResponse.tabs) {
-        chrome.tabs.sendMessage(
-          tabId,
-          {
+        chrome.runtime.onMessage.removeListener(onMessageListener);
+        chrome.runtime.onMessage.addListener(onMessageListener);
+
+        chrome.tabs
+          .sendMessage(tabId, {
             type: message.type,
             data: message,
             called: tabId,
-          },
-          async () => {
-            chrome.runtime.onMessage.addListener((popupMessage) => {
-              chrome.runtime.onMessage.removeListener((popupMessage) =>
-                popupMessageListener(windowResponse.id, message, popupMessage, sendResponse),
-              );
-              popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
-            });
-          },
-        );
+          })
+          .catch(() => undefined);
       }
     });
   });

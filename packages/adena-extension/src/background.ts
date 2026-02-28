@@ -379,6 +379,16 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
   if (changeInfo.status === 'complete') {
     try {
+      const tab = await chrome.tabs.get(tabId).catch(() => null);
+      if (
+        !tab?.url ||
+        tab.url.startsWith('chrome://') ||
+        tab.url.startsWith('chrome-extension://') ||
+        tab.url.startsWith('about:')
+      ) {
+        return;
+      }
+
       chrome.tabs
         .sendMessage(
           tabId,
@@ -387,14 +397,20 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
             gnoConnectInfo: null,
           }),
         )
-        .catch(console.info);
-    } catch (e) {
-      console.warn('Failed to send message(checkMetadata)', e);
+        .catch(() => undefined);
+    } catch {
+      // Tab may have been closed
     }
   }
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Handle ping from content script for connection check
+  if (message?.type === 'ping') {
+    sendResponse({ status: 'pong' });
+    return true;
+  }
+
   // Handle Gno session updates from content script
   if (isGnoSessionUpdateMessage(message)) {
     handleGnoSessionUpdate(message, sender);

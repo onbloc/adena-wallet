@@ -38,20 +38,27 @@ const initListener = (): void => {
 };
 
 const initExtensionListener = (): void => {
-  chrome.runtime.onMessage.addListener((message: EventMessageData | CommandMessageData) => {
-    if (message.status === 'event') {
-      const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {
-        detail: message.data,
-      });
+  chrome.runtime.onMessage.addListener(
+    (message: EventMessageData | CommandMessageData, _sender, sendResponse) => {
+      if (message.status === 'event') {
+        const changedAccountEvent = new CustomEvent(EVENT_KEYS[message.type], {
+          detail: message.data,
+        });
 
-      window.dispatchEvent(changedAccountEvent);
-      return;
-    }
+        window.dispatchEvent(changedAccountEvent);
+        sendResponse({ received: true });
+        return;
+      }
 
-    if (message.status === 'command') {
-      return CommandHandler.createContentHandler(message);
-    }
-  });
+      if (message.status === 'command') {
+        const result = CommandHandler.createContentHandler(message);
+        sendResponse({ received: true, result });
+        return;
+      }
+
+      sendResponse({ received: true });
+    },
+  );
 };
 
 const sendMessage = async (event: MessageEvent): Promise<void> => {
@@ -122,7 +129,9 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
       return;
     }
 
-    chrome.runtime.sendMessage(message);
+    chrome.runtime.sendMessage(message).catch((error) => {
+      console.warn('Failed to send GnoSessionUpdate:', error);
+    });
   } catch {
     console.warn('Failed to send GnoSessionUpdateMessage to background');
   }
