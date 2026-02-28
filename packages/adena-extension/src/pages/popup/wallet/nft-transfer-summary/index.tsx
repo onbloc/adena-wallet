@@ -5,12 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { GasToken } from '@common/constants/token.constant';
+import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
+import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
@@ -35,8 +38,15 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const { openScannerLink } = useLink();
   const { memorizedTransferInfo, setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
+  const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
+  const [transferResult, setTransferResult] = useState<{
+    status: 'SUCCESS' | 'FAILED';
+    hash?: string | null;
+    errorMessage?: string | null;
+  } | null>(null);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
@@ -157,15 +167,36 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      createTransaction().then(createNotificationSendMessage);
-      navigate(RoutePath.History);
-    } catch (e) {
-      if (!(e instanceof Error)) {
-        return false;
+      setScreenState('LOADING');
+      const response = await createTransaction();
+      createNotificationSendMessage(response);
+
+      const txHash = response?.hash || null;
+      if (txHash) {
+        setTransferResult({
+          status: 'SUCCESS',
+          hash: txHash,
+        });
+      } else {
+        setTransferResult({
+          status: 'FAILED',
+          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
+        });
       }
+
+      setScreenState('RESULT');
+      setIsSent(false);
+      return Boolean(txHash);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      setTransferResult({
+        status: 'FAILED',
+        errorMessage,
+      });
+      setScreenState('RESULT');
+      setIsSent(false);
+      return false;
     }
-    setIsSent(false);
-    return false;
   }, [createTransaction]);
 
   const transferByLedger = useCallback(async () => {
@@ -206,6 +237,22 @@ const NFTTransferSummaryContainer: React.FC = () => {
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
 
+  const onClickViewHistory = useCallback(() => {
+    navigate(RoutePath.History);
+  }, [navigate]);
+
+  const onClickCloseResult = useCallback(() => {
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
+
+  const onClickViewGnoscan = useCallback(() => {
+    if (!transferResult?.hash) {
+      return;
+    }
+
+    openScannerLink('/transactions/details', { txhash: transferResult.hash });
+  }, [transferResult?.hash, openScannerLink]);
+
   useEffect(() => {
     createDocument().then((doc) => {
       if (!doc) {
@@ -224,7 +271,17 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
   return (
     <NFTTransferSummaryLayout>
-      {openedNetworkFeeSetting ? (
+      {screenState === 'LOADING' ? (
+        <BroadcastTransactionLoading />
+      ) : screenState === 'RESULT' && transferResult ? (
+        <TransactionResult
+          status={transferResult.status}
+          errorMessage={transferResult.errorMessage}
+          onClickViewHistory={onClickViewHistory}
+          onClickViewGnoscan={onClickViewGnoscan}
+          onClickClose={onClickCloseResult}
+        />
+      ) : openedNetworkFeeSetting ? (
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
           onClickBack={onClickNetworkFeeClose}

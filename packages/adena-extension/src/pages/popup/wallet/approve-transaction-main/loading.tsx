@@ -3,20 +3,7 @@ import styled, { useTheme } from 'styled-components';
 
 import { CommonFullContentLayout, Spinner, Text, View } from '@components/atoms';
 
-const StyledLoadingWrapper = styled(View)`
-  margin-top: 56px;
-  gap: 23px;
-  justify-content: center;
-  align-items: center;
-`;
-
-const StyledDescriptionWrapper = styled(View)`
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-`;
-
-const BroadcastTransactionLoading: React.FC = () => {
+const ApproveTransactionLoading: React.FC = () => {
   const theme = useTheme();
 
   return (
@@ -36,4 +23,17 @@ const BroadcastTransactionLoading: React.FC = () => {
   );
 };
 
-export default BroadcastTransactionLoading;
+export default ApproveTransactionLoading;
+
+const StyledLoadingWrapper = styled(View)`
+  margin-top: 56px;
+  gap: 23px;
+  justify-content: center;
+  align-items: center;
+`;
+
+const StyledDescriptionWrapper = styled(View)`
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+`;

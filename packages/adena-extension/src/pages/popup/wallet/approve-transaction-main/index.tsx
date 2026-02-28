@@ -18,14 +18,13 @@ import {
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
+import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
-import { validateMessageArguments } from '@common/utils/argument-validation';
-import { getTransactionErrorDetail } from '@common/utils/transaction-error-detail';
 import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
@@ -40,6 +39,8 @@ import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
 import { ContractMessage } from '@inject/types';
 import { NetworkMetainfo, RoutePath } from '@types';
+import ApproveTransactionLoading from './loading';
+import ApproveTransactionResult from './result';
 
 interface TransactionData {
   messages: readonly any[];
@@ -111,13 +112,14 @@ const ApproveTransactionContainer: React.FC = () => {
   const [document, setDocument] = useState<Document>();
   const { currentNetwork: currentWalletNetwork } = useNetwork();
   const [currentBalance, setCurrentBalance] = useState(0);
-  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
+  const [screenState, setScreenState] = useState<'APPROVE' | 'LOADING' | 'RESULT'>('APPROVE');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
   const [requiresHoldConfirmation, setRequiresHoldConfirmation] = useState(false);
   const isInitialRenderRef = useRef(true);
+  const isAutoClosedResultRef = useRef(false);
 
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
@@ -131,10 +133,6 @@ const ApproveTransactionContainer: React.FC = () => {
   useEffect(() => {
     changeNetwork(currentNetwork);
   }, [currentNetwork.chainId]);
-
-  const processing = useMemo(() => processType !== 'INIT', [processType]);
-
-  const done = useMemo(() => processType === 'DONE', [processType]);
 
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
@@ -162,6 +160,10 @@ const ApproveTransactionContainer: React.FC = () => {
 
   const useNetworkFeeReturn = useNetworkFee(simulateDocument, true);
   const networkFee = useNetworkFeeReturn.networkFee;
+
+  const isVisibleResult = useMemo(() => {
+    return requestData?.data?.isVisibleResult !== false;
+  }, [requestData?.data?.isVisibleResult]);
 
   const displayNetworkFee = useMemo(() => {
     if (!networkFee) {
@@ -425,8 +427,6 @@ const ApproveTransactionContainer: React.FC = () => {
     }
 
     try {
-      setProcessType('PROCESSING');
-
       const walletInstance = wallet.clone();
       walletInstance.currentAccountId = currentAccount.id;
 
@@ -525,8 +525,11 @@ const ApproveTransactionContainer: React.FC = () => {
       });
       return;
     }
+
+    setScreenState('LOADING');
+    isAutoClosedResultRef.current = false;
     sendTransaction().finally(() => {
-      setProcessType('DONE');
+      setScreenState('RESULT');
     });
   };
 
@@ -596,11 +599,6 @@ const ApproveTransactionContainer: React.FC = () => {
     );
   }, [requestData]);
 
-  const errorDetail = useMemo(() => {
-    if (!response || response.status !== 'failure') return null;
-    return getTransactionErrorDetail(response);
-  }, [response]);
-
   const parsedSimulateErrors = useMemo(() => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
       return { globalErrorMessage: null, messageErrors: [] };
@@ -613,7 +611,12 @@ const ApproveTransactionContainer: React.FC = () => {
     }
 
     return parsed;
-  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage, transactionMessages]);
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    transactionMessages,
+  ]);
 
   const combinedMessageErrors = useMemo(() => {
     const maxLen = Math.max(
@@ -629,13 +632,98 @@ const ApproveTransactionContainer: React.FC = () => {
     return result;
   }, [argumentValidationErrors, parsedSimulateErrors]);
 
-  const onCloseWithResponse = useCallback(() => {
+  const onClickViewHistoryResult = useCallback(() => {
     if (response) {
       chrome.runtime.sendMessage(response);
+      navigate(RoutePath.History);
+    } else {
+      onTimeoutSendTransaction();
+      navigate(RoutePath.History);
     }
+  }, [response, onTimeoutSendTransaction, navigate]);
+
+  const onClickViewGnoscanResult = useCallback(() => {
+    if (!response || response.status !== 'success') {
+      return;
+    }
+
+    const txHash =
+      response?.data?.hash ||
+      response?.data?.txhash ||
+      response?.data?.txHash ||
+      response?.data?.transactionHash;
+
+    if (!txHash || typeof txHash !== 'string') {
+      return;
+    }
+
+    openScannerLink('/transactions/details', { txhash: txHash });
+  }, [response, openScannerLink]);
+
+  const onClickCloseResult = useCallback(() => {
+    if (response) {
+      chrome.runtime.sendMessage(response);
+    } else {
+      onTimeoutSendTransaction();
+    }
+
     window.close();
+  }, [response, onTimeoutSendTransaction]);
+
+  const resultStatus = useMemo<'SUCCESS' | 'FAILED'>(() => {
+    if (response?.status === 'success') {
+      return 'SUCCESS';
+    }
+
+    return 'FAILED';
+  }, [response?.status]);
+
+  const resultErrorMessage = useMemo<string | null>(() => {
+    const error = response?.data?.error;
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (error && typeof error?.message === 'string') {
+      return error.message;
+    }
+
+    return null;
   }, [response]);
 
+  useEffect(() => {
+    if (screenState !== 'RESULT') {
+      return;
+    }
+
+    if (isVisibleResult) {
+      return;
+    }
+
+    if (isAutoClosedResultRef.current) {
+      return;
+    }
+
+    isAutoClosedResultRef.current = true;
+    onClickCloseResult();
+  }, [screenState, isVisibleResult, onClickCloseResult]);
+
+  if (screenState === 'LOADING') {
+    return <ApproveTransactionLoading />;
+  }
+
+  if (screenState === 'RESULT') {
+    return (
+      <ApproveTransactionResult
+        status={resultStatus}
+        errorMessage={resultErrorMessage}
+        onClickViewHistory={onClickViewHistoryResult}
+        onClickViewGnoscan={onClickViewGnoscanResult}
+        onClickClose={onClickCloseResult}
+      />
+    );
+  }
   return (
     <ApproveTransaction
       title='Approve Transaction'
@@ -644,8 +732,8 @@ const ApproveTransactionContainer: React.FC = () => {
       memo={memo}
       hasMemo={hasMemo}
       loading={transactionData === undefined}
-      processing={processing}
-      done={done}
+      processing={false}
+      done={false}
       logo={favicon}
       currentBalance={currentBalance}
       maxDepositAmount={maxDepositAmount}
@@ -666,8 +754,6 @@ const ApproveTransactionContainer: React.FC = () => {
       transactionData={JSON.stringify(document, null, 2)}
       requiresHoldConfirmation={requiresHoldConfirmation}
       onFinishHold={handleFinishHold}
-      errorDetail={errorDetail}
-      onCloseWithResponse={onCloseWithResponse}
       simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
       messageErrors={combinedMessageErrors}
       hasArgumentValidationError={hasArgumentValidationError}

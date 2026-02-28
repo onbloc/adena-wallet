@@ -9,6 +9,7 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionResponse,
+  ContractOptions,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigTransactionParams,
@@ -39,10 +40,17 @@ const init = (): void => {
     },
     async DoContract(
       message: TransactionParams,
-      withNotification = true,
+      options?: ContractOptions | boolean,
     ): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
-      const response = await executor.doContract(message, withNotification);
+
+      // Supports boolean for backward compatibility with the previous API signature
+      const resolved =
+        typeof options === 'boolean'
+          ? { withNotification: options, isVisibleResult: options }
+          : options;
+      const { withNotification = true, isVisibleResult = true } = resolved ?? {};
+      const response = await executor.doContract(message, { withNotification, isVisibleResult });
       return response;
     },
     async GetAccount(): Promise<GetAccountResponse> {
@@ -96,11 +104,13 @@ const init = (): void => {
     async BroadcastMultisigTransaction(
       multisigDocument: MultisigTransactionDocument,
       multisigSignatures?: Signature[],
+      options?: ContractOptions,
     ): Promise<BroadcastMultisigTransactionResponse> {
       const executor = new AdenaExecutor();
       const response = await executor.broadcastMultisigTransaction(
         multisigDocument,
         multisigSignatures,
+        options,
       );
       return response;
     },
@@ -118,7 +128,7 @@ const init = (): void => {
       switch (eventName) {
         case 'changedAccount':
         case 'changedNetwork':
-          window.addEventListener<typeof EVENT_KEYS[typeof eventName]>(
+          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
             (event) => callbackCustomEvent<string>(event, callback),
             true,
@@ -131,7 +141,7 @@ const init = (): void => {
     },
   };
 
-  window.adena = (adena as unknown) as AdenaWallet;
+  window.adena = adena as unknown as AdenaWallet;
 };
 
 init();

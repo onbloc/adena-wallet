@@ -27,13 +27,13 @@ import ApproveSign from '@pages/popup/wallet/approve-sign';
 import ApproveSignLedgerLoading from '@pages/popup/wallet/approve-sign-ledger-loading';
 import ApproveSignTransaction from '@pages/popup/wallet/approve-sign-transaction';
 import ApproveSignTransactionLedgerLoading from '@pages/popup/wallet/approve-sign-transaction-ledger-loading';
-import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
-import CreateMultisigTransactionContainer from '@pages/popup/wallet/create-multisig-transaction';
-import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
-import BroadcastMultisigTransactionContainer from '@pages/popup/wallet/broadcast-multisig-transaction';
 import ApproveTransactionLedgerLoading from '@pages/popup/wallet/approve-transaction-ledger-loading';
 import ApproveTransactionMain from '@pages/popup/wallet/approve-transaction-main';
+import ApproveTransactionResult from '@pages/popup/wallet/approve-transaction-result';
+import BroadcastMultisigTransactionContainer from '@pages/popup/wallet/broadcast-multisig-transaction';
 import BroadcastTransactionScreen from '@pages/popup/wallet/broadcast-transaction-screen';
+import CreateMultisigAccountContainer from '@pages/popup/wallet/create-multisig-account';
+import CreateMultisigTransactionContainer from '@pages/popup/wallet/create-multisig-transaction';
 import { Deposit } from '@pages/popup/wallet/deposit';
 import EditCustomNetworkPage from '@pages/popup/wallet/edit-custom-network';
 import { Explore } from '@pages/popup/wallet/explore';
@@ -42,6 +42,7 @@ import ManageToken from '@pages/popup/wallet/manage-token';
 import ManageTokenAdded from '@pages/popup/wallet/manage-token-added';
 import { Nft } from '@pages/popup/wallet/nft';
 import { WalletSearch } from '@pages/popup/wallet/search';
+import SignMultisigTransactionContainer from '@pages/popup/wallet/sign-multisig-transaction';
 import { Staking } from '@pages/popup/wallet/staking';
 import { TokenDetails } from '@pages/popup/wallet/token-details';
 import { TransactionDetail } from '@pages/popup/wallet/transaction-detail';
@@ -58,17 +59,17 @@ import { CreatePassword } from '@pages/popup/certify/create-password';
 import { LaunchAdena } from '@pages/popup/certify/launch-adena';
 import AccountInitializationPage from '@pages/popup/wallet/account-initialization';
 import ApproveSignFailedScreen from '@pages/popup/wallet/approve-sign-failed-screen';
+import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
 import ManageNFT from '@pages/popup/wallet/manage-nft';
 import NFTTransferInput from '@pages/popup/wallet/nft-transfer-input';
 import NFTTransferSummary from '@pages/popup/wallet/nft-transfer-summary';
 import { NftCollection } from '@pages/popup/wallet/nft/collection';
 import { NftCollectionAsset } from '@pages/popup/wallet/nft/collection-asset';
+import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 import { Header } from './header';
 import LoadingMain from './loading-main';
 import { Navigation } from './navigation';
 import ToastContainer from './toast-container';
-import BroadcastMultisigTransactionScreen from '@pages/popup/wallet/broadcast-multisig-transaction-screen';
-import SignMultisigTransactionScreen from '@pages/popup/wallet/sign-multisig-transaction-screen';
 
 export const PopupRouter = (): JSX.Element => {
   const { failedNetwork } = useNetwork();
@@ -131,6 +132,7 @@ export const PopupRouter = (): JSX.Element => {
           path={RoutePath.ApproveTransactionLoading}
           element={<ApproveTransactionLedgerLoading />}
         />
+        <Route path={RoutePath.ApproveTransactionResult} element={<ApproveTransactionResult />} />
         <Route path={RoutePath.ApproveSign} element={<ApproveSign />} />
         <Route path={RoutePath.ApproveSignLoading} element={<ApproveSignLedgerLoading />} />
         <Route path={RoutePath.ApproveSignTransaction} element={<ApproveSignTransaction />} />
