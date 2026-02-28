@@ -40,10 +40,16 @@ const init = (): void => {
     },
     async DoContract(
       message: TransactionParams,
-      options?: ContractOptions,
+      options?: ContractOptions | boolean,
     ): Promise<DoContractResponse> {
       const executor = new AdenaExecutor();
-      const { withNotification = true, isVisibleResult = true } = options ?? {};
+
+      // Supports boolean for backward compatibility with the previous API signature
+      const resolved =
+        typeof options === 'boolean'
+          ? { withNotification: options, isVisibleResult: options }
+          : options;
+      const { withNotification = true, isVisibleResult = true } = resolved ?? {};
       const response = await executor.doContract(message, { withNotification, isVisibleResult });
       return response;
     },
@@ -122,7 +128,7 @@ const init = (): void => {
       switch (eventName) {
         case 'changedAccount':
         case 'changedNetwork':
-          window.addEventListener<typeof EVENT_KEYS[typeof eventName]>(
+          window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
             (event) => callbackCustomEvent<string>(event, callback),
             true,
@@ -135,7 +141,7 @@ const init = (): void => {
     },
   };
 
-  window.adena = (adena as unknown) as AdenaWallet;
+  window.adena = adena as unknown as AdenaWallet;
 };
 
 init();
