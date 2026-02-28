@@ -1,11 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import { BottomFixedButton, BottomFixedLoadingButtonGroup } from '@components/molecules';
 
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
+import IconFailed from '@assets/connect-fail-permission.svg';
+import { TransactionErrorDetail as TransactionErrorDetailType } from '@common/utils/transaction-error-detail';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
 import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
@@ -53,6 +55,16 @@ export interface ApproveTransactionProps {
   useNetworkFeeReturn: UseNetworkFeeReturn;
   requiresHoldConfirmation?: boolean;
   onFinishHold?: (finished: boolean) => void;
+  /** When set, shows detailed error UI instead of calling onResponse immediately (user must tap Close) */
+  errorDetail?: TransactionErrorDetailType | null;
+  /** Called when user closes the error view; send failure response then close popup */
+  onCloseWithResponse?: () => void;
+  /** Global error banner message shown between fee section and transaction data (from simulate error) */
+  simulateErrorBannerMessage?: string | null;
+  /** Per-message validation errors - array aligned with transactionMessages */
+  messageErrors?: (string | undefined)[];
+  /** Whether argument type validation failed (disables Approve) */
+  hasArgumentValidationError?: boolean;
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -82,8 +94,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   openScannerLink,
   requiresHoldConfirmation = false,
   onFinishHold,
+  errorDetail = null,
+  onCloseWithResponse,
+  simulateErrorBannerMessage,
+  messageErrors,
+  hasArgumentValidationError = false,
 }) => {
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
+  const [showRawError, setShowRawError] = useState(false);
+  const errorBannerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToError = useRef(false);
 
   const disabledApprove = useMemo(() => {
     if (requiresHoldConfirmation) {
@@ -98,12 +118,17 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
       return true;
     }
 
+    if (hasArgumentValidationError) {
+      return true;
+    }
+
     return Number(networkFee?.amount || 0) <= 0;
   }, [
     requiresHoldConfirmation,
     isErrorNetworkFee,
     useNetworkFeeReturn.isLoading,
     useNetworkFeeReturn.isSimulateError,
+    hasArgumentValidationError,
     networkFee,
   ]);
 
@@ -128,26 +153,12 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [useNetworkFeeReturn.isLoading, isMaxDepositError]);
 
   const networkFeeErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      if (currentBalance !== 0) {
-        return 'This transaction cannot be simulated. Try again.';
-      }
-    }
-
     if (isErrorNetworkFee) {
       return 'Insufficient network fee';
     }
 
     return '';
-  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
-
-  const simulateErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      return useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
-    }
-
-    return null;
-  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.currentGasInfo]);
+  }, [isErrorNetworkFee]);
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,10 +194,22 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }, [onClickConfirm, disabledApprove, requiresHoldConfirmation]);
 
   useEffect(() => {
-    if (done) {
+    if (done && !errorDetail) {
       onResponse();
     }
-  }, [done, onResponse]);
+  }, [done, errorDetail, onResponse]);
+
+  useEffect(() => {
+    if (simulateErrorBannerMessage && !hasScrolledToError.current) {
+      hasScrolledToError.current = true;
+      requestAnimationFrame(() => {
+        errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+    if (!simulateErrorBannerMessage) {
+      hasScrolledToError.current = false;
+    }
+  }, [simulateErrorBannerMessage]);
 
   if (loading) {
     return <ApproveTransactionLoading rightButtonText='Approve' />;
@@ -201,6 +224,50 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           onClickSave={onClickNetworkFeeSave}
         />
       </ApproveTransactionNetworkFeeWrapper>
+    );
+  }
+
+  if (done && errorDetail && onCloseWithResponse) {
+    return (
+      <ApproveTransactionWrapper isErrorNetworkFee={false}>
+        <Text className='main-title' type='header4'>
+          {title}
+        </Text>
+        <div className='domain-wrapper'>
+          <img className='logo' src={logo || UnknownLogo} alt='logo img' />
+          <span>{domain}</span>
+        </div>
+        <div className='error-detail-wrapper'>
+          <img src={IconFailed} alt='error' className='error-detail-icon' />
+          <Text className='error-detail-title' type='header4'>
+            {errorDetail.title}
+          </Text>
+          <Text className='error-detail-description' type='body2Reg'>
+            {errorDetail.description}
+          </Text>
+          {errorDetail.suggestion && (
+            <Text className='error-detail-suggestion' type='body2Reg'>
+              {errorDetail.suggestion}
+            </Text>
+          )}
+          {errorDetail.rawError && (
+            <>
+              <Button
+                hierarchy='custom'
+                bgColor='transparent'
+                className='error-detail-raw-toggle'
+                onClick={(): void => setShowRawError((v) => !v)}
+              >
+                {showRawError ? 'Hide' : 'Show'} error details
+              </Button>
+              {showRawError && (
+                <div className='error-detail-raw-box'>{errorDetail.rawError}</div>
+              )}
+            </>
+          )}
+        </div>
+        <BottomFixedButton fill text='Close' onClick={onCloseWithResponse} />
+      </ApproveTransactionWrapper>
     );
   }
 
@@ -220,6 +287,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         argumentInfos={argumentInfos}
         changeMessages={changeTransactionMessages}
         openScannerLink={openScannerLink}
+        messageErrors={messageErrors}
       />
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
@@ -245,20 +313,26 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
             unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
           }}
           isLoading={useNetworkFeeReturn.isLoading}
-          isError={useNetworkFeeReturn.isSimulateError || isMaxDepositError}
+          isError={isMaxDepositError}
           errorMessage={maxDepositErrorMessage}
         />
 
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
+          isError={isErrorNetworkFee}
           isLoading={useNetworkFeeReturn.isLoading}
           errorMessage={networkFeeErrorMessage}
-          simulateErrorMessage={simulateErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
+
+      {simulateErrorBannerMessage && (
+        <div ref={errorBannerRef} className='simulate-error-banner'>
+          <span className='error-label'>ERROR:&nbsp;</span>
+          <span className='error-text'>{simulateErrorBannerMessage}</span>
+        </div>
+      )}
 
       <div className='transaction-data-wrapper'>
         <Button

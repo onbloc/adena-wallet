@@ -29,6 +29,7 @@ export interface GnoArgumentInfo {
   index: number;
   key: string;
   value: string;
+  type?: string;
 }
 
 /**

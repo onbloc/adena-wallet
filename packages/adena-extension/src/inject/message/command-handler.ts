@@ -183,6 +183,7 @@ function makeTransactionMessage(
         index,
         key: param.name,
         value,
+        type: param.type,
       };
     });
 

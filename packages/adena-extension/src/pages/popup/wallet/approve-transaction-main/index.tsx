@@ -18,12 +18,14 @@ import {
 import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
 import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
 import { parseTokenAmount } from '@common/utils/amount-utils';
+import { validateMessageArguments } from '@common/utils/argument-validation';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
 import { fetchHealth } from '@common/utils/fetch-utils';
+import { parseSimulateErrors } from '@common/utils/transaction-error-parser';
 import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
 import { ApproveTransaction } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
@@ -115,12 +117,9 @@ const ApproveTransactionContainer: React.FC = () => {
   const [memo, setMemo] = useState('');
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
   const { openScannerLink } = useLink();
-  const useNetworkFeeReturn = useNetworkFee(document, true);
   const [requiresHoldConfirmation, setRequiresHoldConfirmation] = useState(false);
   const isInitialRenderRef = useRef(true);
   const isAutoClosedResultRef = useRef(false);
-
-  const networkFee = useNetworkFeeReturn.networkFee;
 
   const currentNetwork: NetworkMetainfo = useMemo(() => {
     const networkInfo = requestData?.data?.networkInfo;
@@ -141,6 +140,26 @@ const ApproveTransactionContainer: React.FC = () => {
     }
     return true;
   }, [requestData?.data?.memo]);
+
+  const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
+    return requestData?.data?.arguments || [];
+  }, [requestData?.data?.arguments]);
+
+  const argumentValidationErrors = useMemo(() => {
+    return validateMessageArguments(transactionMessages, argumentInfos);
+  }, [transactionMessages, argumentInfos]);
+
+  const hasArgumentValidationError = useMemo(() => {
+    return argumentValidationErrors.messageErrors.some((e) => !!e);
+  }, [argumentValidationErrors]);
+
+  const simulateDocument = useMemo(() => {
+    if (hasArgumentValidationError) return null;
+    return document;
+  }, [document, hasArgumentValidationError]);
+
+  const useNetworkFeeReturn = useNetworkFee(simulateDocument, true);
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const isVisibleResult = useMemo(() => {
     return requestData?.data?.isVisibleResult !== false;
@@ -214,10 +233,6 @@ const ApproveTransactionContainer: React.FC = () => {
       .shiftedBy(GasToken.decimals * -1)
       .isLessThan(resultConsumedAmount);
   }, [networkFee?.amount, currentBalance, consumedTokenAmount]);
-
-  const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
-    return requestData?.data?.arguments || [];
-  }, [requestData?.data?.arguments]);
 
   // Extract funcName and pkgPath from the first message for session tracking
   const { funcName, pkgPath } = useMemo(() => {
@@ -584,6 +599,39 @@ const ApproveTransactionContainer: React.FC = () => {
     );
   }, [requestData]);
 
+  const parsedSimulateErrors = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
+      return { globalErrorMessage: null, messageErrors: [] };
+    }
+    const rawMessage = useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
+    const parsed = parseSimulateErrors(rawMessage, transactionMessages);
+
+    if (!parsed.globalErrorMessage) {
+      parsed.globalErrorMessage = 'Failed to simulate transaction';
+    }
+
+    return parsed;
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+    transactionMessages,
+  ]);
+
+  const combinedMessageErrors = useMemo(() => {
+    const maxLen = Math.max(
+      argumentValidationErrors.messageErrors.length,
+      parsedSimulateErrors.messageErrors.length,
+    );
+    const result: (string | undefined)[] = [];
+    for (let i = 0; i < maxLen; i++) {
+      result.push(
+        argumentValidationErrors.messageErrors[i] || parsedSimulateErrors.messageErrors[i],
+      );
+    }
+    return result;
+  }, [argumentValidationErrors, parsedSimulateErrors]);
+
   const onClickViewHistoryResult = useCallback(() => {
     if (response) {
       chrome.runtime.sendMessage(response);
@@ -676,7 +724,6 @@ const ApproveTransactionContainer: React.FC = () => {
       />
     );
   }
-
   return (
     <ApproveTransaction
       title='Approve Transaction'
@@ -707,6 +754,9 @@ const ApproveTransactionContainer: React.FC = () => {
       transactionData={JSON.stringify(document, null, 2)}
       requiresHoldConfirmation={requiresHoldConfirmation}
       onFinishHold={handleFinishHold}
+      simulateErrorBannerMessage={parsedSimulateErrors.globalErrorMessage}
+      messageErrors={combinedMessageErrors}
+      hasArgumentValidationError={hasArgumentValidationError}
     />
   );
 };

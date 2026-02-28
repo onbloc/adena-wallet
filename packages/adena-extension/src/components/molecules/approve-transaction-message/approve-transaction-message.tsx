@@ -15,6 +15,7 @@ import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
+  MessageErrorText,
   MessageRowWrapper,
   RealmPathInfoWrapper,
 } from './approve-transaction-message.styles';
@@ -45,6 +46,7 @@ export interface ApproveTransactionMessageProps {
   changeMessage: (index: number, messages: ContractMessage) => void;
   openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
   editable: boolean;
+  errorMessage?: string;
 }
 
 const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
@@ -54,6 +56,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   changeMessage,
   openScannerLink,
   editable,
+  errorMessage,
 }) => {
   const { type } = message;
 
@@ -66,6 +69,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
         editable={editable}
+        errorMessage={errorMessage}
       />
     );
   }
@@ -78,6 +82,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
         editable={editable}
+        errorMessage={errorMessage}
       />
     );
   }
@@ -90,6 +95,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
         changeMessage={changeMessage}
         openScannerLink={openScannerLink}
         editable={editable}
+        errorMessage={errorMessage}
       />
     );
   }
@@ -101,6 +107,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
       changeMessage={changeMessage}
       openScannerLink={openScannerLink}
       editable={editable}
+      errorMessage={errorMessage}
     />
   );
 };
@@ -108,6 +115,7 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   index,
   message,
+  errorMessage,
 }) => {
   const { type } = message;
   const [isOpen, setIsOpen] = useState(true);
@@ -121,22 +129,25 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   }, [functionName, index]);
 
   return (
-    <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+    <>
+      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {isOpen && (
-        <MessageRowWrapper>
-          <div className='message-row'>
-            <span className='key'>type</span>
-            <span className='value'>{type}</span>
-          </div>
-          <div className='message-row'>
-            <span className='key'>function</span>
-            <span className='value'>{functionName}</span>
-          </div>
-        </MessageRowWrapper>
-      )}
-    </ApproveTransactionMessageWrapper>
+        {isOpen && (
+          <MessageRowWrapper>
+            <div className='message-row'>
+              <span className='key'>type</span>
+              <span className='value'>{type}</span>
+            </div>
+            <div className='message-row'>
+              <span className='key'>function</span>
+              <span className='value'>{functionName}</span>
+            </div>
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
   );
 };
 
@@ -147,6 +158,7 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   changeMessage,
   openScannerLink,
   editable,
+  errorMessage,
 }) => {
   const { func, pkg_path, args, send, max_deposit } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
@@ -257,62 +269,65 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   };
 
   return (
-    <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+    <>
+      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {isOpen && (
-        <MessageRowWrapper>
-          <div className='message-row'>
-            <span className='key realm'>realm</span>
-            <span className='realm-wrapper'>
-              <RealmPathInfo
-                domain={realmPathInfo.domain}
-                nameSpace={realmPathInfo.nameSpace}
-                namespaceSubPath={realmPathInfo.namespaceSubPath}
-                contract={realmPathInfo.contract}
-              />
-              <div className='link-wrapper' onClick={moveGnoscan}>
-                <IconLink />
-              </div>
-            </span>
-          </div>
-          <div className='message-row argument'>
-            <span className='key'>
-              send
-              <InfoTooltip content={sendTooltipMessage} />
-            </span>
-            <ArgumentEditBox
-              value={sendAmount}
-              onChange={(value): void => changeSendAmount(value)}
-              editable={editable}
-            />
-          </div>
-          {displayArguments.map((arg, argumentIndex) => (
-            <div className='message-row argument' key={argumentIndex}>
+        {isOpen && (
+          <MessageRowWrapper>
+            <div className='message-row'>
+              <span className='key realm'>realm</span>
+              <span className='realm-wrapper'>
+                <RealmPathInfo
+                  domain={realmPathInfo.domain}
+                  nameSpace={realmPathInfo.nameSpace}
+                  namespaceSubPath={realmPathInfo.namespaceSubPath}
+                  contract={realmPathInfo.contract}
+                />
+                <div className='link-wrapper' onClick={moveGnoscan}>
+                  <IconLink />
+                </div>
+              </span>
+            </div>
+            <div className='message-row argument'>
               <span className='key'>
-                {argumentKeyMap?.[argumentIndex] || `arg${argumentIndex + 1}`}
+                send
+                <InfoTooltip content={sendTooltipMessage} />
               </span>
               <ArgumentEditBox
-                value={arg}
-                onChange={(value): void => changeArgument(argumentIndex, value)}
+                value={sendAmount}
+                onChange={(value): void => changeSendAmount(value)}
                 editable={editable}
               />
             </div>
-          ))}
-          <div className='message-row argument'>
-            <span className='key'>
-              max_deposit
-              <InfoTooltip content={maxDepositTooltipMessage} />
-            </span>
-            <ArgumentEditBox
-              value={maxDeposit}
-              onChange={(value): void => changeMaxDeposit(value)}
-              editable={editable}
-            />
-          </div>
-        </MessageRowWrapper>
-      )}
-    </ApproveTransactionMessageWrapper>
+            {displayArguments.map((arg, argumentIndex) => (
+              <div className='message-row argument' key={argumentIndex}>
+                <span className='key'>
+                  {argumentKeyMap?.[argumentIndex] || `arg${argumentIndex + 1}`}
+                </span>
+                <ArgumentEditBox
+                  value={arg}
+                  onChange={(value): void => changeArgument(argumentIndex, value)}
+                  editable={editable}
+                />
+              </div>
+            ))}
+            <div className='message-row argument'>
+              <span className='key'>
+                max_deposit
+                <InfoTooltip content={maxDepositTooltipMessage} />
+              </span>
+              <ArgumentEditBox
+                value={maxDeposit}
+                onChange={(value): void => changeMaxDeposit(value)}
+                editable={editable}
+              />
+            </div>
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
   );
 };
 
@@ -321,38 +336,42 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
   editable,
+  errorMessage,
 }) => {
   const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
     useMaxDepositMessage(index, message, changeMessage);
 
   return (
-    <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+    <>
+      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {isOpen && (
-        <MessageRowWrapper>
-          <div className='message-row'>
-            <span className='key'>type</span>
-            <span className='value'>{type}</span>
-          </div>
-          <div className='message-row'>
-            <span className='key'>function</span>
-            <span className='value'>{functionName}</span>
-          </div>
-          <div className='message-row argument'>
-            <span className='key'>
-              max_deposit
-              <InfoTooltip content={maxDepositTooltipMessage} />
-            </span>
-            <ArgumentEditBox
-              value={maxDeposit}
-              onChange={(value): void => changeMaxDeposit(value)}
-              editable={editable}
-            />
-          </div>
-        </MessageRowWrapper>
-      )}
-    </ApproveTransactionMessageWrapper>
+        {isOpen && (
+          <MessageRowWrapper>
+            <div className='message-row'>
+              <span className='key'>type</span>
+              <span className='value'>{type}</span>
+            </div>
+            <div className='message-row'>
+              <span className='key'>function</span>
+              <span className='value'>{functionName}</span>
+            </div>
+            <div className='message-row argument'>
+              <span className='key'>
+                max_deposit
+                <InfoTooltip content={maxDepositTooltipMessage} />
+              </span>
+              <ArgumentEditBox
+                value={maxDeposit}
+                onChange={(value): void => changeMaxDeposit(value)}
+                editable={editable}
+              />
+            </div>
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
   );
 };
 
@@ -361,38 +380,42 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   changeMessage,
   editable,
+  errorMessage,
 }) => {
   const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
     useMaxDepositMessage(index, message, changeMessage);
 
   return (
-    <ApproveTransactionMessageWrapper>
-      <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
+    <>
+      <ApproveTransactionMessageWrapper hasError={!!errorMessage}>
+        <MessageBoxArgumentsOpener title={title} isOpen={isOpen} setIsOpen={setIsOpen} />
 
-      {isOpen && (
-        <MessageRowWrapper>
-          <div className='message-row'>
-            <span className='key'>type</span>
-            <span className='value'>{type}</span>
-          </div>
-          <div className='message-row'>
-            <span className='key'>function</span>
-            <span className='value'>{functionName}</span>
-          </div>
-          <div className='message-row argument'>
-            <span className='key'>
-              max_deposit
-              <InfoTooltip content={maxDepositTooltipMessage} />
-            </span>
-            <ArgumentEditBox
-              value={maxDeposit}
-              onChange={(value): void => changeMaxDeposit(value)}
-              editable={editable}
-            />
-          </div>
-        </MessageRowWrapper>
-      )}
-    </ApproveTransactionMessageWrapper>
+        {isOpen && (
+          <MessageRowWrapper>
+            <div className='message-row'>
+              <span className='key'>type</span>
+              <span className='value'>{type}</span>
+            </div>
+            <div className='message-row'>
+              <span className='key'>function</span>
+              <span className='value'>{functionName}</span>
+            </div>
+            <div className='message-row argument'>
+              <span className='key'>
+                max_deposit
+                <InfoTooltip content={maxDepositTooltipMessage} />
+              </span>
+              <ArgumentEditBox
+                value={maxDeposit}
+                onChange={(value): void => changeMaxDeposit(value)}
+                editable={editable}
+              />
+            </div>
+          </MessageRowWrapper>
+        )}
+      </ApproveTransactionMessageWrapper>
+      {errorMessage && <MessageErrorText>{errorMessage}</MessageErrorText>}
+    </>
   );
 };
 

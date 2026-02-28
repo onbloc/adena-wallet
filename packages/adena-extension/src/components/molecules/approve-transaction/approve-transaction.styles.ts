@@ -144,6 +144,26 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     white-space: pre-line;
   }
 
+  .simulate-error-banner {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 16px;
+    border-radius: 18px;
+    background-color: rgba(239, 45, 33, 0.08);
+    border: 1px solid ${getTheme('red', '_5')};
+    margin-bottom: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+    color: ${getTheme('red', '_5')};
+    word-break: break-word;
+
+    .error-label {
+      font-weight: 700;
+    }
+  }
+
   .transaction-data-wrapper {
     width: 100%;
     ${fonts.body2Reg};
@@ -188,5 +208,58 @@ export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean
     }
 
     margin-bottom: 20px;
+  }
+
+  .error-detail-wrapper {
+    ${mixins.flex({ direction: 'column', justify: 'flex-start', align: 'stretch' })};
+    width: 100%;
+    margin-top: 24px;
+    gap: 16px;
+  }
+
+  .error-detail-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+  }
+
+  .error-detail-title {
+    text-align: center;
+    color: ${getTheme('red', '_5')};
+    ${fonts.header4};
+  }
+
+  .error-detail-description,
+  .error-detail-suggestion {
+    text-align: center;
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.body2Reg};
+    white-space: pre-line;
+  }
+
+  .error-detail-suggestion {
+    color: ${getTheme('neutral', 'b')};
+  }
+
+  .error-detail-raw-toggle {
+    width: 100%;
+    text-align: left;
+    color: ${getTheme('neutral', 'a')};
+    ${fonts.captionReg};
+    margin-top: 8px;
+  }
+
+  .error-detail-raw-box {
+    width: 100%;
+    max-height: 120px;
+    overflow: auto;
+    border-radius: 12px;
+    background-color: ${getTheme('neutral', '_9')};
+    border: 1px solid ${getTheme('neutral', '_7')};
+    padding: 12px;
+    ${fonts.captionReg};
+    color: ${getTheme('neutral', 'b')};
+    white-space: pre-wrap;
+    word-break: break-all;
   }
 `;

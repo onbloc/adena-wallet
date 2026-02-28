@@ -3,12 +3,13 @@ import mixins from '@styles/mixins';
 import { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
-export const ApproveTransactionMessageWrapper = styled(View)`
+export const ApproveTransactionMessageWrapper = styled(View)<{ hasError?: boolean }>`
   width: 100%;
   height: auto;
   border-radius: 18px;
-  margin-bottom: 8px;
+  margin-bottom: ${({ hasError }): string => (hasError ? '0' : '8px')};
   background-color: ${getTheme('neutral', '_9')};
+  border: 1px solid ${({ hasError }): string => (hasError ? '#EF2D21' : 'transparent')};
 
   .message-row {
     ${mixins.flex({ direction: 'row' })};
@@ -76,7 +77,6 @@ export const MessageRowWrapper = styled(View)`
   width: 100%;
   padding: 0 18px;
   justify-content: flex-start;
-  border-bottom: 2px solid ${getTheme('neutral', '_8')};
 `;
 
 export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
@@ -109,6 +109,16 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
       height: 16px;
     }
   }
+`;
+
+export const MessageErrorText = styled.p`
+  width: 100%;
+  padding: 4px 16px 8px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+  color: #ef2d21;
 `;
 
 export const RealmPathInfoWrapper = styled.span`
