@@ -143,27 +143,35 @@ export function parseTransactionScannerUrl(notificationId: string): string | nul
 export function createNotificationSendMessage(
   result: BroadcastTxCommitResult | BroadcastTxSyncResult | null,
 ): void {
-  chrome.runtime.sendMessage(
-    InjectionMessageInstance.success(
-      WalletResponseSuccessType.TRANSACTION_SUCCESS,
-      {
-        hash: result?.hash,
-      },
-      '',
-      true,
-    ),
-  );
+  chrome.runtime
+    .sendMessage(
+      InjectionMessageInstance.success(
+        WalletResponseSuccessType.TRANSACTION_SUCCESS,
+        {
+          hash: result?.hash,
+        },
+        '',
+        true,
+      ),
+    )
+    .catch((error) => {
+      console.warn('Failed to send transaction notification:', error);
+    });
 }
 
 export function createNotificationSendMessageByHash(hash: string): void {
-  chrome.runtime.sendMessage(
-    InjectionMessageInstance.success(
-      WalletResponseSuccessType.TRANSACTION_SUCCESS,
-      {
-        hash,
-      },
-      '',
-      true,
-    ),
-  );
+  chrome.runtime
+    .sendMessage(
+      InjectionMessageInstance.success(
+        WalletResponseSuccessType.TRANSACTION_SUCCESS,
+        {
+          hash,
+        },
+        '',
+        true,
+      ),
+    )
+    .catch((error) => {
+      console.warn('Failed to send transaction notification:', error);
+    });
 }

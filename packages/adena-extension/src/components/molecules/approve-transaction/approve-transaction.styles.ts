@@ -8,7 +8,7 @@ export const ApproveTransactionNetworkFeeWrapper = styled.div`
   padding: 24px 20px;
 `;
 
-export const ApproveTransactionWrapper = styled.div<{ isErrorNetworkFee: boolean }>`
+export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolean }>`
   ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding: 0 20px;

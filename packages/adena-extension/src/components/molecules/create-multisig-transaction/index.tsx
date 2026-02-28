@@ -159,7 +159,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   }
 
   return (
-    <CreateMultisigTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <CreateMultisigTransactionWrapper $isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>

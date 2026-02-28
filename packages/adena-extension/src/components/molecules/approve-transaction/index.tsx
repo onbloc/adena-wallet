@@ -272,7 +272,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   }
 
   return (
-    <ApproveTransactionWrapper isErrorNetworkFee={isErrorNetworkFee || false}>
+    <ApproveTransactionWrapper $isErrorNetworkFee={isErrorNetworkFee || false}>
       <Text className='main-title' type='header4'>
         {title}
       </Text>

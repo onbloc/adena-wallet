@@ -58,7 +58,7 @@ export const BottomFixedLoadingButtonGroup = ({
   }, [rightButton, isHoldButton]);
 
   return (
-    <ButtonWrap filled={filled}>
+    <ButtonWrap $filled={filled}>
       <LoadingButton
         className={leftClassName}
         loading={leftButton.loading}
@@ -104,18 +104,18 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   );
 };
 
-const ButtonWrap = styled.div<{ filled?: boolean }>`
+const ButtonWrap = styled.div<{ $filled?: boolean }>`
   ${mixins.flex({ direction: 'row', align: 'flex-start' })};
   position: fixed;
   left: 0px;
   width: 100%;
   padding: 0 20px;
-  height: ${({ filled }): '48px' | '96px' => (filled ? '96px' : '48px')};
-  bottom: ${({ filled }): '0' | '24px' => (filled ? '0' : '24px')};
-  ${({ filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
-    filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
-  ${({ filled }): false | 'align-items: center;' | undefined => filled && 'align-items: center;'}
-  background-color: ${({ filled, theme }): string => (filled ? theme.neutral._8 : 'transparent')};
+  height: ${({ $filled }): '48px' | '96px' => ($filled ? '96px' : '48px')};
+  bottom: ${({ $filled }): '0' | '24px' => ($filled ? '0' : '24px')};
+  ${({ $filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
+    $filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
+  ${({ $filled }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
+  background-color: ${({ $filled, theme }): string => ($filled ? theme.neutral._8 : 'transparent')};
   z-index: 9;
 
   & > button {
