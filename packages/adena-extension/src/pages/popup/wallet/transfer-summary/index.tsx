@@ -28,6 +28,10 @@ const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100%;
+
+  & .network-fee-setting-wrapper {
+    padding: 24px 20px;
+  }
 `;
 
 const TransferSummaryContainer: React.FC = () => {
@@ -351,11 +355,13 @@ const TransferSummaryContainer: React.FC = () => {
           onClickClose={onClickCloseResult}
         />
       ) : openedNetworkFeeSetting ? (
-        <NetworkFeeSetting
-          {...useNetworkFeeReturn}
-          onClickBack={onClickNetworkFeeClose}
-          onClickSave={onClickNetworkFeeSave}
-        />
+        <div className='network-fee-setting-wrapper'>
+          <NetworkFeeSetting
+            {...useNetworkFeeReturn}
+            onClickBack={onClickNetworkFeeClose}
+            onClickSave={onClickNetworkFeeSave}
+          />
+        </div>
       ) : (
         <TransferSummary
           tokenMetainfo={summaryInfo.tokenMetainfo}

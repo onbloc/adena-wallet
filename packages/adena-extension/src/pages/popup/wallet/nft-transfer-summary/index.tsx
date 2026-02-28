@@ -8,7 +8,6 @@ import { GasToken } from '@common/constants/token.constant';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
-import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
@@ -19,6 +18,7 @@ import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
+import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { GRC721Model, RoutePath } from '@types';
@@ -27,7 +27,10 @@ const NFTTransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: auto;
-  padding: 24px 20px 116px;
+
+  & .network-fee-setting-wrapper {
+    padding: 24px 20px;
+  }
 `;
 
 const NFTTransferSummaryContainer: React.FC = () => {
@@ -282,11 +285,13 @@ const NFTTransferSummaryContainer: React.FC = () => {
           onClickClose={onClickCloseResult}
         />
       ) : openedNetworkFeeSetting ? (
-        <NetworkFeeSetting
-          {...useNetworkFeeReturn}
-          onClickBack={onClickNetworkFeeClose}
-          onClickSave={onClickNetworkFeeSave}
-        />
+        <div className='network-fee-setting-wrapper'>
+          <NetworkFeeSetting
+            {...useNetworkFeeReturn}
+            onClickBack={onClickNetworkFeeClose}
+            onClickSave={onClickNetworkFeeSave}
+          />
+        </div>
       ) : (
         <NFTTransferSummary
           grc721Token={summaryInfo.grc721Token}

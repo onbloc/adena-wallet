@@ -19,6 +19,7 @@ export interface StorageDepositProps {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
+  showPlaceholder?: boolean;
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -30,6 +31,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
   isLoading = false,
   isError,
   errorMessage,
+  showPlaceholder = false,
 }) => {
   const isEmptyValue = useMemo(() => {
     return storageDeposit.storageDeposit === 0 && storageDeposit.unlockDeposit === 0;
@@ -73,6 +75,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
             value={depositAmount}
             isRefundable={isRefundable}
             isLoading={isLoading}
+            showPlaceholder={showPlaceholder}
           />
         </div>
       </StorageDepositWrapper>
@@ -86,7 +89,8 @@ const StorageDepositAmount: React.FC<{
   value: number;
   isRefundable: boolean;
   isLoading: boolean;
-}> = ({ value, isRefundable, isLoading }) => {
+  showPlaceholder?: boolean;
+}> = ({ value, isRefundable, isLoading, showPlaceholder = false }) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
   const amount = useMemo(() => {
@@ -109,6 +113,10 @@ const StorageDepositAmount: React.FC<{
 
   if (isLoading) {
     return <StorageDepositItemSkeletonBox />;
+  }
+
+  if (showPlaceholder) {
+    return <span className='value'>{'-'}</span>;
   }
 
   return (

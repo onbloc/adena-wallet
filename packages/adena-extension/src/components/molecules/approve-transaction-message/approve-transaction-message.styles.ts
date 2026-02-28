@@ -113,7 +113,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
 
 export const MessageErrorText = styled.p`
   width: 100%;
-  padding: 4px 16px 8px;
+  padding: 0px 16px 10px;
   font-family: 'Poppins', sans-serif;
   font-weight: 500;
   font-size: 13px;

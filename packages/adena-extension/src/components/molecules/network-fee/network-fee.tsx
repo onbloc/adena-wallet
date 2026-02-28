@@ -53,7 +53,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
         <div className='network-fee-amount-wrapper'>
           <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
 
-          {hasSetting && !isLoading && (
+          {hasSetting && !isLoading && !isEmptyValue && (
             <button className='setting-button' onClick={onClickSetting}>
               <IconRight />
             </button>
