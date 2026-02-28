@@ -1,4 +1,6 @@
 import {
+  INSUFFICIENT_COINS_ERROR_TYPE,
+  INSUFFICIENT_FUNDS_ERROR_TYPE,
   INVALID_PUBLIC_KEY_ERROR_TYPE,
   UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
@@ -199,6 +201,13 @@ export class GnoProvider extends GnoJSONRPCProvider {
         simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
       ) {
         throw new Error(INVALID_PUBLIC_KEY_ERROR_TYPE);
+      }
+
+      if (
+        simulateResult.response_base.error.type_url === INSUFFICIENT_FUNDS_ERROR_TYPE ||
+        simulateResult.response_base.error.type_url === INSUFFICIENT_COINS_ERROR_TYPE
+      ) {
+        throw new Error(simulateResult.response_base.error.type_url);
       }
 
       const errorResult = parseProto(simulateResult.response_base.error.value, Any.decode);

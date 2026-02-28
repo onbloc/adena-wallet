@@ -212,7 +212,6 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           isError={isErrorNetworkFee}
           isLoading={isNetworkFeeLoading}
           errorMessage={networkFeeErrorMessage}
-          simulateErrorMessage={null}
         />
       </div>
 

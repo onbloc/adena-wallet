@@ -14,7 +14,6 @@ export interface NetworkFeeProps {
   isLoading?: boolean;
   isError?: boolean;
   errorMessage?: string;
-  simulateErrorMessage?: string | null;
   onClickSetting?: () => void;
 }
 
@@ -24,7 +23,6 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   isLoading = false,
   isError,
   errorMessage,
-  simulateErrorMessage,
   onClickSetting,
 }) => {
   const hasSetting = !!onClickSetting;
@@ -44,12 +42,8 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
       return '';
     }
 
-    if (simulateErrorMessage) {
-      return errorMessage + '\n' + 'Error: ' + simulateErrorMessage;
-    }
-
     return errorMessage;
-  }, [hasError, isEmptyValue, simulateErrorMessage, errorMessage]);
+  }, [hasError, isEmptyValue, errorMessage]);
 
   return (
     <NetworkFeeContainer>

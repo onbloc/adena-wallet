@@ -76,14 +76,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     return '';
   }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
 
-  const simulateErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      return useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || null;
-    }
-
-    return null;
-  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.currentGasInfo]);
-
   return (
     <TransferSummaryWrapper>
       <div className='sub-header-wrapper'>
@@ -117,11 +109,10 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
           isLoading={useNetworkFeeReturn.isLoading}
           errorMessage={networkFeeErrorMessage}
-          simulateErrorMessage={simulateErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
-      {simulateErrorMessage !== null && <div className='button-group' />}
+      {useNetworkFeeReturn.isSimulateError && <div className='button-group' />}
 
       <BottomFixedButtonGroup
         leftButton={{
