@@ -5,11 +5,10 @@ import styled from 'styled-components';
 export const TransferSummaryWrapper = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
   position: relative;
+  padding: 24px 20px 70px;
   width: 100%;
   height: 100%;
-  padding-top: 5px;
   min-height: 444px;
-  padding-bottom: 70px;
   align-items: center;
 
   .sub-header-wrapper {

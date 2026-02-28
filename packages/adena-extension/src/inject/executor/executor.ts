@@ -27,6 +27,7 @@ import {
   AddNetworkParams,
   AddNetworkResponse,
   BroadcastMultisigTransactionResponse,
+  ContractOptions,
   CreateMultisigAccountParams,
   CreateMultisigAccountResponse,
   CreateMultisigTransactionParams,
@@ -84,16 +85,17 @@ export class AdenaExecutor {
 
   public doContract = (
     params: TransactionParams,
-    withNotification: boolean,
+    options?: ContractOptions,
   ): Promise<DoContractResponse> => {
     const result = this.validateContractMessage(params);
     if (result) {
       return this.sendEventMessage(result);
     }
 
+    const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.DO_CONTRACT,
-      params,
+      { ...params, isVisibleResult },
       withNotification,
     );
     return this.sendEventMessage(eventMessage);
@@ -187,15 +189,18 @@ export class AdenaExecutor {
   public broadcastMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
+    options?: ContractOptions,
   ): Promise<BroadcastMultisigTransactionResponse> => {
     const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
       return this.sendEventMessage(result);
     }
 
+    const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.BROADCAST_MULTISIG_TRANSACTION,
-      { multisigDocument, multisigSignatures },
+      { multisigDocument, multisigSignatures, isVisibleResult },
+      withNotification,
     );
 
     return this.sendEventMessage(eventMessage);

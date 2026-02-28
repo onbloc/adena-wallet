@@ -116,6 +116,8 @@ function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[
 export interface UseBroadcastMultisigTransactionScreenReturn {
   broadcastTransactionState: BroadcastTransactionState;
   broadcast: () => Promise<boolean>;
+  txHash: string | null;
+  errorMessage: string | null;
   uploadMultisigTransaction: (text: string) => boolean;
   uploadSignature: (text: string) => SignatureUploadResult;
   transactionInfos: TransactionDisplayInfo[] | null;
@@ -134,6 +136,8 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   const [broadcastTransactionState, setBroadcastTransactionState] = useState<
     BroadcastTransactionState
   >('IDLE');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const signerPublicKeys = useMemo((): SignerPublicKeyInfo[] => {
     if (!currentAccount || !isMultisigAccount(currentAccount)) {
@@ -255,6 +259,8 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
     }
 
     setBroadcastTransactionState('LOADING');
+    setTxHash(null);
+    setErrorMessage(null);
     try {
       const combinedTx = await multisigService.combineMultisigSignatures(
         currentAccount,
@@ -270,14 +276,19 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         broadcastResult.deliver_tx?.ResponseBase?.Error === null;
 
       if (isSuccessBroadcasting) {
+        setTxHash(broadcastResult.hash);
         setBroadcastTransactionState('SUCCESS');
         return true;
       } else {
+        const checkError = broadcastResult.check_tx?.ResponseBase?.Error;
+        const deliverError = broadcastResult.deliver_tx?.ResponseBase?.Error;
+        setErrorMessage(checkError?.message || deliverError?.message || 'Unknown error');
         setBroadcastTransactionState('FAILED');
         return false;
       }
     } catch (e) {
       console.error(e);
+      setErrorMessage(e instanceof Error ? e.message : 'Unknown error');
       setBroadcastTransactionState('FAILED');
       return false;
     }
@@ -286,6 +297,8 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
   return {
     broadcastTransactionState,
     broadcast,
+    txHash,
+    errorMessage,
     uploadMultisigTransaction,
     uploadSignature,
     transactionInfos,

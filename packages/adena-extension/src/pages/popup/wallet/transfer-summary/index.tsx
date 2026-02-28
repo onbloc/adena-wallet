@@ -7,16 +7,19 @@ import styled from 'styled-components';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import { GasToken } from '@common/constants/token.constant';
 import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
 import useAppNavigate from '@hooks/use-app-navigate';
 import { useAdenaContext, useWalletContext } from '@hooks/use-context';
 import { useCurrentAccount } from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
 import { useNetworkFee } from '@hooks/wallet/use-network-fee';
 import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
+import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import { TransactionMessage } from '@services/index';
 import mixins from '@styles/mixins';
 import { RoutePath } from '@types';
@@ -25,7 +28,6 @@ const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100%;
-  padding: 24px 20px;
 `;
 
 const TransferSummaryContainer: React.FC = () => {
@@ -36,8 +38,15 @@ const TransferSummaryContainer: React.FC = () => {
   const { transactionService } = useAdenaContext();
   const { currentAccount, currentAddress } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
+  const { openScannerLink } = useLink();
   const { setMemorizedTransferInfo } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
+  const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
+  const [transferResult, setTransferResult] = useState<{
+    status: 'SUCCESS' | 'FAILED';
+    hash?: string | null;
+    errorMessage?: string | null;
+  } | null>(null);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
@@ -127,7 +136,9 @@ const TransferSummaryContainer: React.FC = () => {
       func: 'Transfer',
       args: [
         toAddress,
-        `${Math.round(BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber())}`,
+        `${Math.round(
+          BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber(),
+        )}`,
       ],
     });
   }, [summaryInfo, currentAddress]);
@@ -226,16 +237,35 @@ const TransferSummaryContainer: React.FC = () => {
 
   const transferByCommon = useCallback(async () => {
     try {
-      createTransaction().then(createNotificationSendMessage);
-      navigate(RoutePath.History);
-    } catch (e) {
-      if (!(e instanceof Error)) {
-        return false;
-      }
-    }
+      setScreenState('LOADING');
+      const response = await createTransaction();
+      createNotificationSendMessage(response);
 
-    setIsSent(false);
-    return false;
+      const txHash = response?.hash || null;
+      if (txHash) {
+        setTransferResult({
+          status: 'SUCCESS',
+          hash: txHash,
+        });
+      } else {
+        setTransferResult({
+          status: 'FAILED',
+          errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
+        });
+      }
+      setScreenState('RESULT');
+      setIsSent(false);
+      return Boolean(txHash);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      setTransferResult({
+        status: 'FAILED',
+        errorMessage,
+      });
+      setScreenState('RESULT');
+      setIsSent(false);
+      return false;
+    }
   }, [createTransaction]);
 
   const transferByLedger = useCallback(async () => {
@@ -272,6 +302,22 @@ const TransferSummaryContainer: React.FC = () => {
     setOpenedNetworkFeeSetting(false);
   }, [useNetworkFeeReturn.save]);
 
+  const onClickViewHistory = useCallback(() => {
+    navigate(RoutePath.History);
+  }, [navigate]);
+
+  const onClickCloseResult = useCallback(() => {
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
+
+  const onClickViewGnoscan = useCallback(() => {
+    if (!transferResult?.hash) {
+      return;
+    }
+
+    openScannerLink('/transactions/details', { txhash: transferResult.hash });
+  }, [transferResult?.hash, openScannerLink]);
+
   useEffect(() => {
     if (!document) {
       createDocument().then((doc) => {
@@ -294,7 +340,17 @@ const TransferSummaryContainer: React.FC = () => {
 
   return (
     <TransferSummaryLayout>
-      {openedNetworkFeeSetting ? (
+      {screenState === 'LOADING' ? (
+        <BroadcastTransactionLoading />
+      ) : screenState === 'RESULT' && transferResult ? (
+        <TransactionResult
+          status={transferResult.status}
+          errorMessage={transferResult.errorMessage}
+          onClickViewHistory={onClickViewHistory}
+          onClickViewGnoscan={onClickViewGnoscan}
+          onClickClose={onClickCloseResult}
+        />
+      ) : openedNetworkFeeSetting ? (
         <NetworkFeeSetting
           {...useNetworkFeeReturn}
           onClickBack={onClickNetworkFeeClose}
