@@ -89,7 +89,7 @@ export function validateMessageArguments(
 
       const error = validateArgument(argValue, argInfo.type);
       if (error) {
-        messageErrors[i] = `Invalid argument "${argInfo.key}"`;
+        messageErrors[i] = `Invalid argument: "${argInfo.key}"`;
         break;
       }
     }
