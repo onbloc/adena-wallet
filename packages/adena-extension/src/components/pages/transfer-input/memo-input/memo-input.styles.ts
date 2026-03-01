@@ -51,6 +51,7 @@ export const MemoInputWrapper = styled.div`
     margin-top: -10px;
     padding: 0 16px;
     ${fonts.captionReg};
+    font-size: 13px;
     color: ${getTheme('red', '_5')};
   }
 `;

@@ -12,6 +12,7 @@ export const StorageDepositContainer = styled.div`
     width: 100%;
     padding: 0 16px;
     ${fonts.captionReg};
+    font-size: 13px;
     color: ${getTheme('red', '_5')};
     word-break: break-all;
   }

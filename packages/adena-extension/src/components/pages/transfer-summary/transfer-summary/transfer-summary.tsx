@@ -24,6 +24,7 @@ export interface TransferSummaryProps {
   useNetworkFeeReturn: UseNetworkFeeReturn;
   isErrorNetworkFee?: boolean;
   isLoadingNetworkFee?: boolean;
+  simulateErrorBannerMessage?: string | null;
   onClickBack: () => void;
   onClickCancel: () => void;
   onClickSend: () => void;
@@ -40,6 +41,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   currentBalance,
   useNetworkFeeReturn,
   isErrorNetworkFee,
+  simulateErrorBannerMessage,
   onClickBack,
   onClickCancel,
   onClickSend,
@@ -63,18 +65,12 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   ]);
 
   const networkFeeErrorMessage = useMemo(() => {
-    if (useNetworkFeeReturn.isSimulateError) {
-      if (currentBalance !== 0) {
-        return 'This transaction cannot be simulated. Try again.';
-      }
-    }
-
     if (isErrorNetworkFee) {
       return 'Insufficient network fee';
     }
 
     return '';
-  }, [useNetworkFeeReturn.isSimulateError, isErrorNetworkFee, currentBalance]);
+  }, [isErrorNetworkFee]);
 
   return (
     <TransferSummaryWrapper>
@@ -106,13 +102,21 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
-          isError={useNetworkFeeReturn.isSimulateError || isErrorNetworkFee}
+          isError={isErrorNetworkFee}
           isLoading={useNetworkFeeReturn.isLoading}
           errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
       </div>
-      {useNetworkFeeReturn.isSimulateError && <div className='button-group' />}
+
+      {simulateErrorBannerMessage && (
+        <div className='simulate-error-banner'>
+          <span className='error-label'>ERROR:&nbsp;</span>
+          <span className='error-text'>{simulateErrorBannerMessage}</span>
+        </div>
+      )}
+
+      <div className='bottom-spacer' />
 
       <BottomFixedButtonGroup
         leftButton={{

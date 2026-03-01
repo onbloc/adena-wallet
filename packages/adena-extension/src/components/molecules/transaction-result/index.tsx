@@ -120,7 +120,8 @@ const StyledScannerButton = styled.button`
   cursor: pointer;
   text-decoration: underline;
   color: ${({ theme }): string => theme.neutral.a};
-  transition: color 0.2s ease;
+  transition: 0.2s;
+  opacity: 1;
 
   .scanner-label {
     font-size: 16px;
@@ -130,15 +131,9 @@ const StyledScannerButton = styled.button`
   .scanner-icon {
     width: 17px;
     height: 17px;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
   }
 
   &:hover {
-    color: ${({ theme }): string => theme.red._5};
-  }
-
-  &:hover .scanner-icon {
-    opacity: 1;
+    opacity: 0.7;
   }
 `;

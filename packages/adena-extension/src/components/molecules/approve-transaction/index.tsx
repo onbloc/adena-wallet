@@ -312,16 +312,17 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
             storageDeposit: useNetworkFeeReturn.currentStorageDeposits?.storageDeposit || 0,
             unlockDeposit: useNetworkFeeReturn.currentStorageDeposits?.unlockDeposit || 0,
           }}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isLoading={!hasArgumentValidationError && useNetworkFeeReturn.isLoading}
           isError={isMaxDepositError}
           errorMessage={maxDepositErrorMessage}
+          showPlaceholder={hasArgumentValidationError}
         />
 
         <NetworkFee
           value={networkFee?.amount || ''}
           denom={networkFee?.denom || ''}
           isError={isErrorNetworkFee}
-          isLoading={useNetworkFeeReturn.isLoading}
+          isLoading={!hasArgumentValidationError && useNetworkFeeReturn.isLoading}
           errorMessage={networkFeeErrorMessage}
           onClickSetting={onClickNetworkFeeSetting}
         />
