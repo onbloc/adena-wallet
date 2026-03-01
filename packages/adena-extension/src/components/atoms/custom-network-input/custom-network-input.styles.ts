@@ -50,6 +50,7 @@ export const CustomNetworkInputWrapper = styled.div`
     position: relative;
     padding: 0 16px;
     ${fonts.captionReg};
+    font-size: 13px;
     height: 14px;
     color: ${getTheme('red', '_5')};
   }

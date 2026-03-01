@@ -140,6 +140,7 @@ export const CreateMultisigTransactionWrapper = styled.div<{ $isErrorNetworkFee:
     width: 100%;
     padding: 0 16px;
     ${fonts.captionReg};
+    font-size: 13px;
     color: ${getTheme('red', '_5')};
     white-space: pre-line;
   }

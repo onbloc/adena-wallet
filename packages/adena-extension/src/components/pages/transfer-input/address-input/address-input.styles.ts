@@ -107,6 +107,7 @@ export const AddressInputWrapper = styled.div`
     position: relative;
     padding: 0 16px;
     ${fonts.captionReg};
+    font-size: 13px;
     color: ${getTheme('red', '_5')};
   }
 `;

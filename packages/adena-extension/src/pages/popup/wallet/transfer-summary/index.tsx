@@ -87,6 +87,10 @@ const TransferSummaryContainer: React.FC = () => {
       return false;
     }
 
+    if (useNetworkFeeReturn.isSimulateError) {
+      return false;
+    }
+
     if (currentBalance === null || currentBalance === undefined) {
       return false;
     }
@@ -96,7 +100,27 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     return !hasNetworkFee;
-  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, hasNetworkFee]);
+  }, [
+    currentBalance,
+    networkFee?.amount,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.isSimulateError,
+    hasNetworkFee,
+  ]);
+
+  const simulateErrorMessage = useMemo(() => {
+    if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
+      return null;
+    }
+
+    return (
+      useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
+    );
+  }, [
+    useNetworkFeeReturn.isSimulateError,
+    useNetworkFeeReturn.isLoading,
+    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
+  ]);
 
   const getTransferBalance = useCallback(() => {
     const { value, denom } = summaryInfo.transferAmount;
@@ -374,6 +398,7 @@ const TransferSummaryContainer: React.FC = () => {
           memo={summaryInfo.memo}
           currentBalance={currentBalance}
           useNetworkFeeReturn={useNetworkFeeReturn}
+          simulateErrorBannerMessage={simulateErrorMessage}
           onClickBack={onClickBack}
           onClickCancel={onClickCancel}
           onClickSend={transfer}
