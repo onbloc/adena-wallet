@@ -38,7 +38,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   toAddress,
   networkFee,
   memo,
-  currentBalance,
   useNetworkFeeReturn,
   isErrorNetworkFee,
   simulateErrorBannerMessage,
@@ -119,6 +118,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className='bottom-spacer' />
 
       <BottomFixedButtonGroup
+        filled
         leftButton={{
           text: 'Cancel',
           onClick: onClickCancel,

@@ -62,7 +62,7 @@ export const TransferSummaryWrapper = styled.div`
 
   .bottom-spacer {
     width: 100%;
-    height: 96px;
+    height: 116px;
     flex-shrink: 0;
   }
 `;

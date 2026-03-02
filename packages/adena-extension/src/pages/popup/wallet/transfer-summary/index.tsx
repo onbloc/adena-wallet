@@ -1,6 +1,6 @@
 import { Document, isLedgerAccount } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -28,6 +28,7 @@ const TransferSummaryLayout = styled.div`
   ${mixins.flex({ align: 'normal', justify: 'normal' })};
   width: 100%;
   height: 100%;
+  overflow-y: auto;
 
   & .network-fee-setting-wrapper {
     padding: 24px 20px;
@@ -53,6 +54,7 @@ const TransferSummaryContainer: React.FC = () => {
   } | null>(null);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
 
   const useNetworkFeeReturn = useNetworkFee(document, false);
   const networkFee = useNetworkFeeReturn.networkFee;
@@ -347,6 +349,17 @@ const TransferSummaryContainer: React.FC = () => {
   }, [transferResult?.hash, openScannerLink]);
 
   useEffect(() => {
+    if (simulateErrorMessage) {
+      requestAnimationFrame(() => {
+        const el = layoutRef.current;
+        if (el) {
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+      });
+    }
+  }, [simulateErrorMessage]);
+
+  useEffect(() => {
     if (!document) {
       createDocument().then((doc) => {
         if (!doc) {
@@ -367,7 +380,7 @@ const TransferSummaryContainer: React.FC = () => {
   ]);
 
   return (
-    <TransferSummaryLayout>
+    <TransferSummaryLayout ref={layoutRef}>
       {screenState === 'LOADING' ? (
         <BroadcastTransactionLoading />
       ) : screenState === 'RESULT' && transferResult ? (
