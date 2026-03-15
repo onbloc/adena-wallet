@@ -1,17 +1,17 @@
 [
   {
-    "id": "test11",
+    "id": "gnoland1",
     "default": true,
     "main": true,
-    "chainId": "test11",
+    "chainId": "gnoland1",
     "chainName": "Gno.land",
-    "networkId": "test11",
-    "networkName": "Testnet 11",
+    "networkId": "gnoland1",
+    "networkName": "Beta Mainnet",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.test11.testnets.gno.land:443",
-    "indexerUrl": "https://test11.indexer.onbloc.xyz",
-    "gnoUrl": "https://test11.testnets.gno.land",
-    "apiUrl": "https://test11.api.onbloc.xyz",
+    "rpcUrl": "https://rpc.betanet.testnets.gno.land:443",
+    "indexerUrl": "https://gnoland1.indexer.onbloc.xyz",
+    "gnoUrl": "https://betanet.testnets.gno.land",
+    "apiUrl": "https://gnoland1.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
   {
@@ -23,9 +23,9 @@
     "networkId": "staging",
     "networkName": "Staging",
     "addressPrefix": "g",
-    "rpcUrl": "https://rpc.gno.land:443",
-    "indexerUrl": "https://indexer.onbloc.xyz",
-    "gnoUrl": "https://gno.land",
+    "rpcUrl": "https://rpc.staging.gno.land:443",
+    "indexerUrl": "https://staging.indexer.onbloc.xyz",
+    "gnoUrl": "https://staging.gno.land",
     "apiUrl": "https://staging.api.onbloc.xyz",
     "linkUrl": "https://gnoscan.io"
   },
