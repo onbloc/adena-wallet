@@ -3,8 +3,8 @@ import { StorageMigration017 } from './storage-migration-v017';
 
 const mockStorageData = {
   NETWORKS: [],
-  CURRENT_CHAIN_ID: 'test10',
-  CURRENT_NETWORK_ID: 'test10',
+  CURRENT_CHAIN_ID: 'test11',
+  CURRENT_NETWORK_ID: 'test11',
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
@@ -33,8 +33,8 @@ describe('serialized wallet migration V016', () => {
     const migration = new StorageMigration017();
     const result = await migration.up(mockData);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test11');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test11');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('gnoland1');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('gnoland1');
   });
 
   it('up password success', async () => {
@@ -58,8 +58,8 @@ describe('serialized wallet migration V016', () => {
     expect(wallet.accounts).toHaveLength(0);
     expect(wallet.keyrings).toHaveLength(0);
 
-    expect(result.data.CURRENT_CHAIN_ID).toEqual('test11');
-    expect(result.data.CURRENT_NETWORK_ID).toEqual('test11');
+    expect(result.data.CURRENT_CHAIN_ID).toEqual('gnoland1');
+    expect(result.data.CURRENT_NETWORK_ID).toEqual('gnoland1');
   });
 
   it('up failed throw error', async () => {
