@@ -15,7 +15,7 @@ import { StorageModelV007 } from './migrations/v007/storage-model-v007';
 import { StorageMigration008 } from './migrations/v008/storage-migration-v008';
 import { StorageModelV008 } from './migrations/v008/storage-model-v008';
 import { StorageMigration009 } from './migrations/v009/storage-migration-v009';
-import { StorageModelDataV009, StorageModelV009 } from './migrations/v009/storage-model-v009';
+import { StorageModelV009 } from './migrations/v009/storage-model-v009';
 import { StorageMigration010 } from './migrations/v010/storage-migration-v010';
 import { StorageModelV010 } from './migrations/v010/storage-model-v010';
 import { StorageMigration011 } from './migrations/v011/storage-migration-v011';
@@ -30,6 +30,8 @@ import { StorageMigration015 } from './migrations/v015/storage-migration-v015';
 import { StorageModelV015 } from './migrations/v015/storage-model-v015';
 import { StorageMigration016 } from './migrations/v016/storage-migration-v016';
 import { StorageModelV016 } from './migrations/v016/storage-model-v016';
+import { StorageMigration017 } from './migrations/v017/storage-migration-v017';
+import { StorageModelDataV017, StorageModelV017 } from './migrations/v017/storage-model-v017';
 import { Migration, Migrator } from './migrator';
 
 const LegacyStorageKeys = [
@@ -46,7 +48,7 @@ const LegacyStorageKeys = [
 ];
 
 // The latest storage model type
-export type StorageModelLatest = StorageModelV016;
+export type StorageModelLatest = StorageModelV017;
 
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
@@ -62,7 +64,7 @@ const defaultData: StorageModelDataV001 = {
   ACCOUNT_TOKEN_METAINFOS: {},
 };
 
-const defaultLegacyData: StorageModelDataV009 = {
+const defaultLegacyData: StorageModelDataV017 = {
   NETWORKS: [],
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',
@@ -73,9 +75,9 @@ const defaultLegacyData: StorageModelDataV009 = {
   ESTABLISH_SITES: {},
   ADDRESS_BOOK: '',
   ACCOUNT_TOKEN_METAINFOS: {},
-  QUESTIONNAIRE_EXPIRED_DATE: 0,
-  WALLET_CREATION_GUIDE_CONFIRM_DATE: 0,
-  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: 0,
+  QUESTIONNAIRE_EXPIRED_DATE: null,
+  WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
+  ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
   ACCOUNT_GRC721_COLLECTIONS: {},
   ACCOUNT_GRC721_PINNED_PACKAGES: {},
 };
@@ -117,6 +119,7 @@ export class StorageMigrator implements Migrator {
   async deserialize(
     data: string | undefined,
   ): Promise<
+    | StorageModelV017
     | StorageModelV016
     | StorageModelV015
     | StorageModelV014
@@ -147,6 +150,7 @@ export class StorageMigrator implements Migrator {
 
   // Retrieves the current storage data, performing deserialization
   async getCurrent(): Promise<
+    | StorageModelV017
     | StorageModelV016
     | StorageModelV015
     | StorageModelV014
@@ -171,13 +175,13 @@ export class StorageMigrator implements Migrator {
     }
 
     return {
-      version: 13,
+      version: 17,
       data: defaultLegacyData,
     };
   }
 
   // Migrates storage data to the latest version
-  async migrate(current: StorageModel, password: string): Promise<StorageModelV016 | null> {
+  async migrate(current: StorageModel, password: string): Promise<StorageModelV017 | null> {
     let latest = current;
     try {
       const currentVersion = current.version || 1;
@@ -219,6 +223,7 @@ export class StorageMigrator implements Migrator {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     json: any,
   ): Promise<
+    | StorageModelV017
     | StorageModelV016
     | StorageModelV015
     | StorageModelV014
@@ -236,6 +241,9 @@ export class StorageMigrator implements Migrator {
     | StorageModelV002
     | StorageModelV001
   > {
+    if (json?.version === 17) {
+      return json as StorageModelV017;
+    }
     if (json?.version === 16) {
       return json as StorageModelV016;
     }
@@ -328,6 +336,7 @@ export class StorageMigrator implements Migrator {
       new StorageMigration014(),
       new StorageMigration015(),
       new StorageMigration016(),
+      new StorageMigration017(),
     ];
   }
 }
