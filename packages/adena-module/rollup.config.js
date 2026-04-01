@@ -36,6 +36,7 @@ module.exports = merge({
     }),
     typescript({
       tsconfig: 'tsconfig.json',
+      include: ['*.ts', '*.tsx', '**/*.ts', '**/*.tsx'],
     }),
   ],
   onwarn: function (warning) {

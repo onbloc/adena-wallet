@@ -17,11 +17,11 @@ The Adena Module handles the management of account information, transaction gene
 ### Install Package
 
 > ```bash
-> yarn install
+> pnpm install
 > ```
 
 ### Build Package
 
 > ```bash
-> yarn run build
+> pnpm run build
 > ```
