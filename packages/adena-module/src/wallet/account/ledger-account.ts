@@ -1,7 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { isLedgerKeyring, Keyring, KeyringType } from '../../wallet/keyring';
-import { publicKeyToAddress } from './../../utils/address';
+import {
+  v4 as uuidv4,
+} from "uuid";
+
+import {
+  isLedgerKeyring, Keyring, KeyringType,
+} from "../../wallet/keyring/index.js";
+import {
+  publicKeyToAddress,
+} from "./../../utils/address.js";
+import {
+  Account, AccountInfo,
+} from "./account.js";
 
 export class LedgerAccount implements Account {
   public readonly id;
@@ -18,7 +27,9 @@ export class LedgerAccount implements Account {
 
   private _name: string;
 
-  constructor({ id, index, keyringId, type, publicKey, name, hdPath }: AccountInfo) {
+  constructor({
+    id, index, keyringId, type, publicKey, name, hdPath,
+  }: AccountInfo) {
     this.id = id || uuidv4();
     this._index = index;
     this.keyringId = keyringId;
@@ -62,11 +73,13 @@ export class LedgerAccount implements Account {
 
   public static async createBy(keyring: Keyring, name: string, hdPath: number) {
     if (!isLedgerKeyring(keyring)) {
-      throw new Error('Invalid account type');
+      throw new Error("Invalid account type");
     }
 
     const publicKey = await keyring.getPublicKey(hdPath);
-    const { id: keyringId, type } = keyring;
+    const {
+      id: keyringId, type,
+    } = keyring;
     return new LedgerAccount({
       keyringId,
       index: 1,

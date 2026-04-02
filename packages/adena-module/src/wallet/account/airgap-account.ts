@@ -1,7 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { isAddressKeyring, Keyring, KeyringType } from '../keyring';
-import { toBech32 } from '../../encoding';
+import {
+  v4 as uuidv4,
+} from "uuid";
+
+import {
+  toBech32,
+} from "../../encoding/index.js";
+import {
+  isAddressKeyring, Keyring, KeyringType,
+} from "../keyring/index.js";
+import {
+  Account, AccountInfo,
+} from "./account.js";
 
 export class AirgapAccount implements Account {
   public readonly id;
@@ -18,7 +27,9 @@ export class AirgapAccount implements Account {
 
   private _name: string;
 
-  constructor({ id, index, type, keyringId, addressBytes, name }: AccountInfo) {
+  constructor({
+    id, index, type, keyringId, addressBytes, name,
+  }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
     this.type = type;
@@ -63,10 +74,12 @@ export class AirgapAccount implements Account {
 
   public static async createBy(keyring: Keyring, name: string) {
     if (!isAddressKeyring(keyring)) {
-      throw new Error('Invalid account type');
+      throw new Error("Invalid account type");
     }
 
-    const { id: keyringId, type: type, addressBytes } = keyring;
+    const {
+      id: keyringId, type: type, addressBytes,
+    } = keyring;
     return new AirgapAccount({
       keyringId,
       index: 1,
