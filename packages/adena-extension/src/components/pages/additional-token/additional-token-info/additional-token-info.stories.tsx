@@ -1,5 +1,5 @@
 import AdditionalTokenInfo, { type AdditionalTokenInfoProps } from './additional-token-info';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/manage-token/AdditionalTokenInfo',

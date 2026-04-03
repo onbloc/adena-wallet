@@ -1,5 +1,5 @@
 import MainTokenBalance, { type MainTokenBalanceProps } from './main-token-balance';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/main/MainTokenBalance',

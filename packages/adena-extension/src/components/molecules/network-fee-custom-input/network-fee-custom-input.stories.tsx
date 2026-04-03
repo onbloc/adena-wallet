@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import NetworkFeeCustomInput, { type NetworkFeeCustomInputProps } from './network-fee-custom-input';
 
 export default {

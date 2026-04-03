@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 import WebHelpTooltip, { type WebHelpTooltipProps } from './web-help-tooltip';
 

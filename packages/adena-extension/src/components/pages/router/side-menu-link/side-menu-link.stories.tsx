@@ -1,6 +1,6 @@
 import SideMenuLink, { type SideMenuLinkProps } from './side-menu-link';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'components/common/SideMenuLink',

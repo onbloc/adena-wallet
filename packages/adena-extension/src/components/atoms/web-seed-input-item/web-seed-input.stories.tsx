@@ -1,6 +1,6 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import { WebSeedInputItem } from '.';
-import { action } from '@storybook/addon-actions';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'components/atoms/WebSeedInputItem',

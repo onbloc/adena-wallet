@@ -1,5 +1,5 @@
 import TransferSummaryNetworkFee, { type TransferSummaryNetworkFeeProps } from './transfer-summary-network-fee';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/transfer/TransferSummaryNetworkFee',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ThemeProvider } from 'styled-components';
 import { RecoilRoot } from 'recoil';
-import type { Decorator, Parameters } from '@storybook/react';
+import type { Decorator, Parameters } from '@storybook/react-vite';
 import { GlobalPopupStyle } from '../src/styles/global-style';
 import theme from '../src/styles/theme';
 import '../index.css';
@@ -16,19 +16,17 @@ const extensionViewport = {
 
 export const parameters: Parameters = {
   viewport: {
-    viewports: {
+    options: {
       adenaExtension: extensionViewport,
-    },
-    defaultViewport: 'adenaExtension',
+    }
   },
   backgrounds: {
-    default: 'adenaExtension',
-    values: [
-      {
+    options: {
+      adenaextension: {
         name: 'adenaExtension',
         value: '#212128',
-      },
-    ],
+      }
+    }
   },
   layout: 'fullscreen',
   actions: { argTypesRegex: '^on[A-Z].*' },
@@ -55,3 +53,14 @@ export const decorators: Decorator[] = [
     );
   },
 ];
+
+export const initialGlobals = {
+  viewport: {
+    value: 'adenaExtension',
+    isRotated: false
+  },
+
+  backgrounds: {
+    value: 'adenaextension'
+  }
+};

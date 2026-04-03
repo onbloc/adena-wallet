@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import NFTCollections, { type NFTCollectionsProps } from './nft-collections';
 
 export default {

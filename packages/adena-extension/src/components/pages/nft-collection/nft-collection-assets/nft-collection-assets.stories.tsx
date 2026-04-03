@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import NFTCollectionAssets, { type NFTCollectionAssetsProps } from './nft-collection-assets';
 
 export default {

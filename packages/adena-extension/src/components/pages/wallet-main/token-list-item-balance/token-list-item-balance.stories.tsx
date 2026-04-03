@@ -1,5 +1,5 @@
 import TokenListItemBalance, { type TokenListItemBalanceProps } from './token-list-item-balance';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/common/TokenListItemBalance',

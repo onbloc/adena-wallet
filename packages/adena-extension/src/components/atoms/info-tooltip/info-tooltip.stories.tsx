@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import InfoTooltip, { type InfoTooltipProps } from './info-tooltip';
 
 export default {

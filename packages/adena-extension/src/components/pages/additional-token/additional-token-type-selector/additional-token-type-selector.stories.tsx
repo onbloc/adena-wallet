@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import AdditionalTokenTypeSelector, {
   type AdditionalTokenTypeSelectorProps,
 } from './additional-token-type-selector';

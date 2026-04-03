@@ -1,6 +1,6 @@
 import AddressBookList, { type AddressBookListProps } from './address-book-list';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'components/transfer/AddressBookList',

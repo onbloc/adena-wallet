@@ -1,6 +1,6 @@
 import AdditionalTokenSelectBox from './additional-token-select-box';
-import { Meta, StoryObj } from '@storybook/react';
-import { action } from '@storybook/addon-actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
+import { action } from 'storybook/actions';
 import { AdditionalTokenSelectBoxProps } from '@types';
 
 export default {

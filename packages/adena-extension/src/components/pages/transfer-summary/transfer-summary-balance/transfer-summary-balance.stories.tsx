@@ -1,5 +1,5 @@
 import TransferSummaryBalance, { type TransferSummaryBalanceProps } from './transfer-summary-balance';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/transfer/TransferSummaryBalance',

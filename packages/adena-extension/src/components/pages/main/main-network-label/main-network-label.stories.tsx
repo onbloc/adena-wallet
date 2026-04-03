@@ -1,5 +1,5 @@
 import MainNetworkLabel, { type MainNetworkLabelProps } from './main-network-label';
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 
 export default {
   title: 'components/main/MainNetworkLabel',

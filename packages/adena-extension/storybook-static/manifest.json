@@ -1,0 +1,71 @@
+{
+  "name": "Adena",
+  "description": "Adena is a friendly browser extension wallet for the gno.land blockchain.",
+  "manifest_version": 3,
+  "version": "1.18.5",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    },
+    "default_title": "Adena",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "service-worker-loader.js",
+    "type": "module"
+  },
+  "permissions": [
+    "unlimitedStorage",
+    "storage",
+    "tabs",
+    "alarms",
+    "notifications"
+  ],
+  "content_scripts": [
+    {
+      "js": [
+        "assets/content.ts-loader-m-vc9xiw.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "resources": [
+        "src/inject.ts",
+        "resources/*",
+        "assets/command-handler-CmRHWkei.js",
+        "assets/message-handler-D1EeVfGA.js",
+        "assets/theme-D2qI5cuM.js",
+        "assets/index-BAMY2Nnw.js",
+        "assets/client-utils-zr3RfGzN.js",
+        "assets/index-y5y07clE.js",
+        "assets/gte-LYzHDOB4.js",
+        "assets/main-BEJZyd-V.js",
+        "assets/router-BzcCdFuP.js",
+        "assets/token.constant-C-ogqcde.js",
+        "assets/bignumber-B1z4pYDt.js",
+        "assets/string-utils-Bff5ZSZ1.js",
+        "assets/base-error-B60qQlbC.js",
+        "assets/chains-C5osHhKP.js",
+        "assets/content.ts-DHn987-F.js"
+      ],
+      "use_dynamic_url": false
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' https:; object-src 'none'; font-src data:; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http://127.0.0.1:26657; base-uri 'self'; form-action 'none';"
+  }
+}

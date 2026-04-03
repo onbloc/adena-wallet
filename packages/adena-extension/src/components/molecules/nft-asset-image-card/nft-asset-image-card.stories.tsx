@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from '@storybook/react';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import NFTAssetImageCard, { type NFTAssetImageCardProps } from './nft-asset-image-card';
 
 export default {

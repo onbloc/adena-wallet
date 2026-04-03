@@ -1,5 +1,5 @@
-import { action } from '@storybook/addon-actions';
-import { Meta, StoryObj } from '@storybook/react';
+import { action } from 'storybook/actions';
+import { Meta, StoryObj } from '@storybook/react-vite';
 import { UseQueryResult } from '@tanstack/react-query';
 import NFTCollectionCard, { type NFTCollectionCardProps } from './nft-collection-card';
 
