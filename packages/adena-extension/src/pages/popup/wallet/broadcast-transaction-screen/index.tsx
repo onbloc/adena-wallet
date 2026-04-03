@@ -1,10 +1,12 @@
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
+import useBroadcastTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
 import React from 'react';
 
-import { CommonFullContentLayout } from '@components/atoms';
-import useBroadcastTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
-import BroadcastTransactionUpload from './upload';
-import BroadcastTransactionLoading from './loading';
 import BroadcastTransactionFailed from './failed';
+import BroadcastTransactionLoading from './loading';
+import BroadcastTransactionUpload from './upload';
 
 const BroadcastTransactionScreen: React.FC = () => {
   const {

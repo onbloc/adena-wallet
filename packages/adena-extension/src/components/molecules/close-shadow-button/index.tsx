@@ -1,15 +1,20 @@
+import {
+  Button, Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Button } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-
 interface Props {
-  onClick: () => void;
+  onClick: () => void
 }
 
-export const CloseShadowButton = ({ onClick }: Props): JSX.Element => {
+export const CloseShadowButton = ({
+  onClick,
+}: Props): JSX.Element => {
   return (
     <ButtonWrap>
       <Button fullWidth hierarchy='dark' onClick={onClick}>
@@ -20,7 +25,9 @@ export const CloseShadowButton = ({ onClick }: Props): JSX.Element => {
 };
 
 const ButtonWrap = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: fixed;
   bottom: 0px;
   left: 0px;

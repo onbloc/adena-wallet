@@ -1,37 +1,52 @@
-import { DEFAULT_GAS_ADJUSTMENT } from '@common/constants/gas.constant';
-import { GasToken } from '@common/constants/token.constant';
-import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
-import { GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-import { Document } from 'adena-module';
+import {
+  DEFAULT_GAS_ADJUSTMENT,
+} from '@common/constants/gas.constant';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  convertRawGasAmountToDisplayAmount,
+} from '@common/utils/gas-utils';
+import {
+  GasInfo, NetworkFee, NetworkFeeSettingInfo, NetworkFeeSettingType,
+} from '@types';
+import {
+  Document,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  useCallback, useMemo, useState,
+} from 'react';
+
 import {
   useGetDefaultEstimateGasInfo,
   useGetEstimateGasInfo,
 } from './transaction-gas/use-get-estimate-gas-info';
-import { useGetEstimateGasPriceTiers } from './transaction-gas/use-get-estimate-gas-price-tiers';
+import {
+  useGetEstimateGasPriceTiers,
+} from './transaction-gas/use-get-estimate-gas-price-tiers';
 
 export interface UseNetworkFeeReturn {
-  isLoading: boolean;
-  isFetchedPriceTiers: boolean;
-  isFetchedEstimateGasInfo: boolean;
-  isSimulateError: boolean;
-  currentGasInfo: GasInfo | null;
-  currentGasFeeRawAmount: number;
+  isLoading: boolean
+  isFetchedPriceTiers: boolean
+  isFetchedEstimateGasInfo: boolean
+  isSimulateError: boolean
+  currentGasInfo: GasInfo | null
+  currentGasFeeRawAmount: number
   currentStorageDeposits: {
-    storageDeposit: number;
-    unlockDeposit: number;
-    storageUsage: number;
-    releaseStorageUsage: number;
-  } | null;
-  changedGasInfo: GasInfo | null;
-  networkFee: NetworkFee | null;
-  networkFeeSettingType: NetworkFeeSettingType;
-  networkFeeSettings: NetworkFeeSettingInfo[] | null;
-  gasAdjustment: string;
-  setGasAdjustment: (ratio: string) => void;
-  setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
-  save: () => void;
+    storageDeposit: number
+    unlockDeposit: number
+    storageUsage: number
+    releaseStorageUsage: number
+  } | null
+  changedGasInfo: GasInfo | null
+  networkFee: NetworkFee | null
+  networkFeeSettingType: NetworkFeeSettingType
+  networkFeeSettings: NetworkFeeSettingInfo[] | null
+  gasAdjustment: string
+  setGasAdjustment: (ratio: string) => void
+  setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void
+  save: () => void
 }
 
 const defaultSettingType = NetworkFeeSettingType.AVERAGE;
@@ -41,22 +56,28 @@ export const useNetworkFee = (
   isDefaultGasPrice = false,
   gasInfo?: GasInfo | null,
 ): UseNetworkFeeReturn => {
-  const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType] =
-    useState<NetworkFeeSettingType>(defaultSettingType);
-  const [networkFeeSettingType, setNetworkFeeSettingType] =
-    useState<NetworkFeeSettingType>(defaultSettingType);
+  const [currentNetworkFeeSettingType, setCurrentNetworkFeeSettingType]
+    = useState<NetworkFeeSettingType>(defaultSettingType);
+  const [networkFeeSettingType, setNetworkFeeSettingType]
+    = useState<NetworkFeeSettingType>(defaultSettingType);
 
   const [selectedTier, setSelectedTier] = useState(!isDefaultGasPrice);
   const [gasAdjustment, setGasAdjustment] = useState<string>(DEFAULT_GAS_ADJUSTMENT.toString());
 
-  const { data: defaultEstimatedGasInfo, isFetched: isFetchedDefaultEstimatedGasInfo } =
-    useGetDefaultEstimateGasInfo(document);
-  const { data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo } = useGetEstimateGasInfo(
+  const {
+    data: defaultEstimatedGasInfo, isFetched: isFetchedDefaultEstimatedGasInfo,
+  }
+    = useGetDefaultEstimateGasInfo(document);
+  const {
+    data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo,
+  } = useGetEstimateGasInfo(
     document,
     gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0,
   );
 
-  const { data: gasPriceTiers, isFetched: isFetchedPriceTiers } = useGetEstimateGasPriceTiers(
+  const {
+    data: gasPriceTiers, isFetched: isFetchedPriceTiers,
+  } = useGetEstimateGasPriceTiers(
     document,
     gasInfo?.gasUsed || estimatedGasInfo?.gasUsed,
     gasAdjustment,
@@ -72,12 +93,7 @@ export const useNetworkFee = (
     }
 
     return false;
-  }, [
-    gasPriceTiers,
-    isFetchedDefaultEstimatedGasInfo,
-    isFetchedEstimateGasInfo,
-    isFetchedPriceTiers,
-  ]);
+  }, [gasPriceTiers, isFetchedDefaultEstimatedGasInfo, isFetchedEstimateGasInfo, isFetchedPriceTiers]);
 
   const currentSettingType = useMemo(() => {
     if (!gasPriceTiers || gasPriceTiers.length <= 0) {
@@ -100,7 +116,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === currentSettingType);
     if (!current?.gasInfo) {
       return {
         gasFee: 0,
@@ -120,7 +136,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === currentSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === currentSettingType);
     if (!current?.storageDeposits) {
       return {
         storageDeposit: 0,
@@ -150,7 +166,7 @@ export const useNetworkFee = (
       return null;
     }
 
-    const current = gasPriceTiers.find((setting) => setting.settingType === changedSettingType);
+    const current = gasPriceTiers.find(setting => setting.settingType === changedSettingType);
 
     return current?.gasInfo || null;
   }, [changedSettingType, gasPriceTiers]);

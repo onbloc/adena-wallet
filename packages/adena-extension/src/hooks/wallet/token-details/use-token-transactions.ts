@@ -1,40 +1,69 @@
-import { useMemo, useState } from 'react';
-
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { RefetchOptions, useQuery } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useMakeTransactionsWithTime,
+} from '@hooks/use-make-transactions-with-time';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTokenMetainfo,
+} from '@hooks/use-token-metainfo';
+import {
+  RefetchOptions, useQuery,
+} from '@tanstack/react-query';
+import {
+  TransactionInfo,
+} from '@types';
+import {
+  useMemo, useState,
+} from 'react';
 
 export const useTokenTransactions = (
   isNative: boolean | undefined,
   tokenPath: string,
-  { enabled }: { enabled: boolean },
+  {
+    enabled,
+  }: {
+    enabled: boolean
+  },
 ): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
+      title: string
+      transactions: TransactionInfo[]
+    }[]
+    | null
+  isFetched: boolean
+  status: 'loading' | 'error' | 'success'
+  isLoading: boolean
+  isFetching: boolean
+  isSupported: boolean
+  hasNextPage: boolean
+  fetchNextPage: () => Promise<boolean>
+  refetch: (options?: RefetchOptions) => void
 } => {
-  const { currentNetwork } = useNetwork();
-  const { currentAddress } = useCurrentAccount();
-  const { transactionHistoryService } = useAdenaContext();
-  const { tokenMetainfos } = useTokenMetainfo();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
+  const {
+    transactionHistoryService,
+  } = useAdenaContext();
+  const {
+    tokenMetainfos,
+  } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useState<number | null>(null);
 
-  const { data: allTransactions, refetch } = useQuery(
+  const {
+    data: allTransactions, refetch,
+  } = useQuery(
     ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
     () => {
       if (isNative === undefined) {
@@ -47,10 +76,10 @@ export const useTokenTransactions = (
     },
     {
       enabled:
-        !!currentAddress &&
-        transactionHistoryService.supported &&
-        tokenMetainfos.length > 0 &&
-        enabled,
+        !!currentAddress
+        && transactionHistoryService.supported
+        && tokenMetainfos.length > 0
+        && enabled,
     },
   );
 
@@ -78,7 +107,9 @@ export const useTokenTransactions = (
     return allTransactions.transactions.slice(0, blockIndex || 0);
   }, [allTransactions, blockIndex]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const {
+    data, isFetched, status, isLoading, isFetching,
+  } = useMakeTransactionsWithTime(
     `token-details/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
     transactions,
   );

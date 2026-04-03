@@ -1,10 +1,16 @@
+import {
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
+import {
+  isGRC20TokenModel, isNativeTokenModel,
+} from '@common/validation/validation-token';
+import {
+  TokenBalanceType, TokenModel,
+} from '@types';
 import BigNumber from 'bignumber.js';
-
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { TokenBalanceType, TokenModel } from '@types';
 
 export class WalletBalanceService {
   private tokenMetainfos: TokenModel[];
@@ -70,7 +76,7 @@ export class WalletBalanceService {
     const denom = GNOT_TOKEN.denom;
     const balance = await gnoProvider
       .getBalance(address, denom)
-      .then((value) => ({
+      .then(value => ({
         value: value.toFixed(),
         denom,
       }))
@@ -83,8 +89,8 @@ export class WalletBalanceService {
     for (const tokenMetainfo of this.tokenMetainfos) {
       const isNativeToken = isNativeTokenModel(tokenMetainfo);
       if (
-        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase() ||
-        (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
+        balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
+        || (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
       ) {
         tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo));
       }
@@ -98,9 +104,7 @@ export class WalletBalanceService {
     symbol: string,
   ): Promise<TokenBalanceType[]> => {
     const gnoProvider = this.getGnoProvider();
-    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
-      address,
-    ]);
+    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address]);
     if (!balance) {
       return [];
     }
@@ -109,7 +113,7 @@ export class WalletBalanceService {
       denom: symbol.toUpperCase(),
     };
     const tokenBalance = this.tokenMetainfos.find(
-      (tokenMetainfo) => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
+      tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
     );
     if (tokenBalance) {
       return [this.createTokenBalance(balanceAmount, tokenBalance)];
@@ -123,8 +127,8 @@ export class WalletBalanceService {
     tokenMetainfo: TokenModel,
     convertType: 'COMMON' | 'MINIMAL' = 'COMMON',
   ): {
-    value: string;
-    denom: string;
+    value: string
+    denom: string
   } => {
     const decimals = tokenMetainfo.decimals;
     let shift = 0;
@@ -152,12 +156,14 @@ export class WalletBalanceService {
 
   private createTokenBalance = (
     balance: {
-      value: string;
-      denom: string;
+      value: string
+      denom: string
     },
     tokenMetainfo: TokenModel,
   ): TokenBalanceType => {
-    const { value, denom } = this.convertDenom(
+    const {
+      value, denom,
+    } = this.convertDenom(
       balance.value,
       balance.denom,
       tokenMetainfo,

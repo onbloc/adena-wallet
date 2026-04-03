@@ -1,13 +1,18 @@
-import { useRecoilState } from 'recoil';
-
-import { CommonState } from '@states';
-import { useMemo } from 'react';
+import {
+  CommonState,
+} from '@states';
+import {
+  useMemo,
+} from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
 
 export type UseLoadAccountsReturn = {
-  isLoading: boolean;
-  addLoadingImages: (imageUrls: string[]) => void;
-  completeImageLoading: (imageUrl: string) => void;
-  clear: () => void;
+  isLoading: boolean
+  addLoadingImages: (imageUrls: string[]) => void
+  completeImageLoading: (imageUrl: string) => void
+  clear: () => void
 };
 
 export const useLoadImages = (): UseLoadAccountsReturn => {
@@ -22,11 +27,11 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
   }, [loadedImageUrls, loadingImageUrls]);
 
   const addLoadingImages = (imageUrls: string[]): void => {
-    setLoadingImageUrls([...new Set(imageUrls.filter((url) => !!url))]);
+    setLoadingImageUrls([...new Set(imageUrls.filter(url => !!url))]);
   };
 
   const completeImageLoading = (imageUrl: string): void => {
-    setLoadedImageUrls((prev) => [...new Set([...prev, imageUrl])]);
+    setLoadedImageUrls(prev => [...new Set([...prev, imageUrl])]);
   };
 
   const clear = (): void => {
@@ -34,5 +39,10 @@ export const useLoadImages = (): UseLoadAccountsReturn => {
     setLoadedImageUrls([]);
   };
 
-  return { isLoading, addLoadingImages, completeImageLoading, clear };
+  return {
+    isLoading,
+    addLoadingImages,
+    completeImageLoading,
+    clear,
+  };
 };

@@ -1,4 +1,6 @@
-import { WalletResponse } from '@adena-wallet/sdk';
+import {
+  WalletResponse,
+} from '@adena-wallet/sdk';
 
 export type AdenaResponseStatus = 'success' | 'failure';
 

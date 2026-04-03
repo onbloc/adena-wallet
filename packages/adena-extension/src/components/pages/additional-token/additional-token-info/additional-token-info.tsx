@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   AdditionalTokenInfoItemWrapper,
   AdditionalTokenInfoWrapper,
@@ -6,16 +7,16 @@ import {
 } from './additional-token-info.styles';
 
 export interface AdditionalTokenInfoProps {
-  isLoading: boolean;
-  symbol: string;
-  path: string;
-  decimals: string;
+  isLoading: boolean
+  symbol: string
+  path: string
+  decimals: string
 }
 
 export interface AdditionalTokenInfoBlockProps {
-  isLoading: boolean;
-  title: string;
-  value: string;
+  isLoading: boolean
+  title: string
+  value: string
 }
 
 const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
@@ -25,7 +26,10 @@ const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
 }) => {
   return (
     <AdditionalTokenInfoItemWrapper>
-      <span className='title'>{title}:</span>
+      <span className='title'>
+        {title}
+        :
+      </span>
 
       {isLoading ? <TokenInfoValueLoadingBox /> : <span className='value'>{value}</span>}
     </AdditionalTokenInfoItemWrapper>

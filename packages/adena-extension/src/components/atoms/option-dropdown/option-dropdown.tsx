@@ -1,19 +1,26 @@
-import React, { useCallback, useState } from 'react';
-import { OptionDropdownItemWrapper, OptionDropdownWrapper } from './option-dropdown.styles';
+import React, {
+  useCallback, useState,
+} from 'react';
+
+import {
+  OptionDropdownItemWrapper, OptionDropdownWrapper,
+} from './option-dropdown.styles';
 
 interface OptionItem {
-  icon?: React.ReactNode;
-  text: string;
-  onClick: () => void;
+  icon?: React.ReactNode
+  text: string
+  onClick: () => void
 }
 
 export interface OptionDropdownProps {
-  buttonNode: React.ReactNode;
-  options: OptionItem[];
-  hover?: boolean;
+  buttonNode: React.ReactNode
+  options: OptionItem[]
+  hover?: boolean
 }
 
-const OptionDropdown: React.FC<OptionDropdownProps> = ({ buttonNode, options, hover }) => {
+const OptionDropdown: React.FC<OptionDropdownProps> = ({
+  buttonNode, options, hover,
+}) => {
   const [opened, setOpened] = useState(false);
 
   const onMouseOverDropdown = useCallback(() => {
@@ -70,12 +77,14 @@ const OptionDropdown: React.FC<OptionDropdownProps> = ({ buttonNode, options, ho
  * Option Dropdown Item Component
  */
 interface OptionDropdownItemProps {
-  icon?: React.ReactNode;
-  text: string;
-  onClick: () => void;
+  icon?: React.ReactNode
+  text: string
+  onClick: () => void
 }
 
-const OptionDropdownItem: React.FC<OptionDropdownItemProps> = ({ icon, text, onClick }) => {
+const OptionDropdownItem: React.FC<OptionDropdownItemProps> = ({
+  icon, text, onClick,
+}) => {
   return (
     <OptionDropdownItemWrapper onClick={onClick}>
       <div className='item-icon-wrapper'>{!!icon && icon}</div>

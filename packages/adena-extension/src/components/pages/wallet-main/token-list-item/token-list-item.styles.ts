@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const TokenListItemWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   padding: 13px;
   width: 100%;
   height: auto;

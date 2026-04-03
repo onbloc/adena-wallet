@@ -1,9 +1,19 @@
-import { MsgAddPackage, MsgCall, MsgSend } from '@gnolang/gno-js-client';
-import { MsgRun } from '@gnolang/gno-js-client/bin/proto/gno/vm';
-import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import {
+  MsgAddPackage, MsgCall, MsgSend,
+} from '@gnolang/gno-js-client';
+import {
+  MsgRun,
+} from '@gnolang/gno-js-client/bin/proto/gno/vm';
+import {
+  BroadcastTxCommitResult,
+} from '@gnolang/tm2-js-client';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
 
-import { AdenaResponse } from '.';
+import {
+  AdenaResponse,
+} from '.';
 
 export const EMessageType = {
   BANK_MSG_SEND: '/bank.MsgSend',
@@ -24,23 +34,23 @@ export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
 export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
 
 export type ContractMessage = {
-  type: EMessageType;
-  value: TMessage;
+  type: EMessageType
+  value: TMessage
 };
 
 export type TransactionParams = {
-  messages: ContractMessage[];
-  memo?: string;
+  messages: ContractMessage[]
+  memo?: string
   networkInfo?: {
-    chainId: string;
-    rpcUrl: string;
-  };
-  arguments?: GnoArgumentInfo[] | null;
+    chainId: string
+    rpcUrl: string
+  }
+  arguments?: GnoArgumentInfo[] | null
 };
 
 export interface ContractOptions {
-  withNotification?: boolean;
-  isVisibleResult?: boolean;
+  withNotification?: boolean
+  isVisibleResult?: boolean
 }
 
 /**
@@ -48,19 +58,19 @@ export interface ContractOptions {
  */
 export interface Fee {
   amount: {
-    amount: string;
-    denom: string;
-  }[];
-  gas: string;
+    amount: string
+    denom: string
+  }[]
+  gas: string
 }
 
 /**
  * Base document structure shared by all document types
  */
 export interface BaseDocument {
-  chain_id: string;
-  fee: Fee;
-  msgs: any[];
+  chain_id: string
+  fee: Fee
+  msgs: any[]
 }
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
@@ -69,7 +79,7 @@ export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;
 export type AdenaDoContract = (params: TransactionParams) => Promise<DoContractResponse>;
 
 type SignTxResponseData = {
-  encodedTransaction: string;
+  encodedTransaction: string
 };
 
 export type SignTxResponse = AdenaResponse<SignTxResponseData>;

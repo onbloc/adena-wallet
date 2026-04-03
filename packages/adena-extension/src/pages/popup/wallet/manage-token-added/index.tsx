@@ -1,23 +1,52 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { TokenValidationError } from '@common/errors';
-import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
-import { isGRC20TokenModel } from '@common/validation';
+import {
+  TokenValidationError,
+} from '@common/errors';
+import {
+  parseReamPathItemsByPath,
+} from '@common/utils/parse-utils';
+import {
+  isGRC20TokenModel,
+} from '@common/validation';
 import AdditionalToken from '@components/pages/additional-token/additional-token';
-import { AddingType } from '@components/pages/additional-token/additional-token-type-selector';
-import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import {
+  AddingType,
+} from '@components/pages/additional-token/additional-token-type-selector';
+import {
+  ManageTokenLayout,
+} from '@components/pages/manage-token-layout';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useDebounce } from '@hooks/use-debounce';
-import { useGRC20Token } from '@hooks/use-grc20-token';
-import { useGRC20Tokens } from '@hooks/use-grc20-tokens';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { RoutePath, TokenInfo } from '@types';
+import {
+  useDebounce,
+} from '@hooks/use-debounce';
+import {
+  useGRC20Token,
+} from '@hooks/use-grc20-token';
+import {
+  useGRC20Tokens,
+} from '@hooks/use-grc20-tokens';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTokenMetainfo,
+} from '@hooks/use-token-metainfo';
+import {
+  RoutePath, TokenInfo,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 const ManageTokenAddedContainer: React.FC = () => {
-  const { navigate, goBack } = useAppNavigate();
-  const { tokenMetainfos, addGRC20TokenMetainfo } = useTokenMetainfo();
-  const { currentNetwork } = useNetwork();
+  const {
+    navigate, goBack,
+  } = useAppNavigate();
+  const {
+    tokenMetainfos, addGRC20TokenMetainfo,
+  } = useTokenMetainfo();
+  const {
+    currentNetwork,
+  } = useNetwork();
   const [opened, setOpened] = useState(false);
   const [selected, setSelected] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -27,7 +56,9 @@ const ManageTokenAddedContainer: React.FC = () => {
   const [addingType, setAddingType] = useState(AddingType.SEARCH);
   const [manualTokenPath, setManualTokenPath] = useState('');
 
-  const { data: grc20Tokens, refetch: refetchGRC20Tokens } = useGRC20Tokens();
+  const {
+    data: grc20Tokens, refetch: refetchGRC20Tokens,
+  } = useGRC20Tokens();
 
   /**
    * Manual GRC20 Token Query
@@ -37,17 +68,25 @@ const ManageTokenAddedContainer: React.FC = () => {
     setDebouncedValue: setDebouncedManualTokenPath,
     isLoading: isLoadingDebounce,
   } = useDebounce(manualTokenPath, 500);
-  const { data: manualGRC20Token, isFetching: isFetchingManualGRC20Token } = useGRC20Token(
+  const {
+    data: manualGRC20Token, isFetching: isFetchingManualGRC20Token,
+  } = useGRC20Token(
     debouncedManualTokenPath,
-    { enabled: manualTokenPath !== '' },
+    {
+      enabled: manualTokenPath !== '',
+    },
   );
 
   /**
    * Selected GRC20 Token Query
    */
-  const { data: selectedGRC20Token, isFetching: isFetchingSelectedGRC20Token } = useGRC20Token(
+  const {
+    data: selectedGRC20Token, isFetching: isFetchingSelectedGRC20Token,
+  } = useGRC20Token(
     selectedTokenPath || '',
-    { enabled: selected && !!selectedTokenPath },
+    {
+      enabled: selected && !!selectedTokenPath,
+    },
   );
 
   const isValidManualGRC20Token = useMemo(() => {
@@ -58,7 +97,8 @@ const ManageTokenAddedContainer: React.FC = () => {
     try {
       parseReamPathItemsByPath(manualTokenPath);
       return true;
-    } catch {
+    }
+    catch {
       return false;
     }
   }, [manualTokenPath]);
@@ -98,8 +138,8 @@ const ManageTokenAddedContainer: React.FC = () => {
 
     const isRegistered = tokenMetainfos.some((tokenMetaInfo) => {
       if (
-        tokenMetaInfo.tokenId !== manualTokenPath ||
-        tokenMetaInfo.networkId !== currentNetwork.networkId
+        tokenMetaInfo.tokenId !== manualTokenPath
+        || tokenMetaInfo.networkId !== currentNetwork.networkId
       ) {
         return false;
       }
@@ -124,22 +164,22 @@ const ManageTokenAddedContainer: React.FC = () => {
     }
 
     return grc20Tokens
-      .filter((token) => token.networkId === currentNetwork.networkId)
+      .filter(token => token.networkId === currentNetwork.networkId)
       .filter(
-        (token) =>
+        token =>
           !tokenMetainfos.find(
-            (tokenMetainfo) =>
-              tokenMetainfo.tokenId === token.tokenId &&
-              tokenMetainfo.networkId === token.networkId,
+            tokenMetainfo =>
+              tokenMetainfo.tokenId === token.tokenId
+              && tokenMetainfo.networkId === token.networkId,
           ),
       )
       .filter(
-        (token) =>
-          token?.pkgPath.includes(keyword) ||
-          token?.symbol.includes(keyword) ||
-          token?.name.includes(keyword),
+        token =>
+          token?.pkgPath.includes(keyword)
+          || token?.symbol.includes(keyword)
+          || token?.name.includes(keyword),
       )
-      .map((token) => ({
+      .map(token => ({
         tokenId: token?.tokenId,
         name: token?.name,
         symbol: token?.symbol,
@@ -178,7 +218,7 @@ const ManageTokenAddedContainer: React.FC = () => {
 
   const onClickListItem = useCallback(
     (tokenId: string) => {
-      const tokenInfo = tokenInfos?.find((tokenInfo) => tokenInfo.tokenId === tokenId);
+      const tokenInfo = tokenInfos?.find(tokenInfo => tokenInfo.tokenId === tokenId);
       if (!tokenInfo) {
         return;
       }

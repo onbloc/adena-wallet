@@ -1,6 +1,8 @@
-/* eslint-disable react/no-unknown-property */
-
-const IconEditCancel = ({ className }: { className: string }): JSX.Element => (
+const IconEditCancel = ({
+  className,
+}: {
+  className: string
+}): JSX.Element => (
   <svg
     className={className}
     width='16'

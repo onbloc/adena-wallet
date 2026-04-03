@@ -1,7 +1,14 @@
-import { AxiosError, AxiosInstance } from 'axios';
-import { FaucetRequest } from '../common/request';
+import {
+  FaucetResponse,
+} from '@repositories/common/response';
 import FaucetApiResource from '@resources/faucet/faucet-api.json';
-import { FaucetResponse } from '@repositories/common/response';
+import {
+  AxiosError, AxiosInstance,
+} from 'axios';
+
+import {
+  FaucetRequest,
+} from '../common/request';
 
 export class FaucetRepository {
   private networkInstance: AxiosInstance;
@@ -10,7 +17,9 @@ export class FaucetRepository {
 
   constructor(networkInstance: AxiosInstance) {
     this.networkInstance = networkInstance;
-    this.faucetApiMap = { ...FaucetApiResource };
+    this.faucetApiMap = {
+      ...FaucetApiResource,
+    };
   }
 
   public existsFaucetApi(chainId: string): boolean {

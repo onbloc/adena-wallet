@@ -1,33 +1,45 @@
-import { AnimationConfigWithData, AnimationItem, default as LottieWeb } from 'lottie-web';
-import React, { HTMLAttributes, useEffect, useMemo, useRef, useState } from 'react';
-import styled, { css, RuleSet } from 'styled-components';
+import LottieWeb, {
+  AnimationConfigWithData, AnimationItem,
+} from 'lottie-web';
+import React, {
+  HTMLAttributes, useEffect, useMemo, useRef, useState,
+} from 'react';
+import styled, {
+  css, RuleSet,
+} from 'styled-components';
 
 type LottieProps = {
-  animationData: any;
-  loop?: boolean;
-  autoplay?: boolean;
-  speed?: number;
-  isPaused?: boolean;
-  isStopped?: boolean;
-  width?: number;
-  height?: number;
-  visibleSize?: number;
+  animationData: any
+  loop?: boolean
+  autoplay?: boolean
+  speed?: number
+  isPaused?: boolean
+  isStopped?: boolean
+  width?: number
+  height?: number
+  visibleSize?: number
 } & HTMLAttributes<HTMLDivElement>;
 
 const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['visibleSize', 'isOverflow'].includes(prop),
+  shouldForwardProp: prop => !['visibleSize', 'isOverflow'].includes(prop),
 })<{
-  width?: number;
-  height?: number;
-  visibleSize: number;
-  isOverflow: boolean;
+  width?: number
+  height?: number
+  visibleSize: number
+  isOverflow: boolean
 }>`
   display: flex;
   position: relative;
-  width: ${({ width }): string => (width ? `${width}px` : 'auto')};
-  height: ${({ height }): string => (height ? `${height}px` : 'auto')};
+  width: ${({
+    width,
+  }): string => (width ? `${width}px` : 'auto')};
+  height: ${({
+    height,
+  }): string => (height ? `${height}px` : 'auto')};
 
-  ${({ isOverflow, visibleSize, width, height }): RuleSet =>
+  ${({
+    isOverflow, visibleSize, width, height,
+  }): RuleSet =>
     isOverflow
       ? css`
           & .lottie-player {
@@ -94,7 +106,8 @@ const Lottie: React.FC<LottieProps> = ({
     if (animationInstance !== null) {
       if (isPaused) {
         animationInstance.pause();
-      } else {
+      }
+      else {
         animationInstance.play();
       }
 

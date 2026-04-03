@@ -1,24 +1,31 @@
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  Signature,
+} from '@inject/types';
+import {
+  RawTx,
+} from 'adena-module';
 import React from 'react';
 
-import { useAdenaContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
-import { Signature } from '@inject/types';
-import { RawTx } from 'adena-module';
-
 export interface MultisigTransactionContextProps {
-  transaction: RawTx | null;
-  chainId: string;
-  accountNumber: string;
-  sequence: string;
-  signatures: Signature[];
-  updateAccountInfo: (caller: string) => Promise<void>;
-  setAccountNumber: (accountNumber: string) => void;
-  setSequence: (sequence: string) => void;
-  setTransaction: (tx: RawTx | null) => void;
-  addSignature: (signature: Signature) => void;
-  removeSignature: (pubKeyValue: string) => void;
-  clearSignatures: () => void;
-  resetMultisigTransaction: () => void;
+  transaction: RawTx | null
+  chainId: string
+  accountNumber: string
+  sequence: string
+  signatures: Signature[]
+  updateAccountInfo: (caller: string) => Promise<void>
+  setAccountNumber: (accountNumber: string) => void
+  setSequence: (sequence: string) => void
+  setTransaction: (tx: RawTx | null) => void
+  addSignature: (signature: Signature) => void
+  removeSignature: (pubKeyValue: string) => void
+  clearSignatures: () => void
+  resetMultisigTransaction: () => void
 }
 
 export const MultisigTransactionContext = React.createContext<MultisigTransactionContextProps | null>(
@@ -28,8 +35,12 @@ export const MultisigTransactionContext = React.createContext<MultisigTransactio
 export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unknown>> = ({
   children,
 }) => {
-  const { currentNetwork } = useNetwork();
-  const { accountService } = useAdenaContext();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    accountService,
+  } = useAdenaContext();
 
   const [transaction, setTransaction] = React.useState<RawTx | null>(null);
   const [signatures, setSignatures] = React.useState<Signature[]>([]);
@@ -38,7 +49,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
 
   const addSignature = React.useCallback((signature: Signature) => {
     setSignatures((prev) => {
-      const isDuplicate = prev.some((sig) => sig.pub_key.value === signature.pub_key.value);
+      const isDuplicate = prev.some(sig => sig.pub_key.value === signature.pub_key.value);
       if (isDuplicate) {
         return prev;
       }
@@ -47,7 +58,7 @@ export const MultisigTransactionProvider: React.FC<React.PropsWithChildren<unkno
   }, []);
 
   const removeSignature = React.useCallback((pubKeyValue: string) => {
-    setSignatures((prev) => prev.filter((sig) => sig.pub_key.value !== pubKeyValue));
+    setSignatures(prev => prev.filter(sig => sig.pub_key.value !== pubKeyValue));
   }, []);
 
   const clearSignatures = React.useCallback(() => {

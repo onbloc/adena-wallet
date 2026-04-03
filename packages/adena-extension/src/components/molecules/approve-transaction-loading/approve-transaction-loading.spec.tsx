@@ -1,14 +1,26 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
-import { ApproveTransactionLoading, ApproveTransactionLoadingProps } from '.';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import {
+  ApproveTransactionLoading, ApproveTransactionLoadingProps,
+} from '.';
 
 describe('ApproveTransactionLoading Component', () => {
   it('ApproveTransactionLoading render', () => {
-    const args: ApproveTransactionLoadingProps = {};
+    const args: ApproveTransactionLoadingProps = {
+    };
 
     render(
       <RecoilRoot>

@@ -1,20 +1,29 @@
-import { CopyIconButton, FullButtonRightIcon } from '@components/atoms';
-import { QRCodeSVG } from 'qrcode.react';
-import React, { useCallback } from 'react';
+import {
+  CopyIconButton, FullButtonRightIcon,
+} from '@components/atoms';
+import {
+  QRCodeSVG,
+} from 'qrcode.react';
+import React, {
+  useCallback,
+} from 'react';
+
 import AccountNameInput from '../account-name-input';
-import { AccountDetailsWrapper } from './account-details.styles';
+import {
+  AccountDetailsWrapper,
+} from './account-details.styles';
 
 export interface AccountDetailsProps {
-  hasPrivateKey: boolean;
-  hasSeedPhrase: boolean;
-  originName: string;
-  name: string;
-  address: string;
-  moveGnoscan: () => void;
-  moveRevealSeedPhrase: () => void;
-  moveExportPrivateKey: () => void;
-  setName: (name: string) => void;
-  reset: () => void;
+  hasPrivateKey: boolean
+  hasSeedPhrase: boolean
+  originName: string
+  name: string
+  address: string
+  moveGnoscan: () => void
+  moveRevealSeedPhrase: () => void
+  moveExportPrivateKey: () => void
+  setName: (name: string) => void
+  reset: () => void
 }
 
 const AccountDetails: React.FC<AccountDetailsProps> = ({
@@ -66,17 +75,17 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
       <div className='button-group-wrapper'>
         <FullButtonRightIcon
           icon='WEBLINK'
-          title={'View on GnoScan'}
+          title='View on GnoScan'
           onClick={onClickViewOnGnoscan}
         />
         <FullButtonRightIcon
           disabled={!hasPrivateKey}
-          title={'Export Private Key'}
+          title='Export Private Key'
           onClick={onClickExportPrivateKey}
         />
         <FullButtonRightIcon
           disabled={!hasSeedPhrase}
-          title={'Reveal Seed Phrase'}
+          title='Reveal Seed Phrase'
           onClick={onClickRevealSeedPhrase}
         />
       </div>

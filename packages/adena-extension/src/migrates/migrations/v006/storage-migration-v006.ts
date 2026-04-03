@@ -1,5 +1,11 @@
-import { Migration } from '@migrates/migrator';
-import { StorageModel } from '@common/storage';
+import {
+  StorageModel,
+} from '@common/storage';
+import {
+  Migration,
+} from '@migrates/migrator';
+import CHAIN_DATA from '@resources/chains/chains.json';
+
 import {
   CurrentChainIdModelV005,
   CurrentNetworkIdModelV005,
@@ -12,7 +18,6 @@ import {
   NetworksModelV006,
   StorageModelDataV006,
 } from './storage-model-v006';
-import CHAIN_DATA from '@resources/chains/chains.json';
 
 export class StorageMigration006 implements Migration<StorageModelDataV006> {
   public readonly version = 6;
@@ -36,17 +41,7 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
   }
 
   private validateModelV005(currentData: StorageModelDataV005): boolean {
-    const storageDataKeys = [
-      'NETWORKS',
-      'CURRENT_CHAIN_ID',
-      'CURRENT_NETWORK_ID',
-      'SERIALIZED',
-      'ENCRYPTED_STORED_PASSWORD',
-      'CURRENT_ACCOUNT_ID',
-      'ESTABLISH_SITES',
-      'ADDRESS_BOOK',
-      'ACCOUNT_TOKEN_METAINFOS',
-    ];
+    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS'];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);
@@ -99,11 +94,11 @@ export class StorageMigration006 implements Migration<StorageModelDataV006> {
   }
 
   private migrateNetwork(networks: NetworksModelV005): NetworksModelV006 {
-    const defaultNetworks = CHAIN_DATA.filter((network) => network.default);
+    const defaultNetworks = CHAIN_DATA.filter(network => network.default);
     const customNetworks = networks
-      .filter((network) => !network.default)
+      .filter(network => !network.default)
       .map((network) => {
-        const providedNetwork = CHAIN_DATA.find((data) => data.chainId === network.id);
+        const providedNetwork = CHAIN_DATA.find(data => data.chainId === network.id);
         if (providedNetwork) {
           return {
             ...providedNetwork,

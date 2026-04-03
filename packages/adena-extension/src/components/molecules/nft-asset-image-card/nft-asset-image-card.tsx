@@ -1,20 +1,33 @@
 import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image';
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721Model } from '@types';
-import React, { useMemo } from 'react';
-import { NFTAssetImageCardWrapper } from './nft-asset-image-card.styles';
+import {
+  UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  GRC721Model,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  NFTAssetImageCardWrapper,
+} from './nft-asset-image-card.styles';
 
 export interface NFTAssetImageCardProps {
-  asset: GRC721Model;
+  asset: GRC721Model
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
     options?: UseQueryOptions<string | null, Error>,
-  ) => UseQueryResult<string | null>;
+  ) => UseQueryResult<string | null>
 }
 
-const NFTAssetImageCard: React.FC<NFTAssetImageCardProps> = ({ asset, queryGRC721TokenUri }) => {
-  const { data: tokenUri, isFetched: isFetchedTokenUri } = queryGRC721TokenUri(
+const NFTAssetImageCard: React.FC<NFTAssetImageCardProps> = ({
+  asset, queryGRC721TokenUri,
+}) => {
+  const {
+    data: tokenUri, isFetched: isFetchedTokenUri,
+  } = queryGRC721TokenUri(
     asset.packagePath,
     asset.tokenId,
     {

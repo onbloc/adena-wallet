@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-
 import IconEmptyImage from '@assets/icon-empty-image.svg';
-import { Loading } from '@components/atoms';
-import { NFTCardImageSkeletonBox, NFTCardImageWrapper } from './nft-card-image.styles';
+import {
+  Loading,
+} from '@components/atoms';
+import React, {
+  useState,
+} from 'react';
+
+import {
+  NFTCardImageSkeletonBox, NFTCardImageWrapper,
+} from './nft-card-image.styles';
 
 export interface NFTCardImageProps {
-  isFetched: boolean;
-  image: string | null | undefined;
-  hasBadge?: boolean;
+  isFetched: boolean
+  image: string | null | undefined
+  hasBadge?: boolean
 }
 
-const NFTCardImage: React.FC<NFTCardImageProps> = ({ isFetched, image, hasBadge = false }) => {
+const NFTCardImage: React.FC<NFTCardImageProps> = ({
+  isFetched, image, hasBadge = false,
+}) => {
   const [hasError, setHasError] = useState(false);
 
   const handleError = (): void => {

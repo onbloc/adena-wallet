@@ -1,31 +1,61 @@
-import { Document, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { GasToken } from '@common/constants/token.constant';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  isGRC20TokenModel, isNativeTokenModel,
+} from '@common/validation/validation-token';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useTransferInfo } from '@hooks/use-transfer-info';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
-import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTransferInfo,
+} from '@hooks/use-transfer-info';
+import {
+  useGetGnotBalance,
+} from '@hooks/wallet/use-get-gnot-balance';
+import {
+  useNetworkFee,
+} from '@hooks/wallet/use-network-fee';
+import {
+  createNotificationSendMessage,
+} from '@inject/message/methods/transaction-event';
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
-import { TransactionMessage } from '@services/index';
+import {
+  TransactionMessage,
+} from '@services/index';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
+import {
+  RoutePath,
+} from '@types';
+import {
+  Document, isLedgerAccount,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
+import {
+  useNavigate,
+} from 'react-router-dom';
+import styled from 'styled-components';
 
 const TransferSummaryLayout = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: 100%;
   overflow-y: auto;
@@ -37,20 +67,34 @@ const TransferSummaryLayout = styled.div`
 
 const TransferSummaryContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferSummary>();
+  const {
+    navigate, goBack, params,
+  } = useAppNavigate<RoutePath.TransferSummary>();
   const summaryInfo = params;
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
-  const { openScannerLink } = useLink();
-  const { setMemorizedTransferInfo } = useTransferInfo();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    openScannerLink,
+  } = useLink();
+  const {
+    setMemorizedTransferInfo,
+  } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
   const [transferResult, setTransferResult] = useState<{
-    status: 'SUCCESS' | 'FAILED';
-    hash?: string | null;
-    errorMessage?: string | null;
+    status: 'SUCCESS' | 'FAILED'
+    hash?: string | null
+    errorMessage?: string | null
   } | null>(null);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
@@ -59,7 +103,9 @@ const TransferSummaryContainer: React.FC = () => {
   const useNetworkFeeReturn = useNetworkFee(document, false);
   const networkFee = useNetworkFeeReturn.networkFee;
 
-  const { data: currentBalance } = useGetGnotBalance();
+  const {
+    data: currentBalance,
+  } = useGetGnotBalance();
 
   const hasNetworkFee = useMemo(() => {
     if (!currentBalance || currentBalance === 0) {
@@ -102,13 +148,7 @@ const TransferSummaryContainer: React.FC = () => {
     }
 
     return !hasNetworkFee;
-  }, [
-    currentBalance,
-    networkFee?.amount,
-    useNetworkFeeReturn.isLoading,
-    useNetworkFeeReturn.isSimulateError,
-    hasNetworkFee,
-  ]);
+  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasNetworkFee]);
 
   const simulateErrorMessage = useMemo(() => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
@@ -118,14 +158,12 @@ const TransferSummaryContainer: React.FC = () => {
     return (
       useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
     );
-  }, [
-    useNetworkFeeReturn.isSimulateError,
-    useNetworkFeeReturn.isLoading,
-    useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage,
-  ]);
+  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage]);
 
   const getTransferBalance = useCallback(() => {
-    const { value, denom } = summaryInfo.transferAmount;
+    const {
+      value, denom,
+    } = summaryInfo.transferAmount;
 
     return {
       value: `${BigNumber(value).toFormat()}`,
@@ -134,7 +172,9 @@ const TransferSummaryContainer: React.FC = () => {
   }, [summaryInfo]);
 
   const getNativeTransferMessage = useCallback(() => {
-    const { tokenMetainfo, toAddress, transferAmount } = summaryInfo;
+    const {
+      tokenMetainfo, toAddress, transferAmount,
+    } = summaryInfo;
 
     if (!isNativeTokenModel(tokenMetainfo)) {
       return;
@@ -152,7 +192,9 @@ const TransferSummaryContainer: React.FC = () => {
   }, [summaryInfo, currentAddress]);
 
   const getGRC20TransferMessage = useCallback(() => {
-    const { tokenMetainfo, toAddress, transferAmount } = summaryInfo;
+    const {
+      tokenMetainfo, toAddress, transferAmount,
+    } = summaryInfo;
 
     if (!isGRC20TokenModel(tokenMetainfo)) {
       return;
@@ -178,10 +220,12 @@ const TransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    const { tokenMetainfo, memo } = summaryInfo;
+    const {
+      tokenMetainfo, memo,
+    } = summaryInfo;
     const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
-    const message =
-      tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
+    const message
+      = tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
 
     const document = await transactionService.createDocument(
       currentAccount,
@@ -233,7 +277,9 @@ const TransferSummaryContainer: React.FC = () => {
     const walletInstance = wallet.clone();
     walletInstance.currentAccountId = currentAccount.id;
 
-    const { signed } = await transactionService.createTransaction(
+    const {
+      signed,
+    } = await transactionService.createTransaction(
       walletInstance,
       currentAccount,
       document,
@@ -243,14 +289,7 @@ const TransferSummaryContainer: React.FC = () => {
       console.error(e);
       return null;
     });
-  }, [
-    summaryInfo,
-    currentAccount,
-    currentNetwork,
-    networkFee,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-    useNetworkFeeReturn.currentGasInfo,
-  ]);
+  }, [summaryInfo, currentAccount, currentNetwork, networkFee, useNetworkFeeReturn.currentGasFeeRawAmount, useNetworkFeeReturn.currentGasInfo]);
 
   const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
@@ -277,7 +316,8 @@ const TransferSummaryContainer: React.FC = () => {
           status: 'SUCCESS',
           hash: txHash,
         });
-      } else {
+      }
+      else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
@@ -286,7 +326,8 @@ const TransferSummaryContainer: React.FC = () => {
       setScreenState('RESULT');
       setIsSent(false);
       return Boolean(txHash);
-    } catch (e) {
+    }
+    catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
@@ -301,7 +342,11 @@ const TransferSummaryContainer: React.FC = () => {
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
     if (document) {
-      navigate(RoutePath.TransferLedgerLoading, { state: { document } });
+      navigate(RoutePath.TransferLedgerLoading, {
+        state: {
+          document,
+        },
+      });
     }
     return true;
   }, [createDocument]);
@@ -345,7 +390,9 @@ const TransferSummaryContainer: React.FC = () => {
       return;
     }
 
-    openScannerLink('/transactions/details', { txhash: transferResult.hash });
+    openScannerLink('/transactions/details', {
+      txhash: transferResult.hash,
+    });
   }, [transferResult?.hash, openScannerLink]);
 
   useEffect(() => {
@@ -353,7 +400,10 @@ const TransferSummaryContainer: React.FC = () => {
       requestAnimationFrame(() => {
         const el = layoutRef.current;
         if (el) {
-          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+          el.scrollTo({
+            top: el.scrollHeight,
+            behavior: 'smooth',
+          });
         }
       });
     }
@@ -368,56 +418,57 @@ const TransferSummaryContainer: React.FC = () => {
 
         setDocument(doc);
       });
-    } else {
+    }
+    else {
       updateDocument();
     }
-  }, [
-    wallet,
-    summaryInfo,
-    currentAccount,
-    currentNetwork,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-  ]);
+  }, [wallet, summaryInfo, currentAccount, currentNetwork, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   return (
     <TransferSummaryLayout ref={layoutRef}>
-      {screenState === 'LOADING' ? (
-        <BroadcastTransactionLoading />
-      ) : screenState === 'RESULT' && transferResult ? (
-        <TransactionResult
-          status={transferResult.status}
-          errorMessage={transferResult.errorMessage}
-          onClickViewHistory={onClickViewHistory}
-          onClickViewGnoscan={onClickViewGnoscan}
-          onClickClose={onClickCloseResult}
-        />
-      ) : openedNetworkFeeSetting ? (
-        <div className='network-fee-setting-wrapper'>
-          <NetworkFeeSetting
-            {...useNetworkFeeReturn}
-            onClickBack={onClickNetworkFeeClose}
-            onClickSave={onClickNetworkFeeSave}
-          />
-        </div>
-      ) : (
-        <TransferSummary
-          tokenMetainfo={summaryInfo.tokenMetainfo}
-          tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
-          toAddress={summaryInfo.toAddress}
-          transferBalance={getTransferBalance()}
-          isErrorNetworkFee={isNetworkFeeError}
-          isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
-          networkFee={networkFee}
-          memo={summaryInfo.memo}
-          currentBalance={currentBalance}
-          useNetworkFeeReturn={useNetworkFeeReturn}
-          simulateErrorBannerMessage={simulateErrorMessage}
-          onClickBack={onClickBack}
-          onClickCancel={onClickCancel}
-          onClickSend={transfer}
-          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
-        />
-      )}
+      {screenState === 'LOADING'
+        ? (
+          <BroadcastTransactionLoading />
+        )
+        : screenState === 'RESULT' && transferResult
+          ? (
+            <TransactionResult
+              status={transferResult.status}
+              errorMessage={transferResult.errorMessage}
+              onClickViewHistory={onClickViewHistory}
+              onClickViewGnoscan={onClickViewGnoscan}
+              onClickClose={onClickCloseResult}
+            />
+          )
+          : openedNetworkFeeSetting
+            ? (
+              <div className='network-fee-setting-wrapper'>
+                <NetworkFeeSetting
+                  {...useNetworkFeeReturn}
+                  onClickBack={onClickNetworkFeeClose}
+                  onClickSave={onClickNetworkFeeSave}
+                />
+              </div>
+            )
+            : (
+              <TransferSummary
+                tokenMetainfo={summaryInfo.tokenMetainfo}
+                tokenImage={summaryInfo.tokenMetainfo.image || `${UnknownTokenIcon}`}
+                toAddress={summaryInfo.toAddress}
+                transferBalance={getTransferBalance()}
+                isErrorNetworkFee={isNetworkFeeError}
+                isLoadingNetworkFee={useNetworkFeeReturn.isLoading}
+                networkFee={networkFee}
+                memo={summaryInfo.memo}
+                currentBalance={currentBalance}
+                useNetworkFeeReturn={useNetworkFeeReturn}
+                simulateErrorBannerMessage={simulateErrorMessage}
+                onClickBack={onClickBack}
+                onClickCancel={onClickCancel}
+                onClickSend={transfer}
+                onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+              />
+            )}
     </TransferSummaryLayout>
   );
 };

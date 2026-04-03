@@ -1,5 +1,10 @@
-import { CommandHandler } from '@inject/message/command-handler';
-import { CommandMessage } from '@inject/message/command-message';
+import {
+  CommandHandler,
+} from '@inject/message/command-handler';
+import {
+  CommandMessage,
+} from '@inject/message/command-message';
+
 import {
   GnoMessageInfo,
   parseGnoExecFormInfo,
@@ -7,8 +12,12 @@ import {
   shouldInterceptExecForm,
   shouldInterceptForm,
 } from '../gno-connect';
-import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
-import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
+import {
+  GnoConnectInfoProvider,
+} from '../gno-connect-info-provider';
+import {
+  IInterceptor, InterceptorContext, InterceptorHandler,
+} from '../gno-interceptor.types';
 
 /**
  * Interceptor for form submissions
@@ -87,7 +96,8 @@ export class FormSubmitInterceptor implements IInterceptor {
       }
 
       this.handler(gnoMessageInfo, context);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`${this.name} error:`, error);
       // On error, allow normal form submission to proceed
     }
@@ -121,7 +131,9 @@ export class FormSubmitInterceptor implements IInterceptor {
       return null;
     }
 
-    return { gnoConnectInfo };
+    return {
+      gnoConnectInfo,
+    };
   }
 
   /**

@@ -1,20 +1,35 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import { CommonFullContentLayout } from '@components/atoms';
+import {
+  decodeParameter, parseParameters,
+} from '@common/utils/client-utils';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
 import ApproveAddingNetwork from '@components/pages/approve-adding-network/approve-adding-network/approve-adding-network';
-import { useNetwork } from '@hooks/use-network';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
-  const { search } = useLocation();
-  const { addNetwork } = useNetwork();
+  const {
+    search,
+  } = useLocation();
+  const {
+    addNetwork,
+  } = useNetwork();
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [chainId, setChainId] = useState('');
   const [chainName, setChainName] = useState('');
@@ -32,7 +47,10 @@ const ApproveAddingNetworkContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
 
     setChainId(parsedData?.data?.chainId || '');
     setChainName(parsedData?.data?.chainName || '');
@@ -62,7 +80,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );
@@ -86,7 +105,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
           rpcUrl: rpcUrl,
           chainId: chainId,
         }}
-        logo={''}
+        logo=''
         approvable={requestData !== undefined}
         processing={processing}
         done={done}

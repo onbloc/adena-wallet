@@ -1,4 +1,6 @@
-import { NetworkFeeSettingType } from '@types';
+import {
+  NetworkFeeSettingType,
+} from '@types';
 
 // Gnoland default gas price (1ugnot/1000gas)
 // https://github.com/gnolang/gno/blob/master/gno.land/pkg/gnoland/genesis.go#L20

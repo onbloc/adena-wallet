@@ -1,7 +1,10 @@
-/* eslint-disable react/no-unknown-property */
 import React from 'react';
 
-const IconUnpin = ({ className }: { className?: string }): JSX.Element => (
+const IconUnpin = ({
+  className,
+}: {
+  className?: string
+}): JSX.Element => (
   <svg
     className={className}
     xmlns='http://www.w3.org/2000/svg'

@@ -1,20 +1,45 @@
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
-
-import { WalletResponseRejectType, WalletResponseSuccessType } from '@adena-wallet/sdk';
-import { ApproveLedgerLoading } from '@components/molecules';
+import {
+  WalletResponseRejectType, WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
+import {
+  ApproveLedgerLoading,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessageInstance } from '@inject/message';
-import { RoutePath } from '@types';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  InjectionMessageInstance,
+} from '@inject/message';
+import {
+  RoutePath,
+} from '@types';
+import {
+  AdenaLedgerConnector, isLedgerAccount,
+} from 'adena-module';
+import React, {
+  useEffect, useState,
+} from 'react';
 
 const ApproveSignLedgerLoadingContainer: React.FC = () => {
-  const { wallet } = useWalletContext();
-  const { params } = useAppNavigate<RoutePath.ApproveSignLoading>();
-  const { transactionService } = useAdenaContext();
-  const { document, requestData } = params;
-  const { currentAccount } = useCurrentAccount();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    params,
+  } = useAppNavigate<RoutePath.ApproveSignLoading>();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    document, requestData,
+  } = params;
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
@@ -50,11 +75,16 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
 
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
-      .then(async ({ signature }) => {
+      .then(async ({
+        signature,
+      }) => {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success(
             WalletResponseSuccessType.SIGN_SUCCESS,
-            { document, signature },
+            {
+              document,
+              signature,
+            },
             requestData?.key,
           ),
         );
@@ -65,7 +95,8 @@ const ApproveSignLedgerLoadingContainer: React.FC = () => {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,
-              {},
+              {
+              },
               requestData?.key,
             ),
           );

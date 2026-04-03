@@ -1,8 +1,12 @@
+import {
+  SideMenuAccountListProps,
+} from '@types';
 import React from 'react';
 
-import { SideMenuAccountListProps } from '@types';
 import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
-import { SideMenuAccountListWrapper } from './side-menu-account-list.styles';
+import {
+  SideMenuAccountListWrapper,
+} from './side-menu-account-list.styles';
 
 const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   currentAccountId,

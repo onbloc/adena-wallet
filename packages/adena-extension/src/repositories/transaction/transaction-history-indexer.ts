@@ -1,5 +1,10 @@
-import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
-import { AxiosInstance } from 'axios';
+import {
+  NetworkMetainfo, TransactionWithPageInfo,
+} from '@types';
+import {
+  AxiosInstance,
+} from 'axios';
+
 import {
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
@@ -16,7 +21,9 @@ import {
   makeNativeTokenSendTransactionsByAddressQuery,
   makeVMTransactionsByAddressQuery,
 } from './transaction-history-indexer.queries';
-import { ITransactionHistoryIndexerRepository } from './types';
+import {
+  ITransactionHistoryIndexerRepository,
+} from './types';
 
 export class TransactionHistoryIndexerRepository implements ITransactionHistoryIndexerRepository {
   private axiosInstance: AxiosInstance;
@@ -62,7 +69,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         grc20ReceivedTransactionsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
           : [],
@@ -71,7 +78,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         nativeTokenSendQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
           : [],
@@ -80,7 +87,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         nativeTokenReceivedQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
           : [],
@@ -89,12 +96,12 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         vmTransactionsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
       ),
     ])
-      .then((results) => results.flatMap((result) => result))
-      .then((txs) => ({
+      .then(results => results.flatMap(result => result))
+      .then(txs => ({
         page: {
           hasNext: false,
           cursor: null,
@@ -124,7 +131,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         nativeTokenSendQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapSendTransactionByBankMsgSend)
           : [],
@@ -133,14 +140,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         nativeTokenReceivedQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByBankMsgSend)
           : [],
       ),
     ])
-      .then((results) => results.flatMap((result) => result))
-      .then((txs) => ({
+      .then(results => results.flatMap(result => result))
+      .then(txs => ({
         page: {
           hasNext: false,
           cursor: null,
@@ -179,7 +186,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         grc20ReceivedTransactionsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions.map(mapReceivedTransactionByMsgCall)
           : [],
@@ -188,12 +195,12 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         grc20SendTransactionsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions ? result?.data?.transactions.map(mapVMTransaction) : [],
       ),
     ])
-      .then((results) => results.flatMap((result) => result))
-      .then((txs) => ({
+      .then(results => results.flatMap(result => result))
+      .then(txs => ({
         page: {
           hasNext: false,
           cursor: null,
@@ -215,14 +222,14 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         makeBlockTimeLegacyQuery(height),
-      ).then((result) => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
+      ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
     }
 
     return TransactionHistoryIndexerRepository.postGraphQuery(
       this.axiosInstance,
       this.queryUrl,
       makeBlockTimeQuery(height),
-    ).then((result) =>
+    ).then(result =>
       result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
     );
   }
@@ -240,10 +247,11 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           query,
         },
         {
-          headers: header || {},
+          headers: header || {
+          },
         },
       )
-      .then((response) => response.data)
+      .then(response => response.data)
       .catch((e) => {
         console.log(e);
         return null;

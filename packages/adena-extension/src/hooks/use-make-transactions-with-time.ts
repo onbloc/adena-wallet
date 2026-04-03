@@ -1,41 +1,67 @@
-import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
-import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
-import { useAdenaContext } from './use-context';
-import { useGRC20Tokens } from './use-grc20-tokens';
-import { useNetwork } from './use-network';
-import { useTokenMetainfo } from './use-token-metainfo';
+import {
+  TransactionHistoryMapper,
+} from '@repositories/transaction/mapper/transaction-history-mapper';
+import {
+  useQuery, useQueryClient,
+} from '@tanstack/react-query';
+import {
+  TransactionInfo,
+} from '@types';
+
+import {
+  useGetAllGRC721Collections,
+} from './nft/use-get-all-grc721-collections';
+import {
+  useAdenaContext,
+} from './use-context';
+import {
+  useGRC20Tokens,
+} from './use-grc20-tokens';
+import {
+  useNetwork,
+} from './use-network';
+import {
+  useTokenMetainfo,
+} from './use-token-metainfo';
 
 export interface UseMakeTransactionsWithTimeReturn {
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetched: boolean;
-  isFetching: boolean;
-  data: { title: string; transactions: TransactionInfo[] }[] | null | undefined;
+  status: 'loading' | 'error' | 'success'
+  isLoading: boolean
+  isFetched: boolean
+  isFetching: boolean
+  data: {
+    title: string
+    transactions: TransactionInfo[]
+  }[] | null | undefined
 }
 
 export const useMakeTransactionsWithTime = (
   key: string,
   transactions: TransactionInfo[] | null | undefined,
 ): UseMakeTransactionsWithTimeReturn => {
-  const { currentNetwork } = useNetwork();
-  const { transactionHistoryService } = useAdenaContext();
-  const { allTokenMetainfos, tokenLogoMap, getTokenAmount } = useTokenMetainfo();
-  const { isFetched: isFetchedTokens } = useGRC20Tokens();
-  const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections } =
-    useGetAllGRC721Collections();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    transactionHistoryService,
+  } = useAdenaContext();
+  const {
+    allTokenMetainfos, tokenLogoMap, getTokenAmount,
+  } = useTokenMetainfo();
+  const {
+    isFetched: isFetchedTokens,
+  } = useGRC20Tokens();
+  const {
+    data: grc721Collections = [], isFetched: isFetchedGRC721Collections,
+  }
+    = useGetAllGRC721Collections();
 
   const queryClient = useQueryClient();
 
-  const { status, isLoading, isFetched, isFetching, data } = useQuery({
-    queryKey: [
-      'useMakeTransactionsWithTime',
-      currentNetwork.chainId,
-      Object.values(tokenLogoMap).length,
-      transactions?.length,
-      key || '',
-    ],
+  const {
+    status, isLoading, isFetched, isFetching, data,
+  } = useQuery({
+    queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, Object.values(tokenLogoMap).length, transactions?.length, key || ''],
     queryFn: () => {
       if (!transactions || !grc721Collections) {
         return null;
@@ -49,14 +75,16 @@ export const useMakeTransactionsWithTime = (
             time = await queryClient.fetchQuery(
               ['blockTime', currentNetwork.networkId, transaction.height || 1],
               () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-              { staleTime: Infinity },
+              {
+                staleTime: Infinity,
+              },
             );
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
             const amount = transaction.amount;
             const collection = grc721Collections.find(
-              (collection) => collection.packagePath === amount.denom,
+              collection => collection.packagePath === amount.denom,
             );
             return {
               ...transaction,
@@ -97,14 +125,20 @@ export const useMakeTransactionsWithTime = (
       return TransactionHistoryMapper.queryToDisplay(data);
     },
     enabled:
-      !!transactionHistoryService.supported &&
-      !!transactions &&
-      isFetchedTokens &&
-      isFetchedGRC721Collections &&
-      !!allTokenMetainfos &&
-      tokenLogoMap !== null,
+      !!transactionHistoryService.supported
+      && !!transactions
+      && isFetchedTokens
+      && isFetchedGRC721Collections
+      && !!allTokenMetainfos
+      && tokenLogoMap !== null,
     keepPreviousData: true,
   });
 
-  return { status, isLoading, isFetched, isFetching, data };
+  return {
+    status,
+    isLoading,
+    isFetched,
+    isFetching,
+    data,
+  };
 };

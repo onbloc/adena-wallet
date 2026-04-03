@@ -1,14 +1,22 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalWebStyle } from '@styles/global-style';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import WebWarningDescriptionBox from './web-warning-description-box';
 
 describe('WebWarningDescriptionBox Component', () => {
   it('WebWarningDescriptionBox render', () => {
-
     render(
       <RecoilRoot>
         <GlobalWebStyle />

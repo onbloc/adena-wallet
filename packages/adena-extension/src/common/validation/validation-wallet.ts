@@ -4,5 +4,5 @@ export function isSeedPhraseString(seedPhrase: string, length: number): boolean 
   }
 
   const seeds = seedPhrase.split(' ');
-  return seeds.length === length && seeds.every((seed) => seed.length > 0);
+  return seeds.length === length && seeds.every(seed => seed.length > 0);
 }

@@ -1,14 +1,21 @@
 import axios from 'axios';
-import { EventStore } from './event-store';
-import { Event, EventStatus } from './types';
-import { makeHexByBase64, parseABCIValue } from './utility';
+
+import {
+  EventStore,
+} from './event-store';
+import {
+  Event, EventStatus,
+} from './types';
+import {
+  makeHexByBase64, parseABCIValue,
+} from './utility';
 
 type ResponseDataType = string[];
 
 // Add Lock interface: Simple mutex implementation
 interface Lock {
-  acquire(): Promise<void>;
-  release(): void;
+  acquire(): Promise<void>
+  release(): void
 }
 
 // Simple mutex implementation class
@@ -37,7 +44,8 @@ class Mutex implements Lock {
       if (resolve) {
         resolve();
       }
-    } else {
+    }
+    else {
       this._locked = false;
     }
   }
@@ -88,8 +96,11 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
           requests: 0,
           onEmit,
         };
-        this.events.set(id, { ...event });
-      } finally {
+        this.events.set(id, {
+          ...event,
+        });
+      }
+      finally {
         this.lock.release();
       }
     });
@@ -131,8 +142,11 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         }
 
         event.requests += 1;
-        this.events.set(id, { ...event });
-      } finally {
+        this.events.set(id, {
+          ...event,
+        });
+      }
+      finally {
         this.lock.release();
       }
     });
@@ -166,14 +180,16 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
       }
 
       this.events.delete(id);
-    } finally {
+    }
+    finally {
       this.lock.release();
     }
 
     if (event) {
       try {
         await event.onEmit(event);
-      } catch (error) {
+      }
+      catch (error) {
         console.error(`Error executing callback for event ${id}:`, error);
       }
       return true;
@@ -199,7 +215,8 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
           eventsToEmit.push(id);
         }
       }
-    } finally {
+    }
+    finally {
       this.lock.release();
     }
 
@@ -228,14 +245,15 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     await this.lock.acquire();
     try {
       pendingEvents = Array.from(this.events.values()).filter(
-        (event) => event.status === 'PENDING',
+        event => event.status === 'PENDING',
       );
-    } finally {
+    }
+    finally {
       this.lock.release();
     }
 
     const updatedEvents = await Promise.all(
-      pendingEvents.map((event) =>
+      pendingEvents.map(event =>
         this.getTransactionResult(event.id)
           .then<Event<ResponseDataType> | null>((result) => {
             if (!result) {
@@ -258,14 +276,17 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     try {
       for (const updatedEvent of updatedEvents) {
         if (updatedEvent) {
-          this.events.set(updatedEvent.id, { ...updatedEvent });
+          this.events.set(updatedEvent.id, {
+            ...updatedEvent,
+          });
         }
       }
-    } finally {
+    }
+    finally {
       this.lock.release();
     }
 
-    return updatedEvents.filter((event) => event !== null) as Event<ResponseDataType>[];
+    return updatedEvents.filter(event => event !== null) as Event<ResponseDataType>[];
   }
 
   /**
@@ -284,7 +305,8 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         if (this.events.has(id)) {
           this.events.delete(id);
         }
-      } finally {
+      }
+      finally {
         this.lock.release();
       }
     });
@@ -299,7 +321,8 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     this.lock.acquire().then(() => {
       try {
         this.events.clear();
-      } finally {
+      }
+      finally {
         this.lock.release();
       }
     });
@@ -335,9 +358,9 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
   }
 
   private async getTransactionResult(id: string): Promise<{
-    height: number;
-    hasError: boolean;
-    data: ResponseDataType;
+    height: number
+    hasError: boolean
+    data: ResponseDataType
   } | null> {
     const event = this.getEvent(id);
     if (!event) {
@@ -347,7 +370,9 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     this.addEventRequestCount(id);
 
     try {
-      const networkClient = axios.create({ baseURL: event.rpcUrl });
+      const networkClient = axios.create({
+        baseURL: event.rpcUrl,
+      });
       const result = await networkClient.get('/tx?hash=' + makeHexByBase64(id));
 
       const height = Number(result.data?.result?.height || 0);
@@ -387,7 +412,8 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         hasError,
         data: parseABCIValue(responseData),
       };
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Error fetching transaction result for ${id}:`, error);
       return null;
     }

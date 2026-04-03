@@ -1,19 +1,31 @@
-import { WebTextarea } from '@components/atoms/web-textarea';
-import { useEffect, useState } from 'react';
+import {
+  stringFromBase64,
+} from '@common/utils/encoding-util';
+import {
+  generateRandomHex,
+} from '@common/utils/rand-utils';
+import {
+  WebTextarea,
+} from '@components/atoms/web-textarea';
+import {
+  useEffect, useState,
+} from 'react';
 import styled from 'styled-components';
 
-import { stringFromBase64 } from '@common/utils/encoding-util';
-import { generateRandomHex } from '@common/utils/rand-utils';
-import { View } from '../../atoms';
+import {
+  View,
+} from '../../atoms';
 
 interface WebPrivateKeyBoxProps {
-  privateKey: string;
-  showBlur?: boolean;
-  readOnly?: boolean;
-  error?: boolean;
+  privateKey: string
+  showBlur?: boolean
+  readOnly?: boolean
+  error?: boolean
 }
 
-const StyledContainer = styled(View)<{ showBlur: boolean }>`
+const StyledContainer = styled(View)<{
+  showBlur: boolean
+}>`
   position: relative;
   overflow: hidden;
   height: 80px;
@@ -60,7 +72,9 @@ export const WebPrivateKeyBox = ({
         placeholder='Private Key'
         readOnly={readOnly}
         error={error}
-        style={{ height: '100%' }}
+        style={{
+          height: '100%',
+        }}
         onChange={(): void => {
           return;
         }}

@@ -1,16 +1,25 @@
-import React, { CSSProperties } from 'react';
+import React, {
+  CSSProperties,
+} from 'react';
 import styled from 'styled-components';
-import { View } from '../base';
-import { WebButton } from '../web-button';
-import { WebText } from '../web-text';
+
+import {
+  View,
+} from '../base';
+import {
+  WebButton,
+} from '../web-button';
+import {
+  WebText,
+} from '../web-text';
 export interface WebMainButtonProps {
-  buttonRef?: React.RefObject<HTMLButtonElement>;
-  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
-  text: string;
-  width?: CSSProperties['width'];
-  iconElement: JSX.Element;
-  disabled?: boolean;
-  onClick: () => void;
+  buttonRef?: React.RefObject<HTMLButtonElement>
+  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
+  text: string
+  width?: CSSProperties['width']
+  iconElement: JSX.Element
+  disabled?: boolean
+  onClick: () => void
 }
 
 const StyledContainer = styled(WebButton)`
@@ -43,7 +52,9 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
   return (
     <StyledContainer
       buttonRef={buttonRef}
-      style={{ width }}
+      style={{
+        width,
+      }}
       figure={figure}
       size='large'
       disabled={disabled}

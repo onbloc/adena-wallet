@@ -1,20 +1,26 @@
 import IconCopy from '@assets/icon-copy';
 import IconCopyCheck from '@assets/icon-copy-check';
-import React, { useCallback, useEffect, useState } from 'react';
-import { CopyButtonWrapper } from './copy-icon-button.styles';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+
+import {
+  CopyButtonWrapper,
+} from './copy-icon-button.styles';
 
 export interface CopyIconButtonProps {
-  className?: string;
-  copyText: string;
-  style?: React.CSSProperties;
-  size?: number;
-  onClick?: () => void;
+  className?: string
+  copyText: string
+  style?: React.CSSProperties
+  size?: number
+  onClick?: () => void
 }
 
 export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   className = '',
   copyText,
-  style = {},
+  style = {
+  },
   size = 16,
   onClick,
 }) => {

@@ -1,14 +1,22 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import styled, { css, keyframes, RuleSet, useTheme } from 'styled-components';
+import React, {
+  CSSProperties, useCallback, useEffect, useState,
+} from 'react';
+import styled, {
+  css, keyframes, RuleSet, useTheme,
+} from 'styled-components';
 
-import { View } from '../base';
-import { WebText } from '../web-text';
+import {
+  View,
+} from '../base';
+import {
+  WebText,
+} from '../web-text';
 
 interface WebHoldButtonProps {
-  width?: CSSProperties['width'];
-  height?: CSSProperties['height'];
-  text?: string;
-  onFinishHold: (result: boolean) => void;
+  width?: CSSProperties['width']
+  height?: CSSProperties['height']
+  text?: string
+  onFinishHold: (result: boolean) => void
 }
 
 const fill = keyframes`
@@ -20,7 +28,10 @@ const fill = keyframes`
   }
 `;
 
-const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
+const StyledContainer = styled(View)<{
+  pressed: boolean
+  finish: boolean
+}>`
   position: relative;
   overflow: hidden;
   display: flex;
@@ -34,7 +45,9 @@ const StyledContainer = styled(View)<{ pressed: boolean; finish: boolean }>`
   user-select: none;
   box-shadow: 0 0 0 1px #212429 inset;
 
-  ${({ pressed, finish }): RuleSet =>
+  ${({
+    pressed, finish,
+  }): RuleSet =>
     pressed || finish
       ? css`
           box-shadow:

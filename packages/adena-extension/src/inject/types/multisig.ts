@@ -1,36 +1,44 @@
-import { BroadcastTxCommitResult } from '@gnolang/tm2-js-client';
-import { RawTx } from 'adena-module';
+import {
+  BroadcastTxCommitResult,
+} from '@gnolang/tm2-js-client';
+import {
+  RawTx,
+} from 'adena-module';
 
-import { AdenaResponse } from './common';
-import { BaseDocument, TransactionParams } from './transactions';
+import {
+  AdenaResponse,
+} from './common';
+import {
+  BaseDocument, TransactionParams,
+} from './transactions';
 
 export interface Message {
-  type: string;
-  value: any;
+  type: string
+  value: any
 }
 
 export interface Signature {
   pub_key: {
-    '@type': '/tm.PubKeySecp256k1';
-    value: string;
-  };
-  signature: string;
+    '@type': '/tm.PubKeySecp256k1'
+    value: string
+  }
+  signature: string
 }
 
 export interface MultisigPubKey {
-  type: '/tm.PubKeyMultisig';
+  type: '/tm.PubKeyMultisig'
   value: {
-    threshold: string;
+    threshold: string
     pubkeys: Array<{
-      type: '/tm.PubKeySecp256k1';
-      value: string;
-    }>;
-  };
+      type: '/tm.PubKeySecp256k1'
+      value: string
+    }>
+  }
 }
 
 export interface MultisigSignature {
-  pub_key: MultisigPubKey;
-  signature: string;
+  pub_key: MultisigPubKey
+  signature: string
 }
 
 /**
@@ -46,44 +54,44 @@ export enum SignerStatusType {
  * Signer information
  */
 export type SignerInfo = {
-  address: string;
-  status: SignerStatusType;
+  address: string
+  status: SignerStatusType
 };
 
 export interface StandardDocument extends BaseDocument {
-  account_number: string;
-  sequence: string;
-  memo: string;
+  account_number: string
+  sequence: string
+  memo: string
 }
 
 /**
  * Parameters for creating a multisig account
  */
 export interface CreateMultisigAccountParams {
-  signers: string[];
-  threshold: number;
-  noSort?: boolean;
+  signers: string[]
+  threshold: number
+  noSort?: boolean
 }
 
 export interface MultisigAccountResult {
-  multisigAddress: string;
-  multisigAddressBytes: Record<number, number>;
-  multisigPubKey: Record<number, number>;
+  multisigAddress: string
+  multisigAddressBytes: Record<number, number>
+  multisigPubKey: Record<number, number>
   signerPublicKeys: Array<{
-    address: string;
+    address: string
     publicKey: {
-      '@type': string;
-      value: string;
-    };
-  }>;
+      '@type': string
+      value: string
+    }
+  }>
 }
 
 /**
  * Response data for creating a multisig account
  */
 export type CreateMultisigAccountResponseData = {
-  multisigAddress: string;
-  multisigAddressBytes: Uint8Array;
+  multisigAddress: string
+  multisigAddressBytes: Uint8Array
 };
 
 /**
@@ -96,16 +104,16 @@ export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountR
  */
 export interface CreateMultisigTransactionParams extends TransactionParams {
   fee: {
-    gasFee: string;
-    gasWanted: string;
-  };
+    gasFee: string
+    gasWanted: string
+  }
 }
 
 /**
  * Response data for creating a multisig transaction document
  */
 export type CreateMultisigTransactionResponseData = {
-  tx: RawTx;
+  tx: RawTx
 };
 
 /**
@@ -120,10 +128,10 @@ export type CreateMultisigTransactionResponse = AdenaResponse<
  */
 export type SignMultisigTransactionResponseData = {
   result: {
-    multisigDocument: MultisigTransactionDocument;
-    multisigSignatures: Signature[];
-  };
-  signature: Signature;
+    multisigDocument: MultisigTransactionDocument
+    multisigSignatures: Signature[]
+  }
+  signature: Signature
 };
 
 /**
@@ -145,37 +153,37 @@ export type BroadcastMultisigTransactionResponse = AdenaResponse<
 
 export interface UnsignedTransaction {
   msgs: Array<{
-    type: string;
+    type: string
     value: {
-      [key: string]: any;
-    };
-  }>;
+      [key: string]: any
+    }
+  }>
   fee: {
-    gas_wanted: string;
-    gas_fee: string;
-  };
-  signatures: null;
-  memo: string;
+    gas_wanted: string
+    gas_fee: string
+  }
+  signatures: null
+  memo: string
 }
 
 export interface SignedTransaction {
   msg: Array<{
-    '@type': string;
-    [key: string]: any;
-  }>;
+    '@type': string
+    [key: string]: any
+  }>
   fee: {
-    gas_wanted: string;
-    gas_fee: string;
-  };
-  signatures: MultisigSignature[];
-  memo: string;
-  account_number: string;
-  sequence: string;
+    gas_wanted: string
+    gas_fee: string
+  }
+  signatures: MultisigSignature[]
+  memo: string
+  account_number: string
+  sequence: string
 }
 
 export interface MultisigTransactionDocument {
-  tx: RawTx;
-  chainId: string;
-  accountNumber: string;
-  sequence: string;
+  tx: RawTx
+  chainId: string
+  accountNumber: string
+  sequence: string
 }

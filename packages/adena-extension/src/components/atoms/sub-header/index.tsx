@@ -1,19 +1,26 @@
-import React, { ReactNode } from 'react';
-import { SubHeaderWrapper } from './sub-header.styles';
+import React, {
+  ReactNode,
+} from 'react';
+
+import {
+  SubHeaderWrapper,
+} from './sub-header.styles';
 
 export interface SubHeaderProps {
-  title: string;
+  title: string
   leftElement?: {
-    element: ReactNode;
-    onClick: () => void;
-  };
+    element: ReactNode
+    onClick: () => void
+  }
   rightElement?: {
-    element: ReactNode;
-    onClick: () => void;
-  };
+    element: ReactNode
+    onClick: () => void
+  }
 }
 
-export const SubHeader: React.FC<SubHeaderProps> = ({ title, leftElement, rightElement }) => {
+export const SubHeader: React.FC<SubHeaderProps> = ({
+  title, leftElement, rightElement,
+}) => {
   return (
     <SubHeaderWrapper>
       {leftElement && (

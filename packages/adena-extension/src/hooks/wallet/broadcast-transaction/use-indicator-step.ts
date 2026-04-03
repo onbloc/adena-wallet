@@ -1,21 +1,30 @@
-import { useEffect, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
-import _ from 'lodash';
-import { useQuery } from '@tanstack/react-query';
-
-import { useAdenaContext } from '@hooks/use-context';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
 import useQuestionnaire from '@hooks/web/use-questionnaire';
-import { CommonState } from '@states';
+import {
+  CommonState,
+} from '@states';
+import {
+  useQuery,
+} from '@tanstack/react-query';
+import _ from 'lodash';
+import {
+  useEffect, useMemo,
+} from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
 
 interface UseIndicatorStepProps<T extends string> {
-  stepMap?: Record<T, number>;
-  currentState?: T;
-  hasQuestionnaire?: boolean;
+  stepMap?: Record<T, number>
+  currentState?: T
+  hasQuestionnaire?: boolean
 }
 
 export interface UseIndicatorStepReturn {
-  stepNo: number;
-  stepLength: number;
+  stepNo: number
+  stepLength: number
 }
 
 const useIndicatorStep = <T extends string>({
@@ -23,8 +32,12 @@ const useIndicatorStep = <T extends string>({
   currentState,
   hasQuestionnaire = false,
 }: UseIndicatorStepProps<T>): UseIndicatorStepReturn => {
-  const { walletService } = useAdenaContext();
-  const { ableToSkipQuestionnaire } = useQuestionnaire();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    ableToSkipQuestionnaire,
+  } = useQuestionnaire();
   const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useRecoilState(
     CommonState.webHeaderIndicatorLength,
   );
@@ -36,7 +49,9 @@ const useIndicatorStep = <T extends string>({
     };
   }
 
-  const { data: stepLength = 0 } = useQuery<number>(
+  const {
+    data: stepLength = 0,
+  } = useQuery<number>(
     ['stepLength', hasQuestionnaire, stepMap, walletService],
     async () => {
       let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
@@ -47,7 +62,8 @@ const useIndicatorStep = <T extends string>({
       if (hasQuestionnaire) {
         if (!existWallet) {
           defaultStepLength = defaultStepLength + 1;
-        } else {
+        }
+        else {
           const ableToSkipQuestionnaire = await walletService
             .isSkipQuestionnaire()
             .catch(() => false);

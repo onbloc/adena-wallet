@@ -1,4 +1,6 @@
-import { CommonError } from '@common/errors/common';
+import {
+  CommonError,
+} from '@common/errors/common';
 
 export const DEFAULT_TIMEOUT = 1500 as const;
 

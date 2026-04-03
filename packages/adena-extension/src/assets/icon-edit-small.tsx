@@ -1,7 +1,10 @@
-/* eslint-disable react/no-unknown-property */
 import React from 'react';
 
-const IconEditSmall = ({ className }: { className?: string }): JSX.Element => (
+const IconEditSmall = ({
+  className,
+}: {
+  className?: string
+}): JSX.Element => (
   <svg
     className={className}
     width='10'

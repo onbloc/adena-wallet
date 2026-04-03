@@ -1,15 +1,38 @@
-import { DEFAULT_GAS_PRICE_RATE } from '@common/constants/gas.constant';
-import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { parseStorageDeposits } from '@common/provider/gno/event-parser';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { NetworkFeeSettingInfo, NetworkFeeSettingType } from '@types';
-import { Document } from 'adena-module';
+import {
+  DEFAULT_GAS_PRICE_RATE,
+} from '@common/constants/gas.constant';
+import {
+  DEFAULT_GAS_WANTED,
+} from '@common/constants/tx.constant';
+import {
+  parseStorageDeposits,
+} from '@common/provider/gno/event-parser';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useQuery, UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  NetworkFeeSettingInfo, NetworkFeeSettingType,
+} from '@types';
+import {
+  Document,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useIsInitializedAccount } from '../use-get-account-info';
-import { makeEstimateGasTransaction } from './use-get-estimate-gas-info';
-import { useGetGasPrice } from './use-get-gas-price';
+
+import {
+  useIsInitializedAccount,
+} from '../use-get-account-info';
+import {
+  makeEstimateGasTransaction,
+} from './use-get-estimate-gas-info';
+import {
+  useGetGasPrice,
+} from './use-get-gas-price';
 
 const REFETCH_INTERVAL = 5_000;
 
@@ -28,34 +51,29 @@ export const useGetEstimateGasPriceTiers = (
   gasAdjustment: string,
   options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { transactionGasService, transactionService } = useAdenaContext();
-  const { data: gasPrice } = useGetGasPrice();
-  const { wallet } = useWalletContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    transactionGasService, transactionService,
+  } = useAdenaContext();
+  const {
+    data: gasPrice,
+  } = useGetGasPrice();
+  const {
+    wallet,
+  } = useWalletContext();
   const isInitializedAccount = useIsInitializedAccount(currentAddress);
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
-    queryKey: [
-      wallet,
-      currentAccount?.id,
-      GET_ESTIMATE_GAS_PRICE_TIERS,
-      transactionGasService,
-      document?.msgs,
-      document?.memo,
-      document?.account_number,
-      document?.sequence,
-      gasUsed,
-      gasAdjustment,
-      gasPrice || 0,
-      isInitializedAccount,
-    ],
+    queryKey: [wallet, currentAccount?.id, GET_ESTIMATE_GAS_PRICE_TIERS, transactionGasService, document?.msgs, document?.memo, document?.account_number, document?.sequence, gasUsed, gasAdjustment, gasPrice || 0, isInitializedAccount],
     queryFn: async (): Promise<NetworkFeeSettingInfo[] | null> => {
       if (
-        !transactionService ||
-        !transactionGasService ||
-        !document ||
-        !gasPrice ||
-        isInitializedAccount === null
+        !transactionService
+        || !transactionGasService
+        || !document
+        || !gasPrice
+        || isInitializedAccount === null
       ) {
         return null;
       }

@@ -1,4 +1,6 @@
-import { Row, View } from '@components/atoms';
+import {
+  Row, View,
+} from '@components/atoms';
 import styled from 'styled-components';
 
 export const WebHelpTooltipWrapper = styled(View)`

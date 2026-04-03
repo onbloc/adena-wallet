@@ -1,4 +1,6 @@
-import { GnoConnectInfo, parseGnoConnectInfo } from './gno-connect';
+import {
+  GnoConnectInfo, parseGnoConnectInfo,
+} from './gno-connect';
 
 /**
  * Singleton provider for GnoConnectInfo

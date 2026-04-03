@@ -1,20 +1,38 @@
-import { useCallback } from 'react';
-import { useNetwork } from '@hooks/use-network';
-
-import { DocumentSignerListWrapper } from './document-signer-list.styles';
-import DocumentSignerListItem from './document-signer-list-item';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
+import {
+  makeQueryString,
+} from '@common/utils/string-utils';
 import useLink from '@hooks/use-link';
-import { SignerInfo } from '@inject/types';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  SignerInfo,
+} from '@inject/types';
+import {
+  useCallback,
+} from 'react';
+
+import {
+  DocumentSignerListWrapper,
+} from './document-signer-list.styles';
+import DocumentSignerListItem from './document-signer-list-item';
 
 interface DocumentSignerListProps {
-  signerInfos: SignerInfo[];
+  signerInfos: SignerInfo[]
 }
 
-const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.ReactElement => {
-  const { openLink } = useLink();
-  const { currentNetwork, scannerParameters } = useNetwork();
+const DocumentSignerList = ({
+  signerInfos,
+}: DocumentSignerListProps): React.ReactElement => {
+  const {
+    openLink,
+  } = useLink();
+  const {
+    currentNetwork, scannerParameters,
+  } = useNetwork();
 
   const handleLinkClick = useCallback(
     (address: string) => {

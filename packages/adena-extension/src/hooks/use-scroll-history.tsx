@@ -1,11 +1,19 @@
-import { CommonState } from '@states';
-import { RefObject, useCallback, useLayoutEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import {
+  CommonState,
+} from '@states';
+import {
+  RefObject, useCallback, useLayoutEffect, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
+import {
+  useRecoilState,
+} from 'recoil';
 
 export type UseScrollHistoryReturn = {
-  scrollMove: () => void;
-  saveScrollPosition: (scrollY?: number) => void;
+  scrollMove: () => void
+  saveScrollPosition: (scrollY?: number) => void
 };
 
 const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryReturn => {
@@ -35,7 +43,8 @@ const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryRetu
       ref?.current
         ? ref.current.scrollTo(0, scrollPositions[location.key])
         : bodyElement?.scrollTo(0, scrollPositions[location.key]);
-    } else {
+    }
+    else {
       ref?.current ? ref.current.scrollTo(0, 0) : bodyElement?.scrollTo(0, 0);
     }
   }, [location, bodyElement, ref?.current]);
@@ -51,7 +60,10 @@ const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryRetu
     [location, bodyElement, ref?.current],
   );
 
-  return { scrollMove, saveScrollPosition };
+  return {
+    scrollMove,
+    saveScrollPosition,
+  };
 };
 
 export default useScrollHistory;

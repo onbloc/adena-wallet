@@ -1,6 +1,12 @@
-import React, { ReactElement } from 'react';
+import React, {
+  ReactElement,
+} from 'react';
 
-const IconQuestion = ({ className }: { className?: string }): ReactElement => {
+const IconQuestion = ({
+  className,
+}: {
+  className?: string
+}): ReactElement => {
   return (
     <svg
       className={className}

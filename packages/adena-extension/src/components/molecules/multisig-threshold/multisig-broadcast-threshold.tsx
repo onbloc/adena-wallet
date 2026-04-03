@@ -1,11 +1,12 @@
 import React from 'react';
+
 import * as S from './multisig-threshold.styles';
 
 type SignatureStatus = 'insufficient' | 'ready';
 
 interface MultisigBroadcastThresholdProps {
-  threshold: number;
-  signedCount: number;
+  threshold: number
+  signedCount: number
 }
 
 const MultisigBroadcastThreshold = ({
@@ -27,7 +28,7 @@ const MultisigBroadcastThreshold = ({
   return (
     <S.MultisigThresholdContainer>
       <S.MultisigThresholdWrapper>
-        <span className='key'>{'Threshold'}</span>
+        <span className='key'>Threshold</span>
 
         <div className='document-signers-amount-wrapper'>
           <span className={`value status-${status}`}>{statusMessage}</span>

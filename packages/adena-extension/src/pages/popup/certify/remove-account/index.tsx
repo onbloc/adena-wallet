@@ -1,25 +1,46 @@
-import React from 'react';
-import styled, { useTheme } from 'styled-components';
-import { useRecoilState } from 'recoil';
-
 import removeIcon from '@assets/icon-remove-blur.svg';
-import { Text } from '@components/atoms';
-import { CancelAndConfirmButton } from '@components/molecules';
-import { useRemoveAccount } from '@hooks/use-remove-account';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
-import { WalletState } from '@states';
-import mixins from '@styles/mixins';
+import {
+  Text,
+} from '@components/atoms';
+import {
+  CancelAndConfirmButton,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useRemoveAccount,
+} from '@hooks/use-remove-account';
+import {
+  WalletState,
+} from '@states';
+import mixins from '@styles/mixins';
+import {
+  RoutePath,
+} from '@types';
+import React from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-const content =
-  'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
+const content
+  = 'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
   const theme = useTheme();
-  const { navigate, goBack } = useAppNavigate();
-  const { currentAccount } = useCurrentAccount();
-  const { removeAccount } = useRemoveAccount();
+  const {
+    navigate, goBack,
+  } = useAppNavigate();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    removeAccount,
+  } = useRemoveAccount();
   const [, setState] = useRecoilState(WalletState.state);
 
   const removeButtonClick = async (): Promise<void> => {
@@ -41,7 +62,9 @@ export const RemoveAccount = (): JSX.Element => {
         {content}
       </Text>
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: goBack }}
+        cancelButtonProps={{
+          onClick: goBack,
+        }}
         confirmButtonProps={{
           onClick: removeButtonClick,
           text: 'Remove',
@@ -53,7 +76,9 @@ export const RemoveAccount = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 56px;

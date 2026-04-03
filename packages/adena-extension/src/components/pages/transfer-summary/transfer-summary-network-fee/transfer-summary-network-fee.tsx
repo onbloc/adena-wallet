@@ -1,11 +1,16 @@
+import {
+  TokenBalance,
+} from '@components/molecules';
 import React from 'react';
-import { TransferSummaryNetworkFeeWrapper } from './transfer-summary-network-fee.styles';
-import { TokenBalance } from '@components/molecules';
+
+import {
+  TransferSummaryNetworkFeeWrapper,
+} from './transfer-summary-network-fee.styles';
 
 export interface TransferSummaryNetworkFeeProps {
-  isError?: boolean;
-  value: string;
-  denom: string;
+  isError?: boolean
+  value: string
+  denom: string
 }
 
 const TransferSummaryNetworkFee: React.FC<TransferSummaryNetworkFeeProps> = ({
@@ -15,7 +20,7 @@ const TransferSummaryNetworkFee: React.FC<TransferSummaryNetworkFeeProps> = ({
 }) => {
   return (
     <TransferSummaryNetworkFeeWrapper isError={isError}>
-      <span className='key'>{'Network Fee'}</span>
+      <span className='key'>Network Fee</span>
       <TokenBalance
         value={value}
         denom={denom}

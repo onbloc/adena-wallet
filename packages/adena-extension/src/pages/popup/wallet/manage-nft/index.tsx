@@ -1,22 +1,41 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import ManageCollections from '@components/pages/manage-nft/manage-collections/manage-collections';
-import { ManageTokenLayout } from '@components/pages/manage-token-layout';
-import { useNFTCollectionHandler } from '@hooks/nft/use-collection-handler';
-import { useGetGRC721Balance } from '@hooks/nft/use-get-grc721-balance';
-import { useGetGRC721Collections } from '@hooks/nft/use-get-grc721-collections';
-import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import {
+  ManageTokenLayout,
+} from '@components/pages/manage-token-layout';
+import {
+  useNFTCollectionHandler,
+} from '@hooks/nft/use-collection-handler';
+import {
+  useGetGRC721Balance,
+} from '@hooks/nft/use-get-grc721-balance';
+import {
+  useGetGRC721Collections,
+} from '@hooks/nft/use-get-grc721-collections';
+import {
+  useGetGRC721TokenUri,
+} from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { ManageGRC721Info } from '@types';
+import {
+  ManageGRC721Info,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 const ManageNFTContainer: React.FC = () => {
-  const { goBack } = useAppNavigate();
+  const {
+    goBack,
+  } = useAppNavigate();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isClose, setIsClose] = useState(false);
-  const { data: collections, refetch: refetchCollections } = useGetGRC721Collections({
+  const {
+    data: collections, refetch: refetchCollections,
+  } = useGetGRC721Collections({
     refetchOnMount: true,
   });
-  const { showCollection, hideCollection } = useNFTCollectionHandler();
+  const {
+    showCollection, hideCollection,
+  } = useNFTCollectionHandler();
 
   useEffect(() => {
     if (isClose) {
@@ -56,7 +75,8 @@ const ManageNFTContainer: React.FC = () => {
     (packagePath: string, activated: boolean) => {
       if (activated) {
         showCollection(packagePath).then(() => refetchCollections());
-      } else {
+      }
+      else {
         hideCollection(packagePath).then(() => refetchCollections());
       }
     },

@@ -1,17 +1,26 @@
 import IconEtc from '@assets/etc.svg';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
-import { Text } from '@components/atoms';
+import {
+  Text,
+} from '@components/atoms';
 import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
-import React, { useMemo } from 'react';
-import { NFTHeaderWrapper } from './nft-header.styles';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  NFTHeaderWrapper,
+} from './nft-header.styles';
 
 export interface NFTHeaderProps {
-  openGnoscan: () => void;
-  moveDepositPage: () => void;
+  openGnoscan: () => void
+  moveDepositPage: () => void
 }
 
-const NFTHeader: React.FC<NFTHeaderProps> = ({ openGnoscan, moveDepositPage }) => {
+const NFTHeader: React.FC<NFTHeaderProps> = ({
+  openGnoscan, moveDepositPage,
+}) => {
   const dropdownOptions = useMemo(
     () => [
       {

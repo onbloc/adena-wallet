@@ -1,30 +1,60 @@
-import { Document, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
-import { GasToken } from '@common/constants/token.constant';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
 import TransactionResult from '@components/molecules/transaction-result';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
 import NFTTransferSummary from '@components/pages/nft-transfer-summary/nft-transfer-summary/nft-transfer-summary';
-import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import {
+  useGetGRC721TokenUri,
+} from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useTransferInfo } from '@hooks/use-transfer-info';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
-import { createNotificationSendMessage } from '@inject/message/methods/transaction-event';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTransferInfo,
+} from '@hooks/use-transfer-info';
+import {
+  useGetGnotBalance,
+} from '@hooks/wallet/use-get-gnot-balance';
+import {
+  useNetworkFee,
+} from '@hooks/wallet/use-network-fee';
+import {
+  createNotificationSendMessage,
+} from '@inject/message/methods/transaction-event';
 import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
-import { TransactionMessage } from '@services/index';
+import {
+  TransactionMessage,
+} from '@services/index';
 import mixins from '@styles/mixins';
-import { GRC721Model, RoutePath } from '@types';
+import {
+  GRC721Model, RoutePath,
+} from '@types';
+import {
+  Document, isLedgerAccount,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useNavigate,
+} from 'react-router-dom';
+import styled from 'styled-components';
 
 const NFTTransferSummaryLayout = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: auto;
 
@@ -35,26 +65,42 @@ const NFTTransferSummaryLayout = styled.div`
 
 const NFTTransferSummaryContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate, goBack, params } = useAppNavigate<RoutePath.NftTransferSummary>();
+  const {
+    navigate, goBack, params,
+  } = useAppNavigate<RoutePath.NftTransferSummary>();
   const summaryInfo = params;
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
-  const { openScannerLink } = useLink();
-  const { memorizedTransferInfo, setMemorizedTransferInfo } = useTransferInfo();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    openScannerLink,
+  } = useLink();
+  const {
+    memorizedTransferInfo, setMemorizedTransferInfo,
+  } = useTransferInfo();
   const [isSent, setIsSent] = useState(false);
   const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
   const [transferResult, setTransferResult] = useState<{
-    status: 'SUCCESS' | 'FAILED';
-    hash?: string | null;
-    errorMessage?: string | null;
+    status: 'SUCCESS' | 'FAILED'
+    hash?: string | null
+    errorMessage?: string | null
   } | null>(null);
   const [isErrorNetworkFee, setIsErrorNetworkFee] = useState(false);
   const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
   const [document, setDocument] = useState<Document | null>(null);
 
-  const { data: currentBalance } = useGetGnotBalance();
+  const {
+    data: currentBalance,
+  } = useGetGnotBalance();
 
   const useNetworkFeeReturn = useNetworkFee(document);
   const networkFee = useNetworkFeeReturn.networkFee;
@@ -111,7 +157,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return null;
     }
 
-    const { grc721Token, toAddress, memo } = summaryInfo;
+    const {
+      grc721Token, toAddress, memo,
+    } = summaryInfo;
     const message = makeGRC721TransferMessage(grc721Token, currentAddress, toAddress);
 
     const document = await transactionService.createDocument(
@@ -139,7 +187,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
     const walletInstance = wallet.clone();
     walletInstance.currentAccountId = currentAccount.id;
 
-    const { signed } = await transactionService.createTransaction(
+    const {
+      signed,
+    } = await transactionService.createTransaction(
       walletInstance,
       currentAccount,
       document,
@@ -180,7 +230,8 @@ const NFTTransferSummaryContainer: React.FC = () => {
           status: 'SUCCESS',
           hash: txHash,
         });
-      } else {
+      }
+      else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
@@ -190,7 +241,8 @@ const NFTTransferSummaryContainer: React.FC = () => {
       setScreenState('RESULT');
       setIsSent(false);
       return Boolean(txHash);
-    } catch (e) {
+    }
+    catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
@@ -205,7 +257,11 @@ const NFTTransferSummaryContainer: React.FC = () => {
   const transferByLedger = useCallback(async () => {
     const document = await createDocument();
     if (document) {
-      navigate(RoutePath.TransferLedgerLoading, { state: { document } });
+      navigate(RoutePath.TransferLedgerLoading, {
+        state: {
+          document,
+        },
+      });
     }
     return true;
   }, [createDocument]);
@@ -253,7 +309,9 @@ const NFTTransferSummaryContainer: React.FC = () => {
       return;
     }
 
-    openScannerLink('/transactions/details', { txhash: transferResult.hash });
+    openScannerLink('/transactions/details', {
+      txhash: transferResult.hash,
+    });
   }, [transferResult?.hash, openScannerLink]);
 
   useEffect(() => {
@@ -264,48 +322,48 @@ const NFTTransferSummaryContainer: React.FC = () => {
 
       setDocument(doc);
     });
-  }, [
-    wallet,
-    summaryInfo,
-    currentAccount,
-    currentNetwork,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-  ]);
+  }, [wallet, summaryInfo, currentAccount, currentNetwork, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   return (
     <NFTTransferSummaryLayout>
-      {screenState === 'LOADING' ? (
-        <BroadcastTransactionLoading />
-      ) : screenState === 'RESULT' && transferResult ? (
-        <TransactionResult
-          status={transferResult.status}
-          errorMessage={transferResult.errorMessage}
-          onClickViewHistory={onClickViewHistory}
-          onClickViewGnoscan={onClickViewGnoscan}
-          onClickClose={onClickCloseResult}
-        />
-      ) : openedNetworkFeeSetting ? (
-        <div className='network-fee-setting-wrapper'>
-          <NetworkFeeSetting
-            {...useNetworkFeeReturn}
-            onClickBack={onClickNetworkFeeClose}
-            onClickSave={onClickNetworkFeeSave}
-          />
-        </div>
-      ) : (
-        <NFTTransferSummary
-          grc721Token={summaryInfo.grc721Token}
-          toAddress={summaryInfo.toAddress}
-          isErrorNetworkFee={isErrorNetworkFee}
-          networkFee={networkFee}
-          memo={summaryInfo.memo}
-          queryGRC721TokenUri={useGetGRC721TokenUri}
-          onClickBack={onClickBack}
-          onClickCancel={onClickCancel}
-          onClickSend={transfer}
-          onClickNetworkFeeSetting={onClickNetworkFeeSetting}
-        />
-      )}
+      {screenState === 'LOADING'
+        ? (
+          <BroadcastTransactionLoading />
+        )
+        : screenState === 'RESULT' && transferResult
+          ? (
+            <TransactionResult
+              status={transferResult.status}
+              errorMessage={transferResult.errorMessage}
+              onClickViewHistory={onClickViewHistory}
+              onClickViewGnoscan={onClickViewGnoscan}
+              onClickClose={onClickCloseResult}
+            />
+          )
+          : openedNetworkFeeSetting
+            ? (
+              <div className='network-fee-setting-wrapper'>
+                <NetworkFeeSetting
+                  {...useNetworkFeeReturn}
+                  onClickBack={onClickNetworkFeeClose}
+                  onClickSave={onClickNetworkFeeSave}
+                />
+              </div>
+            )
+            : (
+              <NFTTransferSummary
+                grc721Token={summaryInfo.grc721Token}
+                toAddress={summaryInfo.toAddress}
+                isErrorNetworkFee={isErrorNetworkFee}
+                networkFee={networkFee}
+                memo={summaryInfo.memo}
+                queryGRC721TokenUri={useGetGRC721TokenUri}
+                onClickBack={onClickBack}
+                onClickCancel={onClickCancel}
+                onClickSend={transfer}
+                onClickNetworkFeeSetting={onClickNetworkFeeSetting}
+              />
+            )}
     </NFTTransferSummaryLayout>
   );
 };

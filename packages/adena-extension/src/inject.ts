@@ -1,9 +1,14 @@
-import { AdenaWallet, WalletResponse } from '@adena-wallet/sdk';
+import {
+  AdenaWallet, WalletResponse,
+} from '@adena-wallet/sdk';
+import {
+  EVENT_KEYS,
+} from '@common/constants/event-key.constant';
 import manifest from '@public/manifest.json';
 
-import { EVENT_KEYS } from '@common/constants/event-key.constant';
-
-import { AdenaExecutor } from './inject/executor/executor';
+import {
+  AdenaExecutor,
+} from './inject/executor/executor';
 import {
   AddEstablishResponse,
   AddNetworkParams,
@@ -45,12 +50,21 @@ const init = (): void => {
       const executor = new AdenaExecutor();
 
       // Supports boolean for backward compatibility with the previous API signature
-      const resolved =
-        typeof options === 'boolean'
-          ? { withNotification: options, isVisibleResult: options }
+      const resolved
+        = typeof options === 'boolean'
+          ? {
+            withNotification: options,
+            isVisibleResult: options,
+          }
           : options;
-      const { withNotification = true, isVisibleResult = true } = resolved ?? {};
-      const response = await executor.doContract(message, { withNotification, isVisibleResult });
+      const {
+        withNotification = true, isVisibleResult = true,
+      } = resolved ?? {
+      };
+      const response = await executor.doContract(message, {
+        withNotification,
+        isVisibleResult,
+      });
       return response;
     },
     async GetAccount(): Promise<GetAccountResponse> {
@@ -130,7 +144,7 @@ const init = (): void => {
         case 'changedNetwork':
           window.addEventListener<(typeof EVENT_KEYS)[typeof eventName]>(
             EVENT_KEYS[eventName],
-            (event) => callbackCustomEvent<string>(event, callback),
+            event => callbackCustomEvent<string>(event, callback),
             true,
           );
           return true;

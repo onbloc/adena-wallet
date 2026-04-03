@@ -1,11 +1,22 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  render,
+} from '@testing-library/react';
+import {
+  SideMenuAccountListProps,
+} from '@types';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import SideMenuAccountList from './side-menu-account-list';
-import { SideMenuAccountListProps } from '@types';
 
 describe('SideMenuAccountList Component', () => {
   it('SideMenuAccountList render', () => {
@@ -14,7 +25,7 @@ describe('SideMenuAccountList Component', () => {
       accounts: [],
       focusedAccountId: '',
       focusAccountId: () => {
-        return; 
+        return;
       },
       changeAccount: () => {
         return;

@@ -1,19 +1,35 @@
-import { useCallback, useMemo } from 'react';
-import { useMatch, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-
-import { Icon, IconName } from '@components/atoms';
-import { useWalletContext } from '@hooks/use-context';
-import { useNetwork } from '@hooks/use-network';
+import {
+  Icon, IconName,
+} from '@components/atoms';
+import {
+  useWalletContext,
+} from '@hooks/use-context';
+import {
+  useNetwork,
+} from '@hooks/use-network';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  useCallback, useMemo,
+} from 'react';
 import React from 'react';
+import {
+  useMatch, useNavigate,
+} from 'react-router-dom';
+import styled from 'styled-components';
 
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   background-color: ${getTheme('neutral', '_8')};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
   padding: 0px 40px;
@@ -44,9 +60,13 @@ export const Navigation = (): JSX.Element => {
   const matchedNft = useMatch(RoutePath.Nft + '/*');
   const matchedHistory = useMatch(RoutePath.History);
   const matchedTokenDetails = useMatch(RoutePath.TokenDetails);
-  const { failedNetwork } = useNetwork();
+  const {
+    failedNetwork,
+  } = useNetwork();
 
-  const { walletStatus } = useWalletContext();
+  const {
+    walletStatus,
+  } = useWalletContext();
 
   const isActiveWallet = walletStatus === 'FINISH';
 
@@ -86,29 +106,27 @@ export const Navigation = (): JSX.Element => {
     }
 
     return (
-      !!matchedWallet ||
-      !!matchedExplore ||
-      !!matchedNft ||
-      !!matchedHistory ||
-      !!matchedTokenDetails
+      !!matchedWallet
+      || !!matchedExplore
+      || !!matchedNft
+      || !!matchedHistory
+      || !!matchedTokenDetails
     );
-  }, [
-    matchedWallet,
-    matchedExplore,
-    matchedNft,
-    matchedHistory,
-    matchedTokenDetails,
-    isActiveWallet,
-    failedNetwork,
-  ]);
+  }, [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails, isActiveWallet, failedNetwork]);
 
   const onClickNavigationItem = useCallback(
-    (item: { iconName: string; active: boolean; routingAddress: RoutePath }) => {
+    (item: {
+      iconName: string
+      active: boolean
+      routingAddress: RoutePath
+    }) => {
       if (!isActiveWallet) {
         return;
       }
 
-      navigate(item.routingAddress, { replace: true });
+      navigate(item.routingAddress, {
+        replace: true,
+      });
     },
     [isActiveWallet],
   );

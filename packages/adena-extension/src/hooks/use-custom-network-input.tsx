@@ -1,20 +1,22 @@
-import { useCallback, useState } from 'react';
+import {
+  useCallback, useState,
+} from 'react';
 
 export type UseCustomNetworkInputReturn = {
-  name: string;
-  rpcUrl: string;
-  indexerUrl: string;
-  chainId: string;
-  rpcUrlError: string;
-  indexerUrlError: string;
-  chainIdError: string;
-  changeName: (name: string) => void;
-  changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
-  changeChainId: (chainId: string) => void;
-  setRPCUrlError: (error: string) => void;
-  setIndexerUrlError: (error: string) => void;
-  setChainIdError: (error: string) => void;
+  name: string
+  rpcUrl: string
+  indexerUrl: string
+  chainId: string
+  rpcUrlError: string
+  indexerUrlError: string
+  chainIdError: string
+  changeName: (name: string) => void
+  changeRPCUrl: (rpcUrl: string) => void
+  changeIndexerUrl: (indexerUrl: string) => void
+  changeChainId: (chainId: string) => void
+  setRPCUrlError: (error: string) => void
+  setIndexerUrlError: (error: string) => void
+  setChainIdError: (error: string) => void
 };
 
 export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {

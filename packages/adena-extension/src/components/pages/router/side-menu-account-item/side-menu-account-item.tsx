@@ -1,14 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
 import IconEtc from '@assets/icon-etc';
 import IconLink from '@assets/icon-link';
 import IconQRCode from '@assets/icon-qrcode';
-import { CopyIconButton, Portal } from '@components/atoms';
-import { SideMenuAccountItemProps } from '@types';
+import {
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  CopyIconButton, Portal,
+} from '@components/atoms';
+import {
+  TokenBalance,
+} from '@components/molecules';
+import {
+  SideMenuAccountItemProps,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useTheme,
+} from 'styled-components';
 
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { TokenBalance } from '@components/molecules';
-import { useTheme } from 'styled-components';
 import {
   SideMenuAccountItemMoreInfoWrapper,
   SideMenuAccountItemWrapper,
@@ -24,7 +35,9 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   moveAccountDetail,
 }) => {
   const theme = useTheme();
-  const { accountId, name, address, balance, type } = account;
+  const {
+    accountId, name, address, balance, type,
+  } = account;
   const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
   const [positionX, setPositionX] = useState(0);
   const [positionY, setPositionY] = useState(0);
@@ -64,7 +77,9 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
       event.stopPropagation();
-      const { x, y } = event.currentTarget.getBoundingClientRect();
+      const {
+        x, y,
+      } = event.currentTarget.getBoundingClientRect();
       setPositionX(x);
       setPositionY(y);
       focusAccountId(accountId);
@@ -107,18 +122,20 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
           {label !== null && <span className='label'>{label}</span>}
         </div>
         <div className='balance-wrapper'>
-          {balance === '-' ? (
-            <span className='balance'>{balance}</span>
-          ) : (
-            <TokenBalance
-              value={balance}
-              denom={GNOT_TOKEN.symbol}
-              fontColor={theme.neutral.a}
-              orientation='HORIZONTAL'
-              minimumFontSize='11px'
-              fontStyleKey='body3Reg'
-            />
-          )}
+          {balance === '-'
+            ? (
+              <span className='balance'>{balance}</span>
+            )
+            : (
+              <TokenBalance
+                value={balance}
+                denom={GNOT_TOKEN.symbol}
+                fontColor={theme.neutral.a}
+                orientation='HORIZONTAL'
+                minimumFontSize='11px'
+                fontStyleKey='body3Reg'
+              />
+            )}
         </div>
       </div>
 
@@ -143,13 +160,13 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
 export default SideMenuAccountItem;
 
 interface SideMenuAccountItemMoreInfoProps {
-  accountId: string;
-  address: string;
-  positionX: number;
-  positionY: number;
-  close: () => void;
-  moveGnoscan: (address: string) => void;
-  moveAccountDetail: (accountId: string) => void;
+  accountId: string
+  address: string
+  positionX: number
+  positionY: number
+  close: () => void
+  moveGnoscan: (address: string) => void
+  moveAccountDetail: (accountId: string) => void
 }
 
 const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = ({
@@ -184,7 +201,7 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   );
 
   return (
-    <Portal selector={'portal-popup'}>
+    <Portal selector='portal-popup'>
       <SideMenuAccountItemMoreInfoWrapper
         positionX={positionX}
         positionY={positionY}

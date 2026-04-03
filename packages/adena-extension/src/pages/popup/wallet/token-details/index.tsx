@@ -1,32 +1,64 @@
-import { isAirgapAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import etc from '@assets/etc.svg';
-import { isGRC20TokenModel } from '@common/validation/validation-token';
-import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
-import { DoubleButton, TransactionHistory } from '@components/molecules';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useHistoryData from '@hooks/use-history-data';
-import useScrollHistory from '@hooks/use-scroll-history';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
-
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
+import {
+  makeQueryString,
+} from '@common/utils/string-utils';
+import {
+  isGRC20TokenModel,
+} from '@common/validation/validation-token';
+import {
+  HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text,
+} from '@components/atoms';
+import {
+  DoubleButton, TransactionHistory,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import useScrollHistory from '@hooks/use-scroll-history';
 import useSessionParams from '@hooks/use-session-state';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
-import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
+import {
+  useTokenBalance,
+} from '@hooks/use-token-balance';
+import {
+  useTokenTransactions,
+} from '@hooks/wallet/token-details/use-token-transactions';
+import {
+  useTokenTransactionsPage,
+} from '@hooks/wallet/token-details/use-token-transactions-page';
 import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  isAirgapAccount,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
+
 import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
-  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -54,7 +86,9 @@ const Wrapper = styled.main`
 `;
 
 const HeaderWrap = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: relative;
   width: 100%;
   margin-bottom: 20px;
@@ -83,19 +117,35 @@ const EtcIcon = styled.div`
 
 export const TokenDetails = (): JSX.Element => {
   const theme = useTheme();
-  const { currentNetwork, scannerParameters } = useNetwork();
+  const {
+    currentNetwork, scannerParameters,
+  } = useNetwork();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { saveScrollPosition } = useScrollHistory(scrollRef);
-  const { openLink } = useLink();
-  const { navigate } = useAppNavigate<RoutePath.TokenDetails>();
-  const { params } = useSessionParams<RoutePath.TokenDetails>();
+  const {
+    saveScrollPosition,
+  } = useScrollHistory(scrollRef);
+  const {
+    openLink,
+  } = useLink();
+  const {
+    navigate,
+  } = useAppNavigate<RoutePath.TokenDetails>();
+  const {
+    params,
+  } = useSessionParams<RoutePath.TokenDetails>();
   const [etcClicked, setEtcClicked] = useState(false);
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
   const tokenBalance = params?.tokenBalance;
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
-  const { clearHistoryData } = useHistoryData();
-  const { currentBalances } = useTokenBalance();
+  const {
+    clearHistoryData,
+  } = useHistoryData();
+  const {
+    currentBalances,
+  } = useTokenBalance();
 
   const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
 
@@ -117,7 +167,9 @@ export const TokenDetails = (): JSX.Element => {
     enabled: !isUsedApi,
   });
 
-  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
+  const {
+    status, isLoading, isFetching, data, isSupported, fetchNextPage,
+  } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
     }
@@ -137,7 +189,7 @@ export const TokenDetails = (): JSX.Element => {
   }, [document.getElementsByTagName('body')]);
 
   const tokenAmount = useMemo((): string => {
-    const balance = currentBalances.find((balance) => balance.tokenId === tokenBalance?.tokenId);
+    const balance = currentBalances.find(balance => balance.tokenId === tokenBalance?.tokenId);
     return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0';
   }, [currentBalances, tokenBalance]);
 
@@ -160,12 +212,14 @@ export const TokenDetails = (): JSX.Element => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap((group) => group.transactions) ?? [];
-      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      const transactions = data?.flatMap(group => group.transactions) ?? [];
+      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {
-          state: { transactionInfo },
+          state: {
+            transactionInfo,
+          },
         });
       }
     },
@@ -177,7 +231,12 @@ export const TokenDetails = (): JSX.Element => {
     if (!tokenBalance) {
       return;
     }
-    navigate(RoutePath.Deposit, { state: { type: 'token', token: tokenBalance } });
+    navigate(RoutePath.Deposit, {
+      state: {
+        type: 'token',
+        token: tokenBalance,
+      },
+    });
   };
 
   const SendButtonClick = (): void => {
@@ -189,7 +248,11 @@ export const TokenDetails = (): JSX.Element => {
       navigate(RoutePath.BroadcastTransaction);
       return;
     }
-    navigate(RoutePath.TransferInput, { state: { tokenBalance } });
+    navigate(RoutePath.TransferInput, {
+      state: {
+        tokenBalance,
+      },
+    });
   };
   const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
@@ -210,7 +273,10 @@ export const TokenDetails = (): JSX.Element => {
     return '';
   };
 
-  const getTooltipItems = (): { tooltipText: string; onClick: () => void }[] => {
+  const getTooltipItems = (): {
+    tooltipText: string
+    onClick: () => void
+  }[] => {
     const accountDetailItem = {
       tooltipText: 'View on GnoScan',
       onClick: () => openLink(getAccountDetailUri()),
@@ -240,32 +306,39 @@ export const TokenDetails = (): JSX.Element => {
         <HighlightNumber
           value={tokenAmount}
           fontColor={theme.neutral._1}
-          fontStyleKey={'header2'}
-          minimumFontSize={'24px'}
+          fontStyleKey='header2'
+          minimumFontSize='24px'
         />
       </div>
 
       <DoubleButton
         margin='20px 0px 25px'
-        leftProps={{ onClick: DepositButtonClick, text: 'Deposit' }}
+        leftProps={{
+          onClick: DepositButtonClick,
+          text: 'Deposit',
+        }}
         rightProps={{
           onClick: SendButtonClick,
           text: 'Send',
         }}
       />
-      {isLoading && isSupported ? (
-        <LoadingTokenDetails />
-      ) : transactions.length > 0 ? (
-        <TransactionHistory
-          status={status}
-          transactionInfoLists={isSupported ? transactions : []}
-          onClickItem={onClickItem}
-        />
-      ) : (
-        <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-          No transaction to display
-        </Text>
-      )}
+      {isLoading && isSupported
+        ? (
+          <LoadingTokenDetails />
+        )
+        : transactions.length > 0
+          ? (
+            <TransactionHistory
+              status={status}
+              transactionInfoLists={isSupported ? transactions : []}
+              onClickItem={onClickItem}
+            />
+          )
+          : (
+            <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+              No transaction to display
+            </Text>
+          )}
     </Wrapper>
   );
 };

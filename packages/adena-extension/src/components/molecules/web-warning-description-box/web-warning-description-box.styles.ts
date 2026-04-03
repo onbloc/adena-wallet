@@ -1,5 +1,7 @@
+import {
+  View,
+} from '@components/atoms';
 import styled from 'styled-components';
-import { View } from '@components/atoms';
 
 export const StyledContainer = styled(View)`
   gap: 8px;

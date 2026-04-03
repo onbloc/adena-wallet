@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react';
+import React, {
+  useEffect,
+} from 'react';
 
 export const AppReloadFallback: React.FC = () => {
   useEffect(() => {

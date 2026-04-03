@@ -1,15 +1,18 @@
-import React from 'react';
-import styled, { css, RuleSet } from 'styled-components';
-
-import { Button, ButtonProps, Text } from '@components/atoms';
+import {
+  Button, ButtonProps, Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
+import React from 'react';
+import styled, {
+  css, RuleSet,
+} from 'styled-components';
 
 interface BottomFixedButtonProps {
-  hierarchy?: ButtonProps['hierarchy'];
-  text?: string;
-  fill?: boolean;
-  disabled?: boolean;
-  onClick: () => unknown;
+  hierarchy?: ButtonProps['hierarchy']
+  text?: string
+  fill?: boolean
+  disabled?: boolean
+  onClick: () => unknown
 }
 
 export const BottomFixedButton = ({
@@ -32,8 +35,12 @@ export const BottomFixedButton = ({
   );
 };
 
-const ButtonWrap = styled.div<{ fill: string }>`
-  ${mixins.flex({ direction: 'row' })};
+const ButtonWrap = styled.div<{
+  fill: string
+}>`
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: fixed;
   bottom: 0px;
   left: 0px;
@@ -42,7 +49,9 @@ const ButtonWrap = styled.div<{ fill: string }>`
   padding: 0px 20px;
   z-index: 1;
 
-  ${({ fill, theme }): RuleSet =>
+  ${({
+    fill, theme,
+  }): RuleSet =>
     fill === 'fill'
       ? css`
           box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);

@@ -1,19 +1,37 @@
-import _ from 'lodash';
-import { ReactElement, useCallback, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAlert from '@assets/web/alert-circle.svg';
-import { WebSeedInputItem } from '@components/atoms/web-seed-input-item';
-import { WebTextarea } from '@components/atoms/web-textarea';
-import { webFonts } from '@styles/theme';
-import { ImportWalletType } from '@types';
+import {
+  WebSeedInputItem,
+} from '@components/atoms/web-seed-input-item';
+import {
+  WebTextarea,
+} from '@components/atoms/web-textarea';
+import {
+  webFonts,
+} from '@styles/theme';
+import {
+  ImportWalletType,
+} from '@types';
+import _ from 'lodash';
+import {
+  ReactElement, useCallback, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-import { Pressable, Row, View, WebImg, WebText } from '../../atoms';
-import { makeFilledSeedPhrase } from './web-seed-input.utils';
+import {
+  Pressable, Row, View, WebImg, WebText,
+} from '../../atoms';
+import {
+  makeFilledSeedPhrase,
+} from './web-seed-input.utils';
 
 interface WebSeedInputProps {
-  onChange: (props: { type: ImportWalletType; value: string }) => void;
-  errorMessage?: string;
+  onChange: (props: {
+    type: ImportWalletType
+    value: string
+  }) => void
+  errorMessage?: string
 }
 
 const StyledContainer = styled(View)`
@@ -38,10 +56,14 @@ const StyledTypeMenu = styled(Row)`
   background: rgba(0, 0, 0, 0.2);
 `;
 
-const StyledTypeMenuItem = styled(Pressable)<{ selected: boolean }>`
+const StyledTypeMenuItem = styled(Pressable)<{
+  selected: boolean
+}>`
   padding: 8px 12px;
   border-radius: 40px;
-  background: ${({ selected }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
+  background: ${({
+    selected,
+  }): string => (selected ? 'rgba(0, 89, 255, 0.24)' : 'transparent')};
 `;
 
 const StyledTextarea = styled(WebTextarea)`
@@ -50,7 +72,9 @@ const StyledTextarea = styled(WebTextarea)`
   height: 80px;
 `;
 
-export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): ReactElement => {
+export const WebSeedInput = ({
+  errorMessage, onChange,
+}: WebSeedInputProps): ReactElement => {
   const theme = useTheme();
 
   const [type, setType] = useState<ImportWalletType>('12seeds');
@@ -71,7 +95,10 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
       list[index] = value;
 
       setWordList(list);
-      onChange({ type, value: list.join(' ') });
+      onChange({
+        type,
+        value: list.join(' '),
+      });
     },
     [type, wordList],
   );
@@ -80,20 +107,31 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
     (value: string) => {
       const words = _getFilledWordList(type, value.split(' '));
       setWordList(words);
-      onChange({ type, value: words.join(' ') });
+      onChange({
+        type,
+        value: words.join(' '),
+      });
     },
     [type],
   );
 
   const TypeMenuItem = useCallback(
-    ({ title, _type }: { title: string; _type: ImportWalletType }): ReactElement => {
+    ({
+      title, _type,
+    }: {
+      title: string
+      _type: ImportWalletType
+    }): ReactElement => {
       const selected = type === _type;
       return (
         <StyledTypeMenuItem
           onClick={(): void => {
             setType(_type);
             const value = _type === 'pKey' ? pKey : _getFilledWordList(_type, wordList).join(' ');
-            onChange({ type: _type, value });
+            onChange({
+              type: _type,
+              value,
+            });
           }}
           selected={selected}
         >
@@ -114,41 +152,58 @@ export const WebSeedInput = ({ errorMessage, onChange }: WebSeedInputProps): Rea
         <TypeMenuItem _type='pKey' title='Private Key' />
       </StyledTypeMenu>
 
-      <View style={{ rowGap: 12 }}>
-        {type === 'pKey' ? (
-          <StyledTextarea
-            value={pKey}
-            placeholder='Private Key'
-            error={!!errorMessage}
-            onChange={({ target: { value } }): void => {
-              onChange({ type, value });
-              setPKey(value);
-            }}
-          />
-        ) : (
-          <StyledInputBox>
-            {_.times(type === '12seeds' ? 12 : 24, (index) => {
-              return (
-                <WebSeedInputItem
-                  type='password'
-                  key={`seeds-${index}`}
-                  index={index + 1}
-                  value={wordList[index] || ''}
-                  error={!!errorMessage}
-                  onChange={(value: string): void => {
-                    if (index === 0 && value.split(' ').length > 1) {
-                      onChangeWebSeedInputByWords(value);
-                    } else {
-                      onChangeWord(index, value);
-                    }
-                  }}
-                />
-              );
-            })}
-          </StyledInputBox>
-        )}
+      <View style={{
+        rowGap: 12,
+      }}
+      >
+        {type === 'pKey'
+          ? (
+            <StyledTextarea
+              value={pKey}
+              placeholder='Private Key'
+              error={!!errorMessage}
+              onChange={({
+                target: {
+                  value,
+                },
+              }): void => {
+                onChange({
+                  type,
+                  value,
+                });
+                setPKey(value);
+              }}
+            />
+          )
+          : (
+            <StyledInputBox>
+              {_.times(type === '12seeds' ? 12 : 24, (index) => {
+                return (
+                  <WebSeedInputItem
+                    type='password'
+                    key={`seeds-${index}`}
+                    index={index + 1}
+                    value={wordList[index] || ''}
+                    error={!!errorMessage}
+                    onChange={(value: string): void => {
+                      if (index === 0 && value.split(' ').length > 1) {
+                        onChangeWebSeedInputByWords(value);
+                      }
+                      else {
+                        onChangeWord(index, value);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </StyledInputBox>
+          )}
         {!!errorMessage && (
-          <Row style={{ columnGap: 6, alignItems: 'center' }}>
+          <Row style={{
+            columnGap: 6,
+            alignItems: 'center',
+          }}
+          >
             <WebImg src={IconAlert} size={20} color={theme.webError._100} />
             <WebText type='body5' color={theme.webError._100}>
               {errorMessage}

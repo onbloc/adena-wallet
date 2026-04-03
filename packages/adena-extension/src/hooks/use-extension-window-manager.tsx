@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface UseExtensionWindowManagerReturn {
-  closeAllExtensionWindows: () => Promise<void>;
+  closeAllExtensionWindows: () => Promise<void>
 }
 
 const useExtensionWindowManager = (): UseExtensionWindowManagerReturn => {
@@ -14,7 +14,9 @@ const useExtensionWindowManager = (): UseExtensionWindowManagerReturn => {
     }
   }, []);
 
-  return { closeAllExtensionWindows };
+  return {
+    closeAllExtensionWindows,
+  };
 };
 
 export default useExtensionWindowManager;

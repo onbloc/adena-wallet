@@ -1,15 +1,18 @@
-import React, { useMemo } from 'react';
-
 import LeftArrowIcon from '@assets/arrowL-left.svg';
 import IconEtc from '@assets/etc.svg';
 import IconLink from '@assets/icon-link';
-import { SubHeader } from '@components/atoms';
+import {
+  SubHeader,
+} from '@components/atoms';
 import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
+import React, {
+  useMemo,
+} from 'react';
 
 export interface NFTCollectionHeaderProps {
-  title: string;
-  moveBack: () => void;
-  openGnoscanCollection: () => void;
+  title: string
+  moveBack: () => void
+  openGnoscanCollection: () => void
 }
 
 const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
@@ -32,7 +35,7 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
     <SubHeader
       title={title}
       leftElement={{
-        element: <img src={LeftArrowIcon} alt={'back icon'} />,
+        element: <img src={LeftArrowIcon} alt='back icon' />,
         onClick: moveBack,
       }}
       rightElement={{

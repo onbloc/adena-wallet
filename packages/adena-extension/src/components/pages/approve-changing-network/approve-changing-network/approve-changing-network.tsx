@@ -1,27 +1,37 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { useTheme } from 'styled-components';
-
 import IconArrowRight from '@assets/arrowL-right-bold.svg';
-import { SubHeader, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import {
+  SubHeader, Text,
+} from '@components/atoms';
+import {
+  BottomFixedLoadingButtonGroup,
+} from '@components/molecules';
+import React, {
+  useCallback, useEffect, useMemo,
+} from 'react';
+import {
+  useTheme,
+} from 'styled-components';
+
 import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item';
-import { ApproveChangingNetworkWrapper } from './approve-changing-network.styles';
+import {
+  ApproveChangingNetworkWrapper,
+} from './approve-changing-network.styles';
 
 export interface ChangingNetworkInfo {
-  logo?: string;
-  name: string;
+  logo?: string
+  name: string
 }
 
 export interface ApproveChangingNetworkProps {
-  fromChain: ChangingNetworkInfo;
-  toChain: ChangingNetworkInfo;
-  changeable: boolean;
-  processing: boolean;
-  done: boolean;
-  changeNetwork: () => void;
-  cancel: () => void;
-  onResponse: () => void;
-  onTimeout: () => void;
+  fromChain: ChangingNetworkInfo
+  toChain: ChangingNetworkInfo
+  changeable: boolean
+  processing: boolean
+  done: boolean
+  changeNetwork: () => void
+  cancel: () => void
+  onResponse: () => void
+  onTimeout: () => void
 }
 
 const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({

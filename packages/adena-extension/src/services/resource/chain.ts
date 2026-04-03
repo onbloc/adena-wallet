@@ -1,6 +1,12 @@
-import { CommonError } from '@common/errors/common';
-import { ChainRepository } from '@repositories/common';
-import { NetworkMetainfo } from '@types';
+import {
+  CommonError,
+} from '@common/errors/common';
+import {
+  ChainRepository,
+} from '@repositories/common';
+import {
+  NetworkMetainfo,
+} from '@types';
 
 export class ChainService {
   private chainRepository: ChainRepository;
@@ -59,7 +65,7 @@ export class ChainService {
   public getCurrentNetwork = async (): Promise<NetworkMetainfo> => {
     const networks = await this.getNetworks();
     const networkId = await this.chainRepository.getCurrentNetworkId();
-    return networks.find((network) => network.id === networkId) ?? networks[0];
+    return networks.find(network => network.id === networkId) ?? networks[0];
   };
 
   public updateCurrentNetworkId = async (chainId: string): Promise<boolean> => {

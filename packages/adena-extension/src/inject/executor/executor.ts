@@ -5,8 +5,6 @@ import {
   WalletResponseStatus,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import { v4 as uuidv4 } from 'uuid';
-
 import {
   validateChainId,
   validateFee,
@@ -42,7 +40,13 @@ import {
   SwitchNetworkResponse,
   TransactionParams,
 } from '@inject/types';
-import { InjectionMessage, InjectionMessageInstance } from '../message';
+import {
+  v4 as uuidv4,
+} from 'uuid';
+
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '../message';
 
 type Params = { [key in string]: any };
 
@@ -56,8 +60,12 @@ export class AdenaExecutor {
   private resolver: ((message: WalletResponse<unknown>) => void) | undefined;
 
   private messages: {
-    [key in string]: { request: InjectionMessage; response: InjectionMessage | undefined };
-  } = {};
+    [key in string]: {
+      request: InjectionMessage
+      response: InjectionMessage | undefined
+    };
+  } = {
+  };
 
   private static instance: AdenaExecutor | undefined = new AdenaExecutor();
 
@@ -92,10 +100,16 @@ export class AdenaExecutor {
       return this.sendEventMessage(result);
     }
 
-    const { withNotification, isVisibleResult } = options ?? {};
+    const {
+      withNotification, isVisibleResult,
+    } = options ?? {
+    };
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.DO_CONTRACT,
-      { ...params, isVisibleResult },
+      {
+        ...params,
+        isVisibleResult,
+      },
       withNotification,
     );
     return this.sendEventMessage(eventMessage);
@@ -162,7 +176,10 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
-      { ...params, withSaveFile },
+      {
+        ...params,
+        withSaveFile,
+      },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -180,7 +197,11 @@ export class AdenaExecutor {
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_MULTISIG_TRANSACTION,
-      { multisigDocument, multisigSignatures, withSaveFile },
+      {
+        multisigDocument,
+        multisigSignatures,
+        withSaveFile,
+      },
     );
 
     return this.sendEventMessage(eventMessage);
@@ -196,10 +217,17 @@ export class AdenaExecutor {
       return this.sendEventMessage(result);
     }
 
-    const { withNotification, isVisibleResult } = options ?? {};
+    const {
+      withNotification, isVisibleResult,
+    } = options ?? {
+    };
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.BROADCAST_MULTISIG_TRANSACTION,
-      { multisigDocument, multisigSignatures, isVisibleResult },
+      {
+        multisigDocument,
+        multisigSignatures,
+        isVisibleResult,
+      },
       withNotification,
     );
 
@@ -216,7 +244,9 @@ export class AdenaExecutor {
   public switchNetwork = (chainId: string): Promise<SwitchNetworkResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SWITCH_NETWORK,
-      { chainId },
+      {
+        chainId,
+      },
     );
     return this.sendEventMessage(eventMessage);
   };
@@ -233,9 +263,9 @@ export class AdenaExecutor {
       const messageData = message?.type
         ? message
         : {
-            type: message['@type'],
-            value: message,
-          };
+          type: message['@type'],
+          value: message,
+        };
       switch (messageData.type) {
         case '/bank.MsgSend':
           if (!validateTransactionMessageOfBankSend(messageData)) {
@@ -391,7 +421,8 @@ export class AdenaExecutor {
 
     try {
       window.postMessage(this.eventMessage, window.location.origin);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
     this.messages[this.eventKey] = {
@@ -433,32 +464,34 @@ export class AdenaExecutor {
 
     const eventData = event.data;
     if (eventData.status) {
-      const { key, status, data, code, message, type } = eventData;
+      const {
+        key, status, data, code, message, type,
+      } = eventData;
       if (key === this.eventKey) {
         switch (eventData.status) {
           case 'response':
             break;
           case 'success':
             this.unlisten();
-            this.resolver &&
-              this.resolver({
-                status: status as WalletResponseStatus,
-                data,
-                code,
-                message,
-                type,
-              });
+            this.resolver
+            && this.resolver({
+              status: status as WalletResponseStatus,
+              data,
+              code,
+              message,
+              type,
+            });
             break;
           case 'failure':
             this.unlisten();
-            this.resolver &&
-              this.resolver({
-                status: status as WalletResponseStatus,
-                data,
-                code,
-                message,
-                type,
-              });
+            this.resolver
+            && this.resolver({
+              status: status as WalletResponseStatus,
+              data,
+              code,
+              message,
+              type,
+            });
             break;
           default:
             break;

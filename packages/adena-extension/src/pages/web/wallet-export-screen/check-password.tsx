@@ -1,11 +1,22 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconWarning from '@assets/web/warning.svg';
-import { Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText } from '@components/atoms';
-import { TermsCheckbox } from '@components/molecules';
-import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
-import { getTheme } from '@styles/theme';
+import {
+  Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText,
+} from '@components/atoms';
+import {
+  TermsCheckbox,
+} from '@components/molecules';
+import {
+  ExportType,
+} from '@hooks/web/wallet-export/use-wallet-export-screen';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  useCallback, useMemo, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -39,9 +50,9 @@ const StyledTermsBox = styled(View)`
 `;
 
 interface WalletExportCheckPasswordProps {
-  exportType: ExportType;
-  checkPassword: (password: string) => Promise<boolean>;
-  moveExport: (password: string) => Promise<void>;
+  exportType: ExportType
+  checkPassword: (password: string) => Promise<boolean>
+  moveExport: (password: string) => Promise<void>
 }
 
 const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
@@ -107,7 +118,8 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
     if (checkedPassword) {
       setPassword('');
       moveExport(password);
-    } else {
+    }
+    else {
       setErrorMessage('Invalid password');
     }
   }, [availableCheckPassword, password, checkPassword, moveExport]);
@@ -117,13 +129,23 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
       <StyledMessageBox>
         <WebText type='headline2'>{title}</WebText>
         <StyledWarnBox>
-          <Row style={{ gap: 4, alignItems: 'center' }}>
+          <Row style={{
+            gap: 4,
+            alignItems: 'center',
+          }}
+          >
             <WebImg src={IconWarning} size={20} />
             <WebText type='title6' color={theme.webWarning._100}>
               Approach with caution!
             </WebText>
           </Row>
-          <WebText type='body6' color={theme.webWarning._100} style={{ paddingLeft: 4 }}>
+          <WebText
+            type='body6'
+            color={theme.webWarning._100}
+            style={{
+              paddingLeft: 4,
+            }}
+          >
             {warningMessage}
           </WebText>
         </StyledWarnBox>

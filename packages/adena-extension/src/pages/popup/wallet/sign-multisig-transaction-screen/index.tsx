@@ -1,7 +1,15 @@
-import { MultisigTransactionProvider } from '@common/provider';
-import { CommonFullContentLayout } from '@components/atoms';
-import { useMultisigTransactionContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  MultisigTransactionProvider,
+} from '@common/provider';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
+import {
+  useMultisigTransactionContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
 import {
@@ -10,13 +18,18 @@ import {
   RawVmCallMessage,
   RawVmRunMessage,
 } from 'adena-module';
-import React, { useEffect } from 'react';
+import React, {
+  useEffect,
+} from 'react';
+
 import SignTransactionLoading from './loading';
 import SignTransactionResult from './result';
 import SignMultisigTransactionUpload from './upload';
 
 const SignMultisigTransactionContent: React.FC = () => {
-  const { currentAddress } = useCurrentAccount();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
 
   const {
     transaction,

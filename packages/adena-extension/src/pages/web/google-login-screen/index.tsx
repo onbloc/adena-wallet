@@ -1,18 +1,29 @@
-import React, { useCallback, useMemo } from 'react';
-
-import { WebMain } from '@components/atoms';
-import { WebMainHeader } from '@components/pages/web/main-header';
+import {
+  ADENA_DOCS_PAGE,
+} from '@common/constants/resource.constant';
+import {
+  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
+import {
+  WebMain,
+} from '@components/atoms';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import useGoogleLoginScreen from '@hooks/web/google-login/use-google-login-screen';
+import React, {
+  useCallback, useMemo,
+} from 'react';
 
 import GoogleLoginRequest from './request';
 import GoogleLoginRequestFail from './request-fail';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
-import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const GoogleLoginScreen: React.FC = () => {
-  const { googleLoginState, indicatorInfo, backStep, retry, initGoogleLogin, requestGoogleLogin } =
-    useGoogleLoginScreen();
+  const {
+    googleLoginState, indicatorInfo, backStep, retry, initGoogleLogin, requestGoogleLogin,
+  }
+    = useGoogleLoginScreen();
 
   const topSpacing = useMemo(() => {
     if (googleLoginState === 'INIT') {

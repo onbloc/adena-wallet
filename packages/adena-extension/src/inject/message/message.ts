@@ -1,17 +1,19 @@
-import { WalletMessageInfo, WalletResponseType } from '@adena-wallet/sdk';
+import {
+  WalletMessageInfo, WalletResponseType,
+} from '@adena-wallet/sdk';
 
 export type StatusType = 'request' | 'response' | 'common' | 'success' | 'failure';
 
 export interface InjectionMessage {
-  code: number;
-  key?: string;
-  hostname?: string;
-  protocol?: string;
-  withNotification?: boolean;
-  type: WalletResponseType;
-  status: StatusType;
-  message: string;
-  data: { [key in string]: any } | undefined;
+  code: number
+  key?: string
+  hostname?: string
+  protocol?: string
+  withNotification?: boolean
+  type: WalletResponseType
+  status: StatusType
+  message: string
+  data: { [key in string]: any } | undefined
 }
 
 export class InjectionMessageInstance {
@@ -36,7 +38,9 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ) {
-    const { code, message, type } = WalletMessageInfo[messageKey];
+    const {
+      code, message, type,
+    } = WalletMessageInfo[messageKey];
     this.key = key ?? '';
     this.code = code;
     this.type = type;
@@ -74,7 +78,9 @@ export class InjectionMessageInstance {
     return this.description;
   };
 
-  public getData = (): { [x: string]: any } | undefined => {
+  public getData = (): {
+    [x: string]: any
+  } | undefined => {
     return this.data;
   };
 

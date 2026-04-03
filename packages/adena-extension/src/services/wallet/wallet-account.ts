@@ -1,6 +1,12 @@
-import { AccountInfo, GnoProvider } from '@common/provider/gno';
-import { WalletAccountRepository } from '@repositories/wallet';
-import { Account } from 'adena-module';
+import {
+  AccountInfo, GnoProvider,
+} from '@common/provider/gno';
+import {
+  WalletAccountRepository,
+} from '@repositories/wallet';
+import {
+  Account,
+} from 'adena-module';
 
 const defaultAccountInfo: AccountInfo = {
   address: '',
@@ -59,7 +65,8 @@ export class WalletAccountService {
       if (account) {
         return account;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
     return {
@@ -78,7 +85,7 @@ export class WalletAccountService {
   };
 
   public getAccountNames = async (): Promise<{
-    [x: string]: string;
+    [x: string]: string
   }> => {
     return this.walletAccountRepository.getAccountNames();
   };

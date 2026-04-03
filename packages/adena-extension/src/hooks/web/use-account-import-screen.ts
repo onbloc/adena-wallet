@@ -1,4 +1,26 @@
 import {
+  waitForRun,
+} from '@common/utils/timeout-utils';
+import {
+  defaultAddressPrefix,
+} from '@gnolang/tm2-js-client';
+import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useWallet,
+} from '@hooks/use-wallet';
+import useIndicatorStep, {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import {
+  ImportWalletType, RoutePath,
+} from '@types';
+import {
   Account,
   AdenaWallet,
   HDWalletKeyring,
@@ -11,61 +33,67 @@ import {
   SingleAccount,
   Wallet,
 } from 'adena-module';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  useCallback, useMemo, useState,
+} from 'react';
 
-import { waitForRun } from '@common/utils/timeout-utils';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useWallet } from '@hooks/use-wallet';
-import useIndicatorStep, {
-  UseIndicatorStepReturn,
-} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { ImportWalletType, RoutePath } from '@types';
 import useQuestionnaire from './use-questionnaire';
 
 export type UseAccountImportReturn = {
-  indicatorInfo: UseIndicatorStepReturn;
-  isValidForm: boolean;
-  isLoadingAccounts: boolean;
-  storedAccounts: Account[];
-  loadedAccounts: Account[];
-  loadAccounts: () => Promise<void>;
-  selectedAddresses: string[];
-  selectAccount: (address: string) => void;
-  errMsg: string;
-  inputValue: string;
-  updateInputValue: (inputValue: string) => void;
-  inputType: ImportWalletType;
-  setInputType: (inputType: ImportWalletType) => void;
-  step: AccountImportStateType;
-  setStep: React.Dispatch<React.SetStateAction<AccountImportStateType>>;
+  indicatorInfo: UseIndicatorStepReturn
+  isValidForm: boolean
+  isLoadingAccounts: boolean
+  storedAccounts: Account[]
+  loadedAccounts: Account[]
+  loadAccounts: () => Promise<void>
+  selectedAddresses: string[]
+  selectAccount: (address: string) => void
+  errMsg: string
+  inputValue: string
+  updateInputValue: (inputValue: string) => void
+  inputType: ImportWalletType
+  setInputType: (inputType: ImportWalletType) => void
+  step: AccountImportStateType
+  setStep: React.Dispatch<React.SetStateAction<AccountImportStateType>>
   accountImportStepNo:
     | {
-        INIT: number;
-        SET_MNEMONIC: number;
-        LOADING: number;
-      }
+      INIT: number
+      SET_MNEMONIC: number
+      LOADING: number
+    }
     | {
-        INIT: number;
-        SET_MNEMONIC: number;
-        LOADING: number;
-        SELECT_ACCOUNT: number;
-      };
-  stepLength: number;
-  onClickGoBack: () => void;
-  onClickNext: () => void;
+      INIT: number
+      SET_MNEMONIC: number
+      LOADING: number
+      SELECT_ACCOUNT: number
+    }
+  stepLength: number
+  onClickGoBack: () => void
+  onClickNext: () => void
 };
 
 export type AccountImportStateType = 'INIT' | 'SET_MNEMONIC' | 'LOADING' | 'SELECT_ACCOUNT';
 
-const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImportReturn => {
-  const { navigate, params } = useAppNavigate<RoutePath.WebAccountImport>();
-  const { ableToSkipQuestionnaire } = useQuestionnaire();
-  const { updateWallet } = useWalletContext();
-  const { changeCurrentAccount } = useCurrentAccount();
-  const { hasHDWallet } = useWallet();
+const useAccountImportScreen = ({
+  wallet,
+}: {
+  wallet: Wallet
+}): UseAccountImportReturn => {
+  const {
+    navigate, params,
+  } = useAppNavigate<RoutePath.WebAccountImport>();
+  const {
+    ableToSkipQuestionnaire,
+  } = useQuestionnaire();
+  const {
+    updateWallet,
+  } = useWalletContext();
+  const {
+    changeCurrentAccount,
+  } = useCurrentAccount();
+  const {
+    hasHDWallet,
+  } = useWallet();
 
   const [inputType, setInputType] = useState<ImportWalletType>('12seeds');
   const [step, setStep] = useState<AccountImportStateType>(
@@ -114,15 +142,15 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const selectAccount = (selectedAddress: string): void => {
     if (selectedAddresses.includes(selectedAddress)) {
-      setSelectedAddresses((prev) => prev.filter((address) => address !== selectedAddress));
+      setSelectedAddresses(prev => prev.filter(address => address !== selectedAddress));
       return;
     }
-    setSelectedAddresses((prev) => [...prev, selectedAddress]);
+    setSelectedAddresses(prev => [...prev, selectedAddress]);
   };
 
   const makePrivateKeyAccountAndKeyring = useCallback(async (): Promise<{
-    account: Account;
-    keyring: Keyring;
+    account: Account
+    keyring: Keyring
   } | null> => {
     setErrMsg('');
     if (!inputValue) {
@@ -137,16 +165,19 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
     const account = await SingleAccount.createBy(keyring, wallet.nextAccountName);
     const address = await account.getAddress(defaultAddressPrefix);
-    const checkAccounts = wallet.accounts.filter((account) => !isAirgapAccount(account));
+    const checkAccounts = wallet.accounts.filter(account => !isAirgapAccount(account));
     const storedAddresses = await Promise.all(
-      checkAccounts.map((account) => account.getAddress(defaultAddressPrefix)),
+      checkAccounts.map(account => account.getAddress(defaultAddressPrefix)),
     );
     const existAddress = storedAddresses.includes(address);
     if (existAddress) {
       setErrMsg('Private key already registered');
       return null;
     }
-    return { account, keyring };
+    return {
+      account,
+      keyring,
+    };
   }, [wallet, inputValue]);
 
   const onClickGoBack = useCallback(() => {
@@ -170,14 +201,16 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       setErrMsg('');
       if (ableToSkipQuestionnaire) {
         setStep('SET_MNEMONIC');
-      } else {
+      }
+      else {
         navigate(RoutePath.WebQuestionnaire, {
           state: {
             callbackPath: RoutePath.WebAccountImport,
           },
         });
       }
-    } else if (step === 'SET_MNEMONIC') {
+    }
+    else if (step === 'SET_MNEMONIC') {
       if (inputType === 'pKey') {
         const result = await makePrivateKeyAccountAndKeyring();
         if (!result) {
@@ -186,13 +219,16 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
         setStep('LOADING');
 
         await waitForRun(async () => {
-          const { account, keyring } = result;
+          const {
+            account, keyring,
+          } = result;
           const resultWallet = await addAccountWith(wallet.clone(), keyring, account);
           await updateWallet(resultWallet);
           setInputValue('');
         }).then(() => navigate(RoutePath.WebAccountAddedComplete));
         return;
-      } else {
+      }
+      else {
         const keyring = await HDWalletKeyring.fromMnemonic(inputValue).catch(() => null);
         if (!keyring) {
           setErrMsg('Invalid seed phrase');
@@ -207,14 +243,15 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
           setStep('SELECT_ACCOUNT');
         });
       }
-    } else if (step === 'SELECT_ACCOUNT') {
+    }
+    else if (step === 'SELECT_ACCOUNT') {
       let resultWallet = wallet.clone();
 
       const entropy = mnemonicToEntropy(inputValue);
 
       const storedKeyring = resultWallet.keyrings
         .filter(isHDWalletKeyring)
-        .find((keyring) => keyring.mnemonicEntropy === entropy);
+        .find(keyring => keyring.mnemonicEntropy === entropy);
       const keyring = storedKeyring || (await HDWalletKeyring.fromMnemonic(inputValue));
 
       for (const account of loadedAccounts) {
@@ -228,16 +265,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
       setInputValue('');
       navigate(RoutePath.WebAccountAddedComplete);
     }
-  }, [
-    step,
-    wallet,
-    inputType,
-    inputValue,
-    selectedAddresses,
-    loadedAccounts,
-    ableToSkipQuestionnaire,
-    makePrivateKeyAccountAndKeyring,
-  ]);
+  }, [step, wallet, inputType, inputValue, selectedAddresses, loadedAccounts, ableToSkipQuestionnaire, makePrivateKeyAccountAndKeyring]);
 
   const loadAccounts = async (): Promise<void> => {
     if (!generatedKeyring) {
@@ -248,10 +276,12 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
 
   const loadAccountsByKeyring = async (keyring: Keyring): Promise<void> => {
     setIsLoadingAccounts(true);
-    const filteredAccounts = loadedAccounts.filter((account) => account.keyringId === keyring.id);
+    const filteredAccounts = loadedAccounts.filter(account => account.keyringId === keyring.id);
     await waitForRun(async () => {
       const startIndex = filteredAccounts.length;
-      const range = Array.from({ length: 5 }, (_, index) => index + startIndex);
+      const range = Array.from({
+        length: 5,
+      }, (_, index) => index + startIndex);
 
       const accounts: Account[] = [];
       for (const hdPath of range) {
@@ -284,7 +314,7 @@ const useAccountImportScreen = ({ wallet }: { wallet: Wallet }): UseAccountImpor
     clone.addAccount(account);
     clone.addKeyring(keyring);
 
-    const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+    const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
 
     if (storedAccount) {
       await changeCurrentAccount(storedAccount);

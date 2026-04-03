@@ -1,15 +1,25 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { useTheme } from 'styled-components';
-
-import { ErrorText, Text, WebImg } from '@components/atoms';
-import { StyledHiddenInput, StyledInputLabel, StyledWrapper } from './broadcast-transaction-upload-input.styles';
 import IconFile from '@assets/file.svg';
-import { Tx } from '@gnolang/tm2-js-client';
 import IconUpload from '@assets/icon-upload';
+import {
+  ErrorText, Text, WebImg,
+} from '@components/atoms';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
+import React, {
+  useCallback, useMemo, useState,
+} from 'react';
+import {
+  useTheme,
+} from 'styled-components';
+
+import {
+  StyledHiddenInput, StyledInputLabel, StyledWrapper,
+} from './broadcast-transaction-upload-input.styles';
 
 export interface BroadcastTransactionUploadInputProps {
-  transaction: Tx | null;
-  uploadTransaction: (text: string) => boolean;
+  transaction: Tx | null
+  uploadTransaction: (text: string) => boolean
 }
 
 const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputProps> = ({
@@ -60,11 +70,12 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
     if (isUploadSuccess) {
       setErrorMessage(null);
       setFileName(file.name);
-    } else {
+    }
+    else {
       setErrorMessage('Invalid transaction format');
       setFileName(null);
     }
-  }, [])
+  }, []);
 
   return (
     <StyledWrapper>
@@ -76,7 +87,7 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
           <React.Fragment>
             <IconUpload fill='inherit' />
             <Text type='body2Reg' color='inherit'>
-              {'Drag & drop a file or click to upload'}
+              Drag & drop a file or click to upload
             </Text>
           </React.Fragment>
         )}
@@ -84,7 +95,7 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
           <React.Fragment>
             <IconUpload fill='inherit' />
             <Text type='body2Reg' color={theme.neutral.a}>
-              {'Uploading file...'}
+              Uploading file...
             </Text>
           </React.Fragment>
         )}
@@ -100,9 +111,9 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
       {hasError && <ErrorText text={errorMessage || ''} />}
 
       <StyledHiddenInput
-        id="fileUpload"
-        type="file"
-        accept=".txt,.tx"
+        id='fileUpload'
+        type='file'
+        accept='.txt,.tx'
         onChange={onChangeFileInput}
       />
     </StyledWrapper>

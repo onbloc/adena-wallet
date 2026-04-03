@@ -1,10 +1,17 @@
-import { SkeletonBoxStyle } from '@components/atoms';
+import {
+  SkeletonBoxStyle,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkFeeContainer = styled.div`
-  ${mixins.flex({ direction: 'column', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'column',
+    justify: 'flex-start',
+  })};
   width: 100%;
 
   .error-message {
@@ -18,29 +25,43 @@ export const NetworkFeeContainer = styled.div`
   }
 `;
 
-export const NetworkFeeWrapper = styled.div<{ error?: number }>`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+export const NetworkFeeWrapper = styled.div<{
+  error?: number
+}>`
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   padding: 14px 16px;
   background-color: ${getTheme('neutral', '_9')};
   border: 1px solid ${getTheme('neutral', '_7')};
   border-radius: 30px;
-  ${({ error, theme }): string | false | undefined => !!error && `border-color: ${theme.red._5};`}
+  ${({
+    error, theme,
+  }): string | false | undefined => !!error && `border-color: ${theme.red._5};`}
 
   & .key {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     flex-shrink: 0;
     color: ${getTheme('neutral', 'a')};
     ${fonts.body2Reg};
   }
 
   & .network-fee-amount-wrapper {
-    ${mixins.flex({ direction: 'row', justify: 'flex-end' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'flex-end',
+    })};
     width: 100%;
     gap: 3px;
 
     & .setting-button {
-      ${mixins.flex({ direction: 'row' })};
+      ${mixins.flex({
+        direction: 'row',
+      })};
       width: 16px;
       height: 16px;
     }
@@ -48,7 +69,9 @@ export const NetworkFeeWrapper = styled.div<{ error?: number }>`
 `;
 
 export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({ align: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+  })};
   width: 55px;
   height: 14px;
   align-self: center;

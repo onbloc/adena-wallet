@@ -1,28 +1,35 @@
-import React, { useEffect, useMemo } from 'react';
-
-import { SubHeader, WarningBox } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-
 import UnknownLogo from '@assets/common-unknown-logo.svg';
+import {
+  SubHeader, WarningBox,
+} from '@components/atoms';
+import {
+  BottomFixedLoadingButtonGroup,
+} from '@components/molecules';
+import React, {
+  useEffect, useMemo,
+} from 'react';
+
 import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table';
-import { ApproveAddingNetworkWrapper } from './approve-adding-network.styles';
+import {
+  ApproveAddingNetworkWrapper,
+} from './approve-adding-network.styles';
 
 export interface AddingNetworkInfo {
-  chainId: string;
-  name: string;
-  rpcUrl: string;
+  chainId: string
+  name: string
+  rpcUrl: string
 }
 
 export interface ApproveAddingNetworkProps {
-  networkInfo: AddingNetworkInfo;
-  logo?: string;
-  approvable: boolean;
-  processing: boolean;
-  done: boolean;
-  cancel: () => void;
-  approve: () => void;
-  onResponse: () => void;
-  onTimeout: () => void;
+  networkInfo: AddingNetworkInfo
+  logo?: string
+  approvable: boolean
+  processing: boolean
+  done: boolean
+  cancel: () => void
+  approve: () => void
+  onResponse: () => void
+  onTimeout: () => void
 }
 
 const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
@@ -50,7 +57,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         <img src={logo || UnknownLogo} alt='logo' />
       </div>
 
-      <WarningBox padding={'10px 18px'} type='addingNetwork' />
+      <WarningBox padding='10px 18px' type='addingNetwork' />
 
       <div className='table-wrapper'>
         <ApproveAddingNetworkTable

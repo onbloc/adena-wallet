@@ -1,8 +1,12 @@
-import { WindowSizeType } from '@types';
-import { atom } from 'recoil';
+import {
+  WindowSizeType,
+} from '@types';
+import {
+  atom,
+} from 'recoil';
 
 interface HistoryPosition {
-  position: number;
+  position: number
 }
 
 export const fetchedHistoryBlockHeight = atom<number | null>({
@@ -26,12 +30,14 @@ export const tokenDetailPosition = atom<HistoryPosition>({
 
 export const scrollPositions = atom<{ [key in string]: number }>({
   key: 'common/scroll-positions',
-  default: {},
+  default: {
+  },
 });
 
 export const historyState = atom<{ [key in string]: any }>({
   key: 'common/history-state',
-  default: {},
+  default: {
+  },
 });
 
 export const webHeaderIndicatorLength = atom<number>({

@@ -1,9 +1,21 @@
-import { EVENT_KEYS } from '@common/constants/event-key.constant';
-import { EventMessageData } from '@inject/message';
-import { CommandHandler } from '@inject/message/command-handler';
-import { CommandMessageData } from '@inject/message/command-message';
-import { GnoInterceptorManager } from '@inject/message/methods/gno-interceptor-manager';
-import { GnoSessionUpdateMessage } from '@inject/message/methods/gno-session';
+import {
+  EVENT_KEYS,
+} from '@common/constants/event-key.constant';
+import {
+  EventMessageData,
+} from '@inject/message';
+import {
+  CommandHandler,
+} from '@inject/message/command-handler';
+import {
+  CommandMessageData,
+} from '@inject/message/command-message';
+import {
+  GnoInterceptorManager,
+} from '@inject/message/methods/gno-interceptor-manager';
+import {
+  GnoSessionUpdateMessage,
+} from '@inject/message/methods/gno-session';
 
 const loadScript = (): void => {
   const container = document.head || document.documentElement;
@@ -26,10 +38,12 @@ const initListener = (): void => {
     try {
       if (event.data?.status === 'request') {
         sendMessage(event);
-      } else {
+      }
+      else {
         return event.data;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.warn(e);
     }
   };
@@ -46,17 +60,24 @@ const initExtensionListener = (): void => {
         });
 
         window.dispatchEvent(changedAccountEvent);
-        sendResponse({ received: true });
+        sendResponse({
+          received: true,
+        });
         return;
       }
 
       if (message.status === 'command') {
         const result = CommandHandler.createContentHandler(message);
-        sendResponse({ received: true, result });
+        sendResponse({
+          received: true,
+          result,
+        });
         return;
       }
 
-      sendResponse({ received: true });
+      sendResponse({
+        received: true,
+      });
     },
   );
 };
@@ -66,7 +87,9 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
 
   try {
     const isConnected = await new Promise<boolean>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'ping' }, () => {
+      chrome.runtime.sendMessage({
+        type: 'ping',
+      }, () => {
         resolve(!chrome.runtime.lastError);
       });
     }).catch((error) => {
@@ -97,7 +120,8 @@ const sendMessage = async (event: MessageEvent): Promise<void> => {
         });
       return true;
     });
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to send message to runtime', e);
   }
 };
@@ -120,7 +144,9 @@ const initGnoInterceptors = (): void => {
 const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<void> => {
   try {
     const isConnected = await new Promise<boolean>((resolve) => {
-      chrome.runtime.sendMessage({ type: 'ping' }, () => {
+      chrome.runtime.sendMessage({
+        type: 'ping',
+      }, () => {
         resolve(!chrome.runtime.lastError);
       });
     }).catch(() => false);
@@ -132,7 +158,8 @@ const sendGnoSessionUpdate = async (message: GnoSessionUpdateMessage): Promise<v
     chrome.runtime.sendMessage(message).catch((error) => {
       console.warn('Failed to send GnoSessionUpdate:', error);
     });
-  } catch {
+  }
+  catch {
     console.warn('Failed to send GnoSessionUpdateMessage to background');
   }
 };

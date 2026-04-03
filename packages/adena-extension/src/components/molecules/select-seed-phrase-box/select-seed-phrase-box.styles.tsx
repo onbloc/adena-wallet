@@ -1,6 +1,9 @@
-import styled, { keyframes } from 'styled-components';
-
-import { Row, View } from '@components/atoms';
+import {
+  Row, View,
+} from '@components/atoms';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 export const StyledSelectSeedPhraseBox = styled(View)``;
 
@@ -17,7 +20,9 @@ export const StyledSelectSeedPhraseContent = styled(View)`
   }
 `;
 
-export const StyledLoadMore = styled(Row)<{ disabled: boolean }>`
+export const StyledLoadMore = styled(Row)<{
+  disabled: boolean
+}>`
   justify-content: center;
   padding: 8px 0;
   gap: 4px;

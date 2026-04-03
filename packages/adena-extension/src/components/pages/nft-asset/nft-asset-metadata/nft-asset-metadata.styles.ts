@@ -1,6 +1,10 @@
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NFTAssetMetadataWrapper = styled(View)`
@@ -22,7 +26,11 @@ export const NFTAssetMetadataWrapper = styled(View)`
 
   .content-wrapper,
   .attribute-wrapper {
-    ${mixins.flex({ direction: 'column', align: 'flex-start', justify: 'flex-start' })};
+    ${mixins.flex({
+      direction: 'column',
+      align: 'flex-start',
+      justify: 'flex-start',
+    })};
     gap: 8px;
   }
 
@@ -31,7 +39,11 @@ export const NFTAssetMetadataWrapper = styled(View)`
   }
 
   .trait-wrapper {
-    ${mixins.flex({ direction: 'column', align: 'flex-start', justify: 'flex-start' })};
+    ${mixins.flex({
+      direction: 'column',
+      align: 'flex-start',
+      justify: 'flex-start',
+    })};
     width: auto;
     max-width: 100%;
     height: auto;

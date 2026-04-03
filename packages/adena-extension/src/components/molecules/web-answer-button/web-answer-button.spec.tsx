@@ -1,14 +1,22 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalWebStyle } from '@styles/global-style';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import WebAnswerButton from './web-answer-button';
 
 describe('WebAnswerButton Component', () => {
   it('WebAnswerButton render', () => {
-
     render(
       <RecoilRoot>
         <GlobalWebStyle />

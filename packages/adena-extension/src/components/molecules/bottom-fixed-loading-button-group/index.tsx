@@ -1,29 +1,39 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
+import {
+  Button, Text,
+} from '@components/atoms';
+import {
+  IconButtonLoading,
+} from '@components/atoms/icon/icon-assets';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  ReactElement, useCallback, useMemo,
+} from 'react';
 import styled from 'styled-components';
 
-import { Button, Text } from '@components/atoms';
-import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
+import {
+  ApproveHoldButton,
+} from '../approve-hold-button/approve-hold-button';
 
 interface ButtonProps {
-  primary?: boolean;
-  disabled?: boolean;
-  loading?: boolean;
-  text: string;
-  onClick: () => void;
+  primary?: boolean
+  disabled?: boolean
+  loading?: boolean
+  text: string
+  onClick: () => void
 }
 
 interface HoldButtonProps {
-  type: 'hold';
-  onFinishHold: (finished: boolean) => void;
+  type: 'hold'
+  onFinishHold: (finished: boolean) => void
 }
 
 interface BottomFixedLoadingButtonGroupProps {
-  leftButton: ButtonProps;
-  rightButton: ButtonProps | HoldButtonProps;
-  filled?: boolean;
+  leftButton: ButtonProps
+  rightButton: ButtonProps | HoldButtonProps
+  filled?: boolean
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
@@ -66,29 +76,31 @@ export const BottomFixedLoadingButtonGroup = ({
         onClick={onClickLeftButton}
       />
 
-      {isHoldButton ? (
-        <ApproveHoldButton
-          onFinishHold={
-            (rightButton as HoldButtonProps).onFinishHold
-          }
-        />
-      ) : (
-        <LoadingButton
-          className={rightClassName}
-          loading={(rightButton as ButtonProps).loading}
-          text={(rightButton as ButtonProps).text}
-          onClick={onClickRightButton}
-        />
-      )}
+      {isHoldButton
+        ? (
+          <ApproveHoldButton
+            onFinishHold={
+              (rightButton as HoldButtonProps).onFinishHold
+            }
+          />
+        )
+        : (
+          <LoadingButton
+            className={rightClassName}
+            loading={(rightButton as ButtonProps).loading}
+            text={(rightButton as ButtonProps).text}
+            onClick={onClickRightButton}
+          />
+        )}
     </ButtonWrap>
   );
 };
 
 interface LoadingButtonProps {
-  loading?: boolean;
-  className?: string;
-  text: string;
-  onClick: () => void;
+  loading?: boolean
+  className?: string
+  text: string
+  onClick: () => void
 }
 
 const LoadingButton: React.FC<LoadingButtonProps> = ({
@@ -104,18 +116,33 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   );
 };
 
-const ButtonWrap = styled.div<{ $filled?: boolean }>`
-  ${mixins.flex({ direction: 'row', align: 'flex-start' })};
+const ButtonWrap = styled.div<{
+  $filled?: boolean
+}>`
+  ${mixins.flex({
+    direction: 'row',
+    align: 'flex-start',
+  })};
   position: fixed;
   left: 0px;
   width: 100%;
   padding: 0 20px;
-  height: ${({ $filled }): '48px' | '96px' => ($filled ? '96px' : '48px')};
-  bottom: ${({ $filled }): '0' | '24px' => ($filled ? '0' : '24px')};
-  ${({ $filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
+  height: ${({
+    $filled,
+  }): '48px' | '96px' => ($filled ? '96px' : '48px')};
+  bottom: ${({
+    $filled,
+  }): '0' | '24px' => ($filled ? '0' : '24px')};
+  ${({
+    $filled,
+  }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
     $filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
-  ${({ $filled }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
-  background-color: ${({ $filled, theme }): string => ($filled ? theme.neutral._8 : 'transparent')};
+  ${({
+    $filled,
+  }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
+  background-color: ${({
+    $filled, theme,
+  }): string => ($filled ? theme.neutral._8 : 'transparent')};
   z-index: 9;
 
   & > button {

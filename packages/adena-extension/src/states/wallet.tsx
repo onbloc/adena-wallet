@@ -1,16 +1,25 @@
-import { Account, Wallet } from 'adena-module';
-import { atom } from 'recoil';
-
-import { TransactionHistoryItem } from '@repositories/transaction/response/transaction-history-response';
-import { AddressBookItem } from '@repositories/wallet';
-import { StateType } from '@types';
+import {
+  TransactionHistoryItem,
+} from '@repositories/transaction/response/transaction-history-response';
+import {
+  AddressBookItem,
+} from '@repositories/wallet';
+import {
+  StateType,
+} from '@types';
+import {
+  Account, Wallet,
+} from 'adena-module';
+import {
+  atom,
+} from 'recoil';
 
 interface TransactionHistoryState {
-  address: string | null;
-  currentPage: number;
-  init: boolean;
-  isFinish: boolean;
-  items: Array<TransactionHistoryItem>;
+  address: string | null
+  currentPage: number
+  init: boolean
+  isFinish: boolean
+  items: Array<TransactionHistoryItem>
 }
 
 export const wallet = atom<Wallet | null>({
@@ -30,7 +39,8 @@ export const currentAccount = atom<Account | null>({
 
 export const accountNames = atom<{ [key in string]: string }>({
   key: 'wallet/accountNames',
-  default: {},
+  default: {
+  },
 });
 
 export const transactionHistory = atom<TransactionHistoryState>({
@@ -45,9 +55,9 @@ export const transactionHistory = atom<TransactionHistoryState>({
 });
 
 export const addressBook = atom<{
-  init: boolean;
-  loading: boolean;
-  items: AddressBookItem[];
+  init: boolean
+  loading: boolean
+  items: AddressBookItem[]
 }>({
   key: 'wallet/addressBook',
   default: {

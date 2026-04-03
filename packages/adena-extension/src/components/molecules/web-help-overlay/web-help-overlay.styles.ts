@@ -1,4 +1,6 @@
-import styled, { keyframes } from 'styled-components';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 export const WebHelpOverlayWrapper = styled.div`
   position: fixed;
@@ -30,12 +32,19 @@ const overlayItemEndAnimation = keyframes`
   }
 `;
 
-export const WebHelpOverlayItemWrapper = styled.div<{ x: number; y: number }>`
+export const WebHelpOverlayItemWrapper = styled.div<{
+  x: number
+  y: number
+}>`
   position: absolute;
   display: flex;
   flex-direction: column;
-  top: ${({ y }): string => `${y}px`};
-  left: ${({ x }): string => `${x}px`};
+  top: ${({
+    y,
+  }): string => `${y}px`};
+  left: ${({
+    x,
+  }): string => `${x}px`};
   opacity: 0;
   animation-duration: 0.4s;
   animation-timing-function: ease-in-out;

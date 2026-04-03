@@ -1,14 +1,27 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
-import { Question } from '@types';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
 import IconInfo from '@assets/web/info.svg';
+import {
+  Row, View, WebButton, WebImg, WebText,
+} from '@components/atoms';
 import RollingNumber from '@components/atoms/rolling-number';
-import { UseIndicatorStepReturn } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { WebQuestion } from '@components/molecules/web-question';
+import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
+import {
+  WebQuestion,
+} from '@components/molecules/web-question';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
+import {
+  UseIndicatorStepReturn,
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import {
+  Question,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -43,10 +56,10 @@ const StyledWarningDescriptionWrapper = styled(Row)`
 `;
 
 interface QuestionnaireQuestionProps {
-  question: Question | null;
-  indicatorInfo: UseIndicatorStepReturn;
-  nextQuestion: () => void;
-  backStep: () => void;
+  question: Question | null
+  indicatorInfo: UseIndicatorStepReturn
+  nextQuestion: () => void
+  backStep: () => void
 }
 
 const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({

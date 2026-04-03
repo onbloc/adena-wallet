@@ -1,8 +1,11 @@
-import React from 'react';
-import styled, { keyframes } from 'styled-components';
-
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
+import {
+  getTheme,
+} from '@styles/theme';
+import React from 'react';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 const spinAnimation = keyframes`
   0% {
@@ -14,7 +17,9 @@ const spinAnimation = keyframes`
 `;
 
 const SpinRing = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: relative;
   width: 70px;
   height: 70px;

@@ -1,10 +1,21 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import MainNetworkLabel, { MainNetworkLabelProps } from './main-network-label';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import MainNetworkLabel, {
+  MainNetworkLabelProps,
+} from './main-network-label';
 
 describe('MainNetworkLabel Component', () => {
   it('MainNetworkLabel render', () => {

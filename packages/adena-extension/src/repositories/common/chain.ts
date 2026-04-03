@@ -1,8 +1,16 @@
-import { AxiosInstance } from 'axios';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
+import {
+  NetworkMetainfo,
+} from '@types';
+import {
+  AxiosInstance,
+} from 'axios';
 
-import { StorageManager } from '@common/storage/storage-manager';
-import { ChainMetainfoResponse, NetworkMetainfoMapper } from './mapper/network-metainfo-mapper';
-import { NetworkMetainfo } from '@types';
+import {
+  ChainMetainfoResponse, NetworkMetainfoMapper,
+} from './mapper/network-metainfo-mapper';
 
 type LocalValueType = 'NETWORKS' | 'CURRENT_CHAIN_ID' | 'CURRENT_NETWORK_ID';
 
@@ -29,7 +37,7 @@ export class ChainRepository {
     const fetchedNetworks = await this.fetchNetworkMetainfos();
     const networks = await this.localStorage
       .getToObject<Array<NetworkMetainfo>>('NETWORKS')
-      .then((networks) => (Array.isArray(networks) ? networks : []))
+      .then(networks => (Array.isArray(networks) ? networks : []))
       .catch(() => []);
     if (networks.length === 0) {
       await this.updateNetworks(fetchedNetworks);
@@ -37,13 +45,13 @@ export class ChainRepository {
     }
 
     const defaultNetworks = fetchedNetworks.filter(
-      (network) =>
-        network.default || networks?.find((current) => current.id === network.id) === undefined,
+      network =>
+        network.default || networks?.find(current => current.id === network.id) === undefined,
     );
     const customNetworks = networks.filter(
-      (network) =>
-        network.default === false &&
-        defaultNetworks.find((network1) => network.id === network1.id) === undefined,
+      network =>
+        network.default === false
+        && defaultNetworks.find(network1 => network.id === network1.id) === undefined,
     );
     return [...defaultNetworks, ...customNetworks];
   };

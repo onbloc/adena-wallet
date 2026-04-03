@@ -1,17 +1,22 @@
-import React, { useCallback } from 'react';
-
-import { NetworkListItemWrapper } from './network-list-item.styles';
 import IconCheck from '@assets/check-circle.svg';
 import IconEdit from '@assets/icon-edit-small';
+import {
+  NetworkMetainfo,
+} from '@types';
+import React, {
+  useCallback,
+} from 'react';
 
-import { NetworkMetainfo } from '@types';
+import {
+  NetworkListItemWrapper,
+} from './network-list-item.styles';
 
 export interface NetworkListItemProps {
-  selected: boolean;
-  locked: boolean;
-  networkMetainfo: NetworkMetainfo;
-  moveEditPage: (networkMetainfoId: string) => void;
-  changeNetwork: (networkMetainfoId: string) => void;
+  selected: boolean
+  locked: boolean
+  networkMetainfo: NetworkMetainfo
+  moveEditPage: (networkMetainfoId: string) => void
+  changeNetwork: (networkMetainfoId: string) => void
 }
 
 const NetworkListItem: React.FC<NetworkListItemProps> = ({

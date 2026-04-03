@@ -1,19 +1,29 @@
+import mixins from '@styles/mixins';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
-
 export const CustomNetworkInputWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: 100%;
 
   .input-wrapper {
-    ${mixins.flex({ align: 'normal', justify: 'normal' })};
+    ${mixins.flex({
+      align: 'normal',
+      justify: 'normal',
+    })};
     width: 100%;
 
     .input-box {
-      ${mixins.flex({ direction: 'row', justify: 'normal' })};
+      ${mixins.flex({
+        direction: 'row',
+        justify: 'normal',
+      })};
       width: 100%;
       min-height: 48px;
       padding: 12px 16px;

@@ -1,15 +1,23 @@
+import {
+  fonts,
+} from '@styles/theme';
 import styled from 'styled-components';
-import { fonts } from '@styles/theme';
 
-export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
+export const StyledSignerItemWrapper = styled.div<{
+  borderColor: string
+}>`
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
   border-radius: 18px;
-  border: 2px solid ${({ borderColor }): string => borderColor};
-  background-color: ${({ theme }): string => theme.neutral._9};
+  border: 2px solid ${({
+    borderColor,
+  }): string => borderColor};
+  background-color: ${({
+    theme,
+  }): string => theme.neutral._9};
   transition: border-color 0.2s;
 
   .logo-wrapper {
@@ -21,8 +29,12 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background-color: ${({ theme }): string => theme.neutral._5};
-      color: ${({ theme }): string => theme.white};
+      background-color: ${({
+        theme,
+      }): string => theme.neutral._5};
+      color: ${({
+        theme,
+      }): string => theme.white};
       display: flex;
       align-items: center;
       justify-content: center;
@@ -45,7 +57,9 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
 
     .title {
       ${fonts.body2Bold};
-      color: ${({ theme }): string => theme.neutral._1};
+      color: ${({
+        theme,
+      }): string => theme.neutral._1};
       display: flex;
       align-items: center;
       gap: 4px;
@@ -57,7 +71,9 @@ export const StyledSignerItemWrapper = styled.div<{ borderColor: string }>`
 
     .description {
       ${fonts.body3Reg};
-      color: ${({ theme }): string => theme.neutral.a};
+      color: ${({
+        theme,
+      }): string => theme.neutral.a};
       display: flex;
       align-items: center;
       gap: 4px;
@@ -85,14 +101,18 @@ export const StyledRemoveButton = styled.button`
 
     line {
       transition: 0.2s;
-      stroke: ${({ theme }): string => theme.neutral.a};
+      stroke: ${({
+        theme,
+      }): string => theme.neutral.a};
     }
   }
 
   &:hover {
     svg {
       line {
-        stroke: ${({ theme }): string => theme.neutral._1};
+        stroke: ${({
+          theme,
+        }): string => theme.neutral._1};
       }
     }
   }

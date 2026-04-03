@@ -1,12 +1,17 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { AccountNameInputWrapper } from './account-name-input.styles';
 import IconEdit from '@assets/icon-edit';
+import React, {
+  useCallback, useMemo, useState,
+} from 'react';
+
+import {
+  AccountNameInputWrapper,
+} from './account-name-input.styles';
 
 export interface AccountNameInputProps {
-  originName: string;
-  name: string;
-  setName: (name: string) => void;
-  reset: () => void;
+  originName: string
+  name: string
+  setName: (name: string) => void
+  reset: () => void
 }
 
 const AccountNameInput: React.FC<AccountNameInputProps> = ({

@@ -1,8 +1,10 @@
-import { ContractMessage } from '@inject/types';
+import {
+  ContractMessage,
+} from '@inject/types';
 
 export interface ParsedTransactionErrors {
-  globalErrorMessage: string | null;
-  messageErrors: (string | undefined)[];
+  globalErrorMessage: string | null
+  messageErrors: (string | undefined)[]
 }
 
 /**
@@ -40,8 +42,12 @@ export function parseSimulateErrors(
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    const pkgPath = (msg.value as { pkg_path?: string })?.pkg_path;
-    const func = (msg.value as { func?: string })?.func;
+    const pkgPath = (msg.value as {
+      pkg_path?: string
+    })?.pkg_path;
+    const func = (msg.value as {
+      func?: string
+    })?.func;
 
     if (pkgPath && errorMsg.includes(pkgPath)) {
       result.messageErrors[i] = 'Invalid parameter';

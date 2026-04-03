@@ -1,10 +1,21 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
-import ApproveAddingNetwork, { ApproveAddingNetworkProps } from './approve-adding-network';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import ApproveAddingNetwork, {
+  ApproveAddingNetworkProps,
+} from './approve-adding-network';
 
 describe('ApproveAddingNetwork Component', () => {
   it('ApproveAddingNetwork render', () => {

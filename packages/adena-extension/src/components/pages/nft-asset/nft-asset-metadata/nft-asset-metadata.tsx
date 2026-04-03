@@ -1,19 +1,32 @@
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721MetadataModel, GRC721Model } from '@types';
-import React, { useMemo } from 'react';
-import { NFTAssetMetadataWrapper } from './nft-asset-metadata.styles';
+import {
+  UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  GRC721MetadataModel, GRC721Model,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  NFTAssetMetadataWrapper,
+} from './nft-asset-metadata.styles';
 
 export interface NFTAssetMetadataProps {
-  asset: GRC721Model;
+  asset: GRC721Model
   queryGRC721TokenMetadata: (
     packagePath: string,
     tokenId: string,
     options?: UseQueryOptions<GRC721MetadataModel | null, Error>,
-  ) => UseQueryResult<GRC721MetadataModel | null>;
+  ) => UseQueryResult<GRC721MetadataModel | null>
 }
 
-const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({ asset, queryGRC721TokenMetadata }) => {
-  const { data: tokenMetadata, isFetched: isFetchedTokenMetadata } = queryGRC721TokenMetadata(
+const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({
+  asset, queryGRC721TokenMetadata,
+}) => {
+  const {
+    data: tokenMetadata, isFetched: isFetchedTokenMetadata,
+  } = queryGRC721TokenMetadata(
     asset.packagePath,
     asset.tokenId,
     {

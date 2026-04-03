@@ -1,6 +1,11 @@
-import { StorageModel } from '@common/storage';
-import { Migration } from '@migrates/migrator';
+import {
+  StorageModel,
+} from '@common/storage';
+import {
+  Migration,
+} from '@migrates/migrator';
 import CHAIN_DATA from '@resources/chains/chains.json';
+
 import {
   CurrentChainIdModelV015,
   CurrentNetworkIdModelV015,
@@ -36,19 +41,7 @@ export class StorageMigration016 implements Migration<StorageModelDataV016> {
   }
 
   private validateModelV015(currentData: StorageModelDataV015): boolean {
-    const storageDataKeys = [
-      'NETWORKS',
-      'CURRENT_CHAIN_ID',
-      'CURRENT_NETWORK_ID',
-      'SERIALIZED',
-      'ENCRYPTED_STORED_PASSWORD',
-      'CURRENT_ACCOUNT_ID',
-      'ESTABLISH_SITES',
-      'ADDRESS_BOOK',
-      'ACCOUNT_TOKEN_METAINFOS',
-      'ACCOUNT_GRC721_COLLECTIONS',
-      'ACCOUNT_GRC721_PINNED_PACKAGES',
-    ];
+    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'ACCOUNT_GRC721_COLLECTIONS', 'ACCOUNT_GRC721_PINNED_PACKAGES'];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);
@@ -101,11 +94,11 @@ export class StorageMigration016 implements Migration<StorageModelDataV016> {
   }
 
   private migrateNetwork(networks: NetworksModelV015): NetworksModelV016 {
-    const defaultNetworks = CHAIN_DATA.filter((network) => network.default);
+    const defaultNetworks = CHAIN_DATA.filter(network => network.default);
     const customNetworks = networks
-      .filter((network) => !network.default)
+      .filter(network => !network.default)
       .map((network) => {
-        const providedNetwork = CHAIN_DATA.find((data) => data.chainId === network.id);
+        const providedNetwork = CHAIN_DATA.find(data => data.chainId === network.id);
         if (providedNetwork) {
           return {
             ...providedNetwork,

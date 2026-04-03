@@ -1,19 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
-
-import { getTheme } from '@styles/theme';
-import { Text, CopyTooltip, StatusDot, Row } from '@components/atoms';
 import {
   formatAddress,
   formatNickname,
   getSiteName,
   parseParameters,
 } from '@common/utils/client-utils';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
-import { useNetwork } from '@hooks/use-network';
+import {
+  CopyTooltip, Row, StatusDot, Text,
+} from '@components/atoms';
+import {
+  useAccountName,
+} from '@hooks/use-account-name';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  useEffect, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -32,15 +49,23 @@ const StyledCenterWrapper = styled(Row)`
 
 const ApproveMenu = (): JSX.Element => {
   const theme = useTheme();
-  const { establishService } = useAdenaContext();
-  const { currentAccount, getCurrentAddress } = useCurrentAccount();
+  const {
+    establishService,
+  } = useAdenaContext();
+  const {
+    currentAccount, getCurrentAddress,
+  } = useCurrentAccount();
   const [address, setAddress] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isEstablished, setIsEstablished] = useState(false);
   const location = useLocation();
   const [requestData, setRequestData] = useState<any>();
-  const { accountNames } = useAccountName();
-  const { currentNetwork } = useNetwork();
+  const {
+    accountNames,
+  } = useAccountName();
+  const {
+    currentNetwork,
+  } = useNetwork();
 
   useEffect(() => {
     if (location.search) {
@@ -94,9 +119,21 @@ const ApproveMenu = (): JSX.Element => {
         <StyledCenterWrapper>
           <StatusDot status={isEstablished} tooltipText={getTooltipText()} />
           <CopyTooltip copyText={address} className='t-approve'>
-            <Text type='body1Bold' display='inline-flex' style={{ whiteSpace: 'pre' }}>
+            <Text
+              type='body1Bold'
+              display='inline-flex'
+              style={{
+                whiteSpace: 'pre',
+              }}
+            >
               {formatNickname(accountName, 12)}
-              <Text type='body1Reg' color={theme.neutral.a} style={{ whiteSpace: 'pre' }}>
+              <Text
+                type='body1Reg'
+                color={theme.neutral.a}
+                style={{
+                  whiteSpace: 'pre',
+                }}
+              >
                 {` (${formatAddress(address)})`}
               </Text>
             </Text>

@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const AdditionalTokenWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   position: relative;
   width: 100%;
   height: 100%;
@@ -32,7 +37,11 @@ export const AdditionalTokenWrapper = styled.div`
   }
 
   .button-group {
-    ${mixins.flex({ direction: 'row', align: 'normal', justify: 'space-between' })};
+    ${mixins.flex({
+      direction: 'row',
+      align: 'normal',
+      justify: 'space-between',
+    })};
     position: absolute;
     width: 100%;
     bottom: 0;

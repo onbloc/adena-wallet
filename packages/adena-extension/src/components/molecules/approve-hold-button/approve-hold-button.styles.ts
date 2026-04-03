@@ -1,4 +1,6 @@
-import styled, { css, keyframes, RuleSet } from 'styled-components';
+import styled, {
+  css, keyframes, RuleSet,
+} from 'styled-components';
 
 const fill = keyframes`
   from {
@@ -10,8 +12,8 @@ const fill = keyframes`
 `;
 
 export const StyledHoldButton = styled.button<{
-  pressed: boolean;
-  finish: boolean;
+  pressed: boolean
+  finish: boolean
 }>`
   position: relative;
   overflow: hidden;
@@ -22,14 +24,20 @@ export const StyledHoldButton = styled.button<{
   align-items: center;
   border-radius: 30px;
   border: none;
-  background-color: ${({ theme }): string => theme.webWarning._100} !important;
-  color: ${({ theme }): string => theme.neutral._1} !important;
+  background-color: ${({
+    theme,
+  }): string => theme.webWarning._100} !important;
+  color: ${({
+    theme,
+  }): string => theme.neutral._1} !important;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s;
   text-align: left;
 
-  ${({ pressed, finish }): RuleSet =>
+  ${({
+    pressed, finish,
+  }): RuleSet =>
     pressed && !finish
       ? css`
           &::before {

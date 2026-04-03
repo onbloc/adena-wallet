@@ -1,27 +1,45 @@
-import { AdenaStorage } from '@common/storage';
-import { useWindowSize } from '@hooks/use-window-size';
-import { ChainRepository } from '@repositories/common';
-import { TokenRepository } from '@repositories/common/token';
-import { FaucetRepository } from '@repositories/faucet/faucet';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  useWindowSize,
+} from '@hooks/use-window-size';
+import {
+  ChainRepository,
+} from '@repositories/common';
+import {
+  TokenRepository,
+} from '@repositories/common/token';
+import {
+  FaucetRepository,
+} from '@repositories/faucet/faucet';
 import {
   TransactionHistoryApiRepository,
   TransactionHistoryIndexerRepository,
 } from '@repositories/transaction';
-import { TransactionGasRepository } from '@repositories/transaction/transaction-gas';
+import {
+  TransactionGasRepository,
+} from '@repositories/transaction/transaction-gas';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
-import { FaucetService } from '@services/faucet';
-import { ChainService, TokenService } from '@services/resource';
+import {
+  FaucetService,
+} from '@services/faucet';
+import {
+  MultisigService,
+} from '@services/multisig';
+import {
+  ChainService, TokenService,
+} from '@services/resource';
 import {
   TransactionGasService,
   TransactionHistoryService,
   TransactionService,
 } from '@services/transaction';
-import { MultisigService } from '@services/multisig';
 import {
   WalletAccountService,
   WalletAddressBookService,
@@ -29,30 +47,41 @@ import {
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
-import { NetworkState } from '@states';
+import {
+  NetworkState,
+} from '@states';
 import axios from 'axios';
-import React, { createContext, useMemo } from 'react';
-import { useRecoilValue } from 'recoil';
-import { GnoProvider } from '../gno/gno-provider';
+import React, {
+  createContext, useMemo,
+} from 'react';
+import {
+  useRecoilValue,
+} from 'recoil';
+
+import {
+  GnoProvider,
+} from '../gno/gno-provider';
 
 export interface AdenaContextProps {
-  walletService: WalletService;
-  balanceService: WalletBalanceService;
-  accountService: WalletAccountService;
-  addressBookService: WalletAddressBookService;
-  establishService: WalletEstablishService;
-  chainService: ChainService;
-  tokenService: TokenService;
-  transactionService: TransactionService;
-  transactionHistoryService: TransactionHistoryService;
-  faucetService: FaucetService;
-  transactionGasService: TransactionGasService | null;
-  multisigService: MultisigService;
+  walletService: WalletService
+  balanceService: WalletBalanceService
+  accountService: WalletAccountService
+  addressBookService: WalletAddressBookService
+  establishService: WalletEstablishService
+  chainService: ChainService
+  tokenService: TokenService
+  transactionService: TransactionService
+  transactionHistoryService: TransactionHistoryService
+  faucetService: FaucetService
+  transactionGasService: TransactionGasService | null
+  multisigService: MultisigService
 }
 
 export const AdenaContext = createContext<AdenaContextProps | null>(null);
 
-export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
+export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({
+  children,
+}) => {
   const currentNetwork = useRecoilValue(NetworkState.currentNetwork);
 
   const gnoProvider: GnoProvider | null = useMemo(() => {
@@ -62,7 +91,9 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chil
     return new GnoProvider(currentNetwork.rpcUrl, currentNetwork.chainId);
   }, [currentNetwork]);
 
-  const axiosInstance = axios.create({ timeout: 20_000 });
+  const axiosInstance = axios.create({
+    timeout: 20_000,
+  });
 
   const localStorage = AdenaStorage.local();
 

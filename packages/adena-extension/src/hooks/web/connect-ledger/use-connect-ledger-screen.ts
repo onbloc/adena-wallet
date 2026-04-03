@@ -1,33 +1,39 @@
-import { useEffect, useState } from 'react';
-import { AdenaLedgerConnector, AdenaWallet, Wallet, Account, serializeAccount } from 'adena-module';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import {
+  RoutePath,
+} from '@types';
+import {
+  Account, AdenaLedgerConnector, AdenaWallet, serializeAccount, Wallet,
+} from 'adena-module';
+import {
+  useEffect, useState,
+} from 'react';
 
 export type UseConnectLedgerDeviceScreenReturn = {
-  indicatorInfo: UseIndicatorStepReturn;
-  connectState: ConnectLedgerStateType;
-  setConnectState: React.Dispatch<React.SetStateAction<ConnectLedgerStateType>>;
-  initWallet: () => Promise<void>;
-  requestPermission: () => Promise<void>;
+  indicatorInfo: UseIndicatorStepReturn
+  connectState: ConnectLedgerStateType
+  setConnectState: React.Dispatch<React.SetStateAction<ConnectLedgerStateType>>
+  initWallet: () => Promise<void>
+  requestPermission: () => Promise<void>
 };
 
-export type ConnectLedgerStateType =
-  | 'INIT'
-  | 'REQUEST'
-  | 'NOT_PERMISSION'
-  | 'REQUEST_WALLET'
-  | 'REQUEST_WALLET_LOAD'
-  | 'FAILED'
-  | 'SUCCESS';
+export type ConnectLedgerStateType
+  = | 'INIT'
+    | 'REQUEST'
+    | 'NOT_PERMISSION'
+    | 'REQUEST_WALLET'
+    | 'REQUEST_WALLET_LOAD'
+    | 'FAILED'
+    | 'SUCCESS';
 
 export const connectLedgerStep: Record<
   ConnectLedgerStateType,
   {
-    backTo: ConnectLedgerStateType;
-    stepNo: number;
+    backTo: ConnectLedgerStateType
+    stepNo: number
   }
 > = {
   INIT: {
@@ -71,7 +77,9 @@ export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
 };
 
 const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const [connectState, setConnectState] = useState<ConnectLedgerStateType>('INIT');
   const [wallet, setWallet] = useState<Wallet>();
   const indicatorInfo = useIndicatorStep({
@@ -91,7 +99,9 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
         serializeAccount(account),
       );
       navigate(RoutePath.WebConnectLedgerSelectAccount, {
-        state: { accounts: serializedAccounts },
+        state: {
+          accounts: serializedAccounts,
+        },
       });
     }
   }, [connectState, wallet]);
@@ -110,7 +120,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
       await transport?.close();
       setConnectState('REQUEST_WALLET');
       requestHardwareWallet();
-    } catch (e) {
+    }
+    catch (_e) {
       setConnectState('NOT_PERMISSION');
     }
   };
@@ -132,7 +143,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
         setConnectState('NOT_PERMISSION');
         return;
       }
-    } catch (e) {
+    }
+    catch (_e) {
       setConnectState('NOT_PERMISSION');
     }
 
@@ -150,7 +162,8 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
       setWallet(wallet);
       setConnectState('SUCCESS');
       retry = false;
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         if (e.message !== 'The device is already open.') {
           console.log(e);

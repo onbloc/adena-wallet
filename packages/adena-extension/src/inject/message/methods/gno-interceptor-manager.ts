@@ -1,9 +1,21 @@
-import { GnoConnectInfoProvider } from './gno-connect-info-provider';
-import { IInterceptor } from './gno-interceptor.types';
-import { GnoSessionUpdateMessage } from './gno-session';
-import { AnchorInterceptor } from './interceptors/anchor-interceptor';
-import { FormSubmitInterceptor } from './interceptors/form-submit-interceptor';
-import { GnoWebEventWatcherInterceptor } from './interceptors/gno-web-event-watcher-interceptor';
+import {
+  GnoConnectInfoProvider,
+} from './gno-connect-info-provider';
+import {
+  IInterceptor,
+} from './gno-interceptor.types';
+import {
+  GnoSessionUpdateMessage,
+} from './gno-session';
+import {
+  AnchorInterceptor,
+} from './interceptors/anchor-interceptor';
+import {
+  FormSubmitInterceptor,
+} from './interceptors/form-submit-interceptor';
+import {
+  GnoWebEventWatcherInterceptor,
+} from './interceptors/gno-web-event-watcher-interceptor';
 
 /**
  * Central manager for all GNO interceptors
@@ -59,7 +71,8 @@ export class GnoInterceptorManager {
       }
 
       this.isInitialized = true;
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to initialize GnoInterceptorManager:', error);
       this.cleanup();
       throw error;
@@ -81,7 +94,8 @@ export class GnoInterceptorManager {
 
       interceptor.register();
       this.interceptors.set(interceptor.name, interceptor);
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Failed to register interceptor ${interceptor.name}:`, error);
     }
   }
@@ -98,7 +112,8 @@ export class GnoInterceptorManager {
     try {
       interceptor.unregister();
       this.interceptors.delete(name);
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Failed to unregister interceptor ${name}:`, error);
     }
   }
@@ -121,7 +136,7 @@ export class GnoInterceptorManager {
    * Get active interceptors
    */
   public getActiveInterceptors(): IInterceptor[] {
-    return this.getAllInterceptors().filter((interceptor) => interceptor.isActive());
+    return this.getAllInterceptors().filter(interceptor => interceptor.isActive());
   }
 
   /**

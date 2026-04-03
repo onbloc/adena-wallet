@@ -1,17 +1,38 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { Account, Document, documentToDefaultTx, Wallet } from 'adena-module';
+import {
+  MINIMUM_GAS_PRICE,
+} from '@common/constants/gas.constant';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  DEFAULT_GAS_WANTED,
+} from '@common/constants/tx.constant';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  TransactionService,
+} from '@services/index';
+import {
+  useQuery, UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  GasInfo,
+} from '@types';
+import {
+  Account, Document, documentToDefaultTx, Wallet,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
 
-import { MINIMUM_GAS_PRICE } from '@common/constants/gas.constant';
-import { GasToken } from '@common/constants/token.constant';
-import { DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { TransactionService } from '@services/index';
-import { GasInfo } from '@types';
-
-import { useGetGasPrice } from './use-get-gas-price';
+import {
+  useGetGasPrice,
+} from './use-get-gas-price';
 
 export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
 
@@ -21,8 +42,8 @@ function makeGasInfoBy(
   gasUsed: number | null | undefined,
   gasPrice: number | null | undefined,
 ): {
-  gasWanted: number;
-  gasFee: number;
+  gasWanted: number
+  gasFee: number
 } {
   const gasFeeBN = BigNumber(gasUsed || 1000).multipliedBy(gasPrice || MINIMUM_GAS_PRICE);
 
@@ -68,7 +89,9 @@ export const makeEstimateGasTransaction = async (
     return null;
   }
 
-  const { gasFee, gasWanted } = makeGasInfoBy(gasUsed, gasPrice);
+  const {
+    gasFee, gasWanted,
+  } = makeGasInfoBy(gasUsed, gasPrice);
   if (!transactionService || !gasFee || !gasWanted || !wallet || !account) {
     return null;
   }
@@ -78,7 +101,9 @@ export const makeEstimateGasTransaction = async (
     return documentToDefaultTx(modifiedDocument);
   }
 
-  const { signed } = await transactionService
+  const {
+    signed,
+  } = await transactionService
     .createTransaction(wallet, account, modifiedDocument)
     .catch(() => {
       return {
@@ -97,10 +122,18 @@ export const useGetEstimateGasInfo = (
   gasUsed: number,
   options?: UseQueryOptions<GasInfo | null, Error>,
 ): UseQueryResult<GasInfo | null> => {
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { data: gasPrice } = useGetGasPrice();
-  const { wallet } = useWalletContext();
-  const { transactionService, transactionGasService } = useAdenaContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    data: gasPrice,
+  } = useGetGasPrice();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService, transactionGasService,
+  } = useAdenaContext();
 
   async function makeTransaction(document: Document | null | undefined): Promise<Tx | null> {
     if (!document || !gasPrice) {
@@ -119,18 +152,7 @@ export const useGetEstimateGasInfo = (
   }
 
   return useQuery<GasInfo | null, Error>({
-    queryKey: [
-      currentAccount?.id,
-      currentAddress,
-      GET_ESTIMATE_GAS_INFO_KEY,
-      transactionGasService,
-      document?.msgs || '',
-      document?.memo || '',
-      document?.account_number,
-      document?.sequence,
-      gasUsed,
-      gasPrice || 0,
-    ],
+    queryKey: [currentAccount?.id, currentAddress, GET_ESTIMATE_GAS_INFO_KEY, transactionGasService, document?.msgs || '', document?.memo || '', document?.account_number, document?.sequence, gasUsed, gasPrice || 0],
     queryFn: async (): Promise<GasInfo | null> => {
       if (!transactionGasService || !gasPrice) {
         return null;
@@ -143,7 +165,7 @@ export const useGetEstimateGasInfo = (
 
       const resultGasUsed = await transactionGasService
         .estimateGas(tx)
-        .then((gasUsed) => ({
+        .then(gasUsed => ({
           gasUsed,
           errorMessage: null,
         }))

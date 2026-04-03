@@ -1,10 +1,12 @@
-import { EventKeyType } from '@common/constants/event-key.constant';
+import {
+  EventKeyType,
+} from '@common/constants/event-key.constant';
 
 type StatusType = 'event';
 
 interface Message {
-  code: number;
-  description: string;
+  code: number
+  description: string
 }
 
 const MESSAGE_TYPES: { [key in EventKeyType]: Message } = {
@@ -19,14 +21,14 @@ const MESSAGE_TYPES: { [key in EventKeyType]: Message } = {
 };
 
 export interface EventMessageData {
-  code: number;
-  key?: string;
-  hostname?: string;
-  protocol?: string;
-  type: EventKeyType;
-  status: StatusType;
-  message: string;
-  data: any;
+  code: number
+  key?: string
+  hostname?: string
+  protocol?: string
+  type: EventKeyType
+  status: StatusType
+  message: string
+  data: any
 }
 
 export class EventMessage {
@@ -43,7 +45,9 @@ export class EventMessage {
   private data: any;
 
   constructor(messageKey: EventKeyType, status?: StatusType, data?: any, key?: string) {
-    const { code, description } = MESSAGE_TYPES[messageKey];
+    const {
+      code, description,
+    } = MESSAGE_TYPES[messageKey];
     this.key = key ?? '';
     this.code = code;
     this.type = messageKey;

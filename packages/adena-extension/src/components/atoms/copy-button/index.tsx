@@ -1,12 +1,23 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { getTheme } from '@styles/theme';
-import { Text, Button } from '@components/atoms';
+import {
+  Button, Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-const CopyButton = styled(Button) <{ isClicked: boolean }>`
-  ${mixins.flex({ direction: 'row' })};
+const CopyButton = styled(Button) <{
+  isClicked: boolean
+}>`
+  ${mixins.flex({
+    direction: 'row',
+  })};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
@@ -20,8 +31,8 @@ export const Copy = ({
   copyStr,
   tabIndex,
 }: {
-  copyStr: string;
-  tabIndex?: number;
+  copyStr: string
+  tabIndex?: number
 }): JSX.Element => {
   const [isClicked, setIsClicked] = useState<boolean>(false);
 

@@ -1,16 +1,24 @@
-import React, { useCallback } from 'react';
-
 import IconHelp from '@assets/help-fill.svg';
 import IconAdd from '@assets/icon-add';
 import IconLock from '@assets/icon-side-menu-lock.svg';
 import IconSetting from '@assets/icon-side-menu-setting.svg';
 import LogoAdena from '@assets/logo-withIcon.svg';
 import IconRestore from '@assets/restore.svg';
-import { Icon } from '@components/atoms';
+import {
+  Icon,
+} from '@components/atoms';
 import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
 import SideMenuLink from '@components/pages/router/side-menu-link/side-menu-link';
-import { RoutePath, SideMenuProps } from '@types';
-import { SideMenuWrapper } from './side-menu.styles';
+import {
+  RoutePath, SideMenuProps,
+} from '@types';
+import React, {
+  useCallback,
+} from 'react';
+
+import {
+  SideMenuWrapper,
+} from './side-menu.styles';
 
 const SideMenu: React.FC<SideMenuProps> = ({
   scannerUrl,
@@ -99,17 +107,19 @@ const SideMenu: React.FC<SideMenuProps> = ({
       </div>
 
       <div className='bottom-wrapper'>
-        {locked ? (
-          <>
-            <SideMenuLink icon={IconRestore} text='Restore Wallet' onClick={onClickRestoreWallet} />
-            <SideMenuLink icon={IconHelp} text='Help & Support' onClick={onClickHelpAndSupport} />
-          </>
-        ) : (
-          <>
-            <SideMenuLink icon={IconSetting} text='Settings' onClick={onClickSetting} />
-            <SideMenuLink icon={IconLock} text='Lock Wallet' onClick={onClickLockWallet} />
-          </>
-        )}
+        {locked
+          ? (
+            <>
+              <SideMenuLink icon={IconRestore} text='Restore Wallet' onClick={onClickRestoreWallet} />
+              <SideMenuLink icon={IconHelp} text='Help & Support' onClick={onClickHelpAndSupport} />
+            </>
+          )
+          : (
+            <>
+              <SideMenuLink icon={IconSetting} text='Settings' onClick={onClickSetting} />
+              <SideMenuLink icon={IconLock} text='Lock Wallet' onClick={onClickLockWallet} />
+            </>
+          )}
       </div>
     </SideMenuWrapper>
   );

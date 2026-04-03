@@ -1,29 +1,32 @@
-import React from 'react';
-import styled, { CSSProperties, useTheme } from 'styled-components';
-
-import { Text } from '@components/atoms';
+import {
+  Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
+import React from 'react';
+import styled, {
+  CSSProperties, useTheme,
+} from 'styled-components';
 
-type WarningKeyType =
-  | 'revealPassword'
-  | 'revealPrivate'
-  | 'approachPassword'
-  | 'approachPrivate'
-  | 'approachNetwork'
-  | 'addingNetwork';
+type WarningKeyType
+  = | 'revealPassword'
+    | 'revealPrivate'
+    | 'approachPassword'
+    | 'approachPrivate'
+    | 'approachNetwork'
+    | 'addingNetwork';
 
 interface TextProperty {
-  title?: string;
-  subTitle?: string;
+  title?: string
+  subTitle?: string
 }
 
 interface WarningBoxStyleProps {
-  margin?: CSSProperties['margin'];
-  padding?: CSSProperties['padding'];
+  margin?: CSSProperties['margin']
+  padding?: CSSProperties['padding']
 }
 
 export interface WarningBoxProps extends WarningBoxStyleProps {
-  type: WarningKeyType;
+  type: WarningKeyType
 }
 
 const warningType: { [key in WarningKeyType]: TextProperty } = {
@@ -56,7 +59,9 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
   },
 };
 
-export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Element => {
+export const WarningBox = ({
+  type, margin, padding,
+}: WarningBoxProps): JSX.Element => {
   const theme = useTheme();
   return (
     <Wrapper margin={margin} padding={padding}>
@@ -66,7 +71,7 @@ export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Elem
         </Text>
       )}
       {warningType[type].subTitle && (
-        <Text type='body2Reg' color={'rgba(231, 50, 59, 1)'}>
+        <Text type='body2Reg' color='rgba(231, 50, 59, 1)'>
           {warningType[type].subTitle}
         </Text>
       )}
@@ -75,7 +80,10 @@ export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Elem
 };
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
-  ${mixins.flex({ align: 'flex-start', justify: 'space-between' })};
+  ${mixins.flex({
+    align: 'flex-start',
+    justify: 'space-between',
+  })};
   width: 100%;
   padding: ${(props): CSSProperties['padding'] => props.padding ?? '14px 16px'};
   gap: 11px;

@@ -1,49 +1,90 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { Account, isMultisigAccount, MultisigConfig, RawTx } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { mappedRawTxMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
+import {
+  GasToken, GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  mappedRawTxMessages,
+} from '@common/mapper/transaction-mapper';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { fetchHealth } from '@common/utils/fetch-utils';
-import { makeQueryString } from '@common/utils/string-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { BroadcastMultisigTransaction } from '@components/molecules/broadcast-multisig-transaction';
+import {
+  fetchHealth,
+} from '@common/utils/fetch-utils';
+import {
+  makeQueryString,
+} from '@common/utils/string-utils';
+import {
+  validateInjectionDataWithAddress,
+} from '@common/validation/validation-transaction';
+import {
+  BroadcastMultisigTransaction,
+} from '@components/molecules/broadcast-multisig-transaction';
+import {
+  defaultAddressPrefix,
+} from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
-import { NetworkMetainfo, RoutePath } from '@types';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage, MultisigTransactionDocument, Signature,
+} from '@inject/types';
+import {
+  NetworkMetainfo, RoutePath,
+} from '@types';
+import {
+  Account, isMultisigAccount, MultisigConfig, RawTx,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useLocation, useNavigate,
+} from 'react-router-dom';
 
 interface BroadcastMultisigTransactionRequestData {
-  multisigDocument: MultisigTransactionDocument;
-  multisigSignatures?: Signature[];
+  multisigDocument: MultisigTransactionDocument
+  multisigSignatures?: Signature[]
 }
 
 interface TransactionData {
-  messages: readonly any[];
-  contracts: { type: string; function: string; value: any }[];
-  gasWanted: string;
-  gasFee: string;
-  memo: string;
+  messages: readonly any[]
+  contracts: {
+    type: string
+    function: string
+    value: any
+  }[]
+  gasWanted: string
+  gasFee: string
+  memo: string
 }
 
 function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainfo {
@@ -67,7 +108,9 @@ function makeDefaultNetworkInfo(chainId: string, rpcUrl: string): NetworkMetainf
  * Map MultisigTransactionDocument to TransactionData for UI
  */
 function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
-  const { tx } = txDocument;
+  const {
+    tx,
+  } = txDocument;
 
   return {
     messages: tx.msg,
@@ -86,10 +129,13 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
 
 const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
   setTimeout(async () => {
-    const { healthy } = await fetchHealth(rpcUrl);
+    const {
+      healthy,
+    } = await fetchHealth(rpcUrl);
     if (healthy === false) {
       chrome.runtime.sendMessage(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {}, requestKey),
+        InjectionMessageInstance.failure(WalletResponseFailureType.NETWORK_TIMEOUT, {
+        }, requestKey),
       );
       return;
     }
@@ -97,13 +143,25 @@ const checkHealth = (rpcUrl: string, requestKey?: string): NodeJS.Timeout =>
 
 const BroadcastMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate } = useAppNavigate();
-  const { wallet, gnoProvider, changeNetwork } = useWalletContext();
-  const { walletService, multisigService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    wallet, gnoProvider, changeNetwork,
+  } = useWalletContext();
+  const {
+    walletService, multisigService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const location = useLocation();
-  const { currentNetwork: currentWalletNetwork, scannerParameters } = useNetwork();
-  const { openScannerLink } = useLink();
+  const {
+    currentNetwork: currentWalletNetwork, scannerParameters,
+  } = useNetwork();
+  const {
+    openScannerLink,
+  } = useLink();
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [transactionData, setTransactionData] = useState<TransactionData>();
@@ -179,7 +237,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       try {
         const amount = parseTokenAmount(amountStr);
         return BigNumber(acc).plus(amount).toNumber();
-      } catch {
+      }
+      catch {
         return acc;
       }
     }, 0);
@@ -225,13 +284,16 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
   };
 
   const initFavicon = async (): Promise<void> => {
@@ -266,7 +328,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     }
     try {
       const data = requestData?.data as BroadcastMultisigTransactionRequestData;
-      const { multisigDocument, multisigSignatures = [] } = data;
+      const {
+        multisigDocument, multisigSignatures = [],
+      } = data;
 
       if (!data || !multisigDocument.tx) {
         throw new Error('Multisig transaction document not found');
@@ -280,7 +344,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
 
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       const error: any = e;
       if (error?.message === 'Connection Error') {
         checkHealth(currentNetwork.rpcUrl, requestData.key);
@@ -288,7 +353,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       chrome.runtime.sendMessage(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          { error: { message: error?.message } },
+          {
+            error: {
+              message: error?.message,
+            },
+          },
           requestData?.key,
         ),
       );
@@ -319,7 +388,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
   const createTxExplorerUrl = (txHash: string): string => {
     const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     const params = {
-      ...(scannerParameters || {}),
+      ...(scannerParameters || {
+      }),
       txhash: txHash,
     };
 
@@ -335,7 +405,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          {},
+          {
+          },
           requestData?.key,
         ),
       );
@@ -346,7 +417,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          { error: { message: 'Current account is not a multisig account' } },
+          {
+            error: {
+              message: 'Current account is not a multisig account',
+            },
+          },
           requestData?.key,
         ),
       );
@@ -369,17 +444,22 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.TRANSACTION_SUCCESS,
-          { broadcastResult, txExplorerUrl },
+          {
+            broadcastResult,
+            txExplorerUrl,
+          },
           requestData?.key,
           requestData?.withNotification,
         ),
       );
 
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       handleBroadcastError(e);
       return false;
-    } finally {
+    }
+    finally {
       setProcessType('DONE');
     }
   };
@@ -390,7 +470,11 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     setResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.TRANSACTION_FAILED,
-        { error: { message: errorMessage } },
+        {
+          error: {
+            message: errorMessage,
+          },
+        },
         requestData?.key,
         requestData?.withNotification,
       ),
@@ -440,7 +524,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseRejectType.TRANSACTION_REJECTED,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );
@@ -454,7 +539,9 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     if (response) {
       if (isVisibleResult) {
         navigate(RoutePath.ApproveTransactionResult, {
-          state: { response },
+          state: {
+            response,
+          },
         });
         return;
       }
@@ -466,7 +553,8 @@ const BroadcastMultisigTransactionContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );

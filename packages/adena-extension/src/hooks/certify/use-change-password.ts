@@ -1,6 +1,12 @@
-import { PasswordValidationError } from '@common/errors';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
-import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
+import {
+  PasswordValidationError,
+} from '@common/errors';
+import {
+  encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  evaluatePassword, EvaluatePasswordResult,
+} from '@common/utils/password-utils';
 import {
   validateEqualsChangePassword,
   validateInvalidPassword,
@@ -8,48 +14,58 @@ import {
   validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    error: boolean;
-    ref: React.RefObject<HTMLInputElement>;
-  };
+    value: string
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    error: boolean
+    ref: React.RefObject<HTMLInputElement>
+  }
   newPwdState: {
-    value: string;
-    evaluationResult: EvaluatePasswordResult | null;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    error: boolean;
-  };
+    value: string
+    evaluationResult: EvaluatePasswordResult | null
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    error: boolean
+  }
   confirmPwdState: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    error: boolean;
-  };
-  errorMessage: string;
+    value: string
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    error: boolean
+  }
+  errorMessage: string
   buttonState: {
     onClick: {
-      cancel: () => void;
-      save: () => void;
-    };
-    disabled: boolean;
-  };
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+      cancel: () => void
+      save: () => void
+    }
+    disabled: boolean
+  }
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
 };
 
 export const useChangePassword = (): UseChangePasswordReturn => {
-  const { walletService } = useAdenaContext();
-  const { goBack } = useAppNavigate();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    goBack,
+  } = useAppNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     currPwd: '',
     newPwd: '',
     confirmPwd: '',
   });
-  const { currPwd, newPwd, confirmPwd } = inputs;
+  const {
+    currPwd, newPwd, confirmPwd,
+  } = inputs;
 
   const [isCurrPwdError, setIsCurrPwdError] = useState(false);
   const [isNewPwdError, setIsNewPwdError] = useState(false);
@@ -94,8 +110,13 @@ export const useChangePassword = (): UseChangePasswordReturn => {
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setInputs((inputs) => ({ ...inputs, [name]: value }));
+      const {
+        name, value,
+      } = e.target;
+      setInputs(inputs => ({
+        ...inputs,
+        [name]: value,
+      }));
     },
     [currPwd, newPwd, confirmPwd],
   );
@@ -111,7 +132,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     try {
       const encryptedCurrentPassword = encryptWalletPassword(currentPassword);
       validateInvalidPassword(encryptedCurrentPassword, storedPassword);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsCurrPwdError(true);
@@ -123,7 +145,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     try {
       validatePasswordComplexity(newPassword);
       validateEqualsChangePassword(newPassword, currentPassword);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsNewPwdError(true);
@@ -134,7 +157,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
     }
     try {
       validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
-    } catch (error) {
+    }
+    catch (error) {
       isValid = false;
       if (error instanceof PasswordValidationError) {
         setIsConfirmPwdError(true);
@@ -155,7 +179,8 @@ export const useChangePassword = (): UseChangePasswordReturn => {
           confirmPwd: '',
         });
         return 'FINISH';
-      } catch (e) {
+      }
+      catch (e) {
         console.error(e);
       }
     }
@@ -193,7 +218,7 @@ export const useChangePassword = (): UseChangePasswordReturn => {
         cancel: goBack,
         save: saveButtonClick,
       },
-      disabled: Object.values(inputs).some((el) => el === ''),
+      disabled: Object.values(inputs).some(el => el === ''),
     },
     onKeyDown,
   };

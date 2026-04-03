@@ -1,18 +1,27 @@
-import React, { useCallback, useMemo } from 'react';
-
-import { WebMain } from '@components/atoms';
+import {
+  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
+import {
+  WebMain,
+} from '@components/atoms';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useSetupAirgapScreen, {
   setupAirgapStepBackTo,
 } from '@hooks/web/setup-airgap/use-setup-airgap-screen';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback, useMemo,
+} from 'react';
 
+import SetupAirgapCompleteScreen from './complete';
 import SetupAirgapEnterAddress from './enter-address';
 import SetupAirgapInit from './init';
-import SetupAirgapCompleteScreen from './complete';
-import WebLoadingAccounts from '@components/pages/web/loading-accounts';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
@@ -26,7 +35,9 @@ const SetupAirgapScreen: React.FC = () => {
     confirmAddress,
     addAccount,
   } = useSetupAirgapScreen();
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
 
   const topSpacing = useMemo(() => {
     if (setupAirgapState === 'LOADING') {

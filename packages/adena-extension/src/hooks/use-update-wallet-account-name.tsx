@@ -1,6 +1,12 @@
-import { WalletState } from '@states';
-import { useRecoilState } from 'recoil';
-import { Account } from 'adena-module';
+import {
+  WalletState,
+} from '@states';
+import {
+  Account,
+} from 'adena-module';
+import {
+  useRecoilState,
+} from 'recoil';
 
 export type UseUpdateWalletAccountNameReturn = (account: Account, name: string) => void;
 

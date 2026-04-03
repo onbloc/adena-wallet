@@ -1,29 +1,47 @@
-import { AdenaWallet, Wallet } from 'adena-module';
-import React, { createContext, useEffect, useState } from 'react';
-import { useRecoilState, useSetRecoilState } from 'recoil';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  NetworkState, TokenState, WalletState,
+} from '@states';
+import {
+  NetworkMetainfo, StateType, TokenModel,
+} from '@types';
+import {
+  AdenaWallet, Wallet,
+} from 'adena-module';
+import React, {
+  createContext, useEffect, useState,
+} from 'react';
+import {
+  useRecoilState, useSetRecoilState,
+} from 'recoil';
 
-import { useAdenaContext } from '@hooks/use-context';
-import { NetworkState, TokenState, WalletState } from '@states';
-import { NetworkMetainfo, StateType, TokenModel } from '@types';
-import { GnoProvider } from '../gno/gno-provider';
+import {
+  GnoProvider,
+} from '../gno/gno-provider';
 
 export interface WalletContextProps {
-  wallet: Wallet | null;
-  gnoProvider: GnoProvider | undefined;
-  walletStatus: StateType;
-  tokenMetainfos: TokenModel[];
-  networkMetainfos: NetworkMetainfo[];
-  updateWallet: (wallet: Wallet) => Promise<boolean>;
-  initWallet: () => Promise<boolean>;
-  initNetworkMetainfos: () => Promise<boolean>;
-  changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>;
-  clearWallet: () => Promise<void>;
+  wallet: Wallet | null
+  gnoProvider: GnoProvider | undefined
+  walletStatus: StateType
+  tokenMetainfos: TokenModel[]
+  networkMetainfos: NetworkMetainfo[]
+  updateWallet: (wallet: Wallet) => Promise<boolean>
+  initWallet: () => Promise<boolean>
+  initNetworkMetainfos: () => Promise<boolean>
+  changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>
+  clearWallet: () => Promise<void>
 }
 
 export const WalletContext = createContext<WalletContextProps | null>(null);
 
-export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ children }) => {
-  const { walletService, accountService, chainService } = useAdenaContext();
+export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({
+  children,
+}) => {
+  const {
+    walletService, accountService, chainService,
+  } = useAdenaContext();
 
   const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
@@ -72,7 +90,8 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
       wallet.currentAccountId = currentAccountId;
       setWallet(wallet);
       await initCurrentAccount(wallet);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       setWallet(null);
       setWalletStatus('FAIL');
@@ -90,16 +109,13 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
   async function clearWallet(): Promise<void> {
     await setWallet(new AdenaWallet());
 
-    await Promise.all([
-      async (): Promise<void> => await setWallet(null),
-      async (): Promise<void> => await setCurrentAccount(null),
-    ]);
+    await Promise.all([async (): Promise<void> => await setWallet(null), async (): Promise<void> => await setCurrentAccount(null)]);
   }
 
   async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
     const currentAccountId = await accountService.getCurrentAccountId();
-    const currentAccount =
-      wallet.accounts.find((account) => account.id === currentAccountId) ?? wallet.accounts[0];
+    const currentAccount
+      = wallet.accounts.find(account => account.id === currentAccountId) ?? wallet.accounts[0];
     if (currentAccount) {
       setCurrentAccount(currentAccount);
       await accountService.changeCurrentAccount(currentAccount);
@@ -125,9 +141,9 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({ chi
     networkMetainfos: NetworkMetainfo[],
   ): Promise<boolean> {
     const currentNetworkId = await chainService.getCurrentNetworkId();
-    const currentNetwork =
-      networkMetainfos.find((networkMetainfo) => networkMetainfo.id === currentNetworkId) ??
-      networkMetainfos[0];
+    const currentNetwork
+      = networkMetainfos.find(networkMetainfo => networkMetainfo.id === currentNetworkId)
+        ?? networkMetainfos[0];
 
     await chainService.updateCurrentNetworkId(currentNetwork.id);
     await changeNetwork(currentNetwork);

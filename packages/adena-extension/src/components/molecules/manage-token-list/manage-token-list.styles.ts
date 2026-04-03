@@ -1,15 +1,23 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const ManageTokenListWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: auto;
 `;
 
 export const ManageTokenListItemWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   padding: 10px 14px;
   width: 100%;
   height: auto;

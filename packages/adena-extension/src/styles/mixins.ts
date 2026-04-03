@@ -1,5 +1,9 @@
-import { CSSProperties } from 'react';
-import { css, CSSProp } from 'styled-components';
+import {
+  CSSProperties,
+} from 'react';
+import {
+  css, CSSProp,
+} from 'styled-components';
 
 export type MixinsType = {
   /**
@@ -8,18 +12,18 @@ export type MixinsType = {
    * @param justify justify-content, default: center
    */
   flex: (props?: {
-    direction?: CSSProperties['flexDirection'];
-    align?: CSSProperties['alignItems'];
-    justify?: CSSProperties['justifyContent'];
-  }) => CSSProp;
-  positionCenter: () => CSSProp;
-  posTopCenterRight: (right?: string) => CSSProp;
-  posTopCenterLeft: (left?: string) => CSSProp;
-  posTopLeft: (top?: string) => CSSProp;
+    direction?: CSSProperties['flexDirection']
+    align?: CSSProperties['alignItems']
+    justify?: CSSProperties['justifyContent']
+  }) => CSSProp
+  positionCenter: () => CSSProp
+  posTopCenterRight: (right?: string) => CSSProp
+  posTopCenterLeft: (left?: string) => CSSProp
+  posTopLeft: (top?: string) => CSSProp
 };
 
 const mixins: MixinsType = {
-  flex: (props) => css`
+  flex: props => css`
     display: flex;
     flex-direction: ${props?.direction || 'column'};
     align-items: ${props?.align || 'center'};

@@ -1,6 +1,12 @@
-import React, { ReactElement } from 'react';
+import React, {
+  ReactElement,
+} from 'react';
 
-const IconWebLink = ({ className }: { className: string }): ReactElement => {
+const IconWebLink = ({
+  className,
+}: {
+  className: string
+}): ReactElement => {
   return (
     <svg
       className={className}

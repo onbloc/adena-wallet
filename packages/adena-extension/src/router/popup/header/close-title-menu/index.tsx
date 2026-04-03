@@ -1,17 +1,22 @@
+import {
+  Icon, Text,
+} from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Icon } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navigate';
-
 interface CloseTitleMenuProps {
-  title?: string;
+  title?: string
 }
 
 const Wrapper = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   width: 100%;
   height: 100%;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
@@ -39,8 +44,12 @@ const Button = styled.button`
   }
 `;
 
-export const CloseTitleMenu = ({ title }: CloseTitleMenuProps): JSX.Element => {
-  const { goBack } = useAppNavigate();
+export const CloseTitleMenu = ({
+  title,
+}: CloseTitleMenuProps): JSX.Element => {
+  const {
+    goBack,
+  } = useAppNavigate();
 
   return (
     <Wrapper>

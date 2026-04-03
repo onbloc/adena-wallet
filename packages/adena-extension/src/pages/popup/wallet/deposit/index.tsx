@@ -1,26 +1,47 @@
-import { QRCodeSVG } from 'qrcode.react';
-import { useCallback, useEffect, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { formatAddress, formatNickname } from '@common/utils/client-utils';
-import { Button, Copy, inputStyle, Text } from '@components/atoms';
-import { useAccountName } from '@hooks/use-account-name';
+import {
+  formatAddress, formatNickname,
+} from '@common/utils/client-utils';
+import {
+  Button, Copy, inputStyle, Text,
+} from '@components/atoms';
+import {
+  useAccountName,
+} from '@hooks/use-account-name';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useSessionParams from '@hooks/use-session-state';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  QRCodeSVG,
+} from 'qrcode.react';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'stretch' })};
+  ${mixins.flex({
+    justify: 'stretch',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
 `;
 
 const QRCodeBox = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   background-color: ${getTheme('neutral', '_1')};
   padding: 10px;
   border-radius: 8px;
@@ -28,7 +49,10 @@ const QRCodeBox = styled.div`
 `;
 
 const CopyInputBox = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   ${inputStyle};
   border: 1px solid ${getTheme('neutral', '_7')};
 
@@ -41,11 +65,19 @@ const CopyInputBox = styled.div`
 
 export const Deposit = (): JSX.Element => {
   const theme = useTheme();
-  const { navigate, goBack } = useAppNavigate<RoutePath.Deposit>();
-  const { params } = useSessionParams<RoutePath.Deposit>();
+  const {
+    navigate, goBack,
+  } = useAppNavigate<RoutePath.Deposit>();
+  const {
+    params,
+  } = useSessionParams<RoutePath.Deposit>();
   const [displayAddr, setDisplayAddr] = useState('');
-  const { currentAddress, currentAccount } = useCurrentAccount();
-  const { accountNames } = useAccountName();
+  const {
+    currentAddress, currentAccount,
+  } = useCurrentAccount();
+  const {
+    accountNames,
+  } = useAccountName();
 
   useEffect(() => {
     if (currentAddress) {

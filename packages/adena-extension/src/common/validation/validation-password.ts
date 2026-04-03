@@ -1,5 +1,9 @@
-import { PasswordValidationError } from '@common/errors';
-import { evaluatePassword } from '@common/utils/password-utils';
+import {
+  PasswordValidationError,
+} from '@common/errors';
+import {
+  evaluatePassword,
+} from '@common/utils/password-utils';
 
 export const validatePasswordComplexity = (password: string): boolean => {
   const valid = evaluatePassword(password).valid;

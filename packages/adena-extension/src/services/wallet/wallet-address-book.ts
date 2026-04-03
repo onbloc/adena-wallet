@@ -1,5 +1,9 @@
-import { AddressBookItem, WalletAddressRepository, WalletRepository } from '@repositories/wallet';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  AddressBookItem, WalletAddressRepository, WalletRepository,
+} from '@repositories/wallet';
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 export class WalletAddressBookService {
   private walletRepository: WalletRepository;
@@ -21,8 +25,8 @@ export class WalletAddressBookService {
   };
 
   public addAddressBookItem = async (addressBookItem: {
-    name: string;
-    address: string;
+    name: string
+    address: string
   }): Promise<void> => {
     const password = await this.walletRepository.getWalletPassword();
     const addressBook = await this.walletAddressRepository.getAddressBook(password);
@@ -41,9 +45,9 @@ export class WalletAddressBookService {
   };
 
   public updateAddressBookItemById = async (addressBookItem: {
-    id: string;
-    name: string;
-    address: string;
+    id: string
+    name: string
+    address: string
   }): Promise<void> => {
     const password = await this.walletRepository.getWalletPassword();
     const addressBook = await this.walletAddressRepository.getAddressBook(password);

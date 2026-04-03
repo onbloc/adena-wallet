@@ -1,17 +1,27 @@
-import { SkeletonBoxStyle, View } from '@components/atoms';
+import {
+  SkeletonBoxStyle, View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({ align: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+  })};
   width: 55px;
   height: 14px;
   align-self: center;
 `;
 
 export const NetworkFeeSettingItemWrapper = styled(View)`
-  ${mixins.flex({ direction: 'row', align: 'normal', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    align: 'normal',
+    justify: 'space-between',
+  })};
   display: flex;
   width: 100%;
   padding: 14px 16px;
@@ -27,7 +37,9 @@ export const NetworkFeeSettingItemWrapper = styled(View)`
   }
 
   & .title {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     flex-shrink: 0;
     color: ${getTheme('neutral', '_1')};
     ${fonts.body1Bold}

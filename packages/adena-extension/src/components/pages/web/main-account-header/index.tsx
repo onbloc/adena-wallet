@@ -1,10 +1,19 @@
-import React, { ReactElement, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-import { Account } from 'adena-module';
-
-import { CopyIconButton, Pressable, Row, WebImg, WebText } from '@components/atoms';
-import { formatAddress } from '@common/utils/client-utils';
 import back from '@assets/web/chevron-left.svg';
+import {
+  formatAddress,
+} from '@common/utils/client-utils';
+import {
+  CopyIconButton, Pressable, Row, WebImg, WebText,
+} from '@components/atoms';
+import {
+  Account,
+} from 'adena-module';
+import React, {
+  ReactElement, useEffect, useMemo, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -20,8 +29,8 @@ const StyledBlank = styled(Row)`
 `;
 
 export type WebMainAccountHeaderProps = {
-  account: Account | null;
-  onClickGoBack: () => void;
+  account: Account | null
+  onClickGoBack: () => void
 };
 
 export const WebMainAccountHeader = ({
@@ -48,7 +57,11 @@ export const WebMainAccountHeader = ({
     <StyledContainer>
       <Pressable
         onClick={onClickGoBack}
-        style={{ padding: 4, backgroundColor: theme.webInput._100, borderRadius: 16 }}
+        style={{
+          padding: 4,
+          backgroundColor: theme.webInput._100,
+          borderRadius: 16,
+        }}
       >
         <WebImg src={back} size={24} />
       </Pressable>
@@ -62,7 +75,9 @@ export const WebMainAccountHeader = ({
           <WebText
             type='body4'
             color={theme.webNeutral._600}
-            style={{ lineHeight: '22px' }}
+            style={{
+              lineHeight: '22px',
+            }}
           >
             {addressStr}
           </WebText>
@@ -70,6 +85,6 @@ export const WebMainAccountHeader = ({
         </StyledAccountRow>
       )}
       <StyledBlank />
-    </StyledContainer >
+    </StyledContainer>
   );
 };

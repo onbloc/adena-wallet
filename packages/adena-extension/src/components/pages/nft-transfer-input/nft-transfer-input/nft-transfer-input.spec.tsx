@@ -1,11 +1,24 @@
-import React from 'react';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { UseQueryResult } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import NFTTransferInput, { NFTTransferInputProps } from './nft-transfer-input';
+import {
+  UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import NFTTransferInput, {
+  NFTTransferInputProps,
+} from './nft-transfer-input';
 
 describe('NFTTransferInput Component', () => {
   it('NFTTransferInput render', () => {
@@ -21,7 +34,8 @@ describe('NFTTransferInput Component', () => {
         isMetadata: true,
         isTokenUri: true,
       },
-      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
+      queryGRC721TokenUri: () => ({
+      }) as unknown as UseQueryResult<string | null>,
       addressInput: {
         opened: false,
         hasError: false,

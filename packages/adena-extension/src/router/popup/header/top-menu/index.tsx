@@ -1,20 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
-
-import { Text, CopyTooltip, StatusDot, HamburgerMenuBtn } from '@components/atoms';
-
-import { getTheme } from '@styles/theme';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
-import { useAdenaContext } from '@hooks/use-context';
-import { useAccountName } from '@hooks/use-account-name';
-import { useNetwork } from '@hooks/use-network';
-import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
-import mixins from '@styles/mixins';
-import { createPopupWindow } from '@common/utils/browser-utils';
+import {
+  createPopupWindow,
+} from '@common/utils/browser-utils';
+import {
+  formatAddress, formatNickname, getSiteName,
+} from '@common/utils/client-utils';
+import {
+  CopyTooltip, HamburgerMenuBtn, StatusDot, Text,
+} from '@components/atoms';
+import {
+  PopWindowButton,
+} from '@components/atoms/pop-window-button';
+import {
+  SideMenuLayout,
+} from '@components/pages/router/side-menu-layout';
+import {
+  useAccountName,
+} from '@hooks/use-account-name';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useNetwork,
+} from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
-import { PopWindowButton } from '@components/atoms/pop-window-button';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  useEffect, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -24,7 +48,10 @@ const Wrapper = styled.div`
 `;
 
 const Header = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   height: 100%;
   position: relative;
@@ -34,7 +61,10 @@ const Header = styled.div`
 `;
 
 const StyledCenterWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   width: auto;
   height: 100%;
   gap: 8px;
@@ -44,27 +74,44 @@ const StyledCenterWrapper = styled.div`
 `;
 
 const StyledRightWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   width: 15px;
   height: 100%;
 `;
 
-export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
+export const TopMenu = ({
+  disabled,
+}: {
+  disabled?: boolean
+}): JSX.Element => {
   const theme = useTheme();
-  const { isPopup } = useSessionParams();
-  const { establishService } = useAdenaContext();
+  const {
+    isPopup,
+  } = useSessionParams();
+  const {
+    establishService,
+  } = useAdenaContext();
   const [open, setOpen] = useState(false);
   const [hostname, setHostname] = useState('');
   const [protocol, setProtocol] = useState('');
   const [, setUrl] = useState('');
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
   const toggleMenuHandler = (): void => setOpen(!open);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const [isEstablish, setIsEstablish] = useState(false);
   const location = useLocation();
   const [currentAccountName, setCurrentAccountName] = useState('');
-  const { accountNames } = useAccountName();
-  const { currentNetwork } = useNetwork();
+  const {
+    accountNames,
+  } = useAccountName();
+  const {
+    currentNetwork,
+  } = useNetwork();
 
   useEffect(() => {
     initAccountInfo();
@@ -109,7 +156,6 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
     let currentHostname = hostname;
     if (!hostname.includes('.')) {
@@ -122,7 +168,10 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
 
   const getCurrentUrl = (): Promise<unknown> => {
     return new Promise((resolver) => {
-      const queryOptions = { active: true, lastFocusedWindow: true };
+      const queryOptions = {
+        active: true,
+        lastFocusedWindow: true,
+      };
       chrome.tabs.query(queryOptions).then((currentTabs) => {
         if (currentTabs.length > 0 && currentTabs[0].url) {
           resolver(currentTabs[0].url);
@@ -135,28 +184,30 @@ export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
     createPopupWindow(location.pathname, location.state);
   };
 
-  return !disabled ? (
-    <Wrapper>
-      <Header>
-        <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
-        <StyledCenterWrapper>
-          <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
-          <CopyTooltip copyText={currentAddress || ''}>
-            <Text type='body1Bold' display='inline-flex'>
-              {formatNickname(currentAccountName, 12)}
-              <Text type='body1Reg' color={theme.neutral.a}>
-                {` (${formatAddress(currentAddress || '')})`}
+  return !disabled
+    ? (
+      <Wrapper>
+        <Header>
+          <HamburgerMenuBtn type='button' onClick={toggleMenuHandler} />
+          <StyledCenterWrapper>
+            <StatusDot status={isEstablish} tooltipText={tooltipTextMaker(hostname, isEstablish)} />
+            <CopyTooltip copyText={currentAddress || ''}>
+              <Text type='body1Bold' display='inline-flex'>
+                {formatNickname(currentAccountName, 12)}
+                <Text type='body1Reg' color={theme.neutral.a}>
+                  {` (${formatAddress(currentAddress || '')})`}
+                </Text>
               </Text>
-            </Text>
-          </CopyTooltip>
-        </StyledCenterWrapper>
-        <StyledRightWrapper>
-          {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}
-        </StyledRightWrapper>
-      </Header>
-      <SideMenuLayout open={open} setOpen={setOpen} />
-    </Wrapper>
-  ) : (
-    <></>
-  );
+            </CopyTooltip>
+          </StyledCenterWrapper>
+          <StyledRightWrapper>
+            {isPopup ? <div /> : <PopWindowButton onClick={popupWindow} />}
+          </StyledRightWrapper>
+        </Header>
+        <SideMenuLayout open={open} setOpen={setOpen} />
+      </Wrapper>
+    )
+    : (
+      <></>
+    );
 };

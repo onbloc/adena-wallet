@@ -1,23 +1,35 @@
-import { useCallback, useState } from 'react';
-import { AdenaWallet, SingleAccount, Web3AuthKeyring } from 'adena-module';
-import { GoogleTorusSigner } from 'adena-torus-signin/src';
-
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
-import useQuestionnaire from '../use-questionnaire';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import {
+  RoutePath,
+} from '@types';
+import {
+  AdenaWallet, SingleAccount, Web3AuthKeyring,
+} from 'adena-module';
+import {
+  GoogleTorusSigner,
+} from 'adena-torus-signin/src';
+import {
+  useCallback, useState,
+} from 'react';
+
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseGoogleLoginReturn = {
-  googleLoginState: GoogleLoginStateType;
-  indicatorInfo: UseIndicatorStepReturn;
-  backStep: () => void;
-  retry: () => void;
-  initGoogleLogin: () => void;
-  requestGoogleLogin: () => Promise<void>;
+  googleLoginState: GoogleLoginStateType
+  indicatorInfo: UseIndicatorStepReturn
+  backStep: () => void
+  retry: () => void
+  initGoogleLogin: () => void
+  requestGoogleLogin: () => Promise<void>
 };
 
 export type GoogleLoginStateType = 'INIT' | 'REQUEST_LOGIN' | 'FAILED';
@@ -29,11 +41,21 @@ const googleLoginStepNo: Record<GoogleLoginStateType, number> = {
 };
 
 const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
-  const { walletService } = useAdenaContext();
-  const { navigate, params } = useAppNavigate<RoutePath.WebGoogleLogin>();
-  const { ableToSkipQuestionnaire } = useQuestionnaire();
-  const { updateWallet } = useWalletContext();
-  const { changeCurrentAccount } = useCurrentAccount();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    navigate, params,
+  } = useAppNavigate<RoutePath.WebGoogleLogin>();
+  const {
+    ableToSkipQuestionnaire,
+  } = useQuestionnaire();
+  const {
+    updateWallet,
+  } = useWalletContext();
+  const {
+    changeCurrentAccount,
+  } = useCurrentAccount();
 
   const [googleLoginState, setGoogleLoginState] = useState<GoogleLoginStateType>(
     params?.doneQuestionnaire ? 'REQUEST_LOGIN' : 'INIT',
@@ -78,10 +100,12 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       const existWallet = await walletService.existsWallet();
       if (existWallet) {
         await _addGoogleAccount(privateKey);
-      } else {
+      }
+      else {
         await _createGoogleAccount(privateKey);
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
     setGoogleLoginState('FAILED');
@@ -97,7 +121,7 @@ const useGoogleLoginScreen = (): UseGoogleLoginReturn => {
       account.index = clone.lastAccountIndex + 1;
       clone.addAccount(account);
       clone.addKeyring(web3AuthKeyring);
-      const storedAccount = clone.accounts.find((storedAccount) => storedAccount.id === account.id);
+      const storedAccount = clone.accounts.find(storedAccount => storedAccount.id === account.id);
       if (storedAccount) {
         await changeCurrentAccount(storedAccount);
       }

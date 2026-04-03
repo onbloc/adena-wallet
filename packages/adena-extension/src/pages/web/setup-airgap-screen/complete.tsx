@@ -1,12 +1,16 @@
-import React, { useCallback } from 'react';
-import styled from 'styled-components';
-
-import { Row, View, WebButton, WebImg, WebInput } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-
-import IconCheck from '@assets/web/web-check-circle.svg';
 import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
+import IconCheck from '@assets/web/web-check-circle.svg';
+import {
+  Row, View, WebButton, WebImg, WebInput,
+} from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import React, {
+  useCallback,
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -28,8 +32,8 @@ const StyledButtonBox = styled(View)`
 `;
 
 interface SetupAirgapCompleteScreenProps {
-  address: string;
-  addAccount: (password?: string) => void;
+  address: string
+  addAccount: (password?: string) => void
 }
 
 const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
@@ -42,12 +46,18 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
 
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 8 }}>
+      <View style={{
+        marginBottom: 8,
+      }}
+      >
         <Lottie
           animationData={LottieAccountSynced}
           height={104}
           visibleSize={120}
-          style={{ marginLeft: -20, marginBottom: -16 }}
+          style={{
+            marginLeft: -20,
+            marginBottom: -16,
+          }}
         />
       </View>
 

@@ -1,36 +1,46 @@
+import {
+  Button, ButtonProps, Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  FontsType,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import { FontsType } from '@styles/theme';
-import { Text, Button, ButtonProps } from '@components/atoms';
-import mixins from '@styles/mixins';
-
 interface EachButtonProps {
-  onClick: () => void;
-  text: string;
-  props?: React.ComponentPropsWithoutRef<'button'>;
-  hierarchy?: ButtonProps['hierarchy'];
-  bgColor?: string;
-  fontType?: FontsType;
+  onClick: () => void
+  text: string
+  props?: React.ComponentPropsWithoutRef<'button'>
+  hierarchy?: ButtonProps['hierarchy']
+  bgColor?: string
+  fontType?: FontsType
 }
 
 interface WrapperStyleProps {
-  margin?: string;
+  margin?: string
 }
 
 interface DoubleButtonProps extends WrapperStyleProps {
-  leftProps: EachButtonProps;
-  rightProps: EachButtonProps;
+  leftProps: EachButtonProps
+  rightProps: EachButtonProps
 }
 
 const Wrapper = styled.div<WrapperStyleProps>`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   gap: 10px;
-  ${({ margin }): string | undefined => margin && `margin: ${margin}`};
+  ${({
+    margin,
+  }): string | undefined => margin && `margin: ${margin}`};
 `;
 
-export const DoubleButton = ({ margin, leftProps, rightProps }: DoubleButtonProps): JSX.Element => {
+export const DoubleButton = ({
+  margin, leftProps, rightProps,
+}: DoubleButtonProps): JSX.Element => {
   return (
     <Wrapper margin={margin}>
       <Button

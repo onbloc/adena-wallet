@@ -1,9 +1,18 @@
-import { ReactElement, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { Row, View, WebButton, WebCheckBox, WebText } from '@components/atoms';
-import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
-import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
+import {
+  Row, View, WebButton, WebCheckBox, WebText,
+} from '@components/atoms';
+import {
+  WebSeedInput, WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  UseWalletImportReturn,
+} from '@hooks/web/use-wallet-import-screen';
+import {
+  ReactElement, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -13,10 +22,12 @@ const StyledContainer = styled(View)`
 const SetMnemonicStep = ({
   useWalletImportScreenReturn,
 }: {
-  useWalletImportScreenReturn: UseWalletImportReturn;
+  useWalletImportScreenReturn: UseWalletImportReturn
 }): ReactElement => {
-  const { setInputType, updateInputValue, onClickNext, errMsg, isValidForm } =
-    useWalletImportScreenReturn;
+  const {
+    setInputType, updateInputValue, onClickNext, errMsg, isValidForm,
+  }
+    = useWalletImportScreenReturn;
   const theme = useTheme();
   const [agreeWarning, setAgreeWarning] = useState(false);
 
@@ -26,9 +37,15 @@ const SetMnemonicStep = ({
         title='Import Existing Wallet'
         description='Enter a seed phrase or your private key to import your existing wallet.'
       />
-      <View style={{ paddingBottom: 8, marginTop: -6 }}>
+      <View style={{
+        paddingBottom: 8,
+        marginTop: -6,
+      }}
+      >
         <WebSeedInput
-          onChange={({ type, value }): void => {
+          onChange={({
+            type, value,
+          }): void => {
             updateInputValue(value);
             setInputType(type);
           }}
@@ -36,7 +53,11 @@ const SetMnemonicStep = ({
         />
       </View>
 
-      <Row style={{ columnGap: 8, alignItems: 'center' }}>
+      <Row style={{
+        columnGap: 8,
+        alignItems: 'center',
+      }}
+      >
         <WebCheckBox
           checked={agreeWarning}
           onClick={(): void => {
@@ -53,7 +74,9 @@ const SetMnemonicStep = ({
         size='small'
         onClick={onClickNext}
         disabled={!agreeWarning || !isValidForm}
-        style={{ justifyContent: 'center' }}
+        style={{
+          justifyContent: 'center',
+        }}
         text='Next'
         rightIcon='chevronRight'
       />

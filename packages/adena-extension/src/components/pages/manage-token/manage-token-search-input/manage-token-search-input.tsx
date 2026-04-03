@@ -1,12 +1,17 @@
-import React from 'react';
-import { ManageTokenSearchInputWrapper } from './manage-token-search-input.styles';
 import ManageTokenSearchIcon from '@assets/manage-token-search.svg';
-import { Icon } from '@components/atoms';
+import {
+  Icon,
+} from '@components/atoms';
+import React from 'react';
+
+import {
+  ManageTokenSearchInputWrapper,
+} from './manage-token-search-input.styles';
 
 export interface ManageTokenSearchInputProps {
-  keyword: string;
-  onChangeKeyword: (keyword: string) => void;
-  onClickAdded: () => void;
+  keyword: string
+  onChangeKeyword: (keyword: string) => void
+  onClickAdded: () => void
 }
 
 const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({

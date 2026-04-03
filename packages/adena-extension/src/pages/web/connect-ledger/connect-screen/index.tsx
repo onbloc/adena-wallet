@@ -1,24 +1,36 @@
-import { ReactElement, useMemo } from 'react';
-
-import { WebMain } from '@components/atoms';
-
-import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import { RoutePath } from '@types';
+import {
+  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
+import {
+  WebMain,
+} from '@components/atoms';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
+import {
+  RoutePath,
+} from '@types';
+import {
+  ReactElement, useMemo,
+} from 'react';
 
-import ConnectRequestWallet from './connect-request-wallet';
+import ConnectFail from './connect-fail';
 import ConnectInit from './connect-init';
 import ConnectRequest from './connect-request';
-import ConnectFail from './connect-fail';
+import ConnectRequestWallet from './connect-request-wallet';
 import ConnectRequestWalletLoad from './connect-request-wallet-load';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
 
 const ConnectLedgerScreen = (): ReactElement => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
-  const { indicatorInfo, connectState, initWallet, requestPermission, setConnectState } =
-    useConnectLedgerScreenReturn;
-  const { navigate } = useAppNavigate();
+  const {
+    indicatorInfo, connectState, initWallet, requestPermission, setConnectState,
+  }
+    = useConnectLedgerScreenReturn;
+  const {
+    navigate,
+  } = useAppNavigate();
 
   const topSpacing = useMemo(() => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'NOT_PERMISSION') {
@@ -41,7 +53,8 @@ const ConnectLedgerScreen = (): ReactElement => {
           onClickGoBack={(): void => {
             if (indicatorInfo.stepNo === 0) {
               navigate(RoutePath.WebSelectHardWallet);
-            } else {
+            }
+            else {
               setConnectState('INIT');
             }
           }}

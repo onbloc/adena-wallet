@@ -1,22 +1,36 @@
-import BigNumber from 'bignumber.js';
-import React, { useRef, useState } from 'react';
-import styled from 'styled-components';
-
 import cancel from '@assets/cancel-dark.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import search from '@assets/search.svg';
-import { searchTextFilter } from '@common/utils/client-utils';
-import { Button, DefaultInput, ListBox, ListHierarchy, Text } from '@components/atoms';
-import { TokenBalance } from '@components/molecules';
-import useHistoryData from '@hooks/use-history-data';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { RoutePath } from '@types';
-
+import {
+  searchTextFilter,
+} from '@common/utils/client-utils';
+import {
+  Button, DefaultInput, ListBox, ListHierarchy, Text,
+} from '@components/atoms';
+import {
+  TokenBalance,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import useHistoryData from '@hooks/use-history-data';
 import useSessionState from '@hooks/use-session-state';
+import {
+  useTokenBalance,
+} from '@hooks/use-token-balance';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import { TokenBalanceType } from '@types';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  TokenBalanceType,
+} from '@types';
+import BigNumber from 'bignumber.js';
+import React, {
+  useRef, useState,
+} from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.main`
   width: 100%;
@@ -60,7 +74,9 @@ const DataListWrap = styled.div`
 `;
 
 const ButtonWrap = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: fixed;
   bottom: 0px;
   left: 0px;
@@ -73,11 +89,19 @@ const ButtonWrap = styled.div`
 `;
 
 export const WalletSearch = (): JSX.Element => {
-  const { navigate } = useAppNavigate<RoutePath.WalletSearch>();
-  const { params } = useSessionState<RoutePath.WalletSearch>();
+  const {
+    navigate,
+  } = useAppNavigate<RoutePath.WalletSearch>();
+  const {
+    params,
+  } = useSessionState<RoutePath.WalletSearch>();
 
-  const { currentBalances } = useTokenBalance();
-  const { clearHistoryData } = useHistoryData();
+  const {
+    currentBalances,
+  } = useTokenBalance();
+  const {
+    clearHistoryData,
+  } = useHistoryData();
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [searchText, setSearchText] = useState('');
@@ -135,25 +159,25 @@ export const WalletSearch = (): JSX.Element => {
       <DataListWrap>
         {currentBalances
           .filter(
-            (balance) =>
-              searchTextFilter(balance.name ?? '', searchText) ||
-              searchTextFilter(balance.symbol ?? '', searchText),
+            balance =>
+              searchTextFilter(balance.name ?? '', searchText)
+              || searchTextFilter(balance.symbol ?? '', searchText),
           )
           .map((balance, idx) => (
             <ListBox
-              left={
+              left={(
                 <img
                   src={balance.image || `${UnknownTokenIcon}`}
                   alt='logo image'
                   className='logo'
                 />
-              }
-              center={
+              )}
+              center={(
                 <Text type='body2Bold' margin='0px auto 0px 0px'>
                   {balance.name}
                 </Text>
-              }
-              right={
+              )}
+              right={(
                 <TokenBalance
                   value={BigNumber(balance.amount.value).toFormat()}
                   denom={balance.amount.denom}
@@ -161,7 +185,7 @@ export const WalletSearch = (): JSX.Element => {
                   minimumFontSize='11px'
                   orientation='HORIZONTAL'
                 />
-              }
+              )}
               hoverAction={true}
               key={idx}
               onClick={(): void => onClickItem(balance)}

@@ -1,4 +1,12 @@
 import {
+  GRC20TokenModel,
+  IBCNativeTokenModel,
+  IBCTokenModel,
+  NativeTokenModel,
+  TokenModel,
+} from '@types';
+
+import {
   SearchGRC20Token,
   SearchGRC20TokenResponse,
 } from '../response/search-grc20-token-response';
@@ -9,24 +17,18 @@ import {
   NativeTokenResponse,
 } from '../response/token-asset-response';
 
-import {
-  GRC20TokenModel,
-  IBCNativeTokenModel,
-  IBCTokenModel,
-  NativeTokenModel,
-  TokenModel,
-} from '@types';
-
 export class TokenMapper {
-  private static IMAGE_BASE_URI =
-    'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
+  private static IMAGE_BASE_URI
+    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   public static fromNativeTokenMetainfos(
     networkId: string,
     response: NativeTokenResponse,
   ): NativeTokenModel[] {
     return response.map((token) => {
-      const { decimals, denom, image, name, symbol, description, website_url } = token;
+      const {
+        decimals, denom, image, name, symbol, description, website_url,
+      } = token;
       const isGNOT = denom === 'ugnot';
       return {
         main: isGNOT,
@@ -50,7 +52,9 @@ export class TokenMapper {
     response: GRC20TokenResponse,
   ): GRC20TokenModel[] {
     return response.map((token) => {
-      const { decimals, pkg_path, image, name, symbol, description, website_url } = token;
+      const {
+        decimals, pkg_path, image, name, symbol, description, website_url,
+      } = token;
       return {
         main: false,
         display: false,
@@ -73,7 +77,9 @@ export class TokenMapper {
     response: IBCNativeTokenResponse,
   ): IBCNativeTokenModel[] {
     return response.map((token) => {
-      const { decimals, denom, image, name, symbol, description, website_url } = token;
+      const {
+        decimals, denom, image, name, symbol, description, website_url,
+      } = token;
       return {
         main: false,
         display: false,
@@ -96,7 +102,9 @@ export class TokenMapper {
     response: IBCTokenResponse,
   ): IBCTokenModel[] {
     return response.map((token) => {
-      const { website_url, origin_chain, origin_denom, origin_type, symbol } = token;
+      const {
+        website_url, origin_chain, origin_denom, origin_type, symbol,
+      } = token;
       return {
         main: false,
         display: false,
@@ -120,17 +128,19 @@ export class TokenMapper {
     if (response === null) {
       return [];
     }
-    return response.map((token) => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
+    return response.map(token => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
   }
 
   private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token): {
-    name: string;
-    symbol: string;
-    decimals: number;
-    tokenId: string;
-    path: string;
+    name: string
+    symbol: string
+    decimals: number
+    tokenId: string
+    path: string
   } {
-    const { name, symbol, decimals, pkg_path: pkgPath } = searchToken;
+    const {
+      name, symbol, decimals, pkg_path: pkgPath,
+    } = searchToken;
     return {
       name,
       symbol,
@@ -145,8 +155,10 @@ export class TokenMapper {
     searchToken: SearchGRC20Token,
     tokenInfos?: TokenModel[],
   ): GRC20TokenModel {
-    const token = tokenInfos && tokenInfos.find((t) => t.tokenId === pkgPath);
-    const { decimals, name, pkg_path: pkgPath, symbol } = searchToken;
+    const token = tokenInfos && tokenInfos.find(t => t.tokenId === pkgPath);
+    const {
+      decimals, name, pkg_path: pkgPath, symbol,
+    } = searchToken;
     return {
       main: false,
       display: false,

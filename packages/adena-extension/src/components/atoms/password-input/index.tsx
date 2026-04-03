@@ -1,15 +1,28 @@
-import { EvaluatePasswordResult } from '@common/utils/password-utils';
-import { DefaultInput } from '../default-input';
-import { View } from '../base';
-import styled, { useTheme } from 'styled-components';
-import { useMemo } from 'react';
-import { Text } from '../text';
+import {
+  EvaluatePasswordResult,
+} from '@common/utils/password-utils';
+import {
+  useMemo,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
+
+import {
+  View,
+} from '../base';
+import {
+  DefaultInput,
+} from '../default-input';
+import {
+  Text,
+} from '../text';
 
 interface PasswordInputProps extends React.ComponentPropsWithoutRef<'input'> {
-  evaluationResult?: EvaluatePasswordResult | null;
-  error?: boolean;
-  margin?: string;
-  ref?: React.RefObject<HTMLInputElement>;
+  evaluationResult?: EvaluatePasswordResult | null
+  error?: boolean
+  margin?: string
+  ref?: React.RefObject<HTMLInputElement>
 }
 
 const StyledPasswordInputContainer = styled(View)`
@@ -18,7 +31,9 @@ const StyledPasswordInputContainer = styled(View)`
   justify-content: center;
 `;
 
-export const PasswordInput = ({ evaluationResult, ...rest }: PasswordInputProps): JSX.Element => {
+export const PasswordInput = ({
+  evaluationResult, ...rest
+}: PasswordInputProps): JSX.Element => {
   const theme = useTheme();
 
   const complexityColor = useMemo(() => {
@@ -36,7 +51,9 @@ export const PasswordInput = ({ evaluationResult, ...rest }: PasswordInputProps)
   return (
     <StyledPasswordInputContainer>
       <DefaultInput
-        style={{ padding: evaluationResult?.valid ? '14px 60px 14px 16px' : '14px 16px' }}
+        style={{
+          padding: evaluationResult?.valid ? '14px 60px 14px 16px' : '14px 16px',
+        }}
         {...rest}
       />
       {evaluationResult?.valid && (

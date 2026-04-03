@@ -1,15 +1,19 @@
 // packages/adena-extension/src/inject/message/methods/gno-web-event-watcher.ts
 
-import { GnoConnectInfoProvider } from './gno-connect-info-provider';
-import { GnoSessionUpdateMessage } from './gno-session';
+import {
+  GnoConnectInfoProvider,
+} from './gno-connect-info-provider';
+import {
+  GnoSessionUpdateMessage,
+} from './gno-session';
 
 /**
  * Session state for tracking active Gnoweb forms
  */
 interface SessionState {
-  sessionId: string;
-  funcName: string;
-  pkgPath: string;
+  sessionId: string
+  funcName: string
+  pkgPath: string
 }
 
 /**
@@ -182,7 +186,10 @@ export class GnoWebEventWatcher {
   /**
    * Extract gno-connect info from meta tag
    */
-  private getConnectInfo(): { chainId: string; rpc: string } {
+  private getConnectInfo(): {
+    chainId: string
+    rpc: string
+  } {
     const connectInfo = this.connectInfoProvider.getConnectInfo();
     return {
       chainId: connectInfo?.chainId || '',

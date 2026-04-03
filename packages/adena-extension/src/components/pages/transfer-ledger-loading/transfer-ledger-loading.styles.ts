@@ -2,7 +2,10 @@ import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const TransferLedgerLoadingWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'flex-start',
+  })};
   position: relative;
   width: 100%;
   height: auto;
@@ -35,7 +38,9 @@ export const TransferLedgerLoadingWrapper = styled.div`
   }
 
   .data-wrapper {
-    ${mixins.flex({ justify: 'flex-start' })};
+    ${mixins.flex({
+      justify: 'flex-start',
+    })};
     width: 100%;
     margin-top: 20px;
   }

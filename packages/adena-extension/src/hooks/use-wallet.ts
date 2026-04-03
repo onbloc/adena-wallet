@@ -1,19 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-import { useAdenaContext, useWalletContext } from './use-context';
+import {
+  useQuery,
+} from '@tanstack/react-query';
+import {
+  useMemo,
+} from 'react';
+
+import {
+  useAdenaContext, useWalletContext,
+} from './use-context';
 
 export interface UseWalletReturn {
-  hasHDWallet: boolean;
-  existWallet: boolean | undefined;
-  isLoadingExistWallet: boolean;
+  hasHDWallet: boolean
+  existWallet: boolean | undefined
+  isLoadingExistWallet: boolean
 
-  lockedWallet: boolean | undefined;
-  isLoadingLockedWallet: boolean;
+  lockedWallet: boolean | undefined
+  isLoadingLockedWallet: boolean
 }
 
 export const useWallet = (): UseWalletReturn => {
-  const { walletService } = useAdenaContext();
-  const { wallet } = useWalletContext();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    wallet,
+  } = useWalletContext();
 
   const hasHDWallet = useMemo(() => {
     if (!wallet) {
@@ -22,22 +33,28 @@ export const useWallet = (): UseWalletReturn => {
     return wallet.hasHDWallet();
   }, [wallet]);
 
-  const { data: existWallet, isLoading: isLoadingExistWallet } = useQuery(
+  const {
+    data: existWallet, isLoading: isLoadingExistWallet,
+  } = useQuery(
     ['wallet/existWallet', walletService.id],
     async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
     },
-    {},
+    {
+    },
   );
 
-  const { data: lockedWallet, isLoading: isLoadingLockedWallet } = useQuery(
+  const {
+    data: lockedWallet, isLoading: isLoadingLockedWallet,
+  } = useQuery(
     ['wallet/locked', walletService.id],
     async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
     },
-    {},
+    {
+    },
   );
 
   return {

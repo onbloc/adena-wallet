@@ -1,22 +1,45 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
-
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
-import { validateEmptyPassword } from '@common/validation';
-import { Button, DefaultInput, Text } from '@components/atoms';
+import {
+  encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  validateEmptyPassword,
+} from '@common/validation';
+import {
+  Button, DefaultInput, Text,
+} from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useLoadAccounts,
+} from '@hooks/use-load-accounts';
+import {
+  usePreventHistoryBack,
+} from '@hooks/use-prevent-history-back';
 import mixins from '@styles/mixins';
-import { fonts } from '@styles/theme';
-import { RoutePath } from '@types';
+import {
+  fonts,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const text = 'Enter\nYour Password';
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'stretch' })}
+  ${mixins.flex({
+    justify: 'stretch',
+  })}
   width: 100%;
   height: 100%;
 `;
@@ -37,13 +60,19 @@ export const Login = (): JSX.Element => {
   usePreventHistoryBack();
 
   const theme = useTheme();
-  const { navigate } = useAppNavigate();
-  const { walletService } = useAdenaContext();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    walletService,
+  } = useAdenaContext();
   const location = useLocation();
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [validateState, setValidateState] = useState(true);
-  const { loadAccounts } = useLoadAccounts();
+  const {
+    loadAccounts,
+  } = useLoadAccounts();
   const [existWallet, setExistWallet] = useState(false);
 
   const availableLogin = useMemo(() => {
@@ -95,7 +124,8 @@ export const Login = (): JSX.Element => {
         navigate(RoutePath.Wallet);
         return;
       }
-    } catch (e) {
+    }
+    catch (e) {
       setValidateState(false);
       console.log(e);
     }
@@ -118,33 +148,35 @@ export const Login = (): JSX.Element => {
 
   const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
 
-  return existWallet ? (
-    <Wrapper>
-      <Title>{text}</Title>
-      <DefaultInput
-        value={password}
-        type='password'
-        placeholder='Password'
-        onChange={onChangePasswordInput}
-        onKeyDown={onKeyEventUnLockButton}
-        error={!validateState}
-        ref={inputRef}
-      />
-      <ForgetPwd onClick={onClickForgotButton}>
-        <Text type='body2Reg' color={theme.neutral.a}>
-          Forgot Password?
-        </Text>
-      </ForgetPwd>
-      <Button
-        fullWidth
-        onClick={onClickUnLockButton}
-        margin='auto 0px 0px'
-        disabled={!availableLogin}
-      >
-        <Text type='body1Bold'>Unlock</Text>
-      </Button>
-    </Wrapper>
-  ) : (
-    <React.Fragment />
-  );
+  return existWallet
+    ? (
+      <Wrapper>
+        <Title>{text}</Title>
+        <DefaultInput
+          value={password}
+          type='password'
+          placeholder='Password'
+          onChange={onChangePasswordInput}
+          onKeyDown={onKeyEventUnLockButton}
+          error={!validateState}
+          ref={inputRef}
+        />
+        <ForgetPwd onClick={onClickForgotButton}>
+          <Text type='body2Reg' color={theme.neutral.a}>
+            Forgot Password?
+          </Text>
+        </ForgetPwd>
+        <Button
+          fullWidth
+          onClick={onClickUnLockButton}
+          margin='auto 0px 0px'
+          disabled={!availableLogin}
+        >
+          <Text type='body1Bold'>Unlock</Text>
+        </Button>
+      </Wrapper>
+    )
+    : (
+      <React.Fragment />
+    );
 };

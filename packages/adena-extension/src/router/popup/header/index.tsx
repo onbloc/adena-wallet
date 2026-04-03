@@ -1,20 +1,43 @@
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  WalletState,
+} from '@states';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
 import React from 'react';
+import {
+  useLocation, useMatch,
+} from 'react-router-dom';
+import {
+  useRecoilState,
+} from 'recoil';
 import styled from 'styled-components';
-import { useLocation, useMatch } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
 
-import { RoutePath } from '@types';
-import { WalletState } from '@states';
-import { useNetwork } from '@hooks/use-network';
-import { getTheme } from '@styles/theme';
-
-import { HomeMenu } from './home-menu';
-import { TopMenu } from './top-menu';
-import { ProgressMenu } from './progress-menu';
 import ApproveMenu from './approve-menu';
-import { ArrowTitleMenu } from './arrow-title-menu';
-import { TabMenu } from './tab-menu';
-import { CloseTitleMenu } from './close-title-menu';
+import {
+  ArrowTitleMenu,
+} from './arrow-title-menu';
+import {
+  CloseTitleMenu,
+} from './close-title-menu';
+import {
+  HomeMenu,
+} from './home-menu';
+import {
+  ProgressMenu,
+} from './progress-menu';
+import {
+  TabMenu,
+} from './tab-menu';
+import {
+  TopMenu,
+} from './top-menu';
 
 const Wrapper = styled.header`
   display: flex;
@@ -55,7 +78,9 @@ export const Header = (): JSX.Element => {
   const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
 
   const [walletState] = useRecoilState(WalletState.state);
-  const { failedNetwork } = useNetwork();
+  const {
+    failedNetwork,
+  } = useNetwork();
 
   const loadingComplete = walletState === 'FINISH' || failedNetwork !== null;
   const renderHeader = (): JSX.Element | undefined => {
@@ -66,29 +91,31 @@ export const Header = (): JSX.Element => {
       if (location?.state?.type === 'ADD_ACCOUNT') {
         return <ArrowTitleMenu />;
       }
-      return <ProgressMenu progressLevel={'first'} />;
+      return <ProgressMenu progressLevel='first' />;
     }
     if (approveEstablish || approveTransaction || approveSign || approveSignFailed) {
       return <ApproveMenu />;
     }
     if (createPassword) {
-      return <ProgressMenu progressLevel={'second'} />;
+      return <ProgressMenu progressLevel='second' />;
     }
     if (launchAdena) {
-      return <ProgressMenu progressLevel={'third'} hideArrow />;
+      return <ProgressMenu progressLevel='third' hideArrow />;
     }
     if (forgotPassword) {
-      return <ArrowTitleMenu title={'Forgot Password?'} />;
+      return <ArrowTitleMenu title='Forgot Password?' />;
     }
     if (approveHardwareWalletConnect || approveHardwareWalletSelectAccount) {
       return <TabMenu />;
     }
     if (resetWallet) {
-      return location?.state?.from === 'forgot-password' ? (
-        <ArrowTitleMenu title='Reset Wallet' />
-      ) : (
-        <TopMenu />
-      );
+      return location?.state?.from === 'forgot-password'
+        ? (
+          <ArrowTitleMenu title='Reset Wallet' />
+        )
+        : (
+          <TopMenu />
+        );
     }
 
     if (accountDetails) {
@@ -96,14 +123,14 @@ export const Header = (): JSX.Element => {
     }
 
     if (
-      wallet ||
-      nft ||
-      explore ||
-      history ||
-      settings ||
-      connectedApps ||
-      changeNetwork ||
-      loadingComplete
+      wallet
+      || nft
+      || explore
+      || history
+      || settings
+      || connectedApps
+      || changeNetwork
+      || loadingComplete
     ) {
       return <TopMenu />;
     }

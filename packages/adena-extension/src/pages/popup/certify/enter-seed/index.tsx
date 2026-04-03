@@ -1,13 +1,19 @@
+import {
+  Button, ErrorText, SecureTextarea, Text,
+} from '@components/atoms';
+import {
+  TermsCheckbox, TitleWithDesc,
+} from '@components/molecules';
+import {
+  useEnterSeed,
+} from '@hooks/certify/use-enter-seed';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import {
+  RoutePath,
+} from '@types';
 import React from 'react';
 import styled from 'styled-components';
-
-import { Text, ErrorText, Button, SecureTextarea } from '@components/atoms';
-import { TitleWithDesc, TermsCheckbox } from '@components/molecules';
-
-import { useEnterSeed } from '@hooks/certify/use-enter-seed';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 
 const walletContent = {
   title: 'Import with Seed Phrase',
@@ -22,8 +28,12 @@ const forgotContent = {
 };
 
 export const EnterSeedPhrase = (): JSX.Element => {
-  const { seedState, termsState, buttonState } = useEnterSeed();
-  const { params } = useAppNavigate<RoutePath.EnterSeedPhrase>();
+  const {
+    seedState, termsState, buttonState,
+  } = useEnterSeed();
+  const {
+    params,
+  } = useAppNavigate<RoutePath.EnterSeedPhrase>();
 
   return (
     <Wrapper onKeyDown={seedState.onKeyDown}>
@@ -60,7 +70,9 @@ export const EnterSeedPhrase = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 50px;

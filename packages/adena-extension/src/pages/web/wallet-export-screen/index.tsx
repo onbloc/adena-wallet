@@ -1,13 +1,23 @@
-import React, { useMemo } from 'react';
-
-import { View, WebMain } from '@components/atoms';
+import {
+  ADENA_DOCS_PAGE,
+} from '@common/constants/resource.constant';
+import {
+  View, WebMain,
+} from '@components/atoms';
+import {
+  WebMainAccountHeader,
+} from '@components/pages/web/main-account-header';
+import {
+  WebSecurityHeader,
+} from '@components/pages/web/security-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
 import useWalletExportScreen from '@hooks/web/wallet-export/use-wallet-export-screen';
+import React, {
+  useMemo,
+} from 'react';
+
 import WalletExportCheckPassword from './check-password';
 import WalletExportResult from './result';
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
-import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
-import { WebSecurityHeader } from '@components/pages/web/security-header';
-import { WebMainAccountHeader } from '@components/pages/web/main-account-header';
 
 const WalletExportScreen: React.FC = () => {
   const {
@@ -24,7 +34,7 @@ const WalletExportScreen: React.FC = () => {
 
   const spacing = useMemo(() => {
     return null;
-  }, [])
+  }, []);
 
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
@@ -35,7 +45,11 @@ const WalletExportScreen: React.FC = () => {
 
   return (
     <WebMain spacing={spacing}>
-      <View style={{ width: '100%', marginBottom: 16 }}>
+      <View style={{
+        width: '100%',
+        marginBottom: 16,
+      }}
+      >
         {walletExportState === 'INIT' && indicatorInfo.stepLength > 1 && (
           <WebSecurityHeader
             currentStep={0}

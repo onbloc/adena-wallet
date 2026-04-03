@@ -1,33 +1,52 @@
-import { Account } from 'adena-module';
-import axios from 'axios';
-
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { AdenaStorage } from '@common/storage';
-import { ChainRepository, TokenRepository } from '@repositories/common';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
+import {
+  MemoryProvider,
+} from '@common/provider/memory/memory-provider';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  ChainRepository, TokenRepository,
+} from '@repositories/common';
 import {
   WalletAccountRepository,
   WalletAddressRepository,
   WalletEstablishRepository,
   WalletRepository,
 } from '@repositories/wallet';
-import { ChainService, TokenService } from '@services/resource';
-import { TransactionService } from '@services/transaction';
+import {
+  ChainService, TokenService,
+} from '@services/resource';
+import {
+  TransactionService,
+} from '@services/transaction';
 import {
   WalletAccountService,
   WalletAddressBookService,
   WalletEstablishService,
   WalletService,
 } from '@services/wallet';
-import { NetworkMetainfo } from '@types';
-import { decryptPassword, getInMemoryKey } from '../commands/encrypt';
+import {
+  NetworkMetainfo,
+} from '@types';
+import {
+  Account,
+} from 'adena-module';
+import axios from 'axios';
+
+import {
+  decryptPassword, getInMemoryKey,
+} from '../commands/encrypt';
 
 export class InjectCore {
   private inMemoryProvider: MemoryProvider;
 
   private gnoProvider: GnoProvider | null = null;
 
-  private axiosInstance = axios.create({});
+  private axiosInstance = axios.create({
+  });
 
   private localStorage = AdenaStorage.local();
 
@@ -82,7 +101,8 @@ export class InjectCore {
       this.gnoProvider = new GnoProvider(network.rpcUrl, network.networkId);
       this.accountService.setGnoProvider(this.gnoProvider);
       this.transactionService.setGnoProvider(this.gnoProvider);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       return false;
     }
@@ -99,7 +119,7 @@ export class InjectCore {
       return null;
     }
     const networkId = await this.chainRepository.getCurrentNetworkId().catch(() => '');
-    const network = networks.find((network) => network.id === networkId) || networks[0];
+    const network = networks.find(network => network.id === networkId) || networks[0];
     return network;
   }
 
@@ -116,7 +136,7 @@ export class InjectCore {
     const wallet = await this.walletService.deserializeWallet(password);
 
     const accountId = await this.accountService.getCurrentAccountId();
-    const currentAccount = wallet.accounts.find((account) => account.id === accountId);
+    const currentAccount = wallet.accounts.find(account => account.id === accountId);
     return currentAccount;
   }
 
@@ -130,7 +150,7 @@ export class InjectCore {
 
   public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {
     return this.getPasswordBy(inMemoryKey)
-      .then((password) => !password)
+      .then(password => !password)
       .catch(() => true);
   }
 
@@ -139,7 +159,9 @@ export class InjectCore {
       return null;
     }
 
-    const { iv, encryptedPassword } = await this.walletRepository.getSessionCryptPasswords();
+    const {
+      iv, encryptedPassword,
+    } = await this.walletRepository.getSessionCryptPasswords();
     if (iv === '' || encryptedPassword === '') {
       return null;
     }

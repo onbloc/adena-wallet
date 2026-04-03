@@ -1,11 +1,22 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  render,
+} from '@testing-library/react';
+import {
+  AdditionalTokenSelectBoxProps,
+} from '@types';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import AdditionalTokenSelectBox from './additional-token-select-box';
-import { AdditionalTokenSelectBoxProps } from '@types';
 
 describe('AdditionalTokenSelectBox Component', () => {
   it('AdditionalTokenSelectBox render', () => {

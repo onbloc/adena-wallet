@@ -1,24 +1,31 @@
+import mixins from '@styles/mixins';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
-
 export interface DatatableProps {
   data: {
-    key: string;
-    value: string;
-  }[];
+    key: string
+    value: string
+  }[]
 }
 
 const StyledContainer = styled.div`
-  ${mixins.flex({ direction: 'column', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'column',
+    justify: 'flex-start',
+  })};
   width: 100%;
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
 
   .row {
-    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'space-between',
+    })};
     width: 100%;
     padding: 10px 18px;
     border-bottom: 1px solid ${getTheme('neutral', '_8')};
@@ -38,7 +45,9 @@ const StyledContainer = styled.div`
   }
 `;
 
-export const Datatable: React.FC<DatatableProps> = ({ data }) => {
+export const Datatable: React.FC<DatatableProps> = ({
+  data,
+}) => {
   return (
     <StyledContainer>
       {data.map((item, index) => (

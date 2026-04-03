@@ -1,29 +1,66 @@
-import { WalletResponseFailureType, WalletResponseType } from '@adena-wallet/sdk';
-import { isAirgapAccount } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
-
-import { PasswordValidationError } from '@common/errors';
-import { decodeParameter, parseParameters } from '@common/utils/client-utils';
-import { validateEmptyPassword } from '@common/validation';
-import { Button, DefaultInput, Text } from '@components/atoms';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { InjectionMessageInstance } from '@inject/message';
-import { ForgetPwd, Title } from '@pages/popup/certify/login';
-import { WalletState } from '@states';
+import {
+  WalletResponseFailureType, WalletResponseType,
+} from '@adena-wallet/sdk';
+import {
+  PasswordValidationError,
+} from '@common/errors';
+import {
+  decodeParameter, parseParameters,
+} from '@common/utils/client-utils';
+import {
+  encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  validateEmptyPassword,
+} from '@common/validation';
+import {
+  Button, DefaultInput, Text,
+} from '@components/atoms';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useLoadAccounts,
+} from '@hooks/use-load-accounts';
+import {
+  InjectionMessageInstance,
+} from '@inject/message';
+import {
+  ForgetPwd, Title,
+} from '@pages/popup/certify/login';
+import {
+  WalletState,
+} from '@states';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
+import {
+  RoutePath,
+} from '@types';
+import {
+  isAirgapAccount,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
+import {
+  useLocation, useNavigate,
+} from 'react-router-dom';
+import {
+  useRecoilState,
+} from 'recoil';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
 import LoadingApproveTransaction from './loading-approve-transaction';
 
 const text = 'Enter\nYour Password';
 const Wrapper = styled.div`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   max-width: 100%;
   min-height: 100%;
   padding: 29px 20px 72px;
@@ -33,11 +70,19 @@ export const ApproveLogin = (): JSX.Element => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { walletService } = useAdenaContext();
-  const { initWallet } = useWalletContext();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    initWallet,
+  } = useWalletContext();
   const [, setState] = useRecoilState(WalletState.state);
-  const { state, loadAccounts } = useLoadAccounts();
-  const { currentAccount } = useCurrentAccount();
+  const {
+    state, loadAccounts,
+  } = useLoadAccounts();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<PasswordValidationError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -50,7 +95,10 @@ export const ApproveLogin = (): JSX.Element => {
   useEffect(() => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
   }, []);
 
   useEffect(() => {
@@ -103,7 +151,8 @@ export const ApproveLogin = (): JSX.Element => {
         setPassword('');
         setState('FINISH');
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof PasswordValidationError) {
         currentError = new PasswordValidationError('INVALID_PASSWORD');
       }
@@ -121,30 +170,54 @@ export const ApproveLogin = (): JSX.Element => {
           navigate(RoutePath.ApproveSignFailed);
           return;
         }
-        navigate(RoutePath.ApproveTransaction + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveTransaction + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       case 'SIGN_AMINO':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
           navigate(RoutePath.ApproveSignFailed);
           return;
         }
-        navigate(RoutePath.ApproveSign + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveSign + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       case 'SIGN_TX':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
           navigate(RoutePath.ApproveSignFailed);
           return;
         }
-        navigate(RoutePath.ApproveSignTransaction + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveSignTransaction + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       case 'ADD_ESTABLISH':
-        navigate(RoutePath.ApproveEstablish + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveEstablish + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       case 'ADD_NETWORK':
-        navigate(RoutePath.ApproveAddingNetwork + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveAddingNetwork + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       case 'SWITCH_NETWORK':
-        navigate(RoutePath.ApproveChangingNetwork + location.search, { state: { requestData } });
+        navigate(RoutePath.ApproveChangingNetwork + location.search, {
+          state: {
+            requestData,
+          },
+        });
         return;
       default:
         chrome.runtime.sendMessage(
@@ -169,35 +242,37 @@ export const ApproveLogin = (): JSX.Element => {
 
   return (
     <>
-      {state === 'LOGIN' || (state === 'LOADING' && password !== '') ? (
-        <Wrapper>
-          <Title>{text}</Title>
-          <DefaultInput
-            type='password'
-            placeholder='Password'
-            value={password}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            error={error !== null}
-            ref={inputRef}
-          />
-          <ForgetPwd onClick={onClickForgotButton}>
-            <Text type='body2Reg' color={theme.neutral.a}>
-              Forgot Password?
-            </Text>
-          </ForgetPwd>
-          <Button
-            fullWidth
-            onClick={approveButtonClick}
-            margin='auto 0px 0px'
-            disabled={!availableLogin}
-          >
-            <Text type='body1Bold'>Unlock</Text>
-          </Button>
-        </Wrapper>
-      ) : (
-        <LoadingApproveTransaction rightButtonText='Approve' />
-      )}
+      {state === 'LOGIN' || (state === 'LOADING' && password !== '')
+        ? (
+          <Wrapper>
+            <Title>{text}</Title>
+            <DefaultInput
+              type='password'
+              placeholder='Password'
+              value={password}
+              onChange={onChange}
+              onKeyDown={onKeyDown}
+              error={error !== null}
+              ref={inputRef}
+            />
+            <ForgetPwd onClick={onClickForgotButton}>
+              <Text type='body2Reg' color={theme.neutral.a}>
+                Forgot Password?
+              </Text>
+            </ForgetPwd>
+            <Button
+              fullWidth
+              onClick={approveButtonClick}
+              margin='auto 0px 0px'
+              disabled={!availableLogin}
+            >
+              <Text type='body1Bold'>Unlock</Text>
+            </Button>
+          </Wrapper>
+        )
+        : (
+          <LoadingApproveTransaction rightButtonText='Approve' />
+        )}
     </>
   );
 };

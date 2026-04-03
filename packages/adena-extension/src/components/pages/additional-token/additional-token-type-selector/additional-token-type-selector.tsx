@@ -1,12 +1,15 @@
-import React, { useCallback } from 'react';
+import React, {
+  useCallback,
+} from 'react';
+
 import {
   StyledAdditionalTokenTypeSelector,
   StyledAdditionalTokenTypeSelectorWrapper,
 } from './additional-token-type-selector.styles';
 
 export enum AddingType {
-  'SEARCH',
-  'MANUAL',
+  SEARCH,
+  MANUAL,
 }
 
 const displayTypeNames = {
@@ -15,8 +18,8 @@ const displayTypeNames = {
 };
 
 export interface AdditionalTokenTypeSelectorProps {
-  type: AddingType;
-  setType: (type: AddingType) => void;
+  type: AddingType
+  setType: (type: AddingType) => void
 }
 
 const AdditionalTokenTypeSelector: React.FC<AdditionalTokenTypeSelectorProps> = ({

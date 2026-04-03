@@ -1,16 +1,27 @@
-import { StorageDepositEvent, StorageUnlockEvent } from '@adena-wallet/sdk';
-import { parseTokenAmount } from '@common/utils/amount-utils';
-import { Any } from '@gnolang/gno-js-client';
-import { StorageDepositEventType } from './types';
-import { parseProto } from './utils';
+import {
+  StorageDepositEvent, StorageUnlockEvent,
+} from '@adena-wallet/sdk';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
+import {
+  Any,
+} from '@gnolang/gno-js-client';
+
+import {
+  StorageDepositEventType,
+} from './types';
+import {
+  parseProto,
+} from './utils';
 
 export const parseStorageDeposits = (
   events: Any[],
 ): {
-  storageDeposit: number;
-  unlockDeposit: number;
-  storageUsage: number;
-  releaseStorageUsage: number;
+  storageDeposit: number
+  unlockDeposit: number
+  storageUsage: number
+  releaseStorageUsage: number
 } => {
   return events.reduce(
     (acc, event) => {
@@ -34,10 +45,10 @@ export const parseStorageDeposits = (
 const parseStorageDeposit = (
   event: Any,
 ): {
-  storageDeposit: number;
-  unlockDeposit: number;
-  storageUsage: number;
-  releaseStorageUsage: number;
+  storageDeposit: number
+  unlockDeposit: number
+  storageUsage: number
+  releaseStorageUsage: number
 } => {
   switch (event.type_url) {
     case StorageDepositEventType.StorageDeposit: {

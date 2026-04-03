@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'flex-start',
+  })};
   position: relative;
   padding: 24px 20px 0;
   width: 100%;

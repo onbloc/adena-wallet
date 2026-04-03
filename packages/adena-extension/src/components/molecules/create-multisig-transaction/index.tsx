@@ -1,57 +1,72 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { MultisigConfig } from 'adena-module';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, SignerInfo, SignerStatusType } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
-import { ApproveTransactionLoading } from '../approve-transaction-loading';
+import {
+  Button, Text,
+} from '@components/atoms';
+import {
+  BottomFixedLoadingButtonGroup,
+} from '@components/molecules';
+import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage, SignerInfo, SignerStatusType,
+} from '@inject/types';
+import {
+  NetworkFee as NetworkFeeType,
+} from '@types';
+import {
+  MultisigConfig,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+
+import {
+  ApproveTransactionLoading,
+} from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import DocumentSigner from '../document-signer/document-signer';
+import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 import NetworkFee from '../network-fee/network-fee';
 import {
   CreateMultisigTransactionSignerWrapper,
   CreateMultisigTransactionWrapper,
 } from './create-multisig-transaction.styles';
-import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
-import MultisigThreshold from '../multisig-threshold/multisig-threshold';
 
 export interface CreateMultisigTransactionProps {
-  loading: boolean;
-  title: string;
-  logo: string;
-  domain: string;
+  loading: boolean
+  title: string
+  logo: string
+  domain: string
   contracts: {
-    type: string;
-    function: string;
-    value: string;
-  }[];
-  memo: string;
-  hasMemo: boolean;
-  isErrorNetworkFee?: boolean;
-  isNetworkFeeLoading: boolean;
-  networkFee: NetworkFeeType | null;
-  multisigConfig: MultisigConfig | null;
-  transactionData: string;
-  opened: boolean;
-  argumentInfos?: GnoArgumentInfo[];
-  processing: boolean;
-  done: boolean;
-  transactionMessages: ContractMessage[];
-  maxDepositAmount?: number;
-  changeTransactionMessages: (messages: ContractMessage[]) => void;
-  changeMemo: (memo: string) => void;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  onToggleTransactionData: (opened: boolean) => void;
-  onResponse: () => void;
-  onTimeout: () => void;
-  onClickConfirm: () => void;
-  onClickCancel: () => void;
+    type: string
+    function: string
+    value: string
+  }[]
+  memo: string
+  hasMemo: boolean
+  isErrorNetworkFee?: boolean
+  isNetworkFeeLoading: boolean
+  networkFee: NetworkFeeType | null
+  multisigConfig: MultisigConfig | null
+  transactionData: string
+  opened: boolean
+  argumentInfos?: GnoArgumentInfo[]
+  processing: boolean
+  done: boolean
+  transactionMessages: ContractMessage[]
+  maxDepositAmount?: number
+  changeTransactionMessages: (messages: ContractMessage[]) => void
+  changeMemo: (memo: string) => void
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  onToggleTransactionData: (opened: boolean) => void
+  onResponse: () => void
+  onTimeout: () => void
+  onClickConfirm: () => void
+  onClickCancel: () => void
 }
 
 export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps> = ({
@@ -86,7 +101,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   const signerCount = signers.length;
 
   const signerInfos: SignerInfo[] = useMemo(() => {
-    return signers.map((address) => ({
+    return signers.map(address => ({
       address,
       status: SignerStatusType.NONE,
     }));
@@ -187,18 +202,20 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
-        {hasMemo ? (
-          <span className={'value'}>{memo}</span>
-        ) : (
-          <input
-            type='text'
-            className={'value'}
-            value={memo}
-            onChange={onChangeMemo}
-            autoComplete='off'
-            placeholder='(Optional)'
-          />
-        )}
+        {hasMemo
+          ? (
+            <span className='value'>{memo}</span>
+          )
+          : (
+            <input
+              type='text'
+              className='value'
+              value={memo}
+              onChange={onChangeMemo}
+              autoComplete='off'
+              placeholder='(Optional)'
+            />
+          )}
       </div>
 
       <div className='fee-amount-wrapper'>
@@ -218,17 +235,19 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} />
-            </>
-          )}
+          {opened
+            ? (
+              <>
+                <>Hide Transaction Data</>
+                <img src={IconArraowUp} />
+              </>
+            )
+            : (
+              <>
+                <>View Transaction Data</>
+                <img src={IconArraowDown} />
+              </>
+            )}
         </Button>
 
         {opened && (

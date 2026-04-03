@@ -1,4 +1,6 @@
-import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
+import {
+  EstablishSite, WalletEstablishRepository,
+} from '@repositories/wallet';
 
 export class WalletEstablishService {
   private walletEstablishRepository: WalletEstablishRepository;
@@ -31,10 +33,10 @@ export class WalletEstablishService {
     accountId: string,
     chainId: string,
     establishedInfo: {
-      hostname: string;
-      accountId: string;
-      appName: string;
-      favicon?: string | null;
+      hostname: string
+      accountId: string
+      appName: string
+      favicon?: string | null
     },
   ): Promise<void> => {
     const establishedSites = await this.walletEstablishRepository.getEstablishedSites();
@@ -89,8 +91,8 @@ export class WalletEstablishService {
     accountId: string,
     establishedSites: { [key in string]: Array<EstablishSite> },
   ): Promise<EstablishSite[]> => {
-    const accountEstablishedSites =
-      Object.keys(establishedSites).findIndex((key) => key === accountId) > -1
+    const accountEstablishedSites
+      = Object.keys(establishedSites).findIndex(key => key === accountId) > -1
         ? establishedSites[accountId]
         : [];
     return accountEstablishedSites;

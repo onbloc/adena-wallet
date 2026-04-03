@@ -1,20 +1,30 @@
-import { useMemo, useRef } from 'react';
+import {
+  Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  useMemo, useRef,
+} from 'react';
 import styled from 'styled-components';
 
-import { Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
 import IconConnected from '../icon/icon-assets/icon-connected';
 
 interface StatusDotProps {
-  status: boolean;
-  tooltipText: string;
+  status: boolean
+  tooltipText: string
 }
 
 const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['status'].includes(prop),
-})<{ status: boolean }>`
-  display: ${({ status }): string => (status ? 'flex' : 'none')};
+  shouldForwardProp: prop => !['status'].includes(prop),
+})<{
+  status: boolean
+}>`
+  display: ${({
+    status,
+  }): string => (status ? 'flex' : 'none')};
   position: relative;
   width: 15px;
   height: 15px;
@@ -27,10 +37,14 @@ const StyledContainer = styled.div.withConfig({
 `;
 
 const StyledTooltip = styled.div.withConfig({
-  shouldForwardProp: (prop) => !['descriptionSize'].includes(prop),
-})<{ descriptionSize: number }>`
+  shouldForwardProp: prop => !['descriptionSize'].includes(prop),
+})<{
+  descriptionSize: number
+}>`
   position: fixed;
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   width: max-content;
   height: 25px;
   visibility: hidden;
@@ -39,11 +53,15 @@ const StyledTooltip = styled.div.withConfig({
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 13px;
   top: 40px;
-  left: ${({ descriptionSize }): string => `calc(50% - ${descriptionSize / 2}px)`};
+  left: ${({
+    descriptionSize,
+  }): string => `calc(50% - ${descriptionSize / 2}px)`};
   transform: scale(0.6);
 `;
 
-export const StatusDot = ({ status, tooltipText }: StatusDotProps): JSX.Element => {
+export const StatusDot = ({
+  status, tooltipText,
+}: StatusDotProps): JSX.Element => {
   const descriptionContainer = useRef<HTMLDivElement>(null);
 
   const descriptionSize = useMemo(() => {

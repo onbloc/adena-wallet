@@ -1,29 +1,42 @@
-import { Account, Wallet } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
-
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
-import { AdenaStorage } from '@common/storage';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { useQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+} from '@tanstack/react-query';
+import {
+  Account, Wallet,
+} from 'adena-module';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
 
 export type UseWalletExportReturn = {
-  currentAccount: Account | null;
-  exportType: ExportType;
-  walletExportState: WalletExportStateType;
-  exportData: Wallet | null;
-  indicatorInfo: UseIndicatorStepReturn;
-  initWalletExport: () => void;
-  backStep: () => void;
-  checkPassword: (password: string) => Promise<boolean>;
-  moveExport: (password: string) => Promise<void>;
+  currentAccount: Account | null
+  exportType: ExportType
+  walletExportState: WalletExportStateType
+  exportData: Wallet | null
+  indicatorInfo: UseIndicatorStepReturn
+  initWalletExport: () => void
+  backStep: () => void
+  checkPassword: (password: string) => Promise<boolean>
+  moveExport: (password: string) => Promise<void>
 };
 
 export type ExportType = 'PRIVATE_KEY' | 'SEED_PHRASE' | 'NONE';
@@ -33,8 +46,8 @@ export type WalletExportStateType = 'INIT' | 'CHECK_PASSWORD' | 'RESULT';
 export const walletExportStep: Record<
   WalletExportStateType,
   {
-    backTo: WalletExportStateType | null;
-    stepNo: number;
+    backTo: WalletExportStateType | null
+    stepNo: number
   }
 > = {
   INIT: {
@@ -58,9 +71,15 @@ export const walletExportStepNo: Record<WalletExportStateType, number> = {
 };
 
 const useWalletExportScreen = (): UseWalletExportReturn => {
-  const { wallet } = useWalletContext();
-  const { walletService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    walletService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [exportType, setExportType] = useState<ExportType>('NONE');
   const [walletExportState, setWalletExportState] = useState<WalletExportStateType>('INIT');
   const [exportData, setExportData] = useState<Wallet | null>(null);
@@ -71,15 +90,18 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
     hasQuestionnaire: false,
   });
 
-  const { data: account = null } = useQuery(
+  const {
+    data: account = null,
+  } = useQuery(
     ['walletExportScreen/account', exportType, wallet, exportAccountId, currentAccount],
     async () => {
       if (exportType === 'SEED_PHRASE') {
         return currentAccount;
       }
-      return wallet?.accounts.find((account) => account.id === exportAccountId) || currentAccount;
+      return wallet?.accounts.find(account => account.id === exportAccountId) || currentAccount;
     },
-    {},
+    {
+    },
   );
 
   const _initExportType = useCallback(async () => {
@@ -122,7 +144,7 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
       return walletService
         .loadWalletPassword()
-        .then((storedPassword) => storedPassword === encryptWalletPassword(password))
+        .then(storedPassword => storedPassword === encryptWalletPassword(password))
         .catch(() => false);
     },
     [exportType, walletService],
@@ -149,7 +171,8 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
       if (exportType === 'PRIVATE_KEY') {
         setExportData(instance);
-      } else {
+      }
+      else {
         setExportData(instance);
       }
       setWalletExportState('RESULT');

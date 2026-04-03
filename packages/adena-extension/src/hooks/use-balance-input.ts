@@ -1,47 +1,87 @@
+import {
+  GAS_FEE_SAFETY_MARGIN,
+} from '@common/constants/gas.constant';
+import {
+  GasToken, GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED,
+} from '@common/constants/tx.constant';
+import {
+  MsgEndpoint,
+} from '@gnolang/gno-js-client';
+import {
+  GasInfo, TokenBalanceType, TokenModel,
+} from '@types';
+import {
+  Document,
+} from 'adena-module';
 import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
 
-import { GAS_FEE_SAFETY_MARGIN } from '@common/constants/gas.constant';
-import { GasToken, GNOT_TOKEN } from '@common/constants/token.constant';
-import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { GasInfo, TokenBalanceType, TokenModel } from '@types';
-import { Document } from 'adena-module';
-import { useAdenaContext, useWalletContext } from './use-context';
-import { useCurrentAccount } from './use-current-account';
-import { useNetwork } from './use-network';
-import { useTokenBalance } from './use-token-balance';
-import { useTokenMetainfo } from './use-token-metainfo';
-import { useNetworkFee } from './wallet/use-network-fee';
+import {
+  useAdenaContext, useWalletContext,
+} from './use-context';
+import {
+  useCurrentAccount,
+} from './use-current-account';
+import {
+  useNetwork,
+} from './use-network';
+import {
+  useTokenBalance,
+} from './use-token-balance';
+import {
+  useTokenMetainfo,
+} from './use-token-metainfo';
+import {
+  useNetworkFee,
+} from './wallet/use-network-fee';
 
 export type UseBalanceInputHookReturn = {
-  hasError: boolean;
-  amount: string;
-  denom: string;
-  description: string;
-  gasInfo: GasInfo | null;
-  setAmount: (amount: string) => void;
-  updateCurrentBalance: () => Promise<boolean>;
-  onChangeAmount: (amount: string) => void;
-  onClickMax: () => void;
-  validateBalanceInput: () => boolean;
+  hasError: boolean
+  amount: string
+  denom: string
+  description: string
+  gasInfo: GasInfo | null
+  setAmount: (amount: string) => void
+  updateCurrentBalance: () => Promise<boolean>
+  onChangeAmount: (amount: string) => void
+  onClickMax: () => void
+  validateBalanceInput: () => boolean
 };
 
 export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
-  const { balanceService } = useAdenaContext();
-  const { wallet } = useWalletContext();
-  const { currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const {
+    balanceService,
+  } = useAdenaContext();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
+  const {
+    currentNetwork,
+  } = useNetwork();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [amount, setAmount] = useState('');
   const [currentBalance, setCurrentBalance] = useState<TokenBalanceType>();
   const [availAmountNumber, setAvailAmountNumber] = useState<BigNumber>(BigNumber(0));
-  const { fetchBalanceBy } = useTokenBalance();
-  const { convertDenom } = useTokenMetainfo();
+  const {
+    fetchBalanceBy,
+  } = useTokenBalance();
+  const {
+    convertDenom,
+  } = useTokenMetainfo();
 
   const [document, setDocument] = useState<Document | null>(null);
-  const { currentGasInfo } = useNetworkFee(document);
+  const {
+    currentGasInfo,
+  } = useNetworkFee(document);
 
   useEffect(() => {
     if (!currentAddress || !currentBalance || !tokenMetainfo) {
@@ -83,14 +123,17 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
       const availAmountNumber = BigNumber(convertedBalance.value).minus(maxGasFeeBN);
       if (availAmountNumber.isGreaterThan(0)) {
         setAvailAmountNumber(availAmountNumber);
-      } else {
+      }
+      else {
         setAvailAmountNumber(BigNumber(0));
       }
-    } else {
+    }
+    else {
       const convertedBalanceAmount = BigNumber(currentBalance.amount.value);
       if (convertedBalanceAmount.isGreaterThan(0)) {
         setAvailAmountNumber(convertedBalanceAmount);
-      } else {
+      }
+      else {
         setAvailAmountNumber(BigNumber(0));
       }
     }
@@ -130,9 +173,11 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     let charAtZeroCheck: string | null = amount;
     if (Number(charAtSecond) >= 1 && charAtFirst === '0') {
       charAtZeroCheck = amount.replace(/(^0+)/, '');
-    } else if (Number(charAtSecond) === 0 && charAtFirst === '0') {
+    }
+    else if (Number(charAtSecond) === 0 && charAtFirst === '0') {
       charAtZeroCheck = amount.replace(/(^0+)/, '0');
-    } else if (charAtFirst === '.') {
+    }
+    else if (charAtFirst === '.') {
       charAtZeroCheck = `0${amount}`;
     }
     if (charAtZeroCheck.includes('.') && charAtZeroCheck.split('.')[1].length > 6) {
@@ -141,7 +186,8 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
           .toFixed(tokenMetainfo?.decimals || 6)
           .toString(),
       );
-    } else {
+    }
+    else {
       setAmount(charAtZeroCheck);
     }
     clearError();
@@ -157,8 +203,8 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
 
   const validateBalanceInput = useCallback(() => {
     if (
-      BigNumber(amount || 0).isGreaterThan(currentBalance?.amount.value || 0) ||
-      BigNumber(amount || 0).isLessThanOrEqualTo(0)
+      BigNumber(amount || 0).isGreaterThan(currentBalance?.amount.value || 0)
+      || BigNumber(amount || 0).isLessThanOrEqualTo(0)
     ) {
       setHasError(true);
       setErrorMessage('Insufficient balance');
@@ -183,11 +229,11 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
 };
 
 function makeTransferDocument(params: {
-  chainId: string;
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
-  memo: string;
+  chainId: string
+  fromAddress: string
+  toAddress: string
+  amount: string
+  memo: string
 }): Document {
   return {
     account_number: '0',

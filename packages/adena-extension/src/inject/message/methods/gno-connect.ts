@@ -10,26 +10,28 @@ import {
   GNO_MAX_DEPOSIT_PARAM,
   GNO_SEND_PARAM,
 } from '@common/constants/url.constant';
-import { hasHttpProtocol } from '@common/provider/gno/utils';
+import {
+  hasHttpProtocol,
+} from '@common/provider/gno/utils';
 
 export interface GnoConnectInfo {
-  rpc: string;
-  chainId: string;
+  rpc: string
+  chainId: string
 }
 
 export interface GnoMessageInfo {
-  packagePath: string;
-  functionName: string;
-  send: string;
-  maxDeposit: string;
-  args: GnoArgumentInfo[] | null;
+  packagePath: string
+  functionName: string
+  send: string
+  maxDeposit: string
+  args: GnoArgumentInfo[] | null
 }
 
 export interface GnoArgumentInfo {
-  index: number;
-  key: string;
-  value: string;
-  type?: string;
+  index: number
+  key: string
+  value: string
+  type?: string
 }
 
 /**
@@ -95,7 +97,9 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
  */
 export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
   const url = new URL(href);
-  const { pathname } = url;
+  const {
+    pathname,
+  } = url;
   if (!pathname.includes(GNO_HELP_MARKER)) {
     return null;
   }
@@ -298,7 +302,8 @@ export function shouldIntercept(href: string): boolean {
   try {
     const url = new URL(href);
     return url.pathname.includes(GNO_HELP_MARKER);
-  } catch {
+  }
+  catch {
     return false;
   }
 }

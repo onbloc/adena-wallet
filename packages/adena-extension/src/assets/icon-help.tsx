@@ -1,12 +1,11 @@
-/* eslint-disable react/no-unknown-property */
 import React from 'react';
 
 const IconHelp = ({
   className,
   color = '#777777',
 }: {
-  className?: string;
-  color?: string;
+  className?: string
+  color?: string
 }): JSX.Element => (
   <svg
     className={className}

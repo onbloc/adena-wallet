@@ -1,12 +1,18 @@
-import { ReactElement, useEffect, useState } from 'react';
-import styled from 'styled-components';
-
 import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
-
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
-import { WebTitleWithDescription } from '@components/molecules';
-import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  UseAccountAddScreenReturn,
+} from '@hooks/web/use-account-add-screen';
+import {
+  ReactElement, useEffect, useState,
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -18,10 +24,12 @@ const CreateAccountStep = ({
   selectedKeyringId,
   useAccountAddScreenReturn,
 }: {
-  selectedKeyringId?: string;
-  useAccountAddScreenReturn: UseAccountAddScreenReturn;
+  selectedKeyringId?: string
+  useAccountAddScreenReturn: UseAccountAddScreenReturn
 }): ReactElement => {
-  const { addAccount } = useAccountAddScreenReturn;
+  const {
+    addAccount,
+  } = useAccountAddScreenReturn;
   const [executed, setExecuted] = useState(false);
 
   useEffect(() => {
@@ -34,7 +42,10 @@ const CreateAccountStep = ({
 
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{
+        marginBottom: 16,
+      }}
+      >
         <Lottie animationData={AnimationLoadingAccount} height={120} />
       </View>
       <WebTitleWithDescription

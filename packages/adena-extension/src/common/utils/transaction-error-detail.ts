@@ -1,12 +1,16 @@
-import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { InjectionMessage } from '@inject/message';
+import {
+  WalletResponseFailureType,
+} from '@adena-wallet/sdk';
+import {
+  InjectionMessage,
+} from '@inject/message';
 
 export interface TransactionErrorDetail {
-  title: string;
-  description: string;
-  suggestion?: string;
-  rawError?: string;
-  errorCode?: string;
+  title: string
+  description: string
+  suggestion?: string
+  rawError?: string
+  errorCode?: string
 }
 
 /**
@@ -21,7 +25,8 @@ export function getTransactionErrorDetail(
   }
 
   const type = response.type as WalletResponseFailureType;
-  const data = response.data ?? {};
+  const data = response.data ?? {
+  };
   const serverMessage = typeof data?.error === 'string' ? data.error : data?.error?.message;
   const hash = data?.hash;
 
@@ -45,8 +50,8 @@ export function getTransactionErrorDetail(
           ? 'Review the error below and fix the transaction before trying again.'
           : 'Check your network connection and balance, then try again. If the problem continues, try again later.',
         rawError:
-          [serverMessage, hash ? `TxHash: ${hash}` : ''].filter(Boolean).join('\n') ||
-          base.rawError,
+          [serverMessage, hash ? `TxHash: ${hash}` : ''].filter(Boolean).join('\n')
+          || base.rawError,
       };
     case WalletResponseFailureType.NETWORK_TIMEOUT:
       return {

@@ -1,12 +1,28 @@
-import { WebFontType } from '@styles/theme';
-import React, { useEffect, useState } from 'react';
-import styled, { css, RuleSet } from 'styled-components';
-import { View } from '../base';
-import { WebText } from '../web-text';
+import {
+  WebFontType,
+} from '@styles/theme';
+import React, {
+  useEffect, useState,
+} from 'react';
+import styled, {
+  css, RuleSet,
+} from 'styled-components';
 
-export const StyledWrapper = styled(View)<{ active: boolean; height?: number }>`
+import {
+  View,
+} from '../base';
+import {
+  WebText,
+} from '../web-text';
+
+export const StyledWrapper = styled(View)<{
+  active: boolean
+  height?: number
+}>`
   width: fit-content;
-  height: ${({ height }): string => (height ? `${height}px` : '1em')};
+  height: ${({
+    height,
+  }): string => (height ? `${height}px` : '1em')};
   flex-direction: column;
   overflow: hidden;
 
@@ -20,7 +36,9 @@ export const StyledWrapper = styled(View)<{ active: boolean; height?: number }>`
     }
   }
 
-  ${({ active }): RuleSet | string =>
+  ${({
+    active,
+  }): RuleSet | string =>
     active
       ? css`
           & > * {
@@ -31,12 +49,12 @@ export const StyledWrapper = styled(View)<{ active: boolean; height?: number }>`
 `;
 
 export interface RollingNumberProps {
-  value: number;
-  height?: number;
-  type: WebFontType;
-  color?: string;
-  style?: React.CSSProperties;
-  textCenter?: boolean;
+  value: number
+  height?: number
+  type: WebFontType
+  color?: string
+  style?: React.CSSProperties
+  textCenter?: boolean
 }
 
 const RollingNumber: React.FC<RollingNumberProps> = ({

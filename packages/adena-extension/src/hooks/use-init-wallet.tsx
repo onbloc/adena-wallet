@@ -1,19 +1,39 @@
-import { useEffect } from 'react';
+import {
+  RoutePath,
+} from '@types';
+import {
+  useEffect,
+} from 'react';
+import {
+  useMatch,
+} from 'react-router-dom';
 
-import { RoutePath } from '@types';
+import {
+  useAddressBook,
+} from './use-address-book';
 import useAppNavigate from './use-app-navigate';
-import { useLoadAccounts } from './use-load-accounts';
-import { useMatch } from 'react-router-dom';
-import { useAddressBook } from './use-address-book';
-import { useWallet } from './use-wallet';
+import {
+  useLoadAccounts,
+} from './use-load-accounts';
+import {
+  useWallet,
+} from './use-wallet';
 
 export const useInitWallet = (): void => {
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const isApproveLoginPage = useMatch('/approve/*');
 
-  const { state } = useLoadAccounts();
-  const { initAddressBook } = useAddressBook();
-  const { lockedWallet } = useWallet();
+  const {
+    state,
+  } = useLoadAccounts();
+  const {
+    initAddressBook,
+  } = useAddressBook();
+  const {
+    lockedWallet,
+  } = useWallet();
 
   useEffect(() => {
     switch (state) {

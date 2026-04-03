@@ -1,11 +1,20 @@
-import React, { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { CommonFullContentLayout, Text, View } from '@components/atoms';
-import { BottomFixedButton } from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
 import IconFailed from '@assets/connect-fail-permission.svg';
+import {
+  CommonFullContentLayout, Text, View,
+} from '@components/atoms';
+import {
+  BottomFixedButton,
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledFailedWrapper = styled(View)`
   margin-top: 56px;
@@ -22,7 +31,9 @@ const StyledDescriptionWrapper = styled(View)`
 
 const BroadcastTransactionFailed: React.FC = () => {
   const theme = useTheme();
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
 
   const onClickClose = useCallback(() => {
     navigate(RoutePath.Wallet);
@@ -34,7 +45,7 @@ const BroadcastTransactionFailed: React.FC = () => {
         <img src={IconFailed} alt='failed icon' />
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
-            {'Transaction Failed'}
+            Transaction Failed
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'Your transaction has failed. Please\nensure that your transaction is in the\ncorrect format and try again.'}

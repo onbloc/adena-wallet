@@ -1,10 +1,21 @@
-import React from 'react';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import TokenListItem, { TokenListItemProps } from './token-list-item';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import TokenListItem, {
+  TokenListItemProps,
+} from './token-list-item';
 
 const token = {
   tokenId: 'token1',

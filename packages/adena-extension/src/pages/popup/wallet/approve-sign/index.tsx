@@ -1,42 +1,79 @@
-import { Account, Document, isAirgapAccount, isLedgerAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { GasToken } from '@common/constants/token.constant';
-import { mappedTransactionMessages } from '@common/mapper/transaction-mapper';
-import { parseTokenAmount } from '@common/utils/amount-utils';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  mappedTransactionMessages,
+} from '@common/mapper/transaction-mapper';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { ApproveTransaction } from '@components/molecules';
+import {
+  validateInjectionDataWithAddress,
+} from '@common/validation/validation-transaction';
+import {
+  ApproveTransaction,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useGetGnotBalance } from '@hooks/wallet/use-get-gnot-balance';
-import { useNetworkFee } from '@hooks/wallet/use-network-fee';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
-import { RoutePath } from '@types';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useGetGnotBalance,
+} from '@hooks/wallet/use-get-gnot-balance';
+import {
+  useNetworkFee,
+} from '@hooks/wallet/use-network-fee';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage,
+} from '@inject/types';
+import {
+  RoutePath,
+} from '@types';
+import {
+  Account, Document, isAirgapAccount, isLedgerAccount,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useLocation, useNavigate,
+} from 'react-router-dom';
 
 interface TransactionData {
-  messages: readonly any[];
-  contracts: { type: string; function: string; value: any }[];
-  gasWanted: string;
-  gasFee: string;
-  memo: string;
-  document: Document;
+  messages: readonly any[]
+  contracts: {
+    type: string
+    function: string
+    value: any
+  }[]
+  gasWanted: string
+  gasFee: string
+  memo: string
+  document: Document
 }
 
 function mappedTransactionData(document: Document): TransactionData {
@@ -58,12 +95,22 @@ function mappedTransactionData(document: Document): TransactionData {
 
 const ApproveSignContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate } = useAppNavigate();
-  const { gnoProvider } = useWalletContext();
-  const { walletService, transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    gnoProvider,
+  } = useWalletContext();
+  const {
+    walletService, transactionService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [transactionData, setTransactionData] = useState<TransactionData>();
-  const { currentNetwork } = useNetwork();
+  const {
+    currentNetwork,
+  } = useNetwork();
   const [hostname, setHostname] = useState('');
   const location = useLocation();
   const [requestData, setRequestData] = useState<InjectionMessage>();
@@ -73,10 +120,14 @@ const ApproveSignContainer: React.FC = () => {
   const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
   const [response, setResponse] = useState<InjectionMessage | null>(null);
   const [memo, setMemo] = useState('');
-  const { openScannerLink } = useLink();
+  const {
+    openScannerLink,
+  } = useLink();
   const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
 
-  const { data: currentBalance = null } = useGetGnotBalance();
+  const {
+    data: currentBalance = null,
+  } = useGetGnotBalance();
 
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const networkFee = useNetworkFeeReturn.networkFee;
@@ -117,7 +168,8 @@ const ApproveSignContainer: React.FC = () => {
       try {
         const amount = parseTokenAmount(amountStr);
         return BigNumber(acc).plus(amount).toNumber();
-      } catch {
+      }
+      catch {
         return acc;
       }
     }, 0);
@@ -149,7 +201,7 @@ const ApproveSignContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -161,7 +213,10 @@ const ApproveSignContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
   };
 
   useEffect(() => {
@@ -220,7 +275,8 @@ const ApproveSignContainer: React.FC = () => {
       setMemo(document.memo);
       setTransactionMessages(mappedTransactionMessages(document.msgs));
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -272,7 +328,8 @@ const ApproveSignContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          {},
+          {
+          },
           requestData?.key,
         ),
       );
@@ -285,11 +342,15 @@ const ApproveSignContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_SUCCESS,
-          { document, signature },
+          {
+            document,
+            signature,
+          },
           requestData?.key,
         ),
       );
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         if (message.includes('Ledger')) {
@@ -298,7 +359,11 @@ const ApproveSignContainer: React.FC = () => {
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.SIGN_FAILED,
-            { error: { message } },
+            {
+              error: {
+                message,
+              },
+            },
             requestData?.key,
           ),
         );
@@ -306,7 +371,8 @@ const ApproveSignContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_FAILED,
-          {},
+          {
+          },
           requestData?.key,
         ),
       );
@@ -339,7 +405,8 @@ const ApproveSignContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );
@@ -355,7 +422,8 @@ const ApproveSignContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );
@@ -367,12 +435,7 @@ const ApproveSignContainer: React.FC = () => {
     }
 
     updateTransactionData();
-  }, [
-    memo,
-    transactionMessages,
-    useNetworkFeeReturn.currentGasInfo?.gasWanted,
-    useNetworkFeeReturn.currentGasFeeRawAmount,
-  ]);
+  }, [memo, transactionMessages, useNetworkFeeReturn.currentGasInfo?.gasWanted, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   return (
     <ApproveTransaction

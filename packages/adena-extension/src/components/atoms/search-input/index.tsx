@@ -1,19 +1,24 @@
-import React from 'react';
 import SearchIcon from '@assets/common-search.svg';
-import { SearchInputWrapper } from './search-input.styles';
+import React from 'react';
+
+import {
+  SearchInputWrapper,
+} from './search-input.styles';
 
 interface AdditionalButtonOption {
-  button: React.ReactNode;
-  onClickButton: () => void;
+  button: React.ReactNode
+  onClickButton: () => void
 }
 
 export interface SearchInputProps {
-  keyword: string;
-  onChangeKeyword: (keyword: string) => void;
-  option?: AdditionalButtonOption;
+  keyword: string
+  onChangeKeyword: (keyword: string) => void
+  option?: AdditionalButtonOption
 }
 
-export const SearchInput: React.FC<SearchInputProps> = ({ keyword, onChangeKeyword, option }) => {
+export const SearchInput: React.FC<SearchInputProps> = ({
+  keyword, onChangeKeyword, option,
+}) => {
   return (
     <SearchInputWrapper>
       <div className='search-icon-wrapper'>

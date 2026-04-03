@@ -1,12 +1,16 @@
-import { waitForRun } from '@common/utils/timeout-utils';
+import {
+  waitForRun,
+} from '@common/utils/timeout-utils';
 import AccountInitializationInit from '@components/molecules/account-initialization-init/account-initialization-init';
 import AccountInitializationResult from '@components/molecules/account-initialization-result/account-initialization-result';
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect, useState,
+} from 'react';
 
 export interface AccountInitializationProps {
-  address: string | null;
-  moveBack: () => void;
-  initializeAccount: () => Promise<boolean>;
+  address: string | null
+  moveBack: () => void
+  initializeAccount: () => Promise<boolean>
 }
 
 const enum AccountInitializationState {
@@ -28,7 +32,8 @@ const AccountInitialization: React.FC<AccountInitializationProps> = ({
     waitForRun(initializeAccount, 500).then((success) => {
       if (success) {
         setState(AccountInitializationState.SUCCESS);
-      } else {
+      }
+      else {
         setState(AccountInitializationState.FAILURE);
       }
     });

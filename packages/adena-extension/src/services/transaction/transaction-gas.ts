@@ -1,7 +1,16 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
-import { ITransactionGasRepository } from '@repositories/transaction/types';
-import { ITransactionGasService } from '..';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
+import {
+  ResponseDeliverTx,
+} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import {
+  ITransactionGasRepository,
+} from '@repositories/transaction/types';
+
+import {
+  ITransactionGasService,
+} from '..';
 
 export class TransactionGasService implements ITransactionGasService {
   private gasRepository: ITransactionGasRepository;

@@ -1,36 +1,51 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Account, hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
-
-import { Text, FullButtonRightIcon, ButtonMode } from '@components/atoms';
-import { BottomFixedButton } from '@components/molecules';
-import { RoutePath } from '@types';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useRemoveAccount } from '@hooks/use-remove-account';
-import mixins from '@styles/mixins';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import { AdenaStorage } from '@common/storage';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  ButtonMode, FullButtonRightIcon, Text,
+} from '@components/atoms';
+import {
+  BottomFixedButton,
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
+import {
+  useRemoveAccount,
+} from '@hooks/use-remove-account';
+import mixins from '@styles/mixins';
+import {
+  RoutePath,
+} from '@types';
+import {
+  Account, hasPrivateKeyAccount, isSeedAccount,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+import styled from 'styled-components';
 
-type MenuType =
-  | RoutePath.SettingChangePassword
-  | RoutePath.RemoveAccount
-  | RoutePath.ResetWallet
-  | 'EXPORT_SEED_PHRASE'
-  | 'EXPORT_PRIVATE_KEY';
+type MenuType
+  = | RoutePath.SettingChangePassword
+    | RoutePath.RemoveAccount
+    | RoutePath.ResetWallet
+    | 'EXPORT_SEED_PHRASE'
+    | 'EXPORT_PRIVATE_KEY';
 
 const getMenuMakerInfo = (
   account: Account | null,
   availRemove: boolean,
 ): {
-  title: string;
-  navigatePath: MenuType;
-  mode: string;
-  disabled: boolean;
+  title: string
+  navigatePath: MenuType
+  mode: string
+  disabled: boolean
 }[] => [
   {
     title: 'Change Password',
@@ -65,20 +80,25 @@ const getMenuMakerInfo = (
 ];
 
 export const SecurityPrivacy = (): JSX.Element => {
-  const { navigate, goBack } = useAppNavigate();
-  const { openSecurity } = useLink();
-  const { currentAccount } = useCurrentAccount();
-  const { availRemoveAccount } = useRemoveAccount();
+  const {
+    navigate, goBack,
+  } = useAppNavigate();
+  const {
+    openSecurity,
+  } = useLink();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    availRemoveAccount,
+  } = useRemoveAccount();
   const [availRemove, setAvailRemove] = useState(true);
 
   const onClickMenuItem = useCallback(
     (navigatePath: MenuType) => {
       if (navigatePath === 'EXPORT_SEED_PHRASE' || navigatePath === 'EXPORT_PRIVATE_KEY') {
         const exportType = navigatePath === 'EXPORT_SEED_PHRASE' ? 'SEED_PHRASE' : 'PRIVATE_KEY';
-        Promise.all([
-          AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType),
-          AdenaStorage.session().set(WALLET_EXPORT_ACCOUNT_ID, currentAccount?.id || ''),
-        ]).then(() => openSecurity());
+        Promise.all([AdenaStorage.session().set(WALLET_EXPORT_TYPE_STORAGE_KEY, exportType), AdenaStorage.session().set(WALLET_EXPORT_ACCOUNT_ID, currentAccount?.id || '')]).then(() => openSecurity());
         return;
       }
       navigate(navigatePath);
@@ -110,7 +130,10 @@ export const SecurityPrivacy = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

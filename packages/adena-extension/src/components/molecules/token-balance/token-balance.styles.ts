@@ -1,30 +1,31 @@
-import { fonts, FontsType } from '@styles/theme';
-import styled, { css, RuleSet } from 'styled-components';
+import {
+  fonts, FontsType,
+} from '@styles/theme';
+import styled, {
+  css, RuleSet,
+} from 'styled-components';
 
 interface TokenBalanceWrapperProps {
-  orientation: 'VERTICAL' | 'HORIZONTAL';
-  fontColor: string;
-  fontStyleKey: FontsType;
-  minimumFontSize: string;
-  lineHeight?: string;
-  maxWidth?: number;
+  orientation: 'VERTICAL' | 'HORIZONTAL'
+  fontColor: string
+  fontStyleKey: FontsType
+  minimumFontSize: string
+  lineHeight?: string
+  maxWidth?: number
 }
 
 export const TokenBalanceWrapper = styled.div.withConfig({
   shouldForwardProp: (prop): boolean =>
-    ![
-      'orientation',
-      'fontColor',
-      'fontStyleKey',
-      'minimumFontSize',
-      'lineHeight',
-      'maxWidth',
-    ].includes(prop),
+    !['orientation', 'fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight', 'maxWidth'].includes(prop),
 })<TokenBalanceWrapperProps>`
   display: flex;
-  flex-direction: ${({ orientation }): 'column' | 'row' =>
+  flex-direction: ${({
+    orientation,
+  }): 'column' | 'row' =>
     orientation === 'HORIZONTAL' ? 'row' : 'column'};
-  ${({ orientation, maxWidth }): RuleSet =>
+  ${({
+    orientation, maxWidth,
+  }): RuleSet =>
     orientation === 'HORIZONTAL'
       ? css`
           flex-direction: row;
@@ -49,9 +50,15 @@ export const TokenBalanceWrapper = styled.div.withConfig({
 
     .denom {
       display: contents;
-      color: ${({ fontColor }): string => fontColor};
-      ${({ fontStyleKey }): RuleSet => fonts[fontStyleKey]};
-      ${({ lineHeight }): RuleSet =>
+      color: ${({
+        fontColor,
+      }): string => fontColor};
+      ${({
+        fontStyleKey,
+      }): RuleSet => fonts[fontStyleKey]};
+      ${({
+        lineHeight,
+      }): RuleSet =>
         lineHeight
           ? css`
               line-height: ${lineHeight};

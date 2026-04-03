@@ -1,13 +1,17 @@
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-import { Text } from '../../atoms';
+import {
+  Text,
+} from '../../atoms';
 
 interface TitleWithDescProps {
-  title: string;
-  desc: string;
-  isWarningDesc?: boolean;
-  className?: string;
+  title: string
+  desc: string
+  isWarningDesc?: boolean
+  className?: string
 }
 
 const Wrapper = styled.div`

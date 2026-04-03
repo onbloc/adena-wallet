@@ -1,12 +1,20 @@
-import React, { useCallback } from 'react';
-
-import { CommonFullContentLayout } from '@components/atoms';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
 import AddCustomNetwork from '@components/pages/add-custom-network';
-import { useCustomNetworkInput } from '@hooks/use-custom-network-input';
-import { useNetwork } from '@hooks/use-network';
-
-import { NetworkMetainfo } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useCustomNetworkInput,
+} from '@hooks/use-custom-network-input';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  NetworkMetainfo,
+} from '@types';
+import React, {
+  useCallback,
+} from 'react';
 
 function isValidURL(rpcUrl: string): boolean {
   const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
@@ -15,21 +23,25 @@ function isValidURL(rpcUrl: string): boolean {
 
 function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
   return (
-    networks.findIndex((network) => network.networkId === chainId && network.deleted !== true) > -1
+    networks.findIndex(network => network.networkId === chainId && network.deleted !== true) > -1
   );
 }
 
 function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
   const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
   return (
-    networks.findIndex((network) => network.rpcUrl === currentRPCUrl && network.deleted !== true) >
-    -1
+    networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true)
+    > -1
   );
 }
 
 const AddCustomNetworkContainer: React.FC = () => {
-  const { goBack } = useAppNavigate();
-  const { networks, addNetwork } = useNetwork();
+  const {
+    goBack,
+  } = useAppNavigate();
+  const {
+    networks, addNetwork,
+  } = useNetwork();
   const {
     name,
     rpcUrl,

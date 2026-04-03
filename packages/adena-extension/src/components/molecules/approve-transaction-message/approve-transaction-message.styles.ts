@@ -1,18 +1,30 @@
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-export const ApproveTransactionMessageWrapper = styled(View)<{ hasError?: boolean }>`
+export const ApproveTransactionMessageWrapper = styled(View)<{
+  hasError?: boolean
+}>`
   width: 100%;
   height: auto;
   border-radius: 18px;
-  margin-bottom: ${({ hasError }): string => (hasError ? '0' : '8px')};
+  margin-bottom: ${({
+    hasError,
+  }): string => (hasError ? '0' : '8px')};
   background-color: ${getTheme('neutral', '_9')};
-  border: 1px solid ${({ hasError }): string => (hasError ? '#EF2D21' : 'transparent')};
+  border: 1px solid ${({
+    hasError,
+  }): string => (hasError ? '#EF2D21' : 'transparent')};
 
   .message-row {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     position: relative;
     width: 100%;
     padding: 10px 0;
@@ -72,7 +84,9 @@ export const ApproveTransactionMessageWrapper = styled(View)<{ hasError?: boolea
 `;
 
 export const MessageRowWrapper = styled(View)`
-  ${mixins.flex({ direction: 'column' })};
+  ${mixins.flex({
+    direction: 'column',
+  })};
   position: relative;
   width: 100%;
   padding: 0 18px;
@@ -80,7 +94,11 @@ export const MessageRowWrapper = styled(View)`
 `;
 
 export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
-  ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    align: 'center',
+    justify: 'space-between',
+  })};
   width: 100%;
   height: auto;
   color: ${getTheme('neutral', 'a')};
@@ -89,7 +107,11 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   border-bottom: 2px solid ${getTheme('neutral', '_8')};
 
   & .title-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })};
+    ${mixins.flex({
+      direction: 'row',
+      align: 'center',
+      justify: 'space-between',
+    })};
     width: 100%;
     flex-shrink: 0;
     gap: 4px;
@@ -104,7 +126,9 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
     }
 
     & .arrow-icon {
-      ${mixins.flex({ direction: 'row' })};
+      ${mixins.flex({
+        direction: 'row',
+      })};
       width: 16px;
       height: 16px;
     }

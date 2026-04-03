@@ -1,29 +1,36 @@
-import React, { useCallback, useMemo } from 'react';
-
-import { SubHeader, CustomNetworkInput } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import { EditNetworkWrapper } from './edit-network.styles';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
+import {
+  CustomNetworkInput, SubHeader,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
+import React, {
+  useCallback, useMemo,
+} from 'react';
 
 import RemoveNetworkButton from '../remove-network-button/remove-network-button';
+import {
+  EditNetworkWrapper,
+} from './edit-network.styles';
 
 export interface EditNetworkProps {
-  name: string;
-  rpcUrl: string;
-  rpcUrlError?: string;
-  indexerUrl: string;
-  indexerUrlError?: string;
-  chainIdError?: string;
-  chainId: string;
-  savable: boolean;
-  editType: 'rpc-only' | 'all-default' | 'all';
-  changeName: (name: string) => void;
-  changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
-  changeChainId: (chainId: string) => void;
-  clearNetwork: () => void;
-  saveNetwork: () => void;
-  moveBack: () => void;
+  name: string
+  rpcUrl: string
+  rpcUrlError?: string
+  indexerUrl: string
+  indexerUrlError?: string
+  chainIdError?: string
+  chainId: string
+  savable: boolean
+  editType: 'rpc-only' | 'all-default' | 'all'
+  changeName: (name: string) => void
+  changeRPCUrl: (rpcUrl: string) => void
+  changeIndexerUrl: (indexerUrl: string) => void
+  changeChainId: (chainId: string) => void
+  clearNetwork: () => void
+  saveNetwork: () => void
+  moveBack: () => void
 }
 
 const EditNetwork: React.FC<EditNetworkProps> = ({
@@ -72,7 +79,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
         <SubHeader
           title='Edit Network'
           leftElement={{
-            element: <img src={LeftArrowIcon} alt={'back icon'} />,
+            element: <img src={LeftArrowIcon} alt='back icon' />,
             onClick: onClickBack,
           }}
         />

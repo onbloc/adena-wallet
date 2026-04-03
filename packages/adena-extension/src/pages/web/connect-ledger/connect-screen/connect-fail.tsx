@@ -1,10 +1,12 @@
-import styled from 'styled-components';
-
 import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
-
-import { View, WebButton } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
+import {
+  View, WebButton,
+} from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
@@ -13,13 +15,18 @@ const StyledContainer = styled(View)`
 `;
 
 interface Props {
-  retry: () => void;
+  retry: () => void
 }
 
-export const ConnectFail = ({ retry }: Props): JSX.Element => {
+export const ConnectFail = ({
+  retry,
+}: Props): JSX.Element => {
   return (
     <StyledContainer>
-      <View style={{ paddingBottom: 16 }}>
+      <View style={{
+        paddingBottom: 16,
+      }}
+      >
         <Lottie
           animationData={AnimationLoginFailed}
           height={120}

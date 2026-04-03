@@ -1,11 +1,23 @@
-
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import { NetworkFeeSettingType } from '@types';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import TransferSummary, { TransferSummaryProps } from './transfer-summary';
+import {
+  render,
+} from '@testing-library/react';
+import {
+  NetworkFeeSettingType,
+} from '@types';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import TransferSummary, {
+  TransferSummaryProps,
+} from './transfer-summary';
 
 describe('TransferSummary Component', () => {
   it('TransferSummary render', () => {

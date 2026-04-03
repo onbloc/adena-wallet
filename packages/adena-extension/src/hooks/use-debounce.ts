@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect, useState,
+} from 'react';
 
 interface UseDebounceReturn<T> {
-  debouncedValue: T;
-  setDebouncedValue: React.Dispatch<React.SetStateAction<T>>;
-  isLoading: boolean;
+  debouncedValue: T
+  setDebouncedValue: React.Dispatch<React.SetStateAction<T>>
+  isLoading: boolean
 }
 
 export const useDebounce = <T>(value: T, delay: number): UseDebounceReturn<T> => {
@@ -23,5 +25,9 @@ export const useDebounce = <T>(value: T, delay: number): UseDebounceReturn<T> =>
     };
   }, [value, delay]);
 
-  return { debouncedValue, setDebouncedValue, isLoading };
+  return {
+    debouncedValue,
+    setDebouncedValue,
+    isLoading,
+  };
 };

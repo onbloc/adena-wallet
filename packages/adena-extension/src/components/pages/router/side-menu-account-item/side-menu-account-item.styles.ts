@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const SideMenuAccountItemWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   height: auto;
   padding: 12px 20px;
@@ -19,7 +24,10 @@ export const SideMenuAccountItemWrapper = styled.div`
   }
 
   .info-wrapper {
-    ${mixins.flex({ align: 'flex-start', justify: 'normal' })};
+    ${mixins.flex({
+      align: 'flex-start',
+      justify: 'normal',
+    })};
 
     .address-wrapper {
       display: inline-flex;
@@ -83,12 +91,16 @@ export const SideMenuAccountItemWrapper = styled.div`
 `;
 
 export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
-  positionX: number;
-  positionY: number;
+  positionX: number
+  positionY: number
 }>`
   position: absolute;
-  left: ${({ positionX }): string => `${positionX - 130}px`};
-  top: ${({ positionY }): string => `${positionY - 40}px`};
+  left: ${({
+    positionX,
+  }): string => `${positionX - 130}px`};
+  top: ${({
+    positionY,
+  }): string => `${positionY - 40}px`};
   width: 146px;
   background-color: ${getTheme('neutral', '_8')};
   border: 1px solid ${getTheme('neutral', '_7')};
@@ -98,7 +110,11 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
   overflow: hidden;
 
   .info-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'normal', justify: 'normal' })};
+    ${mixins.flex({
+      direction: 'row',
+      align: 'normal',
+      justify: 'normal',
+    })};
     padding: 7px 0 7px 12px;
     border-bottom: 1px solid ${getTheme('neutral', '_7')};
     cursor: pointer;

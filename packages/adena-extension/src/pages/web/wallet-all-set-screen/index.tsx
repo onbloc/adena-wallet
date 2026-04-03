@@ -1,14 +1,16 @@
-import styled, { useTheme } from 'styled-components';
-
 import IconGnoLand from '@assets/web/gnoland.svg';
-import IconGnoSwap from '@assets/web/gnoswap.svg';
 import IconGnoScan from '@assets/web/gnoscan.svg';
+import IconGnoSwap from '@assets/web/gnoswap.svg';
 import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
-
-import { View, WebButton, WebMain, WebText, WebImg, Row } from '@components/atoms';
-import useLink from '@hooks/use-link';
-import Lottie from '@components/atoms/lottie';
 import IconPin from '@assets/web/pin.svg';
+import {
+  Row, View, WebButton, WebImg, WebMain, WebText,
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import useLink from '@hooks/use-link';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
@@ -77,20 +79,29 @@ const StyledPinIconWrapper = styled(View)`
   justify-content: center;
   align-items: center;
   border-radius: 12px;
-  background: ${({ theme }): string => theme.webPrimary._100};
+  background: ${({
+    theme,
+  }): string => theme.webPrimary._100};
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.16);
 `;
 
 const WalletAllSetScreen = (): JSX.Element => {
   const theme = useTheme();
-  const { openLink } = useLink();
+  const {
+    openLink,
+  } = useLink();
 
   const onClickDone = (): void => {
     window.close();
   };
 
   return (
-    <WebMain spacing={null} style={{ width: 'fit-content' }}>
+    <WebMain
+      spacing={null}
+      style={{
+        width: 'fit-content',
+      }}
+    >
       <StyledContainer>
         <StyledLeft>
           <StyledMessageBox>
@@ -99,12 +110,18 @@ const WalletAllSetScreen = (): JSX.Element => {
               Click on the Start button to launch Adena.
             </WebText>
           </StyledMessageBox>
-          <View style={{ gap: 40 }}>
+          <View style={{
+            gap: 40,
+          }}
+          >
             <StyledLinkBox>
               <WebText type='title3' color={theme.webNeutral._200}>
                 Explore the Gno.land Ecosystem
               </WebText>
-              <Row style={{ columnGap: 24 }}>
+              <Row style={{
+                columnGap: 24,
+              }}
+              >
                 <StyledBtn
                   figure='tertiary'
                   size='large'
@@ -115,7 +132,11 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoLand} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%', gap: 6 }}>
+                  <View style={{
+                    width: '100%',
+                    gap: 6,
+                  }}
+                  >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       Gno.land
                     </StyledBtnTitle>
@@ -134,7 +155,11 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoSwap} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%', gap: 6 }}>
+                  <View style={{
+                    width: '100%',
+                    gap: 6,
+                  }}
+                  >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       GnoSwap
                     </StyledBtnTitle>
@@ -154,7 +179,11 @@ const WalletAllSetScreen = (): JSX.Element => {
                   <StyledImgBox>
                     <WebImg src={IconGnoScan} width={40} height={36} />
                   </StyledImgBox>
-                  <View style={{ width: '100%', gap: 6 }}>
+                  <View style={{
+                    width: '100%',
+                    gap: 6,
+                  }}
+                  >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
                       GnoScan
                     </StyledBtnTitle>
@@ -167,7 +196,9 @@ const WalletAllSetScreen = (): JSX.Element => {
             </StyledLinkBox>
 
             <WebButton
-              style={{ width: 'fit-content' }}
+              style={{
+                width: 'fit-content',
+              }}
               figure='primary'
               size='small'
               text='Start'
@@ -176,18 +207,31 @@ const WalletAllSetScreen = (): JSX.Element => {
             />
           </View>
         </StyledLeft>
-        <Lottie width={416} style={{ marginTop: -100 }} animationData={AnimationAllSet} />
+        <Lottie
+          width={416}
+          style={{
+            marginTop: -100,
+          }}
+          animationData={AnimationAllSet}
+        />
       </StyledContainer>
 
       <StyledFixedWrapper>
-        <View style={{ paddingTop: 4 }}>
+        <View style={{
+          paddingTop: 4,
+        }}
+        >
           <StyledPinIconWrapper>
             <WebImg src={IconPin} size={24} />
           </StyledPinIconWrapper>
         </View>
-        <View style={{ width: 256, gap: 6 }}>
+        <View style={{
+          width: 256,
+          gap: 6,
+        }}
+        >
           <WebText type='title3' color={theme.webNeutral._100}>
-            {'Pin Adena for easy access'}
+            Pin Adena for easy access
           </WebText>
           <WebText type='body5' color={theme.webNeutral._500}>
             {'Click the ‘Extensions’ button\nLocate Adena then click the ‘Pin’ button'}

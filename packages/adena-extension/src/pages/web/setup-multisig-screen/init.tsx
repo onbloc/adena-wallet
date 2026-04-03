@@ -1,27 +1,35 @@
-import React from 'react';
-import styled from 'styled-components';
-
-import { Account, validateAddress, isMultisigAccount, isAirgapAccount } from 'adena-module';
-import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
-import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
-
-import { Pressable, Row, View, WebImg, WebText } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
-import WebMainButton from '@components/atoms/web-main-button';
 import IconAirgap from '@assets/web/airgap-green.svg';
 import IconCreate from '@assets/web/icon-create';
 import IconImport from '@assets/web/icon-import';
 import IconLink from '@assets/web/link.svg';
+import {
+  ADENA_MULTISIG_GUIDE_LINK,
+} from '@common/constants/resource.constant';
+import {
+  Pressable, Row, View, WebImg, WebText,
+} from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
 import useLink from '@hooks/use-link';
+import {
+  MultisigAccountMode,
+} from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import {
+  Account, isAirgapAccount, isMultisigAccount, validateAddress,
+} from 'adena-module';
+import React from 'react';
+import styled from 'styled-components';
 
-const description =
-  'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.';
+const description
+  = 'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.';
 
 interface SetupMultisigInitProps {
-  initSetup: (mode: MultisigAccountMode) => void;
-  currentAccount: Account | null;
-  currentAddress: string | null;
+  initSetup: (mode: MultisigAccountMode) => void
+  currentAccount: Account | null
+  currentAddress: string | null
 }
 
 const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
@@ -29,16 +37,18 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   currentAccount,
   currentAddress,
 }) => {
-  const { openLink } = useLink();
+  const {
+    openLink,
+  } = useLink();
 
   const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
   const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
 
-  const cannotBeUsedAsSigner =
-    !!currentAccount && (isMultisigAccount(currentAccount) || isAirgapAccount(currentAccount));
+  const cannotBeUsedAsSigner
+    = !!currentAccount && (isMultisigAccount(currentAccount) || isAirgapAccount(currentAccount));
 
-  const isCreateDisabled =
-    !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
+  const isCreateDisabled
+    = !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
 
   const moveSetupMultisigAccountHelp = React.useCallback(() => {
     openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT);
@@ -50,19 +60,26 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
 
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 8 }}>
+      <View style={{
+        marginBottom: 8,
+      }}
+      >
         <WebImg src={IconAirgap} size={88} />
       </View>
 
       <WebTitleWithDescription
         title='Set Up Multi-sig Account'
-        description={'You can create or import a multi-sig account on Adena.'}
+        description='You can create or import a multi-sig account on Adena.'
         marginBottom={-6}
       />
 
       <WebWarningDescriptionBox description={description} />
 
-      <Row style={{ width: '100%', columnGap: 12 }}>
+      <Row style={{
+        width: '100%',
+        columnGap: 12,
+      }}
+      >
         <WebMainButton
           buttonRef={createMultisigAccountButtonRef}
           figure='primary'
@@ -80,7 +97,10 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
         />
       </Row>
 
-      <View style={{ gap: 8 }}>
+      <View style={{
+        gap: 8,
+      }}
+      >
         <Pressable onClick={moveSetupMultisigAccountHelp}>
           <StyledLinkWrapper>
             <WebText type='title6' color='#6C717A'>

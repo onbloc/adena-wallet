@@ -1,13 +1,17 @@
-import { StorageManager } from '@common/storage/storage-manager';
-import { decryptAES, encryptAES } from 'adena-module';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
+import {
+  decryptAES, encryptAES,
+} from 'adena-module';
 
 type LocalValueType = 'ADDRESS_BOOK' | 'ENCRYPTED_STORED_PASSWORD';
 
 export interface AddressBookItem {
-  id: string;
-  name: string;
-  address: string;
-  createdAt: string;
+  id: string
+  name: string
+  address: string
+  createdAt: string
 }
 
 export class WalletAddressRepository {
@@ -26,7 +30,8 @@ export class WalletAddressRepository {
 
     try {
       return JSON.parse(addressBookRaw) as AddressBookItem[];
-    } catch {
+    }
+    catch {
       return [];
     }
   };

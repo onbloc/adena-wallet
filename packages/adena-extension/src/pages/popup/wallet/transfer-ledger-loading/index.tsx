@@ -1,27 +1,49 @@
-import { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
-
 import TransferLedgerLoading from '@components/pages/transfer-ledger-loading/transfer-ledger-loading';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { createNotificationSendMessageByHash } from '@inject/message/methods/transaction-event';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  createNotificationSendMessageByHash,
+} from '@inject/message/methods/transaction-event';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
+import {
+  RoutePath,
+} from '@types';
+import {
+  AdenaLedgerConnector, isLedgerAccount,
+} from 'adena-module';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
+import styled from 'styled-components';
 
 const TransferLedgerLoadingLayout = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: 100%;
   padding: 24px 20px 120px 20px;
 `;
 
 const TransferLedgerLoadingContainer = (): JSX.Element => {
-  const { wallet } = useWalletContext();
-  const { navigate, goBack, params } = useAppNavigate<RoutePath.TransferLedgerLoading>();
-  const { transactionService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    navigate, goBack, params,
+  } = useAppNavigate<RoutePath.TransferLedgerLoading>();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [connected, setConnected] = useState(false);
   const document = params.document;
 
@@ -61,7 +83,9 @@ const TransferLedgerLoadingContainer = (): JSX.Element => {
 
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
-      .then(async ({ signed }) => {
+      .then(async ({
+        signed,
+      }) => {
         connected.close();
         const response = await transactionService.sendTransactionByLedger(
           ledgerConnector,

@@ -1,34 +1,44 @@
-import React, { useMemo } from 'react';
-
-import { SubHeader } from '@components/atoms';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
+import {
+  SubHeader,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import {
+  UseNetworkFeeReturn,
+} from '@hooks/wallet/use-network-fee';
+import {
+  Amount, NetworkFee as NetworkFeeType, TokenModel,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
 import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
 import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
-import { TransferSummaryWrapper } from './transfer-summary.styles';
-
-import { BottomFixedButtonGroup } from '@components/molecules';
-import NetworkFee from '@components/molecules/network-fee/network-fee';
-import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
-import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
+import {
+  TransferSummaryWrapper,
+} from './transfer-summary.styles';
 
 export interface TransferSummaryProps {
-  tokenMetainfo: TokenModel;
-  tokenImage: string;
-  transferBalance: Amount;
-  toAddress: string;
-  networkFee: NetworkFeeType | null;
-  memo: string;
-  currentBalance: number | null | undefined;
-  useNetworkFeeReturn: UseNetworkFeeReturn;
-  isErrorNetworkFee?: boolean;
-  isLoadingNetworkFee?: boolean;
-  simulateErrorBannerMessage?: string | null;
-  onClickBack: () => void;
-  onClickCancel: () => void;
-  onClickSend: () => void;
-  onClickNetworkFeeSetting: () => void;
+  tokenMetainfo: TokenModel
+  tokenImage: string
+  transferBalance: Amount
+  toAddress: string
+  networkFee: NetworkFeeType | null
+  memo: string
+  currentBalance: number | null | undefined
+  useNetworkFeeReturn: UseNetworkFeeReturn
+  isErrorNetworkFee?: boolean
+  isLoadingNetworkFee?: boolean
+  simulateErrorBannerMessage?: string | null
+  onClickBack: () => void
+  onClickCancel: () => void
+  onClickSend: () => void
+  onClickNetworkFeeSetting: () => void
 }
 
 const TransferSummary: React.FC<TransferSummaryProps> = ({
@@ -56,12 +66,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [
-    isErrorNetworkFee,
-    useNetworkFeeReturn.isLoading,
-    useNetworkFeeReturn.isSimulateError,
-    networkFee,
-  ]);
+  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -76,7 +81,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className='sub-header-wrapper'>
         <SubHeader
           leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
             onClick: onClickBack,
           }}
           title={`Sending ${tokenMetainfo.symbol}`}

@@ -1,11 +1,24 @@
-import React from 'react';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import { NetworkFeeSettingType } from '@types';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { ApproveTransaction, ApproveTransactionProps } from '.';
+import {
+  render,
+} from '@testing-library/react';
+import {
+  NetworkFeeSettingType,
+} from '@types';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import {
+  ApproveTransaction, ApproveTransactionProps,
+} from '.';
 
 describe('ApproveTransaction Component', () => {
   it('ApproveTransaction render', () => {
@@ -53,7 +66,7 @@ describe('ApproveTransaction Component', () => {
       onClickCancel: () => {
         return;
       },
-      openScannerLink: jest.fn(),
+      openScannerLink: vi.fn(),
       useNetworkFeeReturn: {
         isLoading: false,
         isFetchedEstimateGasInfo: true,

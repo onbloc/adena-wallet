@@ -1,14 +1,20 @@
+import IconHelp from '@assets/help-fill.svg';
+import IconLogo from '@assets/logo-type-b.svg';
+import {
+  Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text } from '@components/atoms';
-import IconLogo from '@assets/logo-type-b.svg';
-import IconHelp from '@assets/help-fill.svg';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-
 const Container = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })}
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })}
   position: absolute;
   top: 0;
   display: flex;
@@ -23,7 +29,9 @@ const Container = styled.div`
     font-size: 19px;
   }
   .help-btn {
-    ${mixins.flex({ direction: 'row' })}
+    ${mixins.flex({
+      direction: 'row',
+    })}
     font-size: 19px;
     font-weight: 600;
     line-height: 24px;
@@ -42,7 +50,9 @@ const Container = styled.div`
 
 export const TabMenu = (): JSX.Element => {
   const onClickHelp = (): void => {
-    chrome.tabs.create({ url: 'https://docs.adena.app/resources/faq' });
+    chrome.tabs.create({
+      url: 'https://docs.adena.app/resources/faq',
+    });
   };
 
   return (

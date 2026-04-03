@@ -1,5 +1,9 @@
-import React, { ReactElement } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, {
+  ReactElement,
+} from 'react';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 const rotate = keyframes`
   from {
@@ -21,7 +25,11 @@ const SVG = styled.svg`
   animation: ${rotate} 1.5s infinite;
 `;
 
-const IconConnectLoading = ({ className }: { className: string }): ReactElement => {
+const IconConnectLoading = ({
+  className,
+}: {
+  className: string
+}): ReactElement => {
   return (
     <SVG
       width='100'

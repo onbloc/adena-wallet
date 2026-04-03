@@ -1,15 +1,29 @@
-import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant';
-import { ADENA_WALLET_EXTENSION_ID } from '@common/constants/storage.constant';
-import { TransactionEventStore } from '@common/event-store';
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { ChromeLocalStorage } from '@common/storage';
-import { CommandHandler } from '@inject/message/command-handler';
+import {
+  AlarmKey, SCHEDULE_ALARMS,
+} from '@common/constants/alarm-key.constant';
+import {
+  ADENA_WALLET_EXTENSION_ID,
+} from '@common/constants/storage.constant';
+import {
+  TransactionEventStore,
+} from '@common/event-store';
+import {
+  MemoryProvider,
+} from '@common/provider/memory/memory-provider';
+import {
+  ChromeLocalStorage,
+} from '@common/storage';
+import {
+  CommandHandler,
+} from '@inject/message/command-handler';
 import {
   CommandMessage,
   CommandMessageData,
   isCommandMessageData,
 } from '@inject/message/command-message';
-import { clearInMemoryKey } from '@inject/message/commands/encrypt';
+import {
+  clearInMemoryKey,
+} from '@inject/message/commands/encrypt';
 import {
   GnoSessionState,
   GnoSessionUpdateMessage,
@@ -20,7 +34,10 @@ import {
   isTransactionNotification,
   parseTransactionScannerUrl,
 } from '@inject/message/methods/transaction-event';
-import { InjectionMessage, MessageHandler } from './inject/message';
+
+import {
+  InjectionMessage, MessageHandler,
+} from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
 inMemoryProvider.init();
@@ -71,82 +88,89 @@ function cleanupSession(sessionId: string): void {
 
 function isGnoSessionUpdateMessage(message: unknown): message is GnoSessionUpdateMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
+    typeof message === 'object'
+    && message !== null
+    && (message as GnoSessionUpdateMessage).type === 'GNO_SESSION_UPDATE'
   );
 }
 
 interface RegisterPopupSessionMessage {
-  type: 'REGISTER_POPUP_SESSION';
-  sessionId: string;
+  type: 'REGISTER_POPUP_SESSION'
+  sessionId: string
 }
 
 function isRegisterPopupSessionMessage(message: unknown): message is RegisterPopupSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as RegisterPopupSessionMessage).type === 'REGISTER_POPUP_SESSION'
   );
 }
 
 interface GetGnoSessionMessage {
-  type: 'GET_GNO_SESSION';
-  sessionId: string;
+  type: 'GET_GNO_SESSION'
+  sessionId: string
 }
 
 interface GetActiveSessionMessage {
-  type: 'GET_ACTIVE_SESSION';
-  funcName: string;
-  pkgPath: string;
+  type: 'GET_ACTIVE_SESSION'
+  funcName: string
+  pkgPath: string
 }
 
 interface GetAllGnoSessionsMessage {
-  type: 'GET_ALL_GNO_SESSIONS';
+  type: 'GET_ALL_GNO_SESSIONS'
 }
 
 function isGetGnoSessionMessage(message: unknown): message is GetGnoSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetGnoSessionMessage).type === 'GET_GNO_SESSION'
   );
 }
 
 function isGetActiveSessionMessage(message: unknown): message is GetActiveSessionMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetActiveSessionMessage).type === 'GET_ACTIVE_SESSION'
   );
 }
 
 function isGetAllGnoSessionsMessage(message: unknown): message is GetAllGnoSessionsMessage {
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
+    typeof message === 'object'
+    && message !== null
+    && (message as GetAllGnoSessionsMessage).type === 'GET_ALL_GNO_SESSIONS'
   );
 }
 
 async function handleRegisterPopupSession(
   message: RegisterPopupSessionMessage,
   sender: chrome.runtime.MessageSender,
-): Promise<{ success: boolean; session?: GnoSessionState }> {
-  const { sessionId } = message;
+): Promise<{
+  success: boolean
+  session?: GnoSessionState
+}> {
+  const {
+    sessionId,
+  } = message;
 
   // Get popup window ID
   let popupId: number | undefined;
 
   if (sender.tab?.windowId) {
     popupId = sender.tab.windowId;
-  } else {
+  }
+  else {
     try {
       const currentWindow = await chrome.windows.getCurrent();
       if (currentWindow.type === 'popup') {
         popupId = currentWindow.id;
       }
-    } catch {
+    }
+    catch {
       // Ignore
     }
   }
@@ -168,8 +192,12 @@ function handleGnoSessionUpdate(
   message: GnoSessionUpdateMessage,
   sender: chrome.runtime.MessageSender,
 ): void {
-  const { data } = message;
-  const { sessionId, funcName, pkgPath, chainId, rpc, updateType } = data;
+  const {
+    data,
+  } = message;
+  const {
+    sessionId, funcName, pkgPath, chainId, rpc, updateType,
+  } = data;
   const funcKey = makeFuncKey(pkgPath, funcName);
 
   // Get or create session state
@@ -190,7 +218,8 @@ function handleGnoSessionUpdate(
       rpc,
       address: '',
       mode: 'secure',
-      params: {},
+      params: {
+      },
       tabId: sender.tab?.id || 0,
     };
     gnoSessions.set(sessionId, session);
@@ -252,7 +281,10 @@ function handleGetActiveSession(message: GetActiveSessionMessage): GnoSessionSta
   return session || null;
 }
 
-function handleGetAllGnoSessions(): Array<{ id: string; data: GnoSessionState }> {
+function handleGetAllGnoSessions(): Array<{
+  id: string
+  data: GnoSessionState
+}> {
   const allSessions = Array.from(gnoSessions.entries()).map(([id, data]) => ({
     id,
     data,
@@ -290,13 +322,15 @@ function existsWallet(): Promise<boolean> {
   const storage = new ChromeLocalStorage();
   return storage
     .get('SERIALIZED')
-    .then(async (serialized) => typeof serialized === 'string' && serialized.length !== 0)
+    .then(async serialized => typeof serialized === 'string' && serialized.length !== 0)
     .catch(() => false);
 }
 
 function setupPopup(existWallet: boolean): boolean {
   const popupUri = existWallet ? 'popup.html' : '';
-  chrome.action.setPopup({ popup: popupUri });
+  chrome.action.setPopup({
+    popup: popupUri,
+  });
   return true;
 }
 
@@ -305,7 +339,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     chrome.tabs.create({
       url: chrome.runtime.getURL('/register.html'),
     });
-  } else if (details.reason === 'update') {
+  }
+  else if (details.reason === 'update') {
     existsWallet().then((existWallet) => {
       setupPopup(existWallet);
     });
@@ -352,7 +387,9 @@ chrome.runtime.onConnect.addListener(async (port) => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   try {
     const currentTime = new Date().getTime();
-    chrome.storage.local.set({ SESSION: currentTime });
+    chrome.storage.local.set({
+      SESSION: currentTime,
+    });
 
     switch (alarm?.name) {
       case AlarmKey.EXPIRED_PASSWORD:
@@ -369,7 +406,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
       default:
         break;
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error(error);
   }
 
@@ -381,10 +419,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
     try {
       const tab = await chrome.tabs.get(tabId).catch(() => null);
       if (
-        !tab?.url ||
-        tab.url.startsWith('chrome://') ||
-        tab.url.startsWith('chrome-extension://') ||
-        tab.url.startsWith('about:')
+        !tab?.url
+        || tab.url.startsWith('chrome://')
+        || tab.url.startsWith('chrome-extension://')
+        || tab.url.startsWith('about:')
       ) {
         return;
       }
@@ -398,7 +436,8 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
           }),
         )
         .catch(() => undefined);
-    } catch {
+    }
+    catch {
       // Tab may have been closed
     }
   }
@@ -407,14 +446,18 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Handle ping from content script for connection check
   if (message?.type === 'ping') {
-    sendResponse({ status: 'pong' });
+    sendResponse({
+      status: 'pong',
+    });
     return true;
   }
 
   // Handle Gno session updates from content script
   if (isGnoSessionUpdateMessage(message)) {
     handleGnoSessionUpdate(message, sender);
-    sendResponse({ success: true });
+    sendResponse({
+      success: true,
+    });
     return true;
   }
 
@@ -448,7 +491,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  return MessageHandler.createHandler(inMemoryProvider, message, sender, (response) =>
+  return MessageHandler.createHandler(inMemoryProvider, message, sender, response =>
     sendResponseWithNotification(response, message, sendResponse),
   );
 });
@@ -458,7 +501,9 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   if (isTransactionNotification(notificationId)) {
     const scannerUrl = parseTransactionScannerUrl(notificationId);
     if (scannerUrl) {
-      chrome.tabs.create({ url: scannerUrl });
+      chrome.tabs.create({
+        url: scannerUrl,
+      });
     }
 
     chrome.notifications.clear(notificationId);
@@ -469,7 +514,11 @@ function initAlarms(): void {
   SCHEDULE_ALARMS.map(initAlarmWithDelay);
 }
 
-function initAlarmWithDelay(alarm: { key: string; periodInMinutes: number; delay: number }): void {
+function initAlarmWithDelay(alarm: {
+  key: string
+  periodInMinutes: number
+  delay: number
+}): void {
   if (alarm.delay === 0) {
     chrome.alarms.create(alarm.key, {
       periodInMinutes: alarm.periodInMinutes,

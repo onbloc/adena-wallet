@@ -1,15 +1,30 @@
-import { arrayContentEquals } from 'adena-module';
-import { useMemo } from 'react';
-import styled from 'styled-components';
-
 import IconSelectAccount from '@assets/web/select-account.svg';
-import { View, WebButton, WebImg } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-import { AccountInfo } from '@components/molecules/select-account-box';
+import {
+  View, WebButton, WebImg,
+} from '@components/atoms';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  AccountInfo,
+} from '@components/molecules/select-account-box';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
-import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
-import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
-import { useQuery } from '@tanstack/react-query';
+import {
+  defaultAddressPrefix,
+} from '@gnolang/tm2-js-client';
+import {
+  UseAccountImportReturn,
+} from '@hooks/web/use-account-import-screen';
+import {
+  useQuery,
+} from '@tanstack/react-query';
+import {
+  arrayContentEquals,
+} from 'adena-module';
+import {
+  useMemo,
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -19,7 +34,7 @@ const StyledContainer = styled(View)`
 const SelectAccountStep = ({
   useAccountImportScreenReturn,
 }: {
-  useAccountImportScreenReturn: UseAccountImportReturn;
+  useAccountImportScreenReturn: UseAccountImportReturn
 }): JSX.Element => {
   const {
     isLoadingAccounts,
@@ -31,7 +46,9 @@ const SelectAccountStep = ({
     onClickNext,
   } = useAccountImportScreenReturn;
 
-  const { data: accountInfos = [] } = useQuery<AccountInfo[]>(
+  const {
+    data: accountInfos = [],
+  } = useQuery<AccountInfo[]>(
     ['accountImportSelectAccounts', loadedAccounts],
     async () => {
       const accountInfos: AccountInfo[] = [];
@@ -41,7 +58,7 @@ const SelectAccountStep = ({
           hdPath: account.index,
           index: account.index,
           selected: selectedAddresses.includes(address),
-          stored: storedAccounts.some((storedAccount) =>
+          stored: storedAccounts.some(storedAccount =>
             arrayContentEquals(storedAccount.publicKey, account.publicKey),
           ),
           address,
@@ -51,11 +68,13 @@ const SelectAccountStep = ({
 
       return accountInfos;
     },
-    { keepPreviousData: true },
+    {
+      keepPreviousData: true,
+    },
   );
 
   const accountInfosWithSelection = useMemo(() => {
-    return accountInfos.map((accountInfo) => ({
+    return accountInfos.map(accountInfo => ({
       ...accountInfo,
       selected: selectedAddresses.includes(accountInfo.address),
     }));

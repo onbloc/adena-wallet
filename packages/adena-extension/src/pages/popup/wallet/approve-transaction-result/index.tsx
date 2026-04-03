@@ -1,14 +1,26 @@
-import React, { useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
 import TransactionResult from '@components/molecules/transaction-result';
-import { InjectionMessage } from '@inject/message';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import { RoutePath } from '@types';
+import {
+  InjectionMessage,
+} from '@inject/message';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback, useMemo,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
 
 const ApproveTransactionResult: React.FC = () => {
-  const { navigate } = useAppNavigate();
-  const { openScannerLink } = useLink();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    openScannerLink,
+  } = useLink();
   const location = useLocation();
   const response: InjectionMessage | undefined = location.state?.response;
   const isSuccess = response?.status === 'success';
@@ -47,17 +59,19 @@ const ApproveTransactionResult: React.FC = () => {
       return;
     }
 
-    const txHash =
-      response?.data?.hash ||
-      response?.data?.txhash ||
-      response?.data?.txHash ||
-      response?.data?.transactionHash;
+    const txHash
+      = response?.data?.hash
+        || response?.data?.txhash
+        || response?.data?.txHash
+        || response?.data?.transactionHash;
 
     if (!txHash || typeof txHash !== 'string') {
       return;
     }
 
-    openScannerLink('/transactions/details', { txhash: txHash });
+    openScannerLink('/transactions/details', {
+      txhash: txHash,
+    });
   }, [response, openScannerLink]);
 
   return (

@@ -1,9 +1,15 @@
-import { isBech32Address } from '@common/utils/string-utils';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
+import {
+  isBech32Address,
+} from '@common/utils/string-utils';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage,
+} from '@inject/types';
 
 export interface ArgumentValidationResult {
-  messageErrors: (string | undefined)[];
+  messageErrors: (string | undefined)[]
 }
 
 const INTEGER_TYPES = new Set(['int', 'int8', 'int16', 'int32', 'int64']);
@@ -69,19 +75,25 @@ export function validateMessageArguments(
   const messageErrors: (string | undefined)[] = new Array(messages.length).fill(undefined);
 
   if (argumentInfos.length === 0) {
-    return { messageErrors };
+    return {
+      messageErrors,
+    };
   }
 
-  const typedArgInfos = argumentInfos.filter((info) => !!info.type);
+  const typedArgInfos = argumentInfos.filter(info => !!info.type);
   if (typedArgInfos.length === 0) {
-    return { messageErrors };
+    return {
+      messageErrors,
+    };
   }
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
     if (msg.type !== '/vm.m_call') continue;
 
-    const args: string[] = (msg.value as { args?: string[] })?.args || [];
+    const args: string[] = (msg.value as {
+      args?: string[]
+    })?.args || [];
 
     for (const argInfo of typedArgInfos) {
       const argValue = args[argInfo.index];
@@ -95,5 +107,7 @@ export function validateMessageArguments(
     }
   }
 
-  return { messageErrors };
+  return {
+    messageErrors,
+  };
 }

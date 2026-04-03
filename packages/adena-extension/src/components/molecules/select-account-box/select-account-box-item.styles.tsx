@@ -1,4 +1,6 @@
-import { Row } from '@components/atoms';
+import {
+  Row,
+} from '@components/atoms';
 import styled from 'styled-components';
 
 export const StyledSelectAccountBoxItem = styled(Row)`

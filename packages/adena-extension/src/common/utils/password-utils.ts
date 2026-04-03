@@ -1,9 +1,9 @@
 import zxcvbn from 'zxcvbn';
 
 export interface EvaluatePasswordResult {
-  valid: boolean;
-  score: number;
-  complexity: 'DISABLED' | 'WEEK' | 'MEDIUM' | 'STRONG';
+  valid: boolean
+  score: number
+  complexity: 'DISABLED' | 'WEEK' | 'MEDIUM' | 'STRONG'
 }
 
 /**
@@ -13,7 +13,9 @@ export interface EvaluatePasswordResult {
  * @returns @EvaluatePasswordResult
  */
 export function evaluatePassword(password: string): EvaluatePasswordResult {
-  const { score } = zxcvbn(password);
+  const {
+    score,
+  } = zxcvbn(password);
 
   function getComplexityByScore(score: number): 'DISABLED' | 'WEEK' | 'MEDIUM' | 'STRONG' {
     if (score > 2) {

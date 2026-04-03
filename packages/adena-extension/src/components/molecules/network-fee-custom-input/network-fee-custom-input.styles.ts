@@ -1,9 +1,15 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NetworkFeeCustomInputContainer = styled.div`
-  ${mixins.flex({ direction: 'column', justify: 'flex-start', align: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'column',
+    justify: 'flex-start',
+    align: 'flex-start',
+  })};
   width: 100%;
   gap: 4px;
 
@@ -16,7 +22,10 @@ export const NetworkFeeCustomInputContainer = styled.div`
 `;
 
 export const NetworkFeeCustomInputWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   padding: 14px 16px;
   background-color: ${getTheme('neutral', '_9')};
@@ -24,13 +33,17 @@ export const NetworkFeeCustomInputWrapper = styled.div`
   border-radius: 30px;
 
   & .fee-input {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     width: 100%;
     ${fonts.body2Reg};
   }
 
   & .denom {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     flex-shrink: 0;
     ${getTheme('neutral', '_1')};
     ${fonts.light13}

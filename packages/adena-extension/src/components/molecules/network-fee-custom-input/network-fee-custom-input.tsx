@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, {
+  useState,
+} from 'react';
 
 import {
   NetworkFeeCustomInputContainer,
@@ -6,11 +8,13 @@ import {
 } from './network-fee-custom-input.styles';
 
 export interface NetworkFeeCustomInputProps {
-  value: string;
-  changeValue: (value: string) => string;
+  value: string
+  changeValue: (value: string) => string
 }
 
-const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, changeValue }) => {
+const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({
+  value, changeValue,
+}) => {
   const [fee, setFee] = useState(value);
 
   const onChangeCustomFee = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -24,7 +28,7 @@ const NetworkFeeCustomInput: React.FC<NetworkFeeCustomInputProps> = ({ value, ch
 
   return (
     <NetworkFeeCustomInputContainer>
-      <span className='description'>{'Network Fee Multiplier'}</span>
+      <span className='description'>Network Fee Multiplier</span>
 
       <NetworkFeeCustomInputWrapper>
         <input
