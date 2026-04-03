@@ -44,7 +44,11 @@ export default defineConfig({
       'lottie-web': 'lottie-web/build/player/lottie_light.js',
     },
   },
+  define: {
+    'process.env.SALT_KEY': JSON.stringify('The CosmJS salt.'),
+  },
   build: {
+    assetsInlineLimit: 0,
     sourcemap: true,
     target: 'chrome100',
     rolldownOptions: {
