@@ -13,7 +13,6 @@ export default defineConfig({
     },
   },
   test: {
-    globals: true,
     env: {
       SIGNER_PREFIX: "g",
       SALT_KEY: "TESTTESTTESTTEST",

@@ -37,7 +37,7 @@ const StyledAnimationWrapper = styled.div`
   overflow: visible;
 `;
 
-const LandingScreen = (): ReactElement => {
+const LandingScreen = (): ReactElement<any> => {
   const {
     navigate,
   } = useAppNavigate();
@@ -52,27 +52,23 @@ const LandingScreen = (): ReactElement => {
 
   const {
     data: existWallet, isLoading,
-  } = useQuery(
-    ['existWallet', walletService],
-    async () => walletService.existsWallet(),
-    {
-    },
-  );
+  } = useQuery({
+    queryKey: ['existWallet', walletService],
+    queryFn: async () => walletService.existsWallet(),
+  });
 
   const {
     data: visibleGuide, refetch: refetchVisibleGuide,
-  } = useQuery(
-    ['landingScreen/visibleGuide', existWallet],
-    async () => {
+  } = useQuery({
+    queryKey: ['landingScreen/visibleGuide', existWallet],
+    queryFn: async () => {
       if (existWallet === undefined) {
         return false;
       }
       const isSkip = await walletService.isSkipWalletGuide(existWallet);
       return isSkip === false;
     },
-    {
-    },
-  );
+  });
 
   const animationMarginLeftSize = useMemo(() => {
     if (existWallet) {

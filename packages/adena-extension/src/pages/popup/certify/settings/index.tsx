@@ -12,7 +12,7 @@ import {
 import {
   RoutePath,
 } from '@types';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled from 'styled-components';
 
 const menuMakerInfo: {

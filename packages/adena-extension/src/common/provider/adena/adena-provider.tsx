@@ -52,7 +52,7 @@ import {
 } from '@states';
 import axios from 'axios';
 import React, {
-  createContext, useMemo,
+  createContext, useEffect, useMemo, useState,
 } from 'react';
 import {
   useRecoilValue,
@@ -84,11 +84,20 @@ export const AdenaProvider: React.FC<React.PropsWithChildren<unknown>> = ({
 }) => {
   const currentNetwork = useRecoilValue(NetworkState.currentNetwork);
 
-  const gnoProvider: GnoProvider | null = useMemo(() => {
+  const [gnoProvider, setGnoProvider] = useState<GnoProvider | null>(null);
+
+  useEffect(() => {
     if (!currentNetwork) {
-      return null;
+      setGnoProvider(null);
+      return;
     }
-    return new GnoProvider(currentNetwork.rpcUrl, currentNetwork.chainId);
+    let cancelled = false;
+    GnoProvider.create(currentNetwork.rpcUrl, currentNetwork.chainId).then((provider) => {
+      if (!cancelled) {
+        setGnoProvider(provider);
+      }
+    });
+    return () => { cancelled = true; };
   }, [currentNetwork]);
 
   const axiosInstance = axios.create({

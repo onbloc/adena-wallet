@@ -20,6 +20,8 @@ import styled, {
   css, CSSProp,
 } from 'styled-components';
 
+import type { JSX } from "react";
+
 const text = {
   title: 'Create\na Password',
   desc: 'This will be used to unlock your wallet.',

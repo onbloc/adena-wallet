@@ -42,7 +42,7 @@ export const WebMainHeader = ({
   onClickGoBack,
   currentStep,
   stepLength,
-}: WebMainHeaderProps): ReactElement => {
+}: WebMainHeaderProps): ReactElement<any> => {
   const theme = useTheme();
 
   const isCurrentStep = useMemo(() => {

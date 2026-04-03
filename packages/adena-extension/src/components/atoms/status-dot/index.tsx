@@ -5,9 +5,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import {
-  useMemo, useRef,
-} from 'react';
+import { useMemo, useRef, type JSX } from 'react';
 import styled from 'styled-components';
 
 import IconConnected from '../icon/icon-assets/icon-connected';

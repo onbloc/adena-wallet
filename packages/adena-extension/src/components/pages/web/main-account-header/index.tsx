@@ -36,7 +36,7 @@ export type WebMainAccountHeaderProps = {
 export const WebMainAccountHeader = ({
   account,
   onClickGoBack,
-}: WebMainAccountHeaderProps): ReactElement => {
+}: WebMainAccountHeaderProps): ReactElement<any> => {
   const theme = useTheme();
   const [address, setAddress] = useState<string>('');
 

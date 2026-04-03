@@ -10,10 +10,10 @@ import {
 } from './wallet-creation-help-overlay.styles';
 
 export interface WalletCreationHelpOverlayProps {
-  hardwareWalletButtonRef?: React.RefObject<HTMLButtonElement>
-  airgapAccountButtonRef?: React.RefObject<HTMLButtonElement>
-  multisigAccountButtonRef?: React.RefObject<HTMLButtonElement>
-  advancedOptionButtonRef?: React.RefObject<HTMLButtonElement>
+  hardwareWalletButtonRef?: React.RefObject<HTMLButtonElement | null>
+  airgapAccountButtonRef?: React.RefObject<HTMLButtonElement | null>
+  multisigAccountButtonRef?: React.RefObject<HTMLButtonElement | null>
+  advancedOptionButtonRef?: React.RefObject<HTMLButtonElement | null>
   onFinish: () => void
 }
 
@@ -133,7 +133,7 @@ const WalletCreationHelpOverlay: React.FC<WalletCreationHelpOverlayProps> = ({
 
   const createHelpItem = useCallback(
     (
-      ref: React.RefObject<HTMLButtonElement> | undefined,
+      ref: React.RefObject<HTMLButtonElement | null> | undefined,
       config: TooltipConfig,
     ): OverlayItem | null => {
       if (!ref?.current) return null;

@@ -8,7 +8,7 @@ import {
   useNetwork,
 } from '@hooks/use-network';
 import {
-  useQuery, UseQueryOptions, UseQueryResult,
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import {
   GRC721CollectionModel,
@@ -17,7 +17,7 @@ import {
 export const GET_GRC721_COLLECTIONS_QUERY_KEY = 'nft/useGetGRC721Collections';
 
 export const useGetGRC721Collections = (
-  options?: UseQueryOptions<GRC721CollectionModel[] | null, Error>,
+  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const {
     tokenService,
@@ -46,7 +46,7 @@ export const useGetGRC721Collections = (
       }));
     },
     staleTime: Infinity,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     ...options,
   });
 };

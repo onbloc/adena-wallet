@@ -44,7 +44,7 @@ const GetMnemonicStep = ({
   useWalletCreateScreenReturn,
 }: {
   useWalletCreateScreenReturn: UseWalletCreateReturn
-}): ReactElement => {
+}): ReactElement<any> => {
   const {
     seeds, onClickNext,
   } = useWalletCreateScreenReturn;

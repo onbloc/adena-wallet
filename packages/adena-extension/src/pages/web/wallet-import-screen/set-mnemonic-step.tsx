@@ -23,7 +23,7 @@ const SetMnemonicStep = ({
   useWalletImportScreenReturn,
 }: {
   useWalletImportScreenReturn: UseWalletImportReturn
-}): ReactElement => {
+}): ReactElement<any> => {
   const {
     setInputType, updateInputValue, onClickNext, errMsg, isValidForm,
   }

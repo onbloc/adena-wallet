@@ -1,4 +1,7 @@
 import {
+  describe, it,
+} from 'vitest';
+import {
   GlobalWebStyle,
 } from '@styles/global-style';
 import theme from '@styles/theme';

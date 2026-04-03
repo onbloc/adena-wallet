@@ -41,12 +41,10 @@ import {
 import {
   isAirgapAccount,
 } from 'adena-module';
-import React, {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import {
   useLocation, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   useRecoilState,
 } from 'recoil';
@@ -238,7 +236,7 @@ export const ApproveLogin = (): JSX.Element => {
 
   const approveButtonClick = (): Promise<void> => tryLoginApprove(password);
 
-  const onClickForgotButton = (): void => navigate(RoutePath.ForgotPassword);
+  const onClickForgotButton = (): void => { navigate(RoutePath.ForgotPassword); };
 
   return (
     <>

@@ -2,7 +2,7 @@ import {
   Text,
 } from '@components/atoms';
 import mixins from '@styles/mixins';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled, {
   CSSProperties, useTheme,
 } from 'styled-components';

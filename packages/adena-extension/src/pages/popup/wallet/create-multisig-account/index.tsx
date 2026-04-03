@@ -31,7 +31,7 @@ import React, {
 } from 'react';
 import {
   useLocation, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 
 const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();

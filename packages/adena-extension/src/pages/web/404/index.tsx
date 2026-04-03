@@ -50,7 +50,7 @@ const StyledLabel = styled(Row)`
   column-gap: 4px;
 `;
 
-const NotFoundScreen = (): ReactElement => {
+const NotFoundScreen = (): ReactElement<any> => {
   const theme = useTheme();
   const {
     reload,

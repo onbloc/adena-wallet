@@ -41,7 +41,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingTokenDetails = (): ReactElement => {
+const LoadingTokenDetails = (): ReactElement<any> => {
   return (
     <Wrapper>
       <Loading.Round width='91px' height='14px' radius='24px' />

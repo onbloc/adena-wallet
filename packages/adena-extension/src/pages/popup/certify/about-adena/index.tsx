@@ -8,9 +8,7 @@ import {
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
 import mixins from '@styles/mixins';
-import React, {
-  useEffect, useState,
-} from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

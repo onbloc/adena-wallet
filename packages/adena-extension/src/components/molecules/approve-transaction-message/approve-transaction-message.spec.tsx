@@ -1,4 +1,7 @@
 import {
+  describe, it, vi,
+} from 'vitest';
+import {
   GlobalPopupStyle,
 } from '@styles/global-style';
 import theme from '@styles/theme';

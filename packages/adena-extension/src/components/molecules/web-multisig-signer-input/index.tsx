@@ -28,7 +28,7 @@ export const WebMultisigSignerInput = ({
   onRemoveSigner,
   onSignerChange,
   multisigConfigError,
-}: WebMultisigSignerInputProps): React.ReactElement => {
+}: WebMultisigSignerInputProps): React.ReactElement<any> => {
   const isFirstInputDisabled = mode === 'CREATE' && !!currentAddress;
 
   const isMaxSigners = React.useMemo(() => {

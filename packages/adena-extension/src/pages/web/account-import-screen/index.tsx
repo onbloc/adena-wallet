@@ -34,7 +34,7 @@ const HasWallet = ({
   wallet,
 }: {
   wallet: Wallet
-}): ReactElement => {
+}): ReactElement<any> => {
   const useAccountImportScreenReturn = useAccountImportScreen({
     wallet,
   });
@@ -96,7 +96,7 @@ const HasWallet = ({
   );
 };
 
-const AccountImportScreen = (): ReactElement => {
+const AccountImportScreen = (): ReactElement<any> => {
   const {
     wallet,
   } = useWalletContext();

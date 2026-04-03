@@ -38,7 +38,7 @@ const StyledWarnBox = styled(Row)`
   background: ${getTheme('webWarning', '_100')}14;
 `;
 
-const AdvancedOptionScreen = (): ReactElement => {
+const AdvancedOptionScreen = (): ReactElement<any> => {
   const {
     navigate,
   } = useAppNavigate();

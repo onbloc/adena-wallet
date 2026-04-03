@@ -1,7 +1,7 @@
 import {
   Text,
 } from '@components/atoms';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`

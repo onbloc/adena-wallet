@@ -7,9 +7,7 @@ import {
 import {
   WebTextarea,
 } from '@components/atoms/web-textarea';
-import {
-  useEffect, useState,
-} from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 import {

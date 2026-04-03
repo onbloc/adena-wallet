@@ -22,7 +22,7 @@ import ConnectRequest from './connect-request';
 import ConnectRequestWallet from './connect-request-wallet';
 import ConnectRequestWalletLoad from './connect-request-wallet-load';
 
-const ConnectLedgerScreen = (): ReactElement => {
+const ConnectLedgerScreen = (): ReactElement<any> => {
   const useConnectLedgerScreenReturn = useConnectLedgerScreen();
   const {
     indicatorInfo, connectState, initWallet, requestPermission, setConnectState,

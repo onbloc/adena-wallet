@@ -1,9 +1,7 @@
 import {
   NetworkState, WalletState,
 } from '@states';
-import React, {
-  useMemo,
-} from 'react';
+import React, { useMemo, type JSX } from 'react';
 import {
   useRecoilState,
 } from 'recoil';

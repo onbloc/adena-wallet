@@ -12,7 +12,7 @@ import {
 } from '@tanstack/react-query';
 
 export const useGetGRC721PinnedCollections = (
-  options?: UseQueryOptions<string[], Error>,
+  options?: Omit<UseQueryOptions<string[], Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<string[]> => {
   const {
     tokenService,

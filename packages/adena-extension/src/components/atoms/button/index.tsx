@@ -2,9 +2,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import React, {
-  CSSProperties,
-} from 'react';
+import React, { CSSProperties, type JSX } from 'react';
 import styled, {
   css,
 } from 'styled-components';

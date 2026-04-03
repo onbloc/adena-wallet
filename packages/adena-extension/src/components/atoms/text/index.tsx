@@ -1,9 +1,7 @@
 import {
   fonts, FontsType,
 } from '@styles/theme';
-import React, {
-  CSSProperties, PropsWithChildren,
-} from 'react';
+import React, { CSSProperties, PropsWithChildren, type JSX } from 'react';
 import styled, {
   css, CSSProp,
 } from 'styled-components';

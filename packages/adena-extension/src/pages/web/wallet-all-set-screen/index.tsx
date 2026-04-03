@@ -12,6 +12,8 @@ import styled, {
   useTheme,
 } from 'styled-components';
 
+import type { JSX } from "react";
+
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
   width: fit-content;

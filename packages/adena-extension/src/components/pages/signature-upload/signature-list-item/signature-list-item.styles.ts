@@ -34,7 +34,7 @@ export const StyledSignerItemWrapper = styled.div<{
       }): string => theme.neutral._5};
       color: ${({
         theme,
-      }): string => theme.white};
+      }): string => theme.neutral._1};
       display: flex;
       align-items: center;
       justify-content: center;

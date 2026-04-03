@@ -15,9 +15,7 @@ import mixins from '@styles/mixins';
 import {
   RoutePath,
 } from '@types';
-import React, {
-  useState,
-} from 'react';
+import React, { useState, type JSX } from 'react';
 import styled, {
   css, CSSProp,
 } from 'styled-components';

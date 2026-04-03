@@ -14,13 +14,15 @@ import {
 } from '@gnolang/tm2-js-client';
 import {
   CompactBitArray,
-  compactBitArraySetIndex,
-  createCompactBitArray,
   Multisignature,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
+} from '@gnolang/tm2-js-client';
 import {
   ContractMessage, MultisigAccountResult, Signature,
 } from '@inject/types';
+import {
+  compactBitArraySetIndex,
+  createCompactBitArray,
+} from 'adena-module';
 import {
   Account,
   combineMultisigPublicKey,

@@ -1,9 +1,7 @@
 import {
   stringFromBase64,
 } from '@common/utils/encoding-util';
-import {
-  useEffect, useMemo, useRef,
-} from 'react';
+import { useEffect, useMemo, useRef, type JSX } from 'react';
 import styled from 'styled-components';
 
 interface WebSeedBoxProps {
@@ -115,7 +113,9 @@ export const WebSeedBox = ({
       }).map((_, index) => (
         <CanvasWrapper key={index} blur={showBlur}>
           <canvas
-            ref={(el): HTMLCanvasElement | null => (canvasRefs.current[index] = el)}
+            ref={(el) => {
+              canvasRefs.current[index] = el;
+            }}
             width={BOX_WIDTH}
             height={BOX_HEIGHT}
           />

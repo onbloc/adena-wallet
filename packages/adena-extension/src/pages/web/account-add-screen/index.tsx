@@ -19,7 +19,7 @@ import {
 import CreateAccountStep from './create-account-step';
 import SelectSeedPhraseStep from './select-seed-phrase-step';
 
-const AccountAddScreen = (): ReactElement => {
+const AccountAddScreen = (): ReactElement<any> => {
   const useAccountAddScreenReturn = useAccountAddScreen();
   const {
     step, onClickGoBack, onClickNext,

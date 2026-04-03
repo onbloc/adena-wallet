@@ -47,13 +47,13 @@ export const useFaucet = (): UseFaucetReturn => {
 
   const {
     data: isSupported = false,
-  } = useQuery<boolean>(
-    ['faucet/isSupported', currentNetwork, faucetService],
-    () => faucetService.availFaucet(currentNetwork.chainId),
-  );
+  } = useQuery<boolean>({
+    queryKey: ['faucet/isSupported', currentNetwork, faucetService],
+    queryFn: () => faucetService.availFaucet(currentNetwork.chainId),
+  });
 
   const {
-    isLoading, mutate,
+    isPending: isLoading, mutate,
   } = useMutation({
     mutationFn: (to: string) =>
       waitForRun<FaucetResponse>(

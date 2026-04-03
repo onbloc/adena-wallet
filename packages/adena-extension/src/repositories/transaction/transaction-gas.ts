@@ -6,7 +6,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+} from '@gnolang/tm2-js-client';
 import {
   NetworkMetainfo,
 } from '@types';
@@ -62,13 +62,13 @@ export class TransactionGasRepository implements ITransactionGasRepository {
     return this.gnoProvider.simulateTx(tx);
   }
 
-  public async estimateGasByTx(tx: Tx): Promise<number> {
+  public async estimateGasByTx(tx: Tx): Promise<bigint> {
     if (!this.gnoProvider) {
       throw new Error('GnoProvider is not initialized');
     }
 
     const simulateResult = await this.gnoProvider.simulateTx(tx);
-    return simulateResult.gas_used.toNumber();
+    return simulateResult.gas_used;
   }
 
   private static postRPCRequest = <T = any>(

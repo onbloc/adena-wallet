@@ -33,7 +33,7 @@ import React, {
 } from 'react';
 import {
   useParams,
-} from 'react-router-dom';
+} from 'react-router';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 

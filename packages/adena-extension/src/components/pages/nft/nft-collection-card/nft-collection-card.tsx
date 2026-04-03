@@ -21,11 +21,11 @@ export interface NFTCollectionCardProps {
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>
   queryGRC721Balance: (
     packagePath: string,
-    options?: UseQueryOptions<number | null, Error>,
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<number | null>
   pin: (collection: GRC721CollectionModel) => void
   unpin: (collection: GRC721CollectionModel) => void

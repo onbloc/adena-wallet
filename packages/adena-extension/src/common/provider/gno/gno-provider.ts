@@ -11,50 +11,39 @@ import {
   GnoJSONRPCProvider,
 } from '@gnolang/gno-js-client';
 import {
-  ABCIEndpoint,
-  ABCIResponse,
+  adaptAbciQueryResponse,
   Any,
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
-  CommonEndpoint,
-  newRequest,
   parseABCI,
-  RestService,
-  RPCResponse,
-  Status,
-  stringToBase64,
   TransactionEndpoint,
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
-import axios from 'axios';
+} from '@gnolang/tm2-js-client';
+import {
+  Tm2Client,
+} from '@gnolang/tm2-rpc';
 
 import {
   AccountInfo, GnoDocumentInfo, VMQueryType,
 } from './types';
 import {
-  fetchABCIResponse,
-  isHttpsAvailable,
-  makeRequestQueryPath,
   parseProto,
-  postABCIResponse,
 } from './utils';
 
 export class GnoProvider extends GnoJSONRPCProvider {
   private chainId?: string;
 
-  constructor(baseURL: string, chainId?: string) {
+  constructor(baseURL: Tm2Client, chainId?: string) {
     super(baseURL);
     this.chainId = chainId;
   }
 
-  public async getStatus(): Promise<Status> {
-    return await RestService.post<Status>(this.baseURL, {
-      request: newRequest(CommonEndpoint.STATUS, ['0']),
-    });
+  static async create(baseURL: string, chainId?: string): Promise<GnoProvider> {
+    return new GnoProvider(await Tm2Client.connect(baseURL), chainId);
   }
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
@@ -70,27 +59,33 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   public async getGasPrice(height?: number | undefined): Promise<number> {
-    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, ['auth/gasprice', '', `${height ?? 0}`, false]);
+    try {
+      const abciResponse = adaptAbciQueryResponse(await this.client.abciQuery({
+        path: 'auth/gasprice',
+        data: new Uint8Array(),
+        height: height ?? 0,
+        prove: false,
+      }));
 
-    const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
+      const abciData = abciResponse.response.ResponseBase.Data;
+      if (!abciData) {
+        return 0;
+      }
 
-    const abciData = abciResponse?.result?.response.ResponseBase.Data;
-    // Make sure the response is initialized
-    if (!abciData) {
+      const gasPrice = parseABCI<{
+        gas: number
+        price: string
+      }>(abciData);
+
+      const priceAmount = parseTokenAmount(gasPrice.price);
+      if (gasPrice.gas === 0 || priceAmount === 0) {
+        return 0;
+      }
+
+      return priceAmount / gasPrice.gas;
+    } catch {
       return 0;
     }
-
-    const gasPrice = parseABCI<{
-      gas: number
-      price: string
-    }>(abciData);
-
-    const priceAmount = parseTokenAmount(gasPrice.price);
-    if (gasPrice.gas === 0 || priceAmount === 0) {
-      return 0;
-    }
-
-    return priceAmount / gasPrice.gas;
   }
 
   public async getAccountInfo(
@@ -183,18 +178,15 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
   async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
     const encodedTx = uint8ArrayToBase64(Tx.encode(tx).finish());
-    const params = {
-      request: newRequest(ABCIEndpoint.ABCI_QUERY, ['.app/simulate', `${encodedTx}`, '0', false]),
-    };
 
-    const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(
-      this.baseURL,
-      params.request,
-      {
-      },
-    );
+    const abciResponse = adaptAbciQueryResponse(await this.client.abciQuery({
+      path: '.app/simulate',
+      data: new TextEncoder().encode(encodedTx),
+      height: 0,
+      prove: false,
+    }));
 
-    const responseValue = abciResponse.data.result?.response.Value;
+    const responseValue = abciResponse.response.Value;
     if (!responseValue) {
       throw new Error('Failed to estimate gas');
     }
@@ -236,13 +228,15 @@ export class GnoProvider extends GnoJSONRPCProvider {
   }
 
   public async getRealmDocument(packagePath: string): Promise<GnoDocumentInfo | null> {
-    const query = VMQueryType.QUERY_DOCUMENT;
-    const base64PackagePath = stringToBase64(packagePath);
-    const requestQuery = await this.getRequestQueryPath(query, base64PackagePath);
-
     try {
-      const abciResponse = await fetchABCIResponse(requestQuery, false);
-      const abciData = abciResponse?.result?.response.ResponseBase.Data;
+      const abciResponse = adaptAbciQueryResponse(await this.client.abciQuery({
+        path: VMQueryType.QUERY_DOCUMENT,
+        data: new TextEncoder().encode(packagePath),
+        height: 0,
+        prove: false,
+      }));
+
+      const abciData = abciResponse.response.ResponseBase.Data;
       if (!abciData) {
         return null;
       }
@@ -254,10 +248,5 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     return null;
-  }
-
-  private async getRequestQueryPath(path: string, data: string): Promise<string> {
-    const ssl = await isHttpsAvailable(this.baseURL);
-    return makeRequestQueryPath(this.baseURL, path, data, ssl);
   }
 }

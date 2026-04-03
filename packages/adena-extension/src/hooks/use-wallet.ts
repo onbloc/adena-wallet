@@ -35,27 +35,23 @@ export const useWallet = (): UseWalletReturn => {
 
   const {
     data: existWallet, isLoading: isLoadingExistWallet,
-  } = useQuery(
-    ['wallet/existWallet', walletService.id],
-    async () => {
+  } = useQuery({
+    queryKey: ['wallet/existWallet', walletService.id],
+    queryFn: async () => {
       const existWallet = await walletService.existsWallet().catch(() => false);
       return existWallet;
     },
-    {
-    },
-  );
+  });
 
   const {
     data: lockedWallet, isLoading: isLoadingLockedWallet,
-  } = useQuery(
-    ['wallet/locked', walletService.id],
-    async () => {
+  } = useQuery({
+    queryKey: ['wallet/locked', walletService.id],
+    queryFn: async () => {
       const lockedWallet = await walletService.isLocked();
       return lockedWallet;
     },
-    {
-    },
-  );
+  });
 
   return {
     hasHDWallet,

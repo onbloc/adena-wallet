@@ -13,7 +13,7 @@ import QuestionnaireComplete from './complete';
 import QuestionnaireInitStep from './init-step';
 import QuestionnaireQuestion from './question';
 
-const QuestionnaireScreen = (): ReactElement => {
+const QuestionnaireScreen = (): ReactElement<any> => {
   const {
     indicatorInfo,
     questionnaireState,

@@ -26,7 +26,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingChangeNetwork = (): ReactElement => {
+const LoadingChangeNetwork = (): ReactElement<any> => {
   return (
     <Wrapper>
       {Array.from({

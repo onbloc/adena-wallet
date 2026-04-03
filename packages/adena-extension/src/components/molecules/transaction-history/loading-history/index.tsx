@@ -42,7 +42,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingHistory = (): ReactElement => {
+const LoadingHistory = (): ReactElement<any> => {
   return (
     <Wrapper>
       <Loading.Round width='91px' height='14px' radius='24px' />

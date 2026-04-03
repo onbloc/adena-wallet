@@ -45,9 +45,7 @@ import {
   isAirgapAccount,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

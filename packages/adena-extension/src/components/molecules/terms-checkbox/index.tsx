@@ -4,7 +4,7 @@ import mixins from '@styles/mixins';
 import {
   fonts,
 } from '@styles/theme';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled, {
   CSSProp,
 } from 'styled-components';

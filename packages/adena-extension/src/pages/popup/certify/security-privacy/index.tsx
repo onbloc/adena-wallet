@@ -26,9 +26,7 @@ import {
 import {
   Account, hasPrivateKeyAccount, isSeedAccount,
 } from 'adena-module';
-import React, {
-  useCallback, useEffect, useState,
-} from 'react';
+import React, { useCallback, useEffect, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 type MenuType

@@ -16,7 +16,7 @@ import {
 
 export const useGetGRC721Tokens = (
   collection: GRC721CollectionModel | null,
-  options?: UseQueryOptions<GRC721Model[] | null, Error>,
+  options?: Omit<UseQueryOptions<GRC721Model[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721Model[] | null> => {
   const {
     tokenService,
@@ -50,7 +50,6 @@ export const useGetGRC721Tokens = (
         .reverse();
     },
     staleTime: 1_000,
-    keepPreviousData: false,
     refetchOnMount: true,
     ...options,
   });

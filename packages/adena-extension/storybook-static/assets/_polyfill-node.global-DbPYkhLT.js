@@ -1,1 +1,0 @@
-import{n as e}from"./chunk-zsgVPwQN.js";var t,n=e((()=>{n(),t=t===void 0?typeof self<`u`?self:typeof window<`u`?window:{}:t}));export{n,t};

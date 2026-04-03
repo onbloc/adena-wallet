@@ -2,7 +2,7 @@ import {
   TransactionHistoryMapper,
 } from '@repositories/transaction/mapper/transaction-history-mapper';
 import {
-  useQuery, useQueryClient,
+  keepPreviousData, useQuery, useQueryClient,
 } from '@tanstack/react-query';
 import {
   TransactionInfo,
@@ -25,7 +25,7 @@ import {
 } from './use-token-metainfo';
 
 export interface UseMakeTransactionsWithTimeReturn {
-  status: 'loading' | 'error' | 'success'
+  status: 'pending' | 'error' | 'success'
   isLoading: boolean
   isFetched: boolean
   isFetching: boolean
@@ -72,13 +72,11 @@ export const useMakeTransactionsWithTime = (
           let time: string | null = transaction.date;
 
           if (!transactionHistoryService.supportedApi) {
-            time = await queryClient.fetchQuery(
-              ['blockTime', currentNetwork.networkId, transaction.height || 1],
-              () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-              {
-                staleTime: Infinity,
-              },
-            );
+            time = await queryClient.fetchQuery({
+              queryKey: ['blockTime', currentNetwork.networkId, transaction.height || 1],
+              queryFn: () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
+              staleTime: Infinity,
+            });
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
@@ -131,7 +129,7 @@ export const useMakeTransactionsWithTime = (
       && isFetchedGRC721Collections
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   return {

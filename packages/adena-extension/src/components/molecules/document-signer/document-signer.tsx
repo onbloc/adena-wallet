@@ -11,7 +11,7 @@ interface DocumentSignerProps {
 const DocumentSigner = ({
   signerCount,
   onClickSetting,
-}: DocumentSignerProps): React.ReactElement => {
+}: DocumentSignerProps): React.ReactElement<any> => {
   const hasSetting = !!onClickSetting;
   return (
     <S.DocumentSignersContainer>

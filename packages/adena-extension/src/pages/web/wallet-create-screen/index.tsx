@@ -19,7 +19,7 @@ import {
 import GetMnemonicStep from './get-mnemonic-step';
 import ValidateMnemonicStep from './validate-mnemonic-step';
 
-const WalletCreateScreen = (): ReactElement => {
+const WalletCreateScreen = (): ReactElement<any> => {
   const useWalletCreateScreenReturn = useWalletCreateScreen();
   const {
     step, indicatorInfo, onClickGoBack, onClickNext,

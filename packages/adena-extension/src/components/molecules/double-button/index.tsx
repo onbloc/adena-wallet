@@ -5,7 +5,7 @@ import mixins from '@styles/mixins';
 import {
   FontsType,
 } from '@styles/theme';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled from 'styled-components';
 
 interface EachButtonProps {

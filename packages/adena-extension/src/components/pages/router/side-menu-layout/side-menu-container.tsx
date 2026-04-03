@@ -44,7 +44,7 @@ import React, {
 } from 'react';
 import {
   useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 
 interface SideMenuContainerProps {
   open: boolean
@@ -167,9 +167,9 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
 
   const {
     data: sideMenuAccounts = [],
-  } = useQuery<SideMenuAccountInfo[]>(
-    ['sideMenuAccounts', accountNames, accounts, accountNativeBalanceMap, currentNetwork],
-    () => {
+  } = useQuery<SideMenuAccountInfo[]>({
+    queryKey: ['sideMenuAccounts', accountNames, accounts, accountNativeBalanceMap, currentNetwork],
+    queryFn: () => {
       function mapBalance(
         accountNativeBalanceMap: Record<string, TokenBalanceType>,
         account: Account,
@@ -191,7 +191,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
         })),
       );
     },
-  );
+  });
 
   useEffect(() => {
     if (sideMenuAccounts.length > 0) {

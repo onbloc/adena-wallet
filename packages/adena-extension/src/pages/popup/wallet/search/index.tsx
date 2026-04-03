@@ -27,9 +27,7 @@ import {
   TokenBalanceType,
 } from '@types';
 import BigNumber from 'bignumber.js';
-import React, {
-  useRef, useState,
-} from 'react';
+import React, { useRef, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.main`

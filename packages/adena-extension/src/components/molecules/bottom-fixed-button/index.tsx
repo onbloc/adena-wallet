@@ -2,7 +2,7 @@ import {
   Button, ButtonProps, Text,
 } from '@components/atoms';
 import mixins from '@styles/mixins';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled, {
   css, RuleSet,
 } from 'styled-components';

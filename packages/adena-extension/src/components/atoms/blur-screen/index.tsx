@@ -3,7 +3,7 @@ import {
   Icon, Text,
 } from '@components/atoms';
 import mixins from '@styles/mixins';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled from 'styled-components';
 
 interface BlurScreenProps {

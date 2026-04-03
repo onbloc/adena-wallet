@@ -41,7 +41,7 @@ export const useTransactionHistory = ({
     }[]
     | null
   isFetched: boolean
-  status: 'loading' | 'error' | 'success'
+  status: 'pending' | 'error' | 'success'
   isLoading: boolean
   isFetching: boolean
   isSupported: boolean
@@ -67,17 +67,15 @@ export const useTransactionHistory = ({
 
   const {
     data: allTransactions, refetch,
-  } = useQuery(
-    ['history/common/all', currentNetwork.networkId, currentAddress],
-    () => transactionHistoryService.fetchAllTransactionHistory(currentAddress || ''),
-    {
-      enabled:
-        !!currentAddress
-        && tokenMetainfos.length > 0
-        && transactionHistoryService.supported
-        && enabled,
-    },
-  );
+  } = useQuery({
+    queryKey: ['history/common/all', currentNetwork.networkId, currentAddress],
+    queryFn: () => transactionHistoryService.fetchAllTransactionHistory(currentAddress || ''),
+    enabled:
+      !!currentAddress
+      && tokenMetainfos.length > 0
+      && transactionHistoryService.supported
+      && enabled,
+  });
 
   const blockIndex = useMemo(() => {
     if (!allTransactions) {

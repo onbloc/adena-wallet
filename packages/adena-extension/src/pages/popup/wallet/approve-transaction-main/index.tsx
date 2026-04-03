@@ -77,7 +77,7 @@ import React, {
 } from 'react';
 import {
   useLocation, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 
 import ApproveTransactionLoading from './loading';
 import ApproveTransactionResult from './result';

@@ -35,7 +35,7 @@ const Wrapper = styled.div`
 export const CancelAndConfirmButton = ({
   cancelButtonProps,
   confirmButtonProps,
-}: CancelAndConfirmLocation): ReactElement => {
+}: CancelAndConfirmLocation): ReactElement<any> => {
   return (
     <Wrapper>
       <Button

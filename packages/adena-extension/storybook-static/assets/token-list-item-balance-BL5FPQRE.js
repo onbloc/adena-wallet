@@ -1,0 +1,4 @@
+import{i as e}from"./_polyfill-node.global-CL4hvcq6.js";import{rt as t,t as n}from"./iframe-DekVl-_p.js";import{r}from"./approve-ledger-loading-BquluU52.js";import{t as i}from"./token-balance-DOMhhn0q.js";var a,o,s=e((()=>{r(),t(),a=n(),o=({amount:e})=>{let{value:t,denom:n}=e;return(0,a.jsx)(i,{value:t,denom:n,orientation:`HORIZONTAL`,fontColor:`white`,fontStyleKey:`body2Reg`,minimumFontSize:`11px`})},o.__docgenInfo={description:``,methods:[],displayName:`TokenListItemBalance`,props:{amount:{required:!0,tsType:{name:`signature`,type:`object`,raw:`{
+  value: string
+  denom: string
+}`,signature:{properties:[{key:`value`,value:{name:`string`,required:!0}},{key:`denom`,value:{name:`string`,required:!0}}]}},description:``}}}}));export{s as n,o as t};

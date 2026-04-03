@@ -26,7 +26,7 @@ interface DocumentSignerListProps {
 
 const DocumentSignerList = ({
   signerInfos,
-}: DocumentSignerListProps): React.ReactElement => {
+}: DocumentSignerListProps): React.ReactElement<any> => {
   const {
     openLink,
   } = useLink();

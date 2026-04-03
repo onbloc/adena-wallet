@@ -24,12 +24,10 @@ import {
 import {
   RoutePath,
 } from '@types';
-import React, {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import styled, {
   useTheme,
 } from 'styled-components';

@@ -52,7 +52,7 @@ export class WalletAccountService {
     rpcUrl: string,
     chainId: string,
   ): Promise<AccountInfo> => {
-    const gnoProvider = new GnoProvider(rpcUrl, chainId);
+    const gnoProvider = await GnoProvider.create(rpcUrl, chainId);
     return this.getAccountInfoByProvider(address, gnoProvider);
   };
 

@@ -32,9 +32,7 @@ import {
 import {
   RoutePath,
 } from '@types';
-import React, {
-  useEffect, useRef, useState,
-} from 'react';
+import React, { useEffect, useRef, useState, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

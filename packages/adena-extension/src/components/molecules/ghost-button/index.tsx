@@ -7,6 +7,8 @@ import {
 } from '@styles/theme';
 import styled from 'styled-components';
 
+import type { JSX } from "react";
+
 interface GhostButtonsProps {
   left: string
   right: string

@@ -24,7 +24,7 @@ const AppProvider = ({
   children,
 }: {
   children: ReactNode
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <React.Fragment>
       <AppProviderErrorBoundary fallback={<AppReloadFallback />}>

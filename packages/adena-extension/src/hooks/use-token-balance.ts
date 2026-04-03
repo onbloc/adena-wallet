@@ -2,7 +2,7 @@ import {
   isGRC20TokenModel, isNativeTokenModel,
 } from '@common/validation/validation-token';
 import {
-  QueryObserverResult, useQuery,
+  keepPreviousData, QueryObserverResult, useQuery,
 } from '@tanstack/react-query';
 import {
   Amount, TokenBalanceType, TokenModel,
@@ -89,9 +89,9 @@ export const useTokenBalance = (): {
 
   const {
     data: balances = [], refetch: refetchBalances,
-  } = useQuery<TokenBalanceType[]>(
-    ['balances', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
-    () => {
+  } = useQuery<TokenBalanceType[]>({
+    queryKey: ['balances', currentAddress, currentNetwork.chainId, isFetchedGRC20Tokens, tokenLogoMap],
+    queryFn: () => {
       if (currentAddress === null || nativeToken == null) {
         return [];
       }
@@ -99,21 +99,19 @@ export const useTokenBalance = (): {
         tokenMetainfos.map(tokenModel => fetchBalanceBy(currentAddress, tokenModel)),
       );
     },
-    {
-      refetchInterval: REFETCH_INTERVAL,
-      keepPreviousData: true,
-      enabled: availableBalanceFetching,
-    },
-  );
+    refetchInterval: REFETCH_INTERVAL,
+    placeholderData: keepPreviousData,
+    enabled: availableBalanceFetching,
+  });
 
   const {
     data: accountNativeBalanceMap = {
     }, refetch: refetchAccountNativeBalanceMap,
   } = useQuery<
     Record<string, TokenBalanceType>
-  >(
-    ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, isFetchedGRC20Tokens],
-    () => {
+  >({
+    queryKey: ['accountNativeBalanceMap', wallet?.accounts, currentNetwork.chainId, isFetchedGRC20Tokens],
+    queryFn: () => {
       if (wallet === null || wallet.accounts === null || nativeToken == null) {
         return {
         };
@@ -134,11 +132,9 @@ export const useTokenBalance = (): {
         }),
       );
     },
-    {
-      refetchInterval: REFETCH_INTERVAL,
-      enabled: availableBalanceFetching,
-    },
-  );
+    refetchInterval: REFETCH_INTERVAL,
+    enabled: availableBalanceFetching,
+  });
 
   const currentBalances = useMemo((): TokenBalanceType[] => {
     if (balances.length === 0) {

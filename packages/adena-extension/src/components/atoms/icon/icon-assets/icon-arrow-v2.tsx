@@ -6,7 +6,7 @@ const IconArrowV2 = ({
   className,
 }: {
   className?: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <svg
       width='6'

@@ -48,7 +48,7 @@ import React, {
 } from 'react';
 import {
   useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 import styled from 'styled-components';
 
 const TransferSummaryLayout = styled.div`
@@ -231,7 +231,7 @@ const TransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      gasWanted,
+      BigInt(gasWanted),
       BigNumber(networkFee?.amount || 0)
         .shiftedBy(GasToken.decimals)
         .toNumber(),

@@ -12,9 +12,7 @@ import {
 import {
   RoutePath,
 } from '@types';
-import React, {
-  useState,
-} from 'react';
+import React, { useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.div`

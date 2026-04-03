@@ -36,7 +36,7 @@ export const WebText = ({
   children,
   textCenter,
   ...rest
-}: FormTextProps): ReactElement => {
+}: FormTextProps): ReactElement<any> => {
   return (
     <StyledContainer
       type={type}

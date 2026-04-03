@@ -54,7 +54,7 @@ import React, {
 } from 'react';
 import {
   useLocation, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 
 interface SignMultisigTransactionRequestData {
   multisigDocument: MultisigTransactionDocument

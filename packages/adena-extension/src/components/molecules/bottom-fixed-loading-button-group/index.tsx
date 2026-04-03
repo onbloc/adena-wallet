@@ -44,7 +44,7 @@ export const BottomFixedLoadingButtonGroup = ({
   leftButton,
   rightButton,
   filled,
-}: BottomFixedLoadingButtonGroupProps): ReactElement => {
+}: BottomFixedLoadingButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
   }, [leftButton]);

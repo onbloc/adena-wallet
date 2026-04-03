@@ -78,19 +78,17 @@ export const useCurrentAccount = (): {
 
   const {
     data: currentAddress,
-  } = useQuery<string | null>(
-    ['currentAddress', currentAccount, currentNetwork],
-    async () => {
+  } = useQuery<string | null>({
+    queryKey: ['currentAddress', currentAccount, currentNetwork],
+    queryFn: async () => {
       if (!currentAccount) {
         return null;
       }
       const address = await currentAccount.getAddress(currentNetwork.addressPrefix ?? 'g');
       return address;
     },
-    {
-      enabled: currentAccount !== null,
-    },
-  );
+    enabled: currentAccount !== null,
+  });
 
   return {
     currentAccount,

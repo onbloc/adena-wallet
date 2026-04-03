@@ -6,7 +6,7 @@ import {
 } from 'react';
 import {
   useMatch,
-} from 'react-router-dom';
+} from 'react-router';
 
 import {
   useAddressBook,

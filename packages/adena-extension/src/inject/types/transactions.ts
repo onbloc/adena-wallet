@@ -3,7 +3,7 @@ import {
 } from '@gnolang/gno-js-client';
 import {
   MsgRun,
-} from '@gnolang/gno-js-client/bin/proto/gno/vm';
+} from '@gnolang/gno-js-client';
 import {
   BroadcastTxCommitResult,
 } from '@gnolang/tm2-js-client';

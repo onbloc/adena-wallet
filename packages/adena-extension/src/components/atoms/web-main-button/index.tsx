@@ -1,6 +1,4 @@
-import React, {
-  CSSProperties,
-} from 'react';
+import React, { CSSProperties, type JSX } from 'react';
 import styled from 'styled-components';
 
 import {
@@ -13,7 +11,7 @@ import {
   WebText,
 } from '../web-text';
 export interface WebMainButtonProps {
-  buttonRef?: React.RefObject<HTMLButtonElement>
+  buttonRef?: React.RefObject<HTMLButtonElement | null>
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
   text: string
   width?: CSSProperties['width']

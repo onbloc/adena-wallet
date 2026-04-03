@@ -15,7 +15,7 @@ import {
 } from '@types';
 
 export const useGetAllGRC721Collections = (
-  options?: UseQueryOptions<GRC721CollectionModel[] | null, Error>,
+  options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const {
     tokenService,

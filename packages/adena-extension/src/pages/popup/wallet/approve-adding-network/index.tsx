@@ -21,7 +21,7 @@ import React, {
 } from 'react';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const {

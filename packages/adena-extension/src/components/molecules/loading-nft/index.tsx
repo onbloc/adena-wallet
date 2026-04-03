@@ -37,7 +37,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   padding: 10px;
 `;
 
-const NftRowBox = (): ReactElement => {
+const NftRowBox = (): ReactElement<any> => {
   return (
     <ListBoxWrap>
       {Array.from({
@@ -51,7 +51,7 @@ const NftRowBox = (): ReactElement => {
   );
 };
 
-export const LoadingNft = (): ReactElement => {
+export const LoadingNft = (): ReactElement<any> => {
   return (
     <Wrapper>
       {Array.from({

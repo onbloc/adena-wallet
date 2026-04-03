@@ -13,7 +13,7 @@ export const GET_GRC721_TOKEN_URI_QUERY_KEY = 'nft/useGetGRC721TokenUri';
 export const useGetGRC721TokenUri = (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions<string | null, Error>,
+  options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<string | null> => {
   const {
     tokenService,

@@ -58,7 +58,7 @@ export const ListBox = ({
   className,
   padding,
   mode,
-}: ListBoxProps): ReactElement => {
+}: ListBoxProps): ReactElement<any> => {
   return (
     <Wrapper
       cursor={cursor}

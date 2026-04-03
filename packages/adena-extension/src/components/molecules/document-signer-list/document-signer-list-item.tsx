@@ -68,7 +68,7 @@ const DocumentSignerListItem = ({
   order,
   status,
   onClickAddress,
-}: DocumentSignerListItemProps): React.ReactElement => {
+}: DocumentSignerListItemProps): React.ReactElement<any> => {
   const displaySignerAddress = useMemo(() => {
     return formatAddress(signerAddress, 8);
   }, [signerAddress]);

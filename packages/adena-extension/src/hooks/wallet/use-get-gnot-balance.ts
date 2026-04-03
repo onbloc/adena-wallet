@@ -11,13 +11,13 @@ import {
   useNetwork,
 } from '@hooks/use-network';
 import {
-  useQuery, UseQueryOptions, UseQueryResult,
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 
 export const GET_GNOT_BALANCE_QUERY_KEY = 'wallet/useGetGnotBalance';
 
 export const useGetGnotBalance = (
-  options?: UseQueryOptions<number | null, Error>,
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const {
     gnoProvider,
@@ -38,7 +38,7 @@ export const useGetGnotBalance = (
 
       return gnoProvider.getBalance(currentAddress, GNOT_TOKEN.denom).catch(() => 0);
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     ...options,
   });
 };

@@ -8,6 +8,8 @@ import {
 } from '@components/molecules';
 import styled from 'styled-components';
 
+import type { JSX } from "react";
+
 const StyledContainer = styled(View)`
   row-gap: 40px;
   width: 100%;

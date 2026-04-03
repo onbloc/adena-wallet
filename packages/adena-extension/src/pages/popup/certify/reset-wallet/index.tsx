@@ -13,7 +13,7 @@ import mixins from '@styles/mixins';
 import {
   RoutePath,
 } from '@types';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

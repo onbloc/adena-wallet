@@ -39,7 +39,7 @@ const StyledLinkWrapper = styled(Row)`
   }
 `;
 
-const SelectHardWalletScreen = (): ReactElement => {
+const SelectHardWalletScreen = (): ReactElement<any> => {
   const theme = useTheme();
   const {
     navigate,

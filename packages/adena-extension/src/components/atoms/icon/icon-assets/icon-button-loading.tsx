@@ -37,7 +37,7 @@ const SVGWrapper = styled.div`
   }
 `;
 
-const IconButtonLoading = (): ReactElement => {
+const IconButtonLoading = (): ReactElement<any> => {
   return (
     <SVGWrapper>
       <svg

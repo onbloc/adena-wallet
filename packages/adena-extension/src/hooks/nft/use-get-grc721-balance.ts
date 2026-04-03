@@ -15,7 +15,7 @@ export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance';
 
 export const useGetGRC721Balance = (
   packagePath: string,
-  options?: UseQueryOptions<number | null, Error>,
+  options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<number | null> => {
   const {
     tokenService,

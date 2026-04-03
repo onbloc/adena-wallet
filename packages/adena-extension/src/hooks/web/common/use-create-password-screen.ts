@@ -33,7 +33,7 @@ export type UseCreatePasswordScreenReturn = {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     errorMessage: string
     error: boolean
-    ref: React.RefObject<HTMLInputElement>
+    ref: React.RefObject<HTMLInputElement | null>
   }
   confirmPasswordState: {
     value: string

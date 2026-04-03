@@ -92,17 +92,15 @@ const useWalletExportScreen = (): UseWalletExportReturn => {
 
   const {
     data: account = null,
-  } = useQuery(
-    ['walletExportScreen/account', exportType, wallet, exportAccountId, currentAccount],
-    async () => {
+  } = useQuery({
+    queryKey: ['walletExportScreen/account', exportType, wallet, exportAccountId, currentAccount],
+    queryFn: async () => {
       if (exportType === 'SEED_PHRASE') {
         return currentAccount;
       }
       return wallet?.accounts.find(account => account.id === exportAccountId) || currentAccount;
     },
-    {
-    },
-  );
+  });
 
   const _initExportType = useCallback(async () => {
     const sessionStorage = AdenaStorage.session();

@@ -12,6 +12,6 @@ type WebImgProps = {
 
 export const WebImg = ({
   src, size, width = size, height = size,
-}: WebImgProps): ReactElement => {
+}: WebImgProps): ReactElement<any> => {
   return <img src={src} width={width} height={height} alt={src?.toString()} />;
 };

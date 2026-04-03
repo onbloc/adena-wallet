@@ -1,5 +1,5 @@
 import IconError from '@assets/web/error.svg';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

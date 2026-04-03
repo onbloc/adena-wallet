@@ -3,7 +3,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+} from '@gnolang/tm2-js-client';
 import {
   TransactionWithPageInfo,
 } from '@types';
@@ -11,7 +11,7 @@ import {
 export interface ITransactionGasRepository {
   fetchGasPrices: () => Promise<number | null>
   simulateTx: (tx: Tx) => Promise<ResponseDeliverTx>
-  estimateGasByTx: (tx: Tx) => Promise<number>
+  estimateGasByTx: (tx: Tx) => Promise<bigint>
 }
 
 export interface ITransactionHistoryRepository {

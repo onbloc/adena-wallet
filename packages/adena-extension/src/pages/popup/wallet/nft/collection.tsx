@@ -18,9 +18,7 @@ import {
 import {
   GRC721Model, RoutePath,
 } from '@types';
-import {
-  useCallback, useMemo,
-} from 'react';
+import { useCallback, useMemo, type JSX } from 'react';
 import styled from 'styled-components';
 
 const Wrapper = styled.main`

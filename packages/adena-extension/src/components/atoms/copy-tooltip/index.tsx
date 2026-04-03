@@ -5,9 +5,7 @@ import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
 } from '@styles/theme';
-import React, {
-  useCallback, useEffect, useState,
-} from 'react';
+import React, { useCallback, useEffect, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 interface CopyTooltipProps {

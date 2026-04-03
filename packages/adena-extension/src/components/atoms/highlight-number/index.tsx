@@ -31,7 +31,8 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];
 
   const integerStr = useMemo(() => {
-    const formattedValue = BigNumber(integer.replace(/,/g, '')).toFormat(0);
+    const raw = integer.replace(/,/g, '');
+    const formattedValue = raw === '' ? '0' : BigNumber(raw).toFormat(0);
     if (withSign) {
       return `+${formattedValue}`;
     }

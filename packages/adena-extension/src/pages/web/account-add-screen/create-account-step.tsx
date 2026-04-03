@@ -26,7 +26,7 @@ const CreateAccountStep = ({
 }: {
   selectedKeyringId?: string
   useAccountAddScreenReturn: UseAccountAddScreenReturn
-}): ReactElement => {
+}): ReactElement<any> => {
   const {
     addAccount,
   } = useAccountAddScreenReturn;

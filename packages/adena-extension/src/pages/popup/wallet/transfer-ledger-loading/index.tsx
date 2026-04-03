@@ -16,9 +16,7 @@ import {
 import {
   AdenaLedgerConnector, isLedgerAccount,
 } from 'adena-module';
-import {
-  useCallback, useEffect, useState,
-} from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 const TransferLedgerLoadingLayout = styled.div`

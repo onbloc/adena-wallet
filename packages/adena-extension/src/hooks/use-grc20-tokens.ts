@@ -16,7 +16,7 @@ import {
 } from './use-network';
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const useGRC20Tokens = (options?: UseQueryOptions<GRC20TokenModel[], Error>) => {
+export const useGRC20Tokens = (options?: Omit<UseQueryOptions<GRC20TokenModel[], Error>, 'queryKey' | 'queryFn'>) => {
   const {
     tokenService,
   } = useAdenaContext();

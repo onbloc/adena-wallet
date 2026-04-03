@@ -9,6 +9,8 @@ import {
   useCurrentAccount,
 } from '@hooks/use-current-account';
 
+import type { JSX } from "react";
+
 /**
  * The page to initialize your account is deprecated for now.
  * Keep it for account initialization.

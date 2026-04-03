@@ -14,7 +14,7 @@ import {
   useCurrentAccount,
 } from '@hooks/use-current-account';
 import {
-  useQuery, UseQueryOptions, UseQueryResult,
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import {
   NetworkFeeSettingInfo, NetworkFeeSettingType,
@@ -47,9 +47,9 @@ export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceT
 
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
-  gasUsed: number | undefined,
+  gasUsed: bigint | undefined,
   gasAdjustment: string,
-  options?: UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>,
+  options?: Omit<UseQueryOptions<NetworkFeeSettingInfo[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const {
     currentAccount, currentAddress,
@@ -96,7 +96,7 @@ export const useGetEstimateGasPriceTiers = (
             currentAccount,
             transactionService,
             document,
-            Number(adjustGasUsed),
+            BigInt(adjustGasUsed),
             adjustedGasPriceBN.toNumber(),
             !isInitializedAccount,
           );
@@ -107,8 +107,8 @@ export const useGetEstimateGasPriceTiers = (
               storageDeposits: DefaultStorageDeposits,
               gasInfo: {
                 gasFee: 0,
-                gasUsed: Number(adjustGasUsed),
-                gasWanted: Number(adjustGasUsed),
+                gasUsed: BigInt(adjustGasUsed),
+                gasWanted: BigInt(adjustGasUsed),
                 gasPrice: gasPrice,
                 hasError: true,
                 simulateErrorMessage: 'Failed to simulate transaction',
@@ -119,9 +119,9 @@ export const useGetEstimateGasPriceTiers = (
           const result = await transactionGasService
             .simulateTx(tx)
             .then((simulateResult) => {
-              if (simulateResult.gas_used.toNumber() > Number(adjustGasUsed)) {
+              if (simulateResult.gas_used > BigInt(adjustGasUsed)) {
                 return {
-                  gasUsed: 0,
+                  gasUsed: 0n,
                   errorMessage: 'Network fee too low',
                   storageDeposits: DefaultStorageDeposits,
                 };
@@ -132,27 +132,27 @@ export const useGetEstimateGasPriceTiers = (
               );
 
               return {
-                gasUsed: Number(adjustGasUsed),
+                gasUsed: BigInt(adjustGasUsed),
                 storageDeposits,
                 errorMessage: null,
               };
             })
             .catch((e: Error) => {
               return {
-                gasUsed: 0,
+                gasUsed: 0n,
                 errorMessage: e?.message || '',
                 storageDeposits: DefaultStorageDeposits,
               };
             });
 
-          if (result.gasUsed === 0) {
+          if (result.gasUsed === 0n) {
             return {
               settingType: tier,
               storageDeposits: result.storageDeposits,
               gasInfo: {
                 gasFee: 0,
-                gasUsed: Number(adjustGasUsed),
-                gasWanted: Number(adjustGasUsed),
+                gasUsed: BigInt(adjustGasUsed),
+                gasWanted: BigInt(adjustGasUsed),
                 gasPrice: gasPrice,
                 hasError: true,
                 simulateErrorMessage: result.errorMessage,
@@ -165,8 +165,8 @@ export const useGetEstimateGasPriceTiers = (
             storageDeposits: result.storageDeposits,
             gasInfo: {
               gasFee: Number(gasFee),
-              gasUsed: Number(adjustGasUsed),
-              gasWanted: Number(adjustGasUsed),
+              gasUsed: BigInt(adjustGasUsed),
+              gasWanted: BigInt(adjustGasUsed),
               gasPrice: gasPrice,
               hasError: result.errorMessage !== null,
               simulateErrorMessage: result.errorMessage,
@@ -176,7 +176,7 @@ export const useGetEstimateGasPriceTiers = (
       );
     },
     refetchInterval: REFETCH_INTERVAL,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: !!transactionGasService && !!document && !!gasPrice,
     ...options,
   });

@@ -47,7 +47,7 @@ const ICONS = {
 
 export const Icon = ({
   name, className = '', ...rest
-}: IconProps): ReactElement => {
+}: IconProps): ReactElement<any> => {
   return React.createElement(ICONS[name], {
     className,
     ...rest,

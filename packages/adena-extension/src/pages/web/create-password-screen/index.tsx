@@ -32,9 +32,7 @@ import {
 import {
   RoutePath,
 } from '@types';
-import {
-  useCallback, useMemo,
-} from 'react';
+import { useCallback, useMemo, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

@@ -47,7 +47,7 @@ import React, {
 } from 'react';
 import {
   useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 import styled from 'styled-components';
 
 const NFTTransferSummaryLayout = styled.div`
@@ -166,7 +166,7 @@ const NFTTransferSummaryContainer: React.FC = () => {
       currentAccount,
       currentNetwork.networkId,
       [message],
-      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0,
+      useNetworkFeeReturn.currentGasInfo?.gasWanted || 0n,
       useNetworkFeeReturn.currentGasFeeRawAmount,
       memo,
     );

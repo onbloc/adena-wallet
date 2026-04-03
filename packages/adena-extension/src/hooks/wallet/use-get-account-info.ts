@@ -8,7 +8,7 @@ import {
   useNetwork,
 } from '@hooks/use-network';
 import {
-  useQuery, UseQueryOptions, UseQueryResult,
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import {
   useMemo,
@@ -18,7 +18,7 @@ export const GET_ACCOUNT_INFO = 'accountInfo/useGetAccountInfo';
 
 export const useGetAccountInfo = (
   address: string | null | undefined,
-  options?: UseQueryOptions<AccountInfo | null, Error>,
+  options?: Omit<UseQueryOptions<AccountInfo | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<AccountInfo | null> => {
   const {
     accountService,
@@ -36,7 +36,7 @@ export const useGetAccountInfo = (
 
       return accountService.getAccountInfo(address);
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: !!accountService && !!address,
     ...options,
   });
@@ -44,7 +44,7 @@ export const useGetAccountInfo = (
 
 export const useIsInitializedAccount = (
   address: string | null | undefined,
-  options?: UseQueryOptions<AccountInfo | null, Error>,
+  options?: Omit<UseQueryOptions<AccountInfo | null, Error>, 'queryKey' | 'queryFn'>,
 ): boolean | null => {
   const result = useGetAccountInfo(address, options);
 

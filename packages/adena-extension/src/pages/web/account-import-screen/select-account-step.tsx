@@ -16,14 +16,12 @@ import {
   UseAccountImportReturn,
 } from '@hooks/web/use-account-import-screen';
 import {
-  useQuery,
+  keepPreviousData, useQuery,
 } from '@tanstack/react-query';
 import {
   arrayContentEquals,
 } from 'adena-module';
-import {
-  useMemo,
-} from 'react';
+import { useMemo, type JSX } from 'react';
 import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
@@ -48,9 +46,9 @@ const SelectAccountStep = ({
 
   const {
     data: accountInfos = [],
-  } = useQuery<AccountInfo[]>(
-    ['accountImportSelectAccounts', loadedAccounts],
-    async () => {
+  } = useQuery<AccountInfo[]>({
+    queryKey: ['accountImportSelectAccounts', loadedAccounts],
+    queryFn: async () => {
       const accountInfos: AccountInfo[] = [];
       for (const account of loadedAccounts) {
         const address = await account.getAddress(defaultAddressPrefix);
@@ -68,10 +66,8 @@ const SelectAccountStep = ({
 
       return accountInfos;
     },
-    {
-      keepPreviousData: true,
-    },
-  );
+    placeholderData: keepPreviousData,
+  });
 
   const accountInfosWithSelection = useMemo(() => {
     return accountInfos.map(accountInfo => ({

@@ -60,6 +60,15 @@
           "ws": "8.18.0"
         }
       }
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "react": "19",
+        "react-dom": "19"
+      }
+    },
+    "patchedDependencies": {
+      "recoil@0.7.7": "patches/recoil@0.7.7.patch"
     }
   },
   "packageManager": "pnpm@9.15.4"

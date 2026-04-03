@@ -17,9 +17,9 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
 
   const {
     data: ableToSkipQuestionnaire = false,
-  } = useQuery(
-    ['questionnaire', walletService],
-    async () => {
+  } = useQuery({
+    queryKey: ['questionnaire', walletService],
+    queryFn: async () => {
       const existWallet = await walletService.existsWallet();
       if (!existWallet) {
         return false;
@@ -27,9 +27,7 @@ const useQuestionnaire = (): UseQuestionnaireReturn => {
       const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
       return ableToSkipQuestionnaire;
     },
-    {
-    },
-  );
+  });
 
   const doneQuestionnaire = (): Promise<void> => {
     return walletService.updateQuestionnaireExpiredDate();

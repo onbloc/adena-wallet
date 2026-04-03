@@ -44,9 +44,7 @@ import {
   isAirgapAccount, isMultisigAccount,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
-import {
-  useCallback, useEffect, useMemo,
-} from 'react';
+import { useCallback, useEffect, useMemo, type JSX } from 'react';
 import {
   useRecoilState,
 } from 'recoil';

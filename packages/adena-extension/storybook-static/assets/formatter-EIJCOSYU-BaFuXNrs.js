@@ -1,0 +1,1 @@
+import{i as e}from"./_polyfill-node.global-CL4hvcq6.js";import{A as t,J as n,O as r,j as i,k as a,q as o}from"./iframe-DekVl-_p.js";var s;e((()=>{t(),a(),n(),s=(0,o(i(),1).default)(2)(async(e,t)=>e===!1?t:r(t))}))();export{s as formatter};

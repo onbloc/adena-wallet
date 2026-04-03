@@ -32,7 +32,7 @@ import React, {
 } from 'react';
 import {
   useLocation, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 
 const ApproveEstablishContainer: React.FC = () => {
   const normalNavigate = useNavigate();

@@ -13,9 +13,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import React, {
-  useEffect, useState,
-} from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 import {
   useRecoilState,
 } from 'recoil';

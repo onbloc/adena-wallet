@@ -31,7 +31,7 @@ export const BottomFixedButtonGroup = ({
   leftButton,
   rightButton,
   filled,
-}: BottomFixedButtonGroupProps): ReactElement => {
+}: BottomFixedButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
     return mapClassName(leftButton);
   }, [leftButton]);

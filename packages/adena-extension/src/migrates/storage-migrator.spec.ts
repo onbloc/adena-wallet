@@ -1,4 +1,7 @@
 import {
+  beforeAll, describe, expect, it, vi,
+} from 'vitest';
+import {
   StorageModelV001,
 } from './migrations/v001/storage-model-v001';
 import {

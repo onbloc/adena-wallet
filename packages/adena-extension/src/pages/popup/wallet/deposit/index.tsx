@@ -22,9 +22,7 @@ import {
 import {
   QRCodeSVG,
 } from 'qrcode.react';
-import {
-  useCallback, useEffect, useState,
-} from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

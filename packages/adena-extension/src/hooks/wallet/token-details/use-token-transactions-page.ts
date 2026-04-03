@@ -39,7 +39,7 @@ export const useTokenTransactionsPage = (
     }[]
     | null
   isFetched: boolean
-  status: 'loading' | 'error' | 'success'
+  status: 'pending' | 'error' | 'success'
   isLoading: boolean
   isFetching: boolean
   isSupported: boolean
@@ -65,9 +65,13 @@ export const useTokenTransactionsPage = (
     refetch,
     hasNextPage,
     fetchNextPage,
-  } = useInfiniteQuery(
-    ['token-details/page/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
-    (context: any) => {
+  } = useInfiniteQuery({
+    queryKey: ['token-details/page/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: any): string | null => {
+      return lastPage?.page?.cursor || null;
+    },
+    queryFn: (context) => {
       if (isNative === undefined) {
         return null;
       }
@@ -82,14 +86,12 @@ export const useTokenTransactionsPage = (
           cursor,
         );
     },
-    {
-      enabled:
-        !!currentAddress
-        && transactionHistoryService.supported
-        && tokenMetainfos.length > 0
-        && enabled,
-    },
-  );
+    enabled:
+      !!currentAddress
+      && transactionHistoryService.supported
+      && tokenMetainfos.length > 0
+      && enabled,
+  });
 
   const transactions = useMemo(() => {
     if (!allTransactions) {

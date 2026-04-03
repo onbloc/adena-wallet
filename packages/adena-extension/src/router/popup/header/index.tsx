@@ -10,10 +10,10 @@ import {
 import {
   RoutePath,
 } from '@types';
-import React from 'react';
+import React, { type JSX } from 'react';
 import {
   useLocation, useMatch,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   useRecoilState,
 } from 'recoil';

@@ -49,7 +49,7 @@ const StyedHoverText = styled(WebText)`
   color: inherit;
 `;
 
-const Header = (): ReactElement => {
+const Header = (): ReactElement<any> => {
   const {
     openLink,
   } = useLink();

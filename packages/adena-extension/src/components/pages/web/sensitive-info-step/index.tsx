@@ -31,7 +31,7 @@ export const SensitiveInfoStep = ({
   link,
   desc,
   onClickNext,
-}: SensitiveInfoStepProps): ReactElement => {
+}: SensitiveInfoStepProps): ReactElement<any> => {
   const theme = useTheme();
   const {
     openLink,

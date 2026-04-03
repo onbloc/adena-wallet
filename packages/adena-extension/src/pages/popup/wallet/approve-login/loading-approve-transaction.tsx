@@ -8,7 +8,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import React from 'react';
+import React, { type JSX } from 'react';
 import styled from 'styled-components';
 
 interface ApproveProps {

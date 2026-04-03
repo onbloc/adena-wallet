@@ -30,7 +30,7 @@ const SelectSeedPhraseStep = ({
   selectedKeyringId?: string
   setSelectedKeyringId: (keyringId?: string) => void
   useAccountAddScreenReturn: UseAccountAddScreenReturn
-}): ReactElement => {
+}): ReactElement<any> => {
   const {
     indicatorInfo, keyringInfos, onClickNext, onClickGoBack,
   } = useAccountAddScreenReturn;

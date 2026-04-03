@@ -13,6 +13,8 @@ import {
 import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
+import type { JSX } from "react";
+
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',

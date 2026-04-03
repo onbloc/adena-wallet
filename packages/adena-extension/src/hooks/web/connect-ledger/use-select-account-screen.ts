@@ -73,11 +73,11 @@ const useSelectAccountScreen = (): useSelectAccountScreenReturn => {
   });
   const {
     data: walletAddressList = [],
-  } = useQuery(
-    ['walletAddressList', walletAccounts],
-    async () =>
+  } = useQuery({
+    queryKey: ['walletAddressList', walletAccounts],
+    queryFn: async () =>
       Promise.all(walletAccounts.map(async account => await account.getAddress(addressPrefix))),
-  );
+  });
 
   useEffect(() => {
     if (Array.isArray(params.accounts)) {

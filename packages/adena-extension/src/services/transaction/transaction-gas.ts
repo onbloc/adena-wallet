@@ -3,7 +3,7 @@ import {
 } from '@gnolang/tm2-js-client';
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+} from '@gnolang/tm2-js-client';
 import {
   ITransactionGasRepository,
 } from '@repositories/transaction/types';
@@ -27,7 +27,7 @@ export class TransactionGasService implements ITransactionGasService {
     return this.gasRepository.simulateTx(tx);
   }
 
-  public async estimateGas(tx: Tx): Promise<number> {
+  public async estimateGas(tx: Tx): Promise<bigint> {
     return this.gasRepository.estimateGasByTx(tx);
   }
 }

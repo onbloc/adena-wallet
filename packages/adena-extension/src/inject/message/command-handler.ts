@@ -150,7 +150,7 @@ export class CommandHandler {
       return;
     }
 
-    const gnoProvider = new GnoProvider(gnoConnectInfo.rpc, gnoConnectInfo.chainId);
+    const gnoProvider = await GnoProvider.create(gnoConnectInfo.rpc, gnoConnectInfo.chainId);
     const realmDocument = await gnoProvider.getRealmDocument(gnoMessageInfo.packagePath);
     if (!realmDocument) {
       console.info('Realm document not found');

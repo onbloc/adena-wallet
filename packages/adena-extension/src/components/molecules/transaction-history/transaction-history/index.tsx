@@ -20,7 +20,7 @@ import {
 } from './transaction-history.styles';
 
 export interface TransactionHistoryProps {
-  status: 'error' | 'loading' | 'success'
+  status: 'error' | 'pending' | 'success'
   transactionInfoLists: {
     title: string
     transactions: TransactionInfo[]
@@ -28,7 +28,7 @@ export interface TransactionHistoryProps {
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<string | null, Error>,
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<string | null>
   onClickItem: (hash: string) => void
 }
@@ -41,7 +41,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
 }) => {
   const theme = useTheme();
   if (transactionInfoLists.length === 0) {
-    if (status === 'loading') {
+    if (status === 'pending') {
       return <LoadingHistory />;
     }
     return (

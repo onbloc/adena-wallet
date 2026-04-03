@@ -40,7 +40,7 @@ const StyledContainer = styled(View) <{
 
 export const WebCheckBox = ({
   checked, onClick, disabled,
-}: WebCheckBoxProps): ReactElement => {
+}: WebCheckBoxProps): ReactElement<any> => {
   return (
     <StyledContainer checked={checked} onClick={onClick} disabled={disabled}>
       {checked && <img src={check} width={16} height={16} />}

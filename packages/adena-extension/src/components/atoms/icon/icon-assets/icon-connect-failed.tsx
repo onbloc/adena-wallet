@@ -6,7 +6,7 @@ const IconConnectFailed = ({
   className,
 }: {
   className: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <svg
       width='100'

@@ -5,9 +5,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import React, {
-  useCallback,
-} from 'react';
+import React, { useCallback, type JSX } from 'react';
 import styled, {
   useTheme,
 } from 'styled-components';

@@ -20,7 +20,7 @@ import {
   TransactionService,
 } from '@services/index';
 import {
-  useQuery, UseQueryOptions, UseQueryResult,
+  keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
 } from '@tanstack/react-query';
 import {
   GasInfo,
@@ -39,21 +39,21 @@ export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas
 const REFETCH_INTERVAL = 5_000;
 
 function makeGasInfoBy(
-  gasUsed: number | null | undefined,
+  gasUsed: bigint | null | undefined,
   gasPrice: number | null | undefined,
 ): {
-  gasWanted: number
+  gasWanted: bigint
   gasFee: number
 } {
   const gasFeeBN = BigNumber(gasUsed || 1000).multipliedBy(gasPrice || MINIMUM_GAS_PRICE);
 
   return {
-    gasWanted: Number(DEFAULT_GAS_WANTED),
+    gasWanted: BigInt(DEFAULT_GAS_WANTED),
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
   };
 }
 
-function modifyDocument(document: Document, gasWanted: number, gasFee: number): Document {
+function modifyDocument(document: Document, gasWanted: bigint, gasFee: number): Document {
   return {
     ...document,
     fee: {
@@ -71,9 +71,9 @@ function modifyDocument(document: Document, gasWanted: number, gasFee: number): 
 
 export const useGetDefaultEstimateGasInfo = (
   document: Document | null | undefined,
-  options?: UseQueryOptions<GasInfo | null, Error>,
+  options?: Omit<UseQueryOptions<GasInfo | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GasInfo | null> => {
-  return useGetEstimateGasInfo(document, 0, options);
+  return useGetEstimateGasInfo(document, 0n, options);
 };
 
 export const makeEstimateGasTransaction = async (
@@ -81,7 +81,7 @@ export const makeEstimateGasTransaction = async (
   account: Account | null,
   transactionService: TransactionService | null,
   document: Document | null | undefined,
-  gasUsed: number,
+  gasUsed: bigint,
   gasPrice: number | null,
   withSignTransaction = false,
 ): Promise<Tx | null> => {
@@ -119,8 +119,8 @@ export const makeEstimateGasTransaction = async (
 
 export const useGetEstimateGasInfo = (
   document: Document | null | undefined,
-  gasUsed: number,
-  options?: UseQueryOptions<GasInfo | null, Error>,
+  gasUsed: bigint,
+  options?: Omit<UseQueryOptions<GasInfo | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GasInfo | null> => {
   const {
     currentAccount, currentAddress,
@@ -174,8 +174,8 @@ export const useGetEstimateGasInfo = (
       if (!resultGasUsed) {
         return {
           gasFee: 0,
-          gasUsed: 0,
-          gasWanted: 0,
+          gasUsed: 0n,
+          gasWanted: 0n,
           gasPrice: 0,
           hasError: true,
           simulateErrorMessage: '',
@@ -196,7 +196,7 @@ export const useGetEstimateGasInfo = (
       };
     },
     refetchInterval: REFETCH_INTERVAL,
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     enabled: !!document && !!transactionGasService,
     ...options,
   });

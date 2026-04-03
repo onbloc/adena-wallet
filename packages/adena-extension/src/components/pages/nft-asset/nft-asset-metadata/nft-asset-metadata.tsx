@@ -17,7 +17,7 @@ export interface NFTAssetMetadataProps {
   queryGRC721TokenMetadata: (
     packagePath: string,
     tokenId: string,
-    options?: UseQueryOptions<GRC721MetadataModel | null, Error>,
+    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>,
   ) => UseQueryResult<GRC721MetadataModel | null>
 }
 

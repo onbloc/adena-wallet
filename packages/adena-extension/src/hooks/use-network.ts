@@ -65,9 +65,9 @@ export const useNetwork = (): NetworkResponse => {
 
   const {
     data: failedNetwork = null, refetch: refetchNetworkState,
-  } = useQuery<boolean | null>(
-    ['network/failedNetwork', currentNetwork],
-    () => {
+  } = useQuery<boolean | null>({
+    queryKey: ['network/failedNetwork', currentNetwork],
+    queryFn: () => {
       if (!currentNetwork) {
         return null;
       }
@@ -75,7 +75,7 @@ export const useNetwork = (): NetworkResponse => {
         healthy,
       }) => !healthy);
     },
-  );
+  });
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
     if (!currentNetwork) {

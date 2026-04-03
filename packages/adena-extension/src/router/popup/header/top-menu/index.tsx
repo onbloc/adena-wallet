@@ -30,12 +30,10 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import React, {
-  useEffect, useState,
-} from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import styled, {
   useTheme,
 } from 'styled-components';

@@ -14,13 +14,11 @@ import {
 import {
   RoutePath,
 } from '@types';
-import {
-  useCallback, useMemo,
-} from 'react';
+import { useCallback, useMemo, type JSX } from 'react';
 import React from 'react';
 import {
   useMatch, useNavigate,
-} from 'react-router-dom';
+} from 'react-router';
 import styled from 'styled-components';
 
 const Wrapper = styled.nav`

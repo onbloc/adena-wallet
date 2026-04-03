@@ -13,7 +13,7 @@ const DocumentBroadcastSigner = ({
   signerCount,
   signedCount,
   onClickSetting,
-}: DocumentBroadcastSignerProps): React.ReactElement => {
+}: DocumentBroadcastSignerProps): React.ReactElement<any> => {
   const hasSetting = !!onClickSetting;
   return (
     <S.DocumentSignersContainer>

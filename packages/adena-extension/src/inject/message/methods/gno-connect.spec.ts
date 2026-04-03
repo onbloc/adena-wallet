@@ -1,4 +1,7 @@
 import {
+  describe, expect, it,
+} from 'vitest';
+import {
   GnoMessageInfo, parseGnoMessageInfo,
 } from './gno-connect';
 

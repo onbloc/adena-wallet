@@ -3,7 +3,7 @@ import {
 } from '@states';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   useRecoilState,
 } from 'recoil';

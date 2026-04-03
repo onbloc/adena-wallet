@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 const IconEditCancel = ({
   className,
 }: {

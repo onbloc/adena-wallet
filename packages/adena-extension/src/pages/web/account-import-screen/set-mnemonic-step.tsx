@@ -23,7 +23,7 @@ const SetMnemonicStep = ({
   useAccountImportScreenReturn,
 }: {
   useAccountImportScreenReturn: UseAccountImportReturn
-}): ReactElement => {
+}): ReactElement<any> => {
   const {
     errMsg, isValidForm, updateInputValue, setInputType, onClickNext,
   }

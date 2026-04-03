@@ -74,7 +74,7 @@ const StyledTextarea = styled(WebTextarea)`
 
 export const WebSeedInput = ({
   errorMessage, onChange,
-}: WebSeedInputProps): ReactElement => {
+}: WebSeedInputProps): ReactElement<any> => {
   const theme = useTheme();
 
   const [type, setType] = useState<ImportWalletType>('12seeds');
@@ -121,7 +121,7 @@ export const WebSeedInput = ({
     }: {
       title: string
       _type: ImportWalletType
-    }): ReactElement => {
+    }): ReactElement<any> => {
       const selected = type === _type;
       return (
         <StyledTypeMenuItem

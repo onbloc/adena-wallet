@@ -72,7 +72,7 @@ export const useNetworkFee = (
     data: estimatedGasInfo, isFetched: isFetchedEstimateGasInfo,
   } = useGetEstimateGasInfo(
     document,
-    gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0,
+    gasInfo?.gasUsed || defaultEstimatedGasInfo?.gasUsed || 0n,
   );
 
   const {
@@ -120,8 +120,8 @@ export const useNetworkFee = (
     if (!current?.gasInfo) {
       return {
         gasFee: 0,
-        gasUsed: 0,
-        gasWanted: 0,
+        gasUsed: 0n,
+        gasWanted: 0n,
         gasPrice: 0,
         hasError: true,
         simulateErrorMessage: null,

@@ -108,10 +108,10 @@ import TransferSummary from '@pages/popup/wallet/transfer-summary';
 import {
   WalletMain,
 } from '@pages/popup/wallet/wallet-main';
-import React from 'react';
+import React, { type JSX } from 'react';
 import {
   Navigate, Route, Routes,
-} from 'react-router-dom';
+} from 'react-router';
 
 import {
   RoutePath,

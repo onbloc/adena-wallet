@@ -6,7 +6,7 @@ import {
 } from 'react';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   useRecoilState,
 } from 'recoil';
@@ -16,7 +16,7 @@ export type UseScrollHistoryReturn = {
   saveScrollPosition: (scrollY?: number) => void
 };
 
-const useScrollHistory = (ref?: RefObject<HTMLDivElement>): UseScrollHistoryReturn => {
+const useScrollHistory = (ref?: RefObject<HTMLDivElement | null>): UseScrollHistoryReturn => {
   const location = useLocation();
   const [scrollPositions, setScrollPositions] = useRecoilState(CommonState.scrollPositions);
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();

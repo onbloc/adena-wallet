@@ -46,7 +46,7 @@ export const WebSecurityHeader = ({
   stepLength,
   visibleBackButton,
   onClickGoBack,
-}: WebSecurityHeaderProps): ReactElement => {
+}: WebSecurityHeaderProps): ReactElement<any> => {
   const theme = useTheme();
 
   return (

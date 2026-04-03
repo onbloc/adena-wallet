@@ -76,7 +76,7 @@ export class TransactionService {
     chainId: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     messages: any[],
-    gasWanted?: number,
+    gasWanted?: bigint,
     gasFee?: number,
     memo?: string | undefined,
   ): Promise<Document> => {

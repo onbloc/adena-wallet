@@ -39,9 +39,7 @@ import theme, {
 import {
   RoutePath,
 } from '@types';
-import {
-  useMemo, useState,
-} from 'react';
+import { useMemo, useState, type JSX } from 'react';
 import styled from 'styled-components';
 
 interface DLProps {

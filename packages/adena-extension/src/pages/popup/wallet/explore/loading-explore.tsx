@@ -42,7 +42,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingExplore = (): ReactElement => {
+const LoadingExplore = (): ReactElement<any> => {
   return (
     <Wrapper>
       <ListBoxWrap>

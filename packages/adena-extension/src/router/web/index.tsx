@@ -24,12 +24,10 @@ import WalletImportScreen from '@pages/web/wallet-import-screen';
 import {
   RoutePath,
 } from '@types';
-import {
-  useEffect,
-} from 'react';
+import { useEffect, type JSX } from 'react';
 import {
   Route, Routes,
-} from 'react-router-dom';
+} from 'react-router';
 
 import Header from './Header';
 

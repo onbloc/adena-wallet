@@ -28,7 +28,7 @@ import {
 } from 'react';
 import {
   useMatch,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   useRecoilState,
 } from 'recoil';
@@ -72,7 +72,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   height: 60px;
 `;
 
-const LoadingMain = (): ReactElement => {
+const LoadingMain = (): ReactElement<any> => {
   const [state] = useRecoilState(WalletState.state);
   const {
     currentNetwork,

@@ -6,7 +6,7 @@ export const IconAddressBookLarge = ({
   className,
 }: {
   className: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -73,7 +73,7 @@ export const IconAddressBookSmall = ({
   className,
 }: {
   className: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <svg
       className={className}

@@ -16,12 +16,12 @@ import React, {
 } from 'react';
 import {
   HashRouter,
-} from 'react-router-dom';
+} from 'react-router';
 
 import AppProvider from './app-provider';
 import useApp from './use-app';
 
-const RunApp = (): ReactElement => {
+const RunApp = (): ReactElement<any> => {
   useApp();
   useInitWallet();
   const {
@@ -43,7 +43,7 @@ const RunApp = (): ReactElement => {
   return <PopupRouter />;
 };
 
-const App = (): ReactElement => {
+const App = (): ReactElement<any> => {
   return (
     <AppProvider>
       <GlobalPopupStyle />

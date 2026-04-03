@@ -3728,13 +3728,13 @@ onToggleActiveItem: (tokenId: string, activated: boolean) =&gt; void
 
 queryGRC721Balance: (
   packagePath: string,
-  options?: UseQueryOptions&lt;number | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;number | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;number | null&gt;
 
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;</code></pre>
           </div>
         </div>
@@ -3983,13 +3983,13 @@ onChangeKeyword: (keyword: string) =&gt; void</code></pre>
 
 queryGRC721Balance?: (
   packagePath: string,
-  options?: UseQueryOptions&lt;number | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;number | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;number | null&gt;
 
 queryGRC721TokenUri?: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 tokens: ManageTokenInfo[] | ManageGRC721Info[]</code></pre>
@@ -4920,7 +4920,7 @@ visible: boolean</code></pre>
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;</code></pre>
           </div>
         </div>
@@ -5005,7 +5005,7 @@ queryGRC721TokenUri: (
 queryGRC721TokenMetadata: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;GRC721MetadataModel | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;GRC721MetadataModel | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;GRC721MetadataModel | null&gt;</code></pre>
           </div>
         </div>
@@ -5175,7 +5175,7 @@ moveAssetPage: (grc721Token: GRC721Model) =&gt; void
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;</code></pre>
           </div>
         </div>
@@ -5331,7 +5331,7 @@ moveAssetPage: (grc721Token: GRC721Model) =&gt; void
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 tokens: GRC721Model[] | null | undefined</code></pre>
@@ -5423,13 +5423,13 @@ pin: (collection: GRC721CollectionModel) =&gt; void
 
 queryGRC721Balance: (
   packagePath: string,
-  options?: UseQueryOptions&lt;number | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;number | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;number | null&gt;
 
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 unpin: (collection: GRC721CollectionModel) =&gt; void</code></pre>
@@ -5702,13 +5702,13 @@ pinnedCollections: string[] | null | undefined
 
 queryGRC721Balance: (
   packagePath: string,
-  options?: UseQueryOptions&lt;number | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;number | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;number | null&gt;
 
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 unpin: (packagePath: string) =&gt; Promise&lt;void&gt;</code></pre>
@@ -5912,7 +5912,7 @@ onClickNext: () =&gt; void
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;</code></pre>
           </div>
         </div>
@@ -6044,7 +6044,7 @@ onClickSend: () =&gt; void
 queryGRC721TokenUri: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 toAddress: string</code></pre>
@@ -7893,10 +7893,10 @@ token: MainToken</code></pre>
 queryGRC721TokenUri?: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
-status: &#39;error&#39; | &#39;loading&#39; | &#39;success&#39;
+status: &#39;error&#39; | &#39;pending&#39; | &#39;success&#39;
 
 transactionInfoLists: {
   title: string
@@ -8005,7 +8005,7 @@ transactionInfoLists: {
 queryGRC721TokenUri?: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 title: string
@@ -8117,7 +8117,7 @@ onClickItem: (hash: string) =&gt; void
 queryGRC721TokenUri?: (
   packagePath: string,
   tokenId: string,
-  options?: UseQueryOptions&lt;string | null, Error&gt;,
+  options?: Omit&lt;UseQueryOptions&lt;string | null, Error&gt;, &#39;queryKey&#39; | &#39;queryFn&#39;&gt;,
 ) =&gt; UseQueryResult&lt;string | null&gt;
 
 status: &#39;SUCCESS&#39; | &#39;FAIL&#39;
@@ -9458,7 +9458,7 @@ selected: boolean</code></pre>
             </div>
             <pre><code>Component: src/components/atoms/web-button/index.tsx::WebButton</code></pre>
             <pre><code>Props:</code></pre>
-            <pre><code>buttonRef?: React.RefObject&lt;HTMLButtonElement&gt;
+            <pre><code>buttonRef?: React.RefObject&lt;HTMLButtonElement | null&gt;
 
 figure: &#39;primary&#39; | &#39;secondary&#39; | &#39;tertiary&#39; | &#39;quaternary&#39; | &#39;quinary&#39;
 
@@ -10561,7 +10561,7 @@ onClickGoBack: () =&gt; void</code></pre>
             </div>
             <pre><code>Component: src/components/atoms/web-main-button/index.tsx::default</code></pre>
             <pre><code>Props:</code></pre>
-            <pre><code>buttonRef?: React.RefObject&lt;HTMLButtonElement&gt;
+            <pre><code>buttonRef?: React.RefObject&lt;HTMLButtonElement | null&gt;
 
 disabled?: boolean = false
 

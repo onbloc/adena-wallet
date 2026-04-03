@@ -15,6 +15,8 @@ import {
   RoutePath,
 } from '@types';
 
+import type { JSX } from "react";
+
 const ConnectLedgerSelectAccount = (): JSX.Element => {
   const {
     indicatorInfo,

@@ -14,7 +14,7 @@ import {
   useTokenMetainfo,
 } from '@hooks/use-token-metainfo';
 import {
-  RefetchOptions, useInfiniteQuery,
+  keepPreviousData, RefetchOptions, useInfiniteQuery,
 } from '@tanstack/react-query';
 import {
   TransactionInfo, TransactionWithPageInfo,
@@ -37,7 +37,7 @@ export const useTransactionHistoryPage = ({
     }[]
     | null
   isFetched: boolean
-  status: 'loading' | 'error' | 'success'
+  status: 'pending' | 'error' | 'success'
   isLoading: boolean
   isFetching: boolean
   isSupported: boolean
@@ -63,35 +63,24 @@ export const useTransactionHistoryPage = ({
     hasNextPage,
     refetch,
     fetchNextPage,
-  } = useInfiniteQuery<TransactionWithPageInfo, Error, unknown, any>(
-    {
-      queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
-      getNextPageParam: (lastPage?: TransactionWithPageInfo): string | boolean | null => {
-        return lastPage?.page.cursor || null;
-      },
-      queryFn: (context: any) => {
-        if (context?.pageParam === false) {
-          return {
-            hasNext: false,
-            cursor: null,
-            transactions: [],
-          };
-        }
-
-        const cursor = context?.pageParam || null;
-        return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor);
-      },
+  } = useInfiniteQuery({
+    queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage: TransactionWithPageInfo): string | null => {
+      return lastPage?.page.cursor || null;
     },
-    {
-      enabled:
-        !!currentAddress
-        && tokenMetainfos.length > 0
-        && transactionHistoryService.supported
-        && enabled,
-      keepPreviousData: true,
-      refetchInterval: REFETCH_INTERVAL,
+    queryFn: (context) => {
+      const cursor = context.pageParam;
+      return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor);
     },
-  );
+    enabled:
+      !!currentAddress
+      && tokenMetainfos.length > 0
+      && transactionHistoryService.supported
+      && enabled,
+    placeholderData: keepPreviousData,
+    refetchInterval: REFETCH_INTERVAL,
+  });
 
   const transactions = useMemo(() => {
     if (!allTransactions) {

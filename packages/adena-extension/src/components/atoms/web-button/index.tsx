@@ -20,7 +20,7 @@ import {
 } from '../web-text';
 
 type WebButtonProps = {
-  buttonRef?: React.RefObject<HTMLButtonElement>
+  buttonRef?: React.RefObject<HTMLButtonElement | null>
   size: 'full' | 'large' | 'small'
   textType?: WebFontType
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
@@ -272,7 +272,7 @@ export const WebButton: React.FC<WebButtonProps> = ({
   children,
   fixed,
   ...rest
-}): ReactElement => {
+}): ReactElement<any> => {
   let StyledComponent;
   switch (figure) {
     case 'secondary':

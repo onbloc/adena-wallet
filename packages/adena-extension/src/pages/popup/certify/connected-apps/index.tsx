@@ -20,9 +20,7 @@ import mixins from '@styles/mixins';
 import {
   getTheme,
 } from '@styles/theme';
-import {
-  useEffect, useState,
-} from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import {
   useRecoilState,
 } from 'recoil';

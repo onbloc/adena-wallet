@@ -6,7 +6,7 @@ const IconClock = ({
   className,
 }: {
   className: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <svg
       className={className}

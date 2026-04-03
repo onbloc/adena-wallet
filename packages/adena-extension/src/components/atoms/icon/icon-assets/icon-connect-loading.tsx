@@ -29,7 +29,7 @@ const IconConnectLoading = ({
   className,
 }: {
   className: string
-}): ReactElement => {
+}): ReactElement<any> => {
   return (
     <SVG
       width='100'

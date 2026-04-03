@@ -25,7 +25,7 @@ import {
 } from 'react';
 import {
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 
 const useApp = (): void => {
   const {
