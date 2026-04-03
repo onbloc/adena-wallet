@@ -1,6 +1,6 @@
 import styled, {
   css, keyframes, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 const fill = keyframes`
   from {
@@ -9,11 +9,11 @@ const fill = keyframes`
   to {
     width: 100%;
   }
-`
+`;
 
 export const StyledHoldButton = styled.button<{
-  pressed: boolean
-  finish: boolean
+  pressed: boolean;
+  finish: boolean;
 }>`
   position: relative;
   overflow: hidden;
@@ -57,7 +57,7 @@ export const StyledHoldButton = styled.button<{
             opacity: 0.9;
           }
         `}
-`
+`;
 
 export const StyledButtonContent = styled.div`
   position: relative;
@@ -65,4 +65,4 @@ export const StyledButtonContent = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
-`
+`;

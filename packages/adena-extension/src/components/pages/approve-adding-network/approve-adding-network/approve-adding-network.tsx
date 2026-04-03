@@ -1,35 +1,35 @@
-import UnknownLogo from '@assets/common-unknown-logo.svg'
+import UnknownLogo from '@assets/common-unknown-logo.svg';
 import {
   SubHeader, WarningBox,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
+} from '@components/molecules';
 import React, {
   useEffect, useMemo,
-} from 'react'
+} from 'react';
 
-import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table'
+import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table';
 import {
   ApproveAddingNetworkWrapper,
-} from './approve-adding-network.styles'
+} from './approve-adding-network.styles';
 
 export interface AddingNetworkInfo {
-  chainId: string
-  name: string
-  rpcUrl: string
+  chainId: string;
+  name: string;
+  rpcUrl: string;
 }
 
 export interface ApproveAddingNetworkProps {
-  networkInfo: AddingNetworkInfo
-  logo?: string
-  approvable: boolean
-  processing: boolean
-  done: boolean
-  cancel: () => void
-  approve: () => void
-  onResponse: () => void
-  onTimeout: () => void
+  networkInfo: AddingNetworkInfo;
+  logo?: string;
+  approvable: boolean;
+  processing: boolean;
+  done: boolean;
+  cancel: () => void;
+  approve: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
@@ -42,13 +42,13 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   approve,
   onResponse,
 }) => {
-  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name])
+  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   return (
     <ApproveAddingNetworkWrapper>
@@ -82,7 +82,7 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         }}
       />
     </ApproveAddingNetworkWrapper>
-  )
-}
+  );
+};
 
-export default ApproveAddingNetwork
+export default ApproveAddingNetwork;

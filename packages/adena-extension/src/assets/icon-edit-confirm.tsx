@@ -1,10 +1,10 @@
 import type {
   JSX,
-} from 'react'
+} from 'react';
 const IconEditConfirm = ({
   className,
 }: {
-  className: string
+  className: string;
 }): JSX.Element => (
   <svg
     className={className}
@@ -28,6 +28,6 @@ const IconEditConfirm = ({
       strokeLinejoin='round'
     />
   </svg>
-)
+);
 
-export default IconEditConfirm
+export default IconEditConfirm;

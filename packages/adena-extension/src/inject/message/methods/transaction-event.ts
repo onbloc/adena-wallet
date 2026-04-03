@@ -1,34 +1,34 @@
 import {
   WalletResponseFailureType, WalletResponseSuccessType,
-} from '@adena-wallet/sdk'
+} from '@adena-wallet/sdk';
 import {
   SCANNER_URL,
-} from '@common/constants/resource.constant'
+} from '@common/constants/resource.constant';
 import {
   Event, EventStatus, EventStore,
-} from '@common/event-store'
+} from '@common/event-store';
 import {
   MemoryProvider,
-} from '@common/provider/memory/memory-provider'
+} from '@common/provider/memory/memory-provider';
 import {
   fromBase64, toBase64,
-} from '@common/utils/client-utils'
+} from '@common/utils/client-utils';
 import {
   BroadcastTxCommitResult, BroadcastTxSyncResult,
-} from '@gnolang/tm2-js-client'
+} from '@gnolang/tm2-js-client';
 import {
   CommandMessageData,
-} from '@inject/message/command-message'
+} from '@inject/message/command-message';
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '@inject/message/message'
+} from '@inject/message/message';
 
 import {
   InjectCore,
-} from './core'
+} from './core';
 import {
   createNotification,
-} from './notification'
+} from './notification';
 
 export async function addTransactionEvent(
   inMemoryProvider: MemoryProvider,
@@ -36,35 +36,35 @@ export async function addTransactionEvent(
   message: InjectionMessage | CommandMessageData | any,
 ): Promise<Event<string[]> | null> {
   if (!message?.withNotification) {
-    return null
+    return null;
   }
 
-  const messageType = message?.type
-  const messageStatus = message?.status
-  const transactionHash = message?.data?.hash
+  const messageType = message?.type;
+  const messageStatus = message?.status;
+  const transactionHash = message?.data?.hash;
 
   if (
     messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS
     && messageType !== WalletResponseFailureType.TRANSACTION_FAILED
   ) {
-    return null
+    return null;
   }
 
   if (messageStatus !== 'success' && messageStatus !== 'failure') {
-    return null
+    return null;
   }
 
   if (!transactionHash) {
-    return null
+    return null;
   }
 
-  const core = new InjectCore(inMemoryProvider)
-  const network = await core.getCurrentNetwork()
+  const core = new InjectCore(inMemoryProvider);
+  const network = await core.getCurrentNetwork();
   if (!network) {
-    return null
+    return null;
   }
 
-  const isDefaultNetwork = !!network.apiUrl
+  const isDefaultNetwork = !!network.apiUrl;
 
   createTransactionNotification(
     'PENDING',
@@ -72,7 +72,7 @@ export async function addTransactionEvent(
     network.chainId,
     network.rpcUrl,
     isDefaultNetwork,
-  )
+  );
 
   return transactionEventStore.addEvent(
     transactionHash,
@@ -86,9 +86,9 @@ export async function addTransactionEvent(
         network.chainId,
         network.rpcUrl,
         isDefaultNetwork,
-      )
+      );
     },
-  )
+  );
 }
 
 function createTransactionNotificationId(
@@ -98,14 +98,14 @@ function createTransactionNotificationId(
   rpcUrl: string,
   isDefaultNetwork: boolean,
 ): string {
-  const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`
+  const scannerUrl = `${SCANNER_URL}/transactions/details?=txhash=${txHash}`;
   const resultScannerUrl = isDefaultNetwork
     ? `${scannerUrl}&chainId=${chainId}`
-    : `${scannerUrl}&type=custom&rpcUrl=${rpcUrl}`
+    : `${scannerUrl}&type=custom&rpcUrl=${rpcUrl}`;
 
-  const encodedResultScannerUrl = toBase64(resultScannerUrl)
+  const encodedResultScannerUrl = toBase64(resultScannerUrl);
 
-  return `tx-${status}-${txHash}-${encodedResultScannerUrl}`
+  return `tx-${status}-${txHash}-${encodedResultScannerUrl}`;
 }
 
 function createTransactionNotification(
@@ -121,44 +121,44 @@ function createTransactionNotification(
     chainId,
     rpcUrl,
     isDefaultNetwork,
-  )
-  const notificationTitle = mapEventStatusToNotificationTitle(eventStatus)
-  const notificationMessage = mapTransactionInfoToNotificationMessage(eventStatus, txHash)
+  );
+  const notificationTitle = mapEventStatusToNotificationTitle(eventStatus);
+  const notificationMessage = mapTransactionInfoToNotificationMessage(eventStatus, txHash);
 
-  createNotification(notificationId, notificationTitle, notificationMessage)
+  createNotification(notificationId, notificationTitle, notificationMessage);
 }
 
 function mapEventStatusToNotificationTitle(eventStatus: EventStatus): string {
   switch (eventStatus) {
     case 'SUCCESS':
-      return 'Transaction successful!'
+      return 'Transaction successful!';
     case 'FAILED':
-      return 'Transaction failed!'
+      return 'Transaction failed!';
     default:
-      return 'Broadcasting transaction…'
+      return 'Broadcasting transaction…';
   }
 }
 
 function mapTransactionInfoToNotificationMessage(eventStatus: EventStatus, txHash: string): string {
   if (eventStatus === 'PENDING') {
-    return 'Please wait a moment.'
+    return 'Please wait a moment.';
   }
 
-  return `TxHash: ${txHash}`
+  return `TxHash: ${txHash}`;
 }
 
 export function isTransactionNotification(notificationId: string): boolean {
-  return notificationId.startsWith('tx-')
+  return notificationId.startsWith('tx-');
 }
 
 export function parseTransactionScannerUrl(notificationId: string): string | null {
-  const values = notificationId.split('-')
+  const values = notificationId.split('-');
   if (values.length !== 4) {
-    return null
+    return null;
   }
 
-  const [, , , encodedResultScannerUrl] = values
-  return fromBase64(encodedResultScannerUrl)
+  const [, , , encodedResultScannerUrl] = values;
+  return fromBase64(encodedResultScannerUrl);
 }
 
 export function createNotificationSendMessage(
@@ -176,8 +176,8 @@ export function createNotificationSendMessage(
       ),
     )
     .catch((error) => {
-      console.warn('Failed to send transaction notification:', error)
-    })
+      console.warn('Failed to send transaction notification:', error);
+    });
 }
 
 export function createNotificationSendMessageByHash(hash: string): void {
@@ -193,6 +193,6 @@ export function createNotificationSendMessageByHash(hash: string): void {
       ),
     )
     .catch((error) => {
-      console.warn('Failed to send transaction notification:', error)
-    })
+      console.warn('Failed to send transaction notification:', error);
+    });
 }

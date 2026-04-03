@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 
 const IconGallery = ({
   className,
 }: {
-  className: string
+  className: string;
 }): ReactElement<any> => {
   return (
     <svg
@@ -21,7 +21,7 @@ const IconGallery = ({
       <rect className='icon-default' x='15' y='2' width='11' height='11' rx='2' fill='#646486' />
       <rect className='icon-primary' x='15' y='15' width='11' height='11' rx='2' fill='#646486' />
     </svg>
-  )
-}
+  );
+};
 
-export default IconGallery
+export default IconGallery;

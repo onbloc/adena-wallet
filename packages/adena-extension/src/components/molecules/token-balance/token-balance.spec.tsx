@@ -1,31 +1,31 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import {
   TokenBalance, TokenBalanceProps,
-} from '.'
+} from '.';
 
 describe('TokenBalance Component', () => {
   it('TokenBalance render', () => {
     const args: TokenBalanceProps = {
       value: '123,456,789,123465',
       denom: 'GNOT',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -34,14 +34,14 @@ describe('TokenBalance Component', () => {
           <TokenBalance {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
+    );
+  });
 
   it('TokenBalance empty value', () => {
     const args: TokenBalanceProps = {
       value: '',
       denom: '',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -50,6 +50,6 @@ describe('TokenBalance Component', () => {
           <TokenBalance {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

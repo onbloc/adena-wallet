@@ -1,18 +1,18 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg'
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import {
   SubHeader,
-} from '@components/atoms'
-import DocumentSignerList from '@components/molecules/document-signer-list/document-signer-list'
+} from '@components/atoms';
+import DocumentSignerList from '@components/molecules/document-signer-list/document-signer-list';
 import {
   SignerInfo,
-} from '@inject/types'
-import React from 'react'
+} from '@inject/types';
+import React from 'react';
 
-import * as S from './document-signer-list-screen.styles'
+import * as S from './document-signer-list-screen.styles';
 
 interface DocumentSignerListProps {
-  signerInfos: SignerInfo[]
-  onClickBack: () => void
+  signerInfos: SignerInfo[];
+  onClickBack: () => void;
 }
 
 const DocumentSignerListScreen = ({
@@ -33,7 +33,7 @@ const DocumentSignerListScreen = ({
         <DocumentSignerList signerInfos={signerInfos} />
       </div>
     </S.DocumentSignerListWrapper>
-  )
-}
+  );
+};
 
-export default DocumentSignerListScreen
+export default DocumentSignerListScreen;

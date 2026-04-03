@@ -1,55 +1,55 @@
-import UnknownTokenIcon from '@assets/common-unknown-token.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import {
   GasToken,
-} from '@common/constants/token.constant'
+} from '@common/constants/token.constant';
 import {
   isGRC20TokenModel, isNativeTokenModel,
-} from '@common/validation/validation-token'
-import TransactionResult from '@components/molecules/transaction-result'
-import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting'
-import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@common/validation/validation-token';
+import TransactionResult from '@components/molecules/transaction-result';
+import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
+import TransferSummary from '@components/pages/transfer-summary/transfer-summary/transfer-summary';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
-import useLink from '@hooks/use-link'
+} from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useTransferInfo,
-} from '@hooks/use-transfer-info'
+} from '@hooks/use-transfer-info';
 import {
   useGetGnotBalance,
-} from '@hooks/wallet/use-get-gnot-balance'
+} from '@hooks/wallet/use-get-gnot-balance';
 import {
   useNetworkFee,
-} from '@hooks/wallet/use-network-fee'
+} from '@hooks/wallet/use-network-fee';
 import {
   createNotificationSendMessage,
-} from '@inject/message/methods/transaction-event'
-import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading'
+} from '@inject/message/methods/transaction-event';
+import BroadcastTransactionLoading from '@pages/popup/wallet/broadcast-transaction-screen/loading';
 import {
   TransactionMessage,
-} from '@services/index'
-import mixins from '@styles/mixins'
+} from '@services/index';
+import mixins from '@styles/mixins';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   Document, isLedgerAccount,
-} from 'adena-module'
-import BigNumber from 'bignumber.js'
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
 import React, {
   useCallback, useEffect, useMemo, useRef, useState,
-} from 'react'
+} from 'react';
 import {
   useNavigate,
-} from 'react-router'
-import styled from 'styled-components'
+} from 'react-router';
+import styled from 'styled-components';
 
 const TransferSummaryLayout = styled.div`
   ${mixins.flex({
@@ -63,141 +63,141 @@ const TransferSummaryLayout = styled.div`
   & .network-fee-setting-wrapper {
     padding: 24px 20px;
   }
-`
+`;
 
 const TransferSummaryContainer: React.FC = () => {
-  const normalNavigate = useNavigate()
+  const normalNavigate = useNavigate();
   const {
     navigate, goBack, params,
-  } = useAppNavigate<RoutePath.TransferSummary>()
-  const summaryInfo = params
+  } = useAppNavigate<RoutePath.TransferSummary>();
+  const summaryInfo = params;
   const {
     wallet,
-  } = useWalletContext()
+  } = useWalletContext();
   const {
     transactionService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     currentAccount, currentAddress,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
   const {
     openScannerLink,
-  } = useLink()
+  } = useLink();
   const {
     setMemorizedTransferInfo,
-  } = useTransferInfo()
-  const [isSent, setIsSent] = useState(false)
-  const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY')
+  } = useTransferInfo();
+  const [isSent, setIsSent] = useState(false);
+  const [screenState, setScreenState] = useState<'SUMMARY' | 'LOADING' | 'RESULT'>('SUMMARY');
   const [transferResult, setTransferResult] = useState<{
-    status: 'SUCCESS' | 'FAILED'
-    hash?: string | null
-    errorMessage?: string | null
-  } | null>(null)
-  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false)
-  const [document, setDocument] = useState<Document | null>(null)
-  const layoutRef = useRef<HTMLDivElement>(null)
+    status: 'SUCCESS' | 'FAILED';
+    hash?: string | null;
+    errorMessage?: string | null;
+  } | null>(null);
+  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
+  const [document, setDocument] = useState<Document | null>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
 
-  const useNetworkFeeReturn = useNetworkFee(document, false)
-  const networkFee = useNetworkFeeReturn.networkFee
+  const useNetworkFeeReturn = useNetworkFee(document, false);
+  const networkFee = useNetworkFeeReturn.networkFee;
 
   const {
     data: currentBalance,
-  } = useGetGnotBalance()
+  } = useGetGnotBalance();
 
   const hasNetworkFee = useMemo(() => {
     if (!currentBalance || currentBalance === 0) {
-      return false
+      return false;
     }
 
     if (!networkFee || !Number(networkFee.amount)) {
-      return false
+      return false;
     }
 
-    let leastUsedAmount = BigNumber(networkFee.amount)
+    let leastUsedAmount = BigNumber(networkFee.amount);
 
     if (summaryInfo.tokenMetainfo.type === 'gno-native') {
-      leastUsedAmount = leastUsedAmount.plus(BigNumber(summaryInfo.transferAmount.value))
+      leastUsedAmount = leastUsedAmount.plus(BigNumber(summaryInfo.transferAmount.value));
     }
 
-    const currentBalanceAmount = BigNumber(currentBalance).shiftedBy(GasToken.decimals * -1)
+    const currentBalanceAmount = BigNumber(currentBalance).shiftedBy(GasToken.decimals * -1);
     if (currentBalanceAmount.isLessThan(leastUsedAmount)) {
-      return false
+      return false;
     }
 
-    return true
-  }, [currentBalance, networkFee?.amount, summaryInfo])
+    return true;
+  }, [currentBalance, networkFee?.amount, summaryInfo]);
 
   const isNetworkFeeError = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
-      return false
+      return false;
     }
 
     if (useNetworkFeeReturn.isSimulateError) {
-      return false
+      return false;
     }
 
     if (currentBalance === null || currentBalance === undefined) {
-      return false
+      return false;
     }
 
     if (currentBalance === 0) {
-      return true
+      return true;
     }
 
-    return !hasNetworkFee
-  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasNetworkFee])
+    return !hasNetworkFee;
+  }, [currentBalance, networkFee?.amount, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasNetworkFee]);
 
   const simulateErrorMessage = useMemo(() => {
     if (!useNetworkFeeReturn.isSimulateError || useNetworkFeeReturn.isLoading) {
-      return null
+      return null;
     }
 
     return (
       useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage || 'Failed to simulate transaction'
-    )
-  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage])
+    );
+  }, [useNetworkFeeReturn.isSimulateError, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.currentGasInfo?.simulateErrorMessage]);
 
   const getTransferBalance = useCallback(() => {
     const {
       value, denom,
-    } = summaryInfo.transferAmount
+    } = summaryInfo.transferAmount;
 
     return {
       value: `${BigNumber(value).toFormat()}`,
       denom,
-    }
-  }, [summaryInfo])
+    };
+  }, [summaryInfo]);
 
   const getNativeTransferMessage = useCallback(() => {
     const {
       tokenMetainfo, toAddress, transferAmount,
-    } = summaryInfo
+    } = summaryInfo;
 
     if (!isNativeTokenModel(tokenMetainfo)) {
-      return
+      return;
     }
 
     const sendAmount = `${BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals)}${
       tokenMetainfo.denom
-    }`
+    }`;
 
     return TransactionMessage.createMessageOfBankSend({
       fromAddress: currentAddress || '',
       toAddress,
       amount: sendAmount,
-    })
-  }, [summaryInfo, currentAddress])
+    });
+  }, [summaryInfo, currentAddress]);
 
   const getGRC20TransferMessage = useCallback(() => {
     const {
       tokenMetainfo, toAddress, transferAmount,
-    } = summaryInfo
+    } = summaryInfo;
 
     if (!isGRC20TokenModel(tokenMetainfo)) {
-      return
+      return;
     }
 
     return TransactionMessage.createMessageOfVmCall({
@@ -212,20 +212,20 @@ const TransferSummaryContainer: React.FC = () => {
           BigNumber(transferAmount.value).shiftedBy(tokenMetainfo.decimals).toNumber(),
         )}`,
       ],
-    })
-  }, [summaryInfo, currentAddress])
+    });
+  }, [summaryInfo, currentAddress]);
 
   const createDocument = async (): Promise<Document | null> => {
     if (!currentNetwork || !currentAccount || !currentAddress) {
-      return null
+      return null;
     }
 
     const {
       tokenMetainfo, memo,
-    } = summaryInfo
-    const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0
+    } = summaryInfo;
+    const gasWanted = useNetworkFeeReturn.currentGasInfo?.gasWanted || 0;
     const message
-      = tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage()
+      = tokenMetainfo.type === 'gno-native' ? getNativeTransferMessage() : getGRC20TransferMessage();
 
     const document = await transactionService.createDocument(
       currentAccount,
@@ -236,18 +236,18 @@ const TransferSummaryContainer: React.FC = () => {
         .shiftedBy(GasToken.decimals)
         .toNumber(),
       memo,
-    )
+    );
 
-    return document
-  }
+    return document;
+  };
 
   const updateDocument = (): void => {
     if (!document) {
-      return
+      return;
     }
 
-    const memo = summaryInfo.memo
-    const gasFee = useNetworkFeeReturn.currentGasFeeRawAmount
+    const memo = summaryInfo.memo;
+    const gasFee = useNetworkFeeReturn.currentGasFeeRawAmount;
 
     setDocument({
       ...document,
@@ -261,21 +261,21 @@ const TransferSummaryContainer: React.FC = () => {
         ],
         gas: useNetworkFeeReturn.currentGasInfo?.gasWanted.toString() || '0',
       },
-    })
-  }
+    });
+  };
 
   const createTransaction = useCallback(async () => {
     if (!currentNetwork || !currentAccount || !wallet) {
-      return null
+      return null;
     }
 
-    const document = await createDocument()
+    const document = await createDocument();
     if (!document) {
-      return null
+      return null;
     }
 
-    const walletInstance = wallet.clone()
-    walletInstance.currentAccountId = currentAccount.id
+    const walletInstance = wallet.clone();
+    walletInstance.currentAccountId = currentAccount.id;
 
     const {
       signed,
@@ -283,143 +283,143 @@ const TransferSummaryContainer: React.FC = () => {
       walletInstance,
       currentAccount,
       document,
-    )
+    );
 
     return transactionService.sendTransaction(walletInstance, currentAccount, signed).catch((e) => {
-      console.error(e)
-      return null
-    })
-  }, [summaryInfo, currentAccount, currentNetwork, networkFee, useNetworkFeeReturn.currentGasFeeRawAmount, useNetworkFeeReturn.currentGasInfo])
+      console.error(e);
+      return null;
+    });
+  }, [summaryInfo, currentAccount, currentNetwork, networkFee, useNetworkFeeReturn.currentGasFeeRawAmount, useNetworkFeeReturn.currentGasInfo]);
 
   const transfer = async (): Promise<boolean> => {
     if (isSent || !currentAccount || !hasNetworkFee || useNetworkFeeReturn.isLoading) {
-      return false
+      return false;
     }
 
-    setIsSent(true)
+    setIsSent(true);
     if (isLedgerAccount(currentAccount)) {
-      return transferByLedger()
+      return transferByLedger();
     }
 
-    return transferByCommon()
-  }
+    return transferByCommon();
+  };
 
   const transferByCommon = useCallback(async () => {
     try {
-      setScreenState('LOADING')
-      const response = await createTransaction()
-      createNotificationSendMessage(response)
+      setScreenState('LOADING');
+      const response = await createTransaction();
+      createNotificationSendMessage(response);
 
-      const txHash = response?.hash || null
+      const txHash = response?.hash || null;
       if (txHash) {
         setTransferResult({
           status: 'SUCCESS',
           hash: txHash,
-        })
+        });
       } else {
         setTransferResult({
           status: 'FAILED',
           errorMessage: 'Your transaction could not be submitted to the blockchain. Try again.',
-        })
+        });
       }
-      setScreenState('RESULT')
-      setIsSent(false)
-      return Boolean(txHash)
+      setScreenState('RESULT');
+      setIsSent(false);
+      return Boolean(txHash);
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       setTransferResult({
         status: 'FAILED',
         errorMessage,
-      })
-      setScreenState('RESULT')
-      setIsSent(false)
-      return false
+      });
+      setScreenState('RESULT');
+      setIsSent(false);
+      return false;
     }
-  }, [createTransaction])
+  }, [createTransaction]);
 
   const transferByLedger = useCallback(async () => {
-    const document = await createDocument()
+    const document = await createDocument();
     if (document) {
       navigate(RoutePath.TransferLedgerLoading, {
         state: {
           document,
         },
-      })
+      });
     }
-    return true
-  }, [createDocument])
+    return true;
+  }, [createDocument]);
 
   const onClickBack = useCallback(() => {
-    setMemorizedTransferInfo(summaryInfo)
-    goBack()
-  }, [summaryInfo])
+    setMemorizedTransferInfo(summaryInfo);
+    goBack();
+  }, [summaryInfo]);
 
   const onClickCancel = useCallback(() => {
     if (summaryInfo.isTokenSearch === true) {
-      navigate(RoutePath.Wallet)
-      return
+      navigate(RoutePath.Wallet);
+      return;
     }
-    normalNavigate(-2)
-  }, [summaryInfo, navigate])
+    normalNavigate(-2);
+  }, [summaryInfo, navigate]);
 
   const onClickNetworkFeeSetting = useCallback(() => {
-    setOpenedNetworkFeeSetting(true)
-  }, [])
+    setOpenedNetworkFeeSetting(true);
+  }, []);
 
   const onClickNetworkFeeClose = useCallback(() => {
-    setOpenedNetworkFeeSetting(false)
-  }, [])
+    setOpenedNetworkFeeSetting(false);
+  }, []);
 
   const onClickNetworkFeeSave = useCallback(() => {
-    useNetworkFeeReturn.save()
-    setOpenedNetworkFeeSetting(false)
-  }, [useNetworkFeeReturn.save])
+    useNetworkFeeReturn.save();
+    setOpenedNetworkFeeSetting(false);
+  }, [useNetworkFeeReturn.save]);
 
   const onClickViewHistory = useCallback(() => {
-    navigate(RoutePath.History)
-  }, [navigate])
+    navigate(RoutePath.History);
+  }, [navigate]);
 
   const onClickCloseResult = useCallback(() => {
-    navigate(RoutePath.Wallet)
-  }, [navigate])
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
 
   const onClickViewGnoscan = useCallback(() => {
     if (!transferResult?.hash) {
-      return
+      return;
     }
 
     openScannerLink('/transactions/details', {
       txhash: transferResult.hash,
-    })
-  }, [transferResult?.hash, openScannerLink])
+    });
+  }, [transferResult?.hash, openScannerLink]);
 
   useEffect(() => {
     if (simulateErrorMessage) {
       requestAnimationFrame(() => {
-        const el = layoutRef.current
+        const el = layoutRef.current;
         if (el) {
           el.scrollTo({
             top: el.scrollHeight,
             behavior: 'smooth',
-          })
+          });
         }
-      })
+      });
     }
-  }, [simulateErrorMessage])
+  }, [simulateErrorMessage]);
 
   useEffect(() => {
     if (!document) {
       createDocument().then((doc) => {
         if (!doc) {
-          return
+          return;
         }
 
-        setDocument(doc)
-      })
+        setDocument(doc);
+      });
     } else {
-      updateDocument()
+      updateDocument();
     }
-  }, [wallet, summaryInfo, currentAccount, currentNetwork, useNetworkFeeReturn.currentGasFeeRawAmount])
+  }, [wallet, summaryInfo, currentAccount, currentNetwork, useNetworkFeeReturn.currentGasFeeRawAmount]);
 
   return (
     <TransferSummaryLayout ref={layoutRef}>
@@ -467,7 +467,7 @@ const TransferSummaryContainer: React.FC = () => {
                 />
               )}
     </TransferSummaryLayout>
-  )
-}
+  );
+};
 
-export default TransferSummaryContainer
+export default TransferSummaryContainer;

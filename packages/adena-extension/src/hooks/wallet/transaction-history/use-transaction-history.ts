@@ -1,69 +1,69 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useMakeTransactionsWithTime,
-} from '@hooks/use-make-transactions-with-time'
+} from '@hooks/use-make-transactions-with-time';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo'
+} from '@hooks/use-token-metainfo';
 import {
   CommonState,
-} from '@states'
+} from '@states';
 import {
   RefetchOptions, useQuery,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   TransactionInfo,
-} from '@types'
+} from '@types';
 import {
   useMemo,
-} from 'react'
+} from 'react';
 import {
   useRecoilState,
-} from 'recoil'
+} from 'recoil';
 
 export const useTransactionHistory = ({
   enabled,
 }: {
-  enabled: boolean
+  enabled: boolean;
 }): {
   data:
     | {
-      title: string
-      transactions: TransactionInfo[]
+      title: string;
+      transactions: TransactionInfo[];
     }[]
-    | null
-  isFetched: boolean
-  status: 'pending' | 'error' | 'success'
-  isLoading: boolean
-  isFetching: boolean
-  isSupported: boolean
-  hasNextPage: boolean
-  fetchNextPage: () => Promise<boolean>
-  refetch: (options?: RefetchOptions) => void
+    | null;
+  isFetched: boolean;
+  status: 'pending' | 'error' | 'success';
+  isLoading: boolean;
+  isFetching: boolean;
+  isSupported: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => Promise<boolean>;
+  refetch: (options?: RefetchOptions) => void;
 } => {
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
   const {
     currentAddress,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     transactionHistoryService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     tokenMetainfos,
-  } = useTokenMetainfo()
+  } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useRecoilState(
     CommonState.fetchedHistoryBlockHeight,
-  )
+  );
 
   const {
     data: allTransactions, refetch,
@@ -75,57 +75,57 @@ export const useTransactionHistory = ({
       && tokenMetainfos.length > 0
       && transactionHistoryService.supported
       && enabled,
-  })
+  });
 
   const blockIndex = useMemo(() => {
     if (!allTransactions) {
-      return null
+      return null;
     }
     if (!fetchedHistoryBlockHeight) {
-      return allTransactions.transactions.length < 20 ? allTransactions.transactions.length : 20
+      return allTransactions.transactions.length < 20 ? allTransactions.transactions.length : 20;
     }
-    return fetchedHistoryBlockHeight
-  }, [allTransactions, fetchedHistoryBlockHeight])
+    return fetchedHistoryBlockHeight;
+  }, [allTransactions, fetchedHistoryBlockHeight]);
 
   const transactions = useMemo(() => {
     if (!allTransactions) {
-      return null
+      return null;
     }
 
     if (blockIndex === null) {
-      return null
+      return null;
     }
 
-    return allTransactions.transactions.slice(0, blockIndex || 0)
-  }, [allTransactions, blockIndex])
+    return allTransactions.transactions.slice(0, blockIndex || 0);
+  }, [allTransactions, blockIndex]);
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
-      return ''
+      return '';
     }
 
-    return transactions[0]?.hash
-  }, [transactions])
+    return transactions[0]?.hash;
+  }, [transactions]);
 
   const {
     data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `history/common/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
-  )
+  );
 
   const fetchNextPage = async (): Promise<boolean> => {
-    const transactionSize = allTransactions?.transactions.length || 0
-    const endIndex = blockIndex || 20
-    const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20
+    const transactionSize = allTransactions?.transactions.length || 0;
+    const endIndex = blockIndex || 20;
+    const nextBlockIndex = endIndex >= transactionSize ? transactionSize : endIndex + 20;
 
-    await setFetchedHistoryBlockHeight(nextBlockIndex)
-    return true
-  }
+    await setFetchedHistoryBlockHeight(nextBlockIndex);
+    return true;
+  };
 
   const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options)
-  }
+    refetch(options);
+  };
 
   return {
     data: data || null,
@@ -137,5 +137,5 @@ export const useTransactionHistory = ({
     hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,
     refetch: refetchTransactions,
-  }
-}
+  };
+};

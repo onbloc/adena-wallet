@@ -1,25 +1,25 @@
 import {
   Button, ButtonProps, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import React, {
   ReactElement,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 interface DefaultButtonProps {
-  onClick: () => void
-  props?: React.ComponentPropsWithoutRef<'button'>
+  onClick: () => void;
+  props?: React.ComponentPropsWithoutRef<'button'>;
 }
 
 interface ConfirmButtonProps extends DefaultButtonProps {
-  text: string
-  hierarchy?: ButtonProps['hierarchy']
+  text: string;
+  hierarchy?: ButtonProps['hierarchy'];
 }
 
 interface CancelAndConfirmLocation {
-  cancelButtonProps: DefaultButtonProps
-  confirmButtonProps: ConfirmButtonProps
+  cancelButtonProps: DefaultButtonProps;
+  confirmButtonProps: ConfirmButtonProps;
 }
 
 const Wrapper = styled.div`
@@ -30,7 +30,7 @@ const Wrapper = styled.div`
   })};
   width: 100%;
   gap: 10px;
-`
+`;
 
 export const CancelAndConfirmButton = ({
   cancelButtonProps,
@@ -55,5 +55,5 @@ export const CancelAndConfirmButton = ({
         <Text type='body1Bold'>{confirmButtonProps.text}</Text>
       </Button>
     </Wrapper>
-  )
-}
+  );
+};

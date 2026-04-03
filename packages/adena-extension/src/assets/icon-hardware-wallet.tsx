@@ -1,7 +1,7 @@
 /* eslintDisable react/noUnknownProperty */
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 
 const IconHardwareWallet = (): JSX.Element => (
   <svg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -9,6 +9,6 @@ const IconHardwareWallet = (): JSX.Element => (
     <path d='M5.75 12.0002C5.75 11.7645 5.84365 11.5384 6.01035 11.3717C6.17705 11.205 6.40314 11.1113 6.63889 11.1113H17.3056C17.5413 11.1113 17.7674 11.205 17.9341 11.3717C18.1008 11.5384 18.1944 11.7645 18.1944 12.0002V14.6669C18.1944 15.6099 17.8198 16.5142 17.153 17.181C16.4862 17.8478 15.5819 18.2224 14.6389 18.2224H9.30556C8.36256 18.2224 7.45819 17.8478 6.7914 17.181C6.1246 16.5142 5.75 15.6099 5.75 14.6669V12.0002Z' fill='#FAFCFF' />
   </svg>
 
-)
+);
 
-export default IconHardwareWallet
+export default IconHardwareWallet;

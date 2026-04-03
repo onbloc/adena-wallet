@@ -5,37 +5,37 @@ export enum NetworkFeeSettingType {
 }
 
 export interface NetworkFeeSettingInfo {
-  settingType: NetworkFeeSettingType
-  gasInfo: GasInfo
+  settingType: NetworkFeeSettingType;
+  gasInfo: GasInfo;
   storageDeposits: {
-    storageDeposit: number
-    unlockDeposit: number
-    storageUsage: number
-    releaseStorageUsage: number
-  }
+    storageDeposit: number;
+    unlockDeposit: number;
+    storageUsage: number;
+    releaseStorageUsage: number;
+  };
 }
 
 export interface GasPriceTierInfo {
-  low: number
-  average: number
-  high: number
+  low: number;
+  average: number;
+  high: number;
 }
 
 export interface GasPrice {
-  amount: string
-  denom: string
+  amount: string;
+  denom: string;
 }
 
 export interface NetworkFee {
-  amount: string
-  denom: string
+  amount: string;
+  denom: string;
 }
 
 export interface GasInfo {
-  gasFee: number
-  gasUsed: bigint
-  gasWanted: bigint
-  gasPrice: number
-  hasError?: boolean
-  simulateErrorMessage: string | null
+  gasFee: number;
+  gasUsed: bigint;
+  gasWanted: bigint;
+  gasPrice: number;
+  hasError?: boolean;
+  simulateErrorMessage: string | null;
 }

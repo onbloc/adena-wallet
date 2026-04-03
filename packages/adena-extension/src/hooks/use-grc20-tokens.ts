@@ -1,39 +1,39 @@
 import {
   useQuery, UseQueryOptions,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   GRC20TokenModel,
-} from '@types'
+} from '@types';
 
 import {
   useAdenaContext,
-} from './use-context'
+} from './use-context';
 import {
   useCurrentAccount,
-} from './use-current-account'
+} from './use-current-account';
 import {
   useNetwork,
-} from './use-network'
+} from './use-network';
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const useGRC20Tokens = (options?: Omit<UseQueryOptions<GRC20TokenModel[], Error>, 'queryKey' | 'queryFn'>) => {
   const {
     tokenService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     currentAddress,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
 
   return useQuery<GRC20TokenModel[], Error>({
     queryKey: ['grc20-tokens', currentNetwork.networkId],
     queryFn: () => {
-      return tokenService.fetchGRC20Tokens()
+      return tokenService.fetchGRC20Tokens();
     },
     staleTime: Infinity,
     enabled: !!currentAddress,
     ...options,
-  })
-}
+  });
+};

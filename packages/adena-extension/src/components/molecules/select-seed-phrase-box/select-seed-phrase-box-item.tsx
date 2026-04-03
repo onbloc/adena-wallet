@@ -1,38 +1,38 @@
 import {
   Row, WebCheckBox, WebText,
-} from '@components/atoms'
+} from '@components/atoms';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 import {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   SeedPhraseInfo,
-} from './select-seed-phrase-box.types'
+} from './select-seed-phrase-box.types';
 import {
   StyledSelectSeedPhraseBoxItem,
-} from './select-seed-phrase-box-item.styles'
+} from './select-seed-phrase-box-item.styles';
 
 const SelectSeedPhraseBoxItem: React.FC<{
-  seedPhrase: SeedPhraseInfo
-  select: (keyringId: string) => void
+  seedPhrase: SeedPhraseInfo;
+  select: (keyringId: string) => void;
 }> = ({
   seedPhrase, select,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     index, selected, accountCount, keyringId,
-  } = seedPhrase
+  } = seedPhrase;
 
   const title = useMemo(() => {
-    return `Seed Phrase ${index + 1}`
-  }, [index])
+    return `Seed Phrase ${index + 1}`;
+  }, [index]);
 
   const description = useMemo(() => {
-    return `(${accountCount} accounts)`
-  }, [accountCount])
+    return `(${accountCount} accounts)`;
+  }, [accountCount]);
 
   return (
     <StyledSelectSeedPhraseBoxItem key={index}>
@@ -47,7 +47,7 @@ const SelectSeedPhraseBoxItem: React.FC<{
       </Row>
       <WebCheckBox checked={selected} onClick={(): void => select(keyringId)} />
     </StyledSelectSeedPhraseBoxItem>
-  )
-}
+  );
+};
 
-export default SelectSeedPhraseBoxItem
+export default SelectSeedPhraseBoxItem;

@@ -1,107 +1,107 @@
-import AddPackageIcon from '@assets/addpkg.svg'
-import UnknownTokenIcon from '@assets/common-unknown-token.svg'
-import ContractIcon from '@assets/contract.svg'
-import IconShare from '@assets/icon-share'
+import AddPackageIcon from '@assets/addpkg.svg';
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ContractIcon from '@assets/contract.svg';
+import IconShare from '@assets/icon-share';
 import {
   SCANNER_URL,
-} from '@common/constants/resource.constant'
+} from '@common/constants/resource.constant';
 import {
   GNOT_TOKEN,
-} from '@common/constants/token.constant'
+} from '@common/constants/token.constant';
 import {
   formatHash, getDateTimeText, getStatusStyle,
-} from '@common/utils/client-utils'
+} from '@common/utils/client-utils';
 import {
   makeQueryString,
-} from '@common/utils/string-utils'
+} from '@common/utils/string-utils';
 import {
   Button, CopyIconButton, Text,
-} from '@components/atoms'
-import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip'
+} from '@components/atoms';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
 import {
   TokenBalance,
-} from '@components/molecules'
+} from '@components/molecules';
 import {
   useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri'
-import useAppNavigate from '@hooks/use-app-navigate'
-import useLink from '@hooks/use-link'
+} from '@hooks/nft/use-get-grc721-token-uri';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo'
-import mixins from '@styles/mixins'
+} from '@hooks/use-token-metainfo';
+import mixins from '@styles/mixins';
 import theme, {
   fonts, getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   type JSX, useMemo, useState,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 interface DLProps {
-  color?: string
+  color?: string;
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
 released for storage usage by this
-transaction.`
+transaction.`;
 
 export const TransactionDetail = (): JSX.Element => {
-  const [hasLogoError, setHasLogoError] = useState(false)
-  const [isLoadedLogo, setIsLoadedLogo] = useState(false)
+  const [hasLogoError, setHasLogoError] = useState(false);
+  const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
   const {
     openLink,
-  } = useLink()
+  } = useLink();
   const {
     convertDenom,
-  } = useTokenMetainfo()
+  } = useTokenMetainfo();
   const {
     currentNetwork, scannerParameters,
-  } = useNetwork()
+  } = useNetwork();
   const {
     goBack, params,
-  } = useAppNavigate<RoutePath.TransactionDetail>()
+  } = useAppNavigate<RoutePath.TransactionDetail>();
 
-  const transactionItem = params.transactionInfo
+  const transactionItem = params.transactionInfo;
   const tokenUriQuery
     = transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
-      : null
+      : null;
 
   const logoImage = useMemo(() => {
     if (transactionItem?.type === 'TRANSFER_GRC721' && tokenUriQuery) {
       if (!isLoadedLogo || hasLogoError) {
-        return `${UnknownTokenIcon}`
+        return `${UnknownTokenIcon}`;
       }
 
-      return tokenUriQuery?.data || `${UnknownTokenIcon}`
+      return tokenUriQuery?.data || `${UnknownTokenIcon}`;
     }
 
     if (transactionItem?.type === 'ADD_PACKAGE') {
-      return `${AddPackageIcon}`
+      return `${AddPackageIcon}`;
     }
 
     if (transactionItem?.type === 'CONTRACT_CALL') {
-      return `${ContractIcon}`
+      return `${ContractIcon}`;
     }
 
     if (transactionItem?.type === 'MULTI_CONTRACT_CALL') {
-      return `${ContractIcon}`
+      return `${ContractIcon}`;
     }
 
     if (!transactionItem?.logo) {
-      return `${UnknownTokenIcon}`
+      return `${UnknownTokenIcon}`;
     }
 
-    return `${transactionItem?.logo}`
-  }, [isLoadedLogo, hasLogoError, transactionItem?.type, transactionItem?.logo, tokenUriQuery])
+    return `${transactionItem?.logo}`;
+  }, [isLoadedLogo, hasLogoError, transactionItem?.type, transactionItem?.logo, tokenUriQuery]);
 
   const storageDeposit = useMemo(() => {
     if (!transactionItem?.storageDeposit) {
@@ -110,36 +110,36 @@ export const TransactionDetail = (): JSX.Element => {
         amountDenom: GNOT_TOKEN.denom,
         isRefundable: false,
         fontColor: theme.neutral._1,
-      }
+      };
     }
 
-    const isRefundable = transactionItem.storageDeposit.value < 0
-    const amountValue = Math.abs(transactionItem.storageDeposit.value)
-    const fontColor = isRefundable ? theme.green._5 : theme.neutral._1
+    const isRefundable = transactionItem.storageDeposit.value < 0;
+    const amountValue = Math.abs(transactionItem.storageDeposit.value);
+    const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
     return {
       amountValue,
       amountDenom: transactionItem.storageDeposit.denom,
       isRefundable,
       fontColor,
-    }
-  }, [transactionItem?.storageDeposit])
+    };
+  }, [transactionItem?.storageDeposit]);
 
   const handleLoadLogo = (): void => {
-    setIsLoadedLogo(true)
-  }
+    setIsLoadedLogo(true);
+  };
 
   const handleLogoError = (): void => {
-    setHasLogoError(true)
-  }
+    setHasLogoError(true);
+  };
 
   const handleLinkClick = (hash: string): void => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     const openLinkUrl = scannerParameters
       ? `${scannerUrl}/transactions/details?txhash=${hash}&${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/transactions/details?txhash=${hash}`
-    openLink(openLinkUrl)
-  }
+      : `${scannerUrl}/transactions/details?txhash=${hash}`;
+    openLink(openLinkUrl);
+  };
 
   return transactionItem
     ? (
@@ -280,8 +280,8 @@ export const TransactionDetail = (): JSX.Element => {
       )
     : (
         <></>
-      )
-}
+      );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -308,10 +308,10 @@ const Wrapper = styled.main`
     background: ${getTheme('neutral', '_8')};
     box-shadow: 0px -4px 4px 0px rgba(0, 0, 0, 0.4);
   }
-`
+`;
 
 const TokenBox = styled.div<{
-  color: string
+  color: string;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -339,7 +339,7 @@ const TokenBox = styled.div<{
     text-overflow: ellipsis;
     overflow: hidden;
   }
-`
+`;
 
 const DataBox = styled.div`
   ${mixins.flex()};
@@ -347,7 +347,7 @@ const DataBox = styled.div`
   border-radius: 18px;
   background-color: ${getTheme('neutral', '_9')};
   margin-bottom: 96px;
-`
+`;
 
 const DLWrap = styled.dl<DLProps>`
   ${mixins.flex({
@@ -384,7 +384,7 @@ const DLWrap = styled.dl<DLProps>`
   .copy-button {
     margin-left: 5px;
   }
-`
+`;
 
 const StatusInfo = styled.div`
   ${mixins.flex({
@@ -411,4 +411,4 @@ const StatusInfo = styled.div`
       }
     }
   }
-`
+`;

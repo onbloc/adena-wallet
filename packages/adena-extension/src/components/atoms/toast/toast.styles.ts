@@ -1,10 +1,10 @@
 import {
   View,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   fonts,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const ToastWrapper = styled(View)`
   position: absolute;
@@ -22,7 +22,7 @@ export const ToastWrapper = styled(View)`
   &.active {
     opacity: 1;
   }
-`
+`;
 
 export const ToastContent = styled(View)`
   width: fit-content;
@@ -36,4 +36,4 @@ export const ToastContent = styled(View)`
   ${fonts.body2Reg}
   white-space: nowrap;
   pointer-events: none;
-`
+`;

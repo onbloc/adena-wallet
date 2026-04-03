@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const AccountDetailsWrapper = styled.div`
   ${mixins.flex({
@@ -52,4 +52,4 @@ export const AccountDetailsWrapper = styled.div`
       }
     }
   }
-`
+`;

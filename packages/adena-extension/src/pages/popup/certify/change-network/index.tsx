@@ -1,43 +1,43 @@
 import {
   CommonFullContentLayout,
-} from '@components/atoms'
-import ChangeNetwork from '@components/pages/change-network/change-network/change-network'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/atoms';
+import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import React, {
   useCallback, useEffect, useMemo,
-} from 'react'
+} from 'react';
 
 const ChangeNetworkContainer: React.FC = () => {
   const {
     navigate, goBack,
-  } = useAppNavigate()
+  } = useAppNavigate();
   const {
     modified, currentNetwork, networks, setModified, changeNetwork,
-  } = useNetwork()
+  } = useNetwork();
 
   useEffect(() => {
     if (modified) {
-      setTimeout(() => setModified(false), 1000)
+      setTimeout(() => setModified(false), 1000);
     }
-  }, [modified])
+  }, [modified]);
 
   const displayNetworks = useMemo(() => {
-    return networks.filter(network => network.deleted !== true)
-  }, [networks])
+    return networks.filter(network => network.deleted !== true);
+  }, [networks]);
 
   const loading = useMemo(() => {
-    return networks.length === 0 || modified
-  }, [networks, modified])
+    return networks.length === 0 || modified;
+  }, [networks, modified]);
 
   const moveAddPage = useCallback(() => {
-    navigate(RoutePath.AddCustomNetwork)
-  }, [navigate])
+    navigate(RoutePath.AddCustomNetwork);
+  }, [navigate]);
 
   const moveEditPage = useCallback(
     (networkId: string) => {
@@ -45,21 +45,21 @@ const ChangeNetworkContainer: React.FC = () => {
         state: {
           networkId,
         },
-      })
+      });
     },
     [navigate],
-  )
+  );
 
   const changeNetworkAndRoutePage = async (networkId: string): Promise<void> => {
     if (networkId === currentNetwork?.id) {
-      return
+      return;
     }
 
     if (networkId) {
-      await changeNetwork(networkId)
-      navigate(RoutePath.Wallet)
+      await changeNetwork(networkId);
+      navigate(RoutePath.Wallet);
     }
-  }
+  };
 
   return (
     <CommonFullContentLayout>
@@ -73,7 +73,7 @@ const ChangeNetworkContainer: React.FC = () => {
         moveBack={goBack}
       />
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default ChangeNetworkContainer
+export default ChangeNetworkContainer;

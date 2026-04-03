@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const EditNetworkWrapper = styled.div`
   ${mixins.flex({
@@ -28,4 +28,4 @@ export const EditNetworkWrapper = styled.div`
     height: 100%;
     padding: 12px 0;
   }
-`
+`;

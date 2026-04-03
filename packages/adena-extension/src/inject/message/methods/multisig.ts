@@ -1,19 +1,19 @@
 import {
   WalletResponseRejectType,
-} from '@adena-wallet/sdk'
+} from '@adena-wallet/sdk';
 import {
   validateInjectionData,
-} from '@common/validation/validation-transaction'
+} from '@common/validation/validation-transaction';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 
 import {
   HandlerMethod,
-} from '..'
+} from '..';
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '../message'
+} from '../message';
 
 export const createMultisigAccount = async (
   requestData: InjectionMessage,
@@ -25,17 +25,17 @@ export const createMultisigAccount = async (
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
     }, requestData.key),
     sendResponse,
-  )
-}
+  );
+};
 
 export const createMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const validationMessage = validateInjectionData(requestData)
+  const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
-    sendResponse(validationMessage)
-    return
+    sendResponse(validationMessage);
+    return;
   }
 
   HandlerMethod.createPopup(
@@ -44,17 +44,17 @@ export const createMultisigDocument = async (
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
     }, requestData.key),
     sendResponse,
-  )
-}
+  );
+};
 
 export const signMultisigDocument = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const validationMessage = validateInjectionData(requestData)
+  const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
-    sendResponse(validationMessage)
-    return
+    sendResponse(validationMessage);
+    return;
   }
 
   HandlerMethod.createPopup(
@@ -63,17 +63,17 @@ export const signMultisigDocument = async (
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
     }, requestData.key),
     sendResponse,
-  )
-}
+  );
+};
 
 export const broadcastMultisigTransaction = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const validationMessage = validateInjectionData(requestData)
+  const validationMessage = validateInjectionData(requestData);
   if (validationMessage) {
-    sendResponse(validationMessage)
-    return
+    sendResponse(validationMessage);
+    return;
   }
 
   HandlerMethod.createPopup(
@@ -82,5 +82,5 @@ export const broadcastMultisigTransaction = async (
     InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
     }, requestData.key),
     sendResponse,
-  )
-}
+  );
+};

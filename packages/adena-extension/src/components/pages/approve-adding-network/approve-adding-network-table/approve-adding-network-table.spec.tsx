@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import ApproveAddingNetworkTable, {
   ApproveAddingNetworkTableProps,
-} from './approve-adding-network-table'
+} from './approve-adding-network-table';
 
 describe('ApproveAddingNetworkTable Component', () => {
   it('ApproveAddingNetworkTable render', () => {
@@ -26,7 +26,7 @@ describe('ApproveAddingNetworkTable Component', () => {
       name: '',
       rpcUrl: '',
       chainId: '',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -35,6 +35,6 @@ describe('ApproveAddingNetworkTable Component', () => {
           <ApproveAddingNetworkTable {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

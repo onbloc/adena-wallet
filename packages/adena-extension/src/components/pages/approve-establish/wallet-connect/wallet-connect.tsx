@@ -1,29 +1,29 @@
-import DefaultFavicon from '@assets/favicon-default.svg'
+import DefaultFavicon from '@assets/favicon-default.svg';
 import {
   Text,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   ApproveLoading, BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
+} from '@components/molecules';
 import React, {
   useEffect,
-} from 'react'
+} from 'react';
 
 import {
   WalletConnectWrapper,
-} from './wallet-connect.styles'
+} from './wallet-connect.styles';
 
 export interface WalletConnectProps {
-  loading: boolean
-  app: string
-  logo: string
-  domain: string
-  processing: boolean
-  done: boolean
-  onClickConnect: () => void
-  onClickCancel: () => void
-  onResponse: () => void
-  onTimeout: () => void
+  loading: boolean;
+  app: string;
+  logo: string;
+  domain: string;
+  processing: boolean;
+  done: boolean;
+  onClickConnect: () => void;
+  onClickCancel: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({
@@ -38,14 +38,14 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
   onResponse,
 }) => {
   if (loading) {
-    return <ApproveLoading rightButtonText='Connect' />
+    return <ApproveLoading rightButtonText='Connect' />;
   }
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   return (
     <WalletConnectWrapper>
@@ -93,7 +93,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         }}
       />
     </WalletConnectWrapper>
-  )
-}
+  );
+};
 
-export default WalletConnect
+export default WalletConnect;

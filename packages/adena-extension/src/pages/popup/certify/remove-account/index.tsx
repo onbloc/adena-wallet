@@ -1,58 +1,58 @@
-import removeIcon from '@assets/icon-remove-blur.svg'
+import removeIcon from '@assets/icon-remove-blur.svg';
 import {
   Text,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   CancelAndConfirmButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useRemoveAccount,
-} from '@hooks/use-remove-account'
+} from '@hooks/use-remove-account';
 import {
   WalletState,
-} from '@states'
-import mixins from '@styles/mixins'
+} from '@states';
+import mixins from '@styles/mixins';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import {
   useRecoilState,
-} from 'recoil'
+} from 'recoil';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const content
-  = 'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.'
+  = 'Only proceed if you wish to remove this account from your wallet. You can always recover it with your seed phrase or your private key.';
 
 export const RemoveAccount = (): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     navigate, goBack,
-  } = useAppNavigate()
+  } = useAppNavigate();
   const {
     currentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     removeAccount,
-  } = useRemoveAccount()
-  const [, setState] = useRecoilState(WalletState.state)
+  } = useRemoveAccount();
+  const [, setState] = useRecoilState(WalletState.state);
 
   const removeButtonClick = async (): Promise<void> => {
     if (!currentAccount) {
-      return
+      return;
     }
-    setState('LOADING')
-    await removeAccount(currentAccount)
-    navigate(RoutePath.Wallet)
-  }
+    setState('LOADING');
+    await removeAccount(currentAccount);
+    navigate(RoutePath.Wallet);
+  };
 
   return (
     <Wrapper>
@@ -74,8 +74,8 @@ export const RemoveAccount = (): JSX.Element => {
         }}
       />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -85,4 +85,4 @@ const Wrapper = styled.main`
   height: 100%;
   padding-top: 56px;
   overflow-y: auto;
-`
+`;

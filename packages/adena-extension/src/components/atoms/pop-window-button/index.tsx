@@ -1,19 +1,19 @@
 import {
   Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
-import IconExpand from '../icon/icon-assets/icon-expand'
+import IconExpand from '../icon/icon-assets/icon-expand';
 
 interface PopWindowButtonProps {
-  onClick: () => void
+  onClick: () => void;
 }
 
 const StyledContainer = styled.div`
@@ -30,7 +30,7 @@ const StyledContainer = styled.div`
     transition: all 0.1s ease-in-out;
     transform: scale(1);
   }
-`
+`;
 
 const StyledIconWrapper = styled.div`
   display: flex;
@@ -47,7 +47,7 @@ const StyledIconWrapper = styled.div`
       theme,
     }): string => theme.neutral._1};
   }
-`
+`;
 
 const StyledTooltip = styled.div`
   position: fixed;
@@ -64,7 +64,7 @@ const StyledTooltip = styled.div`
   top: 40px;
   right: 12px;
   transform: scale(0.6);
-`
+`;
 
 export const PopWindowButton = ({
   onClick,
@@ -78,5 +78,5 @@ export const PopWindowButton = ({
         <Text type='body3Reg'>Pop Window</Text>
       </StyledTooltip>
     </StyledContainer>
-  )
-}
+  );
+};

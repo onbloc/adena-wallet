@@ -1,50 +1,50 @@
 import React, {
   useEffect, useState,
-} from 'react'
+} from 'react';
 
 import {
   ToastContent, ToastWrapper,
-} from './toast.styles'
+} from './toast.styles';
 
 export interface ToastProps {
-  text: string
-  onFinish: () => void
+  text: string;
+  onFinish: () => void;
 }
 
 const Toast: React.FC<ToastProps> = ({
   text, onFinish,
 }) => {
-  const [visible, setVisible] = useState(false)
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setVisible(true)
-  }, [text])
+    setVisible(true);
+  }, [text]);
 
   useEffect(() => {
     if (!visible) {
-      const timeout = setTimeout(onFinish, 1000)
+      const timeout = setTimeout(onFinish, 1000);
       return () => {
-        clearTimeout(timeout)
-      }
+        clearTimeout(timeout);
+      };
     }
-  }, [visible])
+  }, [visible]);
 
   useEffect(() => {
     if (visible) {
       const timeout = setTimeout(() => {
-        setVisible(false)
-      }, 3 * 1000)
+        setVisible(false);
+      }, 3 * 1000);
       return () => {
-        clearTimeout(timeout)
-      }
+        clearTimeout(timeout);
+      };
     }
-  }, [visible, text])
+  }, [visible, text]);
 
   return (
     <ToastWrapper className={visible ? 'active' : ''}>
       <ToastContent>{text}</ToastContent>
     </ToastWrapper>
-  )
-}
+  );
+};
 
-export default Toast
+export default Toast;

@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base'
+} from '../base';
 
 const ERROR_VALUE = {
   INVALID_REALM_PATH: {
@@ -13,13 +13,13 @@ const ERROR_VALUE = {
     type: 'ALREADY_ADDED',
     message: 'Already added',
   },
-}
+};
 
-type ErrorType = keyof typeof ERROR_VALUE
+type ErrorType = keyof typeof ERROR_VALUE;
 
 export class TokenValidationError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType])
-    Object.setPrototypeOf(this, TokenValidationError.prototype)
+    super(ERROR_VALUE[errorType]);
+    Object.setPrototypeOf(this, TokenValidationError.prototype);
   }
 }

@@ -116,7 +116,7 @@ export const makeAccountTransactionsQuery = (
       }
     }
   }
-`
+`;
 
 export const makeNativeTransactionsQuery = (
   address: string,
@@ -180,7 +180,7 @@ export const makeNativeTransactionsQuery = (
       }
     }
   }
-`
+`;
 
 export const makeGRC20TransferTransactionsQuery = (
   address: string,
@@ -252,7 +252,7 @@ export const makeGRC20TransferTransactionsQuery = (
       }
     }
   }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -293,7 +293,7 @@ export const makeGRC20ReceivedTransactionsByAddressQuery = (address: string): st
     }
   }
 }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -358,7 +358,7 @@ export const makeVMTransactionsByAddressQuery = (address: string): string => `
     }
   }
 }
-`
+`;
 
 export const makeNativeTokenSendTransactionsByAddressQuery = (address: string): string => `
 {
@@ -393,7 +393,7 @@ export const makeNativeTokenSendTransactionsByAddressQuery = (address: string): 
     }
   }
 }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -431,7 +431,7 @@ export const makeNativeTokenReceivedTransactionsByAddressQuery = (address: strin
     }
   }
 }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -476,7 +476,7 @@ export const makeGRC20ReceivedTransactionsByAddressQueryByPackagePath = (
     }
   }
 }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -521,7 +521,7 @@ export const makeGRC20SendTransactionsByAddressQueryByPackagePath = (
     }
   }
 }
-`
+`;
 
 export const makeBlockTimeQuery = (blockHeight: number): string => `
 {
@@ -539,7 +539,7 @@ export const makeBlockTimeQuery = (blockHeight: number): string => `
     }
   }
 }
-`
+`;
 
 /**
  * XXX: The fix is required after the indexer's pagination update.
@@ -554,4 +554,4 @@ export const makeBlockTimeLegacyQuery = (blockHeight: number): string => `
     time
   }
 }
-`
+`;

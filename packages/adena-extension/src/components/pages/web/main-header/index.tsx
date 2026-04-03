@@ -1,23 +1,23 @@
-import back from '@assets/web/chevron-left.svg'
+import back from '@assets/web/chevron-left.svg';
 import {
   Pressable, Row, View, WebImg,
-} from '@components/atoms'
-import _ from 'lodash'
+} from '@components/atoms';
+import _ from 'lodash';
 import React, {
   ReactElement, useMemo,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledContainer = styled(Row)`
   width: 100%;
   justify-content: space-between;
   padding-bottom: 16px;
-`
+`;
 
 const StyledDot = styled(View) <{
-  selected: boolean
+  selected: boolean;
 }>`
   width: 8px;
   height: 8px;
@@ -26,28 +26,28 @@ const StyledDot = styled(View) <{
     theme, selected,
   }): string =>
     selected ? theme.webPrimary._100 : 'rgba(0, 89, 255, 0.32)'};
-`
+`;
 
 const StyledEmpty = styled(View)`
   width: 32px;
-`
+`;
 
 export type WebMainHeaderProps = {
-  stepLength: number
-  onClickGoBack: () => void
-  currentStep?: number
-}
+  stepLength: number;
+  onClickGoBack: () => void;
+  currentStep?: number;
+};
 
 export const WebMainHeader = ({
   onClickGoBack,
   currentStep,
   stepLength,
 }: WebMainHeaderProps): ReactElement<any> => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   const isCurrentStep = useMemo(() => {
-    return currentStep && currentStep > -1
-  }, [currentStep])
+    return currentStep && currentStep > -1;
+  }, [currentStep]);
 
   return (
     <StyledContainer>
@@ -75,5 +75,5 @@ export const WebMainHeader = ({
       </Row>
       <StyledEmpty />
     </StyledContainer>
-  )
-}
+  );
+};

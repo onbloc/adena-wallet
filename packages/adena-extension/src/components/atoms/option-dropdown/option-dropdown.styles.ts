@@ -1,16 +1,16 @@
 import {
   Row, View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import styled, {
   css, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 export const OptionDropdownWrapper = styled(View)<{
-  position: 'left' | 'right'
+  position: 'left' | 'right';
 }>`
   position: relative;
   width: 24px;
@@ -57,7 +57,7 @@ export const OptionDropdownWrapper = styled(View)<{
           `
         : ''}
   }
-`
+`;
 
 export const OptionDropdownItemWrapper = styled(Row)`
   width: 100%;
@@ -102,4 +102,4 @@ export const OptionDropdownItemWrapper = styled(Row)`
   &:hover {
     background-color: ${getTheme('neutral', '_7')};
   }
-`
+`;

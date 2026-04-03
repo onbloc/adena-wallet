@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const TransactionHistoryWrapper = styled.div`
   ${mixins.flex({
@@ -12,7 +12,7 @@ export const TransactionHistoryWrapper = styled.div`
   & > div + div {
     margin-top: 24px;
   }
-`
+`;
 
 export const TransactionHistoryDescriptionWrapper = styled.div`
   ${mixins.flex({
@@ -24,4 +24,4 @@ export const TransactionHistoryDescriptionWrapper = styled.div`
   padding-top: 140px;
 
   text-align: center;
-`
+`;

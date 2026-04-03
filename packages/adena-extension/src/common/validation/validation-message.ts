@@ -1,123 +1,123 @@
 export const validateDoContractRequest = (requestData: any): boolean => {
   if (!Array.isArray(requestData?.messages)) {
-    return false
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 export const validateTransactionMessageOfBankSend = (message: {
   [key in string]: any;
 }): boolean => {
   if (!message.type || !message.value) {
-    return false
+    return false;
   }
   if (message.type !== '/bank.MsgSend') {
-    return false
+    return false;
   }
   if (typeof message.value !== 'object') {
-    return false
+    return false;
   }
   if (!message.value.to_address || typeof message.value.to_address !== 'string') {
-    return false
+    return false;
   }
   if (!message.value.from_address || typeof message.value.from_address !== 'string') {
-    return false
+    return false;
   }
   if (!message.value.amount || typeof message.value.amount !== 'string') {
-    return false
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 export const validateTransactionMessageOfVmCall = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
-    return false
+    return false;
   }
   if (message.type !== '/vm.m_call') {
-    return false
+    return false;
   }
   if (typeof message.value !== 'object') {
-    return false
+    return false;
   }
   if (Object.keys(message.value).indexOf('caller') === -1) {
-    return false
+    return false;
   }
   if (Object.keys(message.value).indexOf('send') === -1) {
-    return false
+    return false;
   }
   if (Object.keys(message.value).indexOf('pkg_path') === -1) {
-    return false
+    return false;
   }
   if (Object.keys(message.value).indexOf('func') === -1) {
-    return false
+    return false;
   }
   if (Object.keys(message.value).indexOf('args') === -1) {
-    return false
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 export const validateTransactionMessageOfAddPkg = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
-    return false
+    return false;
   }
   if (message.type !== '/vm.m_addpkg') {
-    return false
+    return false;
   }
   if (typeof message.value !== 'object') {
-    return false
+    return false;
   }
   if (typeof message.value.creator !== 'string') {
-    return false
+    return false;
   }
   if (typeof message.value.package !== 'object') {
-    return false
+    return false;
   }
 
-  const packageValue = message.value.package
+  const packageValue = message.value.package;
   if (typeof packageValue?.Name !== 'string' && typeof packageValue?.name !== 'string') {
-    return false
+    return false;
   }
   if (typeof packageValue?.Path !== 'string' && typeof packageValue?.path !== 'string') {
-    return false
+    return false;
   }
   if (!Array.isArray(packageValue?.Files) && !Array.isArray(packageValue?.files)) {
-    return false
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 export const validateTransactionMessageOfRun = (message: { [key in string]: any }): boolean => {
   if (!message.type || !message.value) {
-    return false
+    return false;
   }
   if (message.type !== '/vm.m_run') {
-    return false
+    return false;
   }
   if (typeof message.value !== 'object') {
-    return false
+    return false;
   }
   if (typeof message.value.caller !== 'string') {
-    return false
+    return false;
   }
   if (typeof message.value.send !== 'string') {
-    return false
+    return false;
   }
   if (typeof message.value.package !== 'object') {
-    return false
+    return false;
   }
 
-  const packageValue = message.value.package
+  const packageValue = message.value.package;
   if (typeof packageValue?.Name !== 'string' && typeof packageValue?.name !== 'string') {
-    return false
+    return false;
   }
   if (typeof packageValue?.Path !== 'string' && typeof packageValue?.path !== 'string') {
-    return false
+    return false;
   }
   if (!Array.isArray(packageValue?.Files) && !Array.isArray(packageValue?.files)) {
-    return false
+    return false;
   }
-  return true
-}
+  return true;
+};

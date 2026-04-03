@@ -1,11 +1,11 @@
-import menu from '@assets/menu.svg'
-import styled from 'styled-components'
+import menu from '@assets/menu.svg';
+import styled from 'styled-components';
 
-let op
+let op;
 if (window.location.hash.indexOf('approve') === -1) {
-  op = 1
+  op = 1;
 } else {
-  op = 0
+  op = 0;
 }
 
 export const HamburgerMenuBtn = styled.button`
@@ -13,4 +13,4 @@ export const HamburgerMenuBtn = styled.button`
   width: 24px;
   height: 24px;
   background: url(${menu}) no-repeat center center;
-`
+`;

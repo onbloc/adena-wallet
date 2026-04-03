@@ -1,11 +1,11 @@
 import {
   SkeletonBoxStyle, View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -14,7 +14,7 @@ export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
   width: 55px;
   height: 14px;
   align-self: center;
-`
+`;
 
 export const NetworkFeeSettingItemWrapper = styled(View)`
   ${mixins.flex({
@@ -49,4 +49,4 @@ export const NetworkFeeSettingItemWrapper = styled(View)`
     ${fonts.body1Reg}
     color: ${getTheme('neutral', '_3')};
   }
-`
+`;

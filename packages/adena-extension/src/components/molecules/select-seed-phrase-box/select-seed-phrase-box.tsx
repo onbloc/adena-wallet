@@ -1,26 +1,26 @@
 import {
   WebText,
-} from '@components/atoms'
-import React from 'react'
+} from '@components/atoms';
+import React from 'react';
 
 import {
   StyledSelectSeedPhraseBox,
   StyledSelectSeedPhraseContent,
-} from './select-seed-phrase-box.styles'
+} from './select-seed-phrase-box.styles';
 import {
   SeedPhraseInfo,
-} from './select-seed-phrase-box.types'
-import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item'
+} from './select-seed-phrase-box.types';
+import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 
 export interface SelectSeedPhraseBoxProps {
-  seedPhrases: SeedPhraseInfo[]
-  select: (keyringId: string) => void
+  seedPhrases: SeedPhraseInfo[];
+  select: (keyringId: string) => void;
 }
 
 const SelectSeedPhraseBox: React.FC<SelectSeedPhraseBoxProps> = ({
   seedPhrases, select,
 }) => {
-  const hasSeedPhrase = seedPhrases.length > 0
+  const hasSeedPhrase = seedPhrases.length > 0;
 
   return (
     <StyledSelectSeedPhraseBox>
@@ -36,7 +36,7 @@ const SelectSeedPhraseBox: React.FC<SelectSeedPhraseBoxProps> = ({
             )}
       </StyledSelectSeedPhraseContent>
     </StyledSelectSeedPhraseBox>
-  )
-}
+  );
+};
 
-export default SelectSeedPhraseBox
+export default SelectSeedPhraseBox;

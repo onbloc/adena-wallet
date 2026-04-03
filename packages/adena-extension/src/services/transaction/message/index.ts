@@ -1,2 +1,2 @@
-export * from './bank'
-export * from './vm'
+export * from './bank';
+export * from './vm';

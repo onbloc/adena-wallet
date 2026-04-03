@@ -1,14 +1,14 @@
 import {
   View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const ApproveTransactionMessageWrapper = styled(View)<{
-  hasError?: boolean
+  hasError?: boolean;
 }>`
   width: 100%;
   height: auto;
@@ -81,7 +81,7 @@ export const ApproveTransactionMessageWrapper = styled(View)<{
       }
     }
   }
-`
+`;
 
 export const MessageRowWrapper = styled(View)`
   ${mixins.flex({
@@ -91,7 +91,7 @@ export const MessageRowWrapper = styled(View)`
   width: 100%;
   padding: 0 18px;
   justify-content: flex-start;
-`
+`;
 
 export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
   ${mixins.flex({
@@ -133,7 +133,7 @@ export const ApproveTransactionMessageArgumentsOpenerWrapper = styled(View)`
       height: 16px;
     }
   }
-`
+`;
 
 export const MessageErrorText = styled.p`
   width: 100%;
@@ -143,7 +143,7 @@ export const MessageErrorText = styled.p`
   font-size: 13px;
   line-height: 18px;
   color: #ef2d21;
-`
+`;
 
 export const RealmPathInfoWrapper = styled.span`
   display: block;
@@ -169,4 +169,4 @@ export const RealmPathInfoWrapper = styled.span`
     color: ${getTheme('neutral', '_1')};
     font-weight: 700;
   }
-`
+`;

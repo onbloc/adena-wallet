@@ -1,32 +1,32 @@
-import IconAirgap from '@assets/web/airgap-green.svg'
+import IconAirgap from '@assets/web/airgap-green.svg';
 import {
   View, WebButton, WebErrorText, WebImg, WebInput,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
+} from '@components/molecules';
 import React, {
   useCallback, useMemo,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 350px;
   row-gap: 24px;
-`
+`;
 
 const StyledInputBox = styled(View)`
   row-gap: 12px;
   width: 100%;
-`
+`;
 
 interface StyledInputProps {
-  error: boolean
-  type: string
-  name: string
-  placeholder: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  error: boolean;
+  type: string;
+  name: string;
+  placeholder: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 const StyledInput = styled(WebInput) <StyledInputProps>`
   border: ${({
@@ -41,17 +41,17 @@ const StyledInput = styled(WebInput) <StyledInputProps>`
       theme, error,
     }): string => (error ? theme.webError._300 : '')};
   }
-`
+`;
 
 const StyledButtonBox = styled(View)`
   align-items: flex-start;
-`
+`;
 
 interface SetupAirgapEnterAddressProps {
-  address: string
-  errorMessage: string | null
-  changeAddress: (address: string) => void
-  confirmAddress: () => void
+  address: string;
+  errorMessage: string | null;
+  changeAddress: (address: string) => void;
+  confirmAddress: () => void;
 }
 
 const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
@@ -61,13 +61,13 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
   confirmAddress,
 }) => {
   const disabledNextButton = useMemo(() => {
-    return address === '' || errorMessage !== null
-  }, [address, errorMessage])
+    return address === '' || errorMessage !== null;
+  }, [address, errorMessage]);
 
   const onChangeAddressInput = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value
-    changeAddress(value)
-  }, [])
+    const value = event.target.value;
+    changeAddress(value);
+  }, []);
 
   return (
     <StyledContainer>
@@ -107,7 +107,7 @@ const SetupAirgapEnterAddress: React.FC<SetupAirgapEnterAddressProps> = ({
         />
       </StyledButtonBox>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetupAirgapEnterAddress
+export default SetupAirgapEnterAddress;

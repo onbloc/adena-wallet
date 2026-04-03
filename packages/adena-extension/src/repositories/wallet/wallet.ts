@@ -1,186 +1,186 @@
 import {
   WalletError,
-} from '@common/errors'
+} from '@common/errors';
 import {
   StorageManager,
-} from '@common/storage/storage-manager'
+} from '@common/storage/storage-manager';
 import {
   clearInMemoryKey, decryptPassword, encryptPassword,
-} from '@common/utils/crypto-utils'
+} from '@common/utils/crypto-utils';
 
 type LocalValueType
   = | 'SERIALIZED'
     | 'ENCRYPTED_STORED_PASSWORD'
     | 'QUESTIONNAIRE_EXPIRED_DATE'
     | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
-type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD'
+    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
+type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
-  private localStorage: StorageManager<LocalValueType>
+  private localStorage: StorageManager<LocalValueType>;
 
-  private sessionStorage: StorageManager<SessionValueType>
+  private sessionStorage: StorageManager<SessionValueType>;
 
   constructor(localStorage: StorageManager, sessionStorage: StorageManager) {
-    this.localStorage = localStorage
-    this.sessionStorage = sessionStorage
+    this.localStorage = localStorage;
+    this.sessionStorage = sessionStorage;
   }
 
   public getSerializedWallet = async (): Promise<string> => {
-    const serializedWallet = await this.localStorage.get('SERIALIZED')
+    const serializedWallet = await this.localStorage.get('SERIALIZED');
     if (!serializedWallet || serializedWallet === '') {
-      throw new WalletError('NOT_FOUND_SERIALIZED')
+      throw new WalletError('NOT_FOUND_SERIALIZED');
     }
 
-    return serializedWallet
-  }
+    return serializedWallet;
+  };
 
   public updateSerializedWallet = async (serializedWallet: string): Promise<boolean> => {
-    await this.localStorage.set('SERIALIZED', serializedWallet)
+    await this.localStorage.set('SERIALIZED', serializedWallet);
 
-    return true
-  }
+    return true;
+  };
 
   public deleteSerializedWallet = async (): Promise<boolean> => {
-    await this.localStorage.remove('SERIALIZED')
-    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD')
-    await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE')
+    await this.localStorage.remove('SERIALIZED');
+    await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
+    await this.localStorage.remove('QUESTIONNAIRE_EXPIRED_DATE');
 
-    return true
-  }
+    return true;
+  };
 
   public existsWalletPassword = async (): Promise<boolean> => {
     try {
-      const password = await this.getWalletPassword()
+      const password = await this.getWalletPassword();
       if (password === '') {
-        throw new WalletError('NOT_FOUND_PASSWORD')
+        throw new WalletError('NOT_FOUND_PASSWORD');
       }
     } catch (_e) {
-      return false
+      return false;
     }
 
-    return true
-  }
+    return true;
+  };
 
   public getSessionCryptPasswords = async (): Promise<{
-    iv: string
-    encryptedPassword: string
+    iv: string;
+    encryptedPassword: string;
   }> => {
     try {
-      const iv = await this.sessionStorage.get('ENCRYPTED_KEY')
-      const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD')
+      const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
+      const encryptedPassword = await this.sessionStorage.get('ENCRYPTED_PASSWORD');
 
       return {
         iv,
         encryptedPassword,
-      }
+      };
     } catch (e) {
-      console.warn('Failed to get session crypt passwords', e)
+      console.warn('Failed to get session crypt passwords', e);
 
       return {
         iv: '',
         encryptedPassword: '',
-      }
+      };
     }
-  }
+  };
 
   public getWalletPassword = async (): Promise<string> => {
     const {
       iv, encryptedPassword,
-    } = await this.getSessionCryptPasswords()
+    } = await this.getSessionCryptPasswords();
 
     if (iv === '' || encryptedPassword === '') {
-      throw new WalletError('NOT_FOUND_PASSWORD')
+      throw new WalletError('NOT_FOUND_PASSWORD');
     }
 
     try {
-      return decryptPassword(iv, encryptedPassword)
+      return decryptPassword(iv, encryptedPassword);
     } catch (e) {
-      console.log('e', e)
-      throw new WalletError('NOT_FOUND_PASSWORD')
+      console.log('e', e);
+      throw new WalletError('NOT_FOUND_PASSWORD');
     }
-  }
+  };
 
   public updateWalletPassword = async (password: string): Promise<boolean> => {
     try {
       const {
         encryptedKey, encryptedPassword,
-      } = await encryptPassword(password)
-      await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey)
-      await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword)
-      await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD')
+      } = await encryptPassword(password);
+      await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
+      await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
+      await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
     } catch (e) {
-      console.warn('Failed to update wallet password', e)
+      console.warn('Failed to update wallet password', e);
 
-      return false
+      return false;
     }
 
-    return true
-  }
+    return true;
+  };
 
   public updateStoredPassword = async (encryptedStoredPassword: string): Promise<boolean> => {
-    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', encryptedStoredPassword)
-    return true
-  }
+    await this.localStorage.set('ENCRYPTED_STORED_PASSWORD', encryptedStoredPassword);
+    return true;
+  };
 
   public deleteWalletPassword = async (): Promise<boolean> => {
-    await clearInMemoryKey()
+    await clearInMemoryKey();
 
-    await this.sessionStorage.remove('ENCRYPTED_KEY')
-    await this.sessionStorage.remove('ENCRYPTED_PASSWORD')
+    await this.sessionStorage.remove('ENCRYPTED_KEY');
+    await this.sessionStorage.remove('ENCRYPTED_PASSWORD');
 
-    return true
-  }
+    return true;
+  };
 
   public getEncryptedPassword = async (): Promise<string> => {
-    const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD')
-    return encryptedPassword
-  }
+    const encryptedPassword = await this.localStorage.get('ENCRYPTED_STORED_PASSWORD');
+    return encryptedPassword;
+  };
 
   public updateStoragePassword = async (password: string): Promise<void> => {
-    await this.localStorage.updatePassword(password)
-  }
+    await this.localStorage.updatePassword(password);
+  };
 
   public getQuestionnaireExpiredDate = async (): Promise<number | null> => {
-    const expiredDateTime = await this.localStorage.get('QUESTIONNAIRE_EXPIRED_DATE')
+    const expiredDateTime = await this.localStorage.get('QUESTIONNAIRE_EXPIRED_DATE');
     if (!expiredDateTime) {
-      return null
+      return null;
     }
 
-    return Number(expiredDateTime)
-  }
+    return Number(expiredDateTime);
+  };
 
   public updatedQuestionnaireExpiredDate = async (expiredDateTime: number): Promise<void> => {
-    await this.localStorage.set('QUESTIONNAIRE_EXPIRED_DATE', expiredDateTime)
-  }
+    await this.localStorage.set('QUESTIONNAIRE_EXPIRED_DATE', expiredDateTime);
+  };
 
   public getWalletCreationGuideConfirmDate = async (): Promise<number | null> => {
-    const confirmDate = await this.localStorage.get('WALLET_CREATION_GUIDE_CONFIRM_DATE')
+    const confirmDate = await this.localStorage.get('WALLET_CREATION_GUIDE_CONFIRM_DATE');
     if (!confirmDate) {
-      return null
+      return null;
     }
 
-    return Number(confirmDate)
-  }
+    return Number(confirmDate);
+  };
 
   public updateWalletCreationGuideConfirmDate = async (confirmDate: number): Promise<void> => {
-    await this.localStorage.set('WALLET_CREATION_GUIDE_CONFIRM_DATE', confirmDate)
-  }
+    await this.localStorage.set('WALLET_CREATION_GUIDE_CONFIRM_DATE', confirmDate);
+  };
 
   public getAddAccountGuideConfirmDate = async (): Promise<number | null> => {
-    const confirmDate = await this.localStorage.get('ADD_ACCOUNT_GUIDE_CONFIRM_DATE')
+    const confirmDate = await this.localStorage.get('ADD_ACCOUNT_GUIDE_CONFIRM_DATE');
     if (!confirmDate) {
-      return null
+      return null;
     }
 
-    return Number(confirmDate)
-  }
+    return Number(confirmDate);
+  };
 
   public updateAddAccountGuideConfirmDate = async (confirmDate: number): Promise<void> => {
-    await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate)
-  }
+    await this.localStorage.set('ADD_ACCOUNT_GUIDE_CONFIRM_DATE', confirmDate);
+  };
 
   public migrate = async (password: string): Promise<void> => {
-    await this.localStorage.updatePassword(password)
-  }
+    await this.localStorage.updatePassword(password);
+  };
 }

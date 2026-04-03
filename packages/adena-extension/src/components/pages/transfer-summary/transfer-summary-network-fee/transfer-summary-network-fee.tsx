@@ -1,16 +1,16 @@
 import {
   TokenBalance,
-} from '@components/molecules'
-import React from 'react'
+} from '@components/molecules';
+import React from 'react';
 
 import {
   TransferSummaryNetworkFeeWrapper,
-} from './transfer-summary-network-fee.styles'
+} from './transfer-summary-network-fee.styles';
 
 export interface TransferSummaryNetworkFeeProps {
-  isError?: boolean
-  value: string
-  denom: string
+  isError?: boolean;
+  value: string;
+  denom: string;
 }
 
 const TransferSummaryNetworkFee: React.FC<TransferSummaryNetworkFeeProps> = ({
@@ -29,7 +29,7 @@ const TransferSummaryNetworkFee: React.FC<TransferSummaryNetworkFeeProps> = ({
         orientation='HORIZONTAL'
       />
     </TransferSummaryNetworkFeeWrapper>
-  )
-}
+  );
+};
 
-export default TransferSummaryNetworkFee
+export default TransferSummaryNetworkFee;

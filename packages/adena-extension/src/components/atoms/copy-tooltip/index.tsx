@@ -1,20 +1,20 @@
 import {
   Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX, useCallback, useEffect, useState,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 interface CopyTooltipProps {
-  children: React.ReactNode
-  copyText: string
-  position?: 'top' | 'bottom'
-  className?: string
+  children: React.ReactNode;
+  copyText: string;
+  position?: 'top' | 'bottom';
+  className?: string;
 }
 
 const ToolTipInner = styled.div`
@@ -40,7 +40,7 @@ const ToolTipInner = styled.div`
   &.bottom {
     bottom: -27px;
   }
-`
+`;
 
 const ToolTipWrap = styled.div`
   ${mixins.flex({
@@ -54,7 +54,7 @@ const ToolTipWrap = styled.div`
     visibility: visible;
     transform: scale(1);
   }
-`
+`;
 
 export const CopyTooltip = ({
   children,
@@ -62,19 +62,19 @@ export const CopyTooltip = ({
   className,
   position = 'bottom',
 }: CopyTooltipProps): JSX.Element => {
-  const [isClicked, setIsClicked] = useState<boolean>(false)
+  const [isClicked, setIsClicked] = useState<boolean>(false);
 
   const handleButtonClick = useCallback(() => {
-    setIsClicked(true)
-    navigator.clipboard.writeText(copyText)
-  }, [isClicked, copyText])
+    setIsClicked(true);
+    navigator.clipboard.writeText(copyText);
+  }, [isClicked, copyText]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsClicked(false), 2000)
+    const timer = setTimeout(() => setIsClicked(false), 2000);
     return () => {
-      clearTimeout(timer)
-    }
-  }, [isClicked])
+      clearTimeout(timer);
+    };
+  }, [isClicked]);
 
   return (
     <ToolTipWrap className={isClicked ? `${className} isClicked` : className}>
@@ -83,5 +83,5 @@ export const CopyTooltip = ({
         <Text type='body3Reg'>{isClicked ? 'Copied!' : 'Copy to clipboard'}</Text>
       </ToolTipInner>
     </ToolTipWrap>
-  )
-}
+  );
+};

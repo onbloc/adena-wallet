@@ -1,11 +1,11 @@
 import {
   Loading, SkeletonBoxStyle,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   ReactElement,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   ${mixins.flex({
@@ -15,7 +15,7 @@ const Wrapper = styled.div`
   position: relative;
   width: 100%;
   gap: 16px;
-`
+`;
 
 const ListBoxWrap = styled.div`
   ${mixins.flex({
@@ -24,7 +24,7 @@ const ListBoxWrap = styled.div`
   })}
   width: 100%;
   gap: 16px;
-`
+`;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -35,7 +35,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   aspect-ratio: 1;
   flex: 1;
   padding: 10px;
-`
+`;
 
 const NftRowBox = (): ReactElement<any> => {
   return (
@@ -48,8 +48,8 @@ const NftRowBox = (): ReactElement<any> => {
         </SkeletonBox>
       ))}
     </ListBoxWrap>
-  )
-}
+  );
+};
 
 export const LoadingNft = (): ReactElement<any> => {
   return (
@@ -60,5 +60,5 @@ export const LoadingNft = (): ReactElement<any> => {
         <NftRowBox key={i} />
       ))}
     </Wrapper>
-  )
-}
+  );
+};

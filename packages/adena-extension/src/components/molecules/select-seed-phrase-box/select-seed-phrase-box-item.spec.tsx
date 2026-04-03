@@ -1,22 +1,22 @@
 import {
   GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
-import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item'
+import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 
 describe('SelectSeedPhraseBoxItem Component', () => {
   const args = {
@@ -27,9 +27,9 @@ describe('SelectSeedPhraseBoxItem Component', () => {
       selected: false,
     },
     select: (): void => {
-      return
+      return;
     },
-  }
+  };
 
   it('SelectSeedPhraseBoxItem render', () => {
     render(
@@ -39,6 +39,6 @@ describe('SelectSeedPhraseBoxItem Component', () => {
           <SelectSeedPhraseBoxItem {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

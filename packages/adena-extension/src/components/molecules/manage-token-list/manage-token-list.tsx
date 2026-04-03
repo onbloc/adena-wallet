@@ -1,47 +1,47 @@
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import React from 'react'
+} from '@tanstack/react-query';
+import React from 'react';
 
 import {
   ManageTokenListWrapper,
-} from './manage-token-list.styles'
-import ManageTokenListItem from './manage-token-list-item'
+} from './manage-token-list.styles';
+import ManageTokenListItem from './manage-token-list-item';
 
 export interface ManageTokenInfo {
-  tokenId: string
-  type: 'token'
-  logo: string
-  name: string
-  display?: boolean
-  main?: boolean
+  tokenId: string;
+  type: 'token';
+  logo: string;
+  name: string;
+  display?: boolean;
+  main?: boolean;
   balance: {
-    value: string
-    denom: string
-  }
+    value: string;
+    denom: string;
+  };
 }
 
 export interface ManageGRC721Info {
-  tokenId: string
-  type: 'grc721'
-  packagePath: string
-  isTokenUri: boolean
-  name: string
-  display?: boolean
+  tokenId: string;
+  type: 'grc721';
+  packagePath: string;
+  isTokenUri: boolean;
+  name: string;
+  display?: boolean;
 }
 
 export interface ManageTokenListProps {
-  tokens: ManageTokenInfo[] | ManageGRC721Info[]
+  tokens: ManageTokenInfo[] | ManageGRC721Info[];
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
     options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
+  ) => UseQueryResult<string | null>;
   queryGRC721Balance?: (
     packagePath: string,
     options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<number | null>
-  onToggleActiveItem: (tokenId: string, activated: boolean) => void
+  ) => UseQueryResult<number | null>;
+  onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }
 
 const ManageTokenList: React.FC<ManageTokenListProps> = ({
@@ -62,7 +62,7 @@ const ManageTokenList: React.FC<ManageTokenListProps> = ({
         />
       ))}
     </ManageTokenListWrapper>
-  )
-}
+  );
+};
 
-export default ManageTokenList
+export default ManageTokenList;

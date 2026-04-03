@@ -1,31 +1,31 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import TransferSummaryAddress, {
   TransferSummaryAddressProps,
-} from './transfer-summary-address'
+} from './transfer-summary-address';
 
 describe('TransferSummaryAddress Component', () => {
   it('TransferSummaryAddress render', () => {
     const args: TransferSummaryAddressProps = {
       toAddress: '',
       memo: '',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -34,6 +34,6 @@ describe('TransferSummaryAddress Component', () => {
           <TransferSummaryAddress {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

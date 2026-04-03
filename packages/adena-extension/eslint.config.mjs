@@ -1,11 +1,11 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import eslint from '@eslint/js'
-import stylistic from '@stylistic/eslint-plugin'
-import react from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
-import storybook from 'eslint-plugin-storybook'
-import tseslint from 'typescript-eslint'
+import eslint from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import storybook from 'eslint-plugin-storybook';
+import tseslint from 'typescript-eslint';
 
 export default tseslint.config([
   {
@@ -26,7 +26,7 @@ export default tseslint.config([
   stylistic.configs.customize({
     indent: 2,
     quotes: 'single',
-    semi: false,
+    semi: true,
     jsx: true,
     commaDangle: 'always-multiline',
     braceStyle: '1tbs',
@@ -110,4 +110,4 @@ export default tseslint.config([
       'simple-import-sort/exports': 'error',
     },
   },
-], storybook.configs['flat/recommended'])
+], storybook.configs['flat/recommended']);

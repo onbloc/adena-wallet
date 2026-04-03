@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const SubHeaderWrapper = styled.div`
   ${mixins.flex({
@@ -48,4 +48,4 @@ export const SubHeaderWrapper = styled.div`
     overflow: hidden;
     ${fonts.header4}
   }
-`
+`;

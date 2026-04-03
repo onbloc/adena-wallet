@@ -1,34 +1,34 @@
-import useAppNavigate from '@hooks/use-app-navigate'
+import useAppNavigate from '@hooks/use-app-navigate';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
-} from '@hooks/wallet/broadcast-transaction/use-indicator-step'
-import QuestionData from '@resources/questions/questions.json'
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+import QuestionData from '@resources/questions/questions.json';
 import {
   Question, RoutePath,
-} from '@types'
+} from '@types';
 import {
   useCallback, useMemo, useState,
-} from 'react'
+} from 'react';
 
-import useQuestionnaire from '../use-questionnaire'
+import useQuestionnaire from '../use-questionnaire';
 
 export type UseQuestionnaireScreenReturn = {
-  indicatorInfo: UseIndicatorStepReturn
-  questionnaireState: QuestionnaireStateType
-  question: Question | null
-  initQuestion: () => void
-  nextQuestion: () => void
-  completeQuestion: () => void
-  backStep: () => void
-}
+  indicatorInfo: UseIndicatorStepReturn;
+  questionnaireState: QuestionnaireStateType;
+  question: Question | null;
+  initQuestion: () => void;
+  nextQuestion: () => void;
+  completeQuestion: () => void;
+  backStep: () => void;
+};
 
-export type QuestionnaireStateType = 'INIT' | 'QUESTION' | 'COMPLETE'
+export type QuestionnaireStateType = 'INIT' | 'QUESTION' | 'COMPLETE';
 
 export const questionnaireStep: Record<
   QuestionnaireStateType,
   {
-    backTo: QuestionnaireStateType | null
-    stepNo: number
+    backTo: QuestionnaireStateType | null;
+    stepNo: number;
   }
 > = {
   INIT: {
@@ -43,46 +43,46 @@ export const questionnaireStep: Record<
     backTo: 'QUESTION',
     stepNo: 2,
   },
-}
+};
 
 const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
   const {
     navigate, goBack, params,
-  } = useAppNavigate<RoutePath.WebQuestionnaire>()
+  } = useAppNavigate<RoutePath.WebQuestionnaire>();
   const {
     doneQuestionnaire,
-  } = useQuestionnaire()
-  const [questionnaireState, setQuestionnaireState] = useState<QuestionnaireStateType>('INIT')
-  const [questionIndex, setQuestionIndex] = useState(1)
+  } = useQuestionnaire();
+  const [questionnaireState, setQuestionnaireState] = useState<QuestionnaireStateType>('INIT');
+  const [questionIndex, setQuestionIndex] = useState(1);
 
   const indicatorInfo = useIndicatorStep({
-  })
+  });
 
-  const questions: Question[] = QuestionData
+  const questions: Question[] = QuestionData;
   const {
     callbackPath,
-  } = params
+  } = params;
 
   const question = useMemo(() => {
-    const question = questions.find(question => question.index === questionIndex)
+    const question = questions.find(question => question.index === questionIndex);
     if (question) {
-      return question
+      return question;
     }
-    return null
-  }, [questions, questionIndex])
+    return null;
+  }, [questions, questionIndex]);
 
   const initQuestion = useCallback(() => {
-    setQuestionIndex(1)
-    setQuestionnaireState('QUESTION')
-  }, [])
+    setQuestionIndex(1);
+    setQuestionnaireState('QUESTION');
+  }, []);
 
   const nextQuestion = useCallback(() => {
     if (questionIndex >= questions.length) {
-      setQuestionnaireState('COMPLETE')
-      return
+      setQuestionnaireState('COMPLETE');
+      return;
     }
-    setQuestionIndex(questionIndex + 1)
-  }, [questions, questionIndex])
+    setQuestionIndex(questionIndex + 1);
+  }, [questions, questionIndex]);
 
   const completeQuestion = useCallback(() => {
     doneQuestionnaire().then(() => {
@@ -91,9 +91,9 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
           doneQuestionnaire: true,
         },
         replace: true,
-      })
-    })
-  }, [callbackPath])
+      });
+    });
+  }, [callbackPath]);
 
   const backStep = useCallback(() => {
     if (questionnaireState === 'INIT') {
@@ -101,20 +101,20 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
         state: {
           doneQuestionnaire: false,
         },
-      })
-      return
+      });
+      return;
     }
     if (questionnaireState === 'QUESTION') {
       if (questionIndex > 1) {
-        setQuestionIndex(questionIndex - 1)
+        setQuestionIndex(questionIndex - 1);
       } else {
-        goBack()
+        goBack();
       }
-      return
+      return;
     }
-    setQuestionIndex(1)
-    setQuestionnaireState('INIT')
-  }, [callbackPath, questionnaireState, questionIndex])
+    setQuestionIndex(1);
+    setQuestionnaireState('INIT');
+  }, [callbackPath, questionnaireState, questionIndex]);
 
   return {
     indicatorInfo: {
@@ -127,7 +127,7 @@ const useQuestionnaireScreen = (): UseQuestionnaireScreenReturn => {
     nextQuestion,
     completeQuestion,
     backStep,
-  }
-}
+  };
+};
 
-export default useQuestionnaireScreen
+export default useQuestionnaireScreen;

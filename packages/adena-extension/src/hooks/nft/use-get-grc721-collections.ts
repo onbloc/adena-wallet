@@ -1,52 +1,52 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   GRC721CollectionModel,
-} from '@types'
+} from '@types';
 
-export const GET_GRC721_COLLECTIONS_QUERY_KEY = 'nft/useGetGRC721Collections'
+export const GET_GRC721_COLLECTIONS_QUERY_KEY = 'nft/useGetGRC721Collections';
 
 export const useGetGRC721Collections = (
   options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const {
     tokenService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     currentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
 
   return useQuery<GRC721CollectionModel[] | null, Error>({
     queryKey: [GET_GRC721_COLLECTIONS_QUERY_KEY, currentAccount?.id || '', currentNetwork.chainId],
     queryFn: async () => {
       if (!currentAccount) {
-        return null
+        return null;
       }
 
       const collections = await tokenService
         .getAccountGRC721Collections(currentAccount.id, currentNetwork.chainId)
-        .catch(() => [])
+        .catch(() => []);
 
       return collections.map(collection => ({
         ...collection,
         tokenId: '0',
-      }))
+      }));
     },
     staleTime: Infinity,
     placeholderData: keepPreviousData,
     ...options,
-  })
-}
+  });
+};

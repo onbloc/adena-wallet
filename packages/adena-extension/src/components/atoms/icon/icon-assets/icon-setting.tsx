@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 
 const IconSetting = ({
   className,
 }: {
-  className: string
+  className: string;
 }): ReactElement<any> => {
   return (
     <svg
@@ -25,7 +25,7 @@ const IconSetting = ({
         fill='#646486'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconSetting
+export default IconSetting;

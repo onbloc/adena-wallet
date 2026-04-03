@@ -7,9 +7,9 @@ export enum AlarmKey {
 }
 
 export const SCHEDULE_ALARMS: {
-  key: string
-  periodInMinutes: number
-  delay: number
+  key: string;
+  periodInMinutes: number;
+  delay: number;
 }[] = [
   {
     key: AlarmKey.EXPIRED_PASSWORD,
@@ -36,4 +36,4 @@ export const SCHEDULE_ALARMS: {
     periodInMinutes: 1,
     delay: 45_000,
   },
-]
+];

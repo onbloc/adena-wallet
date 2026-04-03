@@ -1,37 +1,37 @@
 import {
   GasToken,
-} from '@common/constants/token.constant'
+} from '@common/constants/token.constant';
 import {
   GasInfo, NetworkFeeSettingType,
-} from '@types'
-import BigNumber from 'bignumber.js'
+} from '@types';
+import BigNumber from 'bignumber.js';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 
 import {
   TokenBalance,
-} from '../token-balance'
+} from '../token-balance';
 import {
   NetworkFeeItemSkeletonBox,
   NetworkFeeSettingItemWrapper,
-} from './network-fee-setting-item.styles'
+} from './network-fee-setting-item.styles';
 
 export interface NetworkFeeSettingItemProps {
-  selected: boolean
-  isLoading: boolean
-  select: () => void
+  selected: boolean;
+  isLoading: boolean;
+  select: () => void;
   info: {
-    settingType: NetworkFeeSettingType
-    gasInfo?: GasInfo | undefined
-  }
+    settingType: NetworkFeeSettingType;
+    gasInfo?: GasInfo | undefined;
+  };
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
   [NetworkFeeSettingType.FAST]: 'Fast',
   [NetworkFeeSettingType.AVERAGE]: 'Average',
   [NetworkFeeSettingType.SLOW]: 'Slow',
-}
+};
 
 const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   selected,
@@ -42,13 +42,13 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
   const settingTypeName = useMemo(
     () => networkFeeSettingTypeNames[info.settingType],
     [info.settingType],
-  )
+  );
 
-  const hasGasInfo = !!info && !!info.gasInfo && !info.gasInfo.hasError
+  const hasGasInfo = !!info && !!info.gasInfo && !info.gasInfo.hasError;
 
   const gasInfoAmount = useMemo(() => {
     if (!hasGasInfo || !info?.gasInfo) {
-      return ''
+      return '';
     }
 
     return (
@@ -57,24 +57,24 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
         .toFixed(6, BigNumber.ROUND_UP)
         .toString()
         .replace(/0+$/, '') || ''
-    )
-  }, [info.gasInfo])
+    );
+  }, [info.gasInfo]);
 
   const gasInfoDenomination = useMemo(() => {
     if (!hasGasInfo) {
-      return '-'
+      return '-';
     }
 
-    return GasToken.symbol
-  }, [info.gasInfo])
+    return GasToken.symbol;
+  }, [info.gasInfo]);
 
   const onClickItem = (): void => {
     if (!hasGasInfo) {
-      return
+      return;
     }
 
-    select()
-  }
+    select();
+  };
 
   if (isLoading) {
     return (
@@ -83,7 +83,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
 
         <NetworkFeeItemSkeletonBox />
       </NetworkFeeSettingItemWrapper>
-    )
+    );
   }
 
   return (
@@ -104,7 +104,7 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
             <span className='no-data'>-</span>
           )}
     </NetworkFeeSettingItemWrapper>
-  )
-}
+  );
+};
 
-export default NetworkFeeSettingItem
+export default NetworkFeeSettingItem;

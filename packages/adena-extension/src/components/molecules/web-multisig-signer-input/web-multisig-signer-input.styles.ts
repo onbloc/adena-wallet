@@ -1,15 +1,15 @@
 import {
   Pressable, View, WebText,
-} from '@components/atoms'
-import styled from 'styled-components'
+} from '@components/atoms';
+import styled from 'styled-components';
 
 export const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 16px;
-`
+`;
 
 export const StyledAddButton = styled(Pressable)<{
-  isDisabled: boolean
+  isDisabled: boolean;
 }>`
   display: flex;
   width: 128px;
@@ -60,7 +60,7 @@ export const StyledAddButton = styled(Pressable)<{
     }): string =>
       isDisabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)'};
   }
-`
+`;
 
 export const StyledCloseButton = styled.button`
   display: inline-flex;
@@ -92,10 +92,10 @@ export const StyledCloseButton = styled.button`
       }
     }
   }
-`
+`;
 
 export const StyledButtonText = styled(WebText)<{
-  isDisabled: boolean
+  isDisabled: boolean;
 }>`
   color: ${({
     theme, isDisabled,
@@ -107,7 +107,7 @@ export const StyledButtonText = styled(WebText)<{
   font-weight: 600;
   line-height: 16px;
   letter-spacing: -0.12px;
-`
+`;
 
 export const StyledInputRow = styled(View)`
   display: flex;
@@ -115,4 +115,4 @@ export const StyledInputRow = styled(View)`
   align-items: center;
   width: 100%;
   gap: 8px;
-`
+`;

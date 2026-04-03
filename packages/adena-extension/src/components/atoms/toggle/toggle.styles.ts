@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const ToggleWrapper = styled.div`
   ${mixins.flex({
@@ -34,4 +34,4 @@ export const ToggleWrapper = styled.div`
       margin-left: 20px;
     }
   }
-`
+`;

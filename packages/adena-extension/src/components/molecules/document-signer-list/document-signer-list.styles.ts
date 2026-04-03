@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const DocumentSignerListWrapper = styled.div`
   ${mixins.flex({
@@ -12,10 +12,10 @@ export const DocumentSignerListWrapper = styled.div`
   gap: 12px;
   width: 100%;
   height: auto;
-`
+`;
 
 export const DocumentSignerListItemWrapper = styled.div<{
-  borderColor: string
+  borderColor: string;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -144,4 +144,4 @@ export const DocumentSignerListItemWrapper = styled.div<{
       color: ${getTheme('neutral', 'a')};
     }
   }
-`
+`;

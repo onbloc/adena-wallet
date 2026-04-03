@@ -1,22 +1,22 @@
-import React from 'react'
+import React from 'react';
 
 import {
   AdditionalTokenInfoItemWrapper,
   AdditionalTokenInfoWrapper,
   TokenInfoValueLoadingBox,
-} from './additional-token-info.styles'
+} from './additional-token-info.styles';
 
 export interface AdditionalTokenInfoProps {
-  isLoading: boolean
-  symbol: string
-  path: string
-  decimals: string
+  isLoading: boolean;
+  symbol: string;
+  path: string;
+  decimals: string;
 }
 
 export interface AdditionalTokenInfoBlockProps {
-  isLoading: boolean
-  title: string
-  value: string
+  isLoading: boolean;
+  title: string;
+  value: string;
 }
 
 const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
@@ -33,8 +33,8 @@ const AdditionalTokenInfoBlock: React.FC<AdditionalTokenInfoBlockProps> = ({
 
       {isLoading ? <TokenInfoValueLoadingBox /> : <span className='value'>{value}</span>}
     </AdditionalTokenInfoItemWrapper>
-  )
-}
+  );
+};
 
 const AdditionalTokenInfo: React.FC<AdditionalTokenInfoProps> = ({
   isLoading,
@@ -48,7 +48,7 @@ const AdditionalTokenInfo: React.FC<AdditionalTokenInfoProps> = ({
       <AdditionalTokenInfoBlock title='Token Path' value={path} isLoading={isLoading} />
       <AdditionalTokenInfoBlock title='Token Decimals' value={decimals} isLoading={isLoading} />
     </AdditionalTokenInfoWrapper>
-  )
-}
+  );
+};
 
-export default AdditionalTokenInfo
+export default AdditionalTokenInfo;

@@ -1,26 +1,26 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg'
+import LeftArrowIcon from '@assets/arrowL-left.svg';
 import {
   makeDisplayPackagePath,
-} from '@common/utils/string-utils'
+} from '@common/utils/string-utils';
 import {
   SubHeader,
-} from '@components/atoms'
-import AdditionalTokenInfo from '@components/pages/additional-token/additional-token-info/additional-token-info'
-import AdditionalTokenSelectBox from '@components/pages/additional-token/additional-token-select-box/additional-token-select-box'
+} from '@components/atoms';
+import AdditionalTokenInfo from '@components/pages/additional-token/additional-token-info/additional-token-info';
+import AdditionalTokenSelectBox from '@components/pages/additional-token/additional-token-select-box/additional-token-select-box';
 import {
   AdditionalTokenProps,
-} from '@types'
+} from '@types';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 
-import AdditionalTokenPathInput from '../additional-token-path-input/additional-token-path-input'
+import AdditionalTokenPathInput from '../additional-token-path-input/additional-token-path-input';
 import AdditionalTokenTypeSelector, {
   AddingType,
-} from '../additional-token-type-selector/additional-token-type-selector'
+} from '../additional-token-type-selector/additional-token-type-selector';
 import {
   AdditionalTokenWrapper,
-} from './additional-token.styles'
+} from './additional-token.styles';
 
 const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   opened,
@@ -44,40 +44,40 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
   onClickAdd,
 }) => {
   const isSearchType = useMemo(() => {
-    return addingType === AddingType.SEARCH
-  }, [addingType])
+    return addingType === AddingType.SEARCH;
+  }, [addingType]);
 
   const isLoadingTokenInfo = useMemo(() => {
     if (isSearchType) {
-      return isLoadingSelectedGRC20Token
+      return isLoadingSelectedGRC20Token;
     }
 
-    return isLoadingManualGRC20Token
-  }, [addingType, isLoadingManualGRC20Token, isLoadingSelectedGRC20Token])
+    return isLoadingManualGRC20Token;
+  }, [addingType, isLoadingManualGRC20Token, isLoadingSelectedGRC20Token]);
 
   const tokenPathInputErrorMessage = useMemo(() => {
     if (!errorManualGRC20Token) {
-      return null
+      return null;
     }
 
-    return errorManualGRC20Token.message
-  }, [errorManualGRC20Token])
+    return errorManualGRC20Token.message;
+  }, [errorManualGRC20Token]);
 
   const enabledAddButton = useMemo(() => {
-    return selectedTokenInfo && !errorManualGRC20Token
-  }, [selectedTokenInfo, errorManualGRC20Token])
+    return selectedTokenInfo && !errorManualGRC20Token;
+  }, [selectedTokenInfo, errorManualGRC20Token]);
 
   const displaySelectedTokenPath = useMemo(() => {
-    const token = tokenInfos.find(token => token.path === selectedTokenPath)
+    const token = tokenInfos.find(token => token.path === selectedTokenPath);
     if (!token) {
-      return null
+      return null;
     }
 
     return {
       name: token.name,
       symbol: token.symbol,
-    }
-  }, [selectedTokenPath, tokenInfos])
+    };
+  }, [selectedTokenPath, tokenInfos]);
 
   return (
     <AdditionalTokenWrapper>
@@ -139,7 +139,7 @@ const AdditionalToken: React.FC<AdditionalTokenProps> = ({
         </button>
       </div>
     </AdditionalTokenWrapper>
-  )
-}
+  );
+};
 
-export default AdditionalToken
+export default AdditionalToken;

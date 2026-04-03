@@ -8,19 +8,19 @@
 
 export const validateTransactionDocumentFee = (fee: any): boolean => {
   if (!fee || typeof fee !== 'object') {
-    return false
+    return false;
   }
 
   if (!fee.gas_wanted || typeof fee.gas_wanted !== 'string') {
-    return false
+    return false;
   }
 
   if (!fee.gas_fee || typeof fee.gas_fee !== 'string') {
-    return false
+    return false;
   }
 
-  return true
-}
+  return true;
+};
 
 /**
  * Validates the messages array of a signed document.
@@ -30,5 +30,5 @@ export const validateTransactionDocumentFee = (fee: any): boolean => {
  * @returns true if messages array is valid and not empty, false otherwise
  */
 export const validateTransactionDocumentMessages = (msgs: any): boolean => {
-  return Array.isArray(msgs) && msgs.length > 0
-}
+  return Array.isArray(msgs) && msgs.length > 0;
+};

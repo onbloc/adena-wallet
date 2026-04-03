@@ -1,34 +1,34 @@
-import IconWarning from '@assets/web/warning.svg'
+import IconWarning from '@assets/web/warning.svg';
 import {
   Row, View, WebButton, WebErrorText, WebImg, WebInput, WebText,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   TermsCheckbox,
-} from '@components/molecules'
+} from '@components/molecules';
 import {
   ExportType,
-} from '@hooks/web/wallet-export/use-wallet-export-screen'
+} from '@hooks/web/wallet-export/use-wallet-export-screen';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   useCallback, useMemo, useState,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 344px;
   row-gap: 16px;
   align-items: flex-start;
-`
+`;
 
 const StyledMessageBox = styled(View)`
   width: 100%;
   row-gap: 12px;
-`
+`;
 
 const StyledWarnBox = styled(View)`
   width: 100%;
@@ -37,22 +37,22 @@ const StyledWarnBox = styled(View)`
   border-radius: 8px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
-`
+`;
 
 const StyledInputBox = styled(View)`
   width: 100%;
   gap: 12px;
-`
+`;
 
 const StyledTermsBox = styled(View)`
   gap: 16px;
   padding: 8px 0;
-`
+`;
 
 interface WalletExportCheckPasswordProps {
-  exportType: ExportType
-  checkPassword: (password: string) => Promise<boolean>
-  moveExport: (password: string) => Promise<void>
+  exportType: ExportType;
+  checkPassword: (password: string) => Promise<boolean>;
+  moveExport: (password: string) => Promise<void>;
 }
 
 const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
@@ -60,68 +60,68 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
   checkPassword,
   moveExport,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
-  const [password, setPassword] = useState('')
-  const [checkedTerm01, setCheckedTerm01] = useState(false)
-  const [checkedTerm02, setCheckedTerm02] = useState(false)
+  const [password, setPassword] = useState('');
+  const [checkedTerm01, setCheckedTerm01] = useState(false);
+  const [checkedTerm02, setCheckedTerm02] = useState(false);
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const hasError = useMemo(() => {
-    return errorMessage !== null
-  }, [errorMessage])
+    return errorMessage !== null;
+  }, [errorMessage]);
 
   const title = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'Export Private Key'
+      return 'Export Private Key';
     }
-    return 'Reveal Seed Phrase'
-  }, [exportType])
+    return 'Reveal Seed Phrase';
+  }, [exportType]);
 
   const warningMessage = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to export your private key. Please carefully review the checklist below.'
+      return 'You’re about to export your private key. Please carefully review the checklist below.';
     }
-    return 'You’re about to reveal your seed phrase. Please carefully review the checklist below.'
-  }, [exportType])
+    return 'You’re about to reveal your seed phrase. Please carefully review the checklist below.';
+  }, [exportType]);
 
   const term01Text = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'Anyone with the private key will have full control over my funds.'
+      return 'Anyone with the private key will have full control over my funds.';
     }
-    return 'Anyone with the phrase will have full control over my funds.'
-  }, [exportType])
+    return 'Anyone with the phrase will have full control over my funds.';
+  }, [exportType]);
 
   const term02Text = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'I will never share my private key with anyone.'
+      return 'I will never share my private key with anyone.';
     }
-    return 'I will never share my seed phrase with anyone.'
-  }, [exportType])
+    return 'I will never share my seed phrase with anyone.';
+  }, [exportType]);
 
   const availableCheckPassword = useMemo(() => {
-    return checkedTerm01 && checkedTerm02
-  }, [checkedTerm01, checkedTerm02])
+    return checkedTerm01 && checkedTerm02;
+  }, [checkedTerm01, checkedTerm02]);
 
   const onChangePassword = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value
-    setErrorMessage(null)
-    setPassword(value)
-  }, [])
+    const value = event.target.value;
+    setErrorMessage(null);
+    setPassword(value);
+  }, []);
 
   const onClickNext = useCallback(async () => {
     if (!availableCheckPassword) {
-      return
+      return;
     }
-    const checkedPassword = await checkPassword(password)
+    const checkedPassword = await checkPassword(password);
     if (checkedPassword) {
-      setPassword('')
-      moveExport(password)
+      setPassword('');
+      moveExport(password);
     } else {
-      setErrorMessage('Invalid password')
+      setErrorMessage('Invalid password');
     }
-  }, [availableCheckPassword, password, checkPassword, moveExport])
+  }, [availableCheckPassword, password, checkPassword, moveExport]);
 
   return (
     <StyledContainer>
@@ -193,7 +193,7 @@ const WalletExportCheckPassword: React.FC<WalletExportCheckPasswordProps> = ({
         disabled={!availableCheckPassword}
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default WalletExportCheckPassword
+export default WalletExportCheckPassword;

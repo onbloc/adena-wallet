@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveLedgerLoadingWrapper = styled.div`
   ${mixins.flex({
@@ -27,4 +27,4 @@ export const ApproveLedgerLoadingWrapper = styled.div`
     width: 100%;
     margin-top: 20px;
   }
-`
+`;

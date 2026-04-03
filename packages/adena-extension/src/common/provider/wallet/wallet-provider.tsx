@@ -1,163 +1,163 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   NetworkState, TokenState, WalletState,
-} from '@states'
+} from '@states';
 import {
   NetworkMetainfo, StateType, TokenModel,
-} from '@types'
+} from '@types';
 import {
   AdenaWallet, Wallet,
-} from 'adena-module'
+} from 'adena-module';
 import React, {
   createContext, useEffect, useState,
-} from 'react'
+} from 'react';
 import {
   useRecoilState, useSetRecoilState,
-} from 'recoil'
+} from 'recoil';
 
 import {
   GnoProvider,
-} from '../gno/gno-provider'
+} from '../gno/gno-provider';
 
 export interface WalletContextProps {
-  wallet: Wallet | null
-  gnoProvider: GnoProvider | undefined
-  walletStatus: StateType
-  tokenMetainfos: TokenModel[]
-  networkMetainfos: NetworkMetainfo[]
-  updateWallet: (wallet: Wallet) => Promise<boolean>
-  initWallet: () => Promise<boolean>
-  initNetworkMetainfos: () => Promise<boolean>
-  changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>
-  clearWallet: () => Promise<void>
+  wallet: Wallet | null;
+  gnoProvider: GnoProvider | undefined;
+  walletStatus: StateType;
+  tokenMetainfos: TokenModel[];
+  networkMetainfos: NetworkMetainfo[];
+  updateWallet: (wallet: Wallet) => Promise<boolean>;
+  initWallet: () => Promise<boolean>;
+  initNetworkMetainfos: () => Promise<boolean>;
+  changeNetwork: (network: NetworkMetainfo) => Promise<NetworkMetainfo>;
+  clearWallet: () => Promise<void>;
 }
 
-export const WalletContext = createContext<WalletContextProps | null>(null)
+export const WalletContext = createContext<WalletContextProps | null>(null);
 
 export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({
   children,
 }) => {
   const {
     walletService, accountService, chainService,
-  } = useAdenaContext()
+  } = useAdenaContext();
 
-  const [gnoProvider, setGnoProvider] = useState<GnoProvider>()
+  const [gnoProvider, setGnoProvider] = useState<GnoProvider>();
 
-  const [wallet, setWallet] = useRecoilState(WalletState.wallet)
+  const [wallet, setWallet] = useRecoilState(WalletState.wallet);
 
-  const [walletStatus, setWalletStatus] = useRecoilState(WalletState.state)
+  const [walletStatus, setWalletStatus] = useRecoilState(WalletState.state);
 
-  const [tokenMetainfos] = useRecoilState(TokenState.tokenMetainfos)
+  const [tokenMetainfos] = useRecoilState(TokenState.tokenMetainfos);
 
-  const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos)
+  const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
 
-  const setCurrentNetwork = useSetRecoilState(NetworkState.currentNetwork)
+  const setCurrentNetwork = useSetRecoilState(NetworkState.currentNetwork);
 
-  const setCurrentAccount = useSetRecoilState(WalletState.currentAccount)
+  const setCurrentAccount = useSetRecoilState(WalletState.currentAccount);
 
   useEffect(() => {
-    initWallet()
-    initNetworkMetainfos()
-  }, [])
+    initWallet();
+    initNetworkMetainfos();
+  }, []);
 
   useEffect(() => {
     if (wallet && networkMetainfos.length > 0 && tokenMetainfos.length > 0) {
-      setWalletStatus('FINISH')
+      setWalletStatus('FINISH');
     }
-  }, [wallet, networkMetainfos, tokenMetainfos])
+  }, [wallet, networkMetainfos, tokenMetainfos]);
 
   async function initWallet(): Promise<boolean> {
-    const existWallet = await walletService.existsWallet()
+    const existWallet = await walletService.existsWallet();
     if (!existWallet) {
-      setWallet(null)
-      setWalletStatus('CREATE')
-      return true
+      setWallet(null);
+      setWalletStatus('CREATE');
+      return true;
     }
 
-    const isLocked = await walletService.isLocked()
+    const isLocked = await walletService.isLocked();
     if (isLocked) {
-      setWallet(null)
-      setWalletStatus('LOGIN')
-      return true
+      setWallet(null);
+      setWalletStatus('LOGIN');
+      return true;
     }
 
-    setWalletStatus('LOADING')
+    setWalletStatus('LOADING');
     try {
-      const wallet = await walletService.loadWallet()
-      const currentAccountId = await accountService.getCurrentAccountId()
-      wallet.currentAccountId = currentAccountId
-      setWallet(wallet)
-      await initCurrentAccount(wallet)
+      const wallet = await walletService.loadWallet();
+      const currentAccountId = await accountService.getCurrentAccountId();
+      wallet.currentAccountId = currentAccountId;
+      setWallet(wallet);
+      await initCurrentAccount(wallet);
     } catch (e) {
-      console.error(e)
-      setWallet(null)
-      setWalletStatus('FAIL')
-      return false
+      console.error(e);
+      setWallet(null);
+      setWalletStatus('FAIL');
+      return false;
     }
-    return true
+    return true;
   }
 
   async function updateWallet(wallet: Wallet): Promise<boolean> {
-    setWallet(wallet)
-    await walletService.updateWallet(wallet)
-    return true
+    setWallet(wallet);
+    await walletService.updateWallet(wallet);
+    return true;
   }
 
   async function clearWallet(): Promise<void> {
-    await setWallet(new AdenaWallet())
+    await setWallet(new AdenaWallet());
 
-    await Promise.all([async (): Promise<void> => await setWallet(null), async (): Promise<void> => await setCurrentAccount(null)])
+    await Promise.all([async (): Promise<void> => await setWallet(null), async (): Promise<void> => await setCurrentAccount(null)]);
   }
 
   async function initCurrentAccount(wallet: Wallet): Promise<boolean> {
-    const currentAccountId = await accountService.getCurrentAccountId()
+    const currentAccountId = await accountService.getCurrentAccountId();
     const currentAccount
-      = wallet.accounts.find(account => account.id === currentAccountId) ?? wallet.accounts[0]
+      = wallet.accounts.find(account => account.id === currentAccountId) ?? wallet.accounts[0];
     if (currentAccount) {
-      setCurrentAccount(currentAccount)
-      await accountService.changeCurrentAccount(currentAccount)
+      setCurrentAccount(currentAccount);
+      await accountService.changeCurrentAccount(currentAccount);
     }
-    return true
+    return true;
   }
 
   async function initNetworkMetainfos(): Promise<boolean> {
-    const networkMetainfos = await chainService.getNetworks()
+    const networkMetainfos = await chainService.getNetworks();
     if (networkMetainfos.length === 0) {
-      return false
+      return false;
     }
 
-    setNetworkMetainfos(networkMetainfos)
+    setNetworkMetainfos(networkMetainfos);
 
-    chainService.updateNetworks(networkMetainfos)
-    await initCurrentNetworkMetainfos(networkMetainfos)
+    chainService.updateNetworks(networkMetainfos);
+    await initCurrentNetworkMetainfos(networkMetainfos);
 
-    return true
+    return true;
   }
 
   async function initCurrentNetworkMetainfos(
     networkMetainfos: NetworkMetainfo[],
   ): Promise<boolean> {
-    const currentNetworkId = await chainService.getCurrentNetworkId()
+    const currentNetworkId = await chainService.getCurrentNetworkId();
     const currentNetwork
       = networkMetainfos.find(networkMetainfo => networkMetainfo.id === currentNetworkId)
-        ?? networkMetainfos[0]
+        ?? networkMetainfos[0];
 
-    await chainService.updateCurrentNetworkId(currentNetwork.id)
-    await changeNetwork(currentNetwork)
+    await chainService.updateCurrentNetworkId(currentNetwork.id);
+    await changeNetwork(currentNetwork);
 
-    return true
+    return true;
   }
 
   async function changeNetwork(networkMetainfo: NetworkMetainfo): Promise<NetworkMetainfo> {
-    const rpcUrl = networkMetainfo.rpcUrl
-    const gnoProvider = await GnoProvider.create(rpcUrl, networkMetainfo.networkId)
+    const rpcUrl = networkMetainfo.rpcUrl;
+    const gnoProvider = await GnoProvider.create(rpcUrl, networkMetainfo.networkId);
 
-    setCurrentNetwork(networkMetainfo)
-    setGnoProvider(gnoProvider)
+    setCurrentNetwork(networkMetainfo);
+    setGnoProvider(gnoProvider);
 
-    return networkMetainfo
+    return networkMetainfo;
   }
 
   return (
@@ -177,5 +177,5 @@ export const WalletProvider: React.FC<React.PropsWithChildren<unknown>> = ({
     >
       {children}
     </WalletContext.Provider>
-  )
-}
+  );
+};

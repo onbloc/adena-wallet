@@ -1,1 +1,1 @@
-export * from './faucet-request'
+export * from './faucet-request';

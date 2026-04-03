@@ -1,58 +1,58 @@
-import UnknownTokenIcon from '@assets/common-unknown-token.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import {
   Button, Row, Text,
-} from '@components/atoms'
-import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder'
-import LoadingButton from '@components/atoms/loading-button/loading-button'
-import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button'
-import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label'
-import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance'
-import TokenList from '@components/pages/wallet-main/token-list/token-list'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/atoms';
+import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
+import LoadingButton from '@components/atoms/loading-button/loading-button';
+import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
+import MainNetworkLabel from '@components/pages/main/main-network-label/main-network-label';
+import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
+import TokenList from '@components/pages/wallet-main/token-list/token-list';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useFaucet,
-} from '@hooks/use-faucet'
+} from '@hooks/use-faucet';
 import {
   useLoadImages,
-} from '@hooks/use-load-images'
+} from '@hooks/use-load-images';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   usePreventHistoryBack,
-} from '@hooks/use-prevent-history-back'
+} from '@hooks/use-prevent-history-back';
 import {
   useToast,
-} from '@hooks/use-toast'
+} from '@hooks/use-toast';
 import {
   useTokenBalance,
-} from '@hooks/use-token-balance'
+} from '@hooks/use-token-balance';
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo'
+} from '@hooks/use-token-metainfo';
 import {
   WalletState,
-} from '@states'
-import mixins from '@styles/mixins'
+} from '@states';
+import mixins from '@styles/mixins';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   isAirgapAccount, isMultisigAccount,
-} from 'adena-module'
-import BigNumber from 'bignumber.js'
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
 import {
   type JSX, useCallback, useEffect, useMemo,
-} from 'react'
+} from 'react';
 import {
   useRecoilState,
-} from 'recoil'
-import styled from 'styled-components'
+} from 'recoil';
+import styled from 'styled-components';
 
-const REFETCH_INTERVAL = 3_000
+const REFETCH_INTERVAL = 3_000;
 
 const Wrapper = styled.main`
   padding-top: 37px;
@@ -92,133 +92,133 @@ const Wrapper = styled.main`
     align-items: center;
     justify-content: center;
   }
-`
+`;
 
 const MainButton = styled(Button)`
   border-radius: 18px;
-`
+`;
 
 const StyledFaucetButtonContent = styled(Row)`
   gap: 8px;
-`
+`;
 
 export const WalletMain = (): JSX.Element => {
-  usePreventHistoryBack()
+  usePreventHistoryBack();
   const {
     navigate,
-  } = useAppNavigate()
-  const [state] = useRecoilState(WalletState.state)
+  } = useAppNavigate();
+  const [state] = useRecoilState(WalletState.state);
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
   const {
     currentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     mainTokenBalance, currentBalances,
-  } = useTokenBalance()
+  } = useTokenBalance();
   const {
     refetchBalances,
-  } = useTokenBalance()
+  } = useTokenBalance();
   const {
     updateAllTokenMetainfos, getTokenImage,
-  } = useTokenMetainfo()
+  } = useTokenMetainfo();
   const {
     isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet,
-  } = useFaucet()
+  } = useFaucet();
   const {
     show,
-  } = useToast()
+  } = useToast();
 
   const {
     addLoadingImages, completeImageLoading,
-  } = useLoadImages()
+  } = useLoadImages();
 
   const showSignTxButton = useMemo(() => {
-    if (!currentAccount) return false
+    if (!currentAccount) return false;
 
-    return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount)
-  }, [currentAccount])
+    return !isAirgapAccount(currentAccount) && !isMultisigAccount(currentAccount);
+  }, [currentAccount]);
 
   const onClickFaucetButton = (): void => {
     if (isFaucetLoading) {
-      return
+      return;
     }
     faucet().then((result) => {
-      show(result.message)
-    })
-  }
+      show(result.message);
+    });
+  };
 
   const onClickDepositButton = (): void =>
     navigate(RoutePath.WalletSearch, {
       state: {
         type: 'deposit',
       },
-    })
+    });
 
   const onClickActionButton = (): void => {
     if (!currentAccount) {
-      return
+      return;
     }
     if (isAirgapAccount(currentAccount)) {
-      navigate(RoutePath.BroadcastTransaction)
-      return
+      navigate(RoutePath.BroadcastTransaction);
+      return;
     }
     if (isMultisigAccount(currentAccount)) {
-      navigate(RoutePath.BroadcastMultisigTransactionScreen)
-      return
+      navigate(RoutePath.BroadcastMultisigTransactionScreen);
+      return;
     }
     navigate(RoutePath.WalletSearch, {
       state: {
         type: 'send',
       },
-    })
-  }
+    });
+  };
 
   const onClickSignButton = (): void => {
     if (!currentAccount) {
-      return
+      return;
     }
 
-    navigate(RoutePath.SignMultisigTransactionScreen)
-    return
-  }
+    navigate(RoutePath.SignMultisigTransactionScreen);
+    return;
+  };
 
   const actionButtonText: string | null = useMemo(() => {
     if (!currentAccount) {
-      return null
+      return null;
     }
 
     if (isMultisigAccount(currentAccount)) {
-      return 'Broadcast'
+      return 'Broadcast';
     }
 
-    return 'Send'
-  }, [isMultisigAccount, currentAccount])
+    return 'Send';
+  }, [isMultisigAccount, currentAccount]);
 
   useEffect(() => {
     if (state === 'CREATE') {
-      navigate(RoutePath.Home)
+      navigate(RoutePath.Home);
     }
-  }, [state])
+  }, [state]);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null
+    let interval: NodeJS.Timeout | null;
 
     if (currentAccount?.id && currentNetwork.chainId) {
       interval = setInterval(() => {
         updateAllTokenMetainfos().then(() => {
-          refetchBalances()
-        })
-      }, REFETCH_INTERVAL)
+          refetchBalances();
+        });
+      }, REFETCH_INTERVAL);
     }
 
     return () => {
       if (interval) {
-        clearInterval(interval)
+        clearInterval(interval);
       }
-    }
-  }, [currentAccount?.id, currentNetwork.chainId])
+    };
+  }, [currentAccount?.id, currentNetwork.chainId]);
 
   const tokens = useMemo(() => {
     return currentBalances
@@ -233,37 +233,37 @@ export const WalletMain = (): JSX.Element => {
             value: BigNumber(tokenBalance.amount.value).toFormat(),
             denom: tokenBalance.amount.denom,
           },
-        }
-      })
-  }, [currentBalances, getTokenImage])
+        };
+      });
+  }, [currentBalances, getTokenImage]);
 
   const tokenImages = useMemo(() => {
-    return tokens.map(token => token.logo)
-  }, [tokens])
+    return tokens.map(token => token.logo);
+  }, [tokens]);
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
-      const tokenBalance = currentBalances.find(tokenBalance => tokenBalance.tokenId === tokenId)
+      const tokenBalance = currentBalances.find(tokenBalance => tokenBalance.tokenId === tokenId);
       if (!tokenBalance) {
-        window.alert('Token not found')
-        return
+        window.alert('Token not found');
+        return;
       }
       navigate(RoutePath.TokenDetails, {
         state: {
           tokenBalance,
         },
-      })
+      });
     },
     [navigate, tokens],
-  )
+  );
 
   const onClickManageButton = useCallback(() => {
-    navigate(RoutePath.ManageToken)
-  }, [navigate])
+    navigate(RoutePath.ManageToken);
+  }, [navigate]);
 
   useEffect(() => {
-    addLoadingImages(tokenImages)
-  }, [tokenImages.length])
+    addLoadingImages(tokenImages);
+  }, [tokenImages.length]);
 
   return (
     <Wrapper>
@@ -322,5 +322,5 @@ export const WalletMain = (): JSX.Element => {
         <MainManageTokenButton onClick={onClickManageButton} />
       </div>
     </Wrapper>
-  )
-}
+  );
+};

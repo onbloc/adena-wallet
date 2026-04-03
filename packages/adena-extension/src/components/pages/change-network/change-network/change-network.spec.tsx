@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import ChangeNetwork, {
   ChangeNetworkProps,
-} from './change-network'
+} from './change-network';
 
 describe('ChangeNetwork Component', () => {
   it('ChangeNetwork render', () => {
@@ -27,18 +27,18 @@ describe('ChangeNetwork Component', () => {
       currentNetworkId: '',
       networkMetainfos: [],
       changeNetwork: () => {
-        return
+        return;
       },
       moveEditPage: () => {
-        return
+        return;
       },
       moveAddPage: () => {
-        return
+        return;
       },
       moveBack: () => {
-        return
+        return;
       },
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -47,6 +47,6 @@ describe('ChangeNetwork Component', () => {
           <ChangeNetwork {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

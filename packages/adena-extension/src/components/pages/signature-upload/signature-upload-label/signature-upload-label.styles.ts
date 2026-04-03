@@ -1,5 +1,5 @@
 // signature-upload-label.styles.ts
-import styled from 'styled-components'
+import styled from 'styled-components';
 
 export const StyledInputLabel = styled.label`
   display: flex;
@@ -39,4 +39,4 @@ export const StyledInputLabel = styled.label`
       }): string => theme.neutral._1};
     }
   }
-`
+`;

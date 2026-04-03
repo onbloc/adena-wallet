@@ -1,21 +1,21 @@
-import AnimationOpenCosmosApp from '@assets/web/lottie/open-cosmos-app-in-your-ledger.json'
+import AnimationOpenCosmosApp from '@assets/web/lottie/open-cosmos-app-in-your-ledger.json';
 import {
   View,
-} from '@components/atoms'
-import Lottie from '@components/atoms/lottie'
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
+} from '@components/molecules';
 import type {
   JSX,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 40px;
   width: 100%;
   align-items: center;
-`
+`;
 
 const ConnectRequestWallet = (): JSX.Element => {
   return (
@@ -33,7 +33,7 @@ const ConnectRequestWallet = (): JSX.Element => {
         isCenter
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default ConnectRequestWallet
+export default ConnectRequestWallet;

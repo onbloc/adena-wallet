@@ -1,21 +1,21 @@
-import IconEtc from '@assets/etc.svg'
-import IconLink from '@assets/icon-link'
-import IconQRCode from '@assets/icon-qrcode'
+import IconEtc from '@assets/etc.svg';
+import IconLink from '@assets/icon-link';
+import IconQRCode from '@assets/icon-qrcode';
 import {
   Text,
-} from '@components/atoms'
-import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown'
+} from '@components/atoms';
+import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 
 import {
   NFTHeaderWrapper,
-} from './nft-header.styles'
+} from './nft-header.styles';
 
 export interface NFTHeaderProps {
-  openGnoscan: () => void
-  moveDepositPage: () => void
+  openGnoscan: () => void;
+  moveDepositPage: () => void;
 }
 
 const NFTHeader: React.FC<NFTHeaderProps> = ({
@@ -35,7 +35,7 @@ const NFTHeader: React.FC<NFTHeaderProps> = ({
       },
     ],
     [openGnoscan, moveDepositPage],
-  )
+  );
 
   return (
     <NFTHeaderWrapper>
@@ -46,7 +46,7 @@ const NFTHeader: React.FC<NFTHeaderProps> = ({
         hover
       />
     </NFTHeaderWrapper>
-  )
-}
+  );
+};
 
-export default NFTHeader
+export default NFTHeader;

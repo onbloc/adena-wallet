@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 
 const IconExpand = ({
   className,
 }: {
-  className?: string
+  className?: string;
 }): ReactElement<any> => {
   return (
     <svg width='15' height='15' viewBox='0 0 15 15' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -23,7 +23,7 @@ const IconExpand = ({
         fill='#212128'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconExpand
+export default IconExpand;

@@ -1,29 +1,29 @@
 import {
   AppProviderErrorBoundary, AppReloadFallback,
-} from '@common/error-boundary'
+} from '@common/error-boundary';
 import {
   AdenaProvider, WalletProvider,
-} from '@common/provider'
-import theme from '@styles/theme'
+} from '@common/provider';
+import theme from '@styles/theme';
 import {
   QueryClient, QueryClientProvider,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import React, {
   ReactElement, ReactNode, Suspense,
-} from 'react'
+} from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const AppProvider = ({
   children,
 }: {
-  children: ReactNode
+  children: ReactNode;
 }): ReactElement<any> => {
   return (
     <React.Fragment>
@@ -41,7 +41,7 @@ const AppProvider = ({
         </RecoilRoot>
       </AppProviderErrorBoundary>
     </React.Fragment>
-  )
-}
+  );
+};
 
-export default AppProvider
+export default AppProvider;

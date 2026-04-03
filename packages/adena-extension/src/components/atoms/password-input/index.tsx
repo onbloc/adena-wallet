@@ -1,52 +1,52 @@
 import {
   EvaluatePasswordResult,
-} from '@common/utils/password-utils'
+} from '@common/utils/password-utils';
 import {
   type JSX, useMemo,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   View,
-} from '../base'
+} from '../base';
 import {
   DefaultInput,
-} from '../default-input'
+} from '../default-input';
 import {
   Text,
-} from '../text'
+} from '../text';
 
 interface PasswordInputProps extends React.ComponentPropsWithoutRef<'input'> {
-  evaluationResult?: EvaluatePasswordResult | null
-  error?: boolean
-  margin?: string
-  ref?: React.RefObject<HTMLInputElement | null>
+  evaluationResult?: EvaluatePasswordResult | null;
+  error?: boolean;
+  margin?: string;
+  ref?: React.RefObject<HTMLInputElement | null>;
 }
 
 const StyledPasswordInputContainer = styled(View)`
   position: relative;
   width: 100%;
   justify-content: center;
-`
+`;
 
 export const PasswordInput = ({
   evaluationResult, ...rest
 }: PasswordInputProps): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   const complexityColor = useMemo(() => {
-    if (evaluationResult?.complexity === 'STRONG') return theme.webSuccess._100
-    if (evaluationResult?.complexity === 'MEDIUM') return theme.webWarning._100
-    return theme.webError._100
-  }, [evaluationResult])
+    if (evaluationResult?.complexity === 'STRONG') return theme.webSuccess._100;
+    if (evaluationResult?.complexity === 'MEDIUM') return theme.webWarning._100;
+    return theme.webError._100;
+  }, [evaluationResult]);
 
   const complexityText = useMemo(() => {
-    if (evaluationResult?.complexity === 'STRONG') return 'Strong'
-    if (evaluationResult?.complexity === 'MEDIUM') return 'Medium'
-    return 'Week'
-  }, [evaluationResult])
+    if (evaluationResult?.complexity === 'STRONG') return 'Strong';
+    if (evaluationResult?.complexity === 'MEDIUM') return 'Medium';
+    return 'Week';
+  }, [evaluationResult]);
 
   return (
     <StyledPasswordInputContainer>
@@ -70,5 +70,5 @@ export const PasswordInput = ({
         </Text>
       )}
     </StyledPasswordInputContainer>
-  )
-}
+  );
+};

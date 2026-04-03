@@ -1,17 +1,17 @@
 import {
   fonts, FontsType,
-} from '@styles/theme'
+} from '@styles/theme';
 import styled, {
   css, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 interface TokenBalanceWrapperProps {
-  orientation: 'VERTICAL' | 'HORIZONTAL'
-  fontColor: string
-  fontStyleKey: FontsType
-  minimumFontSize: string
-  lineHeight?: string
-  maxWidth?: number
+  orientation: 'VERTICAL' | 'HORIZONTAL';
+  fontColor: string;
+  fontStyleKey: FontsType;
+  minimumFontSize: string;
+  lineHeight?: string;
+  maxWidth?: number;
 }
 
 export const TokenBalanceWrapper = styled.div.withConfig({
@@ -66,4 +66,4 @@ export const TokenBalanceWrapper = styled.div.withConfig({
           : css``};
     }
   }
-`
+`;

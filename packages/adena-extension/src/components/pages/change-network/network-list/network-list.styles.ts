@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const NetworkListWrapper = styled.div`
   ${mixins.flex({
@@ -16,4 +16,4 @@ export const NetworkListWrapper = styled.div`
       margin-bottom: 0;
     }
   }
-`
+`;

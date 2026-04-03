@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const NetworkFeeSettingWrapper = styled.div`
   ${mixins.flex({
@@ -35,4 +35,4 @@ export const NetworkFeeSettingWrapper = styled.div`
     width: 100%;
     margin-top: 90px;
   }
-`
+`;

@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const ManageTokenListWrapper = styled.div`
   ${mixins.flex({
@@ -11,7 +11,7 @@ export const ManageTokenListWrapper = styled.div`
   })};
   width: 100%;
   height: auto;
-`
+`;
 
 export const ManageTokenListItemWrapper = styled.div`
   ${mixins.flex({
@@ -86,4 +86,4 @@ export const ManageTokenListItemWrapper = styled.div`
     align-items: flex-start;
     justify-content: flex-end;
   }
-`
+`;

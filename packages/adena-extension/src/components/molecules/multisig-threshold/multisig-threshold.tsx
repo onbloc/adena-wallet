@@ -1,9 +1,9 @@
-import React from 'react'
+import React from 'react';
 
-import * as S from './multisig-threshold.styles'
+import * as S from './multisig-threshold.styles';
 
 interface MultisigThresholdProps {
-  threshold: number
+  threshold: number;
 }
 
 const MultisigThreshold = ({
@@ -19,7 +19,7 @@ const MultisigThreshold = ({
         </div>
       </S.MultisigThresholdWrapper>
     </S.MultisigThresholdContainer>
-  )
-}
+  );
+};
 
-export default MultisigThreshold
+export default MultisigThreshold;

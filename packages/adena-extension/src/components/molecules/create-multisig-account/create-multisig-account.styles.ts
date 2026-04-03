@@ -1,15 +1,15 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const CreateMultisigAccountWrapper = styled.div`
   ${mixins.flex({
     justify: 'flex-start',
   })};
   padding: 24px 20px;
-`
+`;
 
 export const CreateMultisigAccountDomainWrapper = styled.div`
   ${mixins.flex({
@@ -31,7 +31,7 @@ export const CreateMultisigAccountDomainWrapper = styled.div`
     height: 20px;
     border-radius: 50%;
   }
-`
+`;
 
 export const CreateMultisigAccountContentWrapper = styled.div`
   ${mixins.flex({
@@ -40,7 +40,7 @@ export const CreateMultisigAccountContentWrapper = styled.div`
   gap: 12px;
   width: 100%;
   padding-bottom: 96px;
-`
+`;
 
 export const CreateMultisigAccountInfoWrapper = styled.div`
   ${mixins.flex({
@@ -50,4 +50,4 @@ export const CreateMultisigAccountInfoWrapper = styled.div`
   width: 100%;
   gap: 8px;
   margin-bottom: 8px;
-`
+`;

@@ -1,6 +1,6 @@
 import {
   css, DefaultTheme, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 enum WebNeutral {
   _0 = '#FFFFFF',
@@ -112,7 +112,7 @@ export type WebFontType
     | 'display2'
     | 'display3'
     | 'display4'
-    | 'display5'
+    | 'display5';
 
 export const webFonts: Record<WebFontType, RuleSet> = {
   title1: css`
@@ -262,7 +262,7 @@ export const webFonts: Record<WebFontType, RuleSet> = {
     line-height: 52px; /* 118.182% */
     letter-spacing: -1.32px;
   `,
-}
+};
 
 export const fonts: FontsKeyType = {
   header1: css`
@@ -380,7 +380,7 @@ export const fonts: FontsKeyType = {
     font-size: 11px;
     line-height: 16px;
   `,
-} as const
+} as const;
 
 export type FontsType
   = | 'header1'
@@ -405,11 +405,11 @@ export type FontsType
     | 'light1Reg'
     | 'bold13'
     | 'light13'
-    | 'light11'
+    | 'light11';
 
-type FontsKeyType = { [key in FontsType]: RuleSet }
+type FontsKeyType = { [key in FontsType]: RuleSet };
 
-type ThemeType = typeof theme
+type ThemeType = typeof theme;
 
 const theme = {
   neutral: Neutral,
@@ -423,18 +423,18 @@ const theme = {
   webError: WebError,
   webSuccess: WebSuccess,
   webWarning: WebWarning,
-}
+};
 
 export const getTheme
   = <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
     ({
       theme,
     }: {
-      theme: DefaultTheme
+      theme: DefaultTheme;
     }): DefaultTheme[T1][T2] =>
-      theme[val1][val2]
+      theme[val1][val2];
 
-export default theme
+export default theme;
 
 declare module 'styled-components' {
   export interface DefaultTheme extends ThemeType {

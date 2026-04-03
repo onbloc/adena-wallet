@@ -1,27 +1,27 @@
 import {
   SCANNER_URL,
-} from '@common/constants/resource.constant'
+} from '@common/constants/resource.constant';
 import {
   makeQueryString,
-} from '@common/utils/string-utils'
-import useLink from '@hooks/use-link'
+} from '@common/utils/string-utils';
+import useLink from '@hooks/use-link';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   SignerInfo,
-} from '@inject/types'
+} from '@inject/types';
 import {
   useCallback,
-} from 'react'
+} from 'react';
 
 import {
   DocumentSignerListWrapper,
-} from './document-signer-list.styles'
-import DocumentSignerListItem from './document-signer-list-item'
+} from './document-signer-list.styles';
+import DocumentSignerListItem from './document-signer-list-item';
 
 interface DocumentSignerListProps {
-  signerInfos: SignerInfo[]
+  signerInfos: SignerInfo[];
 }
 
 const DocumentSignerList = ({
@@ -29,21 +29,21 @@ const DocumentSignerList = ({
 }: DocumentSignerListProps): React.ReactElement<any> => {
   const {
     openLink,
-  } = useLink()
+  } = useLink();
   const {
     currentNetwork, scannerParameters,
-  } = useNetwork()
+  } = useNetwork();
 
   const handleLinkClick = useCallback(
     (address: string) => {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL
+      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
       const openLinkUrl = scannerParameters
         ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/account/${address}`
-      openLink(openLinkUrl)
+        : `${scannerUrl}/account/${address}`;
+      openLink(openLinkUrl);
     },
     [currentNetwork, scannerParameters, openLink],
-  )
+  );
 
   return (
     <DocumentSignerListWrapper>
@@ -56,10 +56,10 @@ const DocumentSignerList = ({
             order={i + 1}
             onClickAddress={handleLinkClick}
           />
-        )
+        );
       })}
     </DocumentSignerListWrapper>
-  )
-}
+  );
+};
 
-export default DocumentSignerList
+export default DocumentSignerList;

@@ -1,21 +1,21 @@
 import {
   Loading,
-} from '@components/atoms'
-import React from 'react'
+} from '@components/atoms';
+import React from 'react';
 
 import {
   GhostButtons,
-} from '../ghost-button'
+} from '../ghost-button';
 import {
   ApproveTransactionLoadingAllRadiusBox,
   ApproveTransactionLoadingBottomRadiusBox,
   ApproveTransactionLoadingTopRadiusBox,
   ApproveTransactionLoadingWrapper,
-} from './approve-transaction-loading.styles'
+} from './approve-transaction-loading.styles';
 
 export interface ApproveTransactionLoadingProps {
-  leftButtonText?: string
-  rightButtonText?: string
+  leftButtonText?: string;
+  rightButtonText?: string;
 }
 
 export const ApproveTransactionLoading: React.FC<ApproveTransactionLoadingProps> = ({
@@ -46,5 +46,5 @@ export const ApproveTransactionLoading: React.FC<ApproveTransactionLoadingProps>
         className='l-approve'
       />
     </ApproveTransactionLoadingWrapper>
-  )
-}
+  );
+};

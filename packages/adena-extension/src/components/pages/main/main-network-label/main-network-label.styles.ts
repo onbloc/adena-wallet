@@ -1,7 +1,7 @@
 import {
   View,
-} from '@components/atoms'
-import styled from 'styled-components'
+} from '@components/atoms';
+import styled from 'styled-components';
 
 export const MainNetworkLabelWrapper = styled(View)`
   width: 100%;
@@ -12,4 +12,4 @@ export const MainNetworkLabelWrapper = styled(View)`
   align-items: center;
   justify-content: center;
   height: 30px;
-`
+`;

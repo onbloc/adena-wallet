@@ -1,62 +1,62 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useMakeTransactionsWithTime,
-} from '@hooks/use-make-transactions-with-time'
+} from '@hooks/use-make-transactions-with-time';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo'
+} from '@hooks/use-token-metainfo';
 import {
   keepPreviousData, RefetchOptions, useInfiniteQuery,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   TransactionInfo, TransactionWithPageInfo,
-} from '@types'
+} from '@types';
 import {
   useMemo,
-} from 'react'
+} from 'react';
 
-const REFETCH_INTERVAL = 3_000
+const REFETCH_INTERVAL = 3_000;
 
 export const useTransactionHistoryPage = ({
   enabled,
 }: {
-  enabled: boolean
+  enabled: boolean;
 }): {
   data:
     | {
-      title: string
-      transactions: TransactionInfo[]
+      title: string;
+      transactions: TransactionInfo[];
     }[]
-    | null
-  isFetched: boolean
-  status: 'pending' | 'error' | 'success'
-  isLoading: boolean
-  isFetching: boolean
-  isSupported: boolean
-  hasNextPage: boolean
-  fetchNextPage: () => Promise<boolean>
-  refetch: (options?: RefetchOptions) => void
+    | null;
+  isFetched: boolean;
+  status: 'pending' | 'error' | 'success';
+  isLoading: boolean;
+  isFetching: boolean;
+  isSupported: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => Promise<boolean>;
+  refetch: (options?: RefetchOptions) => void;
 } => {
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
   const {
     currentAddress,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     transactionHistoryService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     tokenMetainfos,
-  } = useTokenMetainfo()
+  } = useTokenMetainfo();
 
   const {
     data: allTransactions,
@@ -67,11 +67,11 @@ export const useTransactionHistoryPage = ({
     queryKey: ['history/page/all', currentNetwork.networkId, currentAddress || ''],
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: TransactionWithPageInfo): string | null => {
-      return lastPage?.page.cursor || null
+      return lastPage?.page.cursor || null;
     },
     queryFn: (context) => {
-      const cursor = context.pageParam
-      return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor)
+      const cursor = context.pageParam;
+      return transactionHistoryService.fetchAllTransactionHistory(currentAddress || '', cursor);
     },
     enabled:
       !!currentAddress
@@ -80,36 +80,36 @@ export const useTransactionHistoryPage = ({
       && enabled,
     placeholderData: keepPreviousData,
     refetchInterval: REFETCH_INTERVAL,
-  })
+  });
 
   const transactions = useMemo(() => {
     if (!allTransactions) {
-      return null
+      return null;
     }
 
     return allTransactions.pages.flatMap(
       (page: unknown) => (page as TransactionWithPageInfo).transactions,
-    )
-  }, [allTransactions?.pages])
+    );
+  }, [allTransactions?.pages]);
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
-      return ''
+      return '';
     }
 
-    return transactions[0]?.hash
-  }, [transactions])
+    return transactions[0]?.hash;
+  }, [transactions]);
 
   const {
     data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
-  )
+  );
 
   const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options)
-  }
+    refetch(options);
+  };
 
   return {
     data: data || null,
@@ -122,8 +122,8 @@ export const useTransactionHistoryPage = ({
     fetchNextPage: (): Promise<boolean> => {
       return fetchNextPage()
         .then(result => !result.error)
-        .catch(() => false)
+        .catch(() => false);
     },
     refetch: refetchTransactions,
-  }
-}
+  };
+};

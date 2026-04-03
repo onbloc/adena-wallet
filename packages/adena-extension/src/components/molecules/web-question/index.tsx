@@ -1,25 +1,25 @@
 import {
   View, WebText,
-} from '@components/atoms'
-import React from 'react'
+} from '@components/atoms';
+import React from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 16px;
-`
+`;
 
 export interface WebQuestionProps {
-  title: string
-  question: string
+  title: string;
+  question: string;
 }
 
 export const WebQuestion: React.FC<WebQuestionProps> = ({
   title,
   question,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <StyledContainer
@@ -35,5 +35,5 @@ export const WebQuestion: React.FC<WebQuestionProps> = ({
         {question}
       </WebText>
     </StyledContainer>
-  )
-}
+  );
+};

@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base'
+} from '../base';
 
 const ERROR_VALUE = {
   EMPTY_PASSWORD: {
@@ -33,13 +33,13 @@ const ERROR_VALUE = {
     type: 'PASSWORD_TOO_SIMPLE',
     message: 'Password is too simple.',
   },
-}
+};
 
-type ErrorType = keyof typeof ERROR_VALUE
+type ErrorType = keyof typeof ERROR_VALUE;
 
 export class PasswordValidationError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType])
-    Object.setPrototypeOf(this, PasswordValidationError.prototype)
+    super(ERROR_VALUE[errorType]);
+    Object.setPrototypeOf(this, PasswordValidationError.prototype);
   }
 }

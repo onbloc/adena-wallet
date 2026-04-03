@@ -1,25 +1,25 @@
 import {
   WalletResponseFailureType, WalletResponseRejectType,
-} from '@adena-wallet/sdk'
+} from '@adena-wallet/sdk';
 import {
   NetworkMetainfo, RoutePath,
-} from '@types'
+} from '@types';
 
 import {
   HandlerMethod,
-} from '..'
+} from '..';
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '../message'
+} from '../message';
 import {
   InjectCore,
-} from './core'
+} from './core';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
-  return network.chainId === chainId
+  return network.chainId === chainId;
 }
 function matchRPCUrl(network: NetworkMetainfo, rpcUrl: string): boolean {
-  return network.rpcUrl === rpcUrl.replace(/\/$/, '')
+  return network.rpcUrl === rpcUrl.replace(/\/$/, '');
 }
 
 export const addNetwork = async (
@@ -27,14 +27,14 @@ export const addNetwork = async (
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const inMemoryKey = await core.getInMemoryKey()
+  const inMemoryKey = await core.getInMemoryKey();
 
-  const isLocked = await core.isLockedBy(inMemoryKey)
-  const data = requestData.data
+  const isLocked = await core.isLockedBy(inMemoryKey);
+  const data = requestData.data;
   if (!isLocked) {
-    const chainId = data?.chainId || ''
-    const chainName = data?.chainName || ''
-    const rpcUrl = data?.rpcUrl || ''
+    const chainId = data?.chainId || '';
+    const chainName = data?.chainName || '';
+    const rpcUrl = data?.rpcUrl || '';
     if (chainId === '' || chainName === '' || rpcUrl === '') {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -43,8 +43,8 @@ export const addNetwork = async (
           },
           requestData.key,
         ),
-      )
-      return
+      );
+      return;
     }
     if (rpcUrl.match(/\s/g)) {
       sendResponse(
@@ -54,16 +54,16 @@ export const addNetwork = async (
           },
           requestData.key,
         ),
-      )
-      return
+      );
+      return;
     }
-    const networks = await core.chainService.getNetworks()
+    const networks = await core.chainService.getNetworks();
     const existNetwork
       = networks.findIndex(
         current =>
           (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl))
           && current.deleted !== true,
-      ) > -1
+      ) > -1;
     if (existNetwork) {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -72,8 +72,8 @@ export const addNetwork = async (
           },
           requestData.key,
         ),
-      )
-      return
+      );
+      return;
     }
 
     HandlerMethod.createPopup(
@@ -86,7 +86,7 @@ export const addNetwork = async (
         requestData.key,
       ),
       sendResponse,
-    )
+    );
   } else {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -95,16 +95,16 @@ export const addNetwork = async (
         },
         requestData.key,
       ),
-    )
+    );
   }
-}
+};
 
 export const switchNetwork = async (
   core: InjectCore,
   requestData: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<void> => {
-  const chainId = requestData.data?.chainId || ''
+  const chainId = requestData.data?.chainId || '';
   if (chainId === '') {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -113,11 +113,11 @@ export const switchNetwork = async (
         },
         requestData.key,
       ),
-    )
-    return
+    );
+    return;
   }
 
-  const currentNetwork = await core.chainService.getCurrentNetwork()
+  const currentNetwork = await core.chainService.getCurrentNetwork();
   if (currentNetwork.networkId === chainId) {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -125,13 +125,13 @@ export const switchNetwork = async (
         requestData?.data,
         requestData?.key,
       ),
-    )
-    return
+    );
+    return;
   }
 
-  const networks = await core.chainService.getNetworks()
+  const networks = await core.chainService.getNetworks();
   const existNetwork
-    = networks.findIndex(current => current.chainId === chainId && current.deleted !== true) > -1
+    = networks.findIndex(current => current.chainId === chainId && current.deleted !== true) > -1;
   if (!existNetwork) {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -140,8 +140,8 @@ export const switchNetwork = async (
         },
         requestData.key,
       ),
-    )
-    return
+    );
+    return;
   }
 
   HandlerMethod.createPopup(
@@ -154,5 +154,5 @@ export const switchNetwork = async (
       requestData.key,
     ),
     sendResponse,
-  )
-}
+  );
+};

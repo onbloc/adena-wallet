@@ -1,46 +1,46 @@
 import {
   CommonError,
-} from '@common/errors/common'
+} from '@common/errors/common';
 import React, {
   ErrorInfo,
-} from 'react'
+} from 'react';
 
 interface Props {
-  fallback: React.ReactNode
-  children?: React.ReactNode
+  fallback: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 interface State {
-  hasError: boolean
+  hasError: boolean;
 }
 
 export class AppProviderErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false,
-  }
+  };
 
   public static getDerivedStateFromError(error: Error): State {
     if (error instanceof CommonError) {
       if (error.getStatus() === 401) {
         return {
           hasError: true,
-        }
+        };
       }
     }
     return {
       hasError: false,
-    }
+    };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('Uncaught error:', error, errorInfo)
+    console.error('Uncaught error:', error, errorInfo);
   }
 
   public render(): React.ReactNode {
     if (this.state.hasError) {
-      return this.props.fallback
+      return this.props.fallback;
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

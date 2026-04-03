@@ -1,27 +1,27 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import NFTCollectionAssetCard, {
   NFTCollectionAssetCardProps,
-} from './nft-collection-asset-card'
+} from './nft-collection-asset-card';
 
 describe('NFTCollectionAssetCard Component', () => {
   it('NFTCollectionAssetCard render', () => {
@@ -38,11 +38,11 @@ describe('NFTCollectionAssetCard Component', () => {
         isTokenUri: true,
       },
       moveAssetPage: () => {
-        return
+        return;
       },
       queryGRC721TokenUri: () => ({
       }) as unknown as UseQueryResult<string | null>,
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -51,6 +51,6 @@ describe('NFTCollectionAssetCard Component', () => {
           <NFTCollectionAssetCard {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

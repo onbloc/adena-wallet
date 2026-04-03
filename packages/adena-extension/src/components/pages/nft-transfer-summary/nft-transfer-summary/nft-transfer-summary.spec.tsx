@@ -1,27 +1,27 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import NFTTransferSummary, {
   NFTTransferSummaryProps,
-} from './nft-transfer-summary'
+} from './nft-transfer-summary';
 
 describe('NFTTransferSummary Component', () => {
   it('NFTTransferSummary render', () => {
@@ -46,19 +46,19 @@ describe('NFTTransferSummary Component', () => {
       queryGRC721TokenUri: () => ({
       }) as unknown as UseQueryResult<string | null>,
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickSend: () => {
-        return
+        return;
       },
       onClickNetworkFeeSetting: () => {
-        return
+        return;
       },
       isErrorNetworkFee: false,
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -67,6 +67,6 @@ describe('NFTTransferSummary Component', () => {
           <NFTTransferSummary {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

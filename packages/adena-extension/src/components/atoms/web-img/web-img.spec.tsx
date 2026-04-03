@@ -1,24 +1,24 @@
 import {
   GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import {
   WebImg,
-} from '.'
+} from '.';
 
 describe('WebImg Component', () => {
   it('WebImg render', () => {
@@ -29,6 +29,6 @@ describe('WebImg Component', () => {
           <WebImg src='https://adena.app/assets/images/favicon.svg' />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

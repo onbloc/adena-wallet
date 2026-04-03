@@ -1,12 +1,12 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 interface CopyButtonWrapperProps {
-  checked: boolean
-  size: number
+  checked: boolean;
+  size: number;
 }
 
 export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
@@ -42,4 +42,4 @@ export const CopyButtonWrapper = styled.div<CopyButtonWrapperProps>`
       stroke: ${getTheme('neutral', '_1')};
     }
   }
-`
+`;

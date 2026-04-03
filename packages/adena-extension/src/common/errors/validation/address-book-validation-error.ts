@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base'
+} from '../base';
 
 const ERROR_VALUE = {
   INVALID_ADDRESS: {
@@ -18,13 +18,13 @@ const ERROR_VALUE = {
     type: 'ALREADY_NAME',
     message: 'Name already in use',
   },
-}
+};
 
-type ErrorType = keyof typeof ERROR_VALUE
+type ErrorType = keyof typeof ERROR_VALUE;
 
 export class AddressBookValidationError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType])
-    Object.setPrototypeOf(this, AddressBookValidationError.prototype)
+    super(ERROR_VALUE[errorType]);
+    Object.setPrototypeOf(this, AddressBookValidationError.prototype);
   }
 }

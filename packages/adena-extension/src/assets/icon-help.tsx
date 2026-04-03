@@ -1,13 +1,13 @@
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 
 const IconHelp = ({
   className,
   color = '#777777',
 }: {
-  className?: string
-  color?: string
+  className?: string;
+  color?: string;
 }): JSX.Element => (
   <svg
     className={className}
@@ -36,6 +36,6 @@ const IconHelp = ({
       strokeLinejoin='round'
     />
   </svg>
-)
+);
 
-export default IconHelp
+export default IconHelp;

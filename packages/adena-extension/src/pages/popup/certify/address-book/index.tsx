@@ -1,43 +1,43 @@
-import plus from '@assets/plus.svg'
+import plus from '@assets/plus.svg';
 import {
   formatAddress, formatNickname,
-} from '@common/utils/client-utils'
+} from '@common/utils/client-utils';
 import {
   ListBox, Text,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   CloseShadowButton,
-} from '@components/molecules'
+} from '@components/molecules';
 import {
   useAddressBook,
-} from '@hooks/use-address-book'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@hooks/use-address-book';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   AddressBookItem,
-} from '@repositories/wallet'
-import mixins from '@styles/mixins'
+} from '@repositories/wallet';
+import mixins from '@styles/mixins';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
-import LoadingAddressBook from './loading-address-book'
+import LoadingAddressBook from './loading-address-book';
 
-type navigateStatus = 'add' | 'edit'
+type navigateStatus = 'add' | 'edit';
 
 const AddressBook = (): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     navigate, goBack,
-  } = useAppNavigate()
+  } = useAppNavigate();
   const {
     loading, addressBook,
-  } = useAddressBook()
+  } = useAddressBook();
   const addAddressHandler = (status: navigateStatus, curr?: AddressBookItem): void =>
     navigate<RoutePath.AddAddress>(RoutePath.AddAddress, {
       state: {
@@ -45,10 +45,10 @@ const AddressBook = (): JSX.Element => {
         addressList: addressBook,
         curr,
       },
-    })
+    });
 
   if (loading) {
-    return <LoadingAddressBook />
+    return <LoadingAddressBook />;
   }
 
   return (
@@ -85,8 +85,8 @@ const AddressBook = (): JSX.Element => {
       </>
       <CloseShadowButton onClick={goBack} />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -104,7 +104,7 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
   }
-`
+`;
 
 const TopSection = styled.div`
   ${mixins.flex({
@@ -113,12 +113,12 @@ const TopSection = styled.div`
   })};
   width: 100%;
   margin-bottom: 12px;
-`
+`;
 
 const AddButton = styled.button`
   width: 24px;
   height: 24px;
   background: url(${plus}) no-repeat center center / 100% 100%;
-`
+`;
 
-export default AddressBook
+export default AddressBook;

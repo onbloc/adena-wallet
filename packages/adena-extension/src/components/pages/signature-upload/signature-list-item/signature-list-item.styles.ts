@@ -1,10 +1,10 @@
 import {
   fonts,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const StyledSignerItemWrapper = styled.div<{
-  borderColor: string
+  borderColor: string;
 }>`
   display: flex;
   flex-direction: row;
@@ -83,7 +83,7 @@ export const StyledSignerItemWrapper = styled.div<{
       }
     }
   }
-`
+`;
 
 export const StyledRemoveButton = styled.button`
   display: inline-flex;
@@ -116,4 +116,4 @@ export const StyledRemoveButton = styled.button`
       }
     }
   }
-`
+`;

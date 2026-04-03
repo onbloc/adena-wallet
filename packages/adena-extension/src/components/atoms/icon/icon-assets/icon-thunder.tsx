@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 
 const IconThunder = (): ReactElement<any> => {
   return (
@@ -10,7 +10,7 @@ const IconThunder = (): ReactElement<any> => {
         fill='white'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconThunder
+export default IconThunder;

@@ -1,9 +1,9 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 import styled, {
   keyframes,
-} from 'styled-components'
+} from 'styled-components';
 
 const rotate = keyframes`
   from {
@@ -16,19 +16,19 @@ const rotate = keyframes`
     -o-transform: rotate(360deg);
     transform: rotate(360deg);
   }
-`
+`;
 
 const SVG = styled.svg`
   width: 100px;
   height: 100px;
   margin: 20px auto;
   animation: ${rotate} 1.5s infinite;
-`
+`;
 
 const IconConnectLoading = ({
   className,
 }: {
-  className: string
+  className: string;
 }): ReactElement<any> => {
   return (
     <SVG
@@ -61,7 +61,7 @@ const IconConnectLoading = ({
         </linearGradient>
       </defs>
     </SVG>
-  )
-}
+  );
+};
 
-export default IconConnectLoading
+export default IconConnectLoading;

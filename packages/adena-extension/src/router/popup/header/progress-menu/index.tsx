@@ -1,24 +1,24 @@
-import logo from '@assets/logo-withIcon.svg'
+import logo from '@assets/logo-withIcon.svg';
 import {
   LeftArrowBtn,
-} from '@components/atoms'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
-type ProgressLevel = 'first' | 'second' | 'third'
+type ProgressLevel = 'first' | 'second' | 'third';
 
 interface ProgressMenuProps {
-  location?: string
-  showLogo?: boolean
-  progressLevel: ProgressLevel
-  hideArrow?: boolean
+  location?: string;
+  showLogo?: boolean;
+  progressLevel: ProgressLevel;
+  hideArrow?: boolean;
 }
 
 const Wrapper = styled.div`
@@ -30,12 +30,12 @@ const Wrapper = styled.div`
   border-bottom: 4px solid ${getTheme('neutral', '_7')};
   position: relative;
   padding: 0px 18px 0px 12px;
-`
+`;
 
 const Button = styled(LeftArrowBtn)`
   position: absolute;
   left: 12px;
-`
+`;
 
 const Hr = styled.hr<ProgressMenuProps>`
   border-color: ${getTheme('primary', '_6')};
@@ -49,7 +49,7 @@ const Hr = styled.hr<ProgressMenuProps>`
   left: 0;
   bottom: -4px;
   margin: 0px;
-`
+`;
 
 export const ProgressMenu = ({
   progressLevel,
@@ -58,7 +58,7 @@ export const ProgressMenu = ({
 }: ProgressMenuProps): JSX.Element => {
   const {
     goBack,
-  } = useAppNavigate()
+  } = useAppNavigate();
 
   return (
     <Wrapper>
@@ -66,5 +66,5 @@ export const ProgressMenu = ({
       {!hideArrow && <Button onClick={goBack} tabIndex={0} />}
       <Hr progressLevel={progressLevel} />
     </Wrapper>
-  )
-}
+  );
+};

@@ -1,17 +1,17 @@
-import IconFailed from '@assets/connect-fail-permission.svg'
+import IconFailed from '@assets/connect-fail-permission.svg';
 import {
   CommonFullContentLayout, Text, View,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   BottomFixedButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
 import React, {
   useCallback,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledFailedWrapper = styled(View)`
   margin-top: 56px;
@@ -19,23 +19,23 @@ const StyledFailedWrapper = styled(View)`
   justify-content: center;
   align-items: center;
   padding: 0 20px;
-`
+`;
 
 const StyledDescriptionWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`
+`;
 
 const ApproveSignFailedScreen: React.FC = () => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     navigate,
-  } = useAppNavigate()
+  } = useAppNavigate();
 
   const onClickClose = useCallback(() => {
-    window.close()
-  }, [navigate])
+    window.close();
+  }, [navigate]);
 
   return (
     <CommonFullContentLayout>
@@ -57,7 +57,7 @@ const ApproveSignFailedScreen: React.FC = () => {
         onClick={onClickClose}
       />
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default ApproveSignFailedScreen
+export default ApproveSignFailedScreen;

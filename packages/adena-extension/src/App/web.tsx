@@ -1,23 +1,23 @@
 import {
   WebRouter,
-} from '@router/web/index'
+} from '@router/web/index';
 import {
   GlobalWebStyle,
-} from '@styles/global-style'
+} from '@styles/global-style';
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 import {
   MemoryRouter,
-} from 'react-router'
+} from 'react-router';
 
-import AppProvider from './app-provider'
-import useApp from './use-app'
+import AppProvider from './app-provider';
+import useApp from './use-app';
 
 const RunApp = (): ReactElement<any> => {
-  useApp()
-  return <WebRouter />
-}
+  useApp();
+  return <WebRouter />;
+};
 
 const App = (): ReactElement<any> => {
   return (
@@ -27,7 +27,7 @@ const App = (): ReactElement<any> => {
         <RunApp />
       </MemoryRouter>
     </AppProvider>
-  )
-}
+  );
+};
 
-export default App
+export default App;

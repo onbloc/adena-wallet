@@ -1,32 +1,32 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import MainManageTokenButton, {
   MainManageTokenButtonProps,
-} from './main-manage-token-button'
+} from './main-manage-token-button';
 
 describe('MainManageTokenButton Component', () => {
   it('MainManageTokenButton render', () => {
     const args: MainManageTokenButtonProps = {
       onClick: () => {
-        return
+        return;
       },
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -35,6 +35,6 @@ describe('MainManageTokenButton Component', () => {
           <MainManageTokenButton {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

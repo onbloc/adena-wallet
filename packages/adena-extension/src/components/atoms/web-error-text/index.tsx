@@ -1,33 +1,33 @@
-import IconError from '@assets/web/error.svg'
+import IconError from '@assets/web/error.svg';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   Row,
-} from '../base'
+} from '../base';
 import {
   WebImg,
-} from '../web-img'
+} from '../web-img';
 import {
   WebText,
-} from '../web-text'
+} from '../web-text';
 
 const StyledText = styled(WebText)`
   width: 100%;
-`
+`;
 
 export const WebErrorText = ({
   text,
   alignItems = 'center',
 }: {
-  text: string
-  alignItems?: React.CSSProperties['alignItems']
+  text: string;
+  alignItems?: React.CSSProperties['alignItems'];
 }): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
   return (
     <Row style={{
       gap: 6,
@@ -39,5 +39,5 @@ export const WebErrorText = ({
         {text}
       </StyledText>
     </Row>
-  )
-}
+  );
+};

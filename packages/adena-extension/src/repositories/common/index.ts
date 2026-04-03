@@ -1,3 +1,3 @@
-export * from './chain'
-export * from './token'
-export * from './token.queries'
+export * from './chain';
+export * from './token';
+export * from './token.queries';

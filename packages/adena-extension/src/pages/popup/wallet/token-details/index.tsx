@@ -1,58 +1,58 @@
-import etc from '@assets/etc.svg'
+import etc from '@assets/etc.svg';
 import {
   SCANNER_URL,
-} from '@common/constants/resource.constant'
+} from '@common/constants/resource.constant';
 import {
   makeQueryString,
-} from '@common/utils/string-utils'
+} from '@common/utils/string-utils';
 import {
   isGRC20TokenModel,
-} from '@common/validation/validation-token'
+} from '@common/validation/validation-token';
 import {
   HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   DoubleButton, TransactionHistory,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
-import useHistoryData from '@hooks/use-history-data'
-import useLink from '@hooks/use-link'
+} from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
+import useLink from '@hooks/use-link';
 import {
   useNetwork,
-} from '@hooks/use-network'
-import useScrollHistory from '@hooks/use-scroll-history'
-import useSessionParams from '@hooks/use-session-state'
+} from '@hooks/use-network';
+import useScrollHistory from '@hooks/use-scroll-history';
+import useSessionParams from '@hooks/use-session-state';
 import {
   useTokenBalance,
-} from '@hooks/use-token-balance'
+} from '@hooks/use-token-balance';
 import {
   useTokenTransactions,
-} from '@hooks/wallet/token-details/use-token-transactions'
+} from '@hooks/wallet/token-details/use-token-transactions';
 import {
   useTokenTransactionsPage,
-} from '@hooks/wallet/token-details/use-token-transactions-page'
-import mixins from '@styles/mixins'
+} from '@hooks/wallet/token-details/use-token-transactions-page';
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   isAirgapAccount,
-} from 'adena-module'
-import BigNumber from 'bignumber.js'
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
 import {
   type JSX, useCallback, useEffect, useMemo, useRef, useState,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
-import LoadingTokenDetails from './loading-token-details'
+import LoadingTokenDetails from './loading-token-details';
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -83,7 +83,7 @@ const Wrapper = styled.main`
     justify-content: center;
     align-items: center;
   }
-`
+`;
 
 const HeaderWrap = styled.div`
   ${mixins.flex({
@@ -96,7 +96,7 @@ const HeaderWrap = styled.div`
     position: absolute;
     left: 0;
   }
-`
+`;
 
 const EtcIcon = styled.div`
   position: absolute;
@@ -113,183 +113,183 @@ const EtcIcon = styled.div`
       transform: scale(1);
     }
   }
-`
+`;
 
 export const TokenDetails = (): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     currentNetwork, scannerParameters,
-  } = useNetwork()
-  const scrollRef = useRef<HTMLDivElement>(null)
+  } = useNetwork();
+  const scrollRef = useRef<HTMLDivElement>(null);
   const {
     saveScrollPosition,
-  } = useScrollHistory(scrollRef)
+  } = useScrollHistory(scrollRef);
   const {
     openLink,
-  } = useLink()
+  } = useLink();
   const {
     navigate,
-  } = useAppNavigate<RoutePath.TokenDetails>()
+  } = useAppNavigate<RoutePath.TokenDetails>();
   const {
     params,
-  } = useSessionParams<RoutePath.TokenDetails>()
-  const [etcClicked, setEtcClicked] = useState(false)
+  } = useSessionParams<RoutePath.TokenDetails>();
+  const [etcClicked, setEtcClicked] = useState(false);
   const {
     currentAccount, currentAddress,
-  } = useCurrentAccount()
-  const tokenBalance = params?.tokenBalance
-  const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>()
-  const [loadingNextFetch, setLoadingNextFetch] = useState(false)
+  } = useCurrentAccount();
+  const tokenBalance = params?.tokenBalance;
+  const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
+  const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const {
     clearHistoryData,
-  } = useHistoryData()
+  } = useHistoryData();
   const {
     currentBalances,
-  } = useTokenBalance()
+  } = useTokenBalance();
 
-  const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance)
+  const isNative = tokenBalance && !isGRC20TokenModel(tokenBalance);
 
   const tokenPath = useMemo(() => {
     if (!tokenBalance || !isGRC20TokenModel(tokenBalance)) {
-      return ''
+      return '';
     }
-    return tokenBalance.pkgPath
-  }, [tokenBalance])
+    return tokenBalance.pkgPath;
+  }, [tokenBalance]);
 
   const isUsedApi = useMemo(() => {
-    return !!currentNetwork.apiUrl
-  }, [currentNetwork])
+    return !!currentNetwork.apiUrl;
+  }, [currentNetwork]);
 
   const pageTransactionHistoryQuery = useTokenTransactionsPage(isNative, tokenPath, {
     enabled: isUsedApi,
-  })
+  });
   const commonTransactionHistoryQuery = useTokenTransactions(isNative, tokenPath, {
     enabled: !isUsedApi,
-  })
+  });
 
   const {
     status, isLoading, isFetching, data, isSupported, fetchNextPage,
   } = useMemo(() => {
     if (isUsedApi) {
-      return pageTransactionHistoryQuery
+      return pageTransactionHistoryQuery;
     }
-    return commonTransactionHistoryQuery
-  }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery])
+    return commonTransactionHistoryQuery;
+  }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery]);
 
   useEffect(() => {
     if (loadingNextFetch && !isLoading && !isFetching) {
-      fetchNextPage().then(() => setLoadingNextFetch(false))
+      fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, isLoading, isFetching])
+  }, [loadingNextFetch, isLoading, isFetching]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
-      setBodyElement(document.getElementsByTagName('body')[0])
+      setBodyElement(document.getElementsByTagName('body')[0]);
     }
-  }, [document.getElementsByTagName('body')])
+  }, [document.getElementsByTagName('body')]);
 
   const tokenAmount = useMemo((): string => {
-    const balance = currentBalances.find(balance => balance.tokenId === tokenBalance?.tokenId)
-    return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0'
-  }, [currentBalances, tokenBalance])
+    const balance = currentBalances.find(balance => balance.tokenId === tokenBalance?.tokenId);
+    return balance?.amount ? BigNumber(balance.amount.value).toFormat() : '0';
+  }, [currentBalances, tokenBalance]);
 
   const transactions = useMemo(() => {
     if (!data) {
-      return []
+      return [];
     }
-    return data
-  }, [data])
+    return data;
+  }, [data]);
 
   const onScrollListener = (): void => {
     if (bodyElement && scrollRef.current) {
-      const scrollHeight = scrollRef.current.clientHeight + scrollRef.current.scrollTop
-      const remain = (scrollRef.current.lastElementChild?.clientHeight || 0) - scrollHeight
+      const scrollHeight = scrollRef.current.clientHeight + scrollRef.current.scrollTop;
+      const remain = (scrollRef.current.lastElementChild?.clientHeight || 0) - scrollHeight;
       if (remain < 20) {
-        setLoadingNextFetch(true)
+        setLoadingNextFetch(true);
       }
     }
-  }
+  };
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap(group => group.transactions) ?? []
-      const transactionInfo = transactions.find(transaction => transaction.hash === hash)
+      const transactions = data?.flatMap(group => group.transactions) ?? [];
+      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
       if (transactionInfo) {
-        saveScrollPosition(scrollRef.current?.scrollTop || 0)
+        saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {
           state: {
             transactionInfo,
           },
-        })
+        });
       }
     },
     [data, bodyElement],
-  )
+  );
 
-  const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet)
+  const handlePrevButtonClick = (): void => navigate(RoutePath.Wallet);
   const DepositButtonClick = (): void => {
     if (!tokenBalance) {
-      return
+      return;
     }
     navigate(RoutePath.Deposit, {
       state: {
         type: 'token',
         token: tokenBalance,
       },
-    })
-  }
+    });
+  };
 
   const SendButtonClick = (): void => {
     if (!currentAccount || !tokenBalance) {
-      return
+      return;
     }
-    clearHistoryData(RoutePath.TransferInput)
+    clearHistoryData(RoutePath.TransferInput);
     if (isAirgapAccount(currentAccount)) {
-      navigate(RoutePath.BroadcastTransaction)
-      return
+      navigate(RoutePath.BroadcastTransaction);
+      return;
     }
     navigate(RoutePath.TransferInput, {
       state: {
         tokenBalance,
       },
-    })
-  }
-  const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev)
+    });
+  };
+  const etcButtonClick = (): void => setEtcClicked((prev: boolean) => !prev);
 
   const getAccountDetailUri = (): string => {
-    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL
+    const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
     return scannerParameters
       ? `${scannerUrl}/account/${currentAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentAddress}`
-  }
+      : `${scannerUrl}/account/${currentAddress}`;
+  };
 
   const getTokenUri = (): string => {
     if (tokenBalance && isGRC20TokenModel(tokenBalance)) {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL
+      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
       return scannerParameters
         ? `${scannerUrl}/tokens/${tokenBalance.pkgPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`
+        : `${scannerUrl}/tokens/${tokenBalance.pkgPath}`;
     }
-    return ''
-  }
+    return '';
+  };
 
   const getTooltipItems = (): {
-    tooltipText: string
-    onClick: () => void
+    tooltipText: string;
+    onClick: () => void;
   }[] => {
     const accountDetailItem = {
       tooltipText: 'View on GnoScan',
       onClick: () => openLink(getAccountDetailUri()),
-    }
+    };
     if (tokenBalance && !isGRC20TokenModel(tokenBalance)) {
-      return [accountDetailItem]
+      return [accountDetailItem];
     }
     const realmDetailItem = {
       tooltipText: 'Token Details',
       onClick: () => openLink(getTokenUri()),
-    }
-    return [accountDetailItem, realmDetailItem]
-  }
+    };
+    return [accountDetailItem, realmDetailItem];
+  };
 
   return (
     <Wrapper ref={scrollRef} onScroll={onScrollListener}>
@@ -340,5 +340,5 @@ export const TokenDetails = (): JSX.Element => {
               </Text>
             )}
     </Wrapper>
-  )
-}
+  );
+};

@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react'
+} from 'react';
 
 const IconWebLink = ({
   className,
 }: {
-  className: string
+  className: string;
 }): ReactElement<any> => {
   return (
     <svg
@@ -21,7 +21,7 @@ const IconWebLink = ({
         fill='white'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconWebLink
+export default IconWebLink;

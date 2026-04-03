@@ -1,39 +1,39 @@
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   useEffect,
-} from 'react'
+} from 'react';
 import {
   useMatch,
-} from 'react-router'
+} from 'react-router';
 
 import {
   useAddressBook,
-} from './use-address-book'
-import useAppNavigate from './use-app-navigate'
+} from './use-address-book';
+import useAppNavigate from './use-app-navigate';
 import {
   useLoadAccounts,
-} from './use-load-accounts'
+} from './use-load-accounts';
 import {
   useWallet,
-} from './use-wallet'
+} from './use-wallet';
 
 export const useInitWallet = (): void => {
   const {
     navigate,
-  } = useAppNavigate()
-  const isApproveLoginPage = useMatch('/approve/*')
+  } = useAppNavigate();
+  const isApproveLoginPage = useMatch('/approve/*');
 
   const {
     state,
-  } = useLoadAccounts()
+  } = useLoadAccounts();
   const {
     initAddressBook,
-  } = useAddressBook()
+  } = useAddressBook();
   const {
     lockedWallet,
-  } = useWallet()
+  } = useWallet();
 
   useEffect(() => {
     switch (state) {
@@ -42,16 +42,16 @@ export const useInitWallet = (): void => {
       case 'CREATE':
       case 'FAIL':
       case 'LOGIN':
-        break
+        break;
       default:
-        initAddressBook()
-        break
+        initAddressBook();
+        break;
     }
-  }, [state])
+  }, [state]);
 
   useEffect(() => {
     if (!isApproveLoginPage && lockedWallet === true) {
-      navigate(RoutePath.Login)
+      navigate(RoutePath.Login);
     }
-  }, [lockedWallet])
-}
+  }, [lockedWallet]);
+};

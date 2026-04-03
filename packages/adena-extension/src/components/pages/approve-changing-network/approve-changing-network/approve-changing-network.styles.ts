@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveChangingNetworkWrapper = styled.div`
   ${mixins.flex()};
@@ -50,4 +50,4 @@ export const ApproveChangingNetworkWrapper = styled.div`
       margin: 28px;
     }
   }
-`
+`;

@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import TransactionHistoryListItem, {
   TransactionHistoryListItemProps,
-} from './transaction-history-list-item'
+} from './transaction-history-list-item';
 
 describe('TransactionHistoryListItem Component', () => {
   it('TransactionHistoryListItem render', () => {
@@ -36,9 +36,9 @@ describe('TransactionHistoryListItem Component', () => {
       },
       valueType: 'DEFAULT',
       onClickItem: () => {
-        return
+        return;
       },
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -47,6 +47,6 @@ describe('TransactionHistoryListItem Component', () => {
           <TransactionHistoryListItem {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

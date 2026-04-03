@@ -1,97 +1,97 @@
 import {
   stringFromBase64,
-} from '@common/utils/encoding-util'
+} from '@common/utils/encoding-util';
 import {
   View, WebButton, WebText,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   WebSeedValidateInputItem,
-} from '@components/atoms/web-seed-validate-input-item'
+} from '@components/atoms/web-seed-validate-input-item';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
+} from '@components/molecules';
 import {
   UseWalletCreateReturn,
-} from '@hooks/web/use-wallet-create-screen'
+} from '@hooks/web/use-wallet-create-screen';
 import {
   ReactElement, useCallback, useEffect, useMemo, useState,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
 const ValidateMnemonicStep = ({
   useWalletCreateScreenReturn,
 }: {
-  useWalletCreateScreenReturn: UseWalletCreateReturn
+  useWalletCreateScreenReturn: UseWalletCreateReturn;
 }): ReactElement<any> => {
   const {
     seeds, onClickNext,
-  } = useWalletCreateScreenReturn
+  } = useWalletCreateScreenReturn;
 
-  const [firstSeed, setFirstSeed] = useState('')
-  const [secondSeed, setSecondSeed] = useState('')
-  const [firstSeedError, setFirstSeedError] = useState(false)
-  const [secondSeedError, setSecondSeedError] = useState(false)
+  const [firstSeed, setFirstSeed] = useState('');
+  const [secondSeed, setSecondSeed] = useState('');
+  const [firstSeedError, setFirstSeedError] = useState(false);
+  const [secondSeedError, setSecondSeedError] = useState(false);
 
-  const [validateSeedIndexes, setValidateSeedIndexes] = useState<number[]>([])
+  const [validateSeedIndexes, setValidateSeedIndexes] = useState<number[]>([]);
 
   const availableToNext = useMemo(() => {
-    return firstSeed.length > 0 && secondSeed.length > 0
-  }, [firstSeed, secondSeed])
+    return firstSeed.length > 0 && secondSeed.length > 0;
+  }, [firstSeed, secondSeed]);
 
   const hasValidatedIndexes = useMemo(() => {
-    return validateSeedIndexes.length === 2
-  }, [validateSeedIndexes])
+    return validateSeedIndexes.length === 2;
+  }, [validateSeedIndexes]);
 
   const validate = useCallback(() => {
     if (!availableToNext || validateSeedIndexes.length !== 2) {
-      return
+      return;
     }
 
-    let currentSeeds = stringFromBase64(seeds)
+    let currentSeeds = stringFromBase64(seeds);
 
-    const currentSeedsArray = currentSeeds.split(' ')
-    const firstSeedIndex = currentSeedsArray.findIndex(word => word === firstSeed)
-    const secondSeedIndex = currentSeedsArray.findIndex(word => word === secondSeed)
+    const currentSeedsArray = currentSeeds.split(' ');
+    const firstSeedIndex = currentSeedsArray.findIndex(word => word === firstSeed);
+    const secondSeedIndex = currentSeedsArray.findIndex(word => word === secondSeed);
 
-    currentSeeds = ''
+    currentSeeds = '';
 
-    const isValidateFirstSeed = firstSeedIndex === validateSeedIndexes[0]
-    const isValidateSecondSeed = secondSeedIndex === validateSeedIndexes[1]
+    const isValidateFirstSeed = firstSeedIndex === validateSeedIndexes[0];
+    const isValidateSecondSeed = secondSeedIndex === validateSeedIndexes[1];
 
     if (!isValidateFirstSeed) {
-      setFirstSeedError(true)
+      setFirstSeedError(true);
     }
     if (!isValidateSecondSeed) {
-      setSecondSeedError(true)
+      setSecondSeedError(true);
     }
 
     if (isValidateFirstSeed && isValidateSecondSeed) {
-      onClickNext()
+      onClickNext();
     }
-  }, [firstSeed, secondSeed, seeds, validateSeedIndexes, availableToNext, onClickNext])
+  }, [firstSeed, secondSeed, seeds, validateSeedIndexes, availableToNext, onClickNext]);
 
   const onChangeFirstSeed = useCallback((value: string) => {
-    setFirstSeed(value)
-    setFirstSeedError(false)
-  }, [])
+    setFirstSeed(value);
+    setFirstSeedError(false);
+  }, []);
 
   const onChangeSecondSeed = useCallback((value: string) => {
-    setSecondSeed(value)
-    setSecondSeedError(false)
-  }, [])
+    setSecondSeed(value);
+    setSecondSeedError(false);
+  }, []);
   useEffect(() => {
     const randomIndexes = Array.from({
       length: 2,
     }, () => Math.floor(Math.random() * 12)).sort(
       (a, b) => a - b,
-    )
-    setValidateSeedIndexes(randomIndexes)
-  }, [])
+    );
+    setValidateSeedIndexes(randomIndexes);
+  }, []);
 
   return (
     <StyledContainer>
@@ -135,7 +135,7 @@ const ValidateMnemonicStep = ({
         <WebText type='title4'>Next</WebText>
       </WebButton>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default ValidateMnemonicStep
+export default ValidateMnemonicStep;

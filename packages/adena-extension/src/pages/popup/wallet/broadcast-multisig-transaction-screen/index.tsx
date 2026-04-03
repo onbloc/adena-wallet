@@ -1,32 +1,32 @@
 import {
   MultisigTransactionProvider,
-} from '@common/provider'
+} from '@common/provider';
 import {
   CommonFullContentLayout,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   useMultisigTransactionContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
-import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen'
-import React from 'react'
+} from '@hooks/use-current-account';
+import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import React from 'react';
 
-import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading'
-import BroadcastTransactionResult from './result'
-import BroadcastMultisigTransactionUpload from './upload'
+import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
+import BroadcastTransactionResult from './result';
+import BroadcastMultisigTransactionUpload from './upload';
 
 const BroadcastMultisigTransactionContent: React.FC = () => {
   const {
     currentAddress,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     transaction,
     signatures,
     removeSignature,
     resetMultisigTransaction,
-  } = useMultisigTransactionContext()
+  } = useMultisigTransactionContext();
 
   const {
     broadcastTransactionState,
@@ -39,7 +39,7 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
     rawTransaction,
     signerPublicKeys,
     threshold,
-  } = useBroadcastMultisigTransactionScreen()
+  } = useBroadcastMultisigTransactionScreen();
 
   return (
     <CommonFullContentLayout>
@@ -67,15 +67,15 @@ const BroadcastMultisigTransactionContent: React.FC = () => {
         <BroadcastTransactionResult status='FAILED' txHash={txHash} errorMessage={errorMessage} />
       )}
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
 const BroadcastMultisigTransactionScreen: React.FC = () => {
   return (
     <MultisigTransactionProvider>
       <BroadcastMultisigTransactionContent />
     </MultisigTransactionProvider>
-  )
-}
+  );
+};
 
-export default BroadcastMultisigTransactionScreen
+export default BroadcastMultisigTransactionScreen;

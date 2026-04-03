@@ -1,19 +1,19 @@
-import IconGnoLand from '@assets/web/gnoland.svg'
-import IconGnoScan from '@assets/web/gnoscan.svg'
-import IconGnoSwap from '@assets/web/gnoswap.svg'
-import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json'
-import IconPin from '@assets/web/pin.svg'
+import IconGnoLand from '@assets/web/gnoland.svg';
+import IconGnoScan from '@assets/web/gnoscan.svg';
+import IconGnoSwap from '@assets/web/gnoswap.svg';
+import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
+import IconPin from '@assets/web/pin.svg';
 import {
   Row, View, WebButton, WebImg, WebMain, WebText,
-} from '@components/atoms'
-import Lottie from '@components/atoms/lottie'
-import useLink from '@hooks/use-link'
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import useLink from '@hooks/use-link';
 import type {
   JSX,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
@@ -21,7 +21,7 @@ const StyledContainer = styled(Row)`
   height: auto;
   column-gap: 56px;
   align-items: center;
-`
+`;
 
 const StyledLeft = styled(View)`
   width: fit-content;
@@ -29,22 +29,22 @@ const StyledLeft = styled(View)`
   row-gap: 28px;
   width: 604px;
   align-items: flex-start;
-`
+`;
 
 const StyledMessageBox = styled(View)`
   row-gap: 10px;
-`
+`;
 
 const StyledImgBox = styled(View)`
   width: 40px;
   height: 36px;
   align-items: center;
   justify-content: center;
-`
+`;
 
 const StyledLinkBox = styled(View)`
   row-gap: 16px;
-`
+`;
 
 const StyledBtn = styled(WebButton)`
   flex: 1;
@@ -55,11 +55,11 @@ const StyledBtn = styled(WebButton)`
   padding: 20px 20px 16px 20px;
   background: #16181c;
   box-shadow: 0 0 0 1px #212429 inset;
-`
+`;
 
-const StyledBtnTitle = styled(WebText)``
+const StyledBtnTitle = styled(WebText)``;
 
-const StyledBtnInfo = styled(WebText)``
+const StyledBtnInfo = styled(WebText)``;
 
 const StyledFixedWrapper = styled(Row)`
   position: fixed;
@@ -72,7 +72,7 @@ const StyledFixedWrapper = styled(Row)`
   background: #181b1f;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
   z-index: 3;
-`
+`;
 
 const StyledPinIconWrapper = styled(View)`
   display: flex;
@@ -86,17 +86,17 @@ const StyledPinIconWrapper = styled(View)`
     theme,
   }): string => theme.webPrimary._100};
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.16);
-`
+`;
 
 const WalletAllSetScreen = (): JSX.Element => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     openLink,
-  } = useLink()
+  } = useLink();
 
   const onClickDone = (): void => {
-    window.close()
-  }
+    window.close();
+  };
 
   return (
     <WebMain
@@ -129,7 +129,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://gno.land')
+                    openLink('https://gno.land');
                   }}
                 >
                   <StyledImgBox>
@@ -152,7 +152,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://docs.gnoswap.io')
+                    openLink('https://docs.gnoswap.io');
                   }}
                 >
                   <StyledImgBox>
@@ -176,7 +176,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://gnoscan.io')
+                    openLink('https://gnoscan.io');
                   }}
                 >
                   <StyledImgBox>
@@ -242,7 +242,7 @@ const WalletAllSetScreen = (): JSX.Element => {
         </View>
       </StyledFixedWrapper>
     </WebMain>
-  )
-}
+  );
+};
 
-export default WalletAllSetScreen
+export default WalletAllSetScreen;

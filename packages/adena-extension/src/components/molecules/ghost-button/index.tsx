@@ -1,19 +1,19 @@
 import {
   Button,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import type {
   JSX,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 interface GhostButtonsProps {
-  left: string
-  right: string
-  className?: string
+  left: string;
+  right: string;
+  className?: string;
 }
 
 const GhostBtnWrap = styled.div`
@@ -23,7 +23,7 @@ const GhostBtnWrap = styled.div`
   })};
   width: 100%;
   gap: 10px;
-`
+`;
 
 const GhostBtn = styled(Button)`
   ${fonts.body1Bold};
@@ -32,7 +32,7 @@ const GhostBtn = styled(Button)`
     color: ${getTheme('neutral', '_4')};
     border: none;
   }
-`
+`;
 
 export const GhostButtons = ({
   left, right, className,
@@ -46,5 +46,5 @@ export const GhostButtons = ({
         {right}
       </GhostBtn>
     </GhostBtnWrap>
-  )
-}
+  );
+};

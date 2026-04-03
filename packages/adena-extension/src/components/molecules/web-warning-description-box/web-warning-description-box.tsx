@@ -1,24 +1,24 @@
-import IconInfo from '@assets/web/info.svg'
+import IconInfo from '@assets/web/info.svg';
 import {
   Row, WebImg, WebText,
-} from '@components/atoms'
-import React from 'react'
+} from '@components/atoms';
+import React from 'react';
 import {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   StyledContainer,
-} from './web-warning-description-box.styles'
+} from './web-warning-description-box.styles';
 
 export interface WebWarningDescriptionBoxProps {
-  description: string
+  description: string;
 }
 
 const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({
   description,
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <StyledContainer style={{
@@ -43,7 +43,7 @@ const WebWarningDescriptionBox: React.FC<WebWarningDescriptionBoxProps> = ({
         </WebText>
       </Row>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default WebWarningDescriptionBox
+export default WebWarningDescriptionBox;

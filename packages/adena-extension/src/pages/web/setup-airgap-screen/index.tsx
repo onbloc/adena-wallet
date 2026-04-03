@@ -1,27 +1,27 @@
 import {
   WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
+} from '@common/constants/ui.constant';
 import {
   WebMain,
-} from '@components/atoms'
-import WebLoadingAccounts from '@components/pages/web/loading-accounts'
+} from '@components/atoms';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
 import useSetupAirgapScreen, {
   setupAirgapStepBackTo,
-} from '@hooks/web/setup-airgap/use-setup-airgap-screen'
+} from '@hooks/web/setup-airgap/use-setup-airgap-screen';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import React, {
   useCallback, useMemo,
-} from 'react'
+} from 'react';
 
-import SetupAirgapCompleteScreen from './complete'
-import SetupAirgapEnterAddress from './enter-address'
-import SetupAirgapInit from './init'
+import SetupAirgapCompleteScreen from './complete';
+import SetupAirgapEnterAddress from './enter-address';
+import SetupAirgapInit from './init';
 
 const SetupAirgapScreen: React.FC = () => {
   const {
@@ -34,30 +34,30 @@ const SetupAirgapScreen: React.FC = () => {
     changeAddress,
     confirmAddress,
     addAccount,
-  } = useSetupAirgapScreen()
+  } = useSetupAirgapScreen();
   const {
     navigate,
-  } = useAppNavigate()
+  } = useAppNavigate();
 
   const topSpacing = useMemo(() => {
     if (setupAirgapState === 'LOADING') {
-      return null
+      return null;
     }
     return {
       default: WEB_TOP_SPACING,
       responsive: WEB_TOP_SPACING_RESPONSIVE,
-    }
-  }, [setupAirgapState])
+    };
+  }, [setupAirgapState]);
 
   const onClickBack = useCallback(() => {
-    const backTo = setupAirgapStepBackTo[setupAirgapState]
+    const backTo = setupAirgapStepBackTo[setupAirgapState];
     if (backTo === null) {
-      navigate(RoutePath.Home)
-      return
+      navigate(RoutePath.Home);
+      return;
     }
-    changeAddress('')
-    setSetupAirgapState(backTo)
-  }, [setupAirgapState])
+    changeAddress('');
+    setSetupAirgapState(backTo);
+  }, [setupAirgapState]);
 
   return (
     <WebMain
@@ -86,7 +86,7 @@ const SetupAirgapScreen: React.FC = () => {
       )}
       {setupAirgapState === 'LOADING' && <WebLoadingAccounts />}
     </WebMain>
-  )
-}
+  );
+};
 
-export default SetupAirgapScreen
+export default SetupAirgapScreen;

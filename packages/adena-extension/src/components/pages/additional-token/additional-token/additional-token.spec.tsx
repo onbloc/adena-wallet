@@ -1,28 +1,28 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
+} from '@testing-library/react';
 import {
   AdditionalTokenProps,
-} from '@types'
-import React from 'react'
+} from '@types';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import {
   AddingType,
-} from '../additional-token-type-selector'
-import AdditionalToken from '.'
+} from '../additional-token-type-selector';
+import AdditionalToken from '.';
 
 describe('AdditionalToken Component', () => {
   it('AdditionalToken render', () => {
@@ -39,30 +39,30 @@ describe('AdditionalToken Component', () => {
       isLoadingSelectedGRC20Token: false,
       errorManualGRC20Token: null,
       selectAddingType: () => {
-        return
+        return;
       },
       onChangeKeyword: () => {
-        return
+        return;
       },
       onChangeManualTokenPath: () => {
-        return
+        return;
       },
       onClickOpenButton: () => {
-        return
+        return;
       },
       onClickListItem: () => {
-        return
+        return;
       },
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickAdd: () => {
-        return
+        return;
       },
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -71,6 +71,6 @@ describe('AdditionalToken Component', () => {
           <AdditionalToken {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

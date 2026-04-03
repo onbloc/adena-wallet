@@ -1,8 +1,8 @@
 import {
   View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const AccountInitializationResultWrapper = styled(View)`
   ${mixins.flex({
@@ -41,4 +41,4 @@ export const AccountInitializationResultWrapper = styled(View)`
       text-align: center;
     }
   }
-`
+`;

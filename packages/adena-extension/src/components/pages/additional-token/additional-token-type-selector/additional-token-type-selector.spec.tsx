@@ -1,34 +1,34 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import AdditionalTokenTypeSelector, {
   AddingType,
   AdditionalTokenTypeSelectorProps,
-} from './additional-token-type-selector'
+} from './additional-token-type-selector';
 
 describe('AdditionalTokenTypeSelector Component', () => {
   it('AdditionalTokenTypeSelector render', () => {
     const args: AdditionalTokenTypeSelectorProps = {
       setType: () => {
-        return
+        return;
       },
       type: AddingType.MANUAL,
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -37,6 +37,6 @@ describe('AdditionalTokenTypeSelector Component', () => {
           <AdditionalTokenTypeSelector {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

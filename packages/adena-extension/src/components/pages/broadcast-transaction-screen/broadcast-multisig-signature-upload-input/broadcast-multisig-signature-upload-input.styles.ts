@@ -1,14 +1,14 @@
 import {
   View,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   fonts,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const StyledWrapper = styled(View)`
   width: 100%;
-`
+`;
 
 export const StyledInputLabel = styled.label`
   display: flex;
@@ -48,21 +48,21 @@ export const StyledInputLabel = styled.label`
       }): string => theme.neutral._1};
     }
   }
-`
+`;
 
 export const StyledHiddenInput = styled.input`
   display: none;
-`
+`;
 
 export const StyledSignerListWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 12px;
-`
+`;
 
 export const StyledSignerItemWrapper = styled.div<{
-  borderColor: string
+  borderColor: string;
 }>`
   display: flex;
   flex-direction: row;
@@ -163,7 +163,7 @@ export const StyledSignerItemWrapper = styled.div<{
       }
     }
   }
-`
+`;
 
 export const StyledRemoveButton = styled.button`
   background: ${({
@@ -184,4 +184,4 @@ export const StyledRemoveButton = styled.button`
   &:hover {
     opacity: 0.8;
   }
-`
+`;

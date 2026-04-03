@@ -1,13 +1,13 @@
-import mixins from '@styles/mixins'
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import styled, {
   keyframes,
-} from 'styled-components'
+} from 'styled-components';
 
 const spinAnimation = keyframes`
   0% {
@@ -16,7 +16,7 @@ const spinAnimation = keyframes`
   100% {
     transform: rotate(360deg);
   }
-`
+`;
 
 const SpinRing = styled.div`
   ${mixins.flex({
@@ -35,7 +35,7 @@ const SpinRing = styled.div`
     height: 36px;
     border-radius: 50%;
   }
-`
+`;
 
 const SpinBall = styled.span`
   position: absolute;
@@ -45,10 +45,10 @@ const SpinBall = styled.span`
   height: 18px;
   border-radius: 50%;
   background-color: ${getTheme('primary', '_6')};
-`
+`;
 
 export const Spinner = (): JSX.Element => (
   <SpinRing>
     <SpinBall />
   </SpinRing>
-)
+);

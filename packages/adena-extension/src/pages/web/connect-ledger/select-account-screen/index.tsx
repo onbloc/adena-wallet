@@ -1,22 +1,22 @@
-import IconLedger from '@assets/web/ledger.svg'
+import IconLedger from '@assets/web/ledger.svg';
 import {
   View, WebButton, WebImg, WebMain,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
-import SelectAccountBox from '@components/molecules/select-account-box/select-account-box'
+} from '@components/molecules';
+import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header'
-import useAppNavigate from '@hooks/use-app-navigate'
-import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen'
+} from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import type {
   JSX,
-} from 'react'
+} from 'react';
 
 const ConnectLedgerSelectAccount = (): JSX.Element => {
   const {
@@ -27,17 +27,17 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
     onClickSelectButton,
     onClickLoadMore,
     onClickNextButton,
-  } = useSelectAccountScreen()
+  } = useSelectAccountScreen();
   const {
     navigate,
-  } = useAppNavigate()
+  } = useAppNavigate();
 
   return (
     <WebMain>
       <WebMainHeader
         stepLength={indicatorInfo.stepLength}
         onClickGoBack={(): void => {
-          navigate(RoutePath.WebConnectLedger)
+          navigate(RoutePath.WebConnectLedger);
         }}
         currentStep={indicatorInfo.stepNo}
       />
@@ -65,7 +65,7 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
         rightIcon='chevronRight'
       />
     </WebMain>
-  )
-}
+  );
+};
 
-export default ConnectLedgerSelectAccount
+export default ConnectLedgerSelectAccount;

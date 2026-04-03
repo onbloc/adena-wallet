@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base'
+} from '../base';
 
 const ERROR_VALUE = {
   MEMO_TOO_LARGE_ERROR: {
@@ -13,13 +13,13 @@ const ERROR_VALUE = {
     type: 'INSUFFICIENT_NETWORK_FEE',
     message: 'Insufficient network fee',
   },
-}
+};
 
-type ErrorType = keyof typeof ERROR_VALUE
+type ErrorType = keyof typeof ERROR_VALUE;
 
 export class TransactionValidationError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType])
-    Object.setPrototypeOf(this, TransactionValidationError.prototype)
+    super(ERROR_VALUE[errorType]);
+    Object.setPrototypeOf(this, TransactionValidationError.prototype);
   }
 }

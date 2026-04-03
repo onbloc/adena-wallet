@@ -1,19 +1,19 @@
 import {
   Button, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX, useCallback, useEffect, useState,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const CopyButton = styled(Button) <{
-  isClicked: boolean
+  isClicked: boolean;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -25,32 +25,32 @@ const CopyButton = styled(Button) <{
   &:hover {
     background-color: ${getTheme('neutral', 'b')};
   }
-`
+`;
 
 export const Copy = ({
   copyStr,
   tabIndex,
 }: {
-  copyStr: string
-  tabIndex?: number
+  copyStr: string;
+  tabIndex?: number;
 }): JSX.Element => {
-  const [isClicked, setIsClicked] = useState<boolean>(false)
+  const [isClicked, setIsClicked] = useState<boolean>(false);
 
-  const theme = useTheme()
+  const theme = useTheme();
   const handleButtonClick = useCallback(() => {
     if (isClicked) {
-      return
+      return;
     }
-    setIsClicked((prev: boolean) => !prev)
-    navigator.clipboard.writeText(copyStr)
-  }, [isClicked, copyStr])
+    setIsClicked((prev: boolean) => !prev);
+    navigator.clipboard.writeText(copyStr);
+  }, [isClicked, copyStr]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsClicked(false), 2000)
+    const timer = setTimeout(() => setIsClicked(false), 2000);
     return () => {
-      clearTimeout(timer)
-    }
-  }, [isClicked])
+      clearTimeout(timer);
+    };
+  }, [isClicked]);
 
   return (
     <CopyButton
@@ -61,5 +61,5 @@ export const Copy = ({
     >
       <Text type='body2Reg'>{isClicked ? 'Copied!' : 'Copy'}</Text>
     </CopyButton>
-  )
-}
+  );
+};

@@ -1,1 +1,1 @@
-export * from './multisig'
+export * from './multisig';

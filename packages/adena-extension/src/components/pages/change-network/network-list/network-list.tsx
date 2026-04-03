@@ -1,18 +1,18 @@
 import {
   NetworkMetainfo,
-} from '@types'
-import React from 'react'
+} from '@types';
+import React from 'react';
 
-import NetworkListItem from '../network-list-item/network-list-item'
+import NetworkListItem from '../network-list-item/network-list-item';
 import {
   NetworkListWrapper,
-} from './network-list.styles'
+} from './network-list.styles';
 
 export interface NetworkListProps {
-  currentNetworkId: string
-  networkMetainfos: NetworkMetainfo[]
-  changeNetwork: (networkMetainfoId: string) => void
-  moveEditPage: (networkMetainfoId: string) => void
+  currentNetworkId: string;
+  networkMetainfos: NetworkMetainfo[];
+  changeNetwork: (networkMetainfoId: string) => void;
+  moveEditPage: (networkMetainfoId: string) => void;
 }
 
 const NetworkList: React.FC<NetworkListProps> = ({
@@ -34,7 +34,7 @@ const NetworkList: React.FC<NetworkListProps> = ({
         />
       ))}
     </NetworkListWrapper>
-  )
-}
+  );
+};
 
-export default NetworkList
+export default NetworkList;

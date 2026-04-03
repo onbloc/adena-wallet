@@ -1,34 +1,34 @@
-import IconCreate from '@assets/web/icon-create'
-import IconGoogle from '@assets/web/icon-google'
-import IconImport from '@assets/web/icon-import'
-import IconThunder from '@assets/web/round-thunder.svg'
-import IconWarning from '@assets/web/warning.svg'
+import IconCreate from '@assets/web/icon-create';
+import IconGoogle from '@assets/web/icon-google';
+import IconImport from '@assets/web/icon-import';
+import IconThunder from '@assets/web/round-thunder.svg';
+import IconWarning from '@assets/web/warning.svg';
 import {
   WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
+} from '@common/constants/ui.constant';
 import {
   Row, View, WebImg, WebMain, WebText,
-} from '@components/atoms'
-import WebMainButton from '@components/atoms/web-main-button'
+} from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useWalletContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   getTheme,
-} from '@styles/theme'
+} from '@styles/theme';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import {
   ReactElement, useCallback, useRef,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 4px;
@@ -36,46 +36,46 @@ const StyledWarnBox = styled(Row)`
   border-radius: 8px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
-`
+`;
 
 const AdvancedOptionScreen = (): ReactElement<any> => {
   const {
     navigate,
-  } = useAppNavigate()
-  const theme = useTheme()
+  } = useAppNavigate();
+  const theme = useTheme();
   const {
     wallet,
-  } = useWalletContext()
-  const createWalletButtonRef = useRef<HTMLButtonElement>(null)
-  const importWalletButtonRef = useRef<HTMLButtonElement>(null)
-  const signInWithGoogleButtonRef = useRef<HTMLButtonElement>(null)
+  } = useWalletContext();
+  const createWalletButtonRef = useRef<HTMLButtonElement>(null);
+  const importWalletButtonRef = useRef<HTMLButtonElement>(null);
+  const signInWithGoogleButtonRef = useRef<HTMLButtonElement>(null);
 
   const onClickNewWallet = useCallback(() => {
     if (wallet && wallet.hasHDWallet()) {
-      navigate(RoutePath.WebAccountAdd)
-      return
+      navigate(RoutePath.WebAccountAdd);
+      return;
     }
-    navigate(RoutePath.WebWalletCreate)
-  }, [wallet])
+    navigate(RoutePath.WebWalletCreate);
+  }, [wallet]);
 
   const onClickImportExistingWallet = useCallback(() => {
     if (wallet) {
-      navigate(RoutePath.WebAccountImport)
-      return
+      navigate(RoutePath.WebAccountImport);
+      return;
     }
-    navigate(RoutePath.WebWalletImport)
-  }, [wallet])
+    navigate(RoutePath.WebWalletImport);
+  }, [wallet]);
 
   const onClickSignInWithGoogle = useCallback(() => {
-    navigate(RoutePath.WebGoogleLogin)
-  }, [])
+    navigate(RoutePath.WebGoogleLogin);
+  }, []);
 
   return (
     <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {
-          navigate(RoutePath.Home)
+          navigate(RoutePath.Home);
         }}
       />
       <WebImg src={IconThunder} size={88} />
@@ -123,7 +123,7 @@ const AdvancedOptionScreen = (): ReactElement<any> => {
         />
       </Row>
     </WebMain>
-  )
-}
+  );
+};
 
-export default AdvancedOptionScreen
+export default AdvancedOptionScreen;

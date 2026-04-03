@@ -1,12 +1,12 @@
 import {
   SideMenuAccountListProps,
-} from '@types'
-import React from 'react'
+} from '@types';
+import React from 'react';
 
-import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item'
+import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
 import {
   SideMenuAccountListWrapper,
-} from './side-menu-account-list.styles'
+} from './side-menu-account-list.styles';
 
 const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   currentAccountId,
@@ -32,7 +32,7 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
         />
       ))}
     </SideMenuAccountListWrapper>
-  )
-}
+  );
+};
 
-export default SideMenuAccountList
+export default SideMenuAccountList;

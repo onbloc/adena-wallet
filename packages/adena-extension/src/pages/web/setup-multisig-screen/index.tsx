@@ -1,38 +1,38 @@
 import {
   WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
+} from '@common/constants/ui.constant';
 import {
   WebMain,
-} from '@components/atoms'
-import WebLoadingAccounts from '@components/pages/web/loading-accounts'
+} from '@components/atoms';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header'
-import useAppNavigate from '@hooks/use-app-navigate'
+} from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import useSetupMultisigScreen, {
   setupMultisigStepBackTo,
-} from '@hooks/web/setup-multisig/use-setup-multisig-screen'
+} from '@hooks/web/setup-multisig/use-setup-multisig-screen';
 import {
   RoutePath,
-} from '@types'
+} from '@types';
 import React, {
   useCallback, useMemo,
-} from 'react'
+} from 'react';
 
-import SetupMultisigCompleteScreen from './complete'
-import SetupMultisigConfig from './enter-multisig-config'
-import SetupMultisigInit from './init'
+import SetupMultisigCompleteScreen from './complete';
+import SetupMultisigConfig from './enter-multisig-config';
+import SetupMultisigInit from './init';
 
 const SetupMultisigScreen: React.FC = () => {
   const {
     navigate,
-  } = useAppNavigate()
+  } = useAppNavigate();
   const {
     currentAddress, currentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     setupMultisigState,
     setSetupMultisigState,
@@ -48,42 +48,42 @@ const SetupMultisigScreen: React.FC = () => {
     createdMultisigAddress,
     resetMultisigConfig,
     multisigAccountMode,
-  } = useSetupMultisigScreen()
+  } = useSetupMultisigScreen();
 
   const topSpacing = useMemo(() => {
     if (setupMultisigState === 'LOADING') {
-      return null
+      return null;
     }
     return {
       default: WEB_TOP_SPACING,
       responsive: WEB_TOP_SPACING_RESPONSIVE,
-    }
-  }, [setupMultisigState])
+    };
+  }, [setupMultisigState]);
 
   const webMainStyle = useMemo(() => {
     if (setupMultisigState === 'ENTER_MULTISIG_CONFIG') {
       return {
         height: 'auto',
         paddingBottom: 40,
-      }
+      };
     }
     return {
-    }
-  }, [setupMultisigState])
+    };
+  }, [setupMultisigState]);
 
   const onClickBack = useCallback(() => {
-    const backTo = setupMultisigStepBackTo[setupMultisigState]
+    const backTo = setupMultisigStepBackTo[setupMultisigState];
     if (backTo === null) {
-      navigate(RoutePath.Home)
-      return
+      navigate(RoutePath.Home);
+      return;
     }
-    resetMultisigConfig()
-    setSetupMultisigState(backTo)
-  }, [setupMultisigState, resetMultisigConfig, navigate, setSetupMultisigState])
+    resetMultisigConfig();
+    setSetupMultisigState(backTo);
+  }, [setupMultisigState, resetMultisigConfig, navigate, setSetupMultisigState]);
 
   const navigateToAccountAddedComplete = useCallback(() => {
-    navigate(RoutePath.WebAccountAddedComplete)
-  }, [navigate])
+    navigate(RoutePath.WebAccountAddedComplete);
+  }, [navigate]);
 
   return (
     <WebMain
@@ -127,7 +127,7 @@ const SetupMultisigScreen: React.FC = () => {
       )}
       {setupMultisigState === 'LOADING' && <WebLoadingAccounts />}
     </WebMain>
-  )
-}
+  );
+};
 
-export default SetupMultisigScreen
+export default SetupMultisigScreen;

@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base'
+} from '../base';
 
 const ERROR_VALUE = {
   FAILED_INITIALIZE_PROVIDER: {
@@ -19,13 +19,13 @@ const ERROR_VALUE = {
     status: 401,
     type: 'FAILED_INITIALIZE_CHROME_API',
   },
-}
+};
 
-type ErrorType = keyof typeof ERROR_VALUE
+type ErrorType = keyof typeof ERROR_VALUE;
 
 export class CommonError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType])
-    Object.setPrototypeOf(this, CommonError.prototype)
+    super(ERROR_VALUE[errorType]);
+    Object.setPrototypeOf(this, CommonError.prototype);
   }
 }

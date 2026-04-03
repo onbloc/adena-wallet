@@ -1,35 +1,35 @@
 import {
   WalletMessageInfo, WalletResponseType,
-} from '@adena-wallet/sdk'
+} from '@adena-wallet/sdk';
 
-export type StatusType = 'request' | 'response' | 'common' | 'success' | 'failure'
+export type StatusType = 'request' | 'response' | 'common' | 'success' | 'failure';
 
 export interface InjectionMessage {
-  code: number
-  key?: string
-  hostname?: string
-  protocol?: string
-  withNotification?: boolean
-  type: WalletResponseType
-  status: StatusType
-  message: string
-  data: { [key in string]: any } | undefined
+  code: number;
+  key?: string;
+  hostname?: string;
+  protocol?: string;
+  withNotification?: boolean;
+  type: WalletResponseType;
+  status: StatusType;
+  message: string;
+  data: { [key in string]: any } | undefined;
 }
 
 export class InjectionMessageInstance {
-  private key: string
+  private key: string;
 
-  private code: number
+  private code: number;
 
-  private type: WalletResponseType
+  private type: WalletResponseType;
 
-  private status: StatusType
+  private status: StatusType;
 
-  private description: string
+  private description: string;
 
-  private withNotification: boolean
+  private withNotification: boolean;
 
-  private data: { [key in string]: any } | undefined
+  private data: { [key in string]: any } | undefined;
 
   constructor(
     messageKey: WalletResponseType,
@@ -40,14 +40,14 @@ export class InjectionMessageInstance {
   ) {
     const {
       code, message, type,
-    } = WalletMessageInfo[messageKey]
-    this.key = key ?? ''
-    this.code = code
-    this.type = type
-    this.status = status ?? 'common'
-    this.description = message
-    this.data = data
-    this.withNotification = withNotification ?? true
+    } = WalletMessageInfo[messageKey];
+    this.key = key ?? '';
+    this.code = code;
+    this.type = type;
+    this.status = status ?? 'common';
+    this.description = message;
+    this.data = data;
+    this.withNotification = withNotification ?? true;
   }
 
   public get dataObj(): InjectionMessage {
@@ -59,38 +59,38 @@ export class InjectionMessageInstance {
       message: this.description,
       data: this.data,
       withNotification: this.withNotification,
-    }
+    };
   }
 
   public getCode = (): number => {
-    return this.code
-  }
+    return this.code;
+  };
 
   public getType = (): WalletResponseType => {
-    return this.type
-  }
+    return this.type;
+  };
 
   public getStatus = (): StatusType => {
-    return this.status
-  }
+    return this.status;
+  };
 
   public getDescription = (): string => {
-    return this.description
-  }
+    return this.description;
+  };
 
   public getData = (): {
-    [x: string]: any
+    [x: string]: any;
   } | undefined => {
-    return this.data
-  }
+    return this.data;
+  };
 
   public getWithNotification = (): boolean => {
-    return this.withNotification
-  }
+    return this.withNotification;
+  };
 
   public setWithNotification = (withNotification: boolean): void => {
-    this.withNotification = withNotification
-  }
+    this.withNotification = withNotification;
+  };
 
   public static request = (
     messageKey: WalletResponseType,
@@ -98,8 +98,8 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'request', data, key, withNotification).dataObj
-  }
+    return new InjectionMessageInstance(messageKey, 'request', data, key, withNotification).dataObj;
+  };
 
   public static response = (
     messageKey: WalletResponseType,
@@ -108,8 +108,8 @@ export class InjectionMessageInstance {
     withNotification?: boolean,
   ): InjectionMessage => {
     return new InjectionMessageInstance(messageKey, 'response', data, key, withNotification)
-      .dataObj
-  }
+      .dataObj;
+  };
 
   public static success = (
     messageKey: WalletResponseType,
@@ -117,8 +117,8 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'success', data, key, withNotification).dataObj
-  }
+    return new InjectionMessageInstance(messageKey, 'success', data, key, withNotification).dataObj;
+  };
 
   public static failure = (
     messageKey: WalletResponseType,
@@ -126,6 +126,6 @@ export class InjectionMessageInstance {
     key?: string,
     withNotification?: boolean,
   ): InjectionMessage => {
-    return new InjectionMessageInstance(messageKey, 'failure', data, key, withNotification).dataObj
-  }
+    return new InjectionMessageInstance(messageKey, 'failure', data, key, withNotification).dataObj;
+  };
 }

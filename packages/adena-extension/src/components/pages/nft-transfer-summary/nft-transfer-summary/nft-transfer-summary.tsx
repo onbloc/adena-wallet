@@ -1,46 +1,46 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg'
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg'
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
 import {
   TransactionValidationError,
-} from '@common/errors/validation/transaction-validation-error'
+} from '@common/errors/validation/transaction-validation-error';
 import {
   SubHeader,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules'
-import NetworkFee from '@components/molecules/network-fee/network-fee'
-import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card'
-import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address'
+} from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
+import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   GRC721Model, NetworkFee as NetworkFeeType,
-} from '@types'
+} from '@types';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 
 import {
   NFTTransferSummaryWrapper,
-} from './nft-transfer-summary.styles'
+} from './nft-transfer-summary.styles';
 
 export interface NFTTransferSummaryProps {
-  grc721Token: GRC721Model
-  toAddress: string
-  networkFee: NetworkFeeType | null
-  memo: string
-  isErrorNetworkFee?: boolean
+  grc721Token: GRC721Model;
+  toAddress: string;
+  networkFee: NetworkFeeType | null;
+  memo: string;
+  isErrorNetworkFee?: boolean;
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
     options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
-  onClickBack: () => void
-  onClickCancel: () => void
-  onClickSend: () => void
-  onClickNetworkFeeSetting: () => void
+  ) => UseQueryResult<string | null>;
+  onClickBack: () => void;
+  onClickCancel: () => void;
+  onClickSend: () => void;
+  onClickNetworkFeeSetting: () => void;
 }
 
 const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
@@ -55,15 +55,15 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
   onClickSend,
   onClickNetworkFeeSetting,
 }) => {
-  const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE')
+  const insufficientNetworkFeeError = new TransactionValidationError('INSUFFICIENT_NETWORK_FEE');
 
   const title = useMemo(() => {
-    return `Sending ${grc721Token.name} #${grc721Token.tokenId}`
-  }, [grc721Token])
+    return `Sending ${grc721Token.name} #${grc721Token.tokenId}`;
+  }, [grc721Token]);
 
   const errorMessage = useMemo(() => {
-    return insufficientNetworkFeeError.message
-  }, [])
+    return insufficientNetworkFeeError.message;
+  }, []);
 
   return (
     <NFTTransferSummaryWrapper>
@@ -112,7 +112,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
         filled
       />
     </NFTTransferSummaryWrapper>
-  )
-}
+  );
+};
 
-export default NFTTransferSummary
+export default NFTTransferSummary;

@@ -1,40 +1,40 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
+} from '@hooks/use-current-account';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 
 export const useGetGRC721PinnedCollections = (
   options?: Omit<UseQueryOptions<string[], Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<string[]> => {
   const {
     tokenService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     currentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
 
   return useQuery<string[], Error>({
     queryKey: ['nft/useGetGRC721PinnedCollections', currentAccount?.id || '', currentNetwork.chainId],
     queryFn: () => {
       if (!currentAccount) {
-        return []
+        return [];
       }
 
       return tokenService
         .getAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId)
-        .catch(() => [])
+        .catch(() => []);
     },
     ...options,
-  })
-}
+  });
+};

@@ -1,32 +1,32 @@
-import checkOff from '@assets/check-off.svg'
-import checkOn from '@assets/check-on.svg'
-import mixins from '@styles/mixins'
+import checkOff from '@assets/check-off.svg';
+import checkOn from '@assets/check-on.svg';
+import mixins from '@styles/mixins';
 import {
   fonts,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import styled, {
   CSSProp,
-} from 'styled-components'
+} from 'styled-components';
 
-type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM'
+type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
-  checked: boolean
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  text?: string
-  children?: React.ReactNode
-  tabIndex: number
-  checkboxPos?: CheckboxPos
-  className?: string
-  margin?: string
-  id?: string
-  color?: string
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  text?: string;
+  children?: React.ReactNode;
+  tabIndex: number;
+  checkboxPos?: CheckboxPos;
+  className?: string;
+  margin?: string;
+  id?: string;
+  color?: string;
 }
 
 const Wrapper = styled.div<{
-  margin?: string
+  margin?: string;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -37,11 +37,11 @@ const Wrapper = styled.div<{
     margin,
   }): string => margin ?? '0px 0px 10px'};
   ${fonts.body2Reg};
-`
+`;
 
 const Label = styled.label<{
-  checkboxPos: CheckboxPos
-  color?: string
+  checkboxPos: CheckboxPos;
+  color?: string;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -74,7 +74,7 @@ const Label = styled.label<{
         color, theme,
       }): string => color ?? theme.neutral.a};
   }
-`
+`;
 
 const Input = styled.input`
   display: none;
@@ -86,7 +86,7 @@ const Input = styled.input`
       background: url(${checkOn}) no-repeat center center;
     }
   }
-`
+`;
 
 export const TermsCheckbox = ({
   checked,
@@ -114,5 +114,5 @@ export const TermsCheckbox = ({
         {children}
       </Label>
     </Wrapper>
-  )
-}
+  );
+};

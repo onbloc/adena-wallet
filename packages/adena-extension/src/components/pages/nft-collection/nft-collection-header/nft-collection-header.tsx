@@ -1,18 +1,18 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg'
-import IconEtc from '@assets/etc.svg'
-import IconLink from '@assets/icon-link'
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import IconEtc from '@assets/etc.svg';
+import IconLink from '@assets/icon-link';
 import {
   SubHeader,
-} from '@components/atoms'
-import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown'
+} from '@components/atoms';
+import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 
 export interface NFTCollectionHeaderProps {
-  title: string
-  moveBack: () => void
-  openGnoscanCollection: () => void
+  title: string;
+  moveBack: () => void;
+  openGnoscanCollection: () => void;
 }
 
 const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
@@ -29,7 +29,7 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
       },
     ],
     [],
-  )
+  );
 
   return (
     <SubHeader
@@ -47,11 +47,11 @@ const NFTCollectionHeader: React.FC<NFTCollectionHeaderProps> = ({
           />
         ),
         onClick: (): void => {
-          return
+          return;
         },
       }}
     />
-  )
-}
+  );
+};
 
-export default NFTCollectionHeader
+export default NFTCollectionHeader;

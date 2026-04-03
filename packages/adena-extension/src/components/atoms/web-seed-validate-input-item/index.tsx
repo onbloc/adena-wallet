@@ -1,27 +1,27 @@
 import {
   fonts, webFonts,
-} from '@styles/theme'
+} from '@styles/theme';
 import React, {
   useCallback, useMemo, useState,
-} from 'react'
+} from 'react';
 import styled, {
   css, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   Row, View,
-} from '../base'
+} from '../base';
 
 interface StyleProps {
-  hover?: boolean
-  focus?: boolean
-  filled?: boolean
-  error: boolean
+  hover?: boolean;
+  focus?: boolean;
+  filled?: boolean;
+  error: boolean;
 }
 
 const forwardConfig = (prop: string): boolean => {
-  return !['hover', 'focus', 'filled', 'error'].includes(prop)
-}
+  return !['hover', 'focus', 'filled', 'error'].includes(prop);
+};
 
 const StyledContainer = styled(Row).withConfig({
   shouldForwardProp: forwardConfig,
@@ -71,7 +71,7 @@ const StyledContainer = styled(Row).withConfig({
             0px 1px 2px 0px rgba(0, 0, 0, 0.06);
         `
       : ''}
-`
+`;
 
 const StyledTitle = styled(View).withConfig({
   shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
@@ -111,7 +111,7 @@ const StyledTitle = styled(View).withConfig({
           border-color: ${theme.webError._200};
         `
       : ''}
-`
+`;
 
 const StyledInput = styled.input.withConfig({
   shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
@@ -131,13 +131,13 @@ const StyledInput = styled.input.withConfig({
   color: ${({
     theme,
   }): string => theme.webNeutral._100};
-`
+`;
 
 interface WebSeedValidateInputItemProps {
-  index: number
-  value: string
-  error: boolean
-  onChange: (value: string) => void
+  index: number;
+  value: string;
+  error: boolean;
+  onChange: (value: string) => void;
 }
 
 export const WebSeedValidateInputItem: React.FC<WebSeedValidateInputItemProps> = ({
@@ -146,24 +146,24 @@ export const WebSeedValidateInputItem: React.FC<WebSeedValidateInputItemProps> =
   error,
   onChange,
 }) => {
-  const [hover, setHover] = useState(false)
-  const [focus, setFocus] = useState(false)
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
 
   const filled = useMemo(() => {
-    return value.length > 0
-  }, [value])
+    return value.length > 0;
+  }, [value]);
 
   const keyName = useMemo(() => {
-    return `Word #${index + 1}`
-  }, [index])
+    return `Word #${index + 1}`;
+  }, [index]);
 
   const onChangeInput = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value
-      onChange(value)
+      const value = event.target.value;
+      onChange(value);
     },
     [onChange],
-  )
+  );
 
   return (
     <StyledContainer
@@ -188,5 +188,5 @@ export const WebSeedValidateInputItem: React.FC<WebSeedValidateInputItemProps> =
         error={error}
       />
     </StyledContainer>
-  )
-}
+  );
+};

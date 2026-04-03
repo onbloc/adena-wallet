@@ -1,11 +1,11 @@
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 
 const IconHide = ({
   className,
 }: {
-  className?: string
+  className?: string;
 }): JSX.Element => (
   <svg
     className={className}
@@ -27,6 +27,6 @@ const IconHide = ({
       </clipPath>
     </defs>
   </svg>
-)
+);
 
-export default IconHide
+export default IconHide;

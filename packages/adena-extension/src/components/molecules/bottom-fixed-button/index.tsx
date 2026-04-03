@@ -1,20 +1,20 @@
 import {
   Button, ButtonProps, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 import styled, {
   css, RuleSet,
-} from 'styled-components'
+} from 'styled-components';
 
 interface BottomFixedButtonProps {
-  hierarchy?: ButtonProps['hierarchy']
-  text?: string
-  fill?: boolean
-  disabled?: boolean
-  onClick: () => unknown
+  hierarchy?: ButtonProps['hierarchy'];
+  text?: string;
+  fill?: boolean;
+  disabled?: boolean;
+  onClick: () => unknown;
 }
 
 export const BottomFixedButton = ({
@@ -25,8 +25,8 @@ export const BottomFixedButton = ({
   onClick,
 }: BottomFixedButtonProps): JSX.Element => {
   const onClickButton = React.useCallback(() => {
-    onClick()
-  }, [onClick])
+    onClick();
+  }, [onClick]);
 
   return (
     <ButtonWrap fill={fill ? 'fill' : 'none'}>
@@ -34,11 +34,11 @@ export const BottomFixedButton = ({
         <Text type='body1Bold'>{text}</Text>
       </Button>
     </ButtonWrap>
-  )
-}
+  );
+};
 
 const ButtonWrap = styled.div<{
-  fill: string
+  fill: string;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -62,4 +62,4 @@ const ButtonWrap = styled.div<{
       : css`
           background-color: transparent;
         `}
-`
+`;

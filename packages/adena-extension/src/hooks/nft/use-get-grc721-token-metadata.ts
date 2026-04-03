@@ -1,15 +1,15 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   GRC721MetadataModel,
-} from '@types'
+} from '@types';
 
 export const useGetGRC721TokenMetadata = (
   packagePath: string,
@@ -18,15 +18,15 @@ export const useGetGRC721TokenMetadata = (
 ): UseQueryResult<GRC721MetadataModel | null> => {
   const {
     tokenService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     currentNetwork,
-  } = useNetwork()
+  } = useNetwork();
 
   return useQuery<GRC721MetadataModel | null, Error>({
     queryKey: ['nft/useGetGRC721TokenMetadata', packagePath, tokenId, currentNetwork.chainId],
     queryFn: () => tokenService.fetchGRC721TokenMetadata(packagePath, tokenId).catch(() => null),
     placeholderData: keepPreviousData,
     ...options,
-  })
-}
+  });
+};

@@ -1,41 +1,41 @@
-import IconAlert from '@assets/web/alert-rounded.svg'
-import IconLink from '@assets/web/external-link.svg'
+import IconAlert from '@assets/web/alert-rounded.svg';
+import IconLink from '@assets/web/external-link.svg';
 import {
   Pressable, Row, View, WebButton, WebImg, WebText,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
-import useLink from '@hooks/use-link'
+} from '@components/molecules';
+import useLink from '@hooks/use-link';
 import {
   ReactElement,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 345px;
   row-gap: 40px;
   align-items: flex-start;
-`
+`;
 
 export type SensitiveInfoStepProps = {
-  link: string
-  desc: string
-  onClickNext: () => void
-}
+  link: string;
+  desc: string;
+  onClickNext: () => void;
+};
 
 export const SensitiveInfoStep = ({
   link,
   desc,
   onClickNext,
 }: SensitiveInfoStepProps): ReactElement<any> => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
     openLink,
-  } = useLink()
+  } = useLink();
 
   return (
     <StyledContainer>
@@ -59,7 +59,7 @@ export const SensitiveInfoStep = ({
       />
       <Pressable
         onClick={(): void => {
-          openLink(link)
+          openLink(link);
         }}
       >
         <Row style={{
@@ -73,7 +73,7 @@ export const SensitiveInfoStep = ({
         </Row>
       </Pressable>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SensitiveInfoStep
+export default SensitiveInfoStep;

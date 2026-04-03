@@ -1,26 +1,26 @@
-import AnimationAddAccount from '@assets/web/lottie/account-added.json'
+import AnimationAddAccount from '@assets/web/lottie/account-added.json';
 import {
   View, WebButton, WebMain,
-} from '@components/atoms'
-import Lottie from '@components/atoms/lottie'
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
 import {
   WebTitleWithDescription,
-} from '@components/molecules'
+} from '@components/molecules';
 import type {
   JSX,
-} from 'react'
-import styled from 'styled-components'
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;
   width: 100%;
   align-items: center;
-`
+`;
 
 const AccountAddedCompleteScreen = (): JSX.Element => {
   const onClickDoneButton = async (): Promise<void> => {
-    window.close()
-  }
+    window.close();
+  };
 
   return (
     <WebMain
@@ -57,7 +57,7 @@ const AccountAddedCompleteScreen = (): JSX.Element => {
         />
       </StyledContainer>
     </WebMain>
-  )
-}
+  );
+};
 
-export default AccountAddedCompleteScreen
+export default AccountAddedCompleteScreen;

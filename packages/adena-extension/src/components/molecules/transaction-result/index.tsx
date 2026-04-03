@@ -1,29 +1,29 @@
-import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed'
-import IconSubmit from '@assets/submit.svg'
-import ExternalLinkIcon from '@assets/web/external-link.svg'
+import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
+import IconSubmit from '@assets/submit.svg';
+import ExternalLinkIcon from '@assets/web/external-link.svg';
 import {
   CommonFullContentLayout, Text, View,
-} from '@components/atoms'
+} from '@components/atoms';
 import React, {
   useMemo,
-} from 'react'
+} from 'react';
 import styled, {
   useTheme,
-} from 'styled-components'
+} from 'styled-components';
 
 import {
   BottomFixedButton,
-} from '../bottom-fixed-button'
+} from '../bottom-fixed-button';
 
 export interface TransactionResultProps {
-  status: 'SUCCESS' | 'FAILED'
-  errorMessage?: string | null
-  onClickViewHistory: () => void
-  onClickViewGnoscan: () => void
-  onClickClose: () => void
-  successIconSrc?: string
-  successButtonText?: string
-  failedButtonText?: string
+  status: 'SUCCESS' | 'FAILED';
+  errorMessage?: string | null;
+  onClickViewHistory: () => void;
+  onClickViewGnoscan: () => void;
+  onClickClose: () => void;
+  successIconSrc?: string;
+  successButtonText?: string;
+  failedButtonText?: string;
 }
 
 const TransactionResult: React.FC<TransactionResultProps> = ({
@@ -36,16 +36,16 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
   successButtonText = 'View history',
   failedButtonText = 'Close',
 }) => {
-  const theme = useTheme()
-  const isSuccess = status === 'SUCCESS'
+  const theme = useTheme();
+  const isSuccess = status === 'SUCCESS';
 
   const failureErrorMessage = useMemo(() => {
     if (!errorMessage) {
-      return 'Unknown error'
+      return 'Unknown error';
     }
 
-    return errorMessage
-  }, [errorMessage])
+    return errorMessage;
+  }, [errorMessage]);
 
   return (
     <CommonFullContentLayout>
@@ -88,24 +88,24 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
         onClick={isSuccess ? onClickViewHistory : onClickClose}
       />
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default TransactionResult
+export default TransactionResult;
 
 const StyledResultWrapper = styled(View)`
   margin-top: 56px;
   gap: 23px;
   justify-content: center;
   align-items: center;
-`
+`;
 
 const StyledDescriptionWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
   padding: 0 20px;
-`
+`;
 
 const StyledErrorWrapper = styled(View)`
   width: 320px;
@@ -115,12 +115,12 @@ const StyledErrorWrapper = styled(View)`
   padding: 10px 20px;
   display: flex;
   align-items: center;
-`
+`;
 
 const StyledErrorTitle = styled.span`
   color: #e7323b;
   font-weight: 700;
-`
+`;
 
 const StyledScannerButton = styled.button`
   margin-top: 12px;
@@ -150,4 +150,4 @@ const StyledScannerButton = styled.button`
   &:hover {
     opacity: 0.7;
   }
-`
+`;

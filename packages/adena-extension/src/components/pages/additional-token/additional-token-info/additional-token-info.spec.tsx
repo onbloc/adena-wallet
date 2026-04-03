@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import AdditionalTokenInfo, {
   AdditionalTokenInfoProps,
-} from './additional-token-info'
+} from './additional-token-info';
 
 describe('AdditionalTokenInfo Component', () => {
   it('AdditionalTokenInfo render', () => {
@@ -27,7 +27,7 @@ describe('AdditionalTokenInfo Component', () => {
       symbol: 'GNOT',
       path: 'gno.land/gnot',
       decimals: '6',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -36,6 +36,6 @@ describe('AdditionalTokenInfo Component', () => {
           <AdditionalTokenInfo {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

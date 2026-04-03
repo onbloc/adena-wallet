@@ -1,54 +1,54 @@
 import {
   SCANNER_URL,
-} from '@common/constants/resource.constant'
+} from '@common/constants/resource.constant';
 import {
   formatNickname,
-} from '@common/utils/client-utils'
+} from '@common/utils/client-utils';
 import {
   makeQueryString,
-} from '@common/utils/string-utils'
-import SideMenu from '@components/pages/router/side-menu/side-menu'
+} from '@common/utils/string-utils';
+import SideMenu from '@components/pages/router/side-menu/side-menu';
 import {
   useAccountName,
-} from '@hooks/use-account-name'
+} from '@hooks/use-account-name';
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context'
+} from '@hooks/use-context';
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account'
-import useLink from '@hooks/use-link'
+} from '@hooks/use-current-account';
+import useLink from '@hooks/use-link';
 import {
   useLoadAccounts,
-} from '@hooks/use-load-accounts'
+} from '@hooks/use-load-accounts';
 import {
   useNetwork,
-} from '@hooks/use-network'
+} from '@hooks/use-network';
 import {
   useTokenBalance,
-} from '@hooks/use-token-balance'
+} from '@hooks/use-token-balance';
 import {
   CommandMessage,
-} from '@inject/message/command-message'
+} from '@inject/message/command-message';
 import {
   useQuery,
-} from '@tanstack/react-query'
+} from '@tanstack/react-query';
 import {
   RoutePath, SideMenuAccountInfo, TokenBalanceType,
-} from '@types'
+} from '@types';
 import {
   Account,
-} from 'adena-module'
+} from 'adena-module';
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react'
+} from 'react';
 import {
   useNavigate,
-} from 'react-router'
+} from 'react-router';
 
 interface SideMenuContainerProps {
-  open: boolean
-  setOpen: (opened: boolean) => void
+  open: boolean;
+  setOpen: (opened: boolean) => void;
 }
 
 const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
@@ -56,113 +56,113 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
 }) => {
   const {
     openLink, openRegister,
-  } = useLink()
+  } = useLink();
   const {
     walletService,
-  } = useAdenaContext()
+  } = useAdenaContext();
   const {
     clearWallet,
-  } = useWalletContext()
-  const navigate = useNavigate()
+  } = useWalletContext();
+  const navigate = useNavigate();
   const {
     changeCurrentAccount,
-  } = useCurrentAccount()
+  } = useCurrentAccount();
   const {
     currentNetwork, scannerParameters,
-  } = useNetwork()
+  } = useNetwork();
   const {
     accountNames,
-  } = useAccountName()
+  } = useAccountName();
   const {
     accounts, loadAccounts,
-  } = useLoadAccounts()
+  } = useLoadAccounts();
   const {
     accountNativeBalanceMap,
-  } = useTokenBalance()
-  const [locked, setLocked] = useState(true)
+  } = useTokenBalance();
+  const [locked, setLocked] = useState(true);
   const {
     currentAccount,
-  } = useCurrentAccount()
-  const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([])
-  const [focusedAccountId, setFocusedAccountId] = useState<string | null>(null)
+  } = useCurrentAccount();
+  const [latestAccountInfos, setLatestAccountInfos] = useState<SideMenuAccountInfo[]>([]);
+  const [focusedAccountId, setFocusedAccountId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
-      setLocked(true)
+      setLocked(true);
     }
-    walletService.isLocked().then(setLocked)
-  }, [walletService, open])
+    walletService.isLocked().then(setLocked);
+  }, [walletService, open]);
 
   const currentAccountId = useMemo(() => {
-    return currentAccount?.id || null
-  }, [currentAccount])
+    return currentAccount?.id || null;
+  }, [currentAccount]);
 
   const scannerUrl = useMemo(() => {
-    return currentNetwork.linkUrl || SCANNER_URL
-  }, [currentNetwork])
+    return currentNetwork.linkUrl || SCANNER_URL;
+  }, [currentNetwork]);
 
   const scannerQueryString = useMemo(() => {
     if (scannerParameters) {
-      return makeQueryString(scannerParameters)
+      return makeQueryString(scannerParameters);
     }
-    return ''
-  }, [scannerParameters])
+    return '';
+  }, [scannerParameters]);
 
   const movePage = useCallback(
     async (link: string) => {
-      setOpen(false)
-      navigate(link)
+      setOpen(false);
+      navigate(link);
     },
     [navigate, setOpen],
-  )
+  );
 
   const onOpenLink = useCallback(
     async (link: string) => {
-      setOpen(false)
-      openLink(link)
+      setOpen(false);
+      openLink(link);
     },
     [setOpen],
-  )
+  );
 
   const focusAccountId = useCallback((accountId: string | null) => {
-    setFocusedAccountId(accountId)
-  }, [])
+    setFocusedAccountId(accountId);
+  }, []);
 
   const changeAccount = useCallback(
     async (accountId: string) => {
-      setOpen(false)
-      const account = accounts.find(current => current.id === accountId)
+      setOpen(false);
+      const account = accounts.find(current => current.id === accountId);
       if (!account) {
-        return
+        return;
       }
-      await changeCurrentAccount(account)
+      await changeCurrentAccount(account);
       navigate(RoutePath.Wallet, {
         replace: true,
-      })
+      });
     },
     [accounts, changeCurrentAccount, setOpen],
-  )
+  );
 
   const lock = useCallback(async () => {
-    setOpen(false)
-    await walletService.lockWallet()
-    await clearWallet()
+    setOpen(false);
+    await walletService.lockWallet();
+    await clearWallet();
 
     try {
-      await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'))
+      await chrome.runtime.sendMessage(CommandMessage.command('clearPopup'));
     } catch (error) {
-      console.warn(error)
+      console.warn(error);
     }
 
-    await loadAccounts()
+    await loadAccounts();
     navigate(RoutePath.Login, {
       replace: true,
-    })
-  }, [walletService, navigate])
+    });
+  }, [walletService, navigate]);
 
   const close = useCallback(async () => {
-    setOpen(false)
-  }, [])
+    setOpen(false);
+  }, []);
 
   const {
     data: sideMenuAccounts = [],
@@ -173,11 +173,11 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
         accountNativeBalanceMap: Record<string, TokenBalanceType>,
         account: Account,
       ): string {
-        const amount = accountNativeBalanceMap[account.id]?.amount
+        const amount = accountNativeBalanceMap[account.id]?.amount;
         if (!amount) {
-          return '-'
+          return '-';
         }
-        return `${amount.value}`
+        return `${amount.value}`;
       }
 
       return Promise.all(
@@ -188,15 +188,15 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
           type: account.type,
           balance: mapBalance(accountNativeBalanceMap, account),
         })),
-      )
+      );
     },
-  })
+  });
 
   useEffect(() => {
     if (sideMenuAccounts.length > 0) {
-      setLatestAccountInfos(sideMenuAccounts)
+      setLatestAccountInfos(sideMenuAccounts);
     }
-  }, [sideMenuAccounts])
+  }, [sideMenuAccounts]);
 
   return (
     <SideMenu
@@ -214,7 +214,7 @@ const SideMenuContainer: React.FC<SideMenuContainerProps> = ({
       lock={lock}
       close={close}
     />
-  )
-}
+  );
+};
 
-export default SideMenuContainer
+export default SideMenuContainer;

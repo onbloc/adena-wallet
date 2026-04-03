@@ -1,11 +1,11 @@
 import React, {
   type JSX,
-} from 'react'
+} from 'react';
 
 const IconShow = ({
   className,
 }: {
-  className?: string
+  className?: string;
 }): JSX.Element => (
   <svg
     className={className}
@@ -31,6 +31,6 @@ const IconShow = ({
       </clipPath>
     </defs>
   </svg>
-)
+);
 
-export default IconShow
+export default IconShow;

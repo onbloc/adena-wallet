@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveAddingNetworkWrapper = styled.div`
   ${mixins.flex({
@@ -37,4 +37,4 @@ export const ApproveAddingNetworkWrapper = styled.div`
     width: 100%;
     margin-top: 15px;
   }
-`
+`;

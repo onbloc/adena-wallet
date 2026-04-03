@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import AddressInput, {
   AddressInputProps,
-} from './address-input'
+} from './address-input';
 
 describe('AddressInput Component', () => {
   it('AddressInput render', () => {
@@ -32,15 +32,15 @@ describe('AddressInput Component', () => {
       address: '',
       addressBookInfos: [],
       onClickInputIcon: () => {
-        return
+        return;
       },
       onChangeAddress: () => {
-        return
+        return;
       },
       onClickAddressBook: () => {
-        return
+        return;
       },
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -49,6 +49,6 @@ describe('AddressInput Component', () => {
           <AddressInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

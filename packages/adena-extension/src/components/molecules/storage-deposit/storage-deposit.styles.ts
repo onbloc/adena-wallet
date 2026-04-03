@@ -1,11 +1,11 @@
 import {
   SkeletonBoxStyle,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import {
   fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+} from '@styles/theme';
+import styled from 'styled-components';
 
 export const StorageDepositContainer = styled.div`
   ${mixins.flex({
@@ -23,10 +23,10 @@ export const StorageDepositContainer = styled.div`
     color: ${getTheme('red', '_5')};
     word-break: break-all;
   }
-`
+`;
 
 export const StorageDepositWrapper = styled.div<{
-  error?: number
+  error?: number;
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -59,7 +59,7 @@ export const StorageDepositWrapper = styled.div<{
     width: 100%;
     gap: 3px;
   }
-`
+`;
 
 export const StorageDepositItemSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -68,7 +68,7 @@ export const StorageDepositItemSkeletonBox = styled(SkeletonBoxStyle)`
   width: 55px;
   height: 14px;
   align-self: center;
-`
+`;
 
 export const StorageDepositIconWrapper = styled.div`
   position: relative;
@@ -76,7 +76,7 @@ export const StorageDepositIconWrapper = styled.div`
     direction: 'row',
   })};
   cursor: pointer;
-`
+`;
 
 export const StorageDepositTooltipBoxWrapper = styled.div`
   position: absolute;
@@ -103,4 +103,4 @@ export const StorageDepositTooltipBoxWrapper = styled.div`
     border-top: 14px solid ${getTheme('neutral', '_8')};
     border-radius: 0 0 4px 4px;
   }
-`
+`;

@@ -1,7 +1,7 @@
 import {
   Row, View,
-} from '@components/atoms'
-import styled from 'styled-components'
+} from '@components/atoms';
+import styled from 'styled-components';
 
 export const WebHelpTooltipWrapper = styled(View)`
   position: relative;
@@ -9,7 +9,7 @@ export const WebHelpTooltipWrapper = styled(View)`
   height: auto;
   align-items: center;
   margin-left: -50%;
-`
+`;
 
 export const WebHelpTooltipBoxArrowWrapper = styled(View)`
   position: relative;
@@ -19,7 +19,7 @@ export const WebHelpTooltipBoxArrowWrapper = styled(View)`
     transform: rotate(180deg);
     margin-top: -1px;
   }
-`
+`;
 
 export const WebHelpTooltipBoxWrapper = styled(View)`
   position: relative;
@@ -43,7 +43,7 @@ export const WebHelpTooltipBoxWrapper = styled(View)`
     justify-content: space-between;
     align-items: center;
   }
-`
+`;
 
 export const WebHelpTooltipEvaluation = styled(Row)`
   gap: 3px;
@@ -61,4 +61,4 @@ export const WebHelpTooltipEvaluation = styled(Row)`
       padding: 2px 0;
     }
   }
-`
+`;

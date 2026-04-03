@@ -1,30 +1,30 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
+} from '@styles/global-style';
+import theme from '@styles/theme';
 import {
   render,
-} from '@testing-library/react'
-import React from 'react'
+} from '@testing-library/react';
+import React from 'react';
 import {
   RecoilRoot,
-} from 'recoil'
+} from 'recoil';
 import {
   ThemeProvider,
-} from 'styled-components'
+} from 'styled-components';
 import {
   describe, it,
-} from 'vitest'
+} from 'vitest';
 
 import {
   CopyIconButton, CopyIconButtonProps,
-} from '.'
+} from '.';
 
 describe('CopyButton Component', () => {
   it('CopyButton render', () => {
     const args: CopyIconButtonProps = {
       copyText: 'hello',
-    }
+    };
 
     render(
       <RecoilRoot>
@@ -33,6 +33,6 @@ describe('CopyButton Component', () => {
           <CopyIconButton {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    )
-  })
-})
+    );
+  });
+});

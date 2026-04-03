@@ -1,38 +1,38 @@
-import UnknownLogo from '@assets/common-unknown-logo.svg'
+import UnknownLogo from '@assets/common-unknown-logo.svg';
 import {
   Text,
-} from '@components/atoms'
+} from '@components/atoms';
 import {
   BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
+} from '@components/molecules';
 import {
   SignerInfo, SignerStatusType,
-} from '@inject/types'
+} from '@inject/types';
 import {
   MultisigConfig,
-} from 'adena-module'
+} from 'adena-module';
 import React, {
   useCallback, useEffect, useMemo,
-} from 'react'
+} from 'react';
 
 import {
   ApproveTransactionLoading,
-} from '../approve-transaction-loading'
-import DocumentSignerList from '../document-signer-list/document-signer-list'
-import MultisigThreshold from '../multisig-threshold/multisig-threshold'
-import * as S from './create-multisig-account.styles'
+} from '../approve-transaction-loading';
+import DocumentSignerList from '../document-signer-list/document-signer-list';
+import MultisigThreshold from '../multisig-threshold/multisig-threshold';
+import * as S from './create-multisig-account.styles';
 
 export interface CreateMultisigAccountProps {
-  loading: boolean
-  title: string
-  logo: string
-  domain: string
-  multisigConfig: MultisigConfig | null
-  processing: boolean
-  done: boolean
-  onResponse: () => void
-  onClickConfirm: () => void
-  onClickCancel: () => void
+  loading: boolean;
+  title: string;
+  logo: string;
+  domain: string;
+  multisigConfig: MultisigConfig | null;
+  processing: boolean;
+  done: boolean;
+  onResponse: () => void;
+  onClickConfirm: () => void;
+  onClickCancel: () => void;
 }
 
 export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
@@ -50,45 +50,45 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
   const {
     signerCount, threshold, signerAddresses,
   } = useMemo(() => {
-    const signers = multisigConfig?.signers || []
+    const signers = multisigConfig?.signers || [];
 
     return {
       signerCount: signers.length,
       threshold: multisigConfig?.threshold || 0,
       signerAddresses: signers,
-    }
-  }, [multisigConfig])
+    };
+  }, [multisigConfig]);
 
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signerAddresses.map(address => ({
       address,
       status: SignerStatusType.NONE,
-    }))
-  }, [signerAddresses])
+    }));
+  }, [signerAddresses]);
 
   const disabledApprove = useMemo(() => {
-    const insufficientSigners = signerCount < 2
-    const invalidThreshold = threshold < 1 || threshold > signerCount
+    const insufficientSigners = signerCount < 2;
+    const invalidThreshold = threshold < 1 || threshold > signerCount;
 
-    return insufficientSigners || invalidThreshold
-  }, [signerCount, threshold])
+    return insufficientSigners || invalidThreshold;
+  }, [signerCount, threshold]);
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledApprove) {
-      return
+      return;
     }
 
-    onClickConfirm()
-  }, [onClickConfirm, disabledApprove])
+    onClickConfirm();
+  }, [onClickConfirm, disabledApprove]);
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   if (loading) {
-    return <ApproveTransactionLoading rightButtonText='Create' />
+    return <ApproveTransactionLoading rightButtonText='Create' />;
   }
 
   return (
@@ -125,5 +125,5 @@ export const CreateMultisigAccount: React.FC<CreateMultisigAccountProps> = ({
         }}
       />
     </S.CreateMultisigAccountWrapper>
-  )
-}
+  );
+};

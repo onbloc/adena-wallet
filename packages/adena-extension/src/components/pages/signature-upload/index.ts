@@ -1,6 +1,6 @@
 export {
   default as SignerListItem,
-} from './signature-list-item'
+} from './signature-list-item';
 export {
   default as SignatureUploadLabel,
-} from './signature-upload-label'
+} from './signature-upload-label';

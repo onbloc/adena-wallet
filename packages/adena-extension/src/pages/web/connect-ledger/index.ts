@@ -1,6 +1,6 @@
 export {
   default as ConnectLedgerScreen,
-} from './connect-screen'
+} from './connect-screen';
 export {
   default as ConnectLedgerSelectAccount,
-} from './select-account-screen'
+} from './select-account-screen';

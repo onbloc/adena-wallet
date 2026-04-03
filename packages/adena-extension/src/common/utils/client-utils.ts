@@ -1,120 +1,120 @@
-import addPkgLogo from '@assets/addpkg.svg'
-import contractLogo from '@assets/contract.svg'
-import failed from '@assets/failed.svg'
-import gnotLogo from '@assets/gnot-logo.svg'
-import success from '@assets/success.svg'
-import theme from '@styles/theme'
+import addPkgLogo from '@assets/addpkg.svg';
+import contractLogo from '@assets/contract.svg';
+import failed from '@assets/failed.svg';
+import gnotLogo from '@assets/gnot-logo.svg';
+import success from '@assets/success.svg';
+import theme from '@styles/theme';
 import {
   validateAddress,
-} from 'adena-module'
+} from 'adena-module';
 import axios, {
   AxiosResponse,
-} from 'axios'
-import BigNumber from 'bignumber.js'
-import dayjs from 'dayjs'
+} from 'axios';
+import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
 
 export function formatHash(hash: string, num?: number): string {
-  const length = num ?? 4
-  return hash.length < 8 ? hash : `${hash.slice(0, length)}...${hash.slice(-length)}`
+  const length = num ?? 4;
+  return hash.length < 8 ? hash : `${hash.slice(0, length)}...${hash.slice(-length)}`;
 }
 
 export function formatAddress(v: string, num?: number): string {
-  const length = num ?? 4
-  return v.length < 40 ? v : `${v.slice(0, length)}...${v.slice(-length)}`
+  const length = num ?? 4;
+  return v.length < 40 ? v : `${v.slice(0, length)}...${v.slice(-length)}`;
 }
 
 export function formatNickname(v: string, num: number): string {
-  return v.length > num ? `${v.slice(0, num)}..` : v
+  return v.length > num ? `${v.slice(0, num)}..` : v;
 }
 
 export function formatFullNickname(name: string, address: string): string {
-  const resultName = formatNickname(name, 10)
-  const resultAddr = formatAddress(address)
-  return `${resultName} (${resultAddr})`
+  const resultName = formatNickname(name, 10);
+  const resultAddr = formatAddress(address);
+  return `${resultName} (${resultAddr})`;
 }
 
 export function getDateDiff(d: Date | string): number {
   if (!d) {
-    return 0
+    return 0;
   }
-  return new Date().getDate() - new Date(d).getDate()
+  return new Date().getDate() - new Date(d).getDate();
 }
 
 export function dateTimeFormatEn(d: Date | string): {
-  year: string
-  month: string
-  day: string
-  time: string
+  year: string;
+  month: string;
+  day: string;
+  time: string;
 } {
-  const currDate = new Date(d)
+  const currDate = new Date(d);
   const year = new Intl.DateTimeFormat('en', {
     year: 'numeric',
-  }).format(currDate)
+  }).format(currDate);
   const month = new Intl.DateTimeFormat('en', {
     month: 'short',
-  }).format(currDate)
+  }).format(currDate);
   const day = new Intl.DateTimeFormat('en', {
     day: '2-digit',
-  }).format(currDate)
+  }).format(currDate);
   const time = new Intl.DateTimeFormat('en', {
     hour: '2-digit',
     minute: '2-digit',
-  }).format(currDate)
+  }).format(currDate);
   return {
     year,
     month,
     day,
     time,
-  }
+  };
 }
 
 export function fullDateFormat(d: Date | string): string {
-  const currDate = new Date(d)
-  const result = dateTimeFormatEn(currDate)
-  return `${result.month} ${result.day}, ${result.year} ${result.time}`
+  const currDate = new Date(d);
+  const result = dateTimeFormatEn(currDate);
+  return `${result.month} ${result.day}, ${result.year} ${result.time}`;
 }
 
 export function parseTxsEachDate(txs: object[]): any {
   return txs.reduce((o: any, cur: any) => {
-    const k = cur.date.slice(0, 10)
-    const currDate = new Date(cur.date)
-    const dateDiff = getDateDiff(currDate)
-    let formatDate = ''
+    const k = cur.date.slice(0, 10);
+    const currDate = new Date(cur.date);
+    const dateDiff = getDateDiff(currDate);
+    let formatDate = '';
 
     if (dateDiff === 0) {
-      formatDate = 'Today'
+      formatDate = 'Today';
     } else if (dateDiff === 1) {
-      formatDate = 'Yesterday'
+      formatDate = 'Yesterday';
     } else {
-      const result = dateTimeFormatEn(currDate)
-      formatDate = `${result.month} ${result.day}, ${result.year}`
+      const result = dateTimeFormatEn(currDate);
+      formatDate = `${result.month} ${result.day}, ${result.year}`;
     }
 
-    let txFunc
-    let txDesc
+    let txFunc;
+    let txDesc;
     if (cur.func === 'Sent') {
-      txDesc = `To: ${formatAddress(cur.to, 4)}`
+      txDesc = `To: ${formatAddress(cur.to, 4)}`;
     } else if (cur.func === 'Received') {
-      txDesc = `From: ${formatAddress(cur.from, 4)}`
+      txDesc = `From: ${formatAddress(cur.from, 4)}`;
     } else if (cur.type === '/vm.m_call') {
-      txDesc = `pkg: ${cur.pkg_path}`
+      txDesc = `pkg: ${cur.pkg_path}`;
     } else if (cur.type === '/vm.m_addpkg') {
-      txFunc = 'AddPkg'
+      txFunc = 'AddPkg';
     } else if (cur.type === '/vm.m_run') {
-      txDesc = 'Run'
+      txDesc = 'Run';
     } else {
-      txDesc = ''
+      txDesc = '';
     }
 
-    let txLogo
+    let txLogo;
     if (cur.type === '/bank.MsgSend') {
-      txLogo = gnotLogo
+      txLogo = gnotLogo;
     } else if (cur.type === '/vm.m_call') {
-      txLogo = contractLogo
+      txLogo = contractLogo;
     } else if (cur.type === '/vm.m_addpkg') {
-      txLogo = addPkgLogo
+      txLogo = addPkgLogo;
     } else {
-      txLogo = null
+      txLogo = null;
     }
 
     if (o[k]) {
@@ -127,7 +127,7 @@ export function parseTxsEachDate(txs: object[]): any {
           txDesc: txDesc,
           txSend: prettier(cur.send),
           protoType: cur,
-        })
+        });
       }
     } else {
       if (!isFailedReceive(cur)) {
@@ -145,225 +145,225 @@ export function parseTxsEachDate(txs: object[]): any {
               protoType: cur,
             },
           ],
-        }
+        };
       }
     }
-    return o
+    return o;
   }, {
-  })
+  });
 }
 
 const prettier = (target: any): any => {
   if (target === undefined) {
-    return '0'
+    return '0';
   } else {
     if (target !== 0) {
-      return target.replace('gnot', '')
+      return target.replace('gnot', '');
     } else if (target === 0) {
-      return '0'
+      return '0';
     }
   }
-}
+};
 
 export function minifyStatus(status: string): string {
   if (status === 'Success') {
-    return 'S'
+    return 'S';
   } else {
-    return 'F'
+    return 'F';
   }
 }
 
 export function numberWithCommas(value: number, fixed?: number): string {
-  const currentFixed = fixed ?? 0
-  const fixedValue = value > 0 ? value.toFixed(currentFixed) : value
-  const parts = fixedValue.toString().split('.')
-  const decimal = parts[1] && Number(parts[1]) > 0 ? '.' + parts[1] : ''
-  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + decimal
+  const currentFixed = fixed ?? 0;
+  const fixedValue = value > 0 ? value.toFixed(currentFixed) : value;
+  const parts = fixedValue.toString().split('.');
+  const decimal = parts[1] && Number(parts[1]) > 0 ? '.' + parts[1] : '';
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + decimal;
 }
 
 export function addressValidationCheck(v: string): boolean {
-  return validateAddress(v)
+  return validateAddress(v);
 }
 
 export function removeUgly(target: any): any {
-  return target.replace('To: ', '').replace('From: ', '').replace('/std.', '')
+  return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
 }
 
 export function getStatusStyle(status: string): {
-  color: string
-  statusIcon: any
+  color: string;
+  statusIcon: any;
 } {
   switch (status) {
     case 'SUCCESS':
       return {
         color: theme.green._5,
         statusIcon: success,
-      }
+      };
     case 'FAIL':
       return {
         color: theme.red._5,
         statusIcon: failed,
-      }
+      };
     default:
       return {
         color: theme.red._5,
         statusIcon: failed,
-      }
+      };
   }
 }
 
 export function minFractionDigits(v: number | string, minDigits: number): string {
   return Number(v).toLocaleString('en-US', {
     minimumFractionDigits: minDigits,
-  })
+  });
 }
 
 export function maxFractionDigits(v: number | string, maxDigits: number): string {
   return Number(v).toLocaleString('en-US', {
     maximumFractionDigits: maxDigits,
-  })
+  });
 }
 
 export function parseFloatNum(v: number | string, fixed: number): string {
-  return parseFloat(Number(v).toFixed(fixed)).toLocaleString()
+  return parseFloat(Number(v).toFixed(fixed)).toLocaleString();
 }
 
 export function searchTextFilter(target: string, searchText: string): boolean {
-  return target.toLocaleLowerCase().includes(searchText.toLocaleLowerCase())
+  return target.toLocaleLowerCase().includes(searchText.toLocaleLowerCase());
 }
 
 export function amountSetSymbol(v: number | string, full?: boolean): string {
   if (v === '0' || v === 0) {
-    return String(v)
+    return String(v);
   } else if (String(v).includes('-')) {
-    return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6)
+    return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6);
   } else {
-    return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`
+    return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`;
   }
 }
 
 export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
   if (['Sent', 'Failed'].includes(v)) {
-    return 'Send'
+    return 'Send';
   }
   if (v === 'Received') {
-    return 'Receive'
-  } else v
+    return 'Receive';
+  } else v;
 }
 
 export const parseParameters = (url: string): {
-  [x: string]: string
+  [x: string]: string;
 } => {
-  const hash = url.split('?')
+  const hash = url.split('?');
   if (hash.length < 2) {
     return {
-    }
+    };
   }
 
   const params: { [key in string]: string } = {
-  }
+  };
   for (const hashValue of hash) {
     for (const parameterValue of hashValue.split('&')) {
-      const values = parameterValue.split('=')
+      const values = parameterValue.split('=');
       if (values.length > 1) {
-        const key = values[0]
-        const value = values[1]
-        params[key] = value
+        const key = values[0];
+        const value = values[1];
+        params[key] = value;
       }
     }
   }
 
-  return params
-}
+  return params;
+};
 
 export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
-    const encodedValue = encodeURI(JSON.stringify(data))
-    return toBase64(encodedValue)
+    const encodedValue = encodeURI(JSON.stringify(data));
+    return toBase64(encodedValue);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-  return ''
-}
+  return '';
+};
 
 export const decodeParameter = (data: string): any => {
   try {
-    const decodedValue = JSON.parse(decodeURI(fromBase64(data)))
-    return decodedValue
+    const decodedValue = JSON.parse(decodeURI(fromBase64(data)));
+    return decodedValue;
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
   return {
-  }
-}
+  };
+};
 
 export const toBase64 = (data: string): string => {
   try {
-    return btoa(data)
+    return btoa(data);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-  return ''
-}
+  return '';
+};
 
 export const fromBase64 = (data: string): string => {
   try {
-    return atob(data)
+    return atob(data);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-  return ''
-}
+  return '';
+};
 
 export const createImageByURI = async (uri: string): Promise<string | null> => {
   try {
-    const imageData = await fetchArrayData(uri)
+    const imageData = await fetchArrayData(uri);
     const encodeImageData
-      = 'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64')
-    return encodeImageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
+    return encodeImageData;
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-  return null
-}
+  return null;
+};
 
 export const createFaviconByHostname = async (baseUrl: string): Promise<string | null> => {
   try {
-    const faviconData = await fetchFavicon(baseUrl)
-    return faviconData
+    const faviconData = await fetchFavicon(baseUrl);
+    return faviconData;
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-  return null
-}
+  return null;
+};
 
 const fetchFavicon = async (baseUrl: string): Promise<any> => {
-  let response = null
+  let response = null;
 
-  response = await fetchArrayData(`${baseUrl}/apple-touch-icon.png`)
+  response = await fetchArrayData(`${baseUrl}/apple-touch-icon.png`);
   if (response?.data) {
-    return `${baseUrl}/apple-touch-icon.png`
+    return `${baseUrl}/apple-touch-icon.png`;
   }
 
-  response = await fetchArrayData(`${baseUrl}/favicon.svg`)
+  response = await fetchArrayData(`${baseUrl}/favicon.svg`);
   if (response?.data) {
-    return `${baseUrl}/favicon.svg`
+    return `${baseUrl}/favicon.svg`;
   }
 
-  response = await fetchArrayData(`${baseUrl}/favicon.ico`)
+  response = await fetchArrayData(`${baseUrl}/favicon.ico`);
   if (response?.data) {
-    return `${baseUrl}/favicon.ico`
+    return `${baseUrl}/favicon.ico`;
   }
 
   response = await fetchArrayData(
     `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`,
-  )
+  );
   if (response?.data) {
-    return `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`
+    return `https://www.google.com/s2/favicons?domain=${baseUrl.replace('https://', '')}&sz=256`;
   }
 
-  return null
-}
+  return null;
+};
 
 const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> => {
   return axios
@@ -371,76 +371,76 @@ const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> =>
       responseType: 'arraybuffer',
     })
     .then(response => (response.headers['content-type'].startsWith('image') ? response : null))
-    .catch(() => null)
-}
+    .catch(() => null);
+};
 
 export const createImageDataBySvg = async (imageUri: string): Promise<string | null> => {
   try {
     const response = await axios.get(imageUri, {
       responseType: 'arraybuffer',
-    })
+    });
     const imageData
-      = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64')
-    return imageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    return imageData;
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
-  return null
-}
+  return null;
+};
 
 const isFailedReceive = (cur: any): boolean => {
-  return cur.func === 'Received' && cur.result.status === 'Failed'
-}
+  return cur.func === 'Received' && cur.result.status === 'Failed';
+};
 
 // TODO: CHECK SSL
 export const getSiteName = (protocol: string | undefined, hostname: string | undefined): string => {
-  return `${protocol}//${hostname}`
-}
+  return `${protocol}//${hostname}`;
+};
 
 export const optimizeNumber = (value: BigNumber, multiply: BigNumber): BigNumber => {
-  const decimalPosition = multiply.toString().indexOf('.')
-  const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0
-  const extraValue = Math.pow(10, decimalLength)
-  const currentAmount = value.multipliedBy(multiply).multipliedBy(extraValue).dividedBy(extraValue)
-  return currentAmount
-}
+  const decimalPosition = multiply.toString().indexOf('.');
+  const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
+  const extraValue = Math.pow(10, decimalLength);
+  const currentAmount = value.multipliedBy(multiply).multipliedBy(extraValue).dividedBy(extraValue);
+  return currentAmount;
+};
 
 export const dateToLocal = (utcDateStr: string): {
-  value: string
-  offsetHours: number
+  value: string;
+  offsetHours: number;
 } => {
-  const hasTimezone = `${utcDateStr}`.includes('Z')
-  const timezoneOffset = new Date().getTimezoneOffset()
-  let currentDate = dayjs(utcDateStr)
+  const hasTimezone = `${utcDateStr}`.includes('Z');
+  const timezoneOffset = new Date().getTimezoneOffset();
+  let currentDate = dayjs(utcDateStr);
   if (!hasTimezone) {
-    currentDate = currentDate.subtract(timezoneOffset, 'minutes')
+    currentDate = currentDate.subtract(timezoneOffset, 'minutes');
   }
   return {
     value: currentDate.format('YYYY-MM-DD HH:mm:ss'),
     offsetHours: -timezoneOffset / 60,
-  }
-}
+  };
+};
 
 export const getDateText = (date: string): string => {
   if (!date) {
-    return 'Today'
+    return 'Today';
   }
-  const currentDate = new Date(date)
-  const today = dateTimeFormatEn(new Date())
-  const result = dateTimeFormatEn(currentDate)
+  const currentDate = new Date(date);
+  const today = dateTimeFormatEn(new Date());
+  const result = dateTimeFormatEn(currentDate);
 
-  let formatDate = ''
+  let formatDate = '';
   if (today.year === result.year && today.month === result.month && today.day === result.day) {
-    formatDate = 'Today'
+    formatDate = 'Today';
   } else {
-    formatDate = `${result.month} ${result.day}, ${result.year}`
+    formatDate = `${result.month} ${result.day}, ${result.year}`;
   }
-  return formatDate
-}
+  return formatDate;
+};
 
 export const getDateTimeText = (date: string): string => {
-  const currentDate = new Date(date)
-  const result = dateTimeFormatEn(currentDate)
-  const formatDate = `${result.month} ${result.day}, ${result.year} ${result.time}`
-  return formatDate
-}
+  const currentDate = new Date(date);
+  const result = dateTimeFormatEn(currentDate);
+  const formatDate = `${result.month} ${result.day}, ${result.year} ${result.time}`;
+  return formatDate;
+};
