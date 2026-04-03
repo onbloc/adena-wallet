@@ -1,27 +1,27 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import NFTCollections, {
   NFTCollectionsProps,
-} from './nft-collections';
+} from './nft-collections'
 
 describe('NFTCollections Component', () => {
   it('NFTCollections render', () => {
@@ -31,22 +31,22 @@ describe('NFTCollections Component', () => {
       pinnedCollections: [],
       isFetchedPinnedCollections: true,
       pin: async () => {
-        return;
+        return
       },
       unpin: async () => {
-        return;
+        return
       },
       moveCollectionPage: () => {
-        return;
+        return
       },
       moveManageCollectionsPage: () => {
-        return;
+        return
       },
       queryGRC721TokenUri: () => ({
       }) as unknown as UseQueryResult<string | null>,
       queryGRC721Balance: () => ({
       }) as unknown as UseQueryResult<number | null>,
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -55,6 +55,6 @@ describe('NFTCollections Component', () => {
           <NFTCollections {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

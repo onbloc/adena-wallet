@@ -1,176 +1,180 @@
-import add from '@assets/add-symbol.svg';
-import edit from '@assets/edit-symbol.svg';
+import add from '@assets/add-symbol.svg'
+import edit from '@assets/edit-symbol.svg'
 import {
   AddressBookValidationError,
-} from '@common/errors/validation/address-book-validation-error';
+} from '@common/errors/validation/address-book-validation-error'
 import {
   DefaultInput, ErrorText, inputStyle, LeftArrowBtn, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   CancelAndConfirmButton,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   useAddressBook,
-} from '@hooks/use-address-book';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@hooks/use-address-book'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   AddressBookItem,
-} from '@repositories/wallet';
+} from '@repositories/wallet'
 import {
   validateAlreadyAddress,
   validateAlreadyAddressByAccounts,
   validateAlreadyName,
   validateInvalidAddress,
-} from '@services/index';
-import mixins from '@styles/mixins';
+} from '@services/index'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import React, {
   type JSX, useEffect, useRef, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
-const specialPatternCheck = /\W|\s/g;
-const ACCOUNT_NAME_LENGTH_LIMIT = 23;
+const specialPatternCheck = /\W|\s/g
+const ACCOUNT_NAME_LENGTH_LIMIT = 23
 
 const AddAddress = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     params, goBack,
-  } = useAppNavigate<RoutePath.AddAddress>();
-  const isAdd = params.status === 'add';
+  } = useAppNavigate<RoutePath.AddAddress>()
+  const isAdd = params.status === 'add'
 
-  const addressList: AddressBookItem[] = params.addressList;
-  const [name, setName] = useState(() => params.curr?.name ?? '');
-  const [address, setAddress] = useState(() => params.curr?.address ?? '');
-  const [nameError, setNameError] = useState<boolean>(false);
-  const [addressError, setAddressError] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const addressList: AddressBookItem[] = params.addressList
+  const [name, setName] = useState(() => params.curr?.name ?? '')
+  const [address, setAddress] = useState(() => params.curr?.address ?? '')
+  const [nameError, setNameError] = useState<boolean>(false)
+  const [addressError, setAddressError] = useState<boolean>(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const nameInputRef = useRef<HTMLInputElement>(null)
   const {
     addAddressBookItem, editAddressBookItem, removeAddressBookItem,
-  } = useAddressBook();
+  } = useAddressBook()
 
   const onChangeAddress = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    const patternCheck = e.target.value.replace(specialPatternCheck, '');
-    setAddress(() => patternCheck.toLowerCase());
-  };
+    const patternCheck = e.target.value.replace(specialPatternCheck, '')
+    setAddress(() => patternCheck.toLowerCase())
+  }
 
   const onChangeName = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const inputText = e.target.value;
+    const inputText = e.target.value
     if (inputText.length <= ACCOUNT_NAME_LENGTH_LIMIT) {
-      setName(e.target.value);
+      setName(e.target.value)
     }
-  };
+  }
 
   const saveButtonClick = async (): Promise<void> => {
-    let isValid = true;
-    let errorMessage = '';
+    let isValid = true
+    let errorMessage = ''
     const currData: AddressBookItem = {
       id: params.curr?.id ?? '',
       name: name,
       address: address,
       createdAt: params.curr?.createdAt ?? '',
-    };
+    }
 
     try {
-      validateInvalidAddress(address);
-    } catch (error) {
-      isValid = false;
+      validateInvalidAddress(address)
+    }
+    catch (error) {
+      isValid = false
       if (error instanceof AddressBookValidationError) {
-        setAddressError(true);
+        setAddressError(true)
         if (errorMessage === '') {
-          errorMessage = error.message;
+          errorMessage = error.message
         }
       }
     }
 
     try {
-      validateAlreadyAddress(currData, addressList, isAdd);
-    } catch (error) {
-      isValid = false;
+      validateAlreadyAddress(currData, addressList, isAdd)
+    }
+    catch (error) {
+      isValid = false
       if (error instanceof AddressBookValidationError) {
-        setAddressError(true);
+        setAddressError(true)
         if (errorMessage === '') {
-          errorMessage = error.message;
+          errorMessage = error.message
         }
       }
     }
 
     try {
-      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd);
-    } catch (error) {
-      isValid = false;
+      await validateAlreadyAddressByAccounts(currData, wallet?.accounts ?? [], isAdd)
+    }
+    catch (error) {
+      isValid = false
       if (error instanceof AddressBookValidationError) {
-        setAddressError(true);
+        setAddressError(true)
         if (errorMessage === '') {
-          errorMessage = error.message;
+          errorMessage = error.message
         }
       }
     }
 
     try {
-      validateAlreadyName(currData, addressList, isAdd);
-    } catch (error) {
-      isValid = false;
+      validateAlreadyName(currData, addressList, isAdd)
+    }
+    catch (error) {
+      isValid = false
       if (error instanceof AddressBookValidationError) {
-        setNameError(true);
+        setNameError(true)
         if (errorMessage === '') {
-          errorMessage = error.message;
+          errorMessage = error.message
         }
       }
     }
 
-    setErrorMsg(errorMessage);
+    setErrorMsg(errorMessage)
     if (isValid) {
-      isAdd ? addHandler() : editHandler();
+      isAdd ? addHandler() : editHandler()
     }
-  };
+  }
 
   const addHandler = async (): Promise<void> => {
-    addAddressBookItem(name, address);
-    goBack();
-  };
+    addAddressBookItem(name, address)
+    goBack()
+  }
 
   const editHandler = async (): Promise<void> => {
-    editAddressBookItem(params.curr?.id || '', name, address);
-    goBack();
-  };
+    editAddressBookItem(params.curr?.id || '', name, address)
+    goBack()
+  }
 
   const removeHandler = async (): Promise<void> => {
-    removeAddressBookItem(params.curr?.id || '');
-    goBack();
-  };
+    removeAddressBookItem(params.curr?.id || '')
+    goBack()
+  }
 
-  useEffect(() => nameInputRef.current?.focus(), [nameInputRef]);
-
-  useEffect(() => {
-    setAddressError(false);
-    setErrorMsg('');
-  }, [address]);
+  useEffect(() => nameInputRef.current?.focus(), [nameInputRef])
 
   useEffect(() => {
-    setNameError(false);
-    setErrorMsg('');
-  }, [name]);
+    setAddressError(false)
+    setErrorMsg('')
+  }, [address])
+
+  useEffect(() => {
+    setNameError(false)
+    setErrorMsg('')
+  }, [name])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter' && Boolean(address) && Boolean(name)) {
-      saveButtonClick();
+      saveButtonClick()
     }
-  };
+  }
 
   return (
     <Wrapper>
@@ -222,11 +226,11 @@ const AddAddress = (): JSX.Element => {
         }}
       />
     </Wrapper>
-  );
-};
+  )
+}
 
 const RemoveAddressBtn = styled.button<{
-  error: boolean;
+  error: boolean
 }>`
   text-decoration-line: underline;
   text-underline-offset: 2px;
@@ -234,10 +238,10 @@ const RemoveAddressBtn = styled.button<{
   text-decoration-color: ${getTheme('neutral', 'a')};
   position: absolute;
   bottom: 91px;
-`;
+`
 
 const AddressInput = styled.textarea<{
-  error: boolean;
+  error: boolean
 }>`
   ${inputStyle};
   height: 70px;
@@ -247,7 +251,7 @@ const AddressInput = styled.textarea<{
     error, theme,
   }): string => (error ? theme.red._5 : theme.neutral._7)};
   margin-top: 12px;
-`;
+`
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -260,7 +264,7 @@ const Wrapper = styled.main`
     margin: 24px auto;
     display: block;
   }
-`;
+`
 
 const TopSection = styled.div`
   ${mixins.flex({
@@ -272,6 +276,6 @@ const TopSection = styled.div`
     position: absolute;
     left: 0;
   }
-`;
+`
 
-export default AddAddress;
+export default AddAddress

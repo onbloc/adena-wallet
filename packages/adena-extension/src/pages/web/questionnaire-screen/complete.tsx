@@ -1,22 +1,22 @@
-import LottieQuestionnaireComplete from '@assets/web/lottie/questionnaire-complete.json';
+import LottieQuestionnaireComplete from '@assets/web/lottie/questionnaire-complete.json'
 import {
   View, WebButton,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
-import React from 'react';
-import styled from 'styled-components';
+} from '@components/molecules'
+import React from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   gap: 18px;
   align-items: center;
-`;
+`
 
 interface QuestionnaireCompleteProps {
-  completeQuestion: () => void;
+  completeQuestion: () => void
 }
 
 const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({
@@ -49,7 +49,7 @@ const QuestionnaireComplete: React.FC<QuestionnaireCompleteProps> = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default QuestionnaireComplete;
+export default QuestionnaireComplete

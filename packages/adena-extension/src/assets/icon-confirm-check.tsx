@@ -1,11 +1,11 @@
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 
 const IconConfirmCheck = ({
   fill = '#11D695',
 }: {
-  fill: string;
+  fill: string
 }): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'>
     <path
@@ -13,6 +13,6 @@ const IconConfirmCheck = ({
       fill={fill}
     />
   </svg>
-);
+)
 
-export default IconConfirmCheck;
+export default IconConfirmCheck

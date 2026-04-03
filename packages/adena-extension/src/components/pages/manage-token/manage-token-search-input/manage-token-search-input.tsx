@@ -1,17 +1,17 @@
-import ManageTokenSearchIcon from '@assets/manage-token-search.svg';
+import ManageTokenSearchIcon from '@assets/manage-token-search.svg'
 import {
   Icon,
-} from '@components/atoms';
-import React from 'react';
+} from '@components/atoms'
+import React from 'react'
 
 import {
   ManageTokenSearchInputWrapper,
-} from './manage-token-search-input.styles';
+} from './manage-token-search-input.styles'
 
 export interface ManageTokenSearchInputProps {
-  keyword: string;
-  onChangeKeyword: (keyword: string) => void;
-  onClickAdded: () => void;
+  keyword: string
+  onChangeKeyword: (keyword: string) => void
+  onClickAdded: () => void
 }
 
 const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({
@@ -38,7 +38,7 @@ const ManageTokenSearchInput: React.FC<ManageTokenSearchInputProps> = ({
         <Icon className='added' name='iconTokenAdded' />
       </div>
     </ManageTokenSearchInputWrapper>
-  );
-};
+  )
+}
 
-export default ManageTokenSearchInput;
+export default ManageTokenSearchInput

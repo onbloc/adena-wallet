@@ -1,36 +1,36 @@
-import cancel from '@assets/cancel-dark.svg';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import search from '@assets/search.svg';
+import cancel from '@assets/cancel-dark.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg'
+import search from '@assets/search.svg'
 import {
   searchTextFilter,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   Button, DefaultInput, ListBox, ListHierarchy, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   TokenBalance,
-} from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useHistoryData from '@hooks/use-history-data';
-import useSessionState from '@hooks/use-session-state';
+} from '@components/molecules'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useHistoryData from '@hooks/use-history-data'
+import useSessionState from '@hooks/use-session-state'
 import {
   useTokenBalance,
-} from '@hooks/use-token-balance';
-import mixins from '@styles/mixins';
+} from '@hooks/use-token-balance'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   TokenBalanceType,
-} from '@types';
-import BigNumber from 'bignumber.js';
+} from '@types'
+import BigNumber from 'bignumber.js'
 import React, {
   type JSX, useRef, useState,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.main`
   width: 100%;
@@ -38,12 +38,12 @@ const Wrapper = styled.main`
   padding-top: 30px;
   padding-bottom: 120px;
   overflow-y: auto;
-`;
+`
 
 const SearchBox = styled.div`
   position: relative;
   width: 100%;
-`;
+`
 
 const SearchClickBtn = styled.button`
   width: 24px;
@@ -51,18 +51,18 @@ const SearchClickBtn = styled.button`
   background: url(${search}) no-repeat center center;
   ${mixins.posTopCenterLeft('11px')};
   cursor: default;
-`;
+`
 
 const Input = styled(DefaultInput)`
   padding: 14px 35px 14px 40px;
-`;
+`
 
 const InputResetBtn = styled.button`
   width: 24px;
   height: 24px;
   background: url(${cancel}) no-repeat center center;
   ${mixins.posTopCenterRight('11px')}
-`;
+`
 
 const DataListWrap = styled.div`
   margin-top: 30px;
@@ -71,7 +71,7 @@ const DataListWrap = styled.div`
     width: 34px;
     height: 34px;
   }
-`;
+`
 
 const ButtonWrap = styled.div`
   ${mixins.flex({
@@ -86,46 +86,46 @@ const ButtonWrap = styled.div`
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
   background-color: ${getTheme('neutral', '_8')};
   z-index: 1;
-`;
+`
 
 export const WalletSearch = (): JSX.Element => {
   const {
     navigate,
-  } = useAppNavigate<RoutePath.WalletSearch>();
+  } = useAppNavigate<RoutePath.WalletSearch>()
   const {
     params,
-  } = useSessionState<RoutePath.WalletSearch>();
+  } = useSessionState<RoutePath.WalletSearch>()
 
   const {
     currentBalances,
-  } = useTokenBalance();
+  } = useTokenBalance()
   const {
     clearHistoryData,
-  } = useHistoryData();
+  } = useHistoryData()
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [searchText, setSearchText] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [searchText, setSearchText] = useState('')
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const regex = /^[a-zA-Z0-9]*$/;
+    const regex = /^[a-zA-Z0-9]*$/
     if (!regex.test(e.target.value)) {
-      return;
+      return
     }
-    setSearchText(e.target.value);
-  };
+    setSearchText(e.target.value)
+  }
 
   const onClickItem = (tokenBalance: TokenBalanceType): void => {
-    params?.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance);
-  };
+    params?.type === 'send' ? moveTransferInput(tokenBalance) : moveDeposit(tokenBalance)
+  }
 
   const moveTransferInput = (tokenBalance: TokenBalanceType): void => {
-    clearHistoryData(RoutePath.TransferInput);
+    clearHistoryData(RoutePath.TransferInput)
     navigate(RoutePath.TransferInput, {
       state: {
         isTokenSearch: true,
         tokenBalance,
       },
-    });
-  };
+    })
+  }
 
   const moveDeposit = (tokenBalance: TokenBalanceType): void => {
     navigate(RoutePath.Deposit, {
@@ -133,15 +133,15 @@ export const WalletSearch = (): JSX.Element => {
         type: 'wallet',
         token: tokenBalance,
       },
-    });
-  };
+    })
+  }
 
   const inputResetClick = (): void => {
     if (inputRef.current) {
-      setSearchText('');
-      inputRef.current.focus();
+      setSearchText('')
+      inputRef.current.focus()
     }
-  };
+  }
 
   return (
     <Wrapper>
@@ -199,5 +199,5 @@ export const WalletSearch = (): JSX.Element => {
         </Button>
       </ButtonWrap>
     </Wrapper>
-  );
-};
+  )
+}

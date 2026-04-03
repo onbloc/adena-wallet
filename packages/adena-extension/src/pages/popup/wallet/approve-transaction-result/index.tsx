@@ -1,78 +1,78 @@
-import TransactionResult from '@components/molecules/transaction-result';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+import TransactionResult from '@components/molecules/transaction-result'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
 import {
   InjectionMessage,
-} from '@inject/message';
+} from '@inject/message'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import React, {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 import {
   useLocation,
-} from 'react-router';
+} from 'react-router'
 
 const ApproveTransactionResult: React.FC = () => {
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
   const {
     openScannerLink,
-  } = useLink();
-  const location = useLocation();
-  const response: InjectionMessage | undefined = location.state?.response;
-  const isSuccess = response?.status === 'success';
+  } = useLink()
+  const location = useLocation()
+  const response: InjectionMessage | undefined = location.state?.response
+  const isSuccess = response?.status === 'success'
   const failureErrorMessage = useMemo(() => {
-    const error = response?.data?.error;
+    const error = response?.data?.error
 
     if (!error) {
-      return 'Unknown error';
+      return 'Unknown error'
     }
 
     if (typeof error === 'string') {
-      return error;
+      return error
     }
 
     if (typeof error?.message === 'string') {
-      return error.message;
+      return error.message
     }
 
-    return 'Unknown error';
-  }, [response]);
+    return 'Unknown error'
+  }, [response])
 
   const onClickViewHistory = useCallback(() => {
     if (response) {
-      chrome.runtime.sendMessage(response);
+      chrome.runtime.sendMessage(response)
     }
     if (isSuccess) {
-      navigate(RoutePath.History);
-      return;
+      navigate(RoutePath.History)
+      return
     }
 
-    window.close();
-  }, [response, navigate, isSuccess]);
+    window.close()
+  }, [response, navigate, isSuccess])
 
   const onClickViewGnoscan = useCallback(() => {
     if (!response || response.status !== 'success') {
-      return;
+      return
     }
 
     const txHash
       = response?.data?.hash
         || response?.data?.txhash
         || response?.data?.txHash
-        || response?.data?.transactionHash;
+        || response?.data?.transactionHash
 
     if (!txHash || typeof txHash !== 'string') {
-      return;
+      return
     }
 
     openScannerLink('/transactions/details', {
       txhash: txHash,
-    });
-  }, [response, openScannerLink]);
+    })
+  }, [response, openScannerLink])
 
   return (
     <TransactionResult
@@ -82,7 +82,7 @@ const ApproveTransactionResult: React.FC = () => {
       onClickViewGnoscan={onClickViewGnoscan}
       onClickClose={onClickViewHistory}
     />
-  );
-};
+  )
+}
 
-export default ApproveTransactionResult;
+export default ApproveTransactionResult

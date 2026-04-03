@@ -1,30 +1,30 @@
-import CancelIcon from '@assets/cancel-small.svg';
-import TransferAddressBookIcon from '@assets/transfer-address-book.svg';
-import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list';
+import CancelIcon from '@assets/cancel-small.svg'
+import TransferAddressBookIcon from '@assets/transfer-address-book.svg'
+import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list'
 import React, {
   useEffect, useRef,
-} from 'react';
+} from 'react'
 
 import {
   AddressInputWrapper,
-} from './address-input.styles';
+} from './address-input.styles'
 
 export interface AddressInputProps {
-  opened: boolean;
-  hasError: boolean;
-  selected: boolean;
-  selectedName: string;
-  selectedDescription: string;
-  address: string;
-  errorMessage?: string;
+  opened: boolean
+  hasError: boolean
+  selected: boolean
+  selectedName: string
+  selectedDescription: string
+  address: string
+  errorMessage?: string
   addressBookInfos: {
-    addressBookId: string;
-    name: string;
-    description: string;
-  }[];
-  onClickInputIcon: (selected: boolean) => void;
-  onChangeAddress: (address: string) => void;
-  onClickAddressBook: (addressBookId: string) => void;
+    addressBookId: string
+    name: string
+    description: string
+  }[]
+  onClickInputIcon: (selected: boolean) => void
+  onChangeAddress: (address: string) => void
+  onClickAddressBook: (addressBookId: string) => void
 }
 
 const AddressInput: React.FC<AddressInputProps> = ({
@@ -40,14 +40,14 @@ const AddressInput: React.FC<AddressInputProps> = ({
   onChangeAddress,
   onClickAddressBook,
 }) => {
-  const addressInputRef = useRef<HTMLTextAreaElement>(null);
+  const addressInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (addressInputRef.current) {
-      addressInputRef.current.style.height = 'auto';
-      addressInputRef.current.style.height = `${addressInputRef.current.scrollHeight}px`;
+      addressInputRef.current.style.height = 'auto'
+      addressInputRef.current.style.height = `${addressInputRef.current.scrollHeight}px`
     }
-  }, [address]);
+  }, [address])
 
   return (
     <AddressInputWrapper className={`${hasError ? 'error' : ''} ${opened ? 'opened' : ''}`}>
@@ -94,7 +94,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
 
       {hasError && <span className='error-message'>{errorMessage}</span>}
     </AddressInputWrapper>
-  );
-};
+  )
+}
 
-export default AddressInput;
+export default AddressInput

@@ -1,57 +1,57 @@
 import {
   useQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   useAdenaContext, useWalletContext,
-} from './use-context';
+} from './use-context'
 
 export interface UseWalletReturn {
-  hasHDWallet: boolean;
-  existWallet: boolean | undefined;
-  isLoadingExistWallet: boolean;
+  hasHDWallet: boolean
+  existWallet: boolean | undefined
+  isLoadingExistWallet: boolean
 
-  lockedWallet: boolean | undefined;
-  isLoadingLockedWallet: boolean;
+  lockedWallet: boolean | undefined
+  isLoadingLockedWallet: boolean
 }
 
 export const useWallet = (): UseWalletReturn => {
   const {
     walletService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
 
   const hasHDWallet = useMemo(() => {
     if (!wallet) {
-      return false;
+      return false
     }
-    return wallet.hasHDWallet();
-  }, [wallet]);
+    return wallet.hasHDWallet()
+  }, [wallet])
 
   const {
     data: existWallet, isLoading: isLoadingExistWallet,
   } = useQuery({
     queryKey: ['wallet/existWallet', walletService.id],
     queryFn: async () => {
-      const existWallet = await walletService.existsWallet().catch(() => false);
-      return existWallet;
+      const existWallet = await walletService.existsWallet().catch(() => false)
+      return existWallet
     },
-  });
+  })
 
   const {
     data: lockedWallet, isLoading: isLoadingLockedWallet,
   } = useQuery({
     queryKey: ['wallet/locked', walletService.id],
     queryFn: async () => {
-      const lockedWallet = await walletService.isLocked();
-      return lockedWallet;
+      const lockedWallet = await walletService.isLocked()
+      return lockedWallet
     },
-  });
+  })
 
   return {
     hasHDWallet,
@@ -59,5 +59,5 @@ export const useWallet = (): UseWalletReturn => {
     isLoadingExistWallet,
     lockedWallet,
     isLoadingLockedWallet,
-  };
-};
+  }
+}

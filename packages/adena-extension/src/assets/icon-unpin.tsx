@@ -1,11 +1,11 @@
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 
 const IconUnpin = ({
   className,
 }: {
-  className?: string;
+  className?: string
 }): JSX.Element => (
   <svg
     className={className}
@@ -35,6 +35,6 @@ const IconUnpin = ({
       </clipPath>
     </defs>
   </svg>
-);
+)
 
-export default IconUnpin;
+export default IconUnpin

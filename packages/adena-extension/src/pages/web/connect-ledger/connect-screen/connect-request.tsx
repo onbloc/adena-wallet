@@ -1,21 +1,21 @@
-import animationData from '@assets/web/lottie/requesting-permission.json';
+import animationData from '@assets/web/lottie/requesting-permission.json'
 import {
   View,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
+} from '@components/molecules'
 import type {
   JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
   width: 100%;
   align-items: center;
-`;
+`
 
 const ConnectRequest = (): JSX.Element => {
   return (
@@ -37,7 +37,7 @@ const ConnectRequest = (): JSX.Element => {
         isCenter
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default ConnectRequest;
+export default ConnectRequest

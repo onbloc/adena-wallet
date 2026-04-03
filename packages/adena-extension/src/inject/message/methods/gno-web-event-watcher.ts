@@ -2,24 +2,24 @@
 
 import {
   GnoConnectInfoProvider,
-} from './gno-connect-info-provider';
+} from './gno-connect-info-provider'
 import {
   GnoSessionUpdateMessage,
-} from './gno-session';
+} from './gno-session'
 
 /**
  * Session state for tracking active Gnoweb forms
  */
 interface SessionState {
-  sessionId: string;
-  funcName: string;
-  pkgPath: string;
+  sessionId: string
+  funcName: string
+  pkgPath: string
 }
 
 /**
  * Callback type for session updates
  */
-type UpdateCallback = (message: GnoSessionUpdateMessage) => void;
+type UpdateCallback = (message: GnoSessionUpdateMessage) => void
 
 /**
  * GnoWebEventWatcher
@@ -30,23 +30,23 @@ type UpdateCallback = (message: GnoSessionUpdateMessage) => void;
  * This replaces the previous DOM-based watcher with a cleaner event-driven approach.
  */
 export class GnoWebEventWatcher {
-  private onUpdate: UpdateCallback;
-  private sessions: Map<string, SessionState> = new Map();
-  private eventHandlers: Map<string, EventListener> = new Map();
-  private readonly connectInfoProvider: GnoConnectInfoProvider;
+  private onUpdate: UpdateCallback
+  private sessions: Map<string, SessionState> = new Map()
+  private eventHandlers: Map<string, EventListener> = new Map()
+  private readonly connectInfoProvider: GnoConnectInfoProvider
 
   constructor(onUpdate: UpdateCallback) {
-    this.onUpdate = onUpdate;
-    this.connectInfoProvider = GnoConnectInfoProvider.getInstance();
+    this.onUpdate = onUpdate
+    this.connectInfoProvider = GnoConnectInfoProvider.getInstance()
   }
 
   /**
    * Start listening to Gnoweb events
    */
   public start(): void {
-    this.registerEventListener('params:changed', this.handleParamsChanged.bind(this));
-    this.registerEventListener('mode:changed', this.handleModeChanged.bind(this));
-    this.registerEventListener('address:changed', this.handleAddressChanged.bind(this));
+    this.registerEventListener('params:changed', this.handleParamsChanged.bind(this))
+    this.registerEventListener('mode:changed', this.handleModeChanged.bind(this))
+    this.registerEventListener('address:changed', this.handleAddressChanged.bind(this))
   }
 
   /**
@@ -54,38 +54,38 @@ export class GnoWebEventWatcher {
    */
   public stop(): void {
     this.eventHandlers.forEach((handler, eventType) => {
-      document.removeEventListener(eventType, handler);
-    });
+      document.removeEventListener(eventType, handler)
+    })
 
-    this.eventHandlers.clear();
-    this.sessions.clear();
+    this.eventHandlers.clear()
+    this.sessions.clear()
   }
 
   /**
    * Register event listener helper
    */
   private registerEventListener(eventType: string, handler: EventListener): void {
-    document.addEventListener(eventType, handler);
-    this.eventHandlers.set(eventType, handler);
+    document.addEventListener(eventType, handler)
+    this.eventHandlers.set(eventType, handler)
   }
 
   /**
    * Handle params:changed event from Gnoweb
    */
   private handleParamsChanged(event: Event): void {
-    const customEvent = event as CustomEvent<GnoWebParamsChangedDetail>;
-    const detail = customEvent.detail;
+    const customEvent = event as CustomEvent<GnoWebParamsChangedDetail>
+    const detail = customEvent.detail
 
     // Validate event data
     if (!detail || !detail.funcName || !detail.pkgPath) {
-      return;
+      return
     }
 
     // Get or create session
-    const sessionId = this.getOrCreateSessionId(detail.funcName, detail.pkgPath);
+    const sessionId = this.getOrCreateSessionId(detail.funcName, detail.pkgPath)
 
     // Extract gno-connect info
-    const connectInfo = this.getConnectInfo();
+    const connectInfo = this.getConnectInfo()
 
     // Send update to background
     this.sendUpdate({
@@ -100,22 +100,22 @@ export class GnoWebEventWatcher {
         allParams: detail.params,
         send: detail.send,
       },
-    });
+    })
   }
 
   /**
    * Handle mode:changed event from Gnoweb
    */
   private handleModeChanged(event: Event): void {
-    const customEvent = event as CustomEvent<GnoWebModeChangedDetail>;
-    const mode = customEvent.detail?.mode;
+    const customEvent = event as CustomEvent<GnoWebModeChangedDetail>
+    const mode = customEvent.detail?.mode
 
     if (!mode) {
-      return;
+      return
     }
 
     // Broadcast to all active sessions
-    const connectInfo = this.getConnectInfo();
+    const connectInfo = this.getConnectInfo()
 
     this.sessions.forEach((session) => {
       this.sendUpdate({
@@ -129,23 +129,23 @@ export class GnoWebEventWatcher {
           updateType: 'mode',
           mode,
         },
-      });
-    });
+      })
+    })
   }
 
   /**
    * Handle address:changed event from Gnoweb
    */
   private handleAddressChanged(event: Event): void {
-    const customEvent = event as CustomEvent<GnoWebAddressChangedDetail>;
-    const address = customEvent.detail?.address;
+    const customEvent = event as CustomEvent<GnoWebAddressChangedDetail>
+    const address = customEvent.detail?.address
 
     if (!address) {
-      return;
+      return
     }
 
     // Broadcast to all active sessions
-    const connectInfo = this.getConnectInfo();
+    const connectInfo = this.getConnectInfo()
 
     this.sessions.forEach((session) => {
       this.sendUpdate({
@@ -159,48 +159,48 @@ export class GnoWebEventWatcher {
           updateType: 'address',
           address,
         },
-      });
-    });
+      })
+    })
   }
 
   /**
    * Get or create session ID for a function
    */
   private getOrCreateSessionId(funcName: string, pkgPath: string): string {
-    const key = `${pkgPath}:${funcName}`;
+    const key = `${pkgPath}:${funcName}`
 
-    let session = this.sessions.get(key);
+    let session = this.sessions.get(key)
     if (!session) {
-      const sessionId = `${key}:${Date.now()}`;
+      const sessionId = `${key}:${Date.now()}`
       session = {
         sessionId,
         funcName,
         pkgPath,
-      };
-      this.sessions.set(key, session);
+      }
+      this.sessions.set(key, session)
     }
 
-    return session.sessionId;
+    return session.sessionId
   }
 
   /**
    * Extract gno-connect info from meta tag
    */
   private getConnectInfo(): {
-    chainId: string;
-    rpc: string;
+    chainId: string
+    rpc: string
   } {
-    const connectInfo = this.connectInfoProvider.getConnectInfo();
+    const connectInfo = this.connectInfoProvider.getConnectInfo()
     return {
       chainId: connectInfo?.chainId || '',
       rpc: connectInfo?.rpc || '',
-    };
+    }
   }
 
   /**
    * Send update to background script via callback
    */
   private sendUpdate(message: GnoSessionUpdateMessage): void {
-    this.onUpdate(message);
+    this.onUpdate(message)
   }
 }

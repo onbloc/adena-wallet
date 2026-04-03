@@ -2,98 +2,98 @@ import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   ApproveLedgerLoading,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   TM2Error,
-} from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@gnolang/tm2-js-client'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   InjectionMessageInstance,
-} from '@inject/message';
+} from '@inject/message'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   AdenaLedgerConnector, isLedgerAccount,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useEffect, useState,
-} from 'react';
+} from 'react'
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
   const {
     params,
-  } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
+  } = useAppNavigate<RoutePath.ApproveTransactionLoading>()
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     transactionService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     document, requestData,
-  } = params;
+  } = params
   const {
     currentAccount,
-  } = useCurrentAccount();
-  const [completed, setCompleted] = useState(false);
+  } = useCurrentAccount()
+  const [completed, setCompleted] = useState(false)
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
 
   useEffect(() => {
     if (currentAccount) {
-      requestTransaction();
+      requestTransaction()
     }
-  }, [currentAccount]);
+  }, [currentAccount])
 
   const requestTransaction = async (): Promise<void> => {
     if (completed) {
-      return;
+      return
     }
-    const result = await createLedgerTransaction();
-    setCompleted(result);
-    setTimeout(() => !result && requestTransaction(), 1000);
-  };
+    const result = await createLedgerTransaction()
+    setCompleted(result)
+    setTimeout(() => !result && requestTransaction(), 1000)
+  }
 
   const createLedgerTransaction = async (): Promise<boolean> => {
     if (!currentAccount || !document || !currentNetwork || !wallet) {
-      return false;
+      return false
     }
     if (!isLedgerAccount(currentAccount)) {
-      return false;
+      return false
     }
 
-    const connected = await AdenaLedgerConnector.openConnected();
+    const connected = await AdenaLedgerConnector.openConnected()
     if (!connected) {
-      console.log('Ledger not found');
-      return false;
+      console.log('Ledger not found')
+      return false
     }
-    const ledgerConnector = AdenaLedgerConnector.fromTransport(connected);
+    const ledgerConnector = AdenaLedgerConnector.fromTransport(connected)
 
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
       .then(async ({
         signed,
       }) => {
-        const hash = transactionService.createHash(signed);
+        const hash = transactionService.createHash(signed)
         const response = await transactionService
           .sendTransactionByLedger(ledgerConnector, currentAccount, signed)
           .catch((error: TM2Error | Error) => {
-            return error;
-          });
+            return error
+          })
 
         if (!response) {
           chrome.runtime.sendMessage(
@@ -105,8 +105,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               },
               requestData?.key,
             ),
-          );
-          return true;
+          )
+          return true
         }
         if (response instanceof TM2Error || response instanceof Error) {
           chrome.runtime.sendMessage(
@@ -118,8 +118,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               },
               requestData?.key,
             ),
-          );
-          return true;
+          )
+          return true
         }
 
         chrome.runtime.sendMessage(
@@ -128,12 +128,12 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
             response,
             requestData?.key,
           ),
-        );
-        return true;
+        )
+        return true
       })
       .catch((error: Error) => {
         if (error.message.includes('Ledger')) {
-          return false;
+          return false
         }
         if (error.message === 'Transaction signing request was rejected by the user') {
           chrome.runtime.sendMessage(
@@ -143,17 +143,17 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
               },
               requestData?.key,
             ),
-          );
+          )
         }
-        return false;
-      });
-    return result;
-  };
+        return false
+      })
+    return result
+  }
 
   const onClickCancel = (): void => {
     if (!requestData) {
-      window.close();
-      return;
+      window.close()
+      return
     }
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
@@ -162,10 +162,10 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
         },
         requestData.key,
       ),
-    );
-  };
+    )
+  }
 
-  return <ApproveLedgerLoading document={document || null} onClickCancel={onClickCancel} />;
-};
+  return <ApproveLedgerLoading document={document || null} onClickCancel={onClickCancel} />
+}
 
-export default ApproveTransactionLedgerLoadingContainer;
+export default ApproveTransactionLedgerLoadingContainer

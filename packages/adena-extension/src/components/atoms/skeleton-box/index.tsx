@@ -1,9 +1,9 @@
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   keyframes,
-} from 'styled-components';
+} from 'styled-components'
 
 const pulseKeyframe = keyframes`
   0% {
@@ -15,7 +15,7 @@ const pulseKeyframe = keyframes`
   100% {
     transform: translateX(130%);
   }
-`;
+`
 
 export const SkeletonBoxStyle = styled.div`
   & {
@@ -44,4 +44,4 @@ export const SkeletonBoxStyle = styled.div`
     animation: ${pulseKeyframe} 1.5s linear infinite;
     content: '';
   }
-`;
+`

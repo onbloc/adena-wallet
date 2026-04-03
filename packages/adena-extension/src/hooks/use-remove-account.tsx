@@ -1,45 +1,45 @@
 import {
   Account,
-} from 'adena-module';
+} from 'adena-module'
 
 import {
   useWalletContext,
-} from './use-context';
+} from './use-context'
 import {
   useCurrentAccount,
-} from './use-current-account';
+} from './use-current-account'
 
 export const useRemoveAccount = (): {
-  availRemoveAccount: () => Promise<boolean>;
-  removeAccount: (account: Account) => Promise<boolean>;
+  availRemoveAccount: () => Promise<boolean>
+  removeAccount: (account: Account) => Promise<boolean>
 } => {
   const {
     wallet, updateWallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     changeCurrentAccount,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
 
   const availRemoveAccount = async (): Promise<boolean> => {
-    const accounts = wallet?.accounts ?? [];
-    return accounts.length > 1;
-  };
+    const accounts = wallet?.accounts ?? []
+    return accounts.length > 1
+  }
 
   const removeAccount = async (account: Account): Promise<boolean> => {
     if (!wallet) {
-      return false;
+      return false
     }
-    const clone = wallet.clone();
-    clone.removeAccount(account);
-    const nextAccount = clone.accounts[clone.accounts.length - 1];
-    clone.currentAccountId = nextAccount.id;
-    await changeCurrentAccount(nextAccount);
-    await updateWallet(clone);
-    return true;
-  };
+    const clone = wallet.clone()
+    clone.removeAccount(account)
+    const nextAccount = clone.accounts[clone.accounts.length - 1]
+    clone.currentAccountId = nextAccount.id
+    await changeCurrentAccount(nextAccount)
+    await updateWallet(clone)
+    return true
+  }
 
   return {
     availRemoveAccount,
     removeAccount,
-  };
-};
+  }
+}

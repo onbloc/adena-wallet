@@ -1,14 +1,14 @@
 export const createMessageOfBankSend = (info: {
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
+  fromAddress: string
+  toAddress: string
+  amount: string
 }): {
-  type: string;
+  type: string
   value: {
-    from_address: string;
-    to_address: string;
-    amount: string;
-  };
+    from_address: string
+    to_address: string
+    amount: string
+  }
 } => {
   return {
     type: '/bank.MsgSend',
@@ -17,5 +17,5 @@ export const createMessageOfBankSend = (info: {
       to_address: info.toAddress,
       amount: info.amount,
     },
-  };
-};
+  }
+}

@@ -1,34 +1,34 @@
 import {
   NetworkState, WalletState,
-} from '@states';
+} from '@states'
 import React, {
   type JSX, useMemo,
-} from 'react';
+} from 'react'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 
 import {
   ErrorNetwork,
-} from './error-network';
+} from './error-network'
 
 interface Props {
-  failedNetwork: boolean | null;
-  children: React.ReactNode;
+  failedNetwork: boolean | null
+  children: React.ReactNode
 }
 
 export const ErrorContainer = ({
   failedNetwork, children,
 }: Props): JSX.Element => {
-  const [currentNetwork] = useRecoilState(NetworkState.currentNetwork);
-  const [currentAccount] = useRecoilState(WalletState.currentAccount);
+  const [currentNetwork] = useRecoilState(NetworkState.currentNetwork)
+  const [currentAccount] = useRecoilState(WalletState.currentAccount)
 
   const isError = useMemo(() => {
     if (!currentNetwork) {
-      return false;
+      return false
     }
-    return failedNetwork === true;
-  }, [failedNetwork, currentNetwork, currentAccount]);
+    return failedNetwork === true
+  }, [failedNetwork, currentNetwork, currentAccount])
 
-  return isError ? <ErrorNetwork /> : <React.Fragment>{children}</React.Fragment>;
-};
+  return isError ? <ErrorNetwork /> : <React.Fragment>{children}</React.Fragment>
+}

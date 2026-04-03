@@ -1,19 +1,19 @@
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   Text,
-} from '../../atoms';
+} from '../../atoms'
 
 interface TitleWithDescProps {
-  title: string;
-  desc: string;
-  isWarningDesc?: boolean;
-  className?: string;
+  title: string
+  desc: string
+  isWarningDesc?: boolean
+  className?: string
 }
 
 const Wrapper = styled.div`
@@ -21,7 +21,7 @@ const Wrapper = styled.div`
   gap: 12px;
   width: 100%;
   text-align: left;
-`;
+`
 
 export const TitleWithDesc = ({
   title,
@@ -29,7 +29,7 @@ export const TitleWithDesc = ({
   isWarningDesc = false,
   className = '',
 }: TitleWithDescProps): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   return (
     <Wrapper className={className}>
       <Text type='header4'>{title}</Text>
@@ -37,5 +37,5 @@ export const TitleWithDesc = ({
         {desc}
       </Text>
     </Wrapper>
-  );
-};
+  )
+}

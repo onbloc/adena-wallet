@@ -1,26 +1,26 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
+} from '@testing-library/react'
 import {
   NetworkFeeSettingType,
-} from '@types';
+} from '@types'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import TransferSummary, {
   TransferSummaryProps,
-} from './transfer-summary';
+} from './transfer-summary'
 
 describe('TransferSummary Component', () => {
   it('TransferSummary render', () => {
@@ -49,13 +49,13 @@ describe('TransferSummary Component', () => {
         networkFeeSettings: null,
         gasAdjustment: '0',
         setGasAdjustment: () => {
-          return;
+          return
         },
         setNetworkFeeSetting: () => {
-          return;
+          return
         },
         save: () => {
-          return;
+          return
         },
         isFetchedPriceTiers: false,
         isFetchedEstimateGasInfo: false,
@@ -72,19 +72,19 @@ describe('TransferSummary Component', () => {
       },
       memo: '',
       onClickBack: () => {
-        return;
+        return
       },
       onClickCancel: () => {
-        return;
+        return
       },
       onClickSend: () => {
-        return;
+        return
       },
       onClickNetworkFeeSetting: () => {
-        return;
+        return
       },
       isErrorNetworkFee: false,
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -93,6 +93,6 @@ describe('TransferSummary Component', () => {
           <TransferSummary {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

@@ -1,20 +1,20 @@
 import {
   fonts, getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 interface SecureTextareaProps {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
-  error: boolean;
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void
+  error: boolean
 }
 
 const StyledWrapper = styled.div<{
-  error: boolean;
+  error: boolean
 }>`
   position: relative;
   width: 100%;
@@ -27,7 +27,7 @@ const StyledWrapper = styled.div<{
   overflow-y: auto;
   padding: 14px 16px 8px;
   margin-top: 20px;
-`;
+`
 
 const StyledTextarea = styled.textarea`
   ${fonts.body2Reg};
@@ -39,7 +39,7 @@ const StyledTextarea = styled.textarea`
   color: white;
   resize: none;
   -webkit-text-security: disc;
-`;
+`
 
 export const SecureTextarea = ({
   value,
@@ -51,5 +51,5 @@ export const SecureTextarea = ({
     <StyledWrapper error={error}>
       <StyledTextarea rows={5} value={value} onChange={onChange} onKeyDown={onKeyDown} autoFocus />
     </StyledWrapper>
-  );
-};
+  )
+}

@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const InfoTooltipContainer = styled.div`
   position: relative;
@@ -10,23 +10,23 @@ export const InfoTooltipContainer = styled.div`
     direction: 'row',
   })};
   cursor: pointer;
-`;
+`
 
 interface TooltipPosition {
-  left?: number;
-  right?: number;
-  top?: number;
-  transform?: string;
+  left?: number
+  right?: number
+  top?: number
+  transform?: string
 }
 
 interface ArrowPosition {
-  left: string;
-  transform: string;
+  left: string
+  transform: string
 }
 
 interface TooltipBoxWrapperProps {
-  $position?: TooltipPosition;
-  $arrowPosition?: ArrowPosition;
+  $position?: TooltipPosition
+  $arrowPosition?: ArrowPosition
 }
 
 export const InfoTooltipTooltipBoxWrapper = styled.div<TooltipBoxWrapperProps>`
@@ -78,4 +78,4 @@ export const InfoTooltipTooltipBoxWrapper = styled.div<TooltipBoxWrapperProps>`
     border-top: 14px solid ${getTheme('neutral', '_8')};
     border-radius: 0 0 4px 4px;
   }
-`;
+`

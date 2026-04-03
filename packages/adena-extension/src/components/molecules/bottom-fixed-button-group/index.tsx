@@ -1,30 +1,30 @@
 import {
   Button, Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   ReactElement, useCallback, useMemo,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 interface ButtonProps {
-  primary?: boolean;
-  disabled?: boolean;
-  text: string;
-  onClick: () => void;
+  primary?: boolean
+  disabled?: boolean
+  text: string
+  onClick: () => void
 }
 
 interface BottomFixedButtonGroupProps {
-  leftButton: ButtonProps;
-  rightButton: ButtonProps;
-  filled?: boolean;
+  leftButton: ButtonProps
+  rightButton: ButtonProps
+  filled?: boolean
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
-  return `${buttonProps.primary && 'primary'} ${buttonProps.disabled && 'disabled'}`;
+  return `${buttonProps.primary && 'primary'} ${buttonProps.disabled && 'disabled'}`
 }
 
 export const BottomFixedButtonGroup = ({
@@ -33,20 +33,20 @@ export const BottomFixedButtonGroup = ({
   filled,
 }: BottomFixedButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
-    return mapClassName(leftButton);
-  }, [leftButton]);
+    return mapClassName(leftButton)
+  }, [leftButton])
 
   const rightClassName = useMemo(() => {
-    return mapClassName(rightButton);
-  }, [rightButton]);
+    return mapClassName(rightButton)
+  }, [rightButton])
 
   const onClickLeftButton = useCallback(() => {
-    leftButton.onClick();
-  }, [leftButton]);
+    leftButton.onClick()
+  }, [leftButton])
 
   const onClickRightButton = useCallback(() => {
-    rightButton.onClick();
-  }, [rightButton]);
+    rightButton.onClick()
+  }, [rightButton])
 
   return (
     <ButtonWrap $filled={filled}>
@@ -57,11 +57,11 @@ export const BottomFixedButtonGroup = ({
         <Text type='body1Bold'>{rightButton.text}</Text>
       </Button>
     </ButtonWrap>
-  );
-};
+  )
+}
 
 const ButtonWrap = styled.div<{
-  $filled?: boolean;
+  $filled?: boolean
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -119,4 +119,4 @@ const ButtonWrap = styled.div<{
       background-color: ${getTheme('primary', '_9')};
     }
   }
-`;
+`

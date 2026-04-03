@@ -1,18 +1,18 @@
-import IconConnectFail from '@assets/connect-fail-permission.svg';
+import IconConnectFail from '@assets/connect-fail-permission.svg'
 import {
   TitleWithDesc,
-} from '@components/molecules';
-import mixins from '@styles/mixins';
+} from '@components/molecules'
+import mixins from '@styles/mixins'
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const Container = styled.main`
   ${mixins.flex({
     justify: 'flex-start',
   })};
-`;
+`
 
 const Wrapper = styled.div`
   ${mixins.flex({
@@ -33,12 +33,12 @@ const Wrapper = styled.div`
   div {
     text-align: center;
   }
-`;
+`
 
 const text = {
   title: 'Failed to load assets',
   desc: 'We couldn’t load your assets. Please\ncheck your connection with the network\nand try again.',
-};
+}
 
 export const ErrorNetwork = (): JSX.Element => {
   return (
@@ -48,5 +48,5 @@ export const ErrorNetwork = (): JSX.Element => {
         <TitleWithDesc title={text.title} desc={text.desc} />
       </Wrapper>
     </Container>
-  );
-};
+  )
+}

@@ -1,33 +1,33 @@
 import {
   formatAddress, formatNickname,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   Button, Copy, inputStyle, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   useAccountName,
-} from '@hooks/use-account-name';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@hooks/use-account-name'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
-import useSessionParams from '@hooks/use-session-state';
-import mixins from '@styles/mixins';
+} from '@hooks/use-current-account'
+import useSessionParams from '@hooks/use-session-state'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   QRCodeSVG,
-} from 'qrcode.react';
+} from 'qrcode.react'
 import {
   type JSX, useCallback, useEffect, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -36,7 +36,7 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 24px;
-`;
+`
 
 const QRCodeBox = styled.div`
   ${mixins.flex({
@@ -46,7 +46,7 @@ const QRCodeBox = styled.div`
   padding: 10px;
   border-radius: 8px;
   margin: 40px 0px;
-`;
+`
 
 const CopyInputBox = styled.div`
   ${mixins.flex({
@@ -61,37 +61,37 @@ const CopyInputBox = styled.div`
   }
 
   margin-bottom: 8px;
-`;
+`
 
 export const Deposit = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     navigate, goBack,
-  } = useAppNavigate<RoutePath.Deposit>();
+  } = useAppNavigate<RoutePath.Deposit>()
   const {
     params,
-  } = useSessionParams<RoutePath.Deposit>();
-  const [displayAddr, setDisplayAddr] = useState('');
+  } = useSessionParams<RoutePath.Deposit>()
+  const [displayAddr, setDisplayAddr] = useState('')
   const {
     currentAddress, currentAccount,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     accountNames,
-  } = useAccountName();
+  } = useAccountName()
 
   useEffect(() => {
     if (currentAddress) {
-      setDisplayAddr(formatAddress(currentAddress, 4));
+      setDisplayAddr(formatAddress(currentAddress, 4))
     }
-  }, [currentAddress]);
+  }, [currentAddress])
 
   const closeButtonClick = useCallback(() => {
     if (params?.type === 'wallet') {
-      navigate(RoutePath.Wallet);
-      return;
+      navigate(RoutePath.Wallet)
+      return
     }
-    goBack();
-  }, [params?.type]);
+    goBack()
+  }, [params?.type])
 
   return (
     <Wrapper>
@@ -118,5 +118,5 @@ export const Deposit = (): JSX.Element => {
         <Text type='body1Bold'>Close</Text>
       </Button>
     </Wrapper>
-  );
-};
+  )
+}

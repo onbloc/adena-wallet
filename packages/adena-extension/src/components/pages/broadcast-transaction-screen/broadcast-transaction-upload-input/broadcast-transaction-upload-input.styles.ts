@@ -1,21 +1,21 @@
 import {
   Pressable, View,
-} from '@components/atoms';
-import styled from 'styled-components';
+} from '@components/atoms'
+import styled from 'styled-components'
 
 export const StyledWrapper = styled(View)`
   width: 100%;
-`;
+`
 
 export const StyledHeaderWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`;
+`
 
 export const StyledUploadWrapper = styled(View)`
   width: 100%;
-`;
+`
 
 export const StyledInputLabel = styled.label`
   display: flex;
@@ -55,15 +55,15 @@ export const StyledInputLabel = styled.label`
       }): string => theme.neutral._1};
     }
   }
-`;
+`
 
 export const StyledHiddenInput = styled.input`
   display: none;
-`;
+`
 
 export const StyledHelpWrapper = styled(Pressable)`
   flex-direction: row;
   gap: 6px;
   justify-content: center;
   align-items: center;
-`;
+`

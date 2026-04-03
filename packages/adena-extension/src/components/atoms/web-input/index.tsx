@@ -1,11 +1,11 @@
 import {
   getTheme, webFonts,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 interface InputProps {
-  width?: string;
-  error?: boolean;
+  width?: string
+  error?: boolean
 }
 
 export const WebInput = styled.input<InputProps>`
@@ -59,4 +59,4 @@ export const WebInput = styled.input<InputProps>`
     }): string =>
       error ? theme.webError._300 : theme.webInput._100};
   }
-`;
+`

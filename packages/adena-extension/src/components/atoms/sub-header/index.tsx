@@ -1,21 +1,21 @@
 import React, {
   ReactNode,
-} from 'react';
+} from 'react'
 
 import {
   SubHeaderWrapper,
-} from './sub-header.styles';
+} from './sub-header.styles'
 
 export interface SubHeaderProps {
-  title: string;
+  title: string
   leftElement?: {
-    element: ReactNode;
-    onClick: () => void;
-  };
+    element: ReactNode
+    onClick: () => void
+  }
   rightElement?: {
-    element: ReactNode;
-    onClick: () => void;
-  };
+    element: ReactNode
+    onClick: () => void
+  }
 }
 
 export const SubHeader: React.FC<SubHeaderProps> = ({
@@ -37,5 +37,5 @@ export const SubHeader: React.FC<SubHeaderProps> = ({
         </div>
       )}
     </SubHeaderWrapper>
-  );
-};
+  )
+}

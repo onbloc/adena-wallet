@@ -1,29 +1,29 @@
 import {
   makeDisplayPackagePath,
-} from '@common/utils/string-utils';
+} from '@common/utils/string-utils'
 import {
   TokenInfo,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   AdditionalTokenSearchListItemWrapper,
   AdditionalTokenSearchListWrapper,
-} from './additional-token-search-list.styles';
+} from './additional-token-search-list.styles'
 
 export interface AdditionalTokenSearchListProps {
-  tokenInfos: TokenInfo[];
-  onClickListItem: (tokenId: string) => void;
+  tokenInfos: TokenInfo[]
+  onClickListItem: (tokenId: string) => void
 }
 
 interface AdditionalTokenSearchListItem {
-  tokenId: string;
-  name: string;
-  symbol: string;
-  path: string;
-  onClickListItem: (tokenId: string) => void;
+  tokenId: string
+  name: string
+  symbol: string
+  path: string
+  onClickListItem: (tokenId: string) => void
 }
 
 const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({
@@ -34,16 +34,16 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
   onClickListItem,
 }) => {
   const formattedSymbol = useMemo(() => {
-    const SYMBOL_TEXT_LENGTH = 5;
+    const SYMBOL_TEXT_LENGTH = 5
     if (symbol.length > SYMBOL_TEXT_LENGTH) {
-      return `${symbol.substring(0, SYMBOL_TEXT_LENGTH)}...`;
+      return `${symbol.substring(0, SYMBOL_TEXT_LENGTH)}...`
     }
-    return symbol;
-  }, [symbol]);
+    return symbol
+  }, [symbol])
 
   const formattedPath = useMemo(() => {
-    return makeDisplayPackagePath(path || '');
-  }, [path]);
+    return makeDisplayPackagePath(path || '')
+  }, [path])
 
   return (
     <AdditionalTokenSearchListItemWrapper onClick={(): void => onClickListItem(tokenId)}>
@@ -53,8 +53,8 @@ const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = (
       </span>
       <span className='path'>{formattedPath}</span>
     </AdditionalTokenSearchListItemWrapper>
-  );
-};
+  )
+}
 
 const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
   tokenInfos,
@@ -81,7 +81,7 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
             )}
       </div>
     </AdditionalTokenSearchListWrapper>
-  );
-};
+  )
+}
 
-export default AdditionalTokenSearchList;
+export default AdditionalTokenSearchList

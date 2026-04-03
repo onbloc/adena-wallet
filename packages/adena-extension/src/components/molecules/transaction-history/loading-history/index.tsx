@@ -1,11 +1,11 @@
 import {
   Loading, SkeletonBoxStyle,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import React, {
   ReactElement,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.div`
   ${mixins.flex({
@@ -15,14 +15,14 @@ const Wrapper = styled.div`
   position: relative;
   width: 100%;
   z-index: 1;
-`;
+`
 
 const RoundsBox = styled.div`
   ${mixins.flex({
     align: 'flex-end',
   })};
   margin-left: auto;
-`;
+`
 
 const ListBoxWrap = styled.div`
   ${mixins.flex({
@@ -31,7 +31,7 @@ const ListBoxWrap = styled.div`
   width: 100%;
   gap: 12px;
   padding-top: 12px;
-`;
+`
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -40,7 +40,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   })}
   width: 100%;
   height: 60px;
-`;
+`
 
 const LoadingHistory = (): ReactElement<any> => {
   return (
@@ -61,7 +61,7 @@ const LoadingHistory = (): ReactElement<any> => {
         ))}
       </ListBoxWrap>
     </Wrapper>
-  );
-};
+  )
+}
 
-export default LoadingHistory;
+export default LoadingHistory

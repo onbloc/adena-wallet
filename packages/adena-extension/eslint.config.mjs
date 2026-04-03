@@ -1,11 +1,11 @@
 // For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import eslint from '@eslint/js';
-import stylistic from '@stylistic/eslint-plugin';
-import react from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import simpleImportSort from 'eslint-plugin-simple-import-sort';
-import storybook from 'eslint-plugin-storybook';
-import tseslint from 'typescript-eslint';
+import eslint from '@eslint/js'
+import stylistic from '@stylistic/eslint-plugin'
+import react from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import storybook from 'eslint-plugin-storybook'
+import tseslint from 'typescript-eslint'
 
 export default tseslint.config([
   {
@@ -23,16 +23,7 @@ export default tseslint.config([
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  stylistic.configs.customize({
-    indent: 2,
-    quotes: 'single',
-    semi: true,
-    jsx: true,
-    commaDangle: 'always-multiline',
-    braceStyle: '1tbs',
-    blockSpacing: true,
-    quoteProps: 'as-needed',
-  }),
+  stylistic.configs.customize(),
   {
     plugins: {
       react,
@@ -52,21 +43,9 @@ export default tseslint.config([
   },
   {
     rules: {
-      '@stylistic/array-element-newline': [
-        'error',
-        {
-          multiline: true,
-        },
-      ],
-      '@stylistic/array-bracket-newline': [
-        'error',
-        {
-          multiline: true,
-        },
-      ],
-      '@stylistic/object-curly-newline': ['error', 'always'],
-      '@stylistic/object-curly-spacing': ['error', 'always'],
-      '@stylistic/object-property-newline': 'error',
+      '@stylistic/object-curly-newline': ['error', { multiline: true, consistent: true }],
+      '@stylistic/object-property-newline': ['error', { allowAllPropertiesOnSameLine: true }],
+      '@stylistic/quote-props': ['error', 'as-needed'],
       '@stylistic/jsx-quotes': ['error', 'prefer-single'],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-namespace': 'off',
@@ -110,4 +89,4 @@ export default tseslint.config([
       'simple-import-sort/exports': 'error',
     },
   },
-], storybook.configs['flat/recommended']);
+], storybook.configs['flat/recommended'])

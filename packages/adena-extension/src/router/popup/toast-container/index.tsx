@@ -1,19 +1,19 @@
-import Toast from '@components/atoms/toast/toast';
+import Toast from '@components/atoms/toast/toast'
 import {
   useToast,
-} from '@hooks/use-toast';
-import React from 'react';
+} from '@hooks/use-toast'
+import React from 'react'
 
 const ToastContainer: React.FC = () => {
   const {
     message, clear,
-  } = useToast();
+  } = useToast()
 
   if (!message) {
-    return <React.Fragment />;
+    return <React.Fragment />
   }
 
-  return <Toast text={message} onFinish={clear} />;
-};
+  return <Toast text={message} onFinish={clear} />
+}
 
-export default ToastContainer;
+export default ToastContainer

@@ -2,47 +2,47 @@ import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   GasToken,
-} from '@common/constants/token.constant';
+} from '@common/constants/token.constant'
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   convertRawGasAmountToDisplayAmount,
-} from '@common/utils/gas-utils';
+} from '@common/utils/gas-utils'
 import {
   validateInjectionDataForMultisig,
-} from '@common/validation/validation-transaction';
+} from '@common/validation/validation-transaction'
 import {
   CreateMultisigTransaction,
-} from '@components/molecules/create-multisig-transaction';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@components/molecules/create-multisig-transaction'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
-import useLink from '@hooks/use-link';
+} from '@hooks/use-current-account'
+import useLink from '@hooks/use-link'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '@inject/message';
+} from '@inject/message'
 import {
   GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect';
+} from '@inject/message/methods/gno-connect'
 import {
   ContractMessage,
-} from '@inject/types';
+} from '@inject/types'
 import {
   NetworkFee, RoutePath,
-} from '@types';
+} from '@types'
 import {
   Account,
   isMultisigAccount,
@@ -52,55 +52,55 @@ import {
   RawTxMessageType,
   RawVmAddPackageMessage,
   RawVmRunMessage,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 import {
   useLocation, useNavigate,
-} from 'react-router';
+} from 'react-router'
 
 interface TransactionData {
-  messages: readonly any[];
+  messages: readonly any[]
   contracts: {
-    type: string;
-    function: string;
-    value: any;
-  }[];
-  gasWanted: string;
-  gasFee: string;
-  memo: string;
+    type: string
+    function: string
+    value: any
+  }[]
+  gasWanted: string
+  gasFee: string
+  memo: string
 }
 
 function isBankSendMessage(message: RawTxMessageType): message is RawBankSendMessage {
-  return message['@type'] === '/bank.MsgSend';
+  return message['@type'] === '/bank.MsgSend'
 }
 
 function isAddPackageMessage(message: RawTxMessageType): message is RawVmAddPackageMessage {
-  return message['@type'] === '/vm.m_addpkg';
+  return message['@type'] === '/vm.m_addpkg'
 }
 
 function isRunMessage(message: RawTxMessageType): message is RawVmRunMessage {
-  return message['@type'] === '/vm.m_run';
+  return message['@type'] === '/vm.m_run'
 }
 
 function parseFunctionName(message: RawTxMessageType): string {
   if (isBankSendMessage(message)) {
-    return 'Transfer';
+    return 'Transfer'
   }
   if (isAddPackageMessage(message)) {
-    return 'AddPackage';
+    return 'AddPackage'
   }
   if (isRunMessage(message)) {
-    return 'Run';
+    return 'Run'
   }
-  return message.func;
+  return message.func
 }
 
 function mappedTransactionData(rawTx: RawTx): TransactionData {
   const {
     msg, fee, memo,
-  } = rawTx;
+  } = rawTx
   return {
     messages: msg,
     contracts: msg.map((message) => {
@@ -108,165 +108,165 @@ function mappedTransactionData(rawTx: RawTx): TransactionData {
         type: message?.['@type'] || '',
         function: parseFunctionName(message),
         value: message,
-      };
+      }
     }),
     gasWanted: fee.gas_wanted,
     gasFee: fee.gas_fee,
     memo: memo || '',
-  };
+  }
 }
 
 const CreateMultisigTransactionContainer: React.FC = () => {
-  const normalNavigate = useNavigate();
+  const normalNavigate = useNavigate()
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
   const {
     gnoProvider,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     walletService, multisigService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     currentAccount,
-  } = useCurrentAccount();
-  const [transactionData, setTransactionData] = useState<TransactionData>();
+  } = useCurrentAccount()
+  const [transactionData, setTransactionData] = useState<TransactionData>()
   const {
     currentNetwork,
-  } = useNetwork();
-  const [hostname, setHostname] = useState('');
-  const location = useLocation();
-  const [requestData, setRequestData] = useState<InjectionMessage>();
-  const [favicon, setFavicon] = useState<any>(null);
-  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false);
-  const [tx, setTx] = useState<RawTx>();
-  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
-  const [response, setResponse] = useState<InjectionMessage | null>(null);
-  const [memo, setMemo] = useState('');
+  } = useNetwork()
+  const [hostname, setHostname] = useState('')
+  const location = useLocation()
+  const [requestData, setRequestData] = useState<InjectionMessage>()
+  const [favicon, setFavicon] = useState<any>(null)
+  const [visibleTransactionInfo, setVisibleTransactionInfo] = useState(false)
+  const [tx, setTx] = useState<RawTx>()
+  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT')
+  const [response, setResponse] = useState<InjectionMessage | null>(null)
+  const [memo, setMemo] = useState('')
   const {
     openScannerLink,
-  } = useLink();
-  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([]);
-  const [withSaveFile, setWithSaveFile] = useState<boolean>(false);
+  } = useLink()
+  const [transactionMessages, setTransactionMessages] = useState<ContractMessage[]>([])
+  const [withSaveFile, setWithSaveFile] = useState<boolean>(false)
 
   const multisigConfig: MultisigConfig | null = useMemo(() => {
-    if (!currentAccount || !isMultisigAccount(currentAccount)) return null;
+    if (!currentAccount || !isMultisigAccount(currentAccount)) return null
 
-    return currentAccount.multisigConfig;
-  }, [currentAccount]);
+    return currentAccount.multisigConfig
+  }, [currentAccount])
 
   const rawNetworkFee: NetworkFee | null = useMemo(() => {
     if (!tx?.fee?.gas_fee) {
-      return null;
+      return null
     }
 
-    const gasFee = tx.fee.gas_fee;
-    const amount = gasFee.replace(/[^0-9]/g, '');
-    const denom = gasFee.replace(/[0-9]/g, '');
+    const gasFee = tx.fee.gas_fee
+    const amount = gasFee.replace(/[^0-9]/g, '')
+    const denom = gasFee.replace(/[0-9]/g, '')
 
     return {
       amount,
       denom,
-    };
-  }, [tx?.fee]);
+    }
+  }, [tx?.fee])
 
   const networkFee: NetworkFee | null = useMemo(() => {
     if (!rawNetworkFee) {
-      return null;
+      return null
     }
 
-    const networkFeeAmount = convertRawGasAmountToDisplayAmount(rawNetworkFee.amount);
+    const networkFeeAmount = convertRawGasAmountToDisplayAmount(rawNetworkFee.amount)
 
     return {
       amount: networkFeeAmount,
       denom: GasToken.symbol,
-    };
-  }, [rawNetworkFee]);
+    }
+  }, [rawNetworkFee])
 
   const displayNetworkFee: NetworkFee = useMemo(() => {
     if (!networkFee) {
       return {
         amount: '',
         denom: '',
-      };
+      }
     }
 
     return {
       amount: networkFee.amount,
       denom: GasToken.symbol,
-    };
-  }, [networkFee]);
+    }
+  }, [networkFee])
 
   const currentGasWanted = useMemo(() => {
-    return tx?.fee?.gas_wanted || '0';
-  }, [tx?.fee?.gas_wanted]);
+    return tx?.fee?.gas_wanted || '0'
+  }, [tx?.fee?.gas_wanted])
 
-  const processing = useMemo(() => processType !== 'INIT', [processType]);
+  const processing = useMemo(() => processType !== 'INIT', [processType])
 
-  const done = useMemo(() => processType === 'DONE', [processType]);
+  const done = useMemo(() => processType === 'DONE', [processType])
 
   const hasMemo = useMemo(() => {
     if (!requestData?.data?.memo) {
-      return false;
+      return false
     }
-    return true;
-  }, [requestData?.data?.memo]);
+    return true
+  }, [requestData?.data?.memo])
 
   const isNetworkFeeLoading = useMemo(() => {
-    return rawNetworkFee === null;
-  }, [rawNetworkFee]);
+    return rawNetworkFee === null
+  }, [rawNetworkFee])
 
   const isErrorNetworkFee = useMemo(() => {
     if (!networkFee) {
-      return true;
+      return true
     }
 
     if (isNetworkFeeLoading) {
-      return false;
+      return false
     }
 
-    return false;
-  }, [isNetworkFeeLoading, networkFee]);
+    return false
+  }, [isNetworkFeeLoading, networkFee])
 
   const argumentInfos: GnoArgumentInfo[] = useMemo(() => {
-    return requestData?.data?.arguments || [];
-  }, [requestData?.data?.arguments]);
+    return requestData?.data?.arguments || []
+  }, [requestData?.data?.arguments])
 
   useEffect(() => {
-    checkLockWallet();
-  }, [walletService]);
+    checkLockWallet()
+  }, [walletService])
 
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
-  };
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search))
+  }
 
   useEffect(() => {
     if (location.search) {
-      initRequestData();
+      initRequestData()
     }
-  }, [location]);
+  }, [location])
 
   const initRequestData = (): void => {
-    const data = parseParameters(location.search);
-    const parsedData = decodeParameter(data['data']);
+    const data = parseParameters(location.search)
+    const parsedData = decodeParameter(data['data'])
     setRequestData({
       ...parsedData,
       hostname: data['hostname'],
-    });
-  };
+    })
+  }
 
   useEffect(() => {
     if (currentAccount && requestData && gnoProvider) {
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
-          initFavicon();
-          initTransactionData();
+          initFavicon()
+          initTransactionData()
         }
-      });
+      })
     }
-  }, [currentAccount, requestData, gnoProvider]);
+  }, [currentAccount, requestData, gnoProvider])
 
   const validate = async (
     currentAccount: Account,
@@ -276,22 +276,22 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       requestData,
       currentAccount,
       await currentAccount.getAddress('g'),
-    );
+    )
 
     if (validationMessage) {
-      chrome.runtime.sendMessage(validationMessage);
-      return false;
+      chrome.runtime.sendMessage(validationMessage)
+      return false
     }
 
-    return true;
-  };
+    return true
+  }
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
       requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
-    );
-    setFavicon(faviconData);
-  };
+    )
+    setFavicon(faviconData)
+  }
 
   const initTransactionData = async (): Promise<boolean> => {
     if (
@@ -301,32 +301,33 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       || !requestData?.data
       || !currentNetwork
     ) {
-      return false;
+      return false
     }
 
     try {
-      const messages = requestData.data.messages as ContractMessage[];
-      const gas = requestData.data.fee;
+      const messages = requestData.data.messages as ContractMessage[]
+      const gas = requestData.data.fee
       const data = await multisigService.createRawTransaction(
         messages,
         requestData.data?.memo || '',
         gas?.gasWanted || '',
         gas?.gasFee || '',
-      );
+      )
 
-      const transactionData = mappedTransactionData(data);
+      const transactionData = mappedTransactionData(data)
 
-      setWithSaveFile(!!requestData.data?.withSaveFile);
-      setTx(data);
-      setTransactionData(transactionData);
-      setHostname(requestData?.hostname ?? '');
-      setMemo(data.memo);
-      setTransactionMessages(messages);
+      setWithSaveFile(!!requestData.data?.withSaveFile)
+      setTx(data)
+      setTransactionData(transactionData)
+      setHostname(requestData?.hostname ?? '')
+      setMemo(data.memo)
+      setTransactionMessages(messages)
 
-      return true;
-    } catch (e) {
-      console.error(e);
-      const error: any = e;
+      return true
+    }
+    catch (e) {
+      console.error(e)
+      const error: any = e
       if (error?.message === 'Transaction signing request was rejected by the user') {
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(
@@ -334,22 +335,22 @@ const CreateMultisigTransactionContainer: React.FC = () => {
             requestData?.data,
             requestData?.key,
           ),
-        );
+        )
       }
     }
-    return false;
-  };
+    return false
+  }
 
   const changeMemo = (memo: string): void => {
-    setMemo(memo);
-  };
+    setMemo(memo)
+  }
 
   const updateTransactionData = useCallback((): void => {
     if (!tx || !rawNetworkFee) {
-      return;
+      return
     }
 
-    const currentMemo = memo;
+    const currentMemo = memo
 
     const updatedTx: RawTx = {
       ...tx,
@@ -358,11 +359,11 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         gas_wanted: currentGasWanted.toString(),
         gas_fee: `${rawNetworkFee.amount}${rawNetworkFee.denom}`,
       },
-    };
+    }
 
-    setTx(updatedTx);
-    setTransactionData(mappedTransactionData(updatedTx));
-  }, [tx, rawNetworkFee, memo, currentGasWanted]);
+    setTx(updatedTx)
+    setTransactionData(mappedTransactionData(updatedTx))
+  }, [tx, rawNetworkFee, memo, currentGasWanted])
 
   const createMultisigTransaction = async (): Promise<boolean> => {
     if (!tx || !currentAccount) {
@@ -373,8 +374,8 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           },
           requestData?.key,
         ),
-      );
-      return false;
+      )
+      return false
     }
 
     if (!isMultisigAccount(currentAccount)) {
@@ -388,19 +389,19 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           },
           requestData?.key,
         ),
-      );
-      return false;
+      )
+      return false
     }
 
     try {
-      setProcessType('PROCESSING');
+      setProcessType('PROCESSING')
 
       // Save transaction to file if enabled
       if (withSaveFile) {
-        const fileSaved = await multisigService.saveTransactionToFile(tx);
+        const fileSaved = await multisigService.saveTransactionToFile(tx)
         if (!fileSaved) {
-          setProcessType('INIT');
-          return false;
+          setProcessType('INIT')
+          return false
         }
       }
 
@@ -412,16 +413,17 @@ const CreateMultisigTransactionContainer: React.FC = () => {
           },
           requestData?.key,
         ),
-      );
+      )
 
-      return true;
-    } catch (e) {
-      setProcessType('INIT');
+      return true
+    }
+    catch (e) {
+      setProcessType('INIT')
 
       if (e instanceof Error) {
-        const message = e.message;
+        const message = e.message
         if (message.includes('Ledger')) {
-          return false;
+          return false
         }
         setResponse(
           InjectionMessageInstance.failure(
@@ -433,8 +435,9 @@ const CreateMultisigTransactionContainer: React.FC = () => {
             },
             requestData?.key,
           ),
-        );
-      } else {
+        )
+      }
+      else {
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
@@ -442,35 +445,35 @@ const CreateMultisigTransactionContainer: React.FC = () => {
             },
             requestData?.key,
           ),
-        );
+        )
       }
-      return false;
+      return false
     }
-  };
+  }
 
   const onToggleTransactionData = (visibleTransactionInfo: boolean): void => {
-    setVisibleTransactionInfo(visibleTransactionInfo);
-  };
+    setVisibleTransactionInfo(visibleTransactionInfo)
+  }
 
   const onClickConfirm = async (): Promise<void> => {
     if (!currentAccount || !tx) {
-      return;
+      return
     }
     if (!isMultisigAccount(currentAccount)) {
       navigate(RoutePath.ApproveSignLoading, {
         state: {
           requestData,
         },
-      });
-      return;
+      })
+      return
     }
 
-    const success = await createMultisigTransaction();
+    const success = await createMultisigTransaction()
 
     if (success) {
-      setProcessType('DONE');
+      setProcessType('DONE')
     }
-  };
+  }
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
@@ -480,14 +483,14 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         },
         requestData?.key,
       ),
-    );
-  };
+    )
+  }
 
   const onResponseSignTransaction = useCallback(() => {
     if (response) {
-      chrome.runtime.sendMessage(response);
+      chrome.runtime.sendMessage(response)
     }
-  }, [response]);
+  }, [response])
 
   const onTimeoutSignTransaction = useCallback(() => {
     chrome.runtime.sendMessage(
@@ -497,16 +500,16 @@ const CreateMultisigTransactionContainer: React.FC = () => {
         },
         requestData?.key,
       ),
-    );
-  }, [requestData]);
+    )
+  }, [requestData])
 
   useEffect(() => {
     if (transactionMessages.length === 0) {
-      return;
+      return
     }
 
-    updateTransactionData();
-  }, [memo, transactionMessages]);
+    updateTransactionData()
+  }, [memo, transactionMessages])
 
   return (
     <CreateMultisigTransaction
@@ -536,7 +539,7 @@ const CreateMultisigTransactionContainer: React.FC = () => {
       opened={visibleTransactionInfo}
       transactionData={JSON.stringify(tx, null, 2)}
     />
-  );
-};
+  )
+}
 
-export default CreateMultisigTransactionContainer;
+export default CreateMultisigTransactionContainer

@@ -1,59 +1,59 @@
-import IconHelp from '@assets/help.svg';
+import IconHelp from '@assets/help.svg'
 import {
   ADENA_SETUP_AIRGAP_HELP_PAGE,
-} from '@common/constants/resource.constant';
+} from '@common/constants/resource.constant'
 import {
   CommonFullContentLayout, Pressable, Text, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
-import BroadcastTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-transaction-upload-input';
-import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
+} from '@components/molecules'
+import BroadcastTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-transaction-upload-input'
+import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result'
 import {
   Tx,
-} from '@gnolang/tm2-js-client';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+} from '@gnolang/tm2-js-client'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
 import {
   TransactionDisplayInfo,
-} from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledWrapper = styled(View)`
   width: 100%;
   gap: 24px;
   padding: 24px 20px 120px;
-`;
+`
 
 const StyledHeaderWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`;
+`
 
 const StyledInputWrapper = styled(View)`
   gap: 12px;
-`;
+`
 
 const StyledHelpWrapper = styled(Pressable)`
   flex-direction: row;
   gap: 6px;
   justify-content: center;
   align-items: center;
-`;
+`
 
 interface BroadcastTransactionUploadProps {
-  transaction: Tx | null;
-  transactionInfos: TransactionDisplayInfo[];
-  rawTransaction: string;
-  broadcast: () => Promise<boolean>;
-  uploadTransaction: (text: string) => boolean;
+  transaction: Tx | null
+  transactionInfos: TransactionDisplayInfo[]
+  rawTransaction: string
+  broadcast: () => Promise<boolean>
+  uploadTransaction: (text: string) => boolean
 }
 
 const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
@@ -63,48 +63,48 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
   broadcast,
   uploadTransaction,
 }) => {
-  const theme = useTheme();
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const theme = useTheme()
+  const [isBroadcasting, setIsBroadcasting] = useState(false)
   const {
     openLink,
-  } = useLink();
+  } = useLink()
   const {
     goBack,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   const loadedTransaction = useMemo(() => {
-    return transaction !== null && transactionInfos.length > 0;
-  }, [transaction]);
+    return transaction !== null && transactionInfos.length > 0
+  }, [transaction])
 
   const onClickBroadcast = useCallback(() => {
     if (isBroadcasting) {
-      return;
+      return
     }
-    setIsBroadcasting(true);
-    broadcast().finally(() => setIsBroadcasting(false));
-  }, [broadcast]);
+    setIsBroadcasting(true)
+    broadcast().finally(() => setIsBroadcasting(false))
+  }, [broadcast])
 
   const onClickCancel = useCallback(() => {
-    goBack();
-  }, [goBack]);
+    goBack()
+  }, [goBack])
 
   const onClickHelp = useCallback(() => {
-    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE);
-  }, []);
+    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE)
+  }, [])
 
   const blockEvent = (event: DragEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
+    event.preventDefault()
+    event.stopPropagation()
+  }
 
   useEffect(() => {
-    window.addEventListener('drop', blockEvent, false);
-    window.addEventListener('dragover', blockEvent, false);
+    window.addEventListener('drop', blockEvent, false)
+    window.addEventListener('dragover', blockEvent, false)
     return () => {
-      window.removeEventListener('drop', blockEvent);
-      window.removeEventListener('dragover', blockEvent);
-    };
-  }, []);
+      window.removeEventListener('drop', blockEvent)
+      window.removeEventListener('dragover', blockEvent)
+    }
+  }, [])
 
   return (
     <CommonFullContentLayout>
@@ -155,7 +155,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
         }}
       />
     </CommonFullContentLayout>
-  );
-};
+  )
+}
 
-export default BroadcastTransactionUpload;
+export default BroadcastTransactionUpload

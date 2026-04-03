@@ -1,19 +1,19 @@
-import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import ArrowDownIcon from '@assets/common-arrow-down-gray.svg'
+import ArrowUpIcon from '@assets/common-arrow-up-gray.svg'
 import {
   SearchInput,
-} from '@components/atoms';
-import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list';
+} from '@components/atoms'
+import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list'
 import {
   AdditionalTokenSelectBoxProps,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   AdditionalTokenSelectBoxWrapper,
-} from './additional-token-select-box.styles';
+} from './additional-token-select-box.styles'
 
 const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   opened,
@@ -26,23 +26,23 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   onClickListItem,
 }) => {
   const selectedTokenName = useMemo(() => {
-    const name = selectedInfo?.name;
+    const name = selectedInfo?.name
     if (!selected || !name) {
-      return '';
+      return ''
     }
-    return name;
-  }, [selected, selectedInfo]);
+    return name
+  }, [selected, selectedInfo])
 
   const selectedTokenSymbol = useMemo(() => {
-    const symbol = selectedInfo?.symbol;
+    const symbol = selectedInfo?.symbol
     if (!selected || !symbol) {
-      return '';
+      return ''
     }
     if (symbol.length > 5) {
-      return `(${symbol.slice(0, 5)}...)`;
+      return `(${symbol.slice(0, 5)}...)`
     }
-    return `(${symbol})`;
-  }, [selected, selectedInfo]);
+    return `(${symbol})`
+  }, [selected, selectedInfo])
 
   return (
     <AdditionalTokenSelectBoxWrapper>
@@ -85,7 +85,7 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
         )}
       </div>
     </AdditionalTokenSelectBoxWrapper>
-  );
-};
+  )
+}
 
-export default AdditionalTokenSelectBox;
+export default AdditionalTokenSelectBox

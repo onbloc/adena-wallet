@@ -1,11 +1,11 @@
 import React, {
   useEffect,
-} from 'react';
+} from 'react'
 
 export const AppReloadFallback: React.FC = () => {
   useEffect(() => {
-    location.reload();
-  }, []);
+    location.reload()
+  }, [])
 
-  return <React.Fragment />;
-};
+  return <React.Fragment />
+}

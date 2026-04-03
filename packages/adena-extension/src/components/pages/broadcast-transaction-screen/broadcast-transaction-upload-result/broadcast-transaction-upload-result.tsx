@@ -1,21 +1,21 @@
-import IconArrowDown from '@assets/arrowS-down-gray.svg';
-import IconArrowUp from '@assets/arrowS-up-gray.svg';
+import IconArrowDown from '@assets/arrowS-down-gray.svg'
+import IconArrowUp from '@assets/arrowS-up-gray.svg'
 import {
   formatAddress,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   CopyIconButton, Text,
-} from '@components/atoms';
-import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
+} from '@components/atoms'
+import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box'
 import {
   TransactionDisplayInfo,
-} from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen'
 import React, {
   useCallback, useState,
-} from 'react';
+} from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   StyledInfoButton,
@@ -27,18 +27,18 @@ import {
   StyledTransactionArea,
   StyledTransactionAreaWrapper,
   StyledWrapper,
-} from './broadcast-transaction-upload-result.styles';
+} from './broadcast-transaction-upload-result.styles'
 
 export interface BroadcastTransactionUploadResultProps {
-  transactionInfos: TransactionDisplayInfo[];
-  rawTransaction: string;
+  transactionInfos: TransactionDisplayInfo[]
+  rawTransaction: string
   signInfo?: {
-    accountNumber: string;
-    sequence: string;
-    chainId: string;
-    setAccountNumber: (accountNumber: string) => void;
-    setSequence: (sequence: string) => void;
-  };
+    accountNumber: string
+    sequence: string
+    chainId: string
+    setAccountNumber: (accountNumber: string) => void
+    setSequence: (sequence: string) => void
+  }
 }
 
 const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResultProps> = ({
@@ -46,23 +46,23 @@ const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResul
   rawTransaction,
   signInfo,
 }) => {
-  const theme = useTheme();
-  const [visibleInfo, setVisibleInfo] = useState(false);
+  const theme = useTheme()
+  const [visibleInfo, setVisibleInfo] = useState(false)
 
   const toggleVisibleInfo = useCallback(() => {
-    setVisibleInfo(!visibleInfo);
-  }, [visibleInfo]);
+    setVisibleInfo(!visibleInfo)
+  }, [visibleInfo])
 
   const getExtraInfo = useCallback((extra: string) => {
-    return `+${extra}`;
-  }, []);
+    return `+${extra}`
+  }, [])
 
   const getValue = useCallback((transactionInfo: TransactionDisplayInfo) => {
     if (transactionInfo.type === 'ADDRESS') {
-      return formatAddress(transactionInfo.value, 4);
+      return formatAddress(transactionInfo.value, 4)
     }
-    return transactionInfo.value;
-  }, []);
+    return transactionInfo.value
+  }, [])
 
   return (
     <StyledWrapper>
@@ -121,7 +121,7 @@ const BroadcastTransactionUploadResult: React.FC<BroadcastTransactionUploadResul
         )}
       </StyledInfoWrapper>
     </StyledWrapper>
-  );
-};
+  )
+}
 
-export default BroadcastTransactionUploadResult;
+export default BroadcastTransactionUploadResult

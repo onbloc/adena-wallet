@@ -1,25 +1,25 @@
-import UnknownAccountImage from '@assets/common-unknown-logo.svg';
+import UnknownAccountImage from '@assets/common-unknown-logo.svg'
 import {
   formatAddress,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
+} from '@components/molecules'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   AccountInitializationInitWrapper,
-} from './account-initialization-init.styles';
+} from './account-initialization-init.styles'
 
 export interface AccountInitializationInitProps {
-  address: string;
-  moveRequest: () => void;
-  moveBack: () => void;
+  address: string
+  moveRequest: () => void
+  moveBack: () => void
 }
 
 const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
@@ -28,8 +28,8 @@ const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
   moveBack,
 }) => {
   const displayAddress = useMemo(() => {
-    return formatAddress(address, 14);
-  }, [address]);
+    return formatAddress(address, 14)
+  }, [address])
 
   return (
     <AccountInitializationInitWrapper>
@@ -59,7 +59,7 @@ const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
         }}
       />
     </AccountInitializationInitWrapper>
-  );
-};
+  )
+}
 
-export default AccountInitializationInit;
+export default AccountInitializationInit

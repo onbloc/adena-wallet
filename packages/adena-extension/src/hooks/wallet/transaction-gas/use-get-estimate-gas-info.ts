@@ -1,56 +1,56 @@
 import {
   MINIMUM_GAS_PRICE,
-} from '@common/constants/gas.constant';
+} from '@common/constants/gas.constant'
 import {
   GasToken,
-} from '@common/constants/token.constant';
+} from '@common/constants/token.constant'
 import {
   DEFAULT_GAS_WANTED,
-} from '@common/constants/tx.constant';
+} from '@common/constants/tx.constant'
 import {
   Tx,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   TransactionService,
-} from '@services/index';
+} from '@services/index'
 import {
   keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GasInfo,
-} from '@types';
+} from '@types'
 import {
   Account, Document, documentToDefaultTx, Wallet,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
+} from 'adena-module'
+import BigNumber from 'bignumber.js'
 
 import {
   useGetGasPrice,
-} from './use-get-gas-price';
+} from './use-get-gas-price'
 
-export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas';
+export const GET_ESTIMATE_GAS_INFO_KEY = 'transactionGas/useGetSingleEstimateGas'
 
-const REFETCH_INTERVAL = 5_000;
+const REFETCH_INTERVAL = 5_000
 
 function makeGasInfoBy(
   gasUsed: bigint | null | undefined,
   gasPrice: number | null | undefined,
 ): {
-  gasWanted: bigint;
-  gasFee: number;
+  gasWanted: bigint
+  gasFee: number
 } {
-  const gasFeeBN = BigNumber(gasUsed || 1000).multipliedBy(gasPrice || MINIMUM_GAS_PRICE);
+  const gasFeeBN = BigNumber(gasUsed || 1000).multipliedBy(gasPrice || MINIMUM_GAS_PRICE)
 
   return {
     gasWanted: BigInt(DEFAULT_GAS_WANTED),
     gasFee: Number(gasFeeBN.toFixed(0, BigNumber.ROUND_UP)),
-  };
+  }
 }
 
 function modifyDocument(document: Document, gasWanted: bigint, gasFee: number): Document {
@@ -66,15 +66,15 @@ function modifyDocument(document: Document, gasWanted: bigint, gasFee: number): 
         },
       ],
     },
-  };
+  }
 }
 
 export const useGetDefaultEstimateGasInfo = (
   document: Document | null | undefined,
   options?: Omit<UseQueryOptions<GasInfo | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GasInfo | null> => {
-  return useGetEstimateGasInfo(document, 0n, options);
-};
+  return useGetEstimateGasInfo(document, 0n, options)
+}
 
 export const makeEstimateGasTransaction = async (
   wallet: Wallet | null,
@@ -86,19 +86,19 @@ export const makeEstimateGasTransaction = async (
   withSignTransaction = false,
 ): Promise<Tx | null> => {
   if (!document || !gasPrice) {
-    return null;
+    return null
   }
 
   const {
     gasFee, gasWanted,
-  } = makeGasInfoBy(gasUsed, gasPrice);
+  } = makeGasInfoBy(gasUsed, gasPrice)
   if (!transactionService || !gasFee || !gasWanted || !wallet || !account) {
-    return null;
+    return null
   }
 
-  const modifiedDocument = modifyDocument(document, gasWanted, gasFee);
+  const modifiedDocument = modifyDocument(document, gasWanted, gasFee)
   if (!withSignTransaction) {
-    return documentToDefaultTx(modifiedDocument);
+    return documentToDefaultTx(modifiedDocument)
   }
 
   const {
@@ -108,14 +108,14 @@ export const makeEstimateGasTransaction = async (
     .catch(() => {
       return {
         signed: null,
-      };
-    });
+      }
+    })
   if (!signed) {
-    return documentToDefaultTx(modifiedDocument);
+    return documentToDefaultTx(modifiedDocument)
   }
 
-  return signed;
-};
+  return signed
+}
 
 export const useGetEstimateGasInfo = (
   document: Document | null | undefined,
@@ -124,20 +124,20 @@ export const useGetEstimateGasInfo = (
 ): UseQueryResult<GasInfo | null> => {
   const {
     currentAccount, currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     data: gasPrice,
-  } = useGetGasPrice();
+  } = useGetGasPrice()
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     transactionService, transactionGasService,
-  } = useAdenaContext();
+  } = useAdenaContext()
 
   async function makeTransaction(document: Document | null | undefined): Promise<Tx | null> {
     if (!document || !gasPrice) {
-      return null;
+      return null
     }
 
     return makeEstimateGasTransaction(
@@ -148,19 +148,19 @@ export const useGetEstimateGasInfo = (
       gasUsed,
       gasPrice,
       true,
-    );
+    )
   }
 
   return useQuery<GasInfo | null, Error>({
     queryKey: [currentAccount?.id, currentAddress, GET_ESTIMATE_GAS_INFO_KEY, transactionGasService, document?.msgs || '', document?.memo || '', document?.account_number, document?.sequence, gasUsed, gasPrice || 0],
     queryFn: async (): Promise<GasInfo | null> => {
       if (!transactionGasService || !gasPrice) {
-        return null;
+        return null
       }
 
-      const tx = await makeTransaction(document);
+      const tx = await makeTransaction(document)
       if (!tx) {
-        return null;
+        return null
       }
 
       const resultGasUsed = await transactionGasService
@@ -169,7 +169,7 @@ export const useGetEstimateGasInfo = (
           gasUsed,
           errorMessage: null,
         }))
-        .catch(() => null);
+        .catch(() => null)
 
       if (!resultGasUsed) {
         return {
@@ -179,12 +179,12 @@ export const useGetEstimateGasInfo = (
           gasPrice: 0,
           hasError: true,
           simulateErrorMessage: '',
-        };
+        }
       }
 
       const gasFee = BigNumber(resultGasUsed.gasUsed)
         .multipliedBy(gasPrice)
-        .toFixed(0, BigNumber.ROUND_UP);
+        .toFixed(0, BigNumber.ROUND_UP)
 
       return {
         gasFee: Number(gasFee),
@@ -193,11 +193,11 @@ export const useGetEstimateGasInfo = (
         gasPrice: gasPrice,
         hasError: resultGasUsed.errorMessage !== null,
         simulateErrorMessage: resultGasUsed.errorMessage,
-      };
+      }
     },
     refetchInterval: REFETCH_INTERVAL,
     placeholderData: keepPreviousData,
     enabled: !!document && !!transactionGasService,
     ...options,
-  });
-};
+  })
+}

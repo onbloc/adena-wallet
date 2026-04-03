@@ -1,1 +1,1 @@
-export * from './argument-edit-box';
+export * from './argument-edit-box'

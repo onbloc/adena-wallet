@@ -1,14 +1,14 @@
 import {
   ContractMessage,
-} from '@inject/types';
+} from '@inject/types'
 import {
   RawTxMessageType,
-} from 'adena-module';
+} from 'adena-module'
 
 export function mappedTransactionMessages(
   messages: {
-    type: string;
-    value: any;
+    type: string
+    value: any
   }[],
 ): ContractMessage[] {
   return messages
@@ -18,26 +18,26 @@ export function mappedTransactionMessages(
           return {
             type: '/bank.MsgSend',
             value: message.value,
-          };
+          }
         case '/vm.m_call':
           return {
             type: '/vm.m_call',
             value: message.value,
-          };
+          }
         case '/vm.m_addpkg':
           return {
             type: '/vm.m_addpkg',
             value: message.value,
-          };
+          }
         case '/vm.m_run':
           return {
             type: '/vm.m_run',
             value: message.value,
-          };
+          }
       }
-      return null;
+      return null
     })
-    .filter(message => message !== null) as ContractMessage[];
+    .filter(message => message !== null) as ContractMessage[]
 }
 
 /**
@@ -54,12 +54,12 @@ export function mappedDocumentMessagesWithCaller(
   currentAddress: string,
 ): ContractMessage[] {
   if (!messages) {
-    return [];
+    return []
   }
 
   return messages
     .map((message) => {
-      const type = message.type;
+      const type = message.type
       switch (type) {
         case '/bank.MsgSend':
           return {
@@ -68,7 +68,7 @@ export function mappedDocumentMessagesWithCaller(
               ...message.value,
               from_address: message.value.from_address || currentAddress,
             },
-          };
+          }
         case '/vm.m_call':
           return {
             ...message,
@@ -76,7 +76,7 @@ export function mappedDocumentMessagesWithCaller(
               ...message.value,
               caller: message.value.caller || currentAddress,
             },
-          };
+          }
         case '/vm.m_addpkg':
           return {
             ...message,
@@ -84,7 +84,7 @@ export function mappedDocumentMessagesWithCaller(
               ...message.value,
               creator: message.value.creator || currentAddress,
             },
-          };
+          }
         case '/vm.m_run':
           return {
             ...message,
@@ -92,44 +92,44 @@ export function mappedDocumentMessagesWithCaller(
               ...message.value,
               caller: message.value.caller || currentAddress,
             },
-          };
+          }
       }
-      return null;
+      return null
     })
-    .filter(message => message !== null) as any[];
+    .filter(message => message !== null) as any[]
 }
 
 export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessage[] {
   if (!messages) {
-    return [];
+    return []
   }
 
   return messages
     .map((message) => {
-      const type = message['@type'];
+      const type = message['@type']
       switch (type) {
         case '/bank.MsgSend':
           return {
             type: '/bank.MsgSend',
             value: message,
-          };
+          }
         case '/vm.m_call':
           return {
             type: '/vm.m_call',
             value: message,
-          };
+          }
         case '/vm.m_addpkg':
           return {
             type: '/vm.m_addpkg',
             value: message,
-          };
+          }
         case '/vm.m_run':
           return {
             type: '/vm.m_run',
             value: message,
-          };
+          }
       }
-      return null;
+      return null
     })
-    .filter(message => message !== null) as any[];
+    .filter(message => message !== null) as any[]
 }

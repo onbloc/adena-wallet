@@ -1,87 +1,87 @@
-import IconArraowDown from '@assets/arrowS-down-gray.svg';
-import IconArraowUp from '@assets/arrowS-up-gray.svg';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
-import IconFailed from '@assets/connect-fail-permission.svg';
+import IconArraowDown from '@assets/arrowS-down-gray.svg'
+import IconArraowUp from '@assets/arrowS-up-gray.svg'
+import UnknownLogo from '@assets/common-unknown-logo.svg'
+import IconFailed from '@assets/connect-fail-permission.svg'
 import {
   TransactionErrorDetail as TransactionErrorDetailType,
-} from '@common/utils/transaction-error-detail';
+} from '@common/utils/transaction-error-detail'
 import {
   Button, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButton, BottomFixedLoadingButtonGroup,
-} from '@components/molecules';
-import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
+} from '@components/molecules'
+import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting'
 import {
   UseNetworkFeeReturn,
-} from '@hooks/wallet/use-network-fee';
+} from '@hooks/wallet/use-network-fee'
 import {
   GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect';
+} from '@inject/message/methods/gno-connect'
 import {
   ContractMessage,
-} from '@inject/types';
+} from '@inject/types'
 import {
   NetworkFee as NetworkFeeType,
-} from '@types';
+} from '@types'
 import React, {
   useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+} from 'react'
 
 import {
   ApproveTransactionLoading,
-} from '../approve-transaction-loading';
-import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
-import NetworkFee from '../network-fee/network-fee';
-import StorageDeposit from '../storage-deposit/storage-deposit';
+} from '../approve-transaction-loading'
+import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box'
+import NetworkFee from '../network-fee/network-fee'
+import StorageDeposit from '../storage-deposit/storage-deposit'
 import {
   ApproveTransactionNetworkFeeWrapper,
   ApproveTransactionWrapper,
-} from './approve-transaction.styles';
+} from './approve-transaction.styles'
 
 export interface ApproveTransactionProps {
-  loading: boolean;
-  title: string;
-  logo: string;
-  domain: string;
+  loading: boolean
+  title: string
+  logo: string
+  domain: string
   contracts: {
-    type: string;
-    function: string;
-    value: string;
-  }[];
-  memo: string;
-  hasMemo: boolean;
-  currentBalance?: number;
-  isErrorNetworkFee?: boolean;
-  networkFee: NetworkFeeType | null;
-  transactionData: string;
-  opened: boolean;
-  argumentInfos?: GnoArgumentInfo[];
-  processing: boolean;
-  done: boolean;
-  transactionMessages: ContractMessage[];
-  maxDepositAmount?: number;
-  changeTransactionMessages: (messages: ContractMessage[]) => void;
-  changeMemo: (memo: string) => void;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  onToggleTransactionData: (opened: boolean) => void;
-  onResponse: () => void;
-  onTimeout: () => void;
-  onClickConfirm: () => void;
-  onClickCancel: () => void;
-  useNetworkFeeReturn: UseNetworkFeeReturn;
-  requiresHoldConfirmation?: boolean;
-  onFinishHold?: (finished: boolean) => void;
+    type: string
+    function: string
+    value: string
+  }[]
+  memo: string
+  hasMemo: boolean
+  currentBalance?: number
+  isErrorNetworkFee?: boolean
+  networkFee: NetworkFeeType | null
+  transactionData: string
+  opened: boolean
+  argumentInfos?: GnoArgumentInfo[]
+  processing: boolean
+  done: boolean
+  transactionMessages: ContractMessage[]
+  maxDepositAmount?: number
+  changeTransactionMessages: (messages: ContractMessage[]) => void
+  changeMemo: (memo: string) => void
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  onToggleTransactionData: (opened: boolean) => void
+  onResponse: () => void
+  onTimeout: () => void
+  onClickConfirm: () => void
+  onClickCancel: () => void
+  useNetworkFeeReturn: UseNetworkFeeReturn
+  requiresHoldConfirmation?: boolean
+  onFinishHold?: (finished: boolean) => void
   /** When set, shows detailed error UI instead of calling onResponse immediately (user must tap Close) */
-  errorDetail?: TransactionErrorDetailType | null;
+  errorDetail?: TransactionErrorDetailType | null
   /** Called when user closes the error view; send failure response then close popup */
-  onCloseWithResponse?: () => void;
+  onCloseWithResponse?: () => void
   /** Global error banner message shown between fee section and transaction data (from simulate error) */
-  simulateErrorBannerMessage?: string | null;
+  simulateErrorBannerMessage?: string | null
   /** Per-message validation errors - array aligned with transactionMessages */
-  messageErrors?: (string | undefined)[];
+  messageErrors?: (string | undefined)[]
   /** Whether argument type validation failed (disables Approve) */
-  hasArgumentValidationError?: boolean;
+  hasArgumentValidationError?: boolean
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -117,115 +117,115 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
   messageErrors,
   hasArgumentValidationError = false,
 }) => {
-  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false);
-  const [showRawError, setShowRawError] = useState(false);
-  const errorBannerRef = useRef<HTMLDivElement>(null);
-  const hasScrolledToError = useRef(false);
+  const [openedNetworkFeeSetting, setOpenedNetworkFeeSetting] = useState(false)
+  const [showRawError, setShowRawError] = useState(false)
+  const errorBannerRef = useRef<HTMLDivElement>(null)
+  const hasScrolledToError = useRef(false)
 
   const disabledApprove = useMemo(() => {
     if (requiresHoldConfirmation) {
-      return true;
+      return true
     }
 
     if (useNetworkFeeReturn.isLoading) {
-      return true;
+      return true
     }
 
     if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
-      return true;
+      return true
     }
 
     if (hasArgumentValidationError) {
-      return true;
+      return true
     }
 
-    return Number(networkFee?.amount || 0) <= 0;
-  }, [requiresHoldConfirmation, isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasArgumentValidationError, networkFee]);
+    return Number(networkFee?.amount || 0) <= 0
+  }, [requiresHoldConfirmation, isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasArgumentValidationError, networkFee])
 
   const isMaxDepositError = useMemo(() => {
     if (!maxDepositAmount || currentBalance === undefined) {
-      return false;
+      return false
     }
 
-    return currentBalance < maxDepositAmount;
-  }, [currentBalance, maxDepositAmount]);
+    return currentBalance < maxDepositAmount
+  }, [currentBalance, maxDepositAmount])
 
   const maxDepositErrorMessage = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
-      return '';
+      return ''
     }
 
     if (isMaxDepositError) {
-      return 'Insufficient balance';
+      return 'Insufficient balance'
     }
 
-    return '';
-  }, [useNetworkFeeReturn.isLoading, isMaxDepositError]);
+    return ''
+  }, [useNetworkFeeReturn.isLoading, isMaxDepositError])
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee';
+      return 'Insufficient network fee'
     }
 
-    return '';
-  }, [isErrorNetworkFee]);
+    return ''
+  }, [isErrorNetworkFee])
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (hasMemo) {
-        return;
+        return
       }
 
-      const value = e.target.value;
-      changeMemo(value);
+      const value = e.target.value
+      changeMemo(value)
     },
     [hasMemo, changeMemo],
-  );
+  )
 
   const onClickNetworkFeeSetting = useCallback(() => {
-    setOpenedNetworkFeeSetting(true);
-  }, []);
+    setOpenedNetworkFeeSetting(true)
+  }, [])
 
   const onClickNetworkFeeClose = useCallback(() => {
-    setOpenedNetworkFeeSetting(false);
-  }, []);
+    setOpenedNetworkFeeSetting(false)
+  }, [])
 
   const onClickNetworkFeeSave = useCallback(() => {
-    useNetworkFeeReturn.save();
-    setOpenedNetworkFeeSetting(false);
-  }, [useNetworkFeeReturn.save]);
+    useNetworkFeeReturn.save()
+    setOpenedNetworkFeeSetting(false)
+  }, [useNetworkFeeReturn.save])
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledApprove || requiresHoldConfirmation) {
-      return;
+      return
     }
 
-    onClickConfirm();
-  }, [onClickConfirm, disabledApprove, requiresHoldConfirmation]);
+    onClickConfirm()
+  }, [onClickConfirm, disabledApprove, requiresHoldConfirmation])
 
   useEffect(() => {
     if (done && !errorDetail) {
-      onResponse();
+      onResponse()
     }
-  }, [done, errorDetail, onResponse]);
+  }, [done, errorDetail, onResponse])
 
   useEffect(() => {
     if (simulateErrorBannerMessage && !hasScrolledToError.current) {
-      hasScrolledToError.current = true;
+      hasScrolledToError.current = true
       requestAnimationFrame(() => {
         errorBannerRef.current?.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
-        });
-      });
+        })
+      })
     }
     if (!simulateErrorBannerMessage) {
-      hasScrolledToError.current = false;
+      hasScrolledToError.current = false
     }
-  }, [simulateErrorBannerMessage]);
+  }, [simulateErrorBannerMessage])
 
   if (loading) {
-    return <ApproveTransactionLoading rightButtonText='Approve' />;
+    return <ApproveTransactionLoading rightButtonText='Approve' />
   }
 
   if (openedNetworkFeeSetting) {
@@ -237,7 +237,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           onClickSave={onClickNetworkFeeSave}
         />
       </ApproveTransactionNetworkFeeWrapper>
-    );
+    )
   }
 
   if (done && errorDetail && onCloseWithResponse) {
@@ -283,7 +283,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         </div>
         <BottomFixedButton fill text='Close' onClick={onCloseWithResponse} />
       </ApproveTransactionWrapper>
-    );
+    )
   }
 
   return (
@@ -408,5 +408,5 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         }
       />
     </ApproveTransactionWrapper>
-  );
-};
+  )
+}

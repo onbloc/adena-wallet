@@ -1,22 +1,22 @@
 import {
   Row, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   webFonts,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   useState,
-} from 'react';
+} from 'react'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 interface StyleProps {
-  hover?: boolean;
-  focus?: boolean;
-  filled?: boolean;
-  error?: boolean;
-  disabled?: boolean;
+  hover?: boolean
+  focus?: boolean
+  filled?: boolean
+  error?: boolean
+  disabled?: boolean
 }
 
 const StyledContainer = styled(Row).withConfig({
@@ -67,7 +67,7 @@ const StyledContainer = styled(Row).withConfig({
             0px 1px 2px 0px rgba(0, 0, 0, 0.06);
         `
       : ''}
-`;
+`
 
 const StyledLabel = styled(View).withConfig({
   shouldForwardProp: (prop): boolean =>
@@ -108,7 +108,7 @@ const StyledLabel = styled(View).withConfig({
           border-color: ${theme.webError._200};
         `
       : ''}
-`;
+`
 
 const StyledInput = styled.input.withConfig({
   shouldForwardProp: (prop): boolean =>
@@ -140,15 +140,15 @@ const StyledInput = styled.input.withConfig({
   &:disabled {
     cursor: default;
   }
-`;
+`
 
 interface WebInputWithLabelProps {
-  label: string;
-  value: string;
-  error?: boolean;
-  disabled?: boolean;
-  onChange: (value: string) => void;
-  placeholder?: string;
+  label: string
+  value: string
+  error?: boolean
+  disabled?: boolean
+  onChange: (value: string) => void
+  placeholder?: string
 }
 
 export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
@@ -159,9 +159,9 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
   onChange,
   placeholder,
 }) => {
-  const [hover, setHover] = useState(false);
-  const [focus, setFocus] = useState(false);
-  const filled = value.length > 0;
+  const [hover, setHover] = useState(false)
+  const [focus, setFocus] = useState(false)
+  const filled = value.length > 0
 
   return (
     <StyledContainer
@@ -196,5 +196,5 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
         disabled={disabled}
       />
     </StyledContainer>
-  );
-};
+  )
+}

@@ -1,49 +1,49 @@
 import {
   DEFAULT_GAS_PRICE_RATE,
-} from '@common/constants/gas.constant';
+} from '@common/constants/gas.constant'
 import {
   DEFAULT_GAS_WANTED,
-} from '@common/constants/tx.constant';
+} from '@common/constants/tx.constant'
 import {
   parseStorageDeposits,
-} from '@common/provider/gno/event-parser';
+} from '@common/provider/gno/event-parser'
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   keepPreviousData, useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   NetworkFeeSettingInfo, NetworkFeeSettingType,
-} from '@types';
+} from '@types'
 import {
   Document,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
+} from 'adena-module'
+import BigNumber from 'bignumber.js'
 
 import {
   useIsInitializedAccount,
-} from '../use-get-account-info';
+} from '../use-get-account-info'
 import {
   makeEstimateGasTransaction,
-} from './use-get-estimate-gas-info';
+} from './use-get-estimate-gas-info'
 import {
   useGetGasPrice,
-} from './use-get-gas-price';
+} from './use-get-gas-price'
 
-const REFETCH_INTERVAL = 5_000;
+const REFETCH_INTERVAL = 5_000
 
 const DefaultStorageDeposits = {
   storageDeposit: 0,
   unlockDeposit: 0,
   storageUsage: 0,
   releaseStorageUsage: 0,
-};
+}
 
-export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers';
+export const GET_ESTIMATE_GAS_PRICE_TIERS = 'transactionGas/getEstimateGasPriceTiers'
 
 export const useGetEstimateGasPriceTiers = (
   document: Document | null | undefined,
@@ -53,17 +53,17 @@ export const useGetEstimateGasPriceTiers = (
 ): UseQueryResult<NetworkFeeSettingInfo[] | null> => {
   const {
     currentAccount, currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     transactionGasService, transactionService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     data: gasPrice,
-  } = useGetGasPrice();
+  } = useGetGasPrice()
   const {
     wallet,
-  } = useWalletContext();
-  const isInitializedAccount = useIsInitializedAccount(currentAddress);
+  } = useWalletContext()
+  const isInitializedAccount = useIsInitializedAccount(currentAddress)
 
   return useQuery<NetworkFeeSettingInfo[] | null, Error>({
     queryKey: [wallet, currentAccount?.id, GET_ESTIMATE_GAS_PRICE_TIERS, transactionGasService, document?.msgs, document?.memo, document?.account_number, document?.sequence, gasUsed, gasAdjustment, gasPrice || 0, isInitializedAccount],
@@ -75,21 +75,21 @@ export const useGetEstimateGasPriceTiers = (
         || !gasPrice
         || isInitializedAccount === null
       ) {
-        return null;
+        return null
       }
 
       return Promise.all(
         Object.keys(NetworkFeeSettingType).map(async (key) => {
-          const tier = key as NetworkFeeSettingType;
+          const tier = key as NetworkFeeSettingType
 
           const adjustGasUsedBN = BigNumber(gasUsed || DEFAULT_GAS_WANTED)
             .multipliedBy(DEFAULT_GAS_PRICE_RATE[tier])
-            .multipliedBy(gasAdjustment);
-          const adjustGasUsed = adjustGasUsedBN.toFixed(0, BigNumber.ROUND_DOWN);
-          const adjustedGasPriceBN = BigNumber(gasPrice);
+            .multipliedBy(gasAdjustment)
+          const adjustGasUsed = adjustGasUsedBN.toFixed(0, BigNumber.ROUND_DOWN)
+          const adjustedGasPriceBN = BigNumber(gasPrice)
           const gasFee = adjustedGasPriceBN
             .multipliedBy(adjustGasUsed)
-            .toFixed(0, BigNumber.ROUND_UP);
+            .toFixed(0, BigNumber.ROUND_UP)
 
           const tx = await makeEstimateGasTransaction(
             wallet,
@@ -99,7 +99,7 @@ export const useGetEstimateGasPriceTiers = (
             BigInt(adjustGasUsed),
             adjustedGasPriceBN.toNumber(),
             !isInitializedAccount,
-          );
+          )
 
           if (!tx) {
             return {
@@ -113,7 +113,7 @@ export const useGetEstimateGasPriceTiers = (
                 hasError: true,
                 simulateErrorMessage: 'Failed to simulate transaction',
               },
-            };
+            }
           }
 
           const result = await transactionGasService
@@ -124,26 +124,26 @@ export const useGetEstimateGasPriceTiers = (
                   gasUsed: 0n,
                   errorMessage: 'Network fee too low',
                   storageDeposits: DefaultStorageDeposits,
-                };
+                }
               }
 
               const storageDeposits = parseStorageDeposits(
                 simulateResult.response_base?.events ?? [],
-              );
+              )
 
               return {
                 gasUsed: BigInt(adjustGasUsed),
                 storageDeposits,
                 errorMessage: null,
-              };
+              }
             })
             .catch((e: Error) => {
               return {
                 gasUsed: 0n,
                 errorMessage: e?.message || '',
                 storageDeposits: DefaultStorageDeposits,
-              };
-            });
+              }
+            })
 
           if (result.gasUsed === 0n) {
             return {
@@ -157,7 +157,7 @@ export const useGetEstimateGasPriceTiers = (
                 hasError: true,
                 simulateErrorMessage: result.errorMessage,
               },
-            };
+            }
           }
 
           return {
@@ -171,13 +171,13 @@ export const useGetEstimateGasPriceTiers = (
               hasError: result.errorMessage !== null,
               simulateErrorMessage: result.errorMessage,
             },
-          };
+          }
         }),
-      );
+      )
     },
     refetchInterval: REFETCH_INTERVAL,
     placeholderData: keepPreviousData,
     enabled: !!transactionGasService && !!document && !!gasPrice,
     ...options,
-  });
-};
+  })
+}

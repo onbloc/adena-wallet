@@ -1,19 +1,19 @@
-import IconCopy from '@assets/icon-copy';
-import IconCopyCheck from '@assets/icon-copy-check';
+import IconCopy from '@assets/icon-copy'
+import IconCopyCheck from '@assets/icon-copy-check'
 import React, {
   useCallback, useEffect, useState,
-} from 'react';
+} from 'react'
 
 import {
   CopyButtonWrapper,
-} from './copy-icon-button.styles';
+} from './copy-icon-button.styles'
 
 export interface CopyIconButtonProps {
-  className?: string;
-  copyText: string;
-  style?: React.CSSProperties;
-  size?: number;
-  onClick?: () => void;
+  className?: string
+  copyText: string
+  style?: React.CSSProperties
+  size?: number
+  onClick?: () => void
 }
 
 export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
@@ -24,26 +24,26 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
   size = 16,
   onClick,
 }) => {
-  const [checked, setChecked] = useState<boolean>(false);
+  const [checked, setChecked] = useState<boolean>(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setChecked(false), 2000);
+    const timer = setTimeout(() => setChecked(false), 2000)
     return () => {
-      clearTimeout(timer);
-    };
-  }, [checked]);
+      clearTimeout(timer)
+    }
+  }, [checked])
 
   const onClickCopyButton = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setChecked(true);
-      navigator.clipboard.writeText(copyText);
+      event.preventDefault()
+      event.stopPropagation()
+      setChecked(true)
+      navigator.clipboard.writeText(copyText)
 
-      !!onClick && onClick();
+      !!onClick && onClick()
     },
     [copyText, checked, onClick],
-  );
+  )
 
   return (
     <CopyButtonWrapper
@@ -55,5 +55,5 @@ export const CopyIconButton: React.FC<CopyIconButtonProps> = ({
     >
       {checked ? <IconCopyCheck /> : <IconCopy />}
     </CopyButtonWrapper>
-  );
-};
+  )
+}

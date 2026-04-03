@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const TransferSummaryWrapper = styled.div`
   ${mixins.flex({
@@ -70,4 +70,4 @@ export const TransferSummaryWrapper = styled.div`
     height: 116px;
     flex-shrink: 0;
   }
-`;
+`

@@ -1,33 +1,33 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import Toggle, {
   ToggleProps,
-} from '.';
+} from '.'
 
 describe('Toggle Component', () => {
   it('Toggle render', () => {
     const args: ToggleProps = {
       activated: true,
       onToggle: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -36,6 +36,6 @@ describe('Toggle Component', () => {
           <Toggle {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

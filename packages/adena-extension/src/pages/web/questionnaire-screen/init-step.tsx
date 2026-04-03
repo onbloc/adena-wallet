@@ -1,22 +1,22 @@
-import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
+import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json'
 import {
   View, WebButton,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
-import React from 'react';
-import styled from 'styled-components';
+} from '@components/molecules'
+import React from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   gap: 18px;
   align-items: center;
-`;
+`
 
 interface QuestionnaireInitStepProps {
-  initQuestion: () => void;
+  initQuestion: () => void
 }
 
 const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
@@ -50,7 +50,7 @@ const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
         onClick={initQuestion}
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default QuestionnaireInitStep;
+export default QuestionnaireInitStep

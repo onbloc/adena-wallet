@@ -1,12 +1,12 @@
-import IconRight from '@assets/icon-right';
-import React from 'react';
+import IconRight from '@assets/icon-right'
+import React from 'react'
 
-import * as S from './document-signer.styles';
+import * as S from './document-signer.styles'
 
 interface DocumentBroadcastSignerProps {
-  signerCount: number;
-  signedCount: number;
-  onClickSetting?: () => void;
+  signerCount: number
+  signedCount: number
+  onClickSetting?: () => void
 }
 
 const DocumentBroadcastSigner = ({
@@ -14,7 +14,7 @@ const DocumentBroadcastSigner = ({
   signedCount,
   onClickSetting,
 }: DocumentBroadcastSignerProps): React.ReactElement<any> => {
-  const hasSetting = !!onClickSetting;
+  const hasSetting = !!onClickSetting
   return (
     <S.DocumentSignersContainer>
       <S.DocumentSignersWrapper>
@@ -35,7 +35,7 @@ const DocumentBroadcastSigner = ({
         </div>
       </S.DocumentSignersWrapper>
     </S.DocumentSignersContainer>
-  );
-};
+  )
+}
 
-export default DocumentBroadcastSigner;
+export default DocumentBroadcastSigner

@@ -1,7 +1,7 @@
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const TransferSummaryAddressWrapper = styled.div`
   display: flex;
@@ -32,4 +32,4 @@ export const TransferSummaryAddressWrapper = styled.div`
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-`;
+`

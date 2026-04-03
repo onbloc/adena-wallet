@@ -1,22 +1,22 @@
 import {
   WalletState,
-} from '@states';
+} from '@states'
 import {
   Account,
-} from 'adena-module';
+} from 'adena-module'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 
-export type UseUpdateWalletAccountNameReturn = (account: Account, name: string) => void;
+export type UseUpdateWalletAccountNameReturn = (account: Account, name: string) => void
 
 export const useUpdateWalletAccountName = (): UseUpdateWalletAccountNameReturn => {
-  const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount);
+  const [, setCurrentAccount] = useRecoilState(WalletState.currentAccount)
 
   const updateAccountName = async (account: Account, name: string): Promise<void> => {
-    account.name = name;
-    setCurrentAccount(account);
-  };
+    account.name = name
+    setCurrentAccount(account)
+  }
 
-  return updateAccountName;
-};
+  return updateAccountName
+}

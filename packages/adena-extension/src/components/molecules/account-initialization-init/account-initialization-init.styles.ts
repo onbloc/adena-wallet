@@ -1,11 +1,11 @@
 import {
   View,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   fonts,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const AccountInitializationInitWrapper = styled(View)`
   width: 100%;
@@ -67,4 +67,4 @@ export const AccountInitializationInitWrapper = styled(View)`
       ${fonts.body2Reg}
     }
   }
-`;
+`

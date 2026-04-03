@@ -1,51 +1,51 @@
 import {
   CommonFullContentLayout,
-} from '@components/atoms';
-import EditNetwork from '@components/pages/edit-network/edit-network';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@components/atoms'
+import EditNetwork from '@components/pages/edit-network/edit-network'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useCustomNetworkInput,
-} from '@hooks/use-custom-network-input';
+} from '@hooks/use-custom-network-input'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   NetworkMetainfo,
-} from '@types';
+} from '@types'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import React, {
   useCallback, useEffect, useMemo,
-} from 'react';
+} from 'react'
 
 function isValidURL(rpcURL: string): boolean {
-  const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/;
-  return regExp.test(rpcURL);
+  const regExp = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-/]))?/
+  return regExp.test(rpcURL)
 }
 
 function existsChainId(chainId: string, networks: NetworkMetainfo[]): boolean {
   return (
     networks.findIndex(network => network.networkId === chainId && network.deleted !== true) > -1
-  );
+  )
 }
 
 function existsRPCUrl(rpcUrl: string, networks: NetworkMetainfo[]): boolean {
-  const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
+  const currentRPCUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl
   return (
     networks.findIndex(network => network.rpcUrl === currentRPCUrl && network.deleted !== true)
     > -1
-  );
+  )
 }
 
 const EditCustomNetworkContainer: React.FC = () => {
   const {
     params, goBack,
-  } = useAppNavigate<RoutePath.EditCustomNetwork>();
-  const currentNetworkId = params.networkId;
+  } = useAppNavigate<RoutePath.EditCustomNetwork>()
+  const currentNetworkId = params.networkId
   const {
     networks, updateNetwork, getDefaultNetworkInfo, deleteNetwork,
-  } = useNetwork();
+  } = useNetwork()
   const {
     name,
     rpcUrl,
@@ -61,84 +61,84 @@ const EditCustomNetworkContainer: React.FC = () => {
     setRPCUrlError,
     setIndexerUrlError,
     setChainIdError,
-  } = useCustomNetworkInput();
+  } = useCustomNetworkInput()
 
   useEffect(() => {
-    initInput(currentNetworkId);
-  }, [currentNetworkId]);
+    initInput(currentNetworkId)
+  }, [currentNetworkId])
 
   const originNetwork = useMemo(() => {
-    const currentNetwork = networks.find(network => network.id === currentNetworkId);
-    return currentNetwork;
-  }, [networks, currentNetworkId]);
+    const currentNetwork = networks.find(network => network.id === currentNetworkId)
+    return currentNetwork
+  }, [networks, currentNetworkId])
 
   const savable = useMemo(() => {
     if (!originNetwork) {
-      return false;
+      return false
     }
     if (name === '' || rpcUrl === '' || chainId === '') {
-      return false;
+      return false
     }
     return (
       originNetwork.networkName !== name
       || originNetwork.rpcUrl !== rpcUrl
       || originNetwork.indexerUrl !== indexerUrl
       || originNetwork.networkId !== chainId
-    );
-  }, [originNetwork, name, rpcUrl, indexerUrl, chainId]);
+    )
+  }, [originNetwork, name, rpcUrl, indexerUrl, chainId])
 
   const defaultNetworkInfo = useMemo(() => {
-    return getDefaultNetworkInfo(currentNetworkId);
-  }, [currentNetworkId, getDefaultNetworkInfo]);
+    return getDefaultNetworkInfo(currentNetworkId)
+  }, [currentNetworkId, getDefaultNetworkInfo])
 
   const editType: 'rpc-only' | 'all-default' | 'all' = useMemo(() => {
     if (!defaultNetworkInfo) {
-      return 'all';
+      return 'all'
     }
     if (defaultNetworkInfo.id === 'dev') {
-      return 'all-default';
+      return 'all-default'
     }
-    return 'rpc-only';
-  }, [defaultNetworkInfo]);
+    return 'rpc-only'
+  }, [defaultNetworkInfo])
 
   function initInput(networkId: string): void {
-    const network = networks.find(current => current.id === networkId);
+    const network = networks.find(current => current.id === networkId)
     if (network) {
-      changeName(network.networkName);
-      changeRPCUrl(network.rpcUrl);
-      changeIndexerUrl(network.indexerUrl);
-      changeChainId(network.chainId);
+      changeName(network.networkName)
+      changeRPCUrl(network.rpcUrl)
+      changeIndexerUrl(network.indexerUrl)
+      changeChainId(network.chainId)
     }
   }
 
   const saveNetwork = useCallback(async () => {
-    let isValid = true;
+    let isValid = true
     if (!isValidURL(rpcUrl)) {
-      isValid = false;
-      setRPCUrlError('Invalid URL');
+      isValid = false
+      setRPCUrlError('Invalid URL')
     }
     if (!!indexerUrl && !isValidURL(indexerUrl)) {
-      isValid = false;
-      setIndexerUrlError('Invalid URL');
+      isValid = false
+      setIndexerUrlError('Invalid URL')
     }
     if (existsChainId(chainId, networks)) {
       if (originNetwork?.chainId !== chainId) {
-        isValid = false;
-        setChainIdError('Chain ID already in use');
+        isValid = false
+        setChainIdError('Chain ID already in use')
       }
     }
     if (existsRPCUrl(rpcUrl, networks)) {
       if (originNetwork?.rpcUrl !== rpcUrl) {
-        isValid = false;
-        setRPCUrlError('RPC URL already in use');
+        isValid = false
+        setRPCUrlError('RPC URL already in use')
       }
     }
     if (!isValid) {
-      return;
+      return
     }
-    const network = networks.find(current => current.id === currentNetworkId);
+    const network = networks.find(current => current.id === currentNetworkId)
     if (network) {
-      const parsedName = name.trim();
+      const parsedName = name.trim()
       await updateNetwork({
         ...network,
         chainId: chainId,
@@ -147,25 +147,25 @@ const EditCustomNetworkContainer: React.FC = () => {
         networkName: parsedName,
         rpcUrl,
         indexerUrl,
-      });
+      })
     }
-    setRPCUrlError('');
-    setChainIdError('');
-    goBack();
-  }, [networks, name, rpcUrl, indexerUrl, chainId, currentNetworkId, originNetwork]);
+    setRPCUrlError('')
+    setChainIdError('')
+    goBack()
+  }, [networks, name, rpcUrl, indexerUrl, chainId, currentNetworkId, originNetwork])
 
   const clearNetwork = useCallback(async () => {
     if (defaultNetworkInfo) {
-      changeName(defaultNetworkInfo.networkName);
-      changeRPCUrl(defaultNetworkInfo.rpcUrl);
-      changeIndexerUrl(defaultNetworkInfo.indexerUrl);
-      changeChainId(defaultNetworkInfo.chainId);
-      return;
+      changeName(defaultNetworkInfo.networkName)
+      changeRPCUrl(defaultNetworkInfo.rpcUrl)
+      changeIndexerUrl(defaultNetworkInfo.indexerUrl)
+      changeChainId(defaultNetworkInfo.chainId)
+      return
     }
 
-    await deleteNetwork(currentNetworkId);
-    goBack();
-  }, [currentNetworkId, defaultNetworkInfo]);
+    await deleteNetwork(currentNetworkId)
+    goBack()
+  }, [currentNetworkId, defaultNetworkInfo])
 
   return (
     <CommonFullContentLayout>
@@ -188,7 +188,7 @@ const EditCustomNetworkContainer: React.FC = () => {
         moveBack={goBack}
       />
     </CommonFullContentLayout>
-  );
-};
+  )
+}
 
-export default EditCustomNetworkContainer;
+export default EditCustomNetworkContainer

@@ -1,23 +1,23 @@
 import {
   WebFontType,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   useEffect, useState,
-} from 'react';
+} from 'react'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   View,
-} from '../base';
+} from '../base'
 import {
   WebText,
-} from '../web-text';
+} from '../web-text'
 
 export const StyledWrapper = styled(View)<{
-  active: boolean;
-  height?: number;
+  active: boolean
+  height?: number
 }>`
   width: fit-content;
   height: ${({
@@ -46,15 +46,15 @@ export const StyledWrapper = styled(View)<{
           }
         `
       : ''}
-`;
+`
 
 export interface RollingNumberProps {
-  value: number;
-  height?: number;
-  type: WebFontType;
-  color?: string;
-  style?: React.CSSProperties;
-  textCenter?: boolean;
+  value: number
+  height?: number
+  type: WebFontType
+  color?: string
+  style?: React.CSSProperties
+  textCenter?: boolean
 }
 
 const RollingNumber: React.FC<RollingNumberProps> = ({
@@ -65,23 +65,23 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
   style,
   textCenter,
 }) => {
-  const [currentValue, setCurrentValue] = useState(value);
-  const [animated, setAnimated] = useState(false);
+  const [currentValue, setCurrentValue] = useState(value)
+  const [animated, setAnimated] = useState(false)
 
   useEffect(() => {
     if (currentValue !== value) {
-      setAnimated(true);
+      setAnimated(true)
     }
-  }, [value]);
+  }, [value])
 
   useEffect(() => {
     if (animated) {
       setTimeout(() => {
-        setAnimated(false);
-        setCurrentValue(value);
-      }, 200);
+        setAnimated(false)
+        setCurrentValue(value)
+      }, 200)
     }
-  }, [animated]);
+  }, [animated])
 
   return (
     <StyledWrapper active={animated} height={height}>
@@ -92,7 +92,7 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
         {value}
       </WebText>
     </StyledWrapper>
-  );
-};
+  )
+}
 
-export default RollingNumber;
+export default RollingNumber

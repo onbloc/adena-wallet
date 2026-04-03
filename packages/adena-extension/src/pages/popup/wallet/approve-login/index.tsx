@@ -1,62 +1,62 @@
 import {
   WalletResponseFailureType, WalletResponseType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   PasswordValidationError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   decodeParameter, parseParameters,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   encryptWalletPassword,
-} from '@common/utils/crypto-utils';
+} from '@common/utils/crypto-utils'
 import {
   validateEmptyPassword,
-} from '@common/validation';
+} from '@common/validation'
 import {
   Button, DefaultInput, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   useAdenaContext, useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useLoadAccounts,
-} from '@hooks/use-load-accounts';
+} from '@hooks/use-load-accounts'
 import {
   InjectionMessageInstance,
-} from '@inject/message';
+} from '@inject/message'
 import {
   ForgetPwd, Title,
-} from '@pages/popup/certify/login';
+} from '@pages/popup/certify/login'
 import {
   WalletState,
-} from '@states';
-import mixins from '@styles/mixins';
+} from '@states'
+import mixins from '@styles/mixins'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   isAirgapAccount,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   type JSX, useCallback, useEffect, useMemo, useRef, useState,
-} from 'react';
+} from 'react'
 import {
   useLocation, useNavigate,
-} from 'react-router';
+} from 'react-router'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
-import LoadingApproveTransaction from './loading-approve-transaction';
+import LoadingApproveTransaction from './loading-approve-transaction'
 
-const text = 'Enter\nYour Password';
+const text = 'Enter\nYour Password'
 const Wrapper = styled.div`
   ${mixins.flex({
     justify: 'flex-start',
@@ -64,180 +64,183 @@ const Wrapper = styled.div`
   max-width: 100%;
   min-height: 100%;
   padding: 29px 20px 72px;
-`;
+`
 
 export const ApproveLogin = (): JSX.Element => {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const theme = useTheme()
+  const navigate = useNavigate()
+  const location = useLocation()
   const {
     walletService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     initWallet,
-  } = useWalletContext();
-  const [, setState] = useRecoilState(WalletState.state);
+  } = useWalletContext()
+  const [, setState] = useRecoilState(WalletState.state)
   const {
     state, loadAccounts,
-  } = useLoadAccounts();
+  } = useLoadAccounts()
   const {
     currentAccount,
-  } = useCurrentAccount();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<PasswordValidationError | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined);
+  } = useCurrentAccount()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<PasswordValidationError | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [requestData, setRequestData] = useState<{ [key in string]: any } | undefined>(undefined)
 
   const availableLogin = useMemo(() => {
-    return password.length > 0;
-  }, [password]);
+    return password.length > 0
+  }, [password])
 
   useEffect(() => {
-    const data = parseParameters(location.search);
-    const parsedData = decodeParameter(data['data']);
+    const data = parseParameters(location.search)
+    const parsedData = decodeParameter(data['data'])
     setRequestData({
       ...parsedData,
       hostname: data['hostname'],
-    });
-  }, []);
+    })
+  }, [])
 
   useEffect(() => {
     switch (state) {
       case 'NONE':
-        loadAccounts();
-        break;
+        loadAccounts()
+        break
       case 'FINISH':
-        redirect();
-        break;
+        redirect()
+        break
       case 'CREATE':
       case 'FAIL':
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, requestData),
-        );
-        break;
+        )
+        break
       default:
-        break;
+        break
     }
-  }, [state]);
+  }, [state])
 
   useEffect(() => {
-    focusInput();
-  }, [state]);
+    focusInput()
+  }, [state])
 
   useEffect(() => {
-    setError(null);
-  }, [password]);
+    setError(null)
+  }, [password])
 
   const focusInput = useCallback(() => {
     if (inputRef.current) {
-      inputRef.current.focus();
+      inputRef.current.focus()
     }
-  }, [inputRef]);
+  }, [inputRef])
 
   const tryLoginApprove = async (password: string): Promise<void> => {
     if (!availableLogin) {
-      return;
+      return
     }
 
-    let currentError = null;
+    let currentError = null
     try {
-      validateEmptyPassword(password);
+      validateEmptyPassword(password)
 
-      const encryptedPassword = encryptWalletPassword(password);
-      const equalPassword = await walletService.equalsPassword(password);
+      const encryptedPassword = encryptWalletPassword(password)
+      const equalPassword = await walletService.equalsPassword(password)
       if (equalPassword) {
-        await walletService.updatePassword(encryptedPassword);
-        await initWallet();
-        setPassword('');
-        setState('FINISH');
+        await walletService.updatePassword(encryptedPassword)
+        await initWallet()
+        setPassword('')
+        setState('FINISH')
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof PasswordValidationError) {
-        currentError = new PasswordValidationError('INVALID_PASSWORD');
+        currentError = new PasswordValidationError('INVALID_PASSWORD')
       }
     }
     if (currentError === null) {
-      currentError = new PasswordValidationError('INVALID_PASSWORD');
+      currentError = new PasswordValidationError('INVALID_PASSWORD')
     }
-    setError(currentError);
-  };
+    setError(currentError)
+  }
 
   const redirect = (): void => {
     switch (requestData?.type as WalletResponseType | undefined) {
       case 'DO_CONTRACT':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
-          navigate(RoutePath.ApproveSignFailed);
-          return;
+          navigate(RoutePath.ApproveSignFailed)
+          return
         }
         navigate(RoutePath.ApproveTransaction + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       case 'SIGN_AMINO':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
-          navigate(RoutePath.ApproveSignFailed);
-          return;
+          navigate(RoutePath.ApproveSignFailed)
+          return
         }
         navigate(RoutePath.ApproveSign + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       case 'SIGN_TX':
         if (currentAccount === null || isAirgapAccount(currentAccount)) {
-          navigate(RoutePath.ApproveSignFailed);
-          return;
+          navigate(RoutePath.ApproveSignFailed)
+          return
         }
         navigate(RoutePath.ApproveSignTransaction + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       case 'ADD_ESTABLISH':
         navigate(RoutePath.ApproveEstablish + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       case 'ADD_NETWORK':
         navigate(RoutePath.ApproveAddingNetwork + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       case 'SWITCH_NETWORK':
         navigate(RoutePath.ApproveChangingNetwork + location.search, {
           state: {
             requestData,
           },
-        });
-        return;
+        })
+        return
       default:
         chrome.runtime.sendMessage(
           InjectionMessageInstance.failure(WalletResponseFailureType.UNEXPECTED_ERROR, requestData),
-        );
-        return;
+        )
+        return
     }
-  };
+  }
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Enter') tryLoginApprove(password);
-  };
+    if (e.key === 'Enter') tryLoginApprove(password)
+  }
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value),
     [password],
-  );
+  )
 
-  const approveButtonClick = (): Promise<void> => tryLoginApprove(password);
+  const approveButtonClick = (): Promise<void> => tryLoginApprove(password)
 
-  const onClickForgotButton = (): void => { navigate(RoutePath.ForgotPassword); };
+  const onClickForgotButton = (): void => {
+    navigate(RoutePath.ForgotPassword)
+  }
 
   return (
     <>
@@ -273,5 +276,5 @@ export const ApproveLogin = (): JSX.Element => {
             <LoadingApproveTransaction rightButtonText='Approve' />
           )}
     </>
-  );
-};
+  )
+}

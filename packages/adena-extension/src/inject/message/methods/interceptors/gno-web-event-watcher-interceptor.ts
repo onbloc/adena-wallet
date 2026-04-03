@@ -1,85 +1,86 @@
 import {
   GnoConnectInfoProvider,
-} from '../gno-connect-info-provider';
+} from '../gno-connect-info-provider'
 import {
   IInterceptor,
-} from '../gno-interceptor.types';
+} from '../gno-interceptor.types'
 import {
   GnoSessionUpdateMessage,
-} from '../gno-session';
+} from '../gno-session'
 import {
   GnoWebEventWatcher,
-} from '../gno-web-event-watcher';
+} from '../gno-web-event-watcher'
 
 /**
  * Interceptor for GnoWeb custom events
  * Subscribes to Gnoweb custom events and forwards to background
  */
 export class GnoWebEventWatcherInterceptor implements IInterceptor {
-  public readonly name = 'GnoWebEventWatcherInterceptor';
-  private isRegistered = false;
-  private watcher: GnoWebEventWatcher | null = null;
-  private readonly connectInfoProvider: GnoConnectInfoProvider;
-  private readonly onSessionUpdate: (message: GnoSessionUpdateMessage) => void;
-  private beforeUnloadHandler: (() => void) | null = null;
+  public readonly name = 'GnoWebEventWatcherInterceptor'
+  private isRegistered = false
+  private watcher: GnoWebEventWatcher | null = null
+  private readonly connectInfoProvider: GnoConnectInfoProvider
+  private readonly onSessionUpdate: (message: GnoSessionUpdateMessage) => void
+  private beforeUnloadHandler: (() => void) | null = null
 
   constructor(onSessionUpdate: (message: GnoSessionUpdateMessage) => void) {
-    this.connectInfoProvider = GnoConnectInfoProvider.getInstance();
-    this.onSessionUpdate = onSessionUpdate;
+    this.connectInfoProvider = GnoConnectInfoProvider.getInstance()
+    this.onSessionUpdate = onSessionUpdate
   }
 
   public shouldRegister(): boolean {
-    return this.connectInfoProvider.shouldRegister();
+    return this.connectInfoProvider.shouldRegister()
   }
 
   public register(): void {
     if (this.isRegistered) {
-      return;
+      return
     }
 
     if (!this.shouldRegister()) {
-      return;
+      return
     }
 
-    this.watcher = new GnoWebEventWatcher(this.onSessionUpdate);
+    this.watcher = new GnoWebEventWatcher(this.onSessionUpdate)
 
     // Handle DOM ready state
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
-        this.startWatcher();
-      });
-    } else {
-      this.startWatcher();
+        this.startWatcher()
+      })
+    }
+    else {
+      this.startWatcher()
     }
 
     // Cleanup on page unload
     this.beforeUnloadHandler = (): void => {
-      this.stopWatcher();
-    };
+      this.stopWatcher()
+    }
 
-    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+    window.addEventListener('beforeunload', this.beforeUnloadHandler)
 
-    this.isRegistered = true;
+    this.isRegistered = true
   }
 
   public unregister(): void {
     if (!this.isRegistered) {
-      return;
+      return
     }
 
-    this.stopWatcher();
+    this.stopWatcher()
 
     if (this.beforeUnloadHandler) {
-      window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-      this.beforeUnloadHandler = null;
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+      this.beforeUnloadHandler = null
     }
 
-    this.watcher = null;
-    this.isRegistered = false;
+    this.watcher = null
+    this.isRegistered = false
   }
 
   public isActive(): boolean {
-    return this.isRegistered && this.watcher !== null;
+    return this.isRegistered && this.watcher !== null
   }
 
   /**
@@ -87,7 +88,7 @@ export class GnoWebEventWatcherInterceptor implements IInterceptor {
    */
   private startWatcher(): void {
     if (this.watcher) {
-      this.watcher.start();
+      this.watcher.start()
     }
   }
 
@@ -96,7 +97,7 @@ export class GnoWebEventWatcherInterceptor implements IInterceptor {
    */
   private stopWatcher(): void {
     if (this.watcher) {
-      this.watcher.stop();
+      this.watcher.stop()
     }
   }
 }

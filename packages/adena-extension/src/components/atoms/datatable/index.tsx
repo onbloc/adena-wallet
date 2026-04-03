@@ -1,15 +1,15 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import React from 'react';
-import styled from 'styled-components';
+} from '@styles/theme'
+import React from 'react'
+import styled from 'styled-components'
 
 export interface DatatableProps {
   data: {
-    key: string;
-    value: string;
-  }[];
+    key: string
+    value: string
+  }[]
 }
 
 const StyledContainer = styled.div`
@@ -43,7 +43,7 @@ const StyledContainer = styled.div`
       }
     }
   }
-`;
+`
 
 export const Datatable: React.FC<DatatableProps> = ({
   data,
@@ -57,5 +57,5 @@ export const Datatable: React.FC<DatatableProps> = ({
         </div>
       ))}
     </StyledContainer>
-  );
-};
+  )
+}

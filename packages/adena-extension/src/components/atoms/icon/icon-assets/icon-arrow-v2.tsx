@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconArrowV2 = ({
   className,
 }: {
-  className?: string;
+  className?: string
 }): ReactElement<any> => {
   return (
     <svg
@@ -24,7 +24,7 @@ const IconArrowV2 = ({
         strokeLinejoin='round'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconArrowV2;
+export default IconArrowV2

@@ -1,11 +1,11 @@
 import {
   SkeletonBoxStyle,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const AdditionalTokenInfoWrapper = styled.div`
   ${mixins.flex({
@@ -14,7 +14,7 @@ export const AdditionalTokenInfoWrapper = styled.div`
   })};
   width: 100%;
   height: auto;
-`;
+`
 
 export const AdditionalTokenInfoItemWrapper = styled.div`
   ${mixins.flex({
@@ -47,9 +47,9 @@ export const AdditionalTokenInfoItemWrapper = styled.div`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-`;
+`
 
 export const TokenInfoValueLoadingBox = styled(SkeletonBoxStyle)`
   width: 40px;
   height: 10px;
-`;
+`

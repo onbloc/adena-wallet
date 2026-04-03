@@ -1,6 +1,6 @@
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 
 const IconEditSmall = (): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'>
@@ -13,6 +13,6 @@ const IconEditSmall = (): JSX.Element => (
       fill='#A3A3B5'
     />
   </svg>
-);
+)
 
-export default IconEditSmall;
+export default IconEditSmall

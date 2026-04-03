@@ -1,46 +1,46 @@
-import IconHelp from '@assets/help.svg';
+import IconHelp from '@assets/help.svg'
 import {
   ADENA_MULTISIG_GUIDE_LINK,
-} from '@common/constants/resource.constant';
+} from '@common/constants/resource.constant'
 import {
   CommonFullContentLayout, Pressable, Text, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
-import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input';
-import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input';
-import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+} from '@components/molecules'
+import BroadcastMultisigSignatureUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-multisig-signature-upload-input/broadcast-multisig-signature-upload-input'
+import BroadcastMultisigTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-multisig-transaction-upload-input'
+import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
 import {
   SignatureUploadResult,
   TransactionDisplayInfo,
-} from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen'
 import {
   Signature,
-} from '@inject/types';
+} from '@inject/types'
 import {
   RawTx, SignerPublicKeyInfo,
-} from 'adena-module';
-import React from 'react';
+} from 'adena-module'
+import React from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 interface BroadcastMultisigTransactionUploadProps {
-  currentAddress: string | null;
-  transaction: RawTx | null;
-  transactionInfos: TransactionDisplayInfo[];
-  uploadTransaction: (text: string) => boolean;
-  rawTransaction: string;
-  signatures: Signature[];
-  uploadSignature: (text: string) => SignatureUploadResult;
-  removeSignature: (pubKeyValue: string) => void;
-  broadcast: () => Promise<boolean>;
-  reset: () => void;
-  signerPublicKeys: SignerPublicKeyInfo[];
-  threshold: number;
+  currentAddress: string | null
+  transaction: RawTx | null
+  transactionInfos: TransactionDisplayInfo[]
+  uploadTransaction: (text: string) => boolean
+  rawTransaction: string
+  signatures: Signature[]
+  uploadSignature: (text: string) => SignatureUploadResult
+  removeSignature: (pubKeyValue: string) => void
+  broadcast: () => Promise<boolean>
+  reset: () => void
+  signerPublicKeys: SignerPublicKeyInfo[]
+  threshold: number
 }
 
 const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionUploadProps> = ({
@@ -57,65 +57,65 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
   signerPublicKeys,
   threshold,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     openLink,
-  } = useLink();
-  const [isBroadcasting, setIsBroadcasting] = React.useState(false);
+  } = useLink()
+  const [isBroadcasting, setIsBroadcasting] = React.useState(false)
   const {
     goBack,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   const validSignatures = React.useMemo(() => {
     return signatures.filter(signature =>
       signerPublicKeys.some(signer => signer.publicKey.value === signature.pub_key.value),
-    );
-  }, [signatures, signerPublicKeys]);
+    )
+  }, [signatures, signerPublicKeys])
 
   const loadedTransaction = React.useMemo(() => {
-    return Boolean(transaction);
-  }, [transaction]);
+    return Boolean(transaction)
+  }, [transaction])
 
   const blockEvent = (event: DragEvent): void => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
+    event.preventDefault()
+    event.stopPropagation()
+  }
 
   const disableBroadcast = React.useMemo(() => {
     if (isBroadcasting) {
-      return true;
+      return true
     }
-    return validSignatures.length < threshold;
-  }, [isBroadcasting, validSignatures, threshold]);
+    return validSignatures.length < threshold
+  }, [isBroadcasting, validSignatures, threshold])
 
   const onClickBroadcast = (): void => {
     if (disableBroadcast) {
-      return;
+      return
     }
-    setIsBroadcasting(true);
+    setIsBroadcasting(true)
     broadcast().finally(() => {
-      setIsBroadcasting(false);
-      reset();
-    });
-  };
+      setIsBroadcasting(false)
+      reset()
+    })
+  }
 
   const onClickCancel = React.useCallback(() => {
-    goBack();
-    reset();
-  }, [goBack, reset]);
+    goBack()
+    reset()
+  }, [goBack, reset])
 
   const onClickHelp = React.useCallback(() => {
-    openLink(ADENA_MULTISIG_GUIDE_LINK.BROADCAST_TRANSACTION);
-  }, []);
+    openLink(ADENA_MULTISIG_GUIDE_LINK.BROADCAST_TRANSACTION)
+  }, [])
 
   React.useEffect(() => {
-    window.addEventListener('drop', blockEvent, false);
-    window.addEventListener('dragover', blockEvent, false);
+    window.addEventListener('drop', blockEvent, false)
+    window.addEventListener('dragover', blockEvent, false)
     return () => {
-      window.removeEventListener('drop', blockEvent);
-      window.removeEventListener('dragover', blockEvent);
-    };
-  }, []);
+      window.removeEventListener('drop', blockEvent)
+      window.removeEventListener('dragover', blockEvent)
+    }
+  }, [])
 
   return (
     <CommonFullContentLayout>
@@ -179,30 +179,30 @@ const BroadcastMultisigTransactionUpload: React.FC<BroadcastMultisigTransactionU
         }}
       />
     </CommonFullContentLayout>
-  );
-};
+  )
+}
 
-export default BroadcastMultisigTransactionUpload;
+export default BroadcastMultisigTransactionUpload
 
 const StyledWrapper = styled(View)`
   width: 100%;
   gap: 24px;
   padding: 24px 20px 120px;
-`;
+`
 
 const StyledHeaderWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`;
+`
 
 const StyledInputWrapper = styled(View)`
   gap: 12px;
-`;
+`
 
 const StyledHelpWrapper = styled(Pressable)`
   flex-direction: row;
   gap: 6px;
   justify-content: center;
   align-items: center;
-`;
+`

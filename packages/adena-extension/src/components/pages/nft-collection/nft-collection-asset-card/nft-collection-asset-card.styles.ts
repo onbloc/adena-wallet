@@ -1,11 +1,11 @@
 import {
   View,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const NFTCollectionAssetCardWrapper = styled(View)`
   position: relative;
@@ -55,4 +55,4 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
       ${fonts.captionBold}
     }
   }
-`;
+`

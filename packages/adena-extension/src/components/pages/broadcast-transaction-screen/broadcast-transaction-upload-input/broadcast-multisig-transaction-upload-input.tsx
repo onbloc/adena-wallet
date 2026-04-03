@@ -1,32 +1,32 @@
-import IconFile from '@assets/file.svg';
-import IconUpload from '@assets/icon-upload';
+import IconFile from '@assets/file.svg'
+import IconUpload from '@assets/icon-upload'
 import {
   ErrorText, Text, WebImg,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   RawTx,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useCallback, useMemo, useState,
-} from 'react';
+} from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   StyledHiddenInput,
   StyledInputLabel,
   StyledWrapper,
-} from './broadcast-transaction-upload-input.styles';
+} from './broadcast-transaction-upload-input.styles'
 
 export interface BroadcastMultisigTransactionUploadInputProps {
-  currentAddress: string | null;
-  transaction: RawTx | null;
-  uploadTransaction: (text: string) => boolean;
-  validatePublicKey?: boolean;
+  currentAddress: string | null
+  transaction: RawTx | null
+  uploadTransaction: (text: string) => boolean
+  validatePublicKey?: boolean
 }
 
 const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransactionUploadInputProps> = ({
@@ -35,96 +35,101 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
   uploadTransaction,
   validatePublicKey = true,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     multisigService,
-  } = useAdenaContext();
+  } = useAdenaContext()
 
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
 
   const hasError = useMemo(() => {
-    return errorMessage !== null;
-  }, [errorMessage]);
+    return errorMessage !== null
+  }, [errorMessage])
 
   const uploadState = useMemo(() => {
     if (transaction) {
-      return 'SUCCESS';
+      return 'SUCCESS'
     }
     if (loading) {
-      return 'LOADING';
+      return 'LOADING'
     }
-    return 'NONE';
-  }, [transaction, loading]);
+    return 'NONE'
+  }, [transaction, loading])
 
   const onDropFile = useCallback(
     async (event: React.DragEvent<HTMLLabelElement>) => {
-      event.preventDefault();
+      event.preventDefault()
       if (event.dataTransfer.files.length > 0) {
-        const file = event.dataTransfer.files[0];
-        uploadFile(file);
+        const file = event.dataTransfer.files[0]
+        uploadFile(file)
       }
     },
     [uploadTransaction],
-  );
+  )
 
   const onChangeFileInput = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
+      const files = event.target.files
       if (files && files.length > 0) {
-        const file = files[0];
-        uploadFile(file);
+        const file = files[0]
+        uploadFile(file)
       }
     },
     [uploadTransaction],
-  );
+  )
 
   const uploadFile = useCallback(
     async (file: File) => {
-      setLoading(true);
-      setErrorMessage(null);
+      setLoading(true)
+      setErrorMessage(null)
 
       try {
         if (!currentAddress) {
-          throw new Error('Current address not found');
+          throw new Error('Current address not found')
         }
 
         if (validatePublicKey) {
-          await multisigService.validatePublicKeyExists(currentAddress);
+          await multisigService.validatePublicKeyExists(currentAddress)
         }
 
-        const text = await file.text();
-        const isUploadSuccess = uploadTransaction(text);
+        const text = await file.text()
+        const isUploadSuccess = uploadTransaction(text)
 
         if (!isUploadSuccess) {
-          throw new Error('Invalid transaction format');
+          throw new Error('Invalid transaction format')
         }
 
-        setErrorMessage(null);
-        setFileName(file.name);
-      } catch (error) {
-        console.error('Upload failed:', error);
+        setErrorMessage(null)
+        setFileName(file.name)
+      }
+      catch (error) {
+        console.error('Upload failed:', error)
 
         if (error instanceof Error) {
           if (error.message.includes('Public key not found')) {
-            setErrorMessage('Your account has not been initialized.');
-          } else if (error.message.includes('not sent any transactions')) {
-            setErrorMessage('Your account has not been initialized.');
-          } else {
-            setErrorMessage(error.message);
+            setErrorMessage('Your account has not been initialized.')
           }
-        } else {
-          setErrorMessage('Upload failed. Please try again.');
+          else if (error.message.includes('not sent any transactions')) {
+            setErrorMessage('Your account has not been initialized.')
+          }
+          else {
+            setErrorMessage(error.message)
+          }
+        }
+        else {
+          setErrorMessage('Upload failed. Please try again.')
         }
 
-        setFileName(null);
-      } finally {
-        setLoading(false);
+        setFileName(null)
+      }
+      finally {
+        setLoading(false)
       }
     },
     [currentAddress, multisigService, uploadTransaction],
-  );
+  )
 
   return (
     <StyledWrapper>
@@ -163,7 +168,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
         onChange={onChangeFileInput}
       />
     </StyledWrapper>
-  );
-};
+  )
+}
 
-export default BroadcastMultisigTransactionUploadInput;
+export default BroadcastMultisigTransactionUploadInput

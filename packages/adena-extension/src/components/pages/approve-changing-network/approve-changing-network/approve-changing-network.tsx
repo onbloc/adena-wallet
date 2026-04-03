@@ -1,37 +1,37 @@
-import IconArrowRight from '@assets/arrowL-right-bold.svg';
+import IconArrowRight from '@assets/arrowL-right-bold.svg'
 import {
   SubHeader, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedLoadingButtonGroup,
-} from '@components/molecules';
+} from '@components/molecules'
 import React, {
   useCallback, useEffect, useMemo,
-} from 'react';
+} from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
-import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item';
+import ApproveChangingNetworkItem from '../approve-changing-network-item/approve-changing-network-item'
 import {
   ApproveChangingNetworkWrapper,
-} from './approve-changing-network.styles';
+} from './approve-changing-network.styles'
 
 export interface ChangingNetworkInfo {
-  logo?: string;
-  name: string;
+  logo?: string
+  name: string
 }
 
 export interface ApproveChangingNetworkProps {
-  fromChain: ChangingNetworkInfo;
-  toChain: ChangingNetworkInfo;
-  changeable: boolean;
-  processing: boolean;
-  done: boolean;
-  changeNetwork: () => void;
-  cancel: () => void;
-  onResponse: () => void;
-  onTimeout: () => void;
+  fromChain: ChangingNetworkInfo
+  toChain: ChangingNetworkInfo
+  changeable: boolean
+  processing: boolean
+  done: boolean
+  changeNetwork: () => void
+  cancel: () => void
+  onResponse: () => void
+  onTimeout: () => void
 }
 
 const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
@@ -44,26 +44,26 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
   cancel,
   onResponse,
 }) => {
-  const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name]);
+  const title = useMemo(() => `Switch to ${toChain.name}`, [toChain.name])
 
-  const theme = useTheme();
+  const theme = useTheme()
 
   const onClickCancel = useCallback(() => {
-    cancel();
-  }, [cancel]);
+    cancel()
+  }, [cancel])
 
   const onClickSwitch = useCallback(() => {
     if (!changeable) {
-      return;
+      return
     }
-    changeNetwork();
-  }, [changeable, changeNetwork]);
+    changeNetwork()
+  }, [changeable, changeNetwork])
 
   useEffect(() => {
     if (done) {
-      onResponse();
+      onResponse()
     }
-  }, [done, onResponse]);
+  }, [done, onResponse])
 
   return (
     <ApproveChangingNetworkWrapper>
@@ -99,7 +99,7 @@ const ApproveChangingNetwork: React.FC<ApproveChangingNetworkProps> = ({
         }}
       />
     </ApproveChangingNetworkWrapper>
-  );
-};
+  )
+}
 
-export default ApproveChangingNetwork;
+export default ApproveChangingNetwork

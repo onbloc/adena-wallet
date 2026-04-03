@@ -1,6 +1,6 @@
 import {
   BaseError,
-} from '../base';
+} from '../base'
 
 const ERROR_VALUE = {
   NOT_FOUND_SERIALIZED: {
@@ -23,13 +23,13 @@ const ERROR_VALUE = {
     status: 1004,
     type: 'NOT_FOUND_ACCOUNT',
   },
-};
+}
 
-type ErrorType = keyof typeof ERROR_VALUE;
+type ErrorType = keyof typeof ERROR_VALUE
 
 export class WalletError extends BaseError {
   constructor(errorType: ErrorType) {
-    super(ERROR_VALUE[errorType]);
-    Object.setPrototypeOf(this, WalletError.prototype);
+    super(ERROR_VALUE[errorType])
+    Object.setPrototypeOf(this, WalletError.prototype)
   }
 }

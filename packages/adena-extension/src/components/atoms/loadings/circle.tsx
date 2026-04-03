@@ -1,13 +1,13 @@
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 interface CircleProps {
-  width?: string;
-  height?: string;
-  bgColor?: string;
-  margin?: string;
+  width?: string
+  height?: string
+  bgColor?: string
+  margin?: string
 }
 
 const CircleStyle = styled.div<CircleProps>`
@@ -24,10 +24,10 @@ const CircleStyle = styled.div<CircleProps>`
     margin,
   }): string | undefined => margin && margin};
   border-radius: 50%;
-`;
+`
 
 export const Circle = ({
   width, height, bgColor, margin,
 }: CircleProps): JSX.Element => {
-  return <CircleStyle width={width} height={height} bgColor={bgColor} margin={margin} />;
-};
+  return <CircleStyle width={width} height={height} bgColor={bgColor} margin={margin} />
+}

@@ -1,29 +1,29 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import {
   Spinner, SpinnerProps,
-} from '.';
+} from '.'
 
 describe('Spinner Component', () => {
   it('Spinner render', () => {
     const args: SpinnerProps = {
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -32,6 +32,6 @@ describe('Spinner Component', () => {
           <Spinner {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

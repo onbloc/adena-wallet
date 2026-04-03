@@ -1,30 +1,30 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   render,
-} from '@testing-library/react';
+} from '@testing-library/react'
 import {
   GRC721MetadataModel,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import NFTAssetMetadata, {
   NFTAssetMetadataProps,
-} from './nft-asset-metadata';
+} from './nft-asset-metadata'
 
 describe('NFTAssetMetadata Component', () => {
   it('NFTAssetMetadata render', () => {
@@ -42,7 +42,7 @@ describe('NFTAssetMetadata Component', () => {
       },
       queryGRC721TokenMetadata: () => ({
       }) as unknown as UseQueryResult<GRC721MetadataModel | null>,
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -51,6 +51,6 @@ describe('NFTAssetMetadata Component', () => {
           <NFTAssetMetadata {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

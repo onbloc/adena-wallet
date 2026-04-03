@@ -1,15 +1,15 @@
 import {
   WEB_CONTENT_WIDTH,
-} from '@common/constants/ui.constant';
-import mixins from '@styles/mixins';
+} from '@common/constants/ui.constant'
+import mixins from '@styles/mixins'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 interface WebMainProps {
-  width?: React.CSSProperties['width'];
-  spacing?: number | null;
-  responsiveSpacing?: number | null;
+  width?: React.CSSProperties['width']
+  spacing?: number | null
+  responsiveSpacing?: number | null
 }
 
 export const WebMain = styled.main.withConfig({
@@ -52,4 +52,4 @@ export const WebMain = styled.main.withConfig({
           }
         `
       : css``}
-`;
+`

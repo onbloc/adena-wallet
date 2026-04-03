@@ -1,82 +1,83 @@
 import {
   dateToLocal, formatAddress, getDateText,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   TransactionInfo, TransactionWithPageInfo,
-} from '@types';
+} from '@types'
 
 import {
   TransactionHistoryItem,
   TransactionHistoryResponse,
-} from '../response/transaction-history-response';
+} from '../response/transaction-history-response'
 
 function isHistoryItemGRC20Transfer(
   historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
-  return historyItem.isGRC20Transfer;
+  return historyItem.isGRC20Transfer
 }
 
 function isHistoryItemBankMsgSend(
   historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
-    return false;
+    return false
   }
 
-  return historyItem.func?.[0].messageType === '/bank.MsgSend';
+  return historyItem.func?.[0].messageType === '/bank.MsgSend'
 }
 
 function isHistoryItemVmMCall(
   historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
-    return false;
+    return false
   }
 
-  return historyItem.func?.[0].messageType === '/vm.m_call';
+  return historyItem.func?.[0].messageType === '/vm.m_call'
 }
 
 function isHistoryItemVmMAddPkg(
   historyItem: TransactionHistoryItem,
 ): historyItem is TransactionHistoryItem {
   if (historyItem.messageCount !== 1) {
-    return false;
+    return false
   }
 
-  return historyItem.func?.[0].messageType === '/vm.m_addpkg';
+  return historyItem.func?.[0].messageType === '/vm.m_addpkg'
 }
 
 export class TransactionHistoryMapper {
   public static queryToDisplay(
     transactions: TransactionInfo[],
   ): {
-    title: string;
-    transactions: TransactionInfo[];
+    title: string
+    transactions: TransactionInfo[]
   }[] {
     const initValue: {
-      title: string;
-      transactions: TransactionInfo[];
-    }[] = [];
+      title: string
+      transactions: TransactionInfo[]
+    }[] = []
 
     return transactions.reduce(
       (accum: {
-        title: string;
-        transactions: TransactionInfo[];
+        title: string
+        transactions: TransactionInfo[]
       }[], current) => {
-        const title = getDateText(current.date.slice(0, 10));
-        const accumIndex = accum.findIndex(item => item.title === title);
+        const title = getDateText(current.date.slice(0, 10))
+        const accumIndex = accum.findIndex(item => item.title === title)
         if (accumIndex < 0) {
           accum.push({
             title,
             transactions: [current],
-          });
-        } else {
-          accum[accumIndex].transactions.push(current);
+          })
         }
-        return accum;
+        else {
+          accum[accumIndex].transactions.push(current)
+        }
+        return accum
       },
       initValue,
-    );
+    )
   }
 
   public static fromResponse(
@@ -90,19 +91,19 @@ export class TransactionHistoryMapper {
           cursor: null,
         },
         transactions: [],
-      };
+      }
     }
 
     const {
       page, items,
-    } = response;
+    } = response
     const mappedTxs = items.map(item =>
       TransactionHistoryMapper.mappedHistoryItem(item, callerAddress),
-    );
+    )
     return {
       page,
       transactions: mappedTxs,
-    };
+    }
   }
 
   private static mappedHistoryItem(
@@ -110,41 +111,41 @@ export class TransactionHistoryMapper {
     callerAddress: string,
   ): TransactionInfo {
     if (historyItem.messageCount > 1) {
-      return TransactionHistoryMapper.mappedHistoryItemMultiCall(historyItem, callerAddress);
+      return TransactionHistoryMapper.mappedHistoryItemMultiCall(historyItem, callerAddress)
     }
 
     if (isHistoryItemBankMsgSend(historyItem)) {
-      return TransactionHistoryMapper.mappedBankMsgSend(historyItem, callerAddress);
+      return TransactionHistoryMapper.mappedBankMsgSend(historyItem, callerAddress)
     }
 
     if (isHistoryItemGRC20Transfer(historyItem)) {
-      return TransactionHistoryMapper.mappedBankMsgSend(historyItem, callerAddress);
+      return TransactionHistoryMapper.mappedBankMsgSend(historyItem, callerAddress)
     }
 
     if (isHistoryItemVmMCall(historyItem)) {
-      return TransactionHistoryMapper.mappedHistoryItemVmMCall(historyItem, callerAddress);
+      return TransactionHistoryMapper.mappedHistoryItemVmMCall(historyItem, callerAddress)
     }
 
     if (isHistoryItemVmMAddPkg(historyItem)) {
-      return TransactionHistoryMapper.mappedHistoryItemVmMAddPkg(historyItem);
+      return TransactionHistoryMapper.mappedHistoryItemVmMAddPkg(historyItem)
     }
 
-    return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem);
+    return TransactionHistoryMapper.mappedHistoryItemDefault(historyItem)
   }
 
   private static mappedHistoryItemMultiCall(
     historyItem: TransactionHistoryItem,
     callerAddress: string,
   ): TransactionInfo {
-    const isReceived = historyItem.toAddress === callerAddress;
+    const isReceived = historyItem.toAddress === callerAddress
 
-    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR';
+    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR'
 
     if (historyItem.successYn) {
-      valueType = isReceived ? 'ACTIVE' : 'DEFAULT';
+      valueType = isReceived ? 'ACTIVE' : 'DEFAULT'
     }
 
-    const message = historyItem.func?.[0];
+    const message = historyItem.func?.[0]
 
     return {
       hash: historyItem.txHash,
@@ -175,28 +176,28 @@ export class TransactionHistoryMapper {
         value: `${historyItem.fee.value || '0'}`,
         denom: `${historyItem.fee.denom}`,
       },
-    };
+    }
   }
 
   private static mappedBankMsgSend(
     historyItem: TransactionHistoryItem,
     callerAddress: string,
   ): TransactionInfo {
-    const isReceived = historyItem.toAddress === callerAddress;
-    const functionName = isReceived ? 'Receive' : 'Send';
+    const isReceived = historyItem.toAddress === callerAddress
+    const functionName = isReceived ? 'Receive' : 'Send'
 
-    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR';
+    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR'
 
     if (historyItem.successYn) {
-      valueType = isReceived ? 'ACTIVE' : 'DEFAULT';
+      valueType = isReceived ? 'ACTIVE' : 'DEFAULT'
     }
 
     const description
       = historyItem.func[0].messageType === '/bank.MsgSend'
         ? `To: ${formatAddress(historyItem.toAddress, 4)}`
-        : `From: ${formatAddress(historyItem.fromAddress, 4)}`;
+        : `From: ${formatAddress(historyItem.fromAddress, 4)}`
 
-    const amount = isReceived ? historyItem.amountIn : historyItem.amountOut;
+    const amount = isReceived ? historyItem.amountIn : historyItem.amountOut
 
     return {
       hash: historyItem.txHash,
@@ -227,34 +228,34 @@ export class TransactionHistoryMapper {
         value: `${historyItem.fee.value || '0'}`,
         denom: `${historyItem.fee.denom}`,
       },
-    };
+    }
   }
 
   private static mappedHistoryItemVmMCall(
     historyItem: TransactionHistoryItem,
     callerAddress: string,
   ): TransactionInfo {
-    const isTransfer = historyItem.isGRC20Transfer;
-    const isReceived = historyItem.toAddress === callerAddress;
+    const isTransfer = historyItem.isGRC20Transfer
+    const isReceived = historyItem.toAddress === callerAddress
     const functionName = isTransfer
       ? isReceived
         ? 'Receive'
         : 'Send'
-      : historyItem.func?.[0]?.funcType || '';
+      : historyItem.func?.[0]?.funcType || ''
 
-    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR';
+    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR'
 
     if (historyItem.successYn) {
-      valueType = 'DEFAULT';
+      valueType = 'DEFAULT'
 
       if (isTransfer) {
-        valueType = isReceived ? 'ACTIVE' : 'DEFAULT';
+        valueType = isReceived ? 'ACTIVE' : 'DEFAULT'
       }
     }
 
-    const transactionType = isTransfer ? 'TRANSFER' : 'CONTRACT_CALL';
+    const transactionType = isTransfer ? 'TRANSFER' : 'CONTRACT_CALL'
 
-    const amount = isTransfer && isReceived ? historyItem.amountIn : historyItem.amountOut;
+    const amount = isTransfer && isReceived ? historyItem.amountIn : historyItem.amountOut
 
     return {
       hash: historyItem.txHash,
@@ -283,14 +284,14 @@ export class TransactionHistoryMapper {
         value: `${historyItem.fee.value || '0'}`,
         denom: `${historyItem.fee.denom}`,
       },
-    };
+    }
   }
 
   private static mappedHistoryItemVmMAddPkg(historyItem: TransactionHistoryItem): TransactionInfo {
-    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR';
+    let valueType: 'BLUR' | 'DEFAULT' | 'ACTIVE' = 'BLUR'
 
     if (historyItem.successYn) {
-      valueType = 'DEFAULT';
+      valueType = 'DEFAULT'
     }
     return {
       hash: historyItem.txHash,
@@ -310,11 +311,11 @@ export class TransactionHistoryMapper {
         value: `${historyItem.fee.value || '0'}`,
         denom: `${historyItem.fee.denom}`,
       },
-    };
+    }
   }
 
   private static mappedHistoryItemDefault(historyItem: TransactionHistoryItem): TransactionInfo {
-    const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR';
+    const valueType = historyItem.successYn ? 'DEFAULT' : 'BLUR'
     return {
       hash: historyItem.txHash,
       logo: '',
@@ -333,6 +334,6 @@ export class TransactionHistoryMapper {
         value: `${historyItem.fee.value || '0'}`,
         denom: `${historyItem.fee.denom}`,
       },
-    };
+    }
   }
 }

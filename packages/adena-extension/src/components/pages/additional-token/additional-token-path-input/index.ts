@@ -1,1 +1,1 @@
-export * from './additional-token-path-input';
+export * from './additional-token-path-input'

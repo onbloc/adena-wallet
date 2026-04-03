@@ -1,13 +1,13 @@
-import ManageTokenSearchIcon from '@assets/manage-token-search.svg';
-import React from 'react';
+import ManageTokenSearchIcon from '@assets/manage-token-search.svg'
+import React from 'react'
 
 import {
   ManageCollectionSearchInputWrapper,
-} from './manage-collection-search-input.styles';
+} from './manage-collection-search-input.styles'
 
 export interface ManageCollectionSearchInputProps {
-  keyword: string;
-  onChangeKeyword: (keyword: string) => void;
+  keyword: string
+  onChangeKeyword: (keyword: string) => void
 }
 
 const ManageCollectionSearchInput: React.FC<ManageCollectionSearchInputProps> = ({
@@ -29,7 +29,7 @@ const ManageCollectionSearchInput: React.FC<ManageCollectionSearchInputProps> = 
         />
       </div>
     </ManageCollectionSearchInputWrapper>
-  );
-};
+  )
+}
 
-export default ManageCollectionSearchInput;
+export default ManageCollectionSearchInput

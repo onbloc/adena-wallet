@@ -1,11 +1,11 @@
 import {
   Loading, SkeletonBoxStyle,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import React, {
   ReactElement,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.div`
   ${mixins.flex({
@@ -16,7 +16,7 @@ const Wrapper = styled.div`
   width: 100%;
   margin-top: 13px;
   gap: 12px;
-`;
+`
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -24,7 +24,7 @@ const SkeletonBox = styled(SkeletonBoxStyle)`
   })}
   width: 100%;
   height: 60px;
-`;
+`
 
 const LoadingChangeNetwork = (): ReactElement<any> => {
   return (
@@ -38,7 +38,7 @@ const LoadingChangeNetwork = (): ReactElement<any> => {
         </SkeletonBox>
       ))}
     </Wrapper>
-  );
-};
+  )
+}
 
-export default LoadingChangeNetwork;
+export default LoadingChangeNetwork

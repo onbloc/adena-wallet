@@ -1,9 +1,9 @@
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 
 interface IconUploadProps {
-  fill?: string;
+  fill?: string
 }
 
 const IconUpload: React.FC<IconUploadProps> = ({
@@ -19,6 +19,6 @@ const IconUpload: React.FC<IconUploadProps> = ({
     <rect x='14' y='19' width='4' height='5' fill='#191920' />
   </svg>
 
-);
+)
 
-export default IconUpload;
+export default IconUpload

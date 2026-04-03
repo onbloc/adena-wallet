@@ -1,96 +1,96 @@
 import {
   GAS_FEE_SAFETY_MARGIN,
-} from '@common/constants/gas.constant';
+} from '@common/constants/gas.constant'
 import {
   GasToken, GNOT_TOKEN,
-} from '@common/constants/token.constant';
+} from '@common/constants/token.constant'
 import {
   DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED,
-} from '@common/constants/tx.constant';
+} from '@common/constants/tx.constant'
 import {
   MsgEndpoint,
-} from '@gnolang/gno-js-client';
+} from '@gnolang/gno-js-client'
 import {
   GasInfo, TokenBalanceType, TokenModel,
-} from '@types';
+} from '@types'
 import {
   Document,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
+} from 'adena-module'
+import BigNumber from 'bignumber.js'
 import {
   useCallback, useEffect, useState,
-} from 'react';
+} from 'react'
 
 import {
   useAdenaContext, useWalletContext,
-} from './use-context';
+} from './use-context'
 import {
   useCurrentAccount,
-} from './use-current-account';
+} from './use-current-account'
 import {
   useNetwork,
-} from './use-network';
+} from './use-network'
 import {
   useTokenBalance,
-} from './use-token-balance';
+} from './use-token-balance'
 import {
   useTokenMetainfo,
-} from './use-token-metainfo';
+} from './use-token-metainfo'
 import {
   useNetworkFee,
-} from './wallet/use-network-fee';
+} from './wallet/use-network-fee'
 
 export type UseBalanceInputHookReturn = {
-  hasError: boolean;
-  amount: string;
-  denom: string;
-  description: string;
-  gasInfo: GasInfo | null;
-  setAmount: (amount: string) => void;
-  updateCurrentBalance: () => Promise<boolean>;
-  onChangeAmount: (amount: string) => void;
-  onClickMax: () => void;
-  validateBalanceInput: () => boolean;
-};
+  hasError: boolean
+  amount: string
+  denom: string
+  description: string
+  gasInfo: GasInfo | null
+  setAmount: (amount: string) => void
+  updateCurrentBalance: () => Promise<boolean>
+  onChangeAmount: (amount: string) => void
+  onClickMax: () => void
+  validateBalanceInput: () => boolean
+}
 
 export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHookReturn => {
   const {
     balanceService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     currentNetwork,
-  } = useNetwork();
-  const [hasError, setHasError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [amount, setAmount] = useState('');
-  const [currentBalance, setCurrentBalance] = useState<TokenBalanceType>();
-  const [availAmountNumber, setAvailAmountNumber] = useState<BigNumber>(BigNumber(0));
+  } = useNetwork()
+  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [amount, setAmount] = useState('')
+  const [currentBalance, setCurrentBalance] = useState<TokenBalanceType>()
+  const [availAmountNumber, setAvailAmountNumber] = useState<BigNumber>(BigNumber(0))
   const {
     fetchBalanceBy,
-  } = useTokenBalance();
+  } = useTokenBalance()
   const {
     convertDenom,
-  } = useTokenMetainfo();
+  } = useTokenMetainfo()
 
-  const [document, setDocument] = useState<Document | null>(null);
+  const [document, setDocument] = useState<Document | null>(null)
   const {
     currentGasInfo,
-  } = useNetworkFee(document);
+  } = useNetworkFee(document)
 
   useEffect(() => {
     if (!currentAddress || !currentBalance || !tokenMetainfo) {
-      return;
+      return
     }
 
     const amount = BigNumber(currentBalance.amount.value)
       .multipliedBy(0.9)
-      .toFixed(tokenMetainfo.decimals || 6);
+      .toFixed(tokenMetainfo.decimals || 6)
 
     setDocument(
       makeTransferDocument({
@@ -100,12 +100,12 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         amount: amount,
         memo: '',
       }),
-    );
-  }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo]);
+    )
+  }, [currentNetwork, currentAddress, currentBalance, tokenMetainfo])
 
   useEffect(() => {
     if (!currentGasInfo || !currentBalance) {
-      return;
+      return
     }
 
     if (currentBalance.type === 'gno-native') {
@@ -113,100 +113,106 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
         currentBalance.amount.value,
         currentBalance.amount.denom,
         'COMMON',
-      );
+      )
 
       const maxGasFeeBN = BigNumber(currentGasInfo.gasWanted)
         .multipliedBy(currentGasInfo.gasPrice * GAS_FEE_SAFETY_MARGIN)
         .shiftedBy(GasToken.decimals * -1)
-        .toFixed(GasToken.decimals, BigNumber.ROUND_UP);
+        .toFixed(GasToken.decimals, BigNumber.ROUND_UP)
 
-      const availAmountNumber = BigNumber(convertedBalance.value).minus(maxGasFeeBN);
+      const availAmountNumber = BigNumber(convertedBalance.value).minus(maxGasFeeBN)
       if (availAmountNumber.isGreaterThan(0)) {
-        setAvailAmountNumber(availAmountNumber);
-      } else {
-        setAvailAmountNumber(BigNumber(0));
+        setAvailAmountNumber(availAmountNumber)
       }
-    } else {
-      const convertedBalanceAmount = BigNumber(currentBalance.amount.value);
-      if (convertedBalanceAmount.isGreaterThan(0)) {
-        setAvailAmountNumber(convertedBalanceAmount);
-      } else {
-        setAvailAmountNumber(BigNumber(0));
+      else {
+        setAvailAmountNumber(BigNumber(0))
       }
     }
-  }, [currentGasInfo, currentBalance]);
+    else {
+      const convertedBalanceAmount = BigNumber(currentBalance.amount.value)
+      if (convertedBalanceAmount.isGreaterThan(0)) {
+        setAvailAmountNumber(convertedBalanceAmount)
+      }
+      else {
+        setAvailAmountNumber(BigNumber(0))
+      }
+    }
+  }, [currentGasInfo, currentBalance])
 
   const updateCurrentBalance = useCallback(async () => {
     if (!currentAddress) {
-      return false;
+      return false
     }
 
     if (!tokenMetainfo) {
-      return false;
+      return false
     }
 
-    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo);
-    setCurrentBalance(currentBalance);
-    return true;
-  }, [wallet, balanceService, currentAddress, tokenMetainfo]);
+    const currentBalance = await fetchBalanceBy(currentAddress, tokenMetainfo)
+    setCurrentBalance(currentBalance)
+    return true
+  }, [wallet, balanceService, currentAddress, tokenMetainfo])
 
   const clearError = useCallback(() => {
-    setHasError(false);
-    setErrorMessage('Invalid address');
-  }, []);
+    setHasError(false)
+    setErrorMessage('Invalid address')
+  }, [])
 
   const getDescription = useCallback(() => {
     if (hasError || !tokenMetainfo) {
-      return errorMessage;
+      return errorMessage
     }
     return `Balance: ${BigNumber(currentBalance?.amount.value || 0).toFormat()} ${
       tokenMetainfo.symbol
-    }`;
-  }, [currentBalance, hasError, errorMessage, tokenMetainfo]);
+    }`
+  }, [currentBalance, hasError, errorMessage, tokenMetainfo])
 
   const onChangeAmount = useCallback((amount: string) => {
-    const charAtFirst = amount.charAt(0);
-    const charAtSecond = amount.charAt(1);
-    let charAtZeroCheck: string | null = amount;
+    const charAtFirst = amount.charAt(0)
+    const charAtSecond = amount.charAt(1)
+    let charAtZeroCheck: string | null = amount
     if (Number(charAtSecond) >= 1 && charAtFirst === '0') {
-      charAtZeroCheck = amount.replace(/(^0+)/, '');
-    } else if (Number(charAtSecond) === 0 && charAtFirst === '0') {
-      charAtZeroCheck = amount.replace(/(^0+)/, '0');
-    } else if (charAtFirst === '.') {
-      charAtZeroCheck = `0${amount}`;
+      charAtZeroCheck = amount.replace(/(^0+)/, '')
+    }
+    else if (Number(charAtSecond) === 0 && charAtFirst === '0') {
+      charAtZeroCheck = amount.replace(/(^0+)/, '0')
+    }
+    else if (charAtFirst === '.') {
+      charAtZeroCheck = `0${amount}`
     }
     if (charAtZeroCheck.includes('.') && charAtZeroCheck.split('.')[1].length > 6) {
       setAmount(
         Number(charAtZeroCheck)
           .toFixed(tokenMetainfo?.decimals || 6)
           .toString(),
-      );
-    } else {
-      setAmount(charAtZeroCheck);
+      )
     }
-    clearError();
-  }, []);
+    else {
+      setAmount(charAtZeroCheck)
+    }
+    clearError()
+  }, [])
 
   const onClickMax = useCallback(() => {
     if (currentGasInfo) {
-      setAmount(availAmountNumber.toString());
+      setAmount(availAmountNumber.toString())
     }
 
-    setAmount(availAmountNumber.toString());
-  }, [availAmountNumber, currentGasInfo]);
+    setAmount(availAmountNumber.toString())
+  }, [availAmountNumber, currentGasInfo])
 
   const validateBalanceInput = useCallback(() => {
     if (
       BigNumber(amount || 0).isGreaterThan(currentBalance?.amount.value || 0)
       || BigNumber(amount || 0).isLessThanOrEqualTo(0)
     ) {
-      setHasError(true);
-      setErrorMessage('Insufficient balance');
-      return false;
+      setHasError(true)
+      setErrorMessage('Insufficient balance')
+      return false
     }
-    clearError();
-    return true;
-  }, [currentBalance, amount]);
+    clearError()
+    return true
+  }, [currentBalance, amount])
 
   return {
     hasError,
@@ -219,15 +225,15 @@ export const useBalanceInput = (tokenMetainfo?: TokenModel): UseBalanceInputHook
     onChangeAmount,
     onClickMax,
     validateBalanceInput,
-  };
-};
+  }
+}
 
 function makeTransferDocument(params: {
-  chainId: string;
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
-  memo: string;
+  chainId: string
+  fromAddress: string
+  toAddress: string
+  amount: string
+  memo: string
 }): Document {
   return {
     account_number: '0',
@@ -253,5 +259,5 @@ function makeTransferDocument(params: {
       ],
       gas: DEFAULT_GAS_WANTED.toString(),
     },
-  };
+  }
 }

@@ -1,34 +1,34 @@
-import IconWallet from '@assets/web/hard-wallet-rounded.svg';
-import IconKeystone from '@assets/web/keystone-xs.svg';
-import IconLedger from '@assets/web/ledger-xs.svg';
-import IconLink from '@assets/web/link.svg';
+import IconWallet from '@assets/web/hard-wallet-rounded.svg'
+import IconKeystone from '@assets/web/keystone-xs.svg'
+import IconLedger from '@assets/web/ledger-xs.svg'
+import IconLink from '@assets/web/link.svg'
 import {
   HARDWARE_WALLET_LEARN_PAGE,
-} from '@common/constants/resource.constant';
+} from '@common/constants/resource.constant'
 import {
   WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant';
+} from '@common/constants/ui.constant'
 import {
   Pressable, Row, View, WebImg, WebMain, WebText,
-} from '@components/atoms';
-import WebMainButton from '@components/atoms/web-main-button';
+} from '@components/atoms'
+import WebMainButton from '@components/atoms/web-main-button'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+} from '@components/pages/web/main-header'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   ReactElement, useCallback,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledLinkWrapper = styled(Row)`
   gap: 6px;
@@ -37,27 +37,27 @@ const StyledLinkWrapper = styled(Row)`
   & > * {
     color: #6c717a;
   }
-`;
+`
 
 const SelectHardWalletScreen = (): ReactElement<any> => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
   const {
     openLink,
-  } = useLink();
+  } = useLink()
 
   const moveLearnMore = useCallback(() => {
-    openLink(HARDWARE_WALLET_LEARN_PAGE);
-  }, [openLink]);
+    openLink(HARDWARE_WALLET_LEARN_PAGE)
+  }, [openLink])
 
   return (
     <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
       <WebMainHeader
         stepLength={0}
         onClickGoBack={(): void => {
-          navigate(RoutePath.Home);
+          navigate(RoutePath.Home)
         }}
       />
       <View style={{
@@ -82,7 +82,7 @@ const SelectHardWalletScreen = (): ReactElement<any> => {
           iconElement={<WebImg src={IconLedger} size={24} />}
           text='Continue with Ledger'
           onClick={(): void => {
-            navigate(RoutePath.WebConnectLedger);
+            navigate(RoutePath.WebConnectLedger)
           }}
         />
         <WebMainButton
@@ -105,7 +105,7 @@ const SelectHardWalletScreen = (): ReactElement<any> => {
         </StyledLinkWrapper>
       </Pressable>
     </WebMain>
-  );
-};
+  )
+}
 
-export default SelectHardWalletScreen;
+export default SelectHardWalletScreen

@@ -1,36 +1,36 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import ManageTokenSearchInput, {
   ManageTokenSearchInputProps,
-} from './manage-token-search-input';
+} from './manage-token-search-input'
 
 describe('ManageTokenSearchInput Component', () => {
   it('ManageTokenSearchInput render', () => {
     const args: ManageTokenSearchInputProps = {
       keyword: 'as',
       onChangeKeyword: () => {
-        return;
+        return
       },
       onClickAdded: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -39,6 +39,6 @@ describe('ManageTokenSearchInput Component', () => {
           <ManageTokenSearchInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

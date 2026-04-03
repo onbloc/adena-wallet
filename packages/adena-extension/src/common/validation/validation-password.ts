@@ -1,56 +1,56 @@
 import {
   PasswordValidationError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   evaluatePassword,
-} from '@common/utils/password-utils';
+} from '@common/utils/password-utils'
 
 export const validatePasswordComplexity = (password: string): boolean => {
-  const valid = evaluatePassword(password).valid;
+  const valid = evaluatePassword(password).valid
   if (!valid) {
-    throw new PasswordValidationError('PASSWORD_TOO_SIMPLE');
+    throw new PasswordValidationError('PASSWORD_TOO_SIMPLE')
   }
-  return true;
-};
+  return true
+}
 
 export const validateInvalidPassword = (password: string, storedPassword: string): boolean => {
   if (password !== storedPassword) {
-    throw new PasswordValidationError('INVALID_PASSWORD');
+    throw new PasswordValidationError('INVALID_PASSWORD')
   }
-  return true;
-};
+  return true
+}
 
 export const validateWrongPasswordLength = (password: string): boolean => {
-  const REGEX_PASSWORD_LENGTH = /^.{8,256}$/;
+  const REGEX_PASSWORD_LENGTH = /^.{8,256}$/
   if (!REGEX_PASSWORD_LENGTH.test(password)) {
-    throw new PasswordValidationError('WRONG_PASSWORD_LENGTH');
+    throw new PasswordValidationError('WRONG_PASSWORD_LENGTH')
   }
-  return true;
-};
+  return true
+}
 
 export const validateEqualsChangePassword = (
   newPassword: string,
   originPassword: string,
 ): boolean => {
   if (newPassword === originPassword) {
-    throw new PasswordValidationError('EQUAL_CHANGE_PASSWORD');
+    throw new PasswordValidationError('EQUAL_CHANGE_PASSWORD')
   }
-  return true;
-};
+  return true
+}
 
 export const validateNotMatchConfirmPassword = (
   password: string,
   confirmPassword: string,
 ): boolean => {
   if (password !== confirmPassword) {
-    throw new PasswordValidationError('NOT_MATCH_CONFIRM_PASSWORD');
+    throw new PasswordValidationError('NOT_MATCH_CONFIRM_PASSWORD')
   }
-  return true;
-};
+  return true
+}
 
 export const validateEmptyPassword = (password: string | undefined): boolean => {
   if (password && password.length > 0) {
-    return true;
+    return true
   }
-  throw new PasswordValidationError('EMPTY_PASSWORD');
-};
+  throw new PasswordValidationError('EMPTY_PASSWORD')
+}

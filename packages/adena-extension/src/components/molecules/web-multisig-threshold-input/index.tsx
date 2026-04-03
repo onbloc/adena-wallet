@@ -1,13 +1,13 @@
 import {
   View, WebInputWithLabel,
-} from '@components/atoms';
-import React from 'react';
-import styled from 'styled-components';
+} from '@components/atoms'
+import React from 'react'
+import styled from 'styled-components'
 
 interface WebMultisigThresholdInputProps {
-  threshold: number;
-  onThresholdChange: (threshold: number) => void;
-  multisigConfigError: string | null;
+  threshold: number
+  onThresholdChange: (threshold: number) => void
+  multisigConfigError: string | null
 }
 
 export const WebMultisigThresholdInput = ({
@@ -16,11 +16,11 @@ export const WebMultisigThresholdInput = ({
   multisigConfigError,
 }: WebMultisigThresholdInputProps): React.ReactElement<any> => {
   const handleChange = (value: string): void => {
-    const numericValue = value.replace(/[^0-9]/g, '');
-    onThresholdChange(numericValue === '' ? 0 : Number(numericValue));
-  };
+    const numericValue = value.replace(/[^0-9]/g, '')
+    onThresholdChange(numericValue === '' ? 0 : Number(numericValue))
+  }
 
-  const hasError = Boolean(multisigConfigError);
+  const hasError = Boolean(multisigConfigError)
 
   return (
     <StyledContainer>
@@ -31,10 +31,10 @@ export const WebMultisigThresholdInput = ({
         error={hasError}
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 16px;
-`;
+`

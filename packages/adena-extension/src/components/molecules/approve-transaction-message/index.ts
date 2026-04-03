@@ -1,1 +1,1 @@
-export * from './approve-transaction-message';
+export * from './approve-transaction-message'

@@ -1,1 +1,1 @@
-export * from './wallet-error';
+export * from './wallet-error'

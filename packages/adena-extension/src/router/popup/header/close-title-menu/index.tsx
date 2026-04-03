@@ -1,18 +1,18 @@
 import {
   Icon, Text,
-} from '@components/atoms';
-import useAppNavigate from '@hooks/use-app-navigate';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import useAppNavigate from '@hooks/use-app-navigate'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 interface CloseTitleMenuProps {
-  title?: string;
+  title?: string
 }
 
 const Wrapper = styled.div`
@@ -24,7 +24,7 @@ const Wrapper = styled.div`
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
   position: relative;
   padding: 0px 18px 0px 12px;
-`;
+`
 
 const Button = styled.button`
   position: absolute;
@@ -44,14 +44,14 @@ const Button = styled.button`
       stroke: ${getTheme('neutral', '_1')};
     }
   }
-`;
+`
 
 export const CloseTitleMenu = ({
   title,
 }: CloseTitleMenuProps): JSX.Element => {
   const {
     goBack,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   return (
     <Wrapper>
@@ -60,5 +60,5 @@ export const CloseTitleMenu = ({
         <Icon name='iconCancel' className='icon-close' />
       </Button>
     </Wrapper>
-  );
-};
+  )
+}

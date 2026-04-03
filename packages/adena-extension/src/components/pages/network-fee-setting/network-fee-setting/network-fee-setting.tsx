@@ -1,40 +1,40 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg'
 import {
   DEFAULT_GAS_ADJUSTMENT,
-} from '@common/constants/gas.constant';
+} from '@common/constants/gas.constant'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButton,
-} from '@components/molecules';
-import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input';
-import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item';
+} from '@components/molecules'
+import NetworkFeeCustomInput from '@components/molecules/network-fee-custom-input/network-fee-custom-input'
+import NetworkFeeSettingItem from '@components/molecules/network-fee-setting-item/network-fee-setting-item'
 import {
   GasInfo, NetworkFeeSettingInfo, NetworkFeeSettingType,
-} from '@types';
-import BigNumber from 'bignumber.js';
+} from '@types'
+import BigNumber from 'bignumber.js'
 import React, {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 
 import {
   NetworkFeeSettingWrapper,
-} from './network-fee-setting.styles';
+} from './network-fee-setting.styles'
 
 export interface NetworkFeeSettingProps {
-  isFetchedPriceTiers: boolean;
-  changedGasInfo: GasInfo | null;
-  networkFeeSettingType: NetworkFeeSettingType;
-  setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void;
-  gasAdjustment: string;
-  setGasAdjustment: (ratio: string) => void;
-  networkFeeSettings: NetworkFeeSettingInfo[] | null;
-  onClickBack: () => void;
-  onClickSave: () => void;
+  isFetchedPriceTiers: boolean
+  changedGasInfo: GasInfo | null
+  networkFeeSettingType: NetworkFeeSettingType
+  setNetworkFeeSetting: (settingInfo: NetworkFeeSettingInfo) => void
+  gasAdjustment: string
+  setGasAdjustment: (ratio: string) => void
+  networkFeeSettings: NetworkFeeSettingInfo[] | null
+  onClickBack: () => void
+  onClickSave: () => void
 }
 
-const settingTypesOfList: NetworkFeeSettingType[] = [NetworkFeeSettingType.FAST, NetworkFeeSettingType.AVERAGE, NetworkFeeSettingType.SLOW];
+const settingTypesOfList: NetworkFeeSettingType[] = [NetworkFeeSettingType.FAST, NetworkFeeSettingType.AVERAGE, NetworkFeeSettingType.SLOW]
 
 const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
   isFetchedPriceTiers,
@@ -53,62 +53,62 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         [NetworkFeeSettingType.FAST]: null,
         [NetworkFeeSettingType.AVERAGE]: null,
         [NetworkFeeSettingType.SLOW]: null,
-      };
+      }
     }
 
     return networkFeeSettings.reduce(
       (acc, setting) => {
-        acc[setting.settingType] = setting;
-        return acc;
+        acc[setting.settingType] = setting
+        return acc
       },
       {
       } as Record<NetworkFeeSettingType, NetworkFeeSettingInfo | null>,
-    );
-  }, [networkFeeSettings]);
+    )
+  }, [networkFeeSettings])
 
   const settingInfos = useMemo(() => {
     return settingTypesOfList.map(settingType => ({
       ...settingInfoMap[settingType],
       settingType,
-    }));
-  }, [settingInfoMap]);
+    }))
+  }, [settingInfoMap])
 
   const enabledSaveButton = useMemo(() => {
     if (!changedGasInfo) {
-      return false;
+      return false
     }
 
-    return BigNumber(changedGasInfo.gasFee).gt(0);
-  }, [changedGasInfo]);
+    return BigNumber(changedGasInfo.gasFee).gt(0)
+  }, [changedGasInfo])
 
   const isSelected = useCallback(
     (settingInfo: {
-      settingType: NetworkFeeSettingType;
-      gasInfo?: GasInfo | undefined;
+      settingType: NetworkFeeSettingType
+      gasInfo?: GasInfo | undefined
     }) => {
-      return settingInfo?.settingType === networkFeeSettingType;
+      return settingInfo?.settingType === networkFeeSettingType
     },
     [networkFeeSettingType],
-  );
+  )
 
   const changeGasAdjustment = useCallback((value: string): string => {
     if (BigNumber(value).isNaN()) {
-      return DEFAULT_GAS_ADJUSTMENT.toString();
+      return DEFAULT_GAS_ADJUSTMENT.toString()
     }
 
     // 3 is the maximum value of gas adjustment
     if (BigNumber(value).isGreaterThan(3)) {
-      return '3';
+      return '3'
     }
 
     if (BigNumber(value).isLessThan(0)) {
-      return '0';
+      return '0'
     }
 
-    setGasAdjustment(value);
+    setGasAdjustment(value)
 
-    return value;
-  }, []);
+    return value
+  }, [])
 
   return (
     <NetworkFeeSettingWrapper>
@@ -164,7 +164,7 @@ const NetworkFeeSetting: React.FC<NetworkFeeSettingProps> = ({
         disabled={!enabledSaveButton}
       />
     </NetworkFeeSettingWrapper>
-  );
-};
+  )
+}
 
-export default NetworkFeeSetting;
+export default NetworkFeeSetting

@@ -1,18 +1,18 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import React, {
   type JSX,
-} from 'react';
+} from 'react'
 import styled, {
   CSSProp,
-} from 'styled-components';
+} from 'styled-components'
 
 interface RoundProps {
-  width?: string;
-  height?: string;
-  bgColor?: string;
-  radius?: string;
-  margin?: string;
-  children?: React.ReactNode;
+  width?: string
+  height?: string
+  bgColor?: string
+  radius?: string
+  margin?: string
+  children?: React.ReactNode
 }
 
 const RoundStyle = styled.div<RoundProps>`
@@ -36,7 +36,7 @@ const RoundStyle = styled.div<RoundProps>`
   border-radius: ${({
     radius,
   }): string | undefined => radius && radius};
-`;
+`
 
 export const Round = ({
   width,
@@ -50,5 +50,5 @@ export const Round = ({
     <RoundStyle width={width} height={height} bgColor={bgColor} radius={radius} margin={margin}>
       {children}
     </RoundStyle>
-  );
-};
+  )
+}

@@ -1,27 +1,27 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useMakeTransactionsWithTime,
-} from '@hooks/use-make-transactions-with-time';
+} from '@hooks/use-make-transactions-with-time'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo';
+} from '@hooks/use-token-metainfo'
 import {
   RefetchOptions, useInfiniteQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   TransactionInfo,
-} from '@types';
+} from '@types'
 import {
   useMemo,
-} from 'react';
+} from 'react'
 
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
@@ -29,36 +29,36 @@ export const useTokenTransactionsPage = (
   {
     enabled,
   }: {
-    enabled: boolean;
+    enabled: boolean
   },
 ): {
   data:
     | {
-      title: string;
-      transactions: TransactionInfo[];
+      title: string
+      transactions: TransactionInfo[]
     }[]
-    | null;
-  isFetched: boolean;
-  status: 'pending' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
+    | null
+  isFetched: boolean
+  status: 'pending' | 'error' | 'success'
+  isLoading: boolean
+  isFetching: boolean
+  isSupported: boolean
+  hasNextPage: boolean
+  fetchNextPage: () => Promise<boolean>
+  refetch: (options?: RefetchOptions) => void
 } => {
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
   const {
     currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     transactionHistoryService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     tokenMetainfos,
-  } = useTokenMetainfo();
+  } = useTokenMetainfo()
 
   const {
     data: allTransactions,
@@ -69,14 +69,14 @@ export const useTokenTransactionsPage = (
     queryKey: ['token-details/page/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage: any): string | null => {
-      return lastPage?.page?.cursor || null;
+      return lastPage?.page?.cursor || null
     },
     queryFn: (context) => {
       if (isNative === undefined) {
-        return null;
+        return null
       }
 
-      const cursor = context.pageParam || null;
+      const cursor = context.pageParam || null
 
       return isNative
         ? transactionHistoryService.fetchNativeTransactionHistory(currentAddress || '', cursor)
@@ -84,41 +84,41 @@ export const useTokenTransactionsPage = (
             currentAddress || '',
             tokenPath,
             cursor,
-          );
+          )
     },
     enabled:
       !!currentAddress
       && transactionHistoryService.supported
       && tokenMetainfos.length > 0
       && enabled,
-  });
+  })
 
   const transactions = useMemo(() => {
     if (!allTransactions) {
-      return null;
+      return null
     }
 
-    return allTransactions.pages.flatMap(page => page?.transactions || []);
-  }, [allTransactions]);
+    return allTransactions.pages.flatMap(page => page?.transactions || [])
+  }, [allTransactions])
 
   const firstTransactionHash = useMemo(() => {
     if (!transactions || transactions.length === 0) {
-      return '';
+      return ''
     }
 
-    return transactions[0]?.hash;
-  }, [transactions]);
+    return transactions[0]?.hash
+  }, [transactions])
 
   const {
     data, isFetched, status, isLoading, isFetching,
   } = useMakeTransactionsWithTime(
     `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
     transactions,
-  );
+  )
 
   const refetchTransactions = (options?: RefetchOptions): void => {
-    refetch(options);
-  };
+    refetch(options)
+  }
 
   return {
     data: data || null,
@@ -133,5 +133,5 @@ export const useTokenTransactionsPage = (
         .catch(() => false),
     hasNextPage: hasNextPage !== false,
     refetch: refetchTransactions,
-  };
-};
+  }
+}

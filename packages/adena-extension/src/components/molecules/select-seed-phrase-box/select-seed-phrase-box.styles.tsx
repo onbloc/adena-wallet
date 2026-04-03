@@ -1,11 +1,11 @@
 import {
   Row, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import styled, {
   keyframes,
-} from 'styled-components';
+} from 'styled-components'
 
-export const StyledSelectSeedPhraseBox = styled(View)``;
+export const StyledSelectSeedPhraseBox = styled(View)``
 
 export const StyledSelectSeedPhraseContent = styled(View)`
   display: block;
@@ -18,10 +18,10 @@ export const StyledSelectSeedPhraseContent = styled(View)`
   &::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera*/
   }
-`;
+`
 
 export const StyledLoadMore = styled(Row)<{
-  disabled: boolean;
+  disabled: boolean
 }>`
   justify-content: center;
   padding: 8px 0;
@@ -31,7 +31,7 @@ export const StyledLoadMore = styled(Row)<{
   &:disabled {
     cursor: not-allowed;
   }
-`;
+`
 
 export const KeyframeRotate = keyframes`
   from {
@@ -44,10 +44,10 @@ export const KeyframeRotate = keyframes`
     -o-transform: rotate(360deg);
     transform: rotate(360deg);
   }
-`;
+`
 
 export const StyledLoadingWrapper = styled(View)`
   justify-content: center;
   align-items: center;
   animation: ${KeyframeRotate} 1.5s infinite;
-`;
+`

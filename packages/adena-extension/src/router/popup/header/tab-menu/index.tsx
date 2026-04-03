@@ -1,16 +1,16 @@
-import IconHelp from '@assets/help-fill.svg';
-import IconLogo from '@assets/logo-type-b.svg';
+import IconHelp from '@assets/help-fill.svg'
+import IconLogo from '@assets/logo-type-b.svg'
 import {
   Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const Container = styled.div`
   ${mixins.flex({
@@ -48,14 +48,14 @@ const Container = styled.div`
     height: 19px;
     margin-right: 7px;
   }
-`;
+`
 
 export const TabMenu = (): JSX.Element => {
   const onClickHelp = (): void => {
     chrome.tabs.create({
       url: 'https://docs.adena.app/resources/faq',
-    });
-  };
+    })
+  }
 
   return (
     <Container>
@@ -66,5 +66,5 @@ export const TabMenu = (): JSX.Element => {
         </Text>
       </div>
     </Container>
-  );
-};
+  )
+}

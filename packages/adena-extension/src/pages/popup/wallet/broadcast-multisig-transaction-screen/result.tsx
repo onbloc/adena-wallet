@@ -1,18 +1,18 @@
-import IconSubmit from '@assets/submit.svg';
-import TransactionResult from '@components/molecules/transaction-result';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
+import IconSubmit from '@assets/submit.svg'
+import TransactionResult from '@components/molecules/transaction-result'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import React, {
   useCallback,
-} from 'react';
+} from 'react'
 
 interface BroadcastMultisigTransactionResultProps {
-  status: 'SUCCESS' | 'FAILED';
-  txHash?: string | null;
-  errorMessage?: string | null;
+  status: 'SUCCESS' | 'FAILED'
+  txHash?: string | null
+  errorMessage?: string | null
 }
 
 const BroadcastMultisigTransactionResult: React.FC<BroadcastMultisigTransactionResultProps> = ({
@@ -22,28 +22,28 @@ const BroadcastMultisigTransactionResult: React.FC<BroadcastMultisigTransactionR
 }) => {
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
   const {
     openScannerLink,
-  } = useLink();
+  } = useLink()
 
   const onClickViewHistory = useCallback(() => {
-    navigate(RoutePath.History);
-  }, [navigate]);
+    navigate(RoutePath.History)
+  }, [navigate])
 
   const onClickViewGnoscan = useCallback(() => {
     if (!txHash) {
-      return;
+      return
     }
 
     openScannerLink('/transactions/details', {
       txhash: txHash,
-    });
-  }, [txHash, openScannerLink]);
+    })
+  }, [txHash, openScannerLink])
 
   const onClickClose = useCallback(() => {
-    navigate(RoutePath.Wallet);
-  }, [navigate]);
+    navigate(RoutePath.Wallet)
+  }, [navigate])
 
   return (
     <TransactionResult
@@ -54,7 +54,7 @@ const BroadcastMultisigTransactionResult: React.FC<BroadcastMultisigTransactionR
       onClickClose={onClickClose}
       successIconSrc={IconSubmit}
     />
-  );
-};
+  )
+}
 
-export default BroadcastMultisigTransactionResult;
+export default BroadcastMultisigTransactionResult

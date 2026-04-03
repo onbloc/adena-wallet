@@ -1,25 +1,25 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
+} from '@testing-library/react'
 import {
   SideMenuProps,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
-import SideMenu from './side-menu';
+import SideMenu from './side-menu'
 
 describe('SideMenu Component', () => {
   it('SideMenu render', () => {
@@ -31,27 +31,27 @@ describe('SideMenu Component', () => {
       accounts: [],
       focusedAccountId: '',
       focusAccountId: () => {
-        return;
+        return
       },
       changeAccount: () => {
-        return;
+        return
       },
       openLink: () => {
-        return;
+        return
       },
       openRegister: () => {
-        return;
+        return
       },
       movePage: () => {
-        return;
+        return
       },
       lock: () => {
-        return;
+        return
       },
       close: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -60,6 +60,6 @@ describe('SideMenu Component', () => {
           <SideMenu {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

@@ -1,18 +1,18 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const CreateMultisigTransactionSignerWrapper = styled.div`
   ${mixins.flex({
     justify: 'flex-start',
   })};
   padding: 24px 20px;
-`;
+`
 
 export const CreateMultisigTransactionWrapper = styled.div<{
-  $isErrorNetworkFee: boolean;
+  $isErrorNetworkFee: boolean
 }>`
   ${mixins.flex({
     justify: 'flex-start',
@@ -205,4 +205,4 @@ export const CreateMultisigTransactionWrapper = styled.div<{
 
     margin-bottom: 20px;
   }
-`;
+`

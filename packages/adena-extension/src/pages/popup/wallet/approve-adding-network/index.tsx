@@ -2,79 +2,79 @@ import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   decodeParameter, parseParameters,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   CommonFullContentLayout,
-} from '@components/atoms';
-import ApproveAddingNetwork from '@components/pages/approve-adding-network/approve-adding-network/approve-adding-network';
+} from '@components/atoms'
+import ApproveAddingNetwork from '@components/pages/approve-adding-network/approve-adding-network/approve-adding-network'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '@inject/message';
+} from '@inject/message'
 import React, {
   useCallback, useEffect, useState,
-} from 'react';
+} from 'react'
 import {
   useLocation,
-} from 'react-router';
+} from 'react-router'
 
 const ApproveAddingNetworkContainer: React.FC = () => {
   const {
     search,
-  } = useLocation();
+  } = useLocation()
   const {
     addNetwork,
-  } = useNetwork();
-  const [requestData, setRequestData] = useState<InjectionMessage>();
-  const [chainId, setChainId] = useState('');
-  const [chainName, setChainName] = useState('');
-  const [rpcUrl, setRPCUrl] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [response, setResponse] = useState<InjectionMessage>();
-  const [done, setDone] = useState(false);
+  } = useNetwork()
+  const [requestData, setRequestData] = useState<InjectionMessage>()
+  const [chainId, setChainId] = useState('')
+  const [chainName, setChainName] = useState('')
+  const [rpcUrl, setRPCUrl] = useState('')
+  const [processing, setProcessing] = useState(false)
+  const [response, setResponse] = useState<InjectionMessage>()
+  const [done, setDone] = useState(false)
 
   useEffect(() => {
     if (search) {
-      initRequestData();
+      initRequestData()
     }
-  }, [search]);
+  }, [search])
 
   const initRequestData = (): void => {
-    const data = parseParameters(search);
-    const parsedData = decodeParameter(data['data']);
+    const data = parseParameters(search)
+    const parsedData = decodeParameter(data['data'])
     setRequestData({
       ...parsedData,
       hostname: data['hostname'],
-    });
+    })
 
-    setChainId(parsedData?.data?.chainId || '');
-    setChainName(parsedData?.data?.chainName || '');
-    setRPCUrl(parsedData?.data?.rpcUrl || '');
-  };
+    setChainId(parsedData?.data?.chainId || '')
+    setChainName(parsedData?.data?.chainName || '')
+    setRPCUrl(parsedData?.data?.rpcUrl || '')
+  }
 
   const onClickApprove = useCallback(async () => {
-    setProcessing(true);
-    await addNetwork(chainName, rpcUrl, chainId, '');
+    setProcessing(true)
+    await addNetwork(chainName, rpcUrl, chainId, '')
     setResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.ADD_NETWORK_SUCCESS,
         requestData?.data,
         requestData?.key,
       ),
-    );
-    setDone(true);
-  }, [addNetwork, chainName, rpcUrl, chainId, requestData]);
+    )
+    setDone(true)
+  }, [addNetwork, chainName, rpcUrl, chainId, requestData])
 
   const onResponse = useCallback(() => {
     if (done && response) {
-      chrome.runtime.sendMessage(response);
+      chrome.runtime.sendMessage(response)
     }
-  }, [done, response]);
+  }, [done, response])
 
   const onTimeout = (): void => {
     chrome.runtime.sendMessage(
@@ -84,8 +84,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
         },
         requestData?.key,
       ),
-    );
-  };
+    )
+  }
 
   const onClickCancel = useCallback(() => {
     chrome.runtime.sendMessage(
@@ -94,8 +94,8 @@ const ApproveAddingNetworkContainer: React.FC = () => {
         requestData?.data,
         requestData?.key,
       ),
-    );
-  }, [requestData]);
+    )
+  }, [requestData])
 
   return (
     <CommonFullContentLayout>
@@ -115,7 +115,7 @@ const ApproveAddingNetworkContainer: React.FC = () => {
         onTimeout={onTimeout}
       />
     </CommonFullContentLayout>
-  );
-};
+  )
+}
 
-export default ApproveAddingNetworkContainer;
+export default ApproveAddingNetworkContainer

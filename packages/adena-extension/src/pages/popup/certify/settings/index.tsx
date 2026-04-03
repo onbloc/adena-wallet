@@ -1,30 +1,30 @@
 import {
   FullButtonRightIcon,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButton,
-} from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import mixins from '@styles/mixins';
+} from '@components/molecules'
+import useAppNavigate from '@hooks/use-app-navigate'
+import mixins from '@styles/mixins'
 import {
   fonts,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import React, {
   type JSX,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const menuMakerInfo: {
-  title: string;
+  title: string
   navigatePath:
     | RoutePath.ConnectedApps
     | RoutePath.AddressBook
     | RoutePath.ChangeNetwork
     | RoutePath.SecurityPrivacy
-    | RoutePath.AboutAdena;
+    | RoutePath.AboutAdena
 }[] = [
   {
     title: 'Connected Apps',
@@ -46,12 +46,12 @@ const menuMakerInfo: {
     title: 'About Adena',
     navigatePath: RoutePath.AboutAdena,
   },
-];
+]
 
 export const Settings = (): JSX.Element => {
   const {
     navigate, goBack,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   return (
     <Wrapper>
@@ -67,8 +67,8 @@ export const Settings = (): JSX.Element => {
       ))}
       <BottomFixedButton text='Close' onClick={goBack} />
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -88,4 +88,4 @@ const Wrapper = styled.main`
       ${fonts.header4};
     }
   }
-`;
+`

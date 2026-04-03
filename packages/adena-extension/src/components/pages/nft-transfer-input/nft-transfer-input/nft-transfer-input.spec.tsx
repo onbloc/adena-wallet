@@ -1,27 +1,27 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import NFTTransferInput, {
   NFTTransferInputProps,
-} from './nft-transfer-input';
+} from './nft-transfer-input'
 
 describe('NFTTransferInput Component', () => {
   it('NFTTransferInput render', () => {
@@ -49,33 +49,33 @@ describe('NFTTransferInput Component', () => {
         address: '',
         addressBookInfos: [],
         onClickInputIcon: () => {
-          return;
+          return
         },
         onChangeAddress: () => {
-          return;
+          return
         },
         onClickAddressBook: () => {
-          return;
+          return
         },
       },
       memoInput: {
         memo: '',
         onChangeMemo: () => {
-          return;
+          return
         },
       },
       isNext: true,
       hasBackButton: true,
       onClickBack: () => {
-        return;
+        return
       },
       onClickCancel: () => {
-        return;
+        return
       },
       onClickNext: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -84,6 +84,6 @@ describe('NFTTransferInput Component', () => {
           <NFTTransferInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

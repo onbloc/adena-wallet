@@ -1,10 +1,10 @@
 import type {
   JSX,
-} from 'react';
+} from 'react'
 const IconEditCancel = ({
   className,
 }: {
-  className: string;
+  className: string
 }): JSX.Element => (
   <svg
     className={className}
@@ -35,6 +35,6 @@ const IconEditCancel = ({
       strokeLinecap='round'
     />
   </svg>
-);
+)
 
-export default IconEditCancel;
+export default IconEditCancel

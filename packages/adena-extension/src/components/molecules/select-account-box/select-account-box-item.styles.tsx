@@ -1,7 +1,7 @@
 import {
   Row,
-} from '@components/atoms';
-import styled from 'styled-components';
+} from '@components/atoms'
+import styled from 'styled-components'
 
 export const StyledSelectAccountBoxItem = styled(Row)`
   height: 48px;
@@ -11,4 +11,4 @@ export const StyledSelectAccountBoxItem = styled(Row)`
   &:last-child {
     border-bottom: 1px solid #14161a;
   }
-`;
+`

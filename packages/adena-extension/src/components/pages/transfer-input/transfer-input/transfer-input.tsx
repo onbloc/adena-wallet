@@ -1,63 +1,63 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg'
 import {
   BaseError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   TokenModel,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 
-import AddressInput from '../address-input/address-input';
-import BalanceInput from '../balance-input/balance-input';
-import MemoInput from '../memo-input/memo-input';
+import AddressInput from '../address-input/address-input'
+import BalanceInput from '../balance-input/balance-input'
+import MemoInput from '../memo-input/memo-input'
 import {
   TransferInputWrapper,
-} from './transfer-input.styles';
+} from './transfer-input.styles'
 
 export interface TransferInputProps {
-  tokenMetainfo?: TokenModel;
+  tokenMetainfo?: TokenModel
   addressInput: {
-    opened: boolean;
-    hasError: boolean;
-    selected: boolean;
-    selectedName: string;
-    selectedDescription: string;
-    address: string;
-    errorMessage?: string;
+    opened: boolean
+    hasError: boolean
+    selected: boolean
+    selectedName: string
+    selectedDescription: string
+    address: string
+    errorMessage?: string
     addressBookInfos: {
-      addressBookId: string;
-      name: string;
-      description: string;
-    }[];
-    onClickInputIcon: (selected: boolean) => void;
-    onChangeAddress: (address: string) => void;
-    onClickAddressBook: (addressBookId: string) => void;
-  };
+      addressBookId: string
+      name: string
+      description: string
+    }[]
+    onClickInputIcon: (selected: boolean) => void
+    onChangeAddress: (address: string) => void
+    onClickAddressBook: (addressBookId: string) => void
+  }
   balanceInput: {
-    hasError: boolean;
-    amount: string;
-    denom: string;
-    description: string;
-    onChangeAmount: (value: string) => void;
-    onClickMax: () => void;
-  };
+    hasError: boolean
+    amount: string
+    denom: string
+    description: string
+    onChangeAmount: (value: string) => void
+    onClickMax: () => void
+  }
   memoInput: {
-    memo: string;
-    memoError?: BaseError | null;
-    onChangeMemo: (memo: string) => void;
-  };
-  isNext: boolean;
-  hasBackButton: boolean;
-  onClickBack: () => void;
-  onClickCancel: () => void;
-  onClickNext: () => void;
+    memo: string
+    memoError?: BaseError | null
+    onChangeMemo: (memo: string) => void
+  }
+  isNext: boolean
+  hasBackButton: boolean
+  onClickBack: () => void
+  onClickCancel: () => void
+  onClickNext: () => void
 }
 
 const TransferInput: React.FC<TransferInputProps> = ({
@@ -113,7 +113,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
         filled
       />
     </TransferInputWrapper>
-  );
-};
+  )
+}
 
-export default TransferInput;
+export default TransferInput

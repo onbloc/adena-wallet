@@ -1,31 +1,31 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721CollectionModel,
-} from '@types';
+} from '@types'
 
 export const useGetAllGRC721Collections = (
   options?: Omit<UseQueryOptions<GRC721CollectionModel[] | null, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<GRC721CollectionModel[] | null> => {
   const {
     tokenService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
   const {
     currentAccount,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
 
   return useQuery<GRC721CollectionModel[] | null, Error>({
     queryKey: ['nft/useGetAllGRC721Collections', currentNetwork.id],
@@ -33,5 +33,5 @@ export const useGetAllGRC721Collections = (
     staleTime: Infinity,
     enabled: !!currentAccount,
     ...options,
-  });
-};
+  })
+}

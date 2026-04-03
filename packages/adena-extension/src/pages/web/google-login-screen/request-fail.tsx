@@ -1,32 +1,32 @@
-import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
+import AnimationLoginFailed from '@assets/web/lottie/login-failed.json'
 import {
   View, WebButton,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
+} from '@components/molecules'
 import React, {
   useCallback,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
   align-items: center;
-`;
+`
 
 interface GoogleLoginRequestFailProps {
-  retry: () => void;
+  retry: () => void
 }
 
 const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({
   retry,
 }) => {
   const onClickRetry = useCallback(() => {
-    retry();
-  }, [retry]);
+    retry()
+  }, [retry])
 
   return (
     <StyledContainer>
@@ -55,7 +55,7 @@ const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({
         onClick={onClickRetry}
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default GoogleLoginRequestFail;
+export default GoogleLoginRequestFail

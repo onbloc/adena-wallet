@@ -1,6 +1,6 @@
 import styled, {
   keyframes,
-} from 'styled-components';
+} from 'styled-components'
 
 export const WebHelpOverlayWrapper = styled.div`
   position: fixed;
@@ -12,7 +12,7 @@ export const WebHelpOverlayWrapper = styled.div`
   left: 0;
   z-index: 99;
   background: #00000080;
-`;
+`
 
 const overlayItemStartAnimation = keyframes`
   0% {
@@ -21,7 +21,7 @@ const overlayItemStartAnimation = keyframes`
   100% {
     opacity: 1;
   }
-`;
+`
 
 const overlayItemEndAnimation = keyframes`
   0% {
@@ -30,11 +30,11 @@ const overlayItemEndAnimation = keyframes`
   100% {
     opacity: 0;
   }
-`;
+`
 
 export const WebHelpOverlayItemWrapper = styled.div<{
-  x: number;
-  y: number;
+  x: number
+  y: number
 }>`
   position: absolute;
   display: flex;
@@ -55,4 +55,4 @@ export const WebHelpOverlayItemWrapper = styled.div<{
   &.visible {
     animation-name: ${overlayItemStartAnimation};
   }
-`;
+`

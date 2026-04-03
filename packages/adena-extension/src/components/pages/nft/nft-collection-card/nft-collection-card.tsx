@@ -1,35 +1,35 @@
-import IconPin from '@assets/icon-pin';
-import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image';
+import IconPin from '@assets/icon-pin'
+import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721CollectionModel,
-} from '@types';
-import BigNumber from 'bignumber.js';
+} from '@types'
+import BigNumber from 'bignumber.js'
 import React, {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 
 import {
   NFTCollectionCardWrapper,
-} from './nft-collection-card.styles';
+} from './nft-collection-card.styles'
 
 export interface NFTCollectionCardProps {
-  grc721Collection: GRC721CollectionModel;
-  exitsPinnedCollections: (collection: GRC721CollectionModel) => boolean;
+  grc721Collection: GRC721CollectionModel
+  exitsPinnedCollections: (collection: GRC721CollectionModel) => boolean
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
     options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>;
+  ) => UseQueryResult<string | null>
   queryGRC721Balance: (
     packagePath: string,
     options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<number | null>;
-  pin: (collection: GRC721CollectionModel) => void;
-  unpin: (collection: GRC721CollectionModel) => void;
-  moveCollectionPage: (collection: GRC721CollectionModel) => void;
+  ) => UseQueryResult<number | null>
+  pin: (collection: GRC721CollectionModel) => void
+  unpin: (collection: GRC721CollectionModel) => void
+  moveCollectionPage: (collection: GRC721CollectionModel) => void
 }
 
 const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
@@ -49,55 +49,55 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
     {
       enabled: grc721Collection.isTokenUri,
     },
-  );
+  )
 
   const {
     data: balance,
   } = queryGRC721Balance(grc721Collection.packagePath, {
     refetchOnMount: true,
-  });
+  })
 
   const isFetchedCardTokenUri = useMemo(() => {
     if (!grc721Collection.isTokenUri) {
-      return true;
+      return true
     }
 
-    return isFetchedTokenUri;
-  }, [grc721Collection, isFetchedTokenUri]);
+    return isFetchedTokenUri
+  }, [grc721Collection, isFetchedTokenUri])
 
   const tokenName = useMemo(() => {
-    return `${grc721Collection.name}`;
-  }, [grc721Collection.name]);
+    return `${grc721Collection.name}`
+  }, [grc721Collection.name])
 
   const balanceStr = useMemo(() => {
     if (balance === undefined || balance === null) {
-      return '';
+      return ''
     }
 
-    return BigNumber(balance).toFormat();
-  }, [balance]);
+    return BigNumber(balance).toFormat()
+  }, [balance])
 
   const pinned = useMemo(() => {
-    return exitsPinnedCollections(grc721Collection);
-  }, [grc721Collection, exitsPinnedCollections]);
+    return exitsPinnedCollections(grc721Collection)
+  }, [grc721Collection, exitsPinnedCollections])
 
   const onClickPin = useCallback(
     (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault()
+      event.stopPropagation()
       if (pinned) {
-        unpin(grc721Collection);
-        return;
+        unpin(grc721Collection)
+        return
       }
 
-      pin(grc721Collection);
+      pin(grc721Collection)
     },
     [pinned, pin, unpin],
-  );
+  )
 
   const onClickCard = useCallback(() => {
-    moveCollectionPage(grc721Collection);
-  }, [grc721Collection, moveCollectionPage]);
+    moveCollectionPage(grc721Collection)
+  }, [grc721Collection, moveCollectionPage])
 
   return (
     <NFTCollectionCardWrapper onClick={onClickCard}>
@@ -106,8 +106,8 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
       <div
         className='info-static-wrapper'
         onClick={(e): void => {
-          e.preventDefault();
-          e.stopPropagation();
+          e.preventDefault()
+          e.stopPropagation()
         }}
       >
         <div className='pin-wrapper' onClick={onClickPin}>
@@ -119,7 +119,7 @@ const NFTCollectionCard: React.FC<NFTCollectionCardProps> = ({
         <div className='balance-wrapper'>{balanceStr}</div>
       </div>
     </NFTCollectionCardWrapper>
-  );
-};
+  )
+}
 
-export default NFTCollectionCard;
+export default NFTCollectionCard

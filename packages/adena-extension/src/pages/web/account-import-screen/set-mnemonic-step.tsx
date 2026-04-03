@@ -1,35 +1,35 @@
 import {
   Row, View, WebButton, WebCheckBox, WebText,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   WebSeedInput, WebTitleWithDescription,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   UseAccountImportReturn,
-} from '@hooks/web/use-account-import-screen';
+} from '@hooks/web/use-account-import-screen'
 import {
   ReactElement, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
+`
 
 const SetMnemonicStep = ({
   useAccountImportScreenReturn,
 }: {
-  useAccountImportScreenReturn: UseAccountImportReturn;
+  useAccountImportScreenReturn: UseAccountImportReturn
 }): ReactElement<any> => {
   const {
     errMsg, isValidForm, updateInputValue, setInputType, onClickNext,
   }
-    = useAccountImportScreenReturn;
-  const theme = useTheme();
-  const [agreeWarning, setAgreeWarning] = useState(false);
+    = useAccountImportScreenReturn
+  const theme = useTheme()
+  const [agreeWarning, setAgreeWarning] = useState(false)
 
   return (
     <StyledContainer>
@@ -46,8 +46,8 @@ const SetMnemonicStep = ({
           onChange={({
             type, value,
           }): void => {
-            updateInputValue(value);
-            setInputType(type);
+            updateInputValue(value)
+            setInputType(type)
           }}
           errorMessage={errMsg}
         />
@@ -60,7 +60,7 @@ const SetMnemonicStep = ({
         <WebCheckBox
           checked={agreeWarning}
           onClick={(): void => {
-            setAgreeWarning(!agreeWarning);
+            setAgreeWarning(!agreeWarning)
           }}
         />
         <WebText type='body5' color={theme.webNeutral._500}>
@@ -77,7 +77,7 @@ const SetMnemonicStep = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default SetMnemonicStep;
+export default SetMnemonicStep

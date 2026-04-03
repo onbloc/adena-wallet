@@ -1,22 +1,22 @@
-import IconCheck from '@assets/check-circle.svg';
-import IconEdit from '@assets/icon-edit-small';
+import IconCheck from '@assets/check-circle.svg'
+import IconEdit from '@assets/icon-edit-small'
 import {
   NetworkMetainfo,
-} from '@types';
+} from '@types'
 import React, {
   useCallback,
-} from 'react';
+} from 'react'
 
 import {
   NetworkListItemWrapper,
-} from './network-list-item.styles';
+} from './network-list-item.styles'
 
 export interface NetworkListItemProps {
-  selected: boolean;
-  locked: boolean;
-  networkMetainfo: NetworkMetainfo;
-  moveEditPage: (networkMetainfoId: string) => void;
-  changeNetwork: (networkMetainfoId: string) => void;
+  selected: boolean
+  locked: boolean
+  networkMetainfo: NetworkMetainfo
+  moveEditPage: (networkMetainfoId: string) => void
+  changeNetwork: (networkMetainfoId: string) => void
 }
 
 const NetworkListItem: React.FC<NetworkListItemProps> = ({
@@ -27,16 +27,16 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
 }) => {
   const onClickEditButton = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      event.stopPropagation();
-      moveEditPage(networkMetainfo.id);
+      event.preventDefault()
+      event.stopPropagation()
+      moveEditPage(networkMetainfo.id)
     },
     [moveEditPage, networkMetainfo.id],
-  );
+  )
 
   const onClickItem = useCallback(() => {
-    changeNetwork(networkMetainfo.id);
-  }, [changeNetwork, networkMetainfo.id]);
+    changeNetwork(networkMetainfo.id)
+  }, [changeNetwork, networkMetainfo.id])
 
   return (
     <NetworkListItemWrapper onClick={onClickItem}>
@@ -57,7 +57,7 @@ const NetworkListItem: React.FC<NetworkListItemProps> = ({
         </div>
       )}
     </NetworkListItemWrapper>
-  );
-};
+  )
+}
 
-export default NetworkListItem;
+export default NetworkListItem

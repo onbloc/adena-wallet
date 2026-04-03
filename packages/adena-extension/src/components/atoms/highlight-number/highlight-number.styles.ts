@@ -1,16 +1,16 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, FontsType,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 interface HighlightNumberWrapperProps {
-  fontColor: string;
-  fontStyleKey: FontsType;
-  minimumFontSize: string;
-  lineHeight?: string;
+  fontColor: string
+  fontStyleKey: FontsType
+  minimumFontSize: string
+  lineHeight?: string
 }
 
 export const HighlightNumberWrapper = styled.div.withConfig({
@@ -50,4 +50,4 @@ export const HighlightNumberWrapper = styled.div.withConfig({
       }): string => minimumFontSize};
     }
   }
-`;
+`

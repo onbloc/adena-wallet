@@ -1,26 +1,26 @@
 import {
   Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   type JSX, useMemo, useRef,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
-import IconConnected from '../icon/icon-assets/icon-connected';
+import IconConnected from '../icon/icon-assets/icon-connected'
 
 interface StatusDotProps {
-  status: boolean;
-  tooltipText: string;
+  status: boolean
+  tooltipText: string
 }
 
 const StyledContainer = styled.div.withConfig({
   shouldForwardProp: prop => !['status'].includes(prop),
 })<{
-  status: boolean;
+  status: boolean
 }>`
   display: ${({
     status,
@@ -34,12 +34,12 @@ const StyledContainer = styled.div.withConfig({
     transition: all 0.1s ease-in-out;
     transform: scale(1);
   }
-`;
+`
 
 const StyledTooltip = styled.div.withConfig({
   shouldForwardProp: prop => !['descriptionSize'].includes(prop),
 })<{
-  descriptionSize: number;
+  descriptionSize: number
 }>`
   position: fixed;
   ${mixins.flex({
@@ -57,16 +57,16 @@ const StyledTooltip = styled.div.withConfig({
     descriptionSize,
   }): string => `calc(50% - ${descriptionSize / 2}px)`};
   transform: scale(0.6);
-`;
+`
 
 export const StatusDot = ({
   status, tooltipText,
 }: StatusDotProps): JSX.Element => {
-  const descriptionContainer = useRef<HTMLDivElement>(null);
+  const descriptionContainer = useRef<HTMLDivElement>(null)
 
   const descriptionSize = useMemo(() => {
-    return descriptionContainer.current?.clientWidth || 0;
-  }, [descriptionContainer.current?.clientWidth, tooltipText]);
+    return descriptionContainer.current?.clientWidth || 0
+  }, [descriptionContainer.current?.clientWidth, tooltipText])
 
   return (
     <StyledContainer status={status}>
@@ -79,5 +79,5 @@ export const StatusDot = ({
         <Text type='body3Reg'>{tooltipText}</Text>
       </StyledTooltip>
     </StyledContainer>
-  );
-};
+  )
+}

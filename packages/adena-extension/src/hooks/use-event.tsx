@@ -1,10 +1,10 @@
 import {
   EventMessageData,
-} from '@inject/message';
+} from '@inject/message'
 
 export type UseEventReturn = {
-  dispatchEvent: (message: EventMessageData) => void;
-};
+  dispatchEvent: (message: EventMessageData) => void
+}
 
 export const useEvent = (): UseEventReturn => {
   function dispatchEvent(message: EventMessageData): void {
@@ -12,16 +12,16 @@ export const useEvent = (): UseEventReturn => {
       active: true,
       currentWindow: true,
     }, (currentTabs) => {
-      const currentTab = currentTabs.length > 0 ? currentTabs[0] : null;
+      const currentTab = currentTabs.length > 0 ? currentTabs[0] : null
       if (!currentTab || !currentTab.id) {
-        return;
+        return
       }
-      const tabId = currentTab.id;
-      chrome.tabs.sendMessage(tabId, message).catch(console.warn);
-    });
+      const tabId = currentTab.id
+      chrome.tabs.sendMessage(tabId, message).catch(console.warn)
+    })
   }
 
   return {
     dispatchEvent,
-  };
-};
+  }
+}

@@ -1,24 +1,24 @@
 import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
 import {
   describe, it,
-} from 'vitest';
+} from 'vitest'
 
 import NFTCardImage, {
   NFTCardImageProps,
-} from './nft-card-image';
+} from './nft-card-image'
 
 describe('NFTCardImage Component', () => {
   it('NFTCardImage render', () => {
@@ -26,7 +26,7 @@ describe('NFTCardImage Component', () => {
       image: '',
       isFetched: false,
       hasBadge: false,
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -35,6 +35,6 @@ describe('NFTCardImage Component', () => {
           <NFTCardImage {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

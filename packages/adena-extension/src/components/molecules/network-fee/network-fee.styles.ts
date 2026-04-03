@@ -1,11 +1,11 @@
 import {
   SkeletonBoxStyle,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const NetworkFeeContainer = styled.div`
   ${mixins.flex({
@@ -23,10 +23,10 @@ export const NetworkFeeContainer = styled.div`
     color: ${getTheme('red', '_5')};
     word-break: break-all;
   }
-`;
+`
 
 export const NetworkFeeWrapper = styled.div<{
-  error?: number;
+  error?: number
 }>`
   ${mixins.flex({
     direction: 'row',
@@ -66,7 +66,7 @@ export const NetworkFeeWrapper = styled.div<{
       height: 16px;
     }
   }
-`;
+`
 
 export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -75,4 +75,4 @@ export const NetworkFeeItemSkeletonBox = styled(SkeletonBoxStyle)`
   width: 55px;
   height: 14px;
   align-self: center;
-`;
+`

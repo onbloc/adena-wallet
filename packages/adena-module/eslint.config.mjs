@@ -19,34 +19,14 @@ export default tseslint.config([
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  stylistic.configs.customize({
-    indent: 2,
-    quotes: "single",
-    semi: false,
-    commaDangle: "always-multiline",
-    braceStyle: "1tbs",
-    blockSpacing: true,
-    quoteProps: "as-needed",
-  }),
+  stylistic.configs.customize(),
   {
     rules: {
-      "@stylistic/array-element-newline": [
-        "error",
-        {
-          multiline: true,
-        },
-      ],
-      "@stylistic/array-bracket-newline": [
-        "error",
-        {
-          multiline: true,
-        },
-      ],
-      "@stylistic/object-curly-newline": ["error", "always"],
-      "@stylistic/object-curly-spacing": ["error", "always"],
-      "@stylistic/object-property-newline": "error",
+      "@stylistic/object-curly-newline": ["error", { multiline: true, consistent: true }],
+      "@stylistic/object-property-newline": ["error", { allowAllPropertiesOnSameLine: true }],
+      "@stylistic/quote-props": ["error", "as-needed"],
       "@typescript-eslint/no-unused-vars": [
-        "error", // or "error"
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

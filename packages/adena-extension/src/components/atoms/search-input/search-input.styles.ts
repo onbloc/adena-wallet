@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const SearchInputWrapper = styled.div`
   ${mixins.flex({
@@ -55,4 +55,4 @@ export const SearchInputWrapper = styled.div`
       height: 100%;
     }
   }
-`;
+`

@@ -1,20 +1,20 @@
 import {
   fonts, FontsType,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   CSSProperties, type JSX, PropsWithChildren,
-} from 'react';
+} from 'react'
 import styled, {
   css, CSSProp,
-} from 'styled-components';
+} from 'styled-components'
 
 interface TextProps extends React.ComponentPropsWithoutRef<'div'> {
-  className?: string;
-  type: FontsType;
-  display?: CSSProperties['display'];
-  textAlign?: CSSProperties['textAlign'];
-  color?: string;
-  margin?: CSSProperties['margin'];
+  className?: string
+  type: FontsType
+  display?: CSSProperties['display']
+  textAlign?: CSSProperties['textAlign']
+  color?: string
+  margin?: CSSProperties['margin']
 }
 
 export const Text = ({
@@ -39,8 +39,8 @@ export const Text = ({
     >
       {children}
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.div.withConfig({
   shouldForwardProp: prop => !['type', 'display', 'textAlign', 'color', 'margin'].includes(prop),
@@ -53,6 +53,6 @@ const Wrapper = styled.div.withConfig({
       color: ${props.color};
       white-space: pre-wrap;
       margin: ${props.margin};
-    `;
+    `
   }}
-`;
+`

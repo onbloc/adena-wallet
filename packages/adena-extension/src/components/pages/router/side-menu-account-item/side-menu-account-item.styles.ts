@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const SideMenuAccountItemWrapper = styled.div`
   ${mixins.flex({
@@ -88,11 +88,11 @@ export const SideMenuAccountItemWrapper = styled.div`
       }
     }
   }
-`;
+`
 
 export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
-  positionX: number;
-  positionY: number;
+  positionX: number
+  positionY: number
 }>`
   position: absolute;
   left: ${({
@@ -140,4 +140,4 @@ export const SideMenuAccountItemMoreInfoWrapper = styled.div<{
       line-height: 12px;
     }
   }
-`;
+`

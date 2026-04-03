@@ -1,11 +1,11 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 export const IconAddressBookLarge = ({
   className,
 }: {
-  className: string;
+  className: string
 }): ReactElement<any> => {
   return (
     <svg
@@ -66,13 +66,13 @@ export const IconAddressBookLarge = ({
         </clipPath>
       </defs>
     </svg>
-  );
-};
+  )
+}
 
 export const IconAddressBookSmall = ({
   className,
 }: {
-  className: string;
+  className: string
 }): ReactElement<any> => {
   return (
     <svg
@@ -133,5 +133,5 @@ export const IconAddressBookSmall = ({
         </clipPath>
       </defs>
     </svg>
-  );
-};
+  )
+}

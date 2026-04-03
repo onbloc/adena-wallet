@@ -1,12 +1,12 @@
 import {
   AccountInfo, GnoProvider,
-} from '@common/provider/gno';
+} from '@common/provider/gno'
 import {
   WalletAccountRepository,
-} from '@repositories/wallet';
+} from '@repositories/wallet'
 import {
   Account,
-} from 'adena-module';
+} from 'adena-module'
 
 const defaultAccountInfo: AccountInfo = {
   address: '',
@@ -19,88 +19,89 @@ const defaultAccountInfo: AccountInfo = {
   },
   accountNumber: '',
   sequence: '',
-};
+}
 
 export class WalletAccountService {
-  private walletAccountRepository: WalletAccountRepository;
+  private walletAccountRepository: WalletAccountRepository
 
-  private gnoProvider: GnoProvider | null;
+  private gnoProvider: GnoProvider | null
 
   constructor(walletAccountRepository: WalletAccountRepository, gnoProvider: GnoProvider | null) {
-    this.walletAccountRepository = walletAccountRepository;
-    this.gnoProvider = gnoProvider;
+    this.walletAccountRepository = walletAccountRepository
+    this.gnoProvider = gnoProvider
   }
 
   public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
+      throw new Error('Gno provider not initialized.')
     }
-    return this.gnoProvider;
+    return this.gnoProvider
   }
 
   public setGnoProvider(gnoProvider: GnoProvider): void {
-    this.gnoProvider = gnoProvider;
+    this.gnoProvider = gnoProvider
   }
 
   public getAccountInfo = async (address: string): Promise<AccountInfo> => {
-    const gnoProvider = this.getGnoProvider();
-    return this.getAccountInfoByProvider(address, gnoProvider);
-  };
+    const gnoProvider = this.getGnoProvider()
+    return this.getAccountInfoByProvider(address, gnoProvider)
+  }
 
   public getAccountInfoByNetwork = async (
     address: string,
     rpcUrl: string,
     chainId: string,
   ): Promise<AccountInfo> => {
-    const gnoProvider = await GnoProvider.create(rpcUrl, chainId);
-    return this.getAccountInfoByProvider(address, gnoProvider);
-  };
+    const gnoProvider = await GnoProvider.create(rpcUrl, chainId)
+    return this.getAccountInfoByProvider(address, gnoProvider)
+  }
 
   public getAccountInfoByProvider = async (
     address: string,
     gnoProvider: GnoProvider,
   ): Promise<AccountInfo> => {
     try {
-      const account = await gnoProvider.getAccountInfo(address);
+      const account = await gnoProvider.getAccountInfo(address)
       if (account) {
-        return account;
+        return account
       }
-    } catch (e) {
-      console.log(e);
+    }
+    catch (e) {
+      console.log(e)
     }
     return {
       ...defaultAccountInfo,
       address,
-    };
-  };
+    }
+  }
 
   public getCurrentAccountId = async (): Promise<string> => {
-    return this.walletAccountRepository.getCurrentAccountId();
-  };
+    return this.walletAccountRepository.getCurrentAccountId()
+  }
 
   public changeCurrentAccount = async (account: Account): Promise<boolean> => {
-    await this.walletAccountRepository.updateCurrentAccountId(account.id);
-    return true;
-  };
+    await this.walletAccountRepository.updateCurrentAccountId(account.id)
+    return true
+  }
 
   public getAccountNames = async (): Promise<{
-    [x: string]: string;
+    [x: string]: string
   }> => {
-    return this.walletAccountRepository.getAccountNames();
-  };
+    return this.walletAccountRepository.getAccountNames()
+  }
 
   public updateAccountNames = async (accountNames: {
     [key in string]: string;
   }): Promise<boolean> => {
-    return this.walletAccountRepository.updateAccountNames(accountNames);
-  };
+    return this.walletAccountRepository.updateAccountNames(accountNames)
+  }
 
   public deleteAccountNames = async (): Promise<boolean> => {
-    return this.walletAccountRepository.deleteAccountNames();
-  };
+    return this.walletAccountRepository.deleteAccountNames()
+  }
 
   public clear = async (): Promise<boolean> => {
-    await this.walletAccountRepository.deleteCurrentAccountId();
-    return true;
-  };
+    await this.walletAccountRepository.deleteCurrentAccountId()
+    return true
+  }
 }

@@ -1,15 +1,15 @@
 import {
   Pressable, Row, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const StyledWrapper = styled(View)`
   width: 100%;
   gap: 12px;
-`;
+`
 
 export const StyledTableWrapper = styled(View)`
   width: 100%;
@@ -17,7 +17,7 @@ export const StyledTableWrapper = styled(View)`
   background: ${({
     theme,
   }): string => theme.neutral._9};
-`;
+`
 
 export const StyledResultRow = styled(Row)`
   width: 100%;
@@ -32,7 +32,7 @@ export const StyledResultRow = styled(Row)`
   &:last-child {
     border-bottom: none;
   }
-`;
+`
 
 export const StyledResultColumnName = styled(Row)`
   flex-shrink: 0;
@@ -42,7 +42,7 @@ export const StyledResultColumnName = styled(Row)`
   justify-content: flex-start;
   align-items: center;
   ${fonts.body1Reg};
-`;
+`
 
 export const StyledResultColumnValue = styled(Row)`
   gap: 5px;
@@ -52,7 +52,7 @@ export const StyledResultColumnValue = styled(Row)`
   justify-content: flex-end;
   align-items: center;
   ${fonts.body1Reg};
-`;
+`
 
 export const StyledInfoWrapper = styled(View)`
   gap: 8px;
@@ -62,7 +62,7 @@ export const StyledInfoWrapper = styled(View)`
   justify-content: flex-end;
   align-items: center;
   ${fonts.body1Reg};
-`;
+`
 
 export const StyledInfoButton = styled(Pressable)`
   flex-direction: row;
@@ -72,7 +72,7 @@ export const StyledInfoButton = styled(Pressable)`
   }): string => theme.neutral._1};
   justify-content: center;
   align-items: center;
-`;
+`
 
 export const StyledTransactionAreaWrapper = styled(View)`
   width: 100%;
@@ -81,7 +81,7 @@ export const StyledTransactionAreaWrapper = styled(View)`
   background-color: ${getTheme('neutral', '_9')};
   border: 1px solid ${getTheme('neutral', '_7')};
   padding: 12px 16px;
-`;
+`
 
 export const StyledTransactionArea = styled.textarea`
   ${fonts.body1Reg};
@@ -104,4 +104,4 @@ export const StyledTransactionArea = styled.textarea`
   &::-webkit-resizer {
     display: none !important;
   }
-`;
+`

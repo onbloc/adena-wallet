@@ -1,12 +1,12 @@
-import React from 'react';
+import React from 'react'
 
-import * as S from './multisig-threshold.styles';
+import * as S from './multisig-threshold.styles'
 
-type SignatureStatus = 'insufficient' | 'ready';
+type SignatureStatus = 'insufficient' | 'ready'
 
 interface MultisigBroadcastThresholdProps {
-  threshold: number;
-  signedCount: number;
+  threshold: number
+  signedCount: number
 }
 
 const MultisigBroadcastThreshold = ({
@@ -14,17 +14,17 @@ const MultisigBroadcastThreshold = ({
   threshold,
 }: MultisigBroadcastThresholdProps): React.ReactElement<any> => {
   const status: SignatureStatus = React.useMemo(() => {
-    return signedCount >= threshold ? 'ready' : 'insufficient';
-  }, [signedCount, threshold]);
+    return signedCount >= threshold ? 'ready' : 'insufficient'
+  }, [signedCount, threshold])
 
   const statusMessage = React.useMemo(() => {
     if (status === 'insufficient') {
-      const remaining = threshold - signedCount;
-      return `Need ${remaining} more ${remaining === 1 ? 'signature' : 'signatures'}`;
+      const remaining = threshold - signedCount
+      return `Need ${remaining} more ${remaining === 1 ? 'signature' : 'signatures'}`
     }
 
-    return `Ready to broadcast (${signedCount}/${threshold})`;
-  }, [status, signedCount, threshold]);
+    return `Ready to broadcast (${signedCount}/${threshold})`
+  }, [status, signedCount, threshold])
   return (
     <S.MultisigThresholdContainer>
       <S.MultisigThresholdWrapper>
@@ -35,7 +35,7 @@ const MultisigBroadcastThreshold = ({
         </div>
       </S.MultisigThresholdWrapper>
     </S.MultisigThresholdContainer>
-  );
-};
+  )
+}
 
-export default MultisigBroadcastThreshold;
+export default MultisigBroadcastThreshold

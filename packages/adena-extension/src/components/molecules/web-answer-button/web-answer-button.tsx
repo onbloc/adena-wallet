@@ -1,14 +1,14 @@
-import React from 'react';
+import React from 'react'
 
 import {
   StyledCorrectButton, StyledIncorrectButton,
-} from './web-answer-button.styles';
+} from './web-answer-button.styles'
 
 export interface WebAnswerButtonProps {
-  answer: string;
-  correct: boolean;
-  selected: boolean;
-  onClick: () => void;
+  answer: string
+  correct: boolean
+  selected: boolean
+  onClick: () => void
 }
 
 const WebAnswerButton: React.FC<WebAnswerButtonProps> = ({
@@ -27,7 +27,7 @@ const WebAnswerButton: React.FC<WebAnswerButtonProps> = ({
         <StyledIncorrectButton selected={selected} onClick={onClick}>
           {answer}
         </StyledIncorrectButton>
-      );
-};
+      )
+}
 
-export default WebAnswerButton;
+export default WebAnswerButton
