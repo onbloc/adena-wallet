@@ -41,7 +41,7 @@
     "rpcUrl": "https://rpc.test12.testnets.gno.land:443",
     "indexerUrl": "https://test12.indexer.onbloc.xyz",
     "gnoUrl": "https://test12.testnets.gno.land",
-    "apiUrl": "https://test12.api.onbloc.xyz",
+    "apiUrl": "",
     "linkUrl": "https://gnoscan.io"
   },
   {
