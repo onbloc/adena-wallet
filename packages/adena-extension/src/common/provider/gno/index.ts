@@ -1,2 +1,2 @@
-export * from './gno-provider';
-export * from './types';
+export * from './gno-provider'
+export * from './types'

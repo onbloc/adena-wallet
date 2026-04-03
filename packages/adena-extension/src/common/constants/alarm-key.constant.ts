@@ -36,4 +36,4 @@ export const SCHEDULE_ALARMS: {
     periodInMinutes: 1,
     delay: 45_000,
   },
-];
+]

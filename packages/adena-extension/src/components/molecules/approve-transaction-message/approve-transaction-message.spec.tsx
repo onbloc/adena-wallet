@@ -1,24 +1,24 @@
 import {
-  describe, it, vi,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it, vi,
+} from 'vitest'
 
 import ApproveTransactionMessage, {
   ApproveTransactionMessageProps,
-} from './approve-transaction-message';
+} from './approve-transaction-message'
 
 describe('ApproveTransactionMessage Component', () => {
   it('ApproveTransactionMessage render', () => {
@@ -38,7 +38,7 @@ describe('ApproveTransactionMessage Component', () => {
           send: '',
         },
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -47,6 +47,6 @@ describe('ApproveTransactionMessage Component', () => {
           <ApproveTransactionMessage {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

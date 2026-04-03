@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const InfoTooltipContainer = styled.div`
   position: relative;
@@ -10,7 +10,7 @@ export const InfoTooltipContainer = styled.div`
     direction: 'row',
   })};
   cursor: pointer;
-`;
+`
 
 interface TooltipPosition {
   left?: number
@@ -78,4 +78,4 @@ export const InfoTooltipTooltipBoxWrapper = styled.div<TooltipBoxWrapperProps>`
     border-top: 14px solid ${getTheme('neutral', '_8')};
     border-radius: 0 0 4px 4px;
   }
-`;
+`

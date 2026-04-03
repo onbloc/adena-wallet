@@ -1,12 +1,14 @@
 import {
   Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
+} from '@styles/theme'
+import React, {
+  type JSX,
+} from 'react'
+import styled from 'styled-components'
 
 interface TooltipProps {
   bgColor?: string
@@ -47,7 +49,7 @@ const Tooltip = styled.div<TooltipProps>`
       border-bottom: none;
     }
   }
-`;
+`
 
 export const StaticMultiTooltip = ({
   bgColor, posTop, items,
@@ -60,5 +62,5 @@ export const StaticMultiTooltip = ({
         </Text>
       ))}
     </Tooltip>
-  );
-};
+  )
+}

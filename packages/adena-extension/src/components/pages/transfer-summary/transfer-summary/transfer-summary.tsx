@@ -1,27 +1,27 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg'
+import ArrowDownIcon from '@assets/transfer-arrow-down.svg'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
-import NetworkFee from '@components/molecules/network-fee/network-fee';
+} from '@components/molecules'
+import NetworkFee from '@components/molecules/network-fee/network-fee'
 import {
   UseNetworkFeeReturn,
-} from '@hooks/wallet/use-network-fee';
+} from '@hooks/wallet/use-network-fee'
 import {
   Amount, NetworkFee as NetworkFeeType, TokenModel,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
-import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
-import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
+import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address'
+import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance'
 import {
   TransferSummaryWrapper,
-} from './transfer-summary.styles';
+} from './transfer-summary.styles'
 
 export interface TransferSummaryProps {
   tokenMetainfo: TokenModel
@@ -58,23 +58,23 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 }) => {
   const disabledSendButton = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
-      return true;
+      return true
     }
 
     if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
-      return true;
+      return true
     }
 
-    return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee]);
+    return Number(networkFee?.amount || 0) <= 0
+  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee])
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee';
+      return 'Insufficient network fee'
     }
 
-    return '';
-  }, [isErrorNetworkFee]);
+    return ''
+  }, [isErrorNetworkFee])
 
   return (
     <TransferSummaryWrapper>
@@ -136,7 +136,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         }}
       />
     </TransferSummaryWrapper>
-  );
-};
+  )
+}
 
-export default TransferSummary;
+export default TransferSummary

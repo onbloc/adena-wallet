@@ -1,17 +1,19 @@
 import {
   Icon, Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   FontsType, getTheme,
-} from '@styles/theme';
-import React, { type JSX } from 'react';
+} from '@styles/theme'
+import React, {
+  type JSX,
+} from 'react'
 import styled, {
   css,
-} from 'styled-components';
+} from 'styled-components'
 
-export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER';
-export type IconMode = 'ARROW' | 'WEBLINK';
+export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER'
+export type IconMode = 'ARROW' | 'WEBLINK'
 
 interface ButtonStyleProps {
   mode?: ButtonMode
@@ -37,7 +39,7 @@ export const FullButtonRightIcon = ({
   gap = 12,
   icon = 'ARROW',
 }: ButtonProps): JSX.Element => {
-  if (disabled) return <></>;
+  if (disabled) return <></>
   return (
     <ButtonWrapper className={className} onClick={onClick} mode={mode} gap={gap}>
       <Text type={textType} color='inherit'>
@@ -46,8 +48,8 @@ export const FullButtonRightIcon = ({
       {icon === 'ARROW' && <Icon name='iconArrowV2' className='icon-arrow-v2' />}
       {icon === 'WEBLINK' && <Icon name='iconWebLink' className='icon-weblink' />}
     </ButtonWrapper>
-  );
-};
+  )
+}
 
 const defaultIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
@@ -62,7 +64,7 @@ const defaultIconStyle = css<ButtonStyleProps>`
       theme, mode,
     }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
   }
-`;
+`
 
 const hoverIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
@@ -75,7 +77,7 @@ const hoverIconStyle = css<ButtonStyleProps>`
       theme, mode,
     }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
   }
-`;
+`
 
 const ButtonWrapper = styled.button<ButtonStyleProps>`
   & + & {
@@ -102,4 +104,4 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
     background-color: ${getTheme('neutral', 'b')};
     ${hoverIconStyle};
   }
-`;
+`

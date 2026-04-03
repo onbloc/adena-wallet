@@ -1,11 +1,11 @@
 import {
   SkeletonBoxStyle, View,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const NFTCollectionCardWrapper = styled(View)`
   position: relative;
@@ -83,7 +83,7 @@ export const NFTCollectionCardWrapper = styled(View)`
       ${fonts.light1Bold};
     }
   }
-`;
+`
 
 export const NFTCollectionCardImageWrapper = styled(View)`
   width: 100%;
@@ -104,7 +104,7 @@ export const NFTCollectionCardImageWrapper = styled(View)`
     min-height: 100%;
     object-fit: cover;
   }
-`;
+`
 
 export const NFTCollectionCardImageSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
@@ -115,4 +115,4 @@ export const NFTCollectionCardImageSkeletonBox = styled(SkeletonBoxStyle)`
   flex: 1;
   height: 100%;
   padding: 10px;
-`;
+`

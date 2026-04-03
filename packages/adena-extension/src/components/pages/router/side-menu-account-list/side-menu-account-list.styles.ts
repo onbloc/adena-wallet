@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
+import mixins from '@styles/mixins'
+import styled from 'styled-components'
 
 export const SideMenuAccountListWrapper = styled.div`
   ${mixins.flex({
@@ -8,4 +8,4 @@ export const SideMenuAccountListWrapper = styled.div`
   })};
   width: 100%;
   height: auto;
-`;
+`

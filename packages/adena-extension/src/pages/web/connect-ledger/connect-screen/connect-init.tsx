@@ -1,19 +1,20 @@
-import IconLedger from '@assets/web/ledger.svg';
+import IconLedger from '@assets/web/ledger.svg'
 import {
   View, WebButton, WebImg,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
-import styled from 'styled-components';
-
-import type { JSX } from "react";
+} from '@components/molecules'
+import type {
+  JSX,
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   row-gap: 18px;
   width: 100%;
   align-items: flex-start;
-`;
+`
 
 const ConnectInit = ({
   init,
@@ -41,7 +42,7 @@ const ConnectInit = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default ConnectInit;
+export default ConnectInit

@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
+import mixins from '@styles/mixins'
+import styled from 'styled-components'
 
 export const NFTTransferInputWrapper = styled.div`
   ${mixins.flex({
@@ -34,4 +34,4 @@ export const NFTTransferInputWrapper = styled.div`
     display: flex;
     padding-bottom: 20px;
   }
-`;
+`

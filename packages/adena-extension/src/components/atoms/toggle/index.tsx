@@ -1,8 +1,8 @@
-import React from 'react';
+import React from 'react'
 
 import {
   ToggleWrapper,
-} from './toggle.styles';
+} from './toggle.styles'
 
 export interface ToggleProps {
   activated: boolean
@@ -19,7 +19,7 @@ const Toggle: React.FC<ToggleProps> = ({
     >
       <div className='circle' />
     </ToggleWrapper>
-  );
-};
+  )
+}
 
-export default Toggle;
+export default Toggle

@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconConnectFailed = ({
   className,
@@ -23,7 +23,7 @@ const IconConnectFailed = ({
         fill='#EF2D21'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconConnectFailed;
+export default IconConnectFailed

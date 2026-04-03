@@ -1,16 +1,16 @@
 import {
   NetworkMetainfo, TransactionWithPageInfo,
-} from '@types';
+} from '@types'
 import {
   AxiosInstance,
-} from 'axios';
+} from 'axios'
 
 import {
   mapReceivedTransactionByBankMsgSend,
   mapReceivedTransactionByMsgCall,
   mapSendTransactionByBankMsgSend,
   mapVMTransaction,
-} from './mapper/transaction-history-query.mapper';
+} from './mapper/transaction-history-query.mapper'
 import {
   makeBlockTimeLegacyQuery,
   makeBlockTimeQuery,
@@ -20,30 +20,30 @@ import {
   makeNativeTokenReceivedTransactionsByAddressQuery,
   makeNativeTokenSendTransactionsByAddressQuery,
   makeVMTransactionsByAddressQuery,
-} from './transaction-history-indexer.queries';
+} from './transaction-history-indexer.queries'
 import {
   ITransactionHistoryIndexerRepository,
-} from './types';
+} from './types'
 
 export class TransactionHistoryIndexerRepository implements ITransactionHistoryIndexerRepository {
-  private axiosInstance: AxiosInstance;
+  private axiosInstance: AxiosInstance
 
-  private networkMetainfo: NetworkMetainfo | null;
+  private networkMetainfo: NetworkMetainfo | null
 
   constructor(axiosInstance: AxiosInstance, networkMetainfo: NetworkMetainfo | null) {
-    this.axiosInstance = axiosInstance;
-    this.networkMetainfo = networkMetainfo;
+    this.axiosInstance = axiosInstance
+    this.networkMetainfo = networkMetainfo
   }
 
   public get type(): 'indexer' | 'none' {
-    return this.networkMetainfo?.indexerUrl ? 'indexer' : 'none';
+    return this.networkMetainfo?.indexerUrl ? 'indexer' : 'none'
   }
 
   public get queryUrl(): string | null {
     if (!this.networkMetainfo?.indexerUrl) {
-      return null;
+      return null
     }
-    return this.networkMetainfo.indexerUrl + '/graphql/query';
+    return this.networkMetainfo.indexerUrl + '/graphql/query'
   }
 
   /**
@@ -57,13 +57,13 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: [],
-      };
+      }
     }
 
-    const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQuery(address);
-    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address);
-    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address);
-    const vmTransactionsQuery = makeVMTransactionsByAddressQuery(address);
+    const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQuery(address)
+    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address)
+    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address)
+    const vmTransactionsQuery = makeVMTransactionsByAddressQuery(address)
     return Promise.all([
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
@@ -107,7 +107,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: txs,
-      }));
+      }))
   }
 
   /**
@@ -121,11 +121,11 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: [],
-      };
+      }
     }
 
-    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address);
-    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address);
+    const nativeTokenSendQuery = makeNativeTokenSendTransactionsByAddressQuery(address)
+    const nativeTokenReceivedQuery = makeNativeTokenReceivedTransactionsByAddressQuery(address)
     return Promise.all([
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
@@ -153,7 +153,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: txs,
-      }));
+      }))
   }
 
   /**
@@ -170,17 +170,17 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: [],
-      };
+      }
     }
 
     const grc20ReceivedTransactionsQuery = makeGRC20ReceivedTransactionsByAddressQueryByPackagePath(
       address,
       packagePath,
-    );
+    )
     const grc20SendTransactionsQuery = makeGRC20SendTransactionsByAddressQueryByPackagePath(
       address,
       packagePath,
-    );
+    )
     return Promise.all([
       TransactionHistoryIndexerRepository.postGraphQuery(
         this.axiosInstance,
@@ -206,7 +206,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
           cursor: null,
         },
         transactions: txs,
-      }));
+      }))
   }
 
   /**
@@ -214,7 +214,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
    */
   public async fetchBlockTimeByHeight(height: number): Promise<string | null> {
     if (!this.queryUrl) {
-      return null;
+      return null
     }
 
     if (!this.networkMetainfo?.apiUrl) {
@@ -222,7 +222,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
         this.axiosInstance,
         this.queryUrl,
         makeBlockTimeLegacyQuery(height),
-      ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null));
+      ).then(result => (result?.data?.blocks?.[0] ? result?.data?.blocks?.[0].time : null))
     }
 
     return TransactionHistoryIndexerRepository.postGraphQuery(
@@ -231,7 +231,7 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       makeBlockTimeQuery(height),
     ).then(result =>
       result?.data?.blocks?.edges?.[0] ? result?.data?.blocks.edges?.[0].block.time : null,
-    );
+    )
   }
 
   private static postGraphQuery = <T = any>(
@@ -253,8 +253,8 @@ export class TransactionHistoryIndexerRepository implements ITransactionHistoryI
       )
       .then(response => response.data)
       .catch((e) => {
-        console.log(e);
-        return null;
-      });
-  };
+        console.log(e)
+        return null
+      })
+  }
 }

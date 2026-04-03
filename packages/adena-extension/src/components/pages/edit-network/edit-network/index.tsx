@@ -1,18 +1,18 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg';
+import LeftArrowIcon from '@assets/arrowL-left.svg'
 import {
   CustomNetworkInput, SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
+} from '@components/molecules'
 import React, {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 
-import RemoveNetworkButton from '../remove-network-button/remove-network-button';
+import RemoveNetworkButton from '../remove-network-button/remove-network-button'
 import {
   EditNetworkWrapper,
-} from './edit-network.styles';
+} from './edit-network.styles'
 
 export interface EditNetworkProps {
   name: string
@@ -53,25 +53,25 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
 }) => {
   const clearButtonText = useMemo(() => {
     if (editType === 'all') {
-      return 'Remove Network';
+      return 'Remove Network'
     }
-    return 'Reset to Default';
-  }, [editType]);
+    return 'Reset to Default'
+  }, [editType])
 
   const onClickBack = useCallback(() => {
-    moveBack();
-  }, [moveBack]);
+    moveBack()
+  }, [moveBack])
 
   const onClickSave = useCallback(() => {
     if (!savable) {
-      return;
+      return
     }
-    saveNetwork();
-  }, [savable, saveNetwork]);
+    saveNetwork()
+  }, [savable, saveNetwork])
 
   const onClickRemoveButton = useCallback(() => {
-    clearNetwork();
-  }, [clearNetwork]);
+    clearNetwork()
+  }, [clearNetwork])
 
   return (
     <EditNetworkWrapper>
@@ -114,7 +114,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
         }}
       />
     </EditNetworkWrapper>
-  );
-};
+  )
+}
 
-export default EditNetwork;
+export default EditNetwork

@@ -1,25 +1,27 @@
-import NFTCollectionAssets from '@components/pages/nft-collection/nft-collection-assets/nft-collection-assets';
-import NFTCollectionHeader from '@components/pages/nft-collection/nft-collection-header/nft-collection-header';
+import NFTCollectionAssets from '@components/pages/nft-collection/nft-collection-assets/nft-collection-assets'
+import NFTCollectionHeader from '@components/pages/nft-collection/nft-collection-header/nft-collection-header'
 import {
   useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri';
+} from '@hooks/nft/use-get-grc721-token-uri'
 import {
   useGetGRC721Tokens,
-} from '@hooks/nft/use-get-grc721-tokens';
+} from '@hooks/nft/use-get-grc721-tokens'
 import {
   useIsLoadingNFT,
-} from '@hooks/nft/use-is-loading-nft';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
+} from '@hooks/nft/use-is-loading-nft'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   GRC721Model, RoutePath,
-} from '@types';
-import { useCallback, useMemo, type JSX } from 'react';
-import styled from 'styled-components';
+} from '@types'
+import {
+  type JSX, useCallback, useMemo,
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -31,15 +33,15 @@ const Wrapper = styled.main`
   padding-top: 24px;
   gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
-`;
+`
 
 export const NftCollection = (): JSX.Element => {
   const {
     openScannerLink,
-  } = useLink();
+  } = useLink()
   const {
     params, navigate, goBack,
-  } = useAppNavigate<RoutePath.NftCollection>();
+  } = useAppNavigate<RoutePath.NftCollection>()
 
   const {
     data: grc721Tokens, isFetched: isFetchedGRC721Tokens,
@@ -48,27 +50,27 @@ export const NftCollection = (): JSX.Element => {
     {
       refetchOnMount: true,
     },
-  );
+  )
 
-  const fetchingCount = useIsLoadingNFT();
+  const fetchingCount = useIsLoadingNFT()
 
   const isFinishFetchedGRC721Tokens = useMemo(() => {
-    return fetchingCount === 0 && isFetchedGRC721Tokens;
-  }, [fetchingCount, isFetchedGRC721Tokens]);
+    return fetchingCount === 0 && isFetchedGRC721Tokens
+  }, [fetchingCount, isFetchedGRC721Tokens])
 
   const title = useMemo(() => {
-    return params.collection.name;
-  }, [params.collection]);
+    return params.collection.name
+  }, [params.collection])
 
   const moveBack = useCallback(() => {
-    goBack();
-  }, [goBack]);
+    goBack()
+  }, [goBack])
 
   const moveGnoscanCollection = useCallback(() => {
     openScannerLink('/realms/details', {
       path: params.collection.packagePath,
-    });
-  }, [openScannerLink]);
+    })
+  }, [openScannerLink])
 
   const moveCollectionAssetPage = useCallback(
     (grc721Token: GRC721Model) => {
@@ -76,10 +78,10 @@ export const NftCollection = (): JSX.Element => {
         state: {
           collectionAsset: grc721Token,
         },
-      });
+      })
     },
     [navigate],
-  );
+  )
 
   return (
     <Wrapper>
@@ -95,5 +97,5 @@ export const NftCollection = (): JSX.Element => {
         queryGRC721TokenUri={useGetGRC721TokenUri}
       />
     </Wrapper>
-  );
-};
+  )
+}

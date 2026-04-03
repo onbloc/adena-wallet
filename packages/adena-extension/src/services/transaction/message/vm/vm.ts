@@ -21,16 +21,16 @@ export const createMessageOfVmAddPackage = (info: {
     type: '/vm.m_addpkg',
     value: info.packageInfo
       ? {
-        creator: info.creator,
-        package: info.packageInfo,
-        max_deposit: info.max_deposit,
-      }
+          creator: info.creator,
+          package: info.packageInfo,
+          max_deposit: info.max_deposit,
+        }
       : {
-        creator: info.creator,
-        max_deposit: info.max_deposit,
-      },
-  };
-};
+          creator: info.creator,
+          max_deposit: info.max_deposit,
+        },
+  }
+}
 
 export const createMessageOfVmCall = (info: {
   caller: string
@@ -60,8 +60,8 @@ export const createMessageOfVmCall = (info: {
       func: info.func,
       args: info.args,
     },
-  };
-};
+  }
+}
 
 export const createMessageOfVmRun = (info: {
   caller: string
@@ -86,5 +86,5 @@ export const createMessageOfVmRun = (info: {
       max_deposit: info.max_deposit,
       package: info.packageInfo,
     },
-  };
-};
+  }
+}

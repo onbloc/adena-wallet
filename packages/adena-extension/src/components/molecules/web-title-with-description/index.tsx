@@ -1,16 +1,16 @@
 import {
   View, WebText,
-} from '@components/atoms';
+} from '@components/atoms'
 import React, {
   CSSProperties,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledContainer = styled(View)`
   row-gap: 10px;
-`;
+`
 
 export interface WebTitleWithDescriptionProps {
   title: string
@@ -29,7 +29,7 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
   marginBottom = 0,
   descriptionLetterSpacing,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
 
   return (
     <StyledContainer
@@ -53,5 +53,5 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
         {description}
       </WebText>
     </StyledContainer>
-  );
-};
+  )
+}

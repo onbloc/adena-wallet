@@ -1,7 +1,7 @@
 export type StorageModelV017 = {
   version: 17
   data: StorageModelDataV017
-};
+}
 
 export type StorageModelDataV017 = {
   NETWORKS: NetworksModelV017
@@ -19,7 +19,7 @@ export type StorageModelDataV017 = {
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: AddAccountGuideConfirmDateModelV017
   ACCOUNT_GRC721_COLLECTIONS: AccountGRC721CollectionsV017
   ACCOUNT_GRC721_PINNED_PACKAGES: AccountGRC721PinnedPackagesV017
-};
+}
 
 export type NetworksModelV017 = {
   id: string
@@ -36,25 +36,25 @@ export type NetworksModelV017 = {
   apiUrl: string
   linkUrl: string
   deleted?: boolean
-}[];
+}[]
 
-export type CurrentChainIdModelV017 = string;
+export type CurrentChainIdModelV017 = string
 
-export type CurrentNetworkIdModelV017 = string;
+export type CurrentNetworkIdModelV017 = string
 
-export type SerializedModelV017 = string;
+export type SerializedModelV017 = string
 
-export type QuestionnaireExpiredDateModelV017 = number | null;
+export type QuestionnaireExpiredDateModelV017 = number | null
 
-export type WalletCreationGuideConfirmDateModelV017 = number | null;
+export type WalletCreationGuideConfirmDateModelV017 = number | null
 
-export type AddAccountGuideConfirmDateModelV017 = number | null;
+export type AddAccountGuideConfirmDateModelV017 = number | null
 
 export type WalletModelV017 = {
   accounts: AccountDataModelV017[]
   keyrings: KeyringDataModelV017[]
   currentAccountId?: string
-};
+}
 
 export type AccountDataModelV017 = {
   id?: string
@@ -65,7 +65,7 @@ export type AccountDataModelV017 = {
   hdPath?: number
   publicKey: number[]
   addressBytes?: number[]
-};
+}
 
 export type KeyringDataModelV017 = {
   id?: string
@@ -75,16 +75,16 @@ export type KeyringDataModelV017 = {
   seed?: number[]
   mnemonic?: string
   addressBytes?: number[]
-};
+}
 
-export type EncryptedStoredPasswordModelV017 = string;
+export type EncryptedStoredPasswordModelV017 = string
 
-export type CurrentAccountIdModelV017 = string;
+export type CurrentAccountIdModelV017 = string
 
-type AccountId = string;
-type NetworkId = string;
+type AccountId = string
+type NetworkId = string
 
-export type AccountNamesModelV017 = { [key in AccountId]: string };
+export type AccountNamesModelV017 = { [key in AccountId]: string }
 
 export type EstablishSitesModelV017 = {
   [key in AccountId]: {
@@ -95,9 +95,9 @@ export type EstablishSitesModelV017 = {
     favicon: string | null
     establishedTime: string
   }[];
-};
+}
 
-export type AddressBookModelV017 = string;
+export type AddressBookModelV017 = string
 
 export type AccountTokenMetainfoModelV017 = {
   [key in string]: {
@@ -121,7 +121,7 @@ export type AccountTokenMetainfoModelV017 = {
     channel?: string
     port?: string
   }[];
-};
+}
 
 export type AccountGRC721CollectionsV017 = {
   [key in AccountId]: {
@@ -138,8 +138,8 @@ export type AccountGRC721CollectionsV017 = {
       isMetadata: boolean
     }[];
   };
-};
+}
 
 export type AccountGRC721PinnedPackagesV017 = {
   [key in AccountId]: { [key in NetworkId]: string[] };
-};
+}

@@ -1,1 +1,0 @@
-import{i as e}from"./_polyfill-node.global-CL4hvcq6.js";import{E as t,d as n,o as r,r as i}from"./client-utils-rtPyoO9p.js";function a(e){return e.split(``).reverse().join(``)}var o,s,c=e((()=>{n(),r(),o=e=>e.split(`/`).map(e=>s(e)?i(e,4):e).join(`/`),s=e=>{try{let{prefix:n}=t(e);return!!n}catch{return!1}}}));export{a as i,s as n,o as r,c as t};

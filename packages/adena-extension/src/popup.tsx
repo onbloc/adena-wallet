@@ -1,9 +1,9 @@
-import * as ReactDOM from 'react-dom/client';
+import * as ReactDOM from 'react-dom/client'
 
-import App from './App/popup';
+import App from './App/popup'
 
-const mountNode = document.getElementById('popup');
+const mountNode = document.getElementById('popup')
 if (mountNode) {
-  const root = ReactDOM.createRoot(mountNode);
-  root.render(<App />);
+  const root = ReactDOM.createRoot(mountNode)
+  root.render(<App />)
 }

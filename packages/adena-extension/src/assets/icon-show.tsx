@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconShow = ({
   className,
@@ -29,6 +31,6 @@ const IconShow = ({
       </clipPath>
     </defs>
   </svg>
-);
+)
 
-export default IconShow;
+export default IconShow

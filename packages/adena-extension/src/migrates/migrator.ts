@@ -1,6 +1,6 @@
 import {
   StorageModel,
-} from '@common/storage';
+} from '@common/storage'
 
 export interface Migration<R = any> {
   version: number

@@ -1,9 +1,9 @@
 import {
   getTheme, webFonts,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 interface InputProps {
   width?: string
@@ -73,4 +73,4 @@ export const WebTextarea = styled.textarea<InputProps>`
             0px 1px 2px 0px rgba(0, 0, 0, 0.06);
         `
       : ''}
-`;
+`

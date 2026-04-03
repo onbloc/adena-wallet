@@ -1,11 +1,11 @@
 import {
   waitForRun,
-} from '@common/utils/timeout-utils';
-import AccountInitializationInit from '@components/molecules/account-initialization-init/account-initialization-init';
-import AccountInitializationResult from '@components/molecules/account-initialization-result/account-initialization-result';
+} from '@common/utils/timeout-utils'
+import AccountInitializationInit from '@components/molecules/account-initialization-init/account-initialization-init'
+import AccountInitializationResult from '@components/molecules/account-initialization-result/account-initialization-result'
 import React, {
   useEffect, useState,
-} from 'react';
+} from 'react'
 
 export interface AccountInitializationProps {
   address: string | null
@@ -25,31 +25,30 @@ const AccountInitialization: React.FC<AccountInitializationProps> = ({
   moveBack,
   initializeAccount,
 }) => {
-  const [state, setState] = useState<AccountInitializationState>(AccountInitializationState.INIT);
+  const [state, setState] = useState<AccountInitializationState>(AccountInitializationState.INIT)
 
   const moveRequest = (): void => {
-    setState(AccountInitializationState.LOADING);
+    setState(AccountInitializationState.LOADING)
     waitForRun(initializeAccount, 500).then((success) => {
       if (success) {
-        setState(AccountInitializationState.SUCCESS);
+        setState(AccountInitializationState.SUCCESS)
+      } else {
+        setState(AccountInitializationState.FAILURE)
       }
-      else {
-        setState(AccountInitializationState.FAILURE);
-      }
-    });
-  };
+    })
+  }
 
   const moveInit = (): void => {
-    setState(AccountInitializationState.INIT);
-  };
+    setState(AccountInitializationState.INIT)
+  }
 
   useEffect(() => {
     if (state === AccountInitializationState.SUCCESS) {
       setTimeout(() => {
-        moveBack();
-      }, 1000);
+        moveBack()
+      }, 1000)
     }
-  }, [state]);
+  }, [state])
 
   if (state === AccountInitializationState.INIT) {
     return (
@@ -58,10 +57,10 @@ const AccountInitialization: React.FC<AccountInitializationProps> = ({
         moveRequest={moveRequest}
         moveBack={moveBack}
       />
-    );
+    )
   }
 
-  return <AccountInitializationResult state={state} moveInit={moveInit} moveBack={moveBack} />;
-};
+  return <AccountInitializationResult state={state} moveInit={moveInit} moveBack={moveBack} />
+}
 
-export default AccountInitialization;
+export default AccountInitialization

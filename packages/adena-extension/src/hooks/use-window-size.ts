@@ -1,48 +1,47 @@
 import {
   WINDOW_EXPAND_SIZE,
-} from '@common/constants/ui.constant';
+} from '@common/constants/ui.constant'
 import {
   CommonState,
-} from '@states';
+} from '@states'
 import {
   WindowSizeType,
-} from '@types';
+} from '@types'
 import {
   useEffect,
-} from 'react';
+} from 'react'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 
 export type UseWindowSizeReturn = {
   windowSizeType: WindowSizeType
-};
+}
 
 export const useWindowSize = (init = false): UseWindowSizeReturn => {
-  const [windowSizeType, setWindowSizeType] = useRecoilState(CommonState.windowSizeType);
+  const [windowSizeType, setWindowSizeType] = useRecoilState(CommonState.windowSizeType)
 
   useEffect(() => {
     if (!init) {
-      return;
+      return
     }
     if (typeof window !== 'undefined') {
       const handleResize = (): void => {
-        const windowSizeType = window.innerWidth > WINDOW_EXPAND_SIZE ? 'EXPAND' : 'DEFAULT';
-        setWindowSizeType(windowSizeType);
-      };
-      window.addEventListener('resize', handleResize);
-      handleResize();
-      return () => window.removeEventListener('resize', handleResize);
-    }
-    else {
+        const windowSizeType = window.innerWidth > WINDOW_EXPAND_SIZE ? 'EXPAND' : 'DEFAULT'
+        setWindowSizeType(windowSizeType)
+      }
+      window.addEventListener('resize', handleResize)
+      handleResize()
+      return () => window.removeEventListener('resize', handleResize)
+    } else {
       return () =>
         window.removeEventListener('resize', () => {
-          return null;
-        });
+          return null
+        })
     }
-  }, []);
+  }, [])
 
   return {
     windowSizeType,
-  };
-};
+  }
+}

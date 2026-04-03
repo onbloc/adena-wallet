@@ -1,6 +1,6 @@
 import {
   createMessageOfVmCall,
-} from './vm';
+} from './vm'
 
 export const createMessageOfVmCreateBoard = (info: {
   address: string
@@ -22,8 +22,8 @@ export const createMessageOfVmCreateBoard = (info: {
     func: 'CreateBoard',
     args: [info.boardName],
     send: '',
-  });
-};
+  })
+}
 
 export const createMessageOfVmCreateRepost = (info: {
   address: string
@@ -49,8 +49,8 @@ export const createMessageOfVmCreateRepost = (info: {
     func: 'CreateRepost',
     args: [`${info.boardId}`, `${info.postId}`, info.title, info.body, `${`${info.destinationBoardId}`}`],
     send: '',
-  });
-};
+  })
+}
 
 export const createMessageOfVmCreateThread = (info: {
   address: string
@@ -74,8 +74,8 @@ export const createMessageOfVmCreateThread = (info: {
     func: 'CreateThread',
     args: [`${info.boardId}`, info.title, info.body],
     send: '',
-  });
-};
+  })
+}
 
 export const createMessageOfVmEditPost = (info: {
   address: string
@@ -101,8 +101,8 @@ export const createMessageOfVmEditPost = (info: {
     func: 'EditPost',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.title, info.body],
     send: '',
-  });
-};
+  })
+}
 
 export const createMessageOfVmDeletePost = (info: {
   address: string
@@ -126,8 +126,8 @@ export const createMessageOfVmDeletePost = (info: {
     func: 'DeletePost',
     args: [`${info.boardId}`, `${info.postId}`, info.reason],
     send: '',
-  });
-};
+  })
+}
 
 export const createMessageOfVmCreateReply = (info: {
   address: string
@@ -152,5 +152,5 @@ export const createMessageOfVmCreateReply = (info: {
     func: 'CreateReply',
     args: [`${info.boardId}`, `${info.threadId}`, `${info.postId}`, info.body],
     send: '',
-  });
-};
+  })
+}

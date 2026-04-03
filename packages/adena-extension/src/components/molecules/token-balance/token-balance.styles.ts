@@ -1,9 +1,9 @@
 import {
   fonts, FontsType,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 interface TokenBalanceWrapperProps {
   orientation: 'VERTICAL' | 'HORIZONTAL'
@@ -66,4 +66,4 @@ export const TokenBalanceWrapper = styled.div.withConfig({
           : css``};
     }
   }
-`;
+`

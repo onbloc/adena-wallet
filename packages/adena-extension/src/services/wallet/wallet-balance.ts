@@ -1,55 +1,55 @@
 import {
   GNOT_TOKEN,
-} from '@common/constants/token.constant';
+} from '@common/constants/token.constant'
 import {
   GnoProvider,
-} from '@common/provider/gno/gno-provider';
+} from '@common/provider/gno/gno-provider'
 import {
   isGRC20TokenModel, isNativeTokenModel,
-} from '@common/validation/validation-token';
+} from '@common/validation/validation-token'
 import {
   TokenBalanceType, TokenModel,
-} from '@types';
-import BigNumber from 'bignumber.js';
+} from '@types'
+import BigNumber from 'bignumber.js'
 
 export class WalletBalanceService {
-  private tokenMetainfos: TokenModel[];
+  private tokenMetainfos: TokenModel[]
 
-  private gnoProvider: GnoProvider | null = null;
+  private gnoProvider: GnoProvider | null = null
 
   constructor(gnoProvider?: GnoProvider | null) {
-    this.tokenMetainfos = [];
-    this.gnoProvider = gnoProvider || null;
+    this.tokenMetainfos = []
+    this.gnoProvider = gnoProvider || null
   }
 
   public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.');
+      throw new Error('Gno provider not initialized.')
     }
-    return this.gnoProvider;
+    return this.gnoProvider
   }
 
   public setGnoProvider(gnoProvider: GnoProvider): void {
-    this.gnoProvider = gnoProvider;
+    this.gnoProvider = gnoProvider
   }
 
   public setTokenMetainfos(tokenMetainfos: Array<TokenModel>): void {
-    this.tokenMetainfos = tokenMetainfos;
+    this.tokenMetainfos = tokenMetainfos
   }
 
   public async getGnotTokenBalance(address: string): Promise<number | null> {
-    const gnoProvider = this.getGnoProvider();
+    const gnoProvider = this.getGnoProvider()
     return gnoProvider
       .getBalance(address, GNOT_TOKEN.denom)
       .then((result) => {
         if (BigNumber(result).isInteger()) {
           return BigNumber(result)
             .shiftedBy(GNOT_TOKEN.decimals * -1)
-            .toNumber();
+            .toNumber()
         }
-        return null;
+        return null
       })
-      .catch(() => null);
+      .catch(() => null)
   }
 
   public async getGRC20TokenBalance(
@@ -57,23 +57,23 @@ export class WalletBalanceService {
     packagePath: string,
     decimals = 6,
   ): Promise<number | null> {
-    const gnoProvider = this.getGnoProvider();
+    const gnoProvider = this.getGnoProvider()
     return gnoProvider
       .getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
       .then((result) => {
         if (result === null || !BigNumber(result).isInteger()) {
-          return null;
+          return null
         }
         return BigNumber(result)
           .shiftedBy(decimals * -1)
-          .toNumber();
+          .toNumber()
       })
-      .catch(() => null);
+      .catch(() => null)
   }
 
   public getTokenBalances = async (address: string): Promise<TokenBalanceType[]> => {
-    const gnoProvider = this.getGnoProvider();
-    const denom = GNOT_TOKEN.denom;
+    const gnoProvider = this.getGnoProvider()
+    const denom = GNOT_TOKEN.denom
     const balance = await gnoProvider
       .getBalance(address, denom)
       .then(value => ({
@@ -83,43 +83,43 @@ export class WalletBalanceService {
       .catch(() => ({
         value: '0',
         denom,
-      }));
-    const tokenBalances: Array<TokenBalanceType> = [];
+      }))
+    const tokenBalances: Array<TokenBalanceType> = []
 
     for (const tokenMetainfo of this.tokenMetainfos) {
-      const isNativeToken = isNativeTokenModel(tokenMetainfo);
+      const isNativeToken = isNativeTokenModel(tokenMetainfo)
       if (
         balance.denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
         || (isNativeToken && balance.denom.toUpperCase() === tokenMetainfo.denom.toUpperCase())
       ) {
-        tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo));
+        tokenBalances.push(this.createTokenBalance(balance, tokenMetainfo))
       }
     }
-    return tokenBalances;
-  };
+    return tokenBalances
+  }
 
   public getGRC20TokenBalances = async (
     address: string,
     packagePath: string,
     symbol: string,
   ): Promise<TokenBalanceType[]> => {
-    const gnoProvider = this.getGnoProvider();
-    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address]);
+    const gnoProvider = this.getGnoProvider()
+    const balance = await gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address])
     if (!balance) {
-      return [];
+      return []
     }
     const balanceAmount = {
       value: balance,
       denom: symbol.toUpperCase(),
-    };
+    }
     const tokenBalance = this.tokenMetainfos.find(
       tokenMetainfo => isGRC20TokenModel(tokenMetainfo) && tokenMetainfo.pkgPath === packagePath,
-    );
+    )
     if (tokenBalance) {
-      return [this.createTokenBalance(balanceAmount, tokenBalance)];
+      return [this.createTokenBalance(balanceAmount, tokenBalance)]
     }
-    return [];
-  };
+    return []
+  }
 
   public convertDenom = (
     value: string,
@@ -130,29 +130,29 @@ export class WalletBalanceService {
     value: string
     denom: string
   } => {
-    const decimals = tokenMetainfo.decimals;
-    let shift = 0;
-    let convertedDenom = tokenMetainfo.symbol;
+    const decimals = tokenMetainfo.decimals
+    let shift = 0
+    let convertedDenom = tokenMetainfo.symbol
     if (convertType === 'COMMON') {
       if (tokenMetainfo.symbol.toUpperCase() !== denom.toUpperCase()) {
-        shift = decimals * -1;
+        shift = decimals * -1
       }
     }
 
     if (convertType === 'MINIMAL') {
       convertedDenom = isNativeTokenModel(tokenMetainfo)
         ? tokenMetainfo.denom
-        : tokenMetainfo.symbol;
+        : tokenMetainfo.symbol
       if (convertedDenom.toUpperCase() !== denom.toUpperCase()) {
-        shift = decimals;
+        shift = decimals
       }
     }
 
     return {
       value: new BigNumber(value).shiftedBy(shift).toString(),
       denom: convertedDenom,
-    };
-  };
+    }
+  }
 
   private createTokenBalance = (
     balance: {
@@ -168,13 +168,13 @@ export class WalletBalanceService {
       balance.denom,
       tokenMetainfo,
       'COMMON',
-    );
+    )
     return {
       ...tokenMetainfo,
       amount: {
         value,
         denom,
       },
-    };
-  };
+    }
+  }
 }

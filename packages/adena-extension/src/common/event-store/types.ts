@@ -1,4 +1,4 @@
-export type EventStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
+export type EventStatus = 'PENDING' | 'SUCCESS' | 'FAILED'
 
 export interface Event<T = unknown> {
   id: string

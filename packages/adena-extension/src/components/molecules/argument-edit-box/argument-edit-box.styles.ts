@@ -1,10 +1,10 @@
 import {
   View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const ArgumentEditBoxWrapper = styled(View)<{
   $marginRight?: number
@@ -86,4 +86,4 @@ export const ArgumentEditBoxWrapper = styled(View)<{
       }
     }
   }
-`;
+`

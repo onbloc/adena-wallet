@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconHiddenEye = ({
   className,
@@ -36,7 +36,7 @@ const IconHiddenEye = ({
         </clipPath>
       </defs>
     </svg>
-  );
-};
+  )
+}
 
-export default IconHiddenEye;
+export default IconHiddenEye

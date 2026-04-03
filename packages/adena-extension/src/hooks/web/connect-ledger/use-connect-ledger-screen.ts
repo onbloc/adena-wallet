@@ -1,16 +1,16 @@
-import useAppNavigate from '@hooks/use-app-navigate';
+import useAppNavigate from '@hooks/use-app-navigate'
 import useIndicatorStep, {
   UseIndicatorStepReturn,
-} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   Account, AdenaLedgerConnector, AdenaWallet, serializeAccount, Wallet,
-} from 'adena-module';
+} from 'adena-module'
 import {
   useEffect, useState,
-} from 'react';
+} from 'react'
 
 export type UseConnectLedgerDeviceScreenReturn = {
   indicatorInfo: UseIndicatorStepReturn
@@ -18,7 +18,7 @@ export type UseConnectLedgerDeviceScreenReturn = {
   setConnectState: React.Dispatch<React.SetStateAction<ConnectLedgerStateType>>
   initWallet: () => Promise<void>
   requestPermission: () => Promise<void>
-};
+}
 
 export type ConnectLedgerStateType
   = | 'INIT'
@@ -27,7 +27,7 @@ export type ConnectLedgerStateType
     | 'REQUEST_WALLET'
     | 'REQUEST_WALLET_LOAD'
     | 'FAILED'
-    | 'SUCCESS';
+    | 'SUCCESS'
 
 export const connectLedgerStep: Record<
   ConnectLedgerStateType,
@@ -64,7 +64,7 @@ export const connectLedgerStep: Record<
     backTo: 'INIT',
     stepNo: 2,
   },
-};
+}
 
 export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
   INIT: 0,
@@ -74,107 +74,104 @@ export const connectLedgerStepNo: Record<ConnectLedgerStateType, number> = {
   REQUEST_WALLET_LOAD: 1,
   FAILED: 1,
   SUCCESS: 2,
-};
+}
 
 const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
   const {
     navigate,
-  } = useAppNavigate();
-  const [connectState, setConnectState] = useState<ConnectLedgerStateType>('INIT');
-  const [wallet, setWallet] = useState<Wallet>();
+  } = useAppNavigate()
+  const [connectState, setConnectState] = useState<ConnectLedgerStateType>('INIT')
+  const [wallet, setWallet] = useState<Wallet>()
   const indicatorInfo = useIndicatorStep({
     currentState: connectState,
     stepMap: connectLedgerStepNo,
-  });
+  })
 
   useEffect(() => {
     if (connectState === 'FAILED') {
       const intervalRequest = setTimeout(() => {
-        requestHardwareWallet();
-      }, 1000);
-      return () => clearTimeout(intervalRequest);
+        requestHardwareWallet()
+      }, 1000)
+      return () => clearTimeout(intervalRequest)
     }
     if (connectState === 'SUCCESS' && wallet) {
       const serializedAccounts = wallet.accounts.map((account: Account) =>
         serializeAccount(account),
-      );
+      )
       navigate(RoutePath.WebConnectLedgerSelectAccount, {
         state: {
           accounts: serializedAccounts,
         },
-      });
+      })
     }
-  }, [connectState, wallet]);
+  }, [connectState, wallet])
 
   const initWallet = async (): Promise<void> => {
-    requestPermission();
-  };
+    requestPermission()
+  }
 
   const requestPermission = async (): Promise<void> => {
-    setConnectState('REQUEST');
+    setConnectState('REQUEST')
     try {
-      const connected = await checkHardwareConnect();
+      const connected = await checkHardwareConnect()
       const transport = connected
         ? await AdenaLedgerConnector.openConnected()
-        : await AdenaLedgerConnector.request();
-      await transport?.close();
-      setConnectState('REQUEST_WALLET');
-      requestHardwareWallet();
+        : await AdenaLedgerConnector.request()
+      await transport?.close()
+      setConnectState('REQUEST_WALLET')
+      requestHardwareWallet()
+    } catch (_e) {
+      setConnectState('NOT_PERMISSION')
     }
-    catch (_e) {
-      setConnectState('NOT_PERMISSION');
-    }
-  };
+  }
 
   const checkHardwareConnect = async (): Promise<boolean> => {
-    const devices = await AdenaLedgerConnector.devices();
+    const devices = await AdenaLedgerConnector.devices()
     if (devices.length === 0) {
-      return false;
+      return false
     }
 
-    return true;
-  };
+    return true
+  }
 
   const requestHardwareWallet = async (): Promise<void> => {
-    let retry = true;
+    let retry = true
     try {
-      const connectedCosmosApp = await checkHardwareConnect();
+      const connectedCosmosApp = await checkHardwareConnect()
       if (!connectedCosmosApp) {
-        setConnectState('NOT_PERMISSION');
-        return;
+        setConnectState('NOT_PERMISSION')
+        return
       }
-    }
-    catch (_e) {
-      setConnectState('NOT_PERMISSION');
+    } catch (_e) {
+      setConnectState('NOT_PERMISSION')
     }
 
     try {
-      setConnectState('REQUEST_WALLET');
-      const transport = await AdenaLedgerConnector.openConnected();
-      setConnectState('REQUEST_WALLET_LOAD');
+      setConnectState('REQUEST_WALLET')
+      const transport = await AdenaLedgerConnector.openConnected()
+      setConnectState('REQUEST_WALLET_LOAD')
       if (!transport) {
-        throw new Error('Not found Connect');
+        throw new Error('Not found Connect')
       }
-      const initHdPaths = [0, 1, 2, 3, 4];
-      const ledgerConnector = AdenaLedgerConnector.fromTransport(transport);
-      const wallet = await AdenaWallet.createByLedger(ledgerConnector, initHdPaths);
-      await transport?.close();
-      setWallet(wallet);
-      setConnectState('SUCCESS');
-      retry = false;
-    }
-    catch (e) {
+      const initHdPaths = [0, 1, 2, 3, 4]
+      const ledgerConnector = AdenaLedgerConnector.fromTransport(transport)
+      const wallet = await AdenaWallet.createByLedger(ledgerConnector, initHdPaths)
+      await transport?.close()
+      setWallet(wallet)
+      setConnectState('SUCCESS')
+      retry = false
+    } catch (e) {
       if (e instanceof Error) {
         if (e.message !== 'The device is already open.') {
-          console.log(e);
+          console.log(e)
         }
       }
     }
 
     if (retry) {
-      setConnectState('FAILED');
+      setConnectState('FAILED')
     }
-  };
+  }
 
   return {
     indicatorInfo,
@@ -182,7 +179,7 @@ const useConnectLedgerDeviceScreen = (): UseConnectLedgerDeviceScreenReturn => {
     setConnectState,
     initWallet,
     requestPermission,
-  };
-};
+  }
+}
 
-export default useConnectLedgerDeviceScreen;
+export default useConnectLedgerDeviceScreen

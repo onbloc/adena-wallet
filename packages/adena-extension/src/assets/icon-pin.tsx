@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconPin = ({
   className,
@@ -20,6 +22,6 @@ const IconPin = ({
       fill='white'
     />
   </svg>
-);
+)
 
-export default IconPin;
+export default IconPin

@@ -1,26 +1,26 @@
 import {
   Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   LoadingNft,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721Model,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
-import NFTCollectionAssetCard from '../nft-collection-asset-card/nft-collection-asset-card';
+import NFTCollectionAssetCard from '../nft-collection-asset-card/nft-collection-asset-card'
 import {
   NFTCollectionAssetsWrapper,
-} from './nft-collection-assets.styles';
+} from './nft-collection-assets.styles'
 
 export interface NFTCollectionAssetsProps {
   tokens: GRC721Model[] | null | undefined
@@ -39,19 +39,19 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
   queryGRC721TokenUri,
   moveAssetPage,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
 
   const isLoading = useMemo(() => {
     if (!isFetchedTokens) {
-      return true;
+      return true
     }
 
-    return tokens === null;
-  }, [isFetchedTokens, tokens]);
+    return tokens === null
+  }, [isFetchedTokens, tokens])
 
   const isEmptyAssets = useMemo(() => {
-    return tokens?.length === 0;
-  }, [tokens]);
+    return tokens?.length === 0
+  }, [tokens])
 
   if (isEmptyAssets) {
     return (
@@ -60,7 +60,7 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
           No NFTs to display
         </Text>
       </NFTCollectionAssetsWrapper>
-    );
+    )
   }
 
   return (
@@ -80,7 +80,7 @@ const NFTCollectionAssets: React.FC<NFTCollectionAssetsProps> = ({
         </div>
       )}
     </NFTCollectionAssetsWrapper>
-  );
-};
+  )
+}
 
-export default NFTCollectionAssets;
+export default NFTCollectionAssets

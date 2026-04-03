@@ -1,7 +1,7 @@
 export type StorageModelV001 = {
   version: 1
   data: StorageModelDataV001
-};
+}
 
 export type StorageModelDataV001 = {
   NETWORKS: NetworksModelV001
@@ -14,7 +14,7 @@ export type StorageModelDataV001 = {
   ESTABLISH_SITES: EstablishSitesModelV001
   ADDRESS_BOOK: AddressBookModelV001
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV001
-};
+}
 
 export type NetworksModelV001 = {
   main: boolean
@@ -33,19 +33,19 @@ export type NetworksModelV001 = {
     minimalDenom: string
     minimalUnit: number
   }
-}[];
+}[]
 
-export type CurrentChainIdModelV001 = string;
+export type CurrentChainIdModelV001 = string
 
-export type CurrentNetworkIdModelV001 = string;
+export type CurrentNetworkIdModelV001 = string
 
-export type SerializedModelV001 = string;
+export type SerializedModelV001 = string
 
 export type WalletModelV001 = {
   accounts: AccountDataModelV001[]
   keyrings: KeyringDataModelV001[]
   currentAccountId?: string
-};
+}
 
 type AccountDataModelV001 = {
   id?: string
@@ -55,7 +55,7 @@ type AccountDataModelV001 = {
   keyringId: string
   hdPath?: number
   publicKey: number[]
-};
+}
 
 type KeyringDataModelV001 = {
   id?: string
@@ -64,13 +64,13 @@ type KeyringDataModelV001 = {
   privateKey?: number[]
   seed?: number[]
   mnemonic?: string
-};
+}
 
-export type EncryptedStoredPasswordModelV001 = string;
+export type EncryptedStoredPasswordModelV001 = string
 
-export type CurrentAccountIdModelV001 = string;
+export type CurrentAccountIdModelV001 = string
 
-export type AccountNamesModelV001 = { [key in string]: string };
+export type AccountNamesModelV001 = { [key in string]: string }
 
 export type EstablishSitesModelV001 = {
   [key in string]: {
@@ -81,7 +81,7 @@ export type EstablishSitesModelV001 = {
     favicon: string | null
     establishedTime: string
   }[];
-};
+}
 
 export type AddressBookModelV001 = {
   [key in string]: {
@@ -90,7 +90,7 @@ export type AddressBookModelV001 = {
     address: string
     createdAt: string
   }[];
-};
+}
 
 export type AccountTokenMetainfoModelV001 = {
   [key in string]: {
@@ -108,4 +108,4 @@ export type AccountTokenMetainfoModelV001 = {
     minimalDenom: string
     display?: boolean
   }[];
-};
+}

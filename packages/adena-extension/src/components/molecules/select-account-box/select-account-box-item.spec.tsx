@@ -1,22 +1,22 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalWebStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
-import SelectAccountBoxItem from './select-account-box-item';
+import SelectAccountBoxItem from './select-account-box-item'
 
 describe('SelectAccountBoxItem Component', () => {
   const args = {
@@ -28,9 +28,9 @@ describe('SelectAccountBoxItem Component', () => {
       selected: false,
     },
     select: (): void => {
-      return;
+      return
     },
-  };
+  }
 
   it('SelectAccountBoxItem render', () => {
     render(
@@ -40,6 +40,6 @@ describe('SelectAccountBoxItem Component', () => {
           <SelectAccountBoxItem {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

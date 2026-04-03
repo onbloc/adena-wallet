@@ -4,4 +4,4 @@ export type AccountInfo = {
   hdPath: number
   stored: boolean
   selected: boolean
-};
+}

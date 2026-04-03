@@ -1,29 +1,29 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg'
 import {
   BaseError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
-import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
-import AddressInput from '@components/pages/transfer-input/address-input/address-input';
-import MemoInput from '@components/pages/transfer-input/memo-input/memo-input';
+} from '@components/molecules'
+import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card'
+import AddressInput from '@components/pages/transfer-input/address-input/address-input'
+import MemoInput from '@components/pages/transfer-input/memo-input/memo-input'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721Model,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   NFTTransferInputWrapper,
-} from './nft-transfer-input.styles';
+} from './nft-transfer-input.styles'
 
 export interface NFTTransferInputProps {
   grc721Token: GRC721Model
@@ -73,24 +73,24 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
   onClickNext,
 }) => {
   const title = useMemo(() => {
-    return `Send ${grc721Token.name} #${grc721Token.tokenId}`;
-  }, [grc721Token]);
+    return `Send ${grc721Token.name} #${grc721Token.tokenId}`
+  }, [grc721Token])
 
   return (
     <NFTTransferInputWrapper>
       {hasBackButton
         ? (
-          <SubHeader
-            title={title}
-            leftElement={{
-              element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-              onClick: onClickBack,
-            }}
-          />
-        )
+            <SubHeader
+              title={title}
+              leftElement={{
+                element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+                onClick: onClickBack,
+              }}
+            />
+          )
         : (
-          <SubHeader title={title} />
-        )}
+            <SubHeader title={title} />
+          )}
       <div className='asset-card-wrapper'>
         <NFTAssetImageCard asset={grc721Token} queryGRC721TokenUri={queryGRC721TokenUri} />
       </div>
@@ -116,7 +116,7 @@ const NFTTransferInput: React.FC<NFTTransferInputProps> = ({
         filled
       />
     </NFTTransferInputWrapper>
-  );
-};
+  )
+}
 
-export default NFTTransferInput;
+export default NFTTransferInput

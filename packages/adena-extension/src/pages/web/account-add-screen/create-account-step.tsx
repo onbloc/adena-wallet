@@ -1,24 +1,24 @@
-import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json';
+import AnimationLoadingAccount from '@assets/web/lottie/loading-accounts.json'
 import {
   View,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   UseAccountAddScreenReturn,
-} from '@hooks/web/use-account-add-screen';
+} from '@hooks/web/use-account-add-screen'
 import {
   ReactElement, useEffect, useState,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
   align-items: center;
-`;
+`
 
 const CreateAccountStep = ({
   selectedKeyringId,
@@ -29,16 +29,16 @@ const CreateAccountStep = ({
 }): ReactElement<any> => {
   const {
     addAccount,
-  } = useAccountAddScreenReturn;
-  const [executed, setExecuted] = useState(false);
+  } = useAccountAddScreenReturn
+  const [executed, setExecuted] = useState(false)
 
   useEffect(() => {
     if (executed) {
-      return;
+      return
     }
-    setExecuted(true);
-    addAccount(selectedKeyringId);
-  }, [selectedKeyringId]);
+    setExecuted(true)
+    addAccount(selectedKeyringId)
+  }, [selectedKeyringId])
 
   return (
     <StyledContainer>
@@ -54,7 +54,7 @@ const CreateAccountStep = ({
         isCenter
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default CreateAccountStep;
+export default CreateAccountStep

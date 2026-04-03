@@ -19,7 +19,15 @@ export default tseslint.config([
   },
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  stylistic.configs.customize(),
+  stylistic.configs.customize({
+    indent: 2,
+    quotes: "single",
+    semi: false,
+    commaDangle: "always-multiline",
+    braceStyle: "1tbs",
+    blockSpacing: true,
+    quoteProps: "as-needed",
+  }),
   {
     rules: {
       "@stylistic/array-element-newline": [
@@ -37,11 +45,6 @@ export default tseslint.config([
       "@stylistic/object-curly-newline": ["error", "always"],
       "@stylistic/object-curly-spacing": ["error", "always"],
       "@stylistic/object-property-newline": "error",
-      "@stylistic/indent": ["error", 2],
-      "@stylistic/quote-props": ["error", "as-needed"],
-      "@stylistic/block-spacing": ["error", "always"],
-      "@stylistic/semi": ["error", "always"],
-      "@stylistic/quotes": ["error", "double"],
       "@typescript-eslint/no-unused-vars": [
         "error", // or "error"
         {

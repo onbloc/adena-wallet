@@ -1,4 +1,6 @@
-import type { JSX } from "react";
+import type {
+  JSX,
+} from 'react'
 const IconEditCancel = ({
   className,
 }: {
@@ -33,6 +35,6 @@ const IconEditCancel = ({
       strokeLinecap='round'
     />
   </svg>
-);
+)
 
-export default IconEditCancel;
+export default IconEditCancel

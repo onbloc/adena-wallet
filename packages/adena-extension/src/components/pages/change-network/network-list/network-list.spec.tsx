@@ -1,24 +1,24 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import NetworkList, {
   NetworkListProps,
-} from './network-list';
+} from './network-list'
 
 describe('NetworkList Component', () => {
   it('NetworkList render', () => {
@@ -26,12 +26,12 @@ describe('NetworkList Component', () => {
       currentNetworkId: 'test3',
       networkMetainfos: [],
       changeNetwork: () => {
-        return;
+        return
       },
       moveEditPage: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -40,6 +40,6 @@ describe('NetworkList Component', () => {
           <NetworkList {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

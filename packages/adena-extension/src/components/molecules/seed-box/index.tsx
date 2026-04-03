@@ -1,13 +1,15 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
+} from '@styles/theme'
+import React, {
+  type JSX,
+} from 'react'
+import styled from 'styled-components'
 
 import {
   BlurScreen, Text,
-} from '../../atoms';
+} from '../../atoms'
 
 interface SeedScrollBoxProps {
   seeds: string[]
@@ -25,7 +27,7 @@ const Wrapper = styled.div`
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   padding: 8px;
-`;
+`
 
 const Inner = styled.div`
   width: 100%;
@@ -40,7 +42,7 @@ const Inner = styled.div`
       direction: 'row',
     })}
   }
-`;
+`
 
 export const SeedBox = ({
   seeds,
@@ -60,5 +62,5 @@ export const SeedBox = ({
       </Inner>
       {hasBlurScreen && <BlurScreen hasText={hasBlurText} text={blurScreenText} />}
     </Wrapper>
-  );
-};
+  )
+}

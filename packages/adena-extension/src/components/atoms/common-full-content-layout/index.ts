@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
+import mixins from '@styles/mixins'
+import styled from 'styled-components'
 
 export const CommonFullContentLayout = styled.section`
   ${mixins.flex({
@@ -9,4 +9,4 @@ export const CommonFullContentLayout = styled.section`
   position: relative;
   width: 100%;
   height: calc(100vh - 48px);
-`;
+`

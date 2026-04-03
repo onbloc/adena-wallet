@@ -1,9 +1,9 @@
 import {
   InjectionMessage,
-} from '@inject/message';
+} from '@inject/message'
 import {
   AddressBookItem,
-} from '@repositories/wallet';
+} from '@repositories/wallet'
 import {
   CreateAccountState,
   GasInfo,
@@ -12,13 +12,13 @@ import {
   TokenBalanceType,
   TokenModel,
   TransactionInfo,
-} from '@types';
+} from '@types'
 import {
   Document,
-} from 'adena-module';
+} from 'adena-module'
 
-export const REGISTER_PATH = 'register.html' as const;
-export const SECURITY_PATH = 'security.html' as const;
+export const REGISTER_PATH = 'register.html' as const
+export const SECURITY_PATH = 'security.html' as const
 
 export enum RoutePath {
   Home = '/',
@@ -276,4 +276,4 @@ export type RouteParams = {
       | RoutePath.WebWalletImport
       | RoutePath.WebAccountImport
   }
-};
+}

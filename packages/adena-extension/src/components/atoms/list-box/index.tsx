@@ -1,13 +1,13 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 import styled, {
   css, CSSProperties,
-} from 'styled-components';
+} from 'styled-components'
 
 export enum ListHierarchy {
   Default = 'default',
@@ -46,7 +46,7 @@ const modeVariants = {
   static: css`
     background: ${getTheme('neutral', '_7')};
   `,
-};
+}
 
 export const ListBox = ({
   cursor,
@@ -72,8 +72,8 @@ export const ListBox = ({
       {center && center}
       {right && right}
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.div<ListBoxStyleProps>`
   ${mixins.flex({
@@ -82,10 +82,10 @@ const Wrapper = styled.div<ListBoxStyleProps>`
   ${({
     mode,
   }): any => {
-    if (mode === ListHierarchy.Default) return modeVariants.default;
-    if (mode === ListHierarchy.Normal) return modeVariants.normal;
-    if (mode === ListHierarchy.Static) return modeVariants.static;
-    return modeVariants.default;
+    if (mode === ListHierarchy.Default) return modeVariants.default
+    if (mode === ListHierarchy.Normal) return modeVariants.normal
+    if (mode === ListHierarchy.Static) return modeVariants.static
+    return modeVariants.default
   }}
   flex-shrink: 0;
   width: 100%;
@@ -106,4 +106,4 @@ const Wrapper = styled.div<ListBoxStyleProps>`
   & + & {
     margin-top: 12px;
   }
-`;
+`

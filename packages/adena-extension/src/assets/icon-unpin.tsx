@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconUnpin = ({
   className,
@@ -33,6 +35,6 @@ const IconUnpin = ({
       </clipPath>
     </defs>
   </svg>
-);
+)
 
-export default IconUnpin;
+export default IconUnpin

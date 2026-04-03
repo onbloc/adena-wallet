@@ -1,16 +1,16 @@
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721MetadataModel, GRC721Model,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   NFTAssetMetadataWrapper,
-} from './nft-asset-metadata.styles';
+} from './nft-asset-metadata.styles'
 
 export interface NFTAssetMetadataProps {
   asset: GRC721Model
@@ -33,18 +33,18 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({
       enabled: asset.isMetadata,
       refetchOnMount: true,
     },
-  );
+  )
 
   const isFetchedTokenMetadataWithEnabled = useMemo(() => {
     if (!asset.isMetadata) {
-      return false;
+      return false
     }
 
-    return isFetchedTokenMetadata && !!tokenMetadata;
-  }, [asset, tokenMetadata, isFetchedTokenMetadata]);
+    return isFetchedTokenMetadata && !!tokenMetadata
+  }, [asset, tokenMetadata, isFetchedTokenMetadata])
 
   if (!isFetchedTokenMetadataWithEnabled) {
-    return <React.Fragment />;
+    return <React.Fragment />
   }
 
   return (
@@ -67,7 +67,7 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({
         </div>
       </div>
     </NFTAssetMetadataWrapper>
-  );
-};
+  )
+}
 
-export default NFTAssetMetadata;
+export default NFTAssetMetadata

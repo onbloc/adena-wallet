@@ -1,17 +1,17 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useNetwork,
-} from '@hooks/use-network';
+} from '@hooks/use-network'
 import {
   useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 
-export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance';
+export const GET_GRC721_BALANCE_QUERY_KEY = 'nft/useGetGRC721TokenBalance'
 
 export const useGetGRC721Balance = (
   packagePath: string,
@@ -19,24 +19,24 @@ export const useGetGRC721Balance = (
 ): UseQueryResult<number | null> => {
   const {
     tokenService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
 
   return useQuery<number | null, Error>({
     queryKey: [GET_GRC721_BALANCE_QUERY_KEY, packagePath, currentAddress, currentNetwork.chainId],
     queryFn: () => {
       if (!currentAddress) {
-        return null;
+        return null
       }
 
-      return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null);
+      return tokenService.fetchGRC721Balance(packagePath, currentAddress).catch(() => null)
     },
     staleTime: 0,
     ...options,
-  });
-};
+  })
+}

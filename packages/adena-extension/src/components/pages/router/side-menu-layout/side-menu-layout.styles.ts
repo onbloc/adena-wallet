@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const SideMenuOverlay = styled.div<{
   open: boolean
@@ -28,7 +28,7 @@ export const SideMenuOverlay = styled.div<{
   -o-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   z-index: 98;
-`;
+`
 
 export const SideMenuBackground = styled.div`
   position: absolute;
@@ -36,7 +36,7 @@ export const SideMenuBackground = styled.div`
   right: 0;
   bottom: 0;
   left: 0;
-`;
+`
 
 export const SideMenuContent = styled.div<{
   open: boolean
@@ -54,4 +54,4 @@ export const SideMenuContent = styled.div<{
   height: 100%;
   z-index: 99;
   transition: left 0.4s ease;
-`;
+`

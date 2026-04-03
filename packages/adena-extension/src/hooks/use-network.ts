@@ -1,32 +1,32 @@
 import {
   fetchHealth,
-} from '@common/utils/fetch-utils';
+} from '@common/utils/fetch-utils'
 import {
   EventMessage,
-} from '@inject/message';
-import CHAIN_DATA from '@resources/chains/chains.json';
+} from '@inject/message'
+import CHAIN_DATA from '@resources/chains/chains.json'
 import {
   BalanceState, NetworkState, WalletState,
-} from '@states';
+} from '@states'
 import {
   useQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   NetworkMetainfo,
-} from '@types';
+} from '@types'
 import {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 import {
   useRecoilState, useResetRecoilState,
-} from 'recoil';
+} from 'recoil'
 
 import {
   useAdenaContext, useWalletContext,
-} from './use-context';
+} from './use-context'
 import {
   useEvent,
-} from './use-event';
+} from './use-event'
 
 interface NetworkResponse {
   networks: NetworkMetainfo[]
@@ -43,25 +43,25 @@ interface NetworkResponse {
   setModified: (modified: boolean) => void
 }
 
-const DEFAULT_NETWORK: NetworkMetainfo = CHAIN_DATA[0];
+const DEFAULT_NETWORK: NetworkMetainfo = CHAIN_DATA[0]
 
 export const useNetwork = (): NetworkResponse => {
   const {
     dispatchEvent,
-  } = useEvent();
+  } = useEvent()
   const {
     changeNetwork: changeNetworkProvider,
-  } = useWalletContext();
-  const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos);
+  } = useWalletContext()
+  const [networkMetainfos, setNetworkMetainfos] = useRecoilState(NetworkState.networkMetainfos)
   const {
     chainService,
-  } = useAdenaContext();
-  const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork);
-  const [modified, setModified] = useRecoilState(NetworkState.modified);
-  const [, setState] = useRecoilState(WalletState.state);
-  const resetAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances);
-  const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances);
-  const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances);
+  } = useAdenaContext()
+  const [currentNetwork, setCurrentNetwork] = useRecoilState(NetworkState.currentNetwork)
+  const [modified, setModified] = useRecoilState(NetworkState.modified)
+  const [, setState] = useRecoilState(WalletState.state)
+  const resetAccountTokenBalances = useResetRecoilState(BalanceState.accountTokenBalances)
+  const resetAccountNativeBalances = useResetRecoilState(BalanceState.accountNativeBalances)
+  const resetCurrentTokenBalances = useResetRecoilState(BalanceState.currentTokenBalances)
 
   const {
     data: failedNetwork = null, refetch: refetchNetworkState,
@@ -69,139 +69,139 @@ export const useNetwork = (): NetworkResponse => {
     queryKey: ['network/failedNetwork', currentNetwork],
     queryFn: () => {
       if (!currentNetwork) {
-        return null;
+        return null
       }
       return fetchHealth(currentNetwork.rpcUrl).then(({
         healthy,
-      }) => !healthy);
+      }) => !healthy)
     },
-  });
+  })
 
   const scannerParameters: { [key in string]: string } | null = useMemo(() => {
     if (!currentNetwork) {
-      return null;
+      return null
     }
     const officialNetworkIds = CHAIN_DATA.filter(network => !!network.apiUrl).map(
       network => network.networkId,
-    );
-    const isOfficialNetwork = officialNetworkIds.includes(currentNetwork.networkId);
+    )
+    const isOfficialNetwork = officialNetworkIds.includes(currentNetwork.networkId)
     const networkParameters: { [key in string]: string } = isOfficialNetwork
       ? {
-        chainId: currentNetwork.networkId,
-      }
+          chainId: currentNetwork.networkId,
+        }
       : {
-        type: 'custom',
-        rpcUrl: currentNetwork.rpcUrl || '',
-        indexerUrl: currentNetwork.indexerUrl || '',
-      };
-    return networkParameters;
-  }, [currentNetwork]);
+          type: 'custom',
+          rpcUrl: currentNetwork.rpcUrl || '',
+          indexerUrl: currentNetwork.indexerUrl || '',
+        }
+    return networkParameters
+  }, [currentNetwork])
 
   const getDefaultNetworkInfo = useCallback((networkId: string) => {
     const network = CHAIN_DATA.find(
       current => current.default && current.networkId === networkId,
-    );
+    )
     if (!network) {
-      return null;
+      return null
     }
-    return network;
-  }, []);
+    return network
+  }, [])
 
   const checkNetworkState = async (): Promise<void> => {
-    await refetchNetworkState();
-  };
+    await refetchNetworkState()
+  }
 
   const addNetwork = useCallback(
     async (name: string, rpcUrl: string, chainId: string, indexerUrl: string) => {
-      setModified(true);
-      const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl;
-      const parsedName = name.trim();
-      await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId, indexerUrl);
-      const networkMetainfos = await chainService.getNetworks();
-      setNetworkMetainfos(networkMetainfos);
+      setModified(true)
+      const changedRpcUrl = rpcUrl.endsWith('/') ? rpcUrl.substring(0, rpcUrl.length - 1) : rpcUrl
+      const parsedName = name.trim()
+      await chainService.addGnoNetwork(parsedName, changedRpcUrl, chainId, indexerUrl)
+      const networkMetainfos = await chainService.getNetworks()
+      setNetworkMetainfos(networkMetainfos)
     },
     [networkMetainfos, chainService],
-  );
+  )
 
   const changeNetworkOfProvider = useCallback(
     async (network: NetworkMetainfo) => {
-      const changedNetwork = await changeNetworkProvider(network);
-      dispatchChangedEvent(changedNetwork);
+      const changedNetwork = await changeNetworkProvider(network)
+      dispatchChangedEvent(changedNetwork)
     },
     [changeNetworkProvider],
-  );
+  )
 
   const changeNetwork = useCallback(
     async (id: string) => {
       if (networkMetainfos.length === 0) {
-        setCurrentNetwork(null);
-        return false;
+        setCurrentNetwork(null)
+        return false
       }
-      resetCurrentTokenBalances();
-      resetAccountTokenBalances();
-      resetAccountNativeBalances();
-      setState('LOADING');
-      const network = networkMetainfos.find(network => network.id === id) ?? networkMetainfos[0];
-      await chainService.updateCurrentNetworkId(id);
-      await changeNetworkOfProvider(network);
-      return true;
+      resetCurrentTokenBalances()
+      resetAccountTokenBalances()
+      resetAccountNativeBalances()
+      setState('LOADING')
+      const network = networkMetainfos.find(network => network.id === id) ?? networkMetainfos[0]
+      await chainService.updateCurrentNetworkId(id)
+      await changeNetworkOfProvider(network)
+      return true
     },
     [networkMetainfos, changeNetworkOfProvider],
-  );
+  )
 
   const updateNetwork = useCallback(
     async (network: NetworkMetainfo) => {
-      setModified(true);
+      setModified(true)
       const changedNetworks = networkMetainfos.map(current =>
         network.id === current.id ? network : current,
-      );
-      await chainService.updateNetworks(changedNetworks);
-      setNetworkMetainfos(changedNetworks);
+      )
+      await chainService.updateNetworks(changedNetworks)
+      setNetworkMetainfos(changedNetworks)
 
       if (network.id === currentNetwork?.id) {
-        changeNetworkOfProvider(network);
+        changeNetworkOfProvider(network)
       }
-      return true;
+      return true
     },
     [currentNetwork, networkMetainfos, chainService],
-  );
+  )
 
   const deleteNetwork = useCallback(
     async (networkId: string) => {
-      const network = networkMetainfos.find(current => current.id === networkId);
+      const network = networkMetainfos.find(current => current.id === networkId)
       if (!network) {
-        return false;
+        return false
       }
-      setModified(true);
+      setModified(true)
       const changedNetworks
         = network.default || network.id === 'teritori'
           ? networkMetainfos.map(current =>
-            current.id === network.id
-              ? {
-                ...current,
-                deleted: true,
-              }
-              : current,
-          )
-          : networkMetainfos.filter(current => current.id !== networkId);
-      await chainService.updateNetworks(changedNetworks);
-      setNetworkMetainfos(changedNetworks);
+              current.id === network.id
+                ? {
+                    ...current,
+                    deleted: true,
+                  }
+                : current,
+            )
+          : networkMetainfos.filter(current => current.id !== networkId)
+      await chainService.updateNetworks(changedNetworks)
+      setNetworkMetainfos(changedNetworks)
 
       if (networkId === currentNetwork?.id) {
-        changeNetworkOfProvider(DEFAULT_NETWORK);
+        changeNetworkOfProvider(DEFAULT_NETWORK)
       }
-      return true;
+      return true
     },
     [currentNetwork, networkMetainfos, chainService, currentNetwork],
-  );
+  )
 
   const dispatchChangedEvent = useCallback(
     (network: NetworkMetainfo) => {
-      const message = EventMessage.event('changedNetwork', network.networkId);
-      dispatchEvent(message);
+      const message = EventMessage.event('changedNetwork', network.networkId)
+      dispatchEvent(message)
     },
     [currentNetwork],
-  );
+  )
 
   return {
     currentNetwork: currentNetwork || DEFAULT_NETWORK,
@@ -216,5 +216,5 @@ export const useNetwork = (): NetworkResponse => {
     addNetwork,
     deleteNetwork,
     setModified,
-  };
-};
+  }
+}

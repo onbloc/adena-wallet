@@ -1,24 +1,24 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import TransferSummaryBalance, {
   TransferSummaryBalanceProps,
-} from './transfer-summary-balance';
+} from './transfer-summary-balance'
 
 describe('TransferSummaryBalance Component', () => {
   it('TransferSummaryBalance render', () => {
@@ -26,7 +26,7 @@ describe('TransferSummaryBalance Component', () => {
       tokenImage: '',
       value: '',
       denom: '',
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -35,6 +35,6 @@ describe('TransferSummaryBalance Component', () => {
           <TransferSummaryBalance {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

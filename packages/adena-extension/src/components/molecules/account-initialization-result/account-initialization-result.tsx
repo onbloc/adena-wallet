@@ -1,13 +1,13 @@
-import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
-import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
+import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed'
+import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success'
 import {
   BottomFixedButton, BottomFixedButtonGroup, TitleWithDesc,
-} from '@components/molecules';
-import React from 'react';
+} from '@components/molecules'
+import React from 'react'
 
 import {
   AccountInitializationResultWrapper,
-} from './account-initialization-result.styles';
+} from './account-initialization-result.styles'
 
 export interface AccountInitializationResultProps {
   state: 'LOADING' | 'SUCCESS' | 'FAILURE'
@@ -19,7 +19,7 @@ const loadingImageMap = {
   LOADING: <IconAccountInitializeSuccess />,
   SUCCESS: <IconAccountInitializeSuccess />,
   FAILURE: <IconAccountInitializeFailed />,
-};
+}
 
 const contentMap = {
   LOADING: {
@@ -34,7 +34,7 @@ const contentMap = {
     title: 'Initialization Failed',
     desc: 'Your account has failed to be\nregistered on chain. Please try again.',
   },
-};
+}
 
 const AccountInitializationResult: React.FC<AccountInitializationResultProps> = ({
   state,
@@ -55,23 +55,23 @@ const AccountInitializationResult: React.FC<AccountInitializationResultProps> = 
 
       {state === 'FAILURE'
         ? (
-          <BottomFixedButtonGroup
-            leftButton={{
-              text: 'Cancel',
-              onClick: moveBack,
-            }}
-            rightButton={{
-              text: 'Retry',
-              primary: true,
-              onClick: moveInit,
-            }}
-          />
-        )
+            <BottomFixedButtonGroup
+              leftButton={{
+                text: 'Cancel',
+                onClick: moveBack,
+              }}
+              rightButton={{
+                text: 'Retry',
+                primary: true,
+                onClick: moveInit,
+              }}
+            />
+          )
         : (
-          <BottomFixedButton fill={false} text='Cancel' onClick={moveBack} />
-        )}
+            <BottomFixedButton fill={false} text='Cancel' onClick={moveBack} />
+          )}
     </AccountInitializationResultWrapper>
-  );
-};
+  )
+}
 
-export default AccountInitializationResult;
+export default AccountInitializationResult

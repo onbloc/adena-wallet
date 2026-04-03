@@ -1,31 +1,32 @@
 import {
   Button, DefaultInput, ErrorText, Text, View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   PasswordInput,
-} from '@components/atoms/password-input';
+} from '@components/atoms/password-input'
 import {
   TermsCheckbox, TitleWithDesc,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   useCreatePassword,
-} from '@hooks/certify/use-create-password';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
+} from '@hooks/certify/use-create-password'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
+import type {
+  JSX,
+} from 'react'
 import styled, {
   css, CSSProp,
-} from 'styled-components';
-
-import type { JSX } from "react";
+} from 'styled-components'
 
 const text = {
   title: 'Create\na Password',
   desc: 'This will be used to unlock your wallet.',
-};
+}
 
 const popupStyle = css`
   ${mixins.flex({
@@ -34,7 +35,7 @@ const popupStyle = css`
   max-width: 380px;
   min-height: 514px;
   padding-top: 50px;
-`;
+`
 
 const defaultStyle = css`
   ${mixins.flex({
@@ -43,7 +44,7 @@ const defaultStyle = css`
   width: 100%;
   height: 100%;
   padding-top: 50px;
-`;
+`
 
 const Wrapper = styled.main<{
   isPopup: boolean
@@ -53,36 +54,36 @@ const Wrapper = styled.main<{
   }): CSSProp => (isPopup ? popupStyle : defaultStyle)};
   height: 100%;
   justify-content: space-between;
-`;
+`
 
 const StyledContentWrapper = styled(View)`
   width: 100%;
   height: 100%;
-`;
+`
 
 const StyledBottomWrapper = styled(View)`
   width: 100%;
-`;
+`
 
 const FormBox = styled.div`
   margin-top: 20px;
   & > * {
     margin-bottom: 12px;
   }
-`;
+`
 
 export const CreatePassword = (): JSX.Element => {
   const {
     openLink,
-  } = useLink();
+  } = useLink()
   const {
     pwdState, confirmPwdState, termsState, errorMessage, buttonState, onKeyDown,
   }
-    = useCreatePassword();
+    = useCreatePassword()
   const {
     params,
-  } = useAppNavigate<RoutePath.CreatePassword>();
-  const handleLinkClick = (): void => openLink('https://adena.app/terms');
+  } = useAppNavigate<RoutePath.CreatePassword>()
+  const handleLinkClick = (): void => openLink('https://adena.app/terms')
 
   return (
     <Wrapper isPopup={params.type !== 'SEED'}>
@@ -134,5 +135,5 @@ export const CreatePassword = (): JSX.Element => {
         </Button>
       </StyledBottomWrapper>
     </Wrapper>
-  );
-};
+  )
+}

@@ -1,14 +1,14 @@
 import {
   CommandKeyType,
-} from '@common/constants/command-key.constant';
+} from '@common/constants/command-key.constant'
 
 import {
   GnoConnectInfo, GnoMessageInfo,
-} from './methods/gno-connect';
-type StatusType = 'command';
+} from './methods/gno-connect'
+type StatusType = 'command'
 
 export function isCommandMessageData(data: any): data is CommandMessageData {
-  return data.status === 'command';
+  return data.status === 'command'
 }
 
 export interface CommandMessageData<T = any> {
@@ -25,22 +25,22 @@ export interface CheckMetadataMessageData {
 }
 
 export class CommandMessage {
-  private code: number;
+  private code: number
 
-  private key: string;
+  private key: string
 
-  private status: StatusType;
+  private status: StatusType
 
-  private command: CommandKeyType;
+  private command: CommandKeyType
 
-  private data: any;
+  private data: any
 
   constructor(command: CommandKeyType, data?: any, key?: string) {
-    this.code = 0;
-    this.key = key ?? '';
-    this.command = command;
-    this.status = 'command';
-    this.data = data;
+    this.code = 0
+    this.key = key ?? ''
+    this.command = command
+    this.status = 'command'
+    this.data = data
   }
 
   public get message(): CommandMessageData {
@@ -50,22 +50,22 @@ export class CommandMessage {
       status: this.status,
       command: this.command,
       data: this.data,
-    };
+    }
   }
 
   public getCommand = (): CommandKeyType => {
-    return this.command;
-  };
+    return this.command
+  }
 
   public getStatus = (): 'command' => {
-    return this.status;
-  };
+    return this.status
+  }
 
   public getData = (): any => {
-    return this.data;
-  };
+    return this.data
+  }
 
   public static command = (command: CommandKeyType, data?: any): CommandMessageData => {
-    return new CommandMessage(command, data).message;
-  };
+    return new CommandMessage(command, data).message
+  }
 }

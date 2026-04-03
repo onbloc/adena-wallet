@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconHelp = ({
   className,
@@ -34,6 +36,6 @@ const IconHelp = ({
       strokeLinejoin='round'
     />
   </svg>
-);
+)
 
-export default IconHelp;
+export default IconHelp

@@ -1,37 +1,39 @@
 import {
   Button,
-} from '@components/atoms';
-import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
-import NFTAssetHeader from '@components/pages/nft-asset/nft-asset-header/nft-asset-header';
-import NFTAssetMetadata from '@components/pages/nft-asset/nft-asset-metadata/nft-asset-metadata';
+} from '@components/atoms'
+import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card'
+import NFTAssetHeader from '@components/pages/nft-asset/nft-asset-header/nft-asset-header'
+import NFTAssetMetadata from '@components/pages/nft-asset/nft-asset-metadata/nft-asset-metadata'
 import {
   useNFTCollectionHandler,
-} from '@hooks/nft/use-collection-handler';
+} from '@hooks/nft/use-collection-handler'
 import {
   useGetGRC721Collections,
-} from '@hooks/nft/use-get-grc721-collections';
+} from '@hooks/nft/use-get-grc721-collections'
 import {
   useGetGRC721PinnedCollections,
-} from '@hooks/nft/use-get-grc721-pinned-collections';
+} from '@hooks/nft/use-get-grc721-pinned-collections'
 import {
   useGetGRC721TokenMetadata,
-} from '@hooks/nft/use-get-grc721-token-metadata';
+} from '@hooks/nft/use-get-grc721-token-metadata'
 import {
   useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
+} from '@hooks/nft/use-get-grc721-token-uri'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   RoutePath,
-} from '@types';
-import { useCallback, useMemo, type JSX } from 'react';
+} from '@types'
+import {
+  type JSX, useCallback, useMemo,
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -56,96 +58,96 @@ const Wrapper = styled.main`
     width: 100%;
     height: 60px;
   }
-`;
+`
 
 export const NftCollectionAsset = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     openScannerLink,
-  } = useLink();
+  } = useLink()
   const {
     params, navigate, goBack,
-  } = useAppNavigate<RoutePath.NftCollectionAsset>();
+  } = useAppNavigate<RoutePath.NftCollectionAsset>()
   const {
     pinCollection, unpinCollection, showCollection, hideCollection,
   }
-    = useNFTCollectionHandler();
-  const collectionAsset = params.collectionAsset;
+    = useNFTCollectionHandler()
+  const collectionAsset = params.collectionAsset
 
   const {
     data: collections, refetch: refetchCollections,
   } = useGetGRC721Collections({
     refetchOnMount: true,
-  });
+  })
 
   const {
     data: pinnedCollections, refetch: refetchPinnedCollection,
   }
     = useGetGRC721PinnedCollections({
       refetchOnMount: true,
-    });
+    })
 
   const title = useMemo(() => {
-    return `${collectionAsset.name} #${collectionAsset.tokenId}`;
-  }, [collectionAsset]);
+    return `${collectionAsset.name} #${collectionAsset.tokenId}`
+  }, [collectionAsset])
 
   const pinnedCollection = useMemo(() => {
     if (!pinnedCollections) {
-      return false;
+      return false
     }
 
-    return !!pinnedCollections.find(packagePath => packagePath === collectionAsset.packagePath);
-  }, [collectionAsset, pinnedCollections]);
+    return !!pinnedCollections.find(packagePath => packagePath === collectionAsset.packagePath)
+  }, [collectionAsset, pinnedCollections])
 
   const visibleCollection = useMemo(() => {
     if (!collections) {
-      return false;
+      return false
     }
 
     const currentCollection = collections.find(
       collection => collection.packagePath === collectionAsset.packagePath,
-    );
+    )
 
     if (!currentCollection) {
-      return false;
+      return false
     }
 
-    return currentCollection.display;
-  }, [collectionAsset, collections]);
+    return currentCollection.display
+  }, [collectionAsset, collections])
 
   const moveGnoscanCollection = useCallback(() => {
     openScannerLink('/realms/details', {
       path: params.collectionAsset.packagePath,
-    });
-  }, [openScannerLink]);
+    })
+  }, [openScannerLink])
 
   const pinCollectionWithRefetch = useCallback(async () => {
-    await pinCollection(collectionAsset.packagePath);
-    await refetchPinnedCollection();
-  }, [collectionAsset.packagePath, pinCollection]);
+    await pinCollection(collectionAsset.packagePath)
+    await refetchPinnedCollection()
+  }, [collectionAsset.packagePath, pinCollection])
 
   const unpinCollectionWithRefetch = useCallback(async () => {
-    await unpinCollection(collectionAsset.packagePath);
-    await refetchPinnedCollection();
-  }, [collectionAsset.packagePath, unpinCollection]);
+    await unpinCollection(collectionAsset.packagePath)
+    await refetchPinnedCollection()
+  }, [collectionAsset.packagePath, unpinCollection])
 
   const showCollectionWithRefetch = useCallback(async () => {
-    await showCollection(collectionAsset.packagePath);
-    await refetchCollections();
-  }, [collectionAsset.packagePath, showCollection]);
+    await showCollection(collectionAsset.packagePath)
+    await refetchCollections()
+  }, [collectionAsset.packagePath, showCollection])
 
   const hideCollectionWithRefetch = useCallback(async () => {
-    await hideCollection(collectionAsset.packagePath);
-    await refetchCollections();
-  }, [collectionAsset.packagePath, hideCollection]);
+    await hideCollection(collectionAsset.packagePath)
+    await refetchCollections()
+  }, [collectionAsset.packagePath, hideCollection])
 
   const onClickSend = useCallback(() => {
     navigate(RoutePath.NftTransferInput, {
       state: {
         collectionAsset,
       },
-    });
-  }, [collectionAsset]);
+    })
+  }, [collectionAsset])
 
   return (
     <Wrapper>
@@ -180,5 +182,5 @@ export const NftCollectionAsset = (): JSX.Element => {
 
       <div className='empty-block' />
     </Wrapper>
-  );
-};
+  )
+}

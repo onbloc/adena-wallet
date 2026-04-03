@@ -1,37 +1,39 @@
-import NFTCollections from '@components/pages/nft/nft-collections/nft-collections';
-import NFTHeader from '@components/pages/nft/nft-header/nft-header';
+import NFTCollections from '@components/pages/nft/nft-collections/nft-collections'
+import NFTHeader from '@components/pages/nft/nft-header/nft-header'
 import {
   useNFTCollectionHandler,
-} from '@hooks/nft/use-collection-handler';
+} from '@hooks/nft/use-collection-handler'
 import {
   useGetGRC721Balance,
-} from '@hooks/nft/use-get-grc721-balance';
+} from '@hooks/nft/use-get-grc721-balance'
 import {
   useGetGRC721Collections,
-} from '@hooks/nft/use-get-grc721-collections';
+} from '@hooks/nft/use-get-grc721-collections'
 import {
   useGetGRC721PinnedCollections,
-} from '@hooks/nft/use-get-grc721-pinned-collections';
+} from '@hooks/nft/use-get-grc721-pinned-collections'
 import {
   useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri';
+} from '@hooks/nft/use-get-grc721-token-uri'
 import {
   useIsLoadingNFT,
-} from '@hooks/nft/use-is-loading-nft';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@hooks/nft/use-is-loading-nft'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
+} from '@hooks/use-current-account'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import {
   GRC721CollectionModel, RoutePath,
-} from '@types';
-import { useCallback, useMemo, type JSX } from 'react';
-import styled from 'styled-components';
+} from '@types'
+import {
+  type JSX, useCallback, useMemo,
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -45,64 +47,64 @@ const Wrapper = styled.main`
   padding-bottom: 96px;
   gap: 12px;
   background-color: ${getTheme('neutral', '_8')};
-`;
+`
 
 export const Nft = (): JSX.Element => {
   const {
     currentAddress,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
   const {
     openScannerLink,
-  } = useLink();
+  } = useLink()
 
   const {
     data: collections, isFetched: isFetchedCollections,
   } = useGetGRC721Collections({
     refetchOnMount: true,
-  });
+  })
   const {
     data: pinnedCollections,
     isFetched: isFetchedPinnedCollections,
     refetch: refetchPinnedCollection,
   } = useGetGRC721PinnedCollections({
     refetchOnMount: true,
-  });
+  })
 
   const {
     pinCollection, unpinCollection,
-  } = useNFTCollectionHandler();
+  } = useNFTCollectionHandler()
 
-  const fetchingCount = useIsLoadingNFT();
+  const fetchingCount = useIsLoadingNFT()
 
   const isFinishFetchedCollections = useMemo(() => {
-    return fetchingCount === 0 && isFetchedCollections;
-  }, [fetchingCount, isFetchedCollections]);
+    return fetchingCount === 0 && isFetchedCollections
+  }, [fetchingCount, isFetchedCollections])
 
   const pin = useCallback(
     async (packagePath: string) => {
-      await pinCollection(packagePath);
-      await refetchPinnedCollection();
+      await pinCollection(packagePath)
+      await refetchPinnedCollection()
     },
     [pinCollection],
-  );
+  )
 
   const unpin = useCallback(
     async (packagePath: string) => {
-      await unpinCollection(packagePath);
-      await refetchPinnedCollection();
+      await unpinCollection(packagePath)
+      await refetchPinnedCollection()
     },
     [unpinCollection],
-  );
+  )
 
   const openGnoscan = useCallback(() => {
     if (!currentAddress) {
-      return;
+      return
     }
-    openScannerLink('/account/' + currentAddress);
-  }, [currentAddress, openScannerLink]);
+    openScannerLink('/account/' + currentAddress)
+  }, [currentAddress, openScannerLink])
 
   const moveDepositPage = useCallback(() => {
     navigate(RoutePath.Deposit, {
@@ -112,8 +114,8 @@ export const Nft = (): JSX.Element => {
         },
         type: 'token',
       },
-    });
-  }, [navigate]);
+    })
+  }, [navigate])
 
   const moveCollectionPage = useCallback(
     (collection: GRC721CollectionModel) => {
@@ -121,14 +123,14 @@ export const Nft = (): JSX.Element => {
         state: {
           collection,
         },
-      });
+      })
     },
     [navigate],
-  );
+  )
 
   const moveManageCollectionsPage = useCallback(() => {
-    navigate(RoutePath.ManageNft);
-  }, [navigate]);
+    navigate(RoutePath.ManageNft)
+  }, [navigate])
 
   return (
     <Wrapper>
@@ -146,5 +148,5 @@ export const Nft = (): JSX.Element => {
         queryGRC721TokenUri={useGetGRC721TokenUri}
       />
     </Wrapper>
-  );
-};
+  )
+}

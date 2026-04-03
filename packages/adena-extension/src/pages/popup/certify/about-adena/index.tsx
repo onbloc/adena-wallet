@@ -1,17 +1,19 @@
-import logo from '@assets/logo-default-v2.svg';
+import logo from '@assets/logo-default-v2.svg'
 import {
   ButtonMode, FullButtonRightIcon, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButton,
-} from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
-import React, { useEffect, useState, type JSX } from 'react';
+} from '@components/molecules'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
+import React, {
+  type JSX, useEffect, useState,
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const menuMakerInfo = [
   {
@@ -44,26 +46,26 @@ const menuMakerInfo = [
     navigatePath: 'https://adena.app/privacy',
     mode: 'DEFAULT',
   },
-];
+]
 
 export const AboutAdena = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     openLink,
-  } = useLink();
-  const [version, setVersion] = useState('');
+  } = useLink()
+  const [version, setVersion] = useState('')
   const {
     goBack,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   useEffect(() => {
-    initVersion();
-  }, []);
+    initVersion()
+  }, [])
 
   const initVersion = (): void => {
-    const manifest = chrome.runtime.getManifest();
-    setVersion(`${manifest.version}`);
-  };
+    const manifest = chrome.runtime.getManifest()
+    setVersion(`${manifest.version}`)
+  }
 
   return (
     <Wrapper>
@@ -82,8 +84,8 @@ export const AboutAdena = (): JSX.Element => {
       ))}
       <BottomFixedButton onClick={goBack} />
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -94,6 +96,6 @@ const Wrapper = styled.main`
   padding-top: 36px;
   padding-bottom: 116px;
   overflow-y: auto;
-`;
+`
 
-const Logo = styled.img``;
+const Logo = styled.img``

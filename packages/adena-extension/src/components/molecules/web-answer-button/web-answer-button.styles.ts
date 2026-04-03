@@ -1,12 +1,12 @@
 import {
   Pressable,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   getTheme, webFonts,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   css, RuleSet,
-} from 'styled-components';
+} from 'styled-components'
 
 export const StyledPressable = styled(Pressable)<{
   selected: boolean
@@ -33,7 +33,7 @@ export const StyledPressable = styled(Pressable)<{
           }
         `
       : ''}
-`;
+`
 
 export const StyledCorrectButton = styled(StyledPressable)`
   ${({
@@ -47,7 +47,7 @@ export const StyledCorrectButton = styled(StyledPressable)`
           background-color: ${theme.webSuccess._300};
         `
       : ''}
-`;
+`
 
 export const StyledIncorrectButton = styled(StyledPressable)`
   ${({
@@ -61,4 +61,4 @@ export const StyledIncorrectButton = styled(StyledPressable)`
           background-color: ${theme.webError._300};
         `
       : ''}
-`;
+`

@@ -1,4 +1,6 @@
-import type { JSX } from "react";
+import type {
+  JSX,
+} from 'react'
 const IconAccountInitializeSuccess = (): JSX.Element => (
   <svg
     xmlns='http://www.w3.org/2000/svg'
@@ -26,6 +28,6 @@ const IconAccountInitializeSuccess = (): JSX.Element => (
       fill='#1D403B'
     />
   </svg>
-);
+)
 
-export default IconAccountInitializeSuccess;
+export default IconAccountInitializeSuccess

@@ -1,42 +1,42 @@
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 
 export type UseQuestionnaireReturn = {
   ableToSkipQuestionnaire: boolean
   doneQuestionnaire: () => Promise<void>
-};
+}
 
 const useQuestionnaire = (): UseQuestionnaireReturn => {
   const {
     walletService,
-  } = useAdenaContext();
+  } = useAdenaContext()
 
   const {
     data: ableToSkipQuestionnaire = false,
   } = useQuery({
     queryKey: ['questionnaire', walletService],
     queryFn: async () => {
-      const existWallet = await walletService.existsWallet();
+      const existWallet = await walletService.existsWallet()
       if (!existWallet) {
-        return false;
+        return false
       }
-      const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false);
-      return ableToSkipQuestionnaire;
+      const ableToSkipQuestionnaire = await walletService.isSkipQuestionnaire().catch(() => false)
+      return ableToSkipQuestionnaire
     },
-  });
+  })
 
   const doneQuestionnaire = (): Promise<void> => {
-    return walletService.updateQuestionnaireExpiredDate();
-  };
+    return walletService.updateQuestionnaireExpiredDate()
+  }
 
   return {
     ableToSkipQuestionnaire,
     doneQuestionnaire,
-  };
-};
+  }
+}
 
-export default useQuestionnaire;
+export default useQuestionnaire

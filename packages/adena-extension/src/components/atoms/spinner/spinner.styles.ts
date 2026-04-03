@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
+import mixins from '@styles/mixins'
+import styled from 'styled-components'
 
 export const SpinnerWrapper = styled.div<{
   size: string | number
@@ -19,4 +19,4 @@ export const SpinnerWrapper = styled.div<{
     width: 100%;
     height: 100%;
   }
-`;
+`

@@ -2,23 +2,23 @@ import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   getSiteName,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 
 import {
   HandlerMethod,
-} from '..';
+} from '..'
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '../message';
+} from '../message'
 import {
   InjectCore,
-} from './core';
+} from './core'
 
 export const getAccount = async (
   core: InjectCore,
@@ -26,9 +26,9 @@ export const getAccount = async (
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
-    const inMemoryKey = await core.getInMemoryKey();
+    const inMemoryKey = await core.getInMemoryKey()
 
-    const isLocked = await core.isLockedBy(inMemoryKey);
+    const isLocked = await core.isLockedBy(inMemoryKey)
     if (isLocked) {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -37,25 +37,25 @@ export const getAccount = async (
           },
           requestData.key,
         ),
-      );
-      return;
+      )
+      return
     }
 
-    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey);
-    const network = await core.getCurrentNetwork();
+    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey)
+    const network = await core.getCurrentNetwork()
     if (!currentAccountAddress || !network) {
       sendResponse(
         InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
         }, requestData.key),
-      );
-      return;
+      )
+      return
     }
 
     const accountInfo = await core.accountService.getAccountInfoByNetwork(
       currentAccountAddress,
       network.rpcUrl,
       network.chainId,
-    );
+    )
     sendResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.GET_ACCOUNT_SUCCESS,
@@ -65,9 +65,8 @@ export const getAccount = async (
         },
         requestData.key,
       ),
-    );
-  }
-  catch (error) {
+    )
+  } catch (error) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NO_ACCOUNT,
@@ -76,9 +75,9 @@ export const getAccount = async (
         },
         requestData.key,
       ),
-    );
+    )
   }
-};
+}
 
 export const getNetwork = async (
   core: InjectCore,
@@ -86,9 +85,9 @@ export const getNetwork = async (
   sendResponse: (message: any) => void,
 ): Promise<void> => {
   try {
-    const inMemoryKey = await core.getInMemoryKey();
+    const inMemoryKey = await core.getInMemoryKey()
 
-    const isLocked = await core.isLockedBy(inMemoryKey);
+    const isLocked = await core.isLockedBy(inMemoryKey)
     if (isLocked) {
       sendResponse(
         InjectionMessageInstance.failure(
@@ -97,18 +96,18 @@ export const getNetwork = async (
           },
           requestData.key,
         ),
-      );
-      return;
+      )
+      return
     }
 
-    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey);
-    const network = await core.getCurrentNetwork();
+    const currentAccountAddress = await core.getCurrentAddress(inMemoryKey)
+    const network = await core.getCurrentNetwork()
     if (!currentAccountAddress || !network) {
       sendResponse(
         InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
         }, requestData.key),
-      );
-      return;
+      )
+      return
     }
 
     sendResponse(
@@ -123,28 +122,27 @@ export const getNetwork = async (
         },
         requestData.key,
       ),
-    );
-  }
-  catch (_error) {
+    )
+  } catch (_error) {
     sendResponse(
       InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
       }, requestData.key),
-    );
+    )
   }
-};
+}
 
 export const addEstablish = async (
   core: InjectCore,
   message: InjectionMessage,
   sendResponse: (message: any) => void,
 ): Promise<boolean> => {
-  const inMemoryKey = await core.getInMemoryKey();
+  const inMemoryKey = await core.getInMemoryKey()
 
-  const isLocked = await core.isLockedBy(inMemoryKey);
+  const isLocked = await core.isLockedBy(inMemoryKey)
 
-  const accountId = await core.getCurrentAccountId();
-  const siteName = getSiteName(message.protocol, message.hostname);
-  const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
+  const accountId = await core.getCurrentAccountId()
+  const siteName = getSiteName(message.protocol, message.hostname)
+  const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName)
   if (isEstablished && !isLocked) {
     sendResponse(
       InjectionMessageInstance.failure(
@@ -153,8 +151,8 @@ export const addEstablish = async (
         },
         message.key,
       ),
-    );
-    return true;
+    )
+    return true
   }
 
   HandlerMethod.createPopup(
@@ -163,6 +161,6 @@ export const addEstablish = async (
     InjectionMessageInstance.failure(WalletResponseRejectType.CONNECTION_REJECTED, {
     }, message.key),
     sendResponse,
-  );
-  return true;
-};
+  )
+  return true
+}

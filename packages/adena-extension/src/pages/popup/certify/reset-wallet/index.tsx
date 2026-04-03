@@ -1,41 +1,43 @@
-import removeIcon from '@assets/icon-remove-blur.svg';
+import removeIcon from '@assets/icon-remove-blur.svg'
 import {
   Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   CancelAndConfirmButton,
-} from '@components/molecules';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@components/molecules'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   useClear,
-} from '@hooks/use-clear';
-import mixins from '@styles/mixins';
+} from '@hooks/use-clear'
+import mixins from '@styles/mixins'
 import {
   RoutePath,
-} from '@types';
-import React, { type JSX } from 'react';
+} from '@types'
+import React, {
+  type JSX,
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const content
-  = 'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
+  = 'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.'
 
 const forgotPasswordContent
-  = 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
+  = 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.'
 
 export const ResetWallet = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     navigate, goBack, params,
-  } = useAppNavigate<RoutePath.ResetWallet>();
+  } = useAppNavigate<RoutePath.ResetWallet>()
   const {
     clear,
-  } = useClear();
+  } = useClear()
 
   const resetButtonClick = (): void => {
-    clear().then(() => navigate(RoutePath.Home));
-  };
+    clear().then(() => navigate(RoutePath.Home))
+  }
 
   return (
     <Wrapper>
@@ -57,8 +59,8 @@ export const ResetWallet = (): JSX.Element => {
         }}
       />
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -68,4 +70,4 @@ const Wrapper = styled.main`
   height: 100%;
   padding-top: 56px;
   overflow-y: auto;
-`;
+`

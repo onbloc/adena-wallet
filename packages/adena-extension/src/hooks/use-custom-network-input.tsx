@@ -1,6 +1,6 @@
 import {
   useCallback, useState,
-} from 'react';
+} from 'react'
 
 export type UseCustomNetworkInputReturn = {
   name: string
@@ -17,47 +17,47 @@ export type UseCustomNetworkInputReturn = {
   setRPCUrlError: (error: string) => void
   setIndexerUrlError: (error: string) => void
   setChainIdError: (error: string) => void
-};
+}
 
 export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
-  const [name, setName] = useState('');
-  const [rpcUrl, setRPCUrl] = useState('');
-  const [indexerUrl, setIndexerUrl] = useState('');
-  const [chainId, setChainId] = useState('');
-  const [rpcUrlError, setRPCUrlError] = useState('');
-  const [indexerUrlError, setIndexerUrlError] = useState('');
-  const [chainIdError, setChainIdError] = useState('');
+  const [name, setName] = useState('')
+  const [rpcUrl, setRPCUrl] = useState('')
+  const [indexerUrl, setIndexerUrl] = useState('')
+  const [chainId, setChainId] = useState('')
+  const [rpcUrlError, setRPCUrlError] = useState('')
+  const [indexerUrlError, setIndexerUrlError] = useState('')
+  const [chainIdError, setChainIdError] = useState('')
 
   const changeName = useCallback(
     (name: string) => {
-      setName(name);
+      setName(name)
     },
     [setName],
-  );
+  )
 
   const changeRPCUrl = useCallback(
     (rpcUrl: string) => {
-      setRPCUrl(rpcUrl.trim());
-      setRPCUrlError('');
+      setRPCUrl(rpcUrl.trim())
+      setRPCUrlError('')
     },
     [setRPCUrl, setRPCUrlError],
-  );
+  )
 
   const changeIndexerUrl = useCallback(
     (rpcUrl: string) => {
-      setIndexerUrl(rpcUrl.trim());
-      setIndexerUrlError('');
+      setIndexerUrl(rpcUrl.trim())
+      setIndexerUrlError('')
     },
     [setRPCUrl, setRPCUrlError],
-  );
+  )
 
   const changeChainId = useCallback(
     (chainId: string) => {
-      setChainId(chainId.trim());
-      setChainIdError('');
+      setChainId(chainId.trim())
+      setChainIdError('')
     },
     [setChainId],
-  );
+  )
 
   return {
     name,
@@ -74,5 +74,5 @@ export const useCustomNetworkInput = (): UseCustomNetworkInputReturn => {
     setRPCUrlError,
     setIndexerUrlError,
     setChainIdError,
-  };
-};
+  }
+}

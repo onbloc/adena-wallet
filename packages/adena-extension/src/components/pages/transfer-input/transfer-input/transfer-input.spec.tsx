@@ -1,24 +1,24 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import TransferInput, {
   TransferInputProps,
-} from './transfer-input';
+} from './transfer-input'
 
 describe('TransferInput Component', () => {
   it('TransferInput render', () => {
@@ -40,10 +40,10 @@ describe('TransferInput Component', () => {
         denom: 'GNOT',
         description: 'Insufficient balance',
         onChangeAmount: () => {
-          return;
+          return
         },
         onClickMax: () => {
-          return;
+          return
         },
       },
       addressInput: {
@@ -56,33 +56,33 @@ describe('TransferInput Component', () => {
         address: '',
         addressBookInfos: [],
         onClickInputIcon: () => {
-          return;
+          return
         },
         onChangeAddress: () => {
-          return;
+          return
         },
         onClickAddressBook: () => {
-          return;
+          return
         },
       },
       memoInput: {
         memo: '',
         onChangeMemo: () => {
-          return;
+          return
         },
       },
       isNext: true,
       hasBackButton: true,
       onClickBack: () => {
-        return;
+        return
       },
       onClickCancel: () => {
-        return;
+        return
       },
       onClickNext: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -91,6 +91,6 @@ describe('TransferInput Component', () => {
           <TransferInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

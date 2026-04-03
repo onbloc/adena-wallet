@@ -3,16 +3,16 @@ import {
   GNO_CONNECT_PREFIX,
   GNO_PACKAGE_PREFIX,
   GNO_RPC_META_TAG,
-} from '@common/constants/metatag.constant';
+} from '@common/constants/metatag.constant'
 import {
   GNO_FUNC_PARAM,
   GNO_HELP_MARKER,
   GNO_MAX_DEPOSIT_PARAM,
   GNO_SEND_PARAM,
-} from '@common/constants/url.constant';
+} from '@common/constants/url.constant'
 import {
   hasHttpProtocol,
-} from '@common/provider/gno/utils';
+} from '@common/provider/gno/utils'
 
 export interface GnoConnectInfo {
   rpc: string
@@ -45,39 +45,39 @@ export interface GnoArgumentInfo {
  */
 export function parseGnoConnectInfo(): GnoConnectInfo | null {
   if (document === null) {
-    return null;
+    return null
   }
 
   const gnoConnectInfo: GnoConnectInfo = {
     rpc: '',
     chainId: '',
-  };
+  }
 
-  const metas = document?.querySelectorAll('meta') || [];
+  const metas = document?.querySelectorAll('meta') || []
 
   metas.forEach((meta) => {
-    const name = meta.getAttribute('name');
-    const content = meta.getAttribute('content') || '';
+    const name = meta.getAttribute('name')
+    const content = meta.getAttribute('content') || ''
 
     if (!name || !name.startsWith(GNO_CONNECT_PREFIX)) {
-      return;
+      return
     }
 
     switch (name) {
       case GNO_RPC_META_TAG:
-        gnoConnectInfo.rpc = getUrlPathWithoutProtocol(content);
-        break;
+        gnoConnectInfo.rpc = getUrlPathWithoutProtocol(content)
+        break
       case GNO_CHAIN_ID_META_TAG:
-        gnoConnectInfo.chainId = content;
-        break;
+        gnoConnectInfo.chainId = content
+        break
     }
-  });
+  })
 
   if (gnoConnectInfo.rpc === '' || gnoConnectInfo.chainId === '') {
-    return null;
+    return null
   }
 
-  return gnoConnectInfo;
+  return gnoConnectInfo
 }
 
 /**
@@ -96,12 +96,12 @@ export function parseGnoConnectInfo(): GnoConnectInfo | null {
  *          if $help is found and func is provided; otherwise returns null.
  */
 export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
-  const url = new URL(href);
+  const url = new URL(href)
   const {
     pathname,
-  } = url;
+  } = url
   if (!pathname.includes(GNO_HELP_MARKER)) {
-    return null;
+    return null
   }
 
   const messageInfo: GnoMessageInfo = {
@@ -110,60 +110,60 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
     send: '',
     maxDeposit: '',
     args: null,
-  };
-
-  const [beforeHelp, afterHelp] = pathname.split(GNO_HELP_MARKER);
-  const packagePostfix = `${beforeHelp}`.replace(/^\/+/, '');
-  if (packagePostfix === '') {
-    return null;
   }
 
-  const queryPart = afterHelp.replace(/^&+/, '');
-  const parts = queryPart.split('&');
+  const [beforeHelp, afterHelp] = pathname.split(GNO_HELP_MARKER)
+  const packagePostfix = `${beforeHelp}`.replace(/^\/+/, '')
+  if (packagePostfix === '') {
+    return null
+  }
 
-  const args: GnoArgumentInfo[] = [];
-  let argumentIndex = 0;
+  const queryPart = afterHelp.replace(/^&+/, '')
+  const parts = queryPart.split('&')
+
+  const args: GnoArgumentInfo[] = []
+  let argumentIndex = 0
 
   for (const p of parts) {
-    const params = p.split('=');
+    const params = p.split('=')
     if (params.length < 2) {
-      continue;
+      continue
     }
 
-    const [key, value] = params;
+    const [key, value] = params
 
     switch (key) {
       case GNO_FUNC_PARAM:
-        messageInfo.functionName = value || '';
-        continue;
+        messageInfo.functionName = value || ''
+        continue
       case GNO_SEND_PARAM:
-        messageInfo.send = value || '';
-        continue;
+        messageInfo.send = value || ''
+        continue
       case GNO_MAX_DEPOSIT_PARAM:
-        messageInfo.maxDeposit = value || '';
-        continue;
+        messageInfo.maxDeposit = value || ''
+        continue
       default:
         args.push({
           index: argumentIndex,
           key,
           value: decodeURIComponent(value),
-        });
+        })
     }
 
-    argumentIndex++;
+    argumentIndex++
   }
 
   if (!messageInfo.functionName) {
-    return null;
+    return null
   }
 
-  messageInfo.packagePath = GNO_PACKAGE_PREFIX + '/' + packagePostfix;
+  messageInfo.packagePath = GNO_PACKAGE_PREFIX + '/' + packagePostfix
 
   if (args.length !== 0) {
-    messageInfo.args = args;
+    messageInfo.args = args
   }
 
-  return messageInfo;
+  return messageInfo
 }
 
 /**
@@ -175,18 +175,18 @@ export function parseGnoMessageInfo(href: string): GnoMessageInfo | null {
  * @returns GnoMessageInfo object if valid; otherwise returns null
  */
 export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
-  const article = form.closest('article.b-action-function') as HTMLElement;
+  const article = form.closest('article.b-action-function') as HTMLElement
 
   if (!article) {
-    return null;
+    return null
   }
 
   // Extract function information from article data attributes
-  const funcName = article.dataset.actionFunctionNameValue;
-  const pkgPath = article.dataset.actionFunctionPkgpathValue;
+  const funcName = article.dataset.actionFunctionNameValue
+  const pkgPath = article.dataset.actionFunctionPkgpathValue
 
   if (!funcName || !pkgPath) {
-    return null;
+    return null
   }
 
   const messageInfo: GnoMessageInfo = {
@@ -195,30 +195,30 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
     send: '',
     maxDeposit: '',
     args: null,
-  };
+  }
 
   // Extract parameters from form inputs
-  const args: GnoArgumentInfo[] = [];
-  const paramInputs = form.querySelectorAll('input[data-action-function-param-value]');
+  const args: GnoArgumentInfo[] = []
+  const paramInputs = form.querySelectorAll('input[data-action-function-param-value]')
 
   paramInputs.forEach((input, index) => {
-    const paramName = (input as HTMLInputElement).dataset.actionFunctionParamValue;
-    const paramValue = (input as HTMLInputElement).value;
+    const paramName = (input as HTMLInputElement).dataset.actionFunctionParamValue
+    const paramValue = (input as HTMLInputElement).value
 
     if (paramName) {
       args.push({
         index,
         key: paramName,
         value: paramValue,
-      });
+      })
     }
-  });
+  })
 
   if (args.length > 0) {
-    messageInfo.args = args;
+    messageInfo.args = args
   }
 
-  return messageInfo;
+  return messageInfo
 }
 
 /**
@@ -232,21 +232,21 @@ export function parseGnoFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
 export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | null {
   // Check if this is a form-exec form
   if (form.dataset.controller !== 'form-exec') {
-    return null;
+    return null
   }
 
   // Find the action-function container for function metadata
-  const actionFunctionDiv = form.querySelector<HTMLElement>('[data-controller="action-function"]');
+  const actionFunctionDiv = form.querySelector<HTMLElement>('[data-controller="action-function"]')
 
   if (!actionFunctionDiv) {
-    return null;
+    return null
   }
 
-  const pkgPath = actionFunctionDiv.dataset.actionFunctionPkgpathValue;
-  const funcName = actionFunctionDiv.dataset.actionFunctionNameValue;
+  const pkgPath = actionFunctionDiv.dataset.actionFunctionPkgpathValue
+  const funcName = actionFunctionDiv.dataset.actionFunctionNameValue
 
   if (!pkgPath || !funcName) {
-    return null;
+    return null
   }
 
   const messageInfo: GnoMessageInfo = {
@@ -255,40 +255,40 @@ export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | nu
     send: '',
     maxDeposit: '',
     args: null,
-  };
+  }
 
   // Extract parameters from form inputs
-  const args: GnoArgumentInfo[] = [];
-  const paramInputs = form.querySelectorAll<HTMLInputElement>('[data-action-function-param-value]');
+  const args: GnoArgumentInfo[] = []
+  const paramInputs = form.querySelectorAll<HTMLInputElement>('[data-action-function-param-value]')
 
-  const processedParams = new Set<string>();
+  const processedParams = new Set<string>()
 
   paramInputs.forEach((input) => {
-    const paramName = input.dataset.actionFunctionParamValue;
+    const paramName = input.dataset.actionFunctionParamValue
     if (!paramName) {
-      return;
+      return
     }
 
     if (processedParams.has(paramName)) {
-      return;
+      return
     }
 
-    processedParams.add(paramName);
+    processedParams.add(paramName)
 
-    const paramValue = input.value || '';
+    const paramValue = input.value || ''
 
     args.push({
       index: args.length,
       key: paramName,
       value: paramValue,
-    });
-  });
+    })
+  })
 
   if (args.length > 0) {
-    messageInfo.args = args;
+    messageInfo.args = args
   }
 
-  return messageInfo;
+  return messageInfo
 }
 
 /**
@@ -300,11 +300,10 @@ export function parseGnoExecFormInfo(form: HTMLFormElement): GnoMessageInfo | nu
  */
 export function shouldIntercept(href: string): boolean {
   try {
-    const url = new URL(href);
-    return url.pathname.includes(GNO_HELP_MARKER);
-  }
-  catch {
-    return false;
+    const url = new URL(href)
+    return url.pathname.includes(GNO_HELP_MARKER)
+  } catch {
+    return false
   }
 }
 
@@ -316,8 +315,8 @@ export function shouldIntercept(href: string): boolean {
  * @deprecated Use GnoConnectInfoProvider.shouldRegister() instead
  */
 export function shouldRegisterInterceptor(): boolean {
-  const gnoConnectInfo = parseGnoConnectInfo();
-  return gnoConnectInfo !== null;
+  const gnoConnectInfo = parseGnoConnectInfo()
+  return gnoConnectInfo !== null
 }
 
 /**
@@ -328,17 +327,17 @@ export function shouldRegisterInterceptor(): boolean {
  */
 export function shouldInterceptForm(target: EventTarget | null): boolean {
   if (!target) {
-    return false;
+    return false
   }
 
-  const element = target as HTMLElement;
+  const element = target as HTMLElement
 
   // Check for action function form (params form inside action-function article)
   if (element.matches('form.params') && element.closest('article.b-action-function')) {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 /**
@@ -349,25 +348,25 @@ export function shouldInterceptForm(target: EventTarget | null): boolean {
  */
 export function shouldInterceptExecForm(target: EventTarget | null): boolean {
   if (!target) {
-    return false;
+    return false
   }
 
-  const element = target as HTMLElement;
+  const element = target as HTMLElement
 
   // Check for form-exec controller (gnoweb exec form)
   if (element.matches('form[data-controller="form-exec"]')) {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 export function getUrlPathWithoutProtocol(url: string): string {
-  const trimmedUrl = url.trim();
+  const trimmedUrl = url.trim()
 
   if (hasHttpProtocol(trimmedUrl)) {
-    return trimmedUrl;
+    return trimmedUrl
   }
 
-  return trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '');
+  return trimmedUrl.replace(/^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//, '')
 }

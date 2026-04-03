@@ -1,15 +1,15 @@
-import useAppNavigate from '@hooks/use-app-navigate';
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   EnglishMnemonic,
-} from 'adena-module';
+} from 'adena-module'
 import {
   useCallback, useEffect, useState,
-} from 'react';
+} from 'react'
 
-const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
+const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g
 
 export const useEnterSeed = (): {
   seedState: {
@@ -30,58 +30,57 @@ export const useEnterSeed = (): {
 } => {
   const {
     navigate,
-  } = useAppNavigate();
-  const [seeds, setSeeds] = useState('');
-  const [terms, setTerms] = useState(false);
-  const [error, setError] = useState(false);
+  } = useAppNavigate()
+  const [seeds, setSeeds] = useState('')
+  const [terms, setTerms] = useState(false)
+  const [error, setError] = useState(false)
 
-  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms]);
+  const handleTermsChange = useCallback(() => setTerms((prev: boolean) => !prev), [terms])
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-      const patternCheck = e.target.value.replace(specialPatternCheck, '');
-      setSeeds(() => patternCheck.toLowerCase());
-      setError(false);
+      const patternCheck = e.target.value.replace(specialPatternCheck, '')
+      setSeeds(() => patternCheck.toLowerCase())
+      setError(false)
     },
     [seeds],
-  );
+  )
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
     if (e.key === 'Enter') {
-      e.preventDefault();
-      handleButtonClick();
+      e.preventDefault()
+      handleButtonClick()
     }
-  };
+  }
 
   const handleButtonClick = async (): Promise<void> => {
     if (seeds.length === 0 || !terms) {
-      return;
+      return
     }
 
     try {
-      const checkedMnemonic = new EnglishMnemonic(seeds);
+      const checkedMnemonic = new EnglishMnemonic(seeds)
       if (checkedMnemonic) {
         navigate(RoutePath.CreatePassword, {
           state: {
             type: 'SEED',
             seeds,
           },
-        });
-        setError(false);
-        return;
+        })
+        setError(false)
+        return
       }
+    } catch (e) {
+      console.log(e)
     }
-    catch (e) {
-      console.log(e);
-    }
-    setError(true);
-  };
+    setError(true)
+  }
 
   useEffect(() => {
     if (seeds === '') {
-      setError(false);
+      setError(false)
     }
-  }, [seeds]);
+  }, [seeds])
 
   return {
     seedState: {
@@ -99,5 +98,5 @@ export const useEnterSeed = (): {
       onClick: handleButtonClick,
       disabled: seeds !== '' && terms,
     },
-  };
-};
+  }
+}

@@ -1,9 +1,9 @@
 export {
   AnchorInterceptor,
-} from './anchor-interceptor';
+} from './anchor-interceptor'
 export {
   FormSubmitInterceptor,
-} from './form-submit-interceptor';
+} from './form-submit-interceptor'
 export {
   GnoWebEventWatcherInterceptor,
-} from './gno-web-event-watcher-interceptor';
+} from './gno-web-event-watcher-interceptor'

@@ -1,7 +1,7 @@
 export type StorageModelV004 = {
   version: 4
   data: StorageModelDataV004
-};
+}
 
 export type StorageModelDataV004 = {
   NETWORKS: NetworksModelV004
@@ -14,7 +14,7 @@ export type StorageModelDataV004 = {
   ESTABLISH_SITES: EstablishSitesModelV004
   ADDRESS_BOOK: AddressBookModelV004
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV004
-};
+}
 
 export type NetworksModelV004 = {
   id: string
@@ -30,19 +30,19 @@ export type NetworksModelV004 = {
   apiUrl: string
   linkUrl: string
   deleted?: boolean
-}[];
+}[]
 
-export type CurrentChainIdModelV004 = string;
+export type CurrentChainIdModelV004 = string
 
-export type CurrentNetworkIdModelV004 = string;
+export type CurrentNetworkIdModelV004 = string
 
-export type SerializedModelV004 = string;
+export type SerializedModelV004 = string
 
 export type WalletModelV004 = {
   accounts: AccountDataModelV004[]
   keyrings: KeyringDataModelV004[]
   currentAccountId?: string
-};
+}
 
 type AccountDataModelV004 = {
   id?: string
@@ -52,7 +52,7 @@ type AccountDataModelV004 = {
   keyringId: string
   hdPath?: number
   publicKey: number[]
-};
+}
 
 type KeyringDataModelV004 = {
   id?: string
@@ -61,13 +61,13 @@ type KeyringDataModelV004 = {
   privateKey?: number[]
   seed?: number[]
   mnemonic?: string
-};
+}
 
-export type EncryptedStoredPasswordModelV004 = string;
+export type EncryptedStoredPasswordModelV004 = string
 
-export type CurrentAccountIdModelV004 = string;
+export type CurrentAccountIdModelV004 = string
 
-export type AccountNamesModelV004 = { [key in string]: string };
+export type AccountNamesModelV004 = { [key in string]: string }
 
 export type EstablishSitesModelV004 = {
   [key in string]: {
@@ -78,14 +78,14 @@ export type EstablishSitesModelV004 = {
     favicon: string | null
     establishedTime: string
   }[];
-};
+}
 
 export type AddressBookModelV004 = {
   id: string
   name: string
   address: string
   createdAt: string
-}[];
+}[]
 
 export type AccountTokenMetainfoModelV004 = {
   [key in string]: {
@@ -109,4 +109,4 @@ export type AccountTokenMetainfoModelV004 = {
     channel?: string
     port?: string
   }[];
-};
+}

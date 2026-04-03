@@ -1,8 +1,8 @@
-import React from 'react';
+import React from 'react'
 
 import {
   StyledCorrectButton, StyledIncorrectButton,
-} from './web-answer-button.styles';
+} from './web-answer-button.styles'
 
 export interface WebAnswerButtonProps {
   answer: string
@@ -19,15 +19,15 @@ const WebAnswerButton: React.FC<WebAnswerButtonProps> = ({
 }) => {
   return correct
     ? (
-      <StyledCorrectButton selected={selected} onClick={onClick}>
-        {answer}
-      </StyledCorrectButton>
-    )
+        <StyledCorrectButton selected={selected} onClick={onClick}>
+          {answer}
+        </StyledCorrectButton>
+      )
     : (
-      <StyledIncorrectButton selected={selected} onClick={onClick}>
-        {answer}
-      </StyledIncorrectButton>
-    );
-};
+        <StyledIncorrectButton selected={selected} onClick={onClick}>
+          {answer}
+        </StyledIncorrectButton>
+      )
+}
 
-export default WebAnswerButton;
+export default WebAnswerButton

@@ -1,4 +1,6 @@
-import type { JSX } from "react";
+import type {
+  JSX,
+} from 'react'
 const IconPencil = ({
   className,
 }: {
@@ -21,6 +23,6 @@ const IconPencil = ({
       fill='#A3A3B5'
     />
   </svg>
-);
+)
 
-export default IconPencil;
+export default IconPencil

@@ -1,19 +1,20 @@
 import {
   DefaultInput, ErrorText, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   PasswordInput,
-} from '@components/atoms/password-input';
+} from '@components/atoms/password-input'
 import {
   CancelAndConfirmButton,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   useChangePassword,
-} from '@hooks/certify/use-change-password';
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
-
-import type { JSX } from "react";
+} from '@hooks/certify/use-change-password'
+import mixins from '@styles/mixins'
+import type {
+  JSX,
+} from 'react'
+import styled from 'styled-components'
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -23,7 +24,7 @@ const Wrapper = styled.main`
   width: 100%;
   height: 100%;
   padding-top: 24px;
-`;
+`
 
 const StyledFormWrapper = styled.div`
   ${mixins.flex({
@@ -32,7 +33,7 @@ const StyledFormWrapper = styled.div`
   })};
   width: 100%;
   margin-top: 12px;
-`;
+`
 
 const FormBox = styled.div`
   width: 100%;
@@ -45,13 +46,13 @@ const FormBox = styled.div`
       margin-bottom: 0;
     }
   }
-`;
+`
 
 export const ChangePassword = (): JSX.Element => {
   const {
     currPwdState, newPwdState, confirmPwdState, errorMessage, buttonState, onKeyDown,
   }
-    = useChangePassword();
+    = useChangePassword()
 
   return (
     <Wrapper>
@@ -103,5 +104,5 @@ export const ChangePassword = (): JSX.Element => {
         }}
       />
     </Wrapper>
-  );
-};
+  )
+}

@@ -1,16 +1,16 @@
-import axios from 'axios';
+import axios from 'axios'
 
 import {
   EventStore,
-} from './event-store';
+} from './event-store'
 import {
   Event, EventStatus,
-} from './types';
+} from './types'
 import {
   makeHexByBase64, parseABCIValue,
-} from './utility';
+} from './utility'
 
-type ResponseDataType = string[];
+type ResponseDataType = string[]
 
 // Add Lock interface: Simple mutex implementation
 interface Lock {
@@ -20,44 +20,43 @@ interface Lock {
 
 // Simple mutex implementation class
 class Mutex implements Lock {
-  private _locked = false;
-  private _waitingResolvers: Array<() => void> = [];
+  private _locked = false
+  private _waitingResolvers: Array<() => void> = []
 
   public async acquire(): Promise<void> {
     if (!this._locked) {
-      this._locked = true;
-      return Promise.resolve();
+      this._locked = true
+      return Promise.resolve()
     }
 
     return new Promise<void>((resolve) => {
-      this._waitingResolvers.push(resolve);
-    });
+      this._waitingResolvers.push(resolve)
+    })
   }
 
   public release(): void {
     if (!this._locked) {
-      return;
+      return
     }
 
     if (this._waitingResolvers.length > 0) {
-      const resolve = this._waitingResolvers.shift();
+      const resolve = this._waitingResolvers.shift()
       if (resolve) {
-        resolve();
+        resolve()
       }
-    }
-    else {
-      this._locked = false;
+    } else {
+      this._locked = false
     }
   }
 }
 
 export class TransactionEventStore implements EventStore<ResponseDataType> {
-  private events: Map<string, Event<ResponseDataType>>;
-  private lock: Lock;
+  private events: Map<string, Event<ResponseDataType>>
+  private lock: Lock
 
   constructor() {
-    this.events = new Map();
-    this.lock = new Mutex();
+    this.events = new Map()
+    this.lock = new Mutex()
   }
 
   /**
@@ -82,7 +81,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
       try {
         // Ignore if already added
         if (this.events.has(id)) {
-          return;
+          return
         }
 
         const event: Event<ResponseDataType> = {
@@ -95,15 +94,14 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
           data: null,
           requests: 0,
           onEmit,
-        };
+        }
         this.events.set(id, {
           ...event,
-        });
+        })
+      } finally {
+        this.lock.release()
       }
-      finally {
-        this.lock.release();
-      }
-    });
+    })
 
     // Create event object to return immediately
     return {
@@ -116,7 +114,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
       data: null,
       requests: 0,
       onEmit,
-    };
+    }
   }
 
   /**
@@ -126,7 +124,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns The event if found, otherwise null.
    */
   getEvent(id: string): Event<ResponseDataType> | null {
-    return this.events.get(id) || null;
+    return this.events.get(id) || null
   }
 
   /**
@@ -136,20 +134,19 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
   addEventRequestCount(id: string): void {
     this.lock.acquire().then(() => {
       try {
-        const event = this.events.get(id);
+        const event = this.events.get(id)
         if (!event) {
-          return;
+          return
         }
 
-        event.requests += 1;
+        event.requests += 1
         this.events.set(id, {
           ...event,
-        });
+        })
+      } finally {
+        this.lock.release()
       }
-      finally {
-        this.lock.release();
-      }
-    });
+    })
   }
 
   /**
@@ -159,7 +156,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns True if the event exists, otherwise false.
    */
   hasEvent(id: string): boolean {
-    return this.events.has(id);
+    return this.events.has(id)
   }
 
   /**
@@ -170,32 +167,30 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns True if the event was successfully emitted, otherwise false.
    */
   async emitEvent(id: string): Promise<boolean> {
-    let event: Event<ResponseDataType> | undefined;
+    let event: Event<ResponseDataType> | undefined
 
-    await this.lock.acquire();
+    await this.lock.acquire()
     try {
-      event = this.events.get(id);
+      event = this.events.get(id)
       if (!event || event.status === 'PENDING') {
-        return false;
+        return false
       }
 
-      this.events.delete(id);
-    }
-    finally {
-      this.lock.release();
+      this.events.delete(id)
+    } finally {
+      this.lock.release()
     }
 
     if (event) {
       try {
-        await event.onEmit(event);
+        await event.onEmit(event)
+      } catch (error) {
+        console.error(`Error executing callback for event ${id}:`, error)
       }
-      catch (error) {
-        console.error(`Error executing callback for event ${id}:`, error);
-      }
-      return true;
+      return true
     }
 
-    return false;
+    return false
   }
 
   /**
@@ -205,33 +200,32 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns An array of events that were successfully emitted.
    */
   async emitAllEvents(): Promise<Event<ResponseDataType>[]> {
-    const eventsToEmit: string[] = [];
-    const triggeredEvents: Event<ResponseDataType>[] = [];
+    const eventsToEmit: string[] = []
+    const triggeredEvents: Event<ResponseDataType>[] = []
 
-    await this.lock.acquire();
+    await this.lock.acquire()
     try {
       for (const [id, event] of this.events.entries()) {
         if (event.emitNumber !== null) {
-          eventsToEmit.push(id);
+          eventsToEmit.push(id)
         }
       }
-    }
-    finally {
-      this.lock.release();
+    } finally {
+      this.lock.release()
     }
 
     // Emit individual events after releasing the lock
     for (const id of eventsToEmit) {
-      const success = await this.emitEvent(id);
+      const success = await this.emitEvent(id)
       if (success) {
-        const event = this.getEvent(id);
+        const event = this.getEvent(id)
         if (event) {
-          triggeredEvents.push(event);
+          triggeredEvents.push(event)
         }
       }
     }
 
-    return triggeredEvents;
+    return triggeredEvents
   }
 
   /**
@@ -240,16 +234,15 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns An array of events that were updated
    */
   async updatePendingEvents(): Promise<Event<ResponseDataType>[]> {
-    let pendingEvents: Event<ResponseDataType>[] = [];
+    let pendingEvents: Event<ResponseDataType>[] = []
 
-    await this.lock.acquire();
+    await this.lock.acquire()
     try {
       pendingEvents = Array.from(this.events.values()).filter(
         event => event.status === 'PENDING',
-      );
-    }
-    finally {
-      this.lock.release();
+      )
+    } finally {
+      this.lock.release()
     }
 
     const updatedEvents = await Promise.all(
@@ -257,36 +250,35 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
         this.getTransactionResult(event.id)
           .then<Event<ResponseDataType> | null>((result) => {
             if (!result) {
-              return null;
+              return null
             }
 
-            const status = !result.hasError ? 'SUCCESS' : 'FAILED';
+            const status = !result.hasError ? 'SUCCESS' : 'FAILED'
             return {
               ...event,
               status,
               emitNumber: result?.height || null,
               data: result?.data || null,
-            };
+            }
           })
           .catch(() => null),
       ),
-    );
+    )
 
-    await this.lock.acquire();
+    await this.lock.acquire()
     try {
       for (const updatedEvent of updatedEvents) {
         if (updatedEvent) {
           this.events.set(updatedEvent.id, {
             ...updatedEvent,
-          });
+          })
         }
       }
-    }
-    finally {
-      this.lock.release();
+    } finally {
+      this.lock.release()
     }
 
-    return updatedEvents.filter(event => event !== null) as Event<ResponseDataType>[];
+    return updatedEvents.filter(event => event !== null) as Event<ResponseDataType>[]
   }
 
   /**
@@ -296,22 +288,21 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns The removed event if it existed, otherwise null.
    */
   removeEvent(id: string): Event<ResponseDataType> | null {
-    const event = this.events.get(id);
-    if (!event) return null;
+    const event = this.events.get(id)
+    if (!event) return null
 
     this.lock.acquire().then(() => {
       try {
         // If not deleted yet, delete it
         if (this.events.has(id)) {
-          this.events.delete(id);
+          this.events.delete(id)
         }
+      } finally {
+        this.lock.release()
       }
-      finally {
-        this.lock.release();
-      }
-    });
+    })
 
-    return event;
+    return event
   }
 
   /**
@@ -320,12 +311,11 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
   removeAllEvents(): void {
     this.lock.acquire().then(() => {
       try {
-        this.events.clear();
+        this.events.clear()
+      } finally {
+        this.lock.release()
       }
-      finally {
-        this.lock.release();
-      }
-    });
+    })
   }
 
   /**
@@ -334,7 +324,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns The number of events in the store.
    */
   count(): number {
-    return this.events.size;
+    return this.events.size
   }
 
   /**
@@ -343,7 +333,7 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns An array of event IDs.
    */
   list(): string[] {
-    return Array.from(this.events.keys());
+    return Array.from(this.events.keys())
   }
 
   /**
@@ -353,8 +343,8 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
    * @returns The status of the event if it exists, otherwise null.
    */
   getStatus(id: string): EventStatus | null {
-    const event = this.events.get(id);
-    return event ? event.status : null;
+    const event = this.events.get(id)
+    return event ? event.status : null
   }
 
   private async getTransactionResult(id: string): Promise<{
@@ -362,60 +352,59 @@ export class TransactionEventStore implements EventStore<ResponseDataType> {
     hasError: boolean
     data: ResponseDataType
   } | null> {
-    const event = this.getEvent(id);
+    const event = this.getEvent(id)
     if (!event) {
-      return null;
+      return null
     }
 
-    this.addEventRequestCount(id);
+    this.addEventRequestCount(id)
 
     try {
       const networkClient = axios.create({
         baseURL: event.rpcUrl,
-      });
-      const result = await networkClient.get('/tx?hash=' + makeHexByBase64(id));
+      })
+      const result = await networkClient.get('/tx?hash=' + makeHexByBase64(id))
 
-      const height = Number(result.data?.result?.height || 0);
+      const height = Number(result.data?.result?.height || 0)
       if (!height) {
         if (event.requests >= 10) {
           return {
             height: 0,
             hasError: true,
             data: [],
-          };
+          }
         }
 
-        return null;
+        return null
       }
 
-      const response = result.data?.result?.tx_result?.ResponseBase;
-      const hasError = !!response?.Error;
+      const response = result.data?.result?.tx_result?.ResponseBase
+      const hasError = !!response?.Error
       if (hasError) {
         return {
           height,
           hasError,
           data: [],
-        };
+        }
       }
 
-      const responseData = response?.Data;
+      const responseData = response?.Data
       if (!responseData) {
         return {
           height,
           hasError,
           data: [],
-        };
+        }
       }
 
       return {
         height,
         hasError,
         data: parseABCIValue(responseData),
-      };
-    }
-    catch (error) {
-      console.error(`Error fetching transaction result for ${id}:`, error);
-      return null;
+      }
+    } catch (error) {
+      console.error(`Error fetching transaction result for ${id}:`, error)
+      return null
     }
   }
 }

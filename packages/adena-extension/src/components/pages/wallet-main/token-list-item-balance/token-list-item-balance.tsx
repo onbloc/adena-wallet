@@ -1,7 +1,7 @@
 import {
   TokenBalance,
-} from '@components/molecules';
-import React from 'react';
+} from '@components/molecules'
+import React from 'react'
 
 export interface TokenListItemBalanceProps {
   amount: {
@@ -15,7 +15,7 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
 }) => {
   const {
     value, denom,
-  } = amount;
+  } = amount
 
   return (
     <TokenBalance
@@ -26,7 +26,7 @@ const TokenListItemBalance: React.FC<TokenListItemBalanceProps> = ({
       fontStyleKey='body2Reg'
       minimumFontSize='11px'
     />
-  );
-};
+  )
+}
 
-export default TokenListItemBalance;
+export default TokenListItemBalance

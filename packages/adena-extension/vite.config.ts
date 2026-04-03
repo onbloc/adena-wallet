@@ -1,18 +1,18 @@
 import {
   crx,
-} from '@crxjs/vite-plugin';
-import nodePolyfills from '@rolldown/plugin-node-polyfills';
-import react from '@vitejs/plugin-react';
+} from '@crxjs/vite-plugin'
+import nodePolyfills from '@rolldown/plugin-node-polyfills'
+import react from '@vitejs/plugin-react'
 import {
   resolve,
-} from 'path';
+} from 'path'
 import {
   defineConfig,
-} from 'vite';
+} from 'vite'
 
-import manifest from './public/manifest.json';
+import manifest from './public/manifest.json'
 
-const isStorybook = process.argv[1]?.includes('storybook');
+const isStorybook = process.argv[1]?.includes('storybook')
 
 export default defineConfig({
   plugins: [
@@ -57,4 +57,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ['adena-module', 'adena-torus-signin', '@adena-wallet/sdk'],
   },
-});
+})

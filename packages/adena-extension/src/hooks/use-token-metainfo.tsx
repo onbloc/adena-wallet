@@ -1,44 +1,44 @@
 import {
   isGRC20TokenModel, isNativeTokenModel,
-} from '@common/validation/validation-token';
+} from '@common/validation/validation-token'
 import {
   TokenState,
-} from '@states';
+} from '@states'
 import {
   useQuery,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC20TokenModel, GRC721CollectionModel, TokenModel,
-} from '@types';
+} from '@types'
 import {
   Account,
-} from 'adena-module';
-import BigNumber from 'bignumber.js';
+} from 'adena-module'
+import BigNumber from 'bignumber.js'
 import {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 
 import {
   useNFTCollectionHandler,
-} from './nft/use-collection-handler';
+} from './nft/use-collection-handler'
 import {
   useAdenaContext,
-} from './use-context';
+} from './use-context'
 import {
   useCurrentAccount,
-} from './use-current-account';
+} from './use-current-account'
 import {
   useGRC20Tokens,
-} from './use-grc20-tokens';
+} from './use-grc20-tokens'
 import {
   useNetwork,
-} from './use-network';
+} from './use-network'
 import {
   useTransferTokens,
-} from './wallet/use-transfer-tokens';
+} from './wallet/use-transfer-tokens'
 
 interface GRC20Token {
   tokenId: string
@@ -84,214 +84,214 @@ export type UseTokenMetainfoReturn = {
   getTokenImage: (token: TokenModel) => string | null
   getTokenImageByDenom: (denom: string) => string | null
   getTokenImageByPkgPath: (pkgPath: string) => string | null
-};
+}
 
 function makeTokenKeyByDenom(denom: string): string {
-  return `${denom.toLowerCase()}`;
+  return `${denom.toLowerCase()}`
 }
 
 function makeTokenKeyByPackagePath(packagePath: string): string {
-  return `${packagePath.toLowerCase()}`;
+  return `${packagePath.toLowerCase()}`
 }
 
 function makeTokenKey(token: TokenModel): string {
   if (isNativeTokenModel(token)) {
-    return makeTokenKeyByDenom(token.denom);
+    return makeTokenKeyByDenom(token.denom)
   }
   if (isGRC20TokenModel(token)) {
-    return makeTokenKeyByPackagePath(token.pkgPath);
+    return makeTokenKeyByPackagePath(token.pkgPath)
   }
-  return `${token.symbol}`;
+  return `${token.symbol}`
 }
 
 export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
   const {
     balanceService, tokenService,
-  } = useAdenaContext();
-  const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos);
+  } = useAdenaContext()
+  const [tokenMetainfos, setTokenMetainfo] = useRecoilState(TokenState.tokenMetainfos)
   const {
     currentAccount,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
   const {
     fetchTransferTokens,
-  } = useTransferTokens();
+  } = useTransferTokens()
   const {
     addCollections,
-  } = useNFTCollectionHandler();
+  } = useNFTCollectionHandler()
   const {
     data: grc20Tokens,
-  } = useGRC20Tokens();
+  } = useGRC20Tokens()
 
   const {
     data: allTokenMetainfos = null,
   } = useQuery<TokenModel[]>({
     queryKey: ['useTokenMetainfo/allTokenMetainfos', grc20Tokens?.map(token => token.pkgPath), currentNetwork.networkId],
     queryFn: async (): Promise<TokenModel[]> => {
-      const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos();
+      const fetchedTokenMetainfos = await tokenService.fetchTokenMetainfos()
       const remainGRC20Tokens = grc20Tokens
         ? grc20Tokens.filter(
-          token =>
-            !fetchedTokenMetainfos.find(
-              meta => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
-            ),
-        )
-        : [];
+            token =>
+              !fetchedTokenMetainfos.find(
+                meta => isGRC20TokenModel(meta) && meta?.pkgPath === token?.pkgPath,
+              ),
+          )
+        : []
 
-      return [...fetchedTokenMetainfos, ...remainGRC20Tokens];
+      return [...fetchedTokenMetainfos, ...remainGRC20Tokens]
     },
     staleTime: Infinity,
     enabled: !!grc20Tokens,
-  });
+  })
 
   const currentTokenMetainfos = useMemo(() => {
     return tokenMetainfos.filter(
       tokenMetainfo => tokenMetainfo.main || tokenMetainfo.networkId === currentNetwork.networkId,
-    );
-  }, [tokenMetainfos, currentNetwork]);
+    )
+  }, [tokenMetainfos, currentNetwork])
 
   const tokenMetaMap = useMemo(() => {
     if (!allTokenMetainfos) {
       return {
-      };
+      }
     }
 
     return allTokenMetainfos.reduce<{ [key in string]: TokenModel }>((acc, current) => {
       if (isNativeTokenModel(current)) {
-        acc[current.denom] = current;
+        acc[current.denom] = current
       }
       if (isGRC20TokenModel(current)) {
-        acc[current.pkgPath] = current;
+        acc[current.pkgPath] = current
       }
-      return acc;
+      return acc
     }, {
-    });
-  }, [allTokenMetainfos]);
+    })
+  }, [allTokenMetainfos])
 
   const tokenLogoMap = useMemo(() => {
     if (!allTokenMetainfos) {
       return {
-      };
+      }
     }
 
     return allTokenMetainfos.reduce<Record<string, string | null>>((accum, current) => {
-      const key = makeTokenKey(current);
-      accum[key] = current.image || null;
-      return accum;
+      const key = makeTokenKey(current)
+      accum[key] = current.image || null
+      return accum
     }, {
-    });
-  }, [allTokenMetainfos]);
+    })
+  }, [allTokenMetainfos])
 
   const initTokenMetainfos = async (): Promise<void> => {
     if (!currentAccount) {
-      return;
+      return
     }
 
-    await setTokenMetainfo([]);
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    await setTokenMetainfo([])
+    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix)
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
      */
-    const transferTokens = await fetchTransferTokens(currentAddress).catch(() => null);
+    const transferTokens = await fetchTransferTokens(currentAddress).catch(() => null)
     if (!transferTokens) {
-      await tokenService.initAccountTokenMetainfos(currentAccount.id);
-      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-      setTokenMetainfo([...tokenMetainfos]);
-      return;
+      await tokenService.initAccountTokenMetainfos(currentAccount.id)
+      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
+      setTokenMetainfo([...tokenMetainfos])
+      return
     }
 
     /**
      * When there is a transfer event, verify that the token is new and not part of the list of tokens stored in the existing account.
      * The new tokens are added to the account's token information.
      */
-    const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
     const storedCollections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
       currentNetwork.chainId,
-    );
+    )
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map(grc20Token => grc20Token.tokenId);
+      .map(grc20Token => grc20Token.tokenId)
     const storedGRC721Packages = storedCollections
       .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map(grc721Token => grc721Token.packagePath);
+      .map(grc721Token => grc721Token.packagePath)
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
       grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
-    );
+    )
     const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
       grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
-    );
+    )
 
-    await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
+    await addTokenMetainfos(filteredGRC20Packages)
+    await addCollections(filteredGRC721Packages)
 
-    await tokenService.initAccountTokenMetainfos(currentAccount.id);
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    setTokenMetainfo([...tokenMetainfos]);
-  };
+    await tokenService.initAccountTokenMetainfos(currentAccount.id)
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
+    setTokenMetainfo([...tokenMetainfos])
+  }
 
   const updateAllTokenMetainfos = async (): Promise<void> => {
     if (!currentAccount) {
-      return;
+      return
     }
 
-    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix);
+    const currentAddress = await currentAccount.getAddress(currentNetwork.addressPrefix)
 
     /**
      * For accounts with no transfer events, initialize the state with the list of stored tokens.
      */
-    const transferTokens = await fetchTransferTokens(currentAddress).catch(() => null);
+    const transferTokens = await fetchTransferTokens(currentAddress).catch(() => null)
     if (!transferTokens) {
-      await tokenService.initAccountTokenMetainfos(currentAccount.id);
-      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-      setTokenMetainfo([...tokenMetainfos]);
-      return;
+      await tokenService.initAccountTokenMetainfos(currentAccount.id)
+      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
+      setTokenMetainfo([...tokenMetainfos])
+      return
     }
 
     /**
      * When there is a transfer event, verify that the token is new and not part of the list of tokens stored in the existing account.
      * The new tokens are added to the account's token information.
      */
-    const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
     const storedCollections = await tokenService.getAccountGRC721Collections(
       currentAccount.id,
       currentNetwork.chainId,
-    );
+    )
 
     const storedGRC20Packages = storedGRC20Tokens
       .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map(grc20Token => grc20Token.tokenId);
+      .map(grc20Token => grc20Token.tokenId)
     const storedGRC721Packages = storedCollections
       .filter((token: GRC721CollectionModel) => token.networkId === currentNetwork.networkId)
-      .map(grc721Token => grc721Token.packagePath);
+      .map(grc721Token => grc721Token.packagePath)
 
     const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
       grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
-    );
+    )
     const filteredGRC721Packages = (transferTokens.grc721Packages || []).filter(
       grc721Token => !storedGRC721Packages.includes(grc721Token.packagePath),
-    );
+    )
 
-    await addTokenMetainfos(filteredGRC20Packages);
-    await addCollections(filteredGRC721Packages);
+    await addTokenMetainfos(filteredGRC20Packages)
+    await addCollections(filteredGRC721Packages)
 
-    await tokenService.initAccountTokenMetainfos(currentAccount.id);
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    setTokenMetainfo([...tokenMetainfos]);
-  };
+    await tokenService.initAccountTokenMetainfos(currentAccount.id)
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
+    setTokenMetainfo([...tokenMetainfos])
+  }
 
   const updateTokenMetainfos = async (
     account: Account,
     tokenMetainfos: TokenModel[],
   ): Promise<void> => {
-    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos);
-    setTokenMetainfo([...tokenMetainfos]);
-  };
+    await tokenService.updateTokenMetainfosByAccountId(account.id, tokenMetainfos)
+    setTokenMetainfo([...tokenMetainfos])
+  }
 
   const convertDenom = (
     amount: string,
@@ -308,78 +308,78 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
           tokenMetainfo =>
             denom.toUpperCase() === tokenMetainfo.symbol.toUpperCase()
             || denom.toUpperCase() === tokenMetainfo.denom.toUpperCase(),
-        );
+        )
 
       if (tokenMetainfo) {
-        return balanceService.convertDenom(amount, denom, tokenMetainfo, convertType);
+        return balanceService.convertDenom(amount, denom, tokenMetainfo, convertType)
       }
     }
 
     return {
       value: amount,
       denom,
-    };
-  };
+    }
+  }
 
   const getTokenAmount = useCallback(
     (amount: {
       value: string
       denom: string
     }) => {
-      const tokenMeta = tokenMetaMap[amount.denom];
+      const tokenMeta = tokenMetaMap[amount.denom]
       if (!tokenMeta) {
-        const paths = amount.denom.split('/');
+        const paths = amount.denom.split('/')
         return {
           ...amount,
           denom: paths.length > 0 ? paths[paths.length - 1] : amount.denom,
-        };
+        }
       }
       const value = BigNumber(amount.value)
         .shiftedBy(tokenMeta.decimals * -1)
-        .toString();
-      const denom = tokenMeta.symbol;
+        .toString()
+      const denom = tokenMeta.symbol
       return {
         value,
         denom,
-      };
+      }
     },
     [tokenMetaMap],
-  );
+  )
 
   const getTokenImage = useCallback(
     (token: TokenModel): string | null => {
-      const key = makeTokenKey(token);
-      return tokenLogoMap[key] || null;
+      const key = makeTokenKey(token)
+      return tokenLogoMap[key] || null
     },
     [tokenLogoMap],
-  );
+  )
 
   const getTokenImageByDenom = useCallback(
     (denom: string): string | null => {
-      const key = makeTokenKeyByDenom(denom);
-      return tokenLogoMap[key] || null;
+      const key = makeTokenKeyByDenom(denom)
+      return tokenLogoMap[key] || null
     },
     [tokenLogoMap],
-  );
+  )
 
   const getTokenImageByPkgPath = useCallback(
     (packagePath: string): string | null => {
-      const key = makeTokenKeyByPackagePath(packagePath);
-      return tokenLogoMap[key] || null;
+      const key = makeTokenKeyByPackagePath(packagePath)
+      return tokenLogoMap[key] || null
     },
     [tokenLogoMap],
-  );
+  )
 
   const addTokenMetainfo = async (tokenMetainfo: GRC20TokenModel): Promise<boolean> => {
     if (!currentAccount) {
-      return false;
+      return false
     }
     const changedTokenMetainfo = {
       ...tokenMetainfo,
       image: getTokenImage(tokenMetainfo) ?? '',
-    };
+    }
 
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
+    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id)
     if (
       tokenMetainfos.find(
         item =>
@@ -387,29 +387,29 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
           && item.networkId === changedTokenMetainfo.networkId,
       )
     ) {
-      return false;
+      return false
     }
 
-    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, changedTokenMetainfo]);
+    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...tokenMetainfos, changedTokenMetainfo])
     const changedTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(
       currentAccount.id,
-    );
-    setTokenMetainfo(changedTokenMetainfos);
-    return true;
-  };
+    )
+    setTokenMetainfo(changedTokenMetainfos)
+    return true
+  }
 
   const addTokenMetainfos = async (tokenMetainfos: TokenModel[]): Promise<boolean> => {
     if (!currentAccount) {
-      return false;
+      return false
     }
 
     if (tokenMetainfos.length === 0) {
-      return true;
+      return true
     }
 
     const currentTokenMetainfos = await tokenService.getTokenMetainfosByAccountId(
       currentAccount.id,
-    );
+    )
 
     const newTokenMetainfos = tokenMetainfos
       .filter(
@@ -423,11 +423,11 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
         main: false,
         display: true,
         image: getTokenImage(tokenMetainfo) ?? '',
-      }));
+      }))
 
-    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...currentTokenMetainfos, ...newTokenMetainfos]);
-    return true;
-  };
+    await tokenService.updateTokenMetainfosByAccountId(currentAccount.id, [...currentTokenMetainfos, ...newTokenMetainfos])
+    return true
+  }
 
   const addGRC20TokenMetainfo = async ({
     tokenId,
@@ -447,9 +447,9 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
       decimals,
       image: getTokenImageByPkgPath(path) || '',
       display: true,
-    };
-    return addTokenMetainfo(tokenMetainfo);
-  };
+    }
+    return addTokenMetainfo(tokenMetainfo)
+  }
 
   return {
     tokenLogoMap,
@@ -467,5 +467,5 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     getTokenImageByDenom,
     getTokenImageByPkgPath,
     updateTokenMetainfos,
-  };
-};
+  }
+}

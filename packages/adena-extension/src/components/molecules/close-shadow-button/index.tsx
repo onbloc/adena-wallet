@@ -1,12 +1,14 @@
 import {
   Button, Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
+} from '@styles/theme'
+import React, {
+  type JSX,
+} from 'react'
+import styled from 'styled-components'
 
 interface Props {
   onClick: () => void
@@ -21,8 +23,8 @@ export const CloseShadowButton = ({
         <Text type='body1Bold'>Close</Text>
       </Button>
     </ButtonWrap>
-  );
-};
+  )
+}
 
 const ButtonWrap = styled.div`
   ${mixins.flex({
@@ -37,4 +39,4 @@ const ButtonWrap = styled.div`
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);
   background-color: ${getTheme('neutral', '_8')};
   z-index: 1;
-`;
+`

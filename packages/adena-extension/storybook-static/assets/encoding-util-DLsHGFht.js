@@ -1,1 +1,0 @@
-import{i as e}from"./_polyfill-node.global-CL4hvcq6.js";import{at as t,it as n}from"./iframe-DekVl-_p.js";function r(e){return n.from(e,`base64`).toString(`utf-8`)}var i=e((()=>{t()}));export{r as n,i as t};

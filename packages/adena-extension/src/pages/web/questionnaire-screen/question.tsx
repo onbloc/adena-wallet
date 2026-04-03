@@ -1,37 +1,37 @@
-import IconInfo from '@assets/web/info.svg';
+import IconInfo from '@assets/web/info.svg'
 import {
   Row, View, WebButton, WebImg, WebText,
-} from '@components/atoms';
-import RollingNumber from '@components/atoms/rolling-number';
-import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button';
+} from '@components/atoms'
+import RollingNumber from '@components/atoms/rolling-number'
+import WebAnswerButton from '@components/molecules/web-answer-button/web-answer-button'
 import {
   WebQuestion,
-} from '@components/molecules/web-question';
+} from '@components/molecules/web-question'
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header';
+} from '@components/pages/web/main-header'
 import {
   UseIndicatorStepReturn,
-} from '@hooks/wallet/broadcast-transaction/use-indicator-step';
+} from '@hooks/wallet/broadcast-transaction/use-indicator-step'
 import {
   Question,
-} from '@types';
+} from '@types'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
+`
 
 const StyledAnswerBox = styled(View)`
   width: 100%;
   row-gap: 16px;
-`;
+`
 
 const StyledWarningBox = styled(Row)`
   width: 100%;
@@ -42,18 +42,18 @@ const StyledWarningBox = styled(Row)`
   border-radius: 12px;
   border: 1px solid rgba(251, 194, 36, 0.08);
   background: rgba(251, 194, 36, 0.08);
-`;
+`
 
 const StyledWarningTextWrapper = styled(Row)`
   justify-content: flex-start;
   align-items: center;
-`;
+`
 
 const StyledWarningDescriptionWrapper = styled(Row)`
   margin-left: 1px;
   justify-content: flex-start;
   align-items: center;
-`;
+`
 
 interface QuestionnaireQuestionProps {
   question: Question | null
@@ -68,88 +68,88 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
   nextQuestion,
   backStep,
 }) => {
-  const theme = useTheme();
-  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
-  const [retryTime, setRetryTime] = useState(0);
+  const theme = useTheme()
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null)
+  const [retryTime, setRetryTime] = useState(0)
 
   const selectedAnswer = useMemo(() => {
     if (!question) {
-      return null;
+      return null
     }
-    const selectedAnswer = question.answers.find((_, index) => selectedAnswerIndex === index);
+    const selectedAnswer = question.answers.find((_, index) => selectedAnswerIndex === index)
     if (!selectedAnswer) {
-      return null;
+      return null
     }
-    return selectedAnswer;
-  }, [question, selectedAnswerIndex]);
+    return selectedAnswer
+  }, [question, selectedAnswerIndex])
 
   const isWarning = useMemo(() => {
     if (!selectedAnswer) {
-      return false;
+      return false
     }
-    return selectedAnswer.correct === false;
-  }, [selectedAnswer]);
+    return selectedAnswer.correct === false
+  }, [selectedAnswer])
 
   const isRetry = useMemo(() => {
-    return retryTime > 0;
-  }, [retryTime]);
+    return retryTime > 0
+  }, [retryTime])
 
   const availableNext = useMemo(() => {
     if (!question) {
-      return false;
+      return false
     }
-    return selectedAnswer?.correct === true;
-  }, [question, selectedAnswer]);
+    return selectedAnswer?.correct === true
+  }, [question, selectedAnswer])
 
   const questionTitle = useMemo(() => {
     if (!question) {
-      return '';
+      return ''
     }
-    return `${question.index}. ${question.question}`;
-  }, [question]);
+    return `${question.index}. ${question.question}`
+  }, [question])
 
   const answers = useMemo(() => {
     if (!question) {
-      return [];
+      return []
     }
-    return question.answers;
-  }, [question]);
+    return question.answers
+  }, [question])
 
   const selectAnswer = useCallback(
     (index: number) => {
       if (retryTime > 0) {
-        return;
+        return
       }
-      setSelectedAnswerIndex(index);
-      setRetryTime(3);
+      setSelectedAnswerIndex(index)
+      setRetryTime(3)
     },
     [retryTime],
-  );
+  )
 
   const onClickNextButton = useCallback(() => {
     if (availableNext) {
-      nextQuestion();
+      nextQuestion()
     }
-    setSelectedAnswerIndex(null);
-    setRetryTime(0);
-  }, [availableNext]);
+    setSelectedAnswerIndex(null)
+    setRetryTime(0)
+  }, [availableNext])
 
   const onClickBack = useCallback(() => {
-    setSelectedAnswerIndex(null);
-    setRetryTime(0);
-    backStep();
-  }, [backStep]);
+    setSelectedAnswerIndex(null)
+    setRetryTime(0)
+    backStep()
+  }, [backStep])
 
   useEffect(() => {
     function decreaseRetryTime(): void {
-      setRetryTime(retryTime - 1);
+      setRetryTime(retryTime - 1)
     }
 
     if (isRetry) {
-      const intervalId = setInterval(decreaseRetryTime, 1000);
-      return () => clearInterval(intervalId);
+      const intervalId = setInterval(decreaseRetryTime, 1000)
+      return () => clearInterval(intervalId)
     }
-  }, [isRetry, retryTime]);
+  }, [isRetry, retryTime])
 
   return (
     <StyledContainer>
@@ -211,7 +211,7 @@ const QuestionnaireQuestion: React.FC<QuestionnaireQuestionProps> = ({
         onClick={onClickNextButton}
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default QuestionnaireQuestion;
+export default QuestionnaireQuestion

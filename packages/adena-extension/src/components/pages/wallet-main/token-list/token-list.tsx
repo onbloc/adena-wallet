@@ -1,12 +1,12 @@
 import {
   MainToken,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 
-import TokenListItem from '../token-list-item/token-list-item';
+import TokenListItem from '../token-list-item/token-list-item'
 import {
   TokenListWrapper,
-} from './token-list.styles';
+} from './token-list.styles'
 
 export interface TokenListProps {
   tokens: Array<MainToken>
@@ -30,7 +30,7 @@ const TokenList: React.FC<TokenListProps> = ({
         />
       ))}
     </TokenListWrapper>
-  );
-};
+  )
+}
 
-export default TokenList;
+export default TokenList

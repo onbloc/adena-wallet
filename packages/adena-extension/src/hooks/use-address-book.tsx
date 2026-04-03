@@ -1,19 +1,19 @@
 import {
   AddressBookItem,
-} from '@repositories/wallet';
+} from '@repositories/wallet'
 import {
   WalletState,
-} from '@states';
+} from '@states'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 
 import {
   useAdenaContext,
-} from './use-context';
+} from './use-context'
 import {
   useCurrentAccount,
-} from './use-current-account';
+} from './use-current-account'
 
 export type UseAddressBookReturn = {
   addressBook: AddressBookItem[]
@@ -22,16 +22,16 @@ export type UseAddressBookReturn = {
   addAddressBookItem: (name: string, address: string) => Promise<boolean>
   editAddressBookItem: (id: string, name: string, address: string) => Promise<boolean>
   removeAddressBookItem: (id: string) => Promise<boolean>
-};
+}
 
 export const useAddressBook = (): UseAddressBookReturn => {
   const {
     addressBookService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     currentAccount,
-  } = useCurrentAccount();
-  const [addressBook, setAddressBook] = useRecoilState(WalletState.addressBook);
+  } = useCurrentAccount()
+  const [addressBook, setAddressBook] = useRecoilState(WalletState.addressBook)
 
   const addAddressBookItem = async (name: string, address: string): Promise<boolean> => {
     return _update(() =>
@@ -42,8 +42,8 @@ export const useAddressBook = (): UseAddressBookReturn => {
         })
         .then(() => true)
         .catch(() => false),
-    );
-  };
+    )
+  }
 
   const editAddressBookItem = async (
     id: string,
@@ -59,8 +59,8 @@ export const useAddressBook = (): UseAddressBookReturn => {
         })
         .then(() => true)
         .catch(() => false),
-    );
-  };
+    )
+  }
 
   const removeAddressBookItem = async (id: string): Promise<boolean> => {
     return _update(() =>
@@ -68,27 +68,27 @@ export const useAddressBook = (): UseAddressBookReturn => {
         .removeAddressBookItemByAccountId(currentAccount?.id || '', id)
         .then(() => true)
         .catch(() => false),
-    );
-  };
+    )
+  }
 
   const initAddressBook = async (): Promise<boolean> => {
-    return _update();
-  };
+    return _update()
+  }
 
   const _update = async (callback?: () => Promise<boolean>): Promise<boolean> => {
     setAddressBook(prev => ({
       ...prev,
       loading: true,
-    }));
-    const result = callback ? await callback() : true;
-    const addressBookItems = await addressBookService.getAddressBook();
+    }))
+    const result = callback ? await callback() : true
+    const addressBookItems = await addressBookService.getAddressBook()
     setAddressBook({
       init: true,
       loading: false,
       items: addressBookItems,
-    });
-    return result;
-  };
+    })
+    return result
+  }
 
   return {
     addressBook: addressBook.items,
@@ -97,5 +97,5 @@ export const useAddressBook = (): UseAddressBookReturn => {
     addAddressBookItem,
     editAddressBookItem,
     removeAddressBookItem,
-  };
-};
+  }
+}

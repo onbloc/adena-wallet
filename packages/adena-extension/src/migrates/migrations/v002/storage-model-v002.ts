@@ -1,7 +1,7 @@
 export type StorageModelV002 = {
   version: 2
   data: StorageModelDataV002
-};
+}
 
 export type StorageModelDataV002 = {
   NETWORKS: NetworksModelV002
@@ -14,7 +14,7 @@ export type StorageModelDataV002 = {
   ESTABLISH_SITES: EstablishSitesModelV002
   ADDRESS_BOOK: AddressBookModelV002
   ACCOUNT_TOKEN_METAINFOS: AccountTokenMetainfoModelV002
-};
+}
 
 export type NetworksModelV002 = {
   main: boolean
@@ -33,19 +33,19 @@ export type NetworksModelV002 = {
     minimalDenom: string
     minimalUnit: number
   }
-}[];
+}[]
 
-export type CurrentChainIdModelV002 = string;
+export type CurrentChainIdModelV002 = string
 
-export type CurrentNetworkIdModelV002 = string;
+export type CurrentNetworkIdModelV002 = string
 
-export type SerializedModelV002 = string;
+export type SerializedModelV002 = string
 
 export type WalletModelV002 = {
   accounts: AccountDataModelV002[]
   keyrings: KeyringDataModelV002[]
   currentAccountId?: string
-};
+}
 
 type AccountDataModelV002 = {
   id?: string
@@ -55,7 +55,7 @@ type AccountDataModelV002 = {
   keyringId: string
   hdPath?: number
   publicKey: number[]
-};
+}
 
 type KeyringDataModelV002 = {
   id?: string
@@ -64,13 +64,13 @@ type KeyringDataModelV002 = {
   privateKey?: number[]
   seed?: number[]
   mnemonic?: string
-};
+}
 
-export type EncryptedStoredPasswordModelV002 = string;
+export type EncryptedStoredPasswordModelV002 = string
 
-export type CurrentAccountIdModelV002 = string;
+export type CurrentAccountIdModelV002 = string
 
-export type AccountNamesModelV002 = { [key in string]: string };
+export type AccountNamesModelV002 = { [key in string]: string }
 
 export type EstablishSitesModelV002 = {
   [key in string]: {
@@ -81,14 +81,14 @@ export type EstablishSitesModelV002 = {
     favicon: string | null
     establishedTime: string
   }[];
-};
+}
 
 export type AddressBookModelV002 = {
   id: string
   name: string
   address: string
   createdAt: string
-}[];
+}[]
 
 export type AccountTokenMetainfoModelV002 = {
   [key in string]: {
@@ -111,4 +111,4 @@ export type AccountTokenMetainfoModelV002 = {
     channel?: string
     port?: string
   }[];
-};
+}

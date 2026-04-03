@@ -1,4 +1,6 @@
-import type { JSX } from "react";
+import type {
+  JSX,
+} from 'react'
 const IconEditConfirm = ({
   className,
 }: {
@@ -26,6 +28,6 @@ const IconEditConfirm = ({
       strokeLinejoin='round'
     />
   </svg>
-);
+)
 
-export default IconEditConfirm;
+export default IconEditConfirm

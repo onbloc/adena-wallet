@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const AdditionalTokenSearchListWrapper = styled.div`
   ${mixins.flex({
@@ -31,7 +31,7 @@ export const AdditionalTokenSearchListWrapper = styled.div`
     justify-content: center;
     align-items: center;
   }
-`;
+`
 
 export const AdditionalTokenSearchListItemWrapper = styled.div`
   ${mixins.flex({
@@ -80,4 +80,4 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-`;
+`

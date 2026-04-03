@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconHide = ({
   className,
@@ -25,6 +27,6 @@ const IconHide = ({
       </clipPath>
     </defs>
   </svg>
-);
+)
 
-export default IconHide;
+export default IconHide

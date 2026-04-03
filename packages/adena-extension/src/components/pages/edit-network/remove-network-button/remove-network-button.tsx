@@ -1,9 +1,9 @@
 import {
   UnderlineTextButton,
-} from '@components/molecules';
+} from '@components/molecules'
 import React, {
   useCallback,
-} from 'react';
+} from 'react'
 
 export interface RemoveNetworkButtonProps {
   text: string
@@ -14,10 +14,10 @@ const RemoveNetworkButton: React.FC<RemoveNetworkButtonProps> = ({
   text, clearNetwork,
 }) => {
   const onClickButton = useCallback(() => {
-    clearNetwork();
-  }, [clearNetwork]);
+    clearNetwork()
+  }, [clearNetwork])
 
-  return <UnderlineTextButton text={text} onClick={onClickButton} />;
-};
+  return <UnderlineTextButton text={text} onClick={onClickButton} />
+}
 
-export default RemoveNetworkButton;
+export default RemoveNetworkButton

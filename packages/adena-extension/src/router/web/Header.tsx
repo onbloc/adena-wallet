@@ -1,17 +1,17 @@
-import logo from '@assets/web/brand.svg';
+import logo from '@assets/web/brand.svg'
 import {
   ADENA_HELP_PAGE,
-} from '@common/constants/resource.constant';
+} from '@common/constants/resource.constant'
 import {
   Pressable, Row, WebImg, WebText,
-} from '@components/atoms';
-import IconQuestion from '@components/atoms/icon/icon-assets/icon-question';
-import useLink from '@hooks/use-link';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import IconQuestion from '@components/atoms/icon/icon-assets/icon-question'
+import useLink from '@hooks/use-link'
+import mixins from '@styles/mixins'
 import {
   ReactElement,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled.header`
   ${mixins.flex({
@@ -20,7 +20,7 @@ const StyledContainer = styled.header`
   })}
   padding: 0 74px;
   height: 80px;
-`;
+`
 
 const StyedHelpButton = styled(Pressable)`
   color: ${({
@@ -43,23 +43,23 @@ const StyedHelpButton = styled(Pressable)`
       }): string => theme.webNeutral._100};
     }
   }
-`;
+`
 
 const StyedHoverText = styled(WebText)`
   color: inherit;
-`;
+`
 
 const Header = (): ReactElement<any> => {
   const {
     openLink,
-  } = useLink();
+  } = useLink()
 
   return (
     <StyledContainer>
       <WebImg src={logo} />
       <StyedHelpButton
         onClick={(): void => {
-          openLink(ADENA_HELP_PAGE);
+          openLink(ADENA_HELP_PAGE)
         }}
       >
         <Row style={{
@@ -71,7 +71,7 @@ const Header = (): ReactElement<any> => {
         </Row>
       </StyedHelpButton>
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

@@ -1,27 +1,27 @@
 import {
   ErrorText,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   SignatureUploadLabel, SignerListItem,
-} from '@components/pages/signature-upload';
+} from '@components/pages/signature-upload'
 import {
   SignatureUploadResult,
-} from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen'
 import {
   Signature,
-} from '@inject/types';
+} from '@inject/types'
 import {
   SignerPublicKeyInfo,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useCallback, useMemo, useState,
-} from 'react';
+} from 'react'
 
 import {
   StyledHiddenInput,
   StyledSignerListWrapper,
   StyledWrapper,
-} from './broadcast-multisig-signature-upload-input.styles';
+} from './broadcast-multisig-signature-upload-input.styles'
 
 export interface BroadcastMultisigSignatureUploadInputProps {
   signatures: Signature[]
@@ -36,133 +36,128 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
 > = ({
   signatures, uploadSignature, removeSignature, signerPublicKeys, threshold,
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const signersWithStatus = useMemo(() => {
     return signerPublicKeys.map((signer, index) => {
       const isSigned = signatures.some(
         signature => signature.pub_key.value === signer.publicKey.value,
-      );
+      )
       return {
         index: index + 1,
         address: signer.address,
         publicKey: signer.publicKey.value,
         isSigned,
-      };
-    });
-  }, [signerPublicKeys, signatures]);
+      }
+    })
+  }, [signerPublicKeys, signatures])
 
   const signedCount = useMemo(() => {
-    return signersWithStatus.filter(s => s.isSigned).length;
-  }, [signersWithStatus]);
+    return signersWithStatus.filter(s => s.isSigned).length
+  }, [signersWithStatus])
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
-      setLoading(true);
-      setErrorMessage(null);
+      setLoading(true)
+      setErrorMessage(null)
 
-      let successCount = 0;
-      let invalidFormatCount = 0;
-      let invalidSignerCount = 0;
-      let duplicateCount = 0;
+      let successCount = 0
+      let invalidFormatCount = 0
+      let invalidSignerCount = 0
+      let duplicateCount = 0
 
       for (const file of files) {
         try {
-          const text = await file.text();
-          const result = uploadSignature(text);
+          const text = await file.text()
+          const result = uploadSignature(text)
 
           if (result.success) {
-            successCount++;
-          }
-          else {
+            successCount++
+          } else {
             switch (result.error) {
               case 'INVALID_FORMAT':
-                invalidFormatCount++;
-                break;
+                invalidFormatCount++
+                break
               case 'INVALID_SIGNER':
-                invalidSignerCount++;
-                break;
+                invalidSignerCount++
+                break
               case 'DUPLICATE':
-                duplicateCount++;
-                break;
+                duplicateCount++
+                break
             }
           }
-        }
-        catch {
-          invalidFormatCount++;
+        } catch {
+          invalidFormatCount++
         }
       }
 
-      setLoading(false);
+      setLoading(false)
 
-      const failCount = invalidFormatCount + invalidSignerCount + duplicateCount;
+      const failCount = invalidFormatCount + invalidSignerCount + duplicateCount
 
       if (failCount > 0) {
         if (files.length === 1) {
           if (invalidFormatCount > 0) {
-            setErrorMessage('Invalid signature format');
+            setErrorMessage('Invalid signature format')
+          } else if (invalidSignerCount > 0) {
+            setErrorMessage('Not a valid signer for the multisig transaction file')
+          } else if (duplicateCount > 0) {
+            setErrorMessage('Duplicate signature')
           }
-          else if (invalidSignerCount > 0) {
-            setErrorMessage('Not a valid signer for the multisig transaction file');
-          }
-          else if (duplicateCount > 0) {
-            setErrorMessage('Duplicate signature');
-          }
-          return;
+          return
         }
 
-        const messageParts: string[] = [];
+        const messageParts: string[] = []
 
         if (successCount > 0) {
-          messageParts.push(`${successCount} uploaded`);
+          messageParts.push(`${successCount} uploaded`)
         }
 
-        const failDetails: string[] = [];
+        const failDetails: string[] = []
         if (invalidFormatCount > 0) {
-          failDetails.push(`invalid format: ${invalidFormatCount}`);
+          failDetails.push(`invalid format: ${invalidFormatCount}`)
         }
         if (invalidSignerCount > 0) {
-          failDetails.push(`not a signer: ${invalidSignerCount}`);
+          failDetails.push(`not a signer: ${invalidSignerCount}`)
         }
         if (duplicateCount > 0) {
-          failDetails.push(`duplicate: ${duplicateCount}`);
+          failDetails.push(`duplicate: ${duplicateCount}`)
         }
 
         if (failDetails.length > 0) {
-          messageParts.push(`${failCount} failed (${failDetails.join(', ')})`);
+          messageParts.push(`${failCount} failed (${failDetails.join(', ')})`)
         }
 
-        setErrorMessage(messageParts.join(', '));
-      }
-      else {
-        setErrorMessage(null);
+        setErrorMessage(messageParts.join(', '))
+      } else {
+        setErrorMessage(null)
       }
     },
     [uploadSignature],
-  );
+  )
 
   const onDropFile = useCallback(
     async (event: React.DragEvent<HTMLLabelElement>) => {
-      event.preventDefault();
+      event.preventDefault()
       if (event.dataTransfer.files.length > 0) {
-        const files = Array.from(event.dataTransfer.files);
-        uploadFiles(files);
+        const files = Array.from(event.dataTransfer.files)
+        uploadFiles(files)
       }
     },
     [uploadFiles],
-  );
+  )
 
   const onChangeFileInput = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
+      const files = event.target.files
       if (files && files.length > 0) {
-        const fileArray = Array.from(files);
-        uploadFiles(fileArray);
+        const fileArray = Array.from(files)
+        uploadFiles(fileArray)
       }
     },
     [uploadFiles],
-  );
+  )
 
   return (
     <StyledWrapper>
@@ -192,7 +187,7 @@ const BroadcastMultisigSignatureUploadInput: React.FC<
         onChange={onChangeFileInput}
       />
     </StyledWrapper>
-  );
-};
+  )
+}
 
-export default BroadcastMultisigSignatureUploadInput;
+export default BroadcastMultisigSignatureUploadInput

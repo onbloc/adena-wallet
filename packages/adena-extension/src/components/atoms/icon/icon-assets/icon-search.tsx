@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconSearch = ({
   className,
@@ -31,7 +31,7 @@ const IconSearch = ({
         fill='#212128'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconSearch;
+export default IconSearch

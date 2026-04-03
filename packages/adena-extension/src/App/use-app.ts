@@ -1,93 +1,92 @@
 import {
   ADENA_WALLET_EXTENSION_ID,
-} from '@common/constants/storage.constant';
+} from '@common/constants/storage.constant'
 import {
   useAccountName,
-} from '@hooks/use-account-name';
+} from '@hooks/use-account-name'
 import {
   useWalletContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   useLoadImages,
-} from '@hooks/use-load-images';
+} from '@hooks/use-load-images'
 import {
   useNetwork,
-} from '@hooks/use-network';
-import useScrollHistory from '@hooks/use-scroll-history';
+} from '@hooks/use-network'
+import useScrollHistory from '@hooks/use-scroll-history'
 import {
   useTokenMetainfo,
-} from '@hooks/use-token-metainfo';
+} from '@hooks/use-token-metainfo'
 import {
   useEffect,
-} from 'react';
+} from 'react'
 import {
   useLocation,
-} from 'react-router';
+} from 'react-router'
 
 const useApp = (): void => {
   const {
     wallet,
-  } = useWalletContext();
+  } = useWalletContext()
   const {
     initAccountNames,
-  } = useAccountName();
+  } = useAccountName()
   const {
     currentAccount,
-  } = useCurrentAccount();
+  } = useCurrentAccount()
   const {
     currentNetwork, checkNetworkState,
-  } = useNetwork();
+  } = useNetwork()
   const {
     initTokenMetainfos,
-  } = useTokenMetainfo();
+  } = useTokenMetainfo()
   const {
     clear: clearLoadingImages,
-  } = useLoadImages();
+  } = useLoadImages()
   const {
     pathname, key,
-  } = useLocation();
+  } = useLocation()
   const {
     scrollMove,
-  } = useScrollHistory();
+  } = useScrollHistory()
 
   useEffect(() => {
     try {
       chrome?.runtime?.connect({
         name: ADENA_WALLET_EXTENSION_ID,
-      });
+      })
+    } catch (error) {
+      console.warn('Failed to connect to chrome runtime:', error)
     }
-    catch (error) {
-      console.warn('Failed to connect to chrome runtime:', error);
-    }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    checkNetworkState();
-  }, [pathname]);
+    checkNetworkState()
+  }, [pathname])
 
   useEffect(() => {
-    scrollMove();
-  }, [key]);
+    scrollMove()
+  }, [key])
 
   useEffect(() => {
     if (!currentAccount?.id) {
-      return;
+      return
     }
 
     if (!currentNetwork?.networkId) {
-      return;
+      return
     }
 
-    clearLoadingImages();
-    initTokenMetainfos();
-  }, [currentAccount?.id, currentNetwork.networkId]);
+    clearLoadingImages()
+    initTokenMetainfos()
+  }, [currentAccount?.id, currentNetwork.networkId])
 
   useEffect(() => {
-    initAccountNames(wallet?.accounts ?? []);
-  }, [wallet?.accounts]);
-};
+    initAccountNames(wallet?.accounts ?? [])
+  }, [wallet?.accounts])
+}
 
-export default useApp;
+export default useApp

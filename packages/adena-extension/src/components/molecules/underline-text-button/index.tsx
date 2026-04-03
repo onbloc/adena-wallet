@@ -1,10 +1,10 @@
 import React, {
   useCallback,
-} from 'react';
+} from 'react'
 
 import {
   UnderlineTextButtonWrapper,
-} from './underline-text-button.styles';
+} from './underline-text-button.styles'
 
 export interface UnderlineTextButtonProps {
   text: string
@@ -15,12 +15,12 @@ export const UnderlineTextButton: React.FC<UnderlineTextButtonProps> = ({
   text, onClick,
 }) => {
   const onClickButton = useCallback(() => {
-    onClick();
-  }, [onClick]);
+    onClick()
+  }, [onClick])
 
   return (
     <UnderlineTextButtonWrapper onClick={onClickButton}>
       <span className='title'>{text}</span>
     </UnderlineTextButtonWrapper>
-  );
-};
+  )
+}

@@ -1,5 +1,5 @@
 declare module 'ledger-cosmos-js' {
-  import Transport from '@ledgerhq/hw-transport';
+  import Transport from '@ledgerhq/hw-transport'
 
   export interface ErrorResponse {
     readonly return_code: number
@@ -37,18 +37,18 @@ declare module 'ledger-cosmos-js' {
   }
 
   export default class CosmosApp {
-    static getBech32FromPK(hrp: string, pk: Buffer): string;
+    static getBech32FromPK(hrp: string, pk: Buffer): string
 
-    constructor(transport: Transport, scrambleKey?: string);
+    constructor(transport: Transport, scrambleKey?: string)
 
-    getVersion: () => Promise<VersionResponse | ErrorResponse>;
-    appInfo: () => Promise<AppInfoResponse | ErrorResponse>;
-    publicKey: (path: Array<number>) => Promise<PublicKeyResponse | ErrorResponse>;
+    getVersion: () => Promise<VersionResponse | ErrorResponse>
+    appInfo: () => Promise<AppInfoResponse | ErrorResponse>
+    publicKey: (path: Array<number>) => Promise<PublicKeyResponse | ErrorResponse>
     showAddressAndPubKey: (
       path: Array<number>,
       hrp: string,
-    ) => Promise<AddressAndPublicKeyResponse | ErrorResponse>;
+    ) => Promise<AddressAndPublicKeyResponse | ErrorResponse>
 
-    sign: (path: Array<number>, message: string) => Promise<SignResponse | ErrorResponse>;
+    sign: (path: Array<number>, message: string) => Promise<SignResponse | ErrorResponse>
   }
 }

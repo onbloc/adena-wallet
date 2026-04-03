@@ -1,9 +1,9 @@
 import {
   BaseError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   AddingType,
-} from '@components/pages/additional-token/additional-token-type-selector';
+} from '@components/pages/additional-token/additional-token-type-selector'
 
 export interface TokenModel {
   main: boolean

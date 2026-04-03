@@ -1,19 +1,19 @@
 // signer-list-item.tsx
-import SuccessIcon from '@assets/success.svg';
+import SuccessIcon from '@assets/success.svg'
 import {
   formatAddress,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   CopyIconButton, Icon,
-} from '@components/atoms';
-import React from 'react';
+} from '@components/atoms'
+import React from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   StyledRemoveButton, StyledSignerItemWrapper,
-} from './signature-list-item.styles';
+} from './signature-list-item.styles'
 
 interface SignerInfo {
   index: number
@@ -30,9 +30,9 @@ interface SignerListItemProps {
 const SignerListItem: React.FC<SignerListItemProps> = ({
   signer, onRemove,
 }) => {
-  const theme = useTheme();
-  const borderColor = signer.isSigned ? theme.green._5 : 'transparent';
-  const displayAddress = formatAddress(signer.address, 8);
+  const theme = useTheme()
+  const borderColor = signer.isSigned ? theme.green._5 : 'transparent'
+  const displayAddress = formatAddress(signer.address, 8)
 
   return (
     <StyledSignerItemWrapper borderColor={borderColor}>
@@ -60,7 +60,7 @@ const SignerListItem: React.FC<SignerListItemProps> = ({
         </StyledRemoveButton>
       )}
     </StyledSignerItemWrapper>
-  );
-};
+  )
+}
 
-export default SignerListItem;
+export default SignerListItem

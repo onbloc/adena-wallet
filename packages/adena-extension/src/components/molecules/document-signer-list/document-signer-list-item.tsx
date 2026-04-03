@@ -1,22 +1,22 @@
-import IconShare from '@assets/icon-share';
-import SuccessIcon from '@assets/success.svg';
+import IconShare from '@assets/icon-share'
+import SuccessIcon from '@assets/success.svg'
 import {
   formatAddress,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   CopyIconButton,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   SignerStatusType,
-} from '@inject/types';
-import theme from '@styles/theme';
+} from '@inject/types'
+import theme from '@styles/theme'
 import {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   DocumentSignerListItemWrapper,
-} from './document-signer-list.styles';
+} from './document-signer-list.styles'
 
 interface StatusStyle {
   color: string
@@ -35,7 +35,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         statusText: 'Signed',
         showLabel: true,
         showBadge: true,
-      };
+      }
     case 'UNSIGNED':
       return {
         color: theme.neutral.a,
@@ -43,7 +43,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         statusText: 'Unsigned',
         showLabel: true,
         showBadge: false,
-      };
+      }
     case 'NONE':
     default:
       return {
@@ -52,7 +52,7 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         statusText: '',
         showLabel: false,
         showBadge: false,
-      };
+      }
   }
 }
 
@@ -70,10 +70,10 @@ const DocumentSignerListItem = ({
   onClickAddress,
 }: DocumentSignerListItemProps): React.ReactElement<any> => {
   const displaySignerAddress = useMemo(() => {
-    return formatAddress(signerAddress, 8);
-  }, [signerAddress]);
+    return formatAddress(signerAddress, 8)
+  }, [signerAddress])
 
-  const statusStyle = useMemo(() => getStatusStyle(status), [status]);
+  const statusStyle = useMemo(() => getStatusStyle(status), [status])
 
   return (
     <DocumentSignerListItemWrapper borderColor={statusStyle.color}>
@@ -104,7 +104,7 @@ const DocumentSignerListItem = ({
         </div>
       )}
     </DocumentSignerListItemWrapper>
-  );
-};
+  )
+}
 
-export default DocumentSignerListItem;
+export default DocumentSignerListItem

@@ -1,27 +1,27 @@
 import {
-  describe, it, vi,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
+} from '@testing-library/react'
 import {
   NetworkFeeSettingType,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it, vi,
+} from 'vitest'
 
 import {
   ApproveTransaction, ApproveTransactionProps,
-} from '.';
+} from '.'
 
 describe('ApproveTransaction Component', () => {
   it('ApproveTransaction render', () => {
@@ -34,7 +34,7 @@ describe('ApproveTransaction Component', () => {
       hasMemo: true,
       transactionMessages: [],
       changeTransactionMessages: () => {
-        return;
+        return
       },
       contracts: [
         {
@@ -52,22 +52,22 @@ describe('ApproveTransaction Component', () => {
       processing: false,
       done: false,
       changeMemo: () => {
-        return;
+        return
       },
       onResponse: () => {
-        return;
+        return
       },
       onTimeout: () => {
-        return;
+        return
       },
       onToggleTransactionData: () => {
-        return;
+        return
       },
       onClickConfirm: () => {
-        return;
+        return
       },
       onClickCancel: () => {
-        return;
+        return
       },
       openScannerLink: vi.fn(),
       useNetworkFeeReturn: {
@@ -94,20 +94,20 @@ describe('ApproveTransaction Component', () => {
         },
         gasAdjustment: '1.5',
         setGasAdjustment: () => {
-          return;
+          return
         },
         currentGasFeeRawAmount: 4800,
         changedGasInfo: null,
         networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
         networkFeeSettings: [],
         setNetworkFeeSetting: () => {
-          return;
+          return
         },
         save: () => {
-          return;
+          return
         },
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -116,6 +116,6 @@ describe('ApproveTransaction Component', () => {
           <ApproveTransaction {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

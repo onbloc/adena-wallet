@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconSetting = ({
   className,
@@ -25,7 +25,7 @@ const IconSetting = ({
         fill='#646486'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconSetting;
+export default IconSetting

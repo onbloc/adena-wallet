@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconMultisig = (): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='21' height='20' viewBox='0 0 21 20' fill='none'>
@@ -17,6 +19,6 @@ const IconMultisig = (): JSX.Element => (
     />
     <circle cx='17.5006' cy='11.7857' r='0.785714' fill='#212128' />
   </svg>
-);
+)
 
-export default IconMultisig;
+export default IconMultisig

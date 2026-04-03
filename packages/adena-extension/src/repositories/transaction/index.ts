@@ -1,3 +1,3 @@
-export * from './transaction-history-api';
-export * from './transaction-history-indexer';
-export * from './types';
+export * from './transaction-history-api'
+export * from './transaction-history-indexer'
+export * from './types'

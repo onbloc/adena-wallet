@@ -1,33 +1,33 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import ManageCollectionSearchInput, {
   ManageCollectionSearchInputProps,
-} from './manage-collection-search-input';
+} from './manage-collection-search-input'
 
 describe('ManageCollectionSearchInput Component', () => {
   it('ManageCollectionSearchInput render', () => {
     const args: ManageCollectionSearchInputProps = {
       keyword: 'as',
       onChangeKeyword: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -36,6 +36,6 @@ describe('ManageCollectionSearchInput Component', () => {
           <ManageCollectionSearchInput {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

@@ -1,8 +1,8 @@
 import {
   NetworkMetainfo,
-} from '@types';
+} from '@types'
 
-export type ChainMetainfoResponse = ChainMetainfoItem[];
+export type ChainMetainfoResponse = ChainMetainfoItem[]
 
 export interface ChainMetainfoItem {
   id: string
@@ -24,13 +24,13 @@ export class NetworkMetainfoMapper {
   public static fromChainMetainfoResponse(
     chainMetainfoResponse: ChainMetainfoResponse,
   ): NetworkMetainfo[] {
-    return chainMetainfoResponse.map(this.mappedNetworkMetainfo);
+    return chainMetainfoResponse.map(this.mappedNetworkMetainfo)
   }
 
   private static mappedNetworkMetainfo(chainMetainfoItem: ChainMetainfoItem): NetworkMetainfo {
     return {
       ...chainMetainfoItem,
       deleted: false,
-    };
+    }
   }
 }

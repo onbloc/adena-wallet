@@ -1,17 +1,17 @@
 import {
   BottomFixedButton,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   NetworkMetainfo,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 
-import AddCustomNetworkButton from '../add-custom-network-button/add-custom-network-button';
-import LoadingChangeNetwork from '../loading-change-network';
-import NetworkList from '../network-list/network-list';
+import AddCustomNetworkButton from '../add-custom-network-button/add-custom-network-button'
+import LoadingChangeNetwork from '../loading-change-network'
+import NetworkList from '../network-list/network-list'
 import {
   ChangeNetworkWrapper,
-} from './change-network.styles';
+} from './change-network.styles'
 
 export interface ChangeNetworkProps {
   loading: boolean
@@ -38,23 +38,23 @@ const ChangeNetwork: React.FC<ChangeNetworkProps> = ({
         <h4 className='title'>Change Network</h4>
         {loading
           ? (
-            <LoadingChangeNetwork />
-          )
+              <LoadingChangeNetwork />
+            )
           : (
-            <>
-              <NetworkList
-                currentNetworkId={currentNetworkId}
-                networkMetainfos={networkMetainfos}
-                changeNetwork={changeNetwork}
-                moveEditPage={moveEditPage}
-              />
-              <AddCustomNetworkButton onClick={moveAddPage} />
-            </>
-          )}
+              <>
+                <NetworkList
+                  currentNetworkId={currentNetworkId}
+                  networkMetainfos={networkMetainfos}
+                  changeNetwork={changeNetwork}
+                  moveEditPage={moveEditPage}
+                />
+                <AddCustomNetworkButton onClick={moveAddPage} />
+              </>
+            )}
       </div>
       <BottomFixedButton onClick={moveBack} />
     </ChangeNetworkWrapper>
-  );
-};
+  )
+}
 
-export default ChangeNetwork;
+export default ChangeNetwork

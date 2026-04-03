@@ -3,4 +3,4 @@ export type SeedPhraseInfo = {
   keyringId: string
   accountCount: number
   selected: boolean
-};
+}

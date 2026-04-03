@@ -1,12 +1,12 @@
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
-import React from 'react';
+} from '@tanstack/react-query'
+import React from 'react'
 
 import {
   ManageTokenListWrapper,
-} from './manage-token-list.styles';
-import ManageTokenListItem from './manage-token-list-item';
+} from './manage-token-list.styles'
+import ManageTokenListItem from './manage-token-list-item'
 
 export interface ManageTokenInfo {
   tokenId: string
@@ -62,7 +62,7 @@ const ManageTokenList: React.FC<ManageTokenListProps> = ({
         />
       ))}
     </ManageTokenListWrapper>
-  );
-};
+  )
+}
 
-export default ManageTokenList;
+export default ManageTokenList

@@ -5,11 +5,11 @@ import {
   GRC721Model,
   NetworkMetainfo,
   TokenModel,
-} from '@types';
+} from '@types'
 
 import {
   AppInfoResponse,
-} from './response';
+} from './response'
 
 export interface ITokenRepository extends IGRC721TokenRepository {
   supported: boolean

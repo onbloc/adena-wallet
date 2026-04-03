@@ -1,12 +1,14 @@
 import {
   Button, ButtonProps, Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   FontsType,
-} from '@styles/theme';
-import React, { type JSX } from 'react';
-import styled from 'styled-components';
+} from '@styles/theme'
+import React, {
+  type JSX,
+} from 'react'
+import styled from 'styled-components'
 
 interface EachButtonProps {
   onClick: () => void
@@ -36,7 +38,7 @@ const Wrapper = styled.div<WrapperStyleProps>`
   ${({
     margin,
   }): string | undefined => margin && `margin: ${margin}`};
-`;
+`
 
 export const DoubleButton = ({
   margin, leftProps, rightProps,
@@ -62,5 +64,5 @@ export const DoubleButton = ({
         <Text type={rightProps.fontType ?? 'body1Bold'}>{rightProps.text}</Text>
       </Button>
     </Wrapper>
-  );
-};
+  )
+}

@@ -1,56 +1,56 @@
-import link from '@assets/share.svg';
+import link from '@assets/share.svg'
 import {
   Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   useAdenaContext,
-} from '@hooks/use-context';
-import useLink from '@hooks/use-link';
+} from '@hooks/use-context'
+import useLink from '@hooks/use-link'
 import {
   ExploreState,
-} from '@states';
-import mixins from '@styles/mixins';
+} from '@states'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { useEffect, useState, type JSX } from 'react';
+} from '@styles/theme'
+import React, {
+  type JSX, useEffect, useState,
+} from 'react'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
-import LoadingExplore from './loading-explore';
+import LoadingExplore from './loading-explore'
 
 export const Explore = (): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     openLink,
-  } = useLink();
+  } = useLink()
   const {
     tokenService,
-  } = useAdenaContext();
-  const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites);
-  const [loading, setLoading] = useState(true);
+  } = useAdenaContext()
+  const [exploreSites, setExploreSites] = useRecoilState(ExploreState.sites)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (exploreSites.length === 0) {
-      initExploreSties().finally(() => setLoading(false));
+      initExploreSties().finally(() => setLoading(false))
+    } else {
+      setLoading(false)
     }
-    else {
-      setLoading(false);
-    }
-  }, [exploreSites]);
+  }, [exploreSites])
 
   async function initExploreSties(): Promise<void> {
     try {
-      const response = await tokenService.getAppInfos();
-      const exploreSites = response.filter(site => site.display).sort(site => site.order);
-      Promise.all([...exploreSites]).then(setExploreSites);
-    }
-    catch (error) {
-      console.error(error);
+      const response = await tokenService.getAppInfos()
+      const exploreSites = response.filter(site => site.display).sort(site => site.order)
+      Promise.all([...exploreSites]).then(setExploreSites)
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -61,41 +61,41 @@ export const Explore = (): JSX.Element => {
       </Text>
       {loading || exploreSites.length === 0
         ? (
-          <LoadingExplore />
-        )
+            <LoadingExplore />
+          )
         : (
-          exploreSites.map((exploreSite, index) => (
-            <BoxContainer key={index}>
-              <img src={exploreSite.logo} alt='logo-image' />
-              <Contents>
-                <Text type='body2Bold'>{exploreSite.name}</Text>
-                <Text type='captionReg' color={theme.neutral.a}>
-                  {exploreSite.description}
-                </Text>
-              </Contents>
-              <MoveToLink
-                src={link}
-                alt='move to link'
-                onClick={(): void => openLink(exploreSite.link)}
-              />
-            </BoxContainer>
-          ))
-        )}
+            exploreSites.map((exploreSite, index) => (
+              <BoxContainer key={index}>
+                <img src={exploreSite.logo} alt='logo-image' />
+                <Contents>
+                  <Text type='body2Bold'>{exploreSite.name}</Text>
+                  <Text type='captionReg' color={theme.neutral.a}>
+                    {exploreSite.description}
+                  </Text>
+                </Contents>
+                <MoveToLink
+                  src={link}
+                  alt='move to link'
+                  onClick={(): void => openLink(exploreSite.link)}
+                />
+              </BoxContainer>
+            ))
+          )}
     </Wrapper>
-  );
-};
+  )
+}
 
 const MoveToLink = styled.img`
   margin-left: auto;
   cursor: pointer;
-`;
+`
 
 const Contents = styled.div`
   ${mixins.flex({
     align: 'flex-start',
   })};
   margin-left: 12px;
-`;
+`
 
 const BoxContainer = styled.div`
   ${mixins.flex({
@@ -109,7 +109,7 @@ const BoxContainer = styled.div`
   border-radius: 18px;
   margin-bottom: 12px;
   cursor: default;
-`;
+`
 
 const Wrapper = styled.main`
   ${mixins.flex({
@@ -124,4 +124,4 @@ const Wrapper = styled.main`
   & .explore-title {
     margin-bottom: 12px;
   }
-`;
+`

@@ -1,1 +1,1 @@
-export * from './additional-token-type-selector';
+export * from './additional-token-type-selector'

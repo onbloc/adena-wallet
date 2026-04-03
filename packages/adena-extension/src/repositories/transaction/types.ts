@@ -1,12 +1,12 @@
 import {
   Tx,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   TransactionWithPageInfo,
-} from '@types';
+} from '@types'
 
 export interface ITransactionGasRepository {
   fetchGasPrices: () => Promise<number | null>

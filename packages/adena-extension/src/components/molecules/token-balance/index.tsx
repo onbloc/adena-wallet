@@ -1,14 +1,14 @@
 import {
   HighlightNumber,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   FontsType,
-} from '@styles/theme';
-import React from 'react';
+} from '@styles/theme'
+import React from 'react'
 
 import {
   TokenBalanceWrapper,
-} from './token-balance.styles';
+} from './token-balance.styles'
 
 export interface TokenBalanceProps {
   value: string
@@ -54,5 +54,5 @@ export const TokenBalance: React.FC<TokenBalanceProps> = ({
         <span className='denom'>{denom}</span>
       </div>
     </TokenBalanceWrapper>
-  );
-};
+  )
+}

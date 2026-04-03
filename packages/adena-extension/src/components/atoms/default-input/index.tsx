@@ -1,9 +1,9 @@
 import {
   fonts, getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import styled, {
   css,
-} from 'styled-components';
+} from 'styled-components'
 
 interface InputProps {
   error?: boolean
@@ -25,7 +25,7 @@ export const inputStyle = css`
     color: ${getTheme('neutral', 'a')};
     letter-spacing: 0px;
   }
-`;
+`
 
 export const DefaultInput = styled.input.withConfig({
   shouldForwardProp: prop => !['error', 'margin'].includes(prop),
@@ -37,4 +37,4 @@ export const DefaultInput = styled.input.withConfig({
   margin: ${({
     margin,
   }): string | undefined => margin && margin};
-`;
+`

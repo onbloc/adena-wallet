@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 export const IconAddressBookLarge = ({
   className,
@@ -66,8 +66,8 @@ export const IconAddressBookLarge = ({
         </clipPath>
       </defs>
     </svg>
-  );
-};
+  )
+}
 
 export const IconAddressBookSmall = ({
   className,
@@ -133,5 +133,5 @@ export const IconAddressBookSmall = ({
         </clipPath>
       </defs>
     </svg>
-  );
-};
+  )
+}

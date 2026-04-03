@@ -1,16 +1,16 @@
 import {
   AdenaResponse,
-} from '.';
+} from '.'
 
 export type AddNetworkParams = {
   chainId: string
   chainName: string
   rpcUrl: string
-};
+}
 
-export type AddNetworkResponse = AdenaResponse<AddNetworkParams>;
+export type AddNetworkResponse = AdenaResponse<AddNetworkParams>
 
-export type AdenaAddNetwork = (network: AddNetworkParams) => Promise<AddNetworkResponse>;
+export type AdenaAddNetwork = (network: AddNetworkParams) => Promise<AddNetworkResponse>
 
 export enum SwitchNetworkResponseType {
   SWITCH_NETWORK_SUCCESS = 'SWITCH_NETWORK_SUCCESS',
@@ -22,9 +22,9 @@ interface SwitchNetworkResponseData {
   chainId: string
 }
 
-export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>;
+export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>
 
-export type AdenaSwitchNetwork = (chainId: string) => Promise<SwitchNetworkResponse>;
+export type AdenaSwitchNetwork = (chainId: string) => Promise<SwitchNetworkResponse>
 
 interface GetNetworkResponseData {
   chainId: string
@@ -34,4 +34,4 @@ interface GetNetworkResponseData {
   indexerUrl: string | null
 }
 
-export type GetNetworkResponse = AdenaResponse<GetNetworkResponseData>;
+export type GetNetworkResponse = AdenaResponse<GetNetworkResponseData>

@@ -1,20 +1,21 @@
-import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
+import AnimationLoginFailed from '@assets/web/lottie/login-failed.json'
 import {
   View, WebButton,
-} from '@components/atoms';
-import Lottie from '@components/atoms/lottie';
+} from '@components/atoms'
+import Lottie from '@components/atoms/lottie'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
-import styled from 'styled-components';
-
-import type { JSX } from "react";
+} from '@components/molecules'
+import type {
+  JSX,
+} from 'react'
+import styled from 'styled-components'
 
 const StyledContainer = styled(View)`
   row-gap: 24px;
   width: 100%;
   align-items: center;
-`;
+`
 
 interface Props {
   retry: () => void
@@ -51,7 +52,7 @@ export const ConnectFail = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default ConnectFail;
+export default ConnectFail

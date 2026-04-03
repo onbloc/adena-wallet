@@ -1,9 +1,9 @@
 import {
   CSSProperties,
-} from 'react';
+} from 'react'
 import {
   css, CSSProp,
-} from 'styled-components';
+} from 'styled-components'
 
 export type MixinsType = {
   /**
@@ -20,7 +20,7 @@ export type MixinsType = {
   posTopCenterRight: (right?: string) => CSSProp
   posTopCenterLeft: (left?: string) => CSSProp
   posTopLeft: (top?: string) => CSSProp
-};
+}
 
 const mixins: MixinsType = {
   flex: props => css`
@@ -52,6 +52,6 @@ const mixins: MixinsType = {
     top: ${top};
     left: 0px;
   `,
-} as const;
+} as const
 
-export default mixins;
+export default mixins

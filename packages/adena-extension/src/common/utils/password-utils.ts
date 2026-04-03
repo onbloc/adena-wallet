@@ -1,4 +1,4 @@
-import zxcvbn from 'zxcvbn';
+import zxcvbn from 'zxcvbn'
 
 export interface EvaluatePasswordResult {
   valid: boolean
@@ -15,24 +15,24 @@ export interface EvaluatePasswordResult {
 export function evaluatePassword(password: string): EvaluatePasswordResult {
   const {
     score,
-  } = zxcvbn(password);
+  } = zxcvbn(password)
 
   function getComplexityByScore(score: number): 'DISABLED' | 'WEEK' | 'MEDIUM' | 'STRONG' {
     if (score > 2) {
-      return 'STRONG';
+      return 'STRONG'
     }
     if (score > 1) {
-      return 'MEDIUM';
+      return 'MEDIUM'
     }
-    return 'DISABLED';
+    return 'DISABLED'
   }
 
-  const valid = score > 1;
-  const complexity = getComplexityByScore(score);
+  const valid = score > 1
+  const complexity = getComplexityByScore(score)
 
   return {
     valid,
     score,
     complexity,
-  };
+  }
 }

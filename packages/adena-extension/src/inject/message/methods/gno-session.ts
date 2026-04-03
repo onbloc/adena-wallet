@@ -27,10 +27,10 @@ export interface GnoSessionState {
   tabId: number
 }
 
-export type GnoActionMode = 'fast' | 'secure';
+export type GnoActionMode = 'fast' | 'secure'
 
 // Message types for communication between content script and background
-export type GnoSessionUpdateType = 'params' | 'mode' | 'address' | 'init';
+export type GnoSessionUpdateType = 'params' | 'mode' | 'address' | 'init'
 
 export interface GnoSessionUpdateData {
   sessionId: string

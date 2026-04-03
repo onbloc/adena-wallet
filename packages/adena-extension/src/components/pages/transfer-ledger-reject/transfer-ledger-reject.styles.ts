@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins';
-import styled from 'styled-components';
+import mixins from '@styles/mixins'
+import styled from 'styled-components'
 
 export const TransferLedgerRejectWrapper = styled.div`
   ${mixins.flex({
@@ -25,4 +25,4 @@ export const TransferLedgerRejectWrapper = styled.div`
     position: absolute;
     bottom: 0;
   }
-`;
+`

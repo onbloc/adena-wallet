@@ -1,1 +1,1 @@
-export * from './app-reload-fallback';
+export * from './app-reload-fallback'

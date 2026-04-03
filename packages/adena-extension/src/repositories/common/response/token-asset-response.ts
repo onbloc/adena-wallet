@@ -1,7 +1,7 @@
-export type NativeTokenResponse = NativeTokenInfo[];
-export type GRC20TokenResponse = GRC20TokenInfo[];
-export type IBCNativeTokenResponse = IBCNativeTokenInfo[];
-export type IBCTokenResponse = IBCTokenInfo[];
+export type NativeTokenResponse = NativeTokenInfo[]
+export type GRC20TokenResponse = GRC20TokenInfo[]
+export type IBCNativeTokenResponse = IBCNativeTokenInfo[]
+export type IBCTokenResponse = IBCTokenInfo[]
 
 interface TokenInfo {
   name: string

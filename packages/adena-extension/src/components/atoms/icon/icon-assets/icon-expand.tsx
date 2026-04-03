@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconExpand = ({
   className,
@@ -23,7 +23,7 @@ const IconExpand = ({
         fill='#212128'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconExpand;
+export default IconExpand

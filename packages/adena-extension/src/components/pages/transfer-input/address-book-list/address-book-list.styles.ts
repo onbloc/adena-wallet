@@ -1,8 +1,8 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const AddressBookListWrapper = styled.div`
   ${mixins.flex({
@@ -19,7 +19,7 @@ export const AddressBookListWrapper = styled.div`
     align-items: center;
     padding: 13px 16px;
   }
-`;
+`
 
 export const AddressBookListItemWrapper = styled.div`
   ${mixins.flex({
@@ -44,4 +44,4 @@ export const AddressBookListItemWrapper = styled.div`
   .address {
     color: ${getTheme('neutral', 'a')};
   }
-`;
+`

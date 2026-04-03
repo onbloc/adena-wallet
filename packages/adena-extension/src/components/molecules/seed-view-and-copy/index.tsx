@@ -1,14 +1,16 @@
 import {
   Button, Copy, Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { useCallback, type JSX } from 'react';
+} from '@styles/theme'
+import React, {
+  type JSX, useCallback,
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 interface SeedViewAndCopyProps {
   showBlurScreen: boolean
@@ -23,10 +25,10 @@ export const SeedViewAndCopy = ({
   copyStr,
   toggleText,
 }: SeedViewAndCopyProps): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   const blurScreenHandler = useCallback(() => {
-    setShowBlurScreen((prev: boolean) => !prev);
-  }, [showBlurScreen]);
+    setShowBlurScreen((prev: boolean) => !prev)
+  }, [showBlurScreen])
 
   return (
     <Wrapper>
@@ -35,8 +37,8 @@ export const SeedViewAndCopy = ({
       </ButtonStyle>
       <Copy copyStr={copyStr} />
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.div`
   ${mixins.flex({
@@ -46,7 +48,7 @@ const Wrapper = styled.div`
   width: 100%;
   margin: 12px auto auto;
   padding: 0px 45px;
-`;
+`
 
 const ButtonStyle = styled(Button)`
   ${mixins.flex({
@@ -59,4 +61,4 @@ const ButtonStyle = styled(Button)`
   &:hover {
     background-color: ${getTheme('neutral', 'b')};
   }
-`;
+`

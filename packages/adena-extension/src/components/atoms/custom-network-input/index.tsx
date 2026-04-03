@@ -1,10 +1,10 @@
 import React, {
   useCallback, useMemo,
-} from 'react';
+} from 'react'
 
 import {
   CustomNetworkInputWrapper,
-} from './custom-network-input.styles';
+} from './custom-network-input.styles'
 
 export interface CustomNetworkInputProps {
   name: string
@@ -36,36 +36,36 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
   changeChainId,
 }) => {
   const readonlyNetworkName = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+    return editType === 'rpc-only'
+  }, [editType])
 
   const readonlyRPCUrl = useMemo(() => {
-    return false;
-  }, [editType]);
+    return false
+  }, [editType])
 
   const readonlyChainId = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+    return editType === 'rpc-only'
+  }, [editType])
 
   const readonlyIndexerUrl = useMemo(() => {
-    return editType === 'rpc-only';
-  }, [editType]);
+    return editType === 'rpc-only'
+  }, [editType])
 
   const onChangeName = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeName(event.target.value);
-  }, []);
+    changeName(event.target.value)
+  }, [])
 
   const onChangeRPCUrl = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeRPCUrl(event.target.value.replace(/ /g, ''));
-  }, []);
+    changeRPCUrl(event.target.value.replace(/ /g, ''))
+  }, [])
 
   const onChangeIndexerUrl = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeIndexerUrl(event.target.value.replace(/ /g, ''));
-  }, []);
+    changeIndexerUrl(event.target.value.replace(/ /g, ''))
+  }, [])
 
   const onChangeChainId = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    changeChainId(event.target.value.replace(/ /g, ''));
-  }, []);
+    changeChainId(event.target.value.replace(/ /g, ''))
+  }, [])
 
   return (
     <CustomNetworkInputWrapper>
@@ -115,5 +115,5 @@ export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({
         {indexerUrlError && <span className='error-message'>{indexerUrlError}</span>}
       </div>
     </CustomNetworkInputWrapper>
-  );
-};
+  )
+}

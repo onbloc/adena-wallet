@@ -1,6 +1,6 @@
 import {
   GnoConnectInfo, GnoMessageInfo,
-} from './gno-connect';
+} from './gno-connect'
 
 /**
  * Interceptor execution result
@@ -36,4 +36,4 @@ export interface InterceptorContext {
 export type InterceptorHandler = (
   gnoMessageInfo: GnoMessageInfo,
   context: InterceptorContext,
-) => Promise<void> | void;
+) => Promise<void> | void

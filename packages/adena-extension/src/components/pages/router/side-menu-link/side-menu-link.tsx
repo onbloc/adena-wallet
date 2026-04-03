@@ -1,8 +1,8 @@
-import React from 'react';
+import React from 'react'
 
 import {
   SideMenuLinkWrapper,
-} from './side-menu-link.styles';
+} from './side-menu-link.styles'
 
 export interface SideMenuLinkProps {
   icon: string
@@ -20,7 +20,7 @@ const SideMenuLink: React.FC<SideMenuLinkProps> = ({
       <img className='icon' src={icon} alt='icon' />
       <span className='title'>{text}</span>
     </SideMenuLinkWrapper>
-  );
-};
+  )
+}
 
-export default SideMenuLink;
+export default SideMenuLink

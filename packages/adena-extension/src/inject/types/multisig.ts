@@ -1,16 +1,16 @@
 import {
   BroadcastTxCommitResult,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   RawTx,
-} from 'adena-module';
+} from 'adena-module'
 
 import {
   AdenaResponse,
-} from './common';
+} from './common'
 import {
   BaseDocument, TransactionParams,
-} from './transactions';
+} from './transactions'
 
 export interface Message {
   type: string
@@ -56,7 +56,7 @@ export enum SignerStatusType {
 export type SignerInfo = {
   address: string
   status: SignerStatusType
-};
+}
 
 export interface StandardDocument extends BaseDocument {
   account_number: string
@@ -92,12 +92,12 @@ export interface MultisigAccountResult {
 export type CreateMultisigAccountResponseData = {
   multisigAddress: string
   multisigAddressBytes: Uint8Array
-};
+}
 
 /**
  * Response for creating a multisig account
  */
-export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountResponseData>;
+export type CreateMultisigAccountResponse = AdenaResponse<CreateMultisigAccountResponseData>
 
 /**
  * Parameters for creating a multisig transaction
@@ -114,14 +114,14 @@ export interface CreateMultisigTransactionParams extends TransactionParams {
  */
 export type CreateMultisigTransactionResponseData = {
   tx: RawTx
-};
+}
 
 /**
  * Response for creating a multisig transaction document
  */
 export type CreateMultisigTransactionResponse = AdenaResponse<
   CreateMultisigTransactionResponseData
->;
+>
 
 /**
  * Response data for signing a multisig document
@@ -132,24 +132,24 @@ export type SignMultisigTransactionResponseData = {
     multisigSignatures: Signature[]
   }
   signature: Signature
-};
+}
 
 /**
  * Response for signing a multisig document
  */
-export type SignMultisigTransactionResponse = AdenaResponse<SignMultisigTransactionResponseData>;
+export type SignMultisigTransactionResponse = AdenaResponse<SignMultisigTransactionResponseData>
 
 /**
  * Response data for broadcasting a multisig transaction
  */
-export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult;
+export type BroadcastMultisigTransactionResponseData = BroadcastTxCommitResult
 
 /**
  * Response for broadcasting a multisig transaction
  */
 export type BroadcastMultisigTransactionResponse = AdenaResponse<
   BroadcastMultisigTransactionResponseData
->;
+>
 
 export interface UnsignedTransaction {
   msgs: Array<{

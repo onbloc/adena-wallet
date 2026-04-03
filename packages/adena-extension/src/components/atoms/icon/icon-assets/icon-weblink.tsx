@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconWebLink = ({
   className,
@@ -21,7 +21,7 @@ const IconWebLink = ({
         fill='white'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconWebLink;
+export default IconWebLink

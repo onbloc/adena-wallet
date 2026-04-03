@@ -1,1 +1,1 @@
-export * from './account-initialization';
+export * from './account-initialization'

@@ -1,16 +1,16 @@
-import IconEditCancel from '@assets/icon-edit-cancel';
-import IconEditConfirm from '@assets/icon-edit-confirm';
-import IconPencil from '@assets/icon-pencil';
+import IconEditCancel from '@assets/icon-edit-cancel'
+import IconEditConfirm from '@assets/icon-edit-confirm'
+import IconPencil from '@assets/icon-pencil'
 import {
   reverseString,
-} from '@common/utils/string-utils';
+} from '@common/utils/string-utils'
 import React, {
   useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 
 import {
   ArgumentEditBoxWrapper,
-} from './argument-edit-box.styles';
+} from './argument-edit-box.styles'
 
 export interface ArgumentEditBoxProps {
   editRightMargin?: number
@@ -19,7 +19,7 @@ export interface ArgumentEditBoxProps {
   editable?: boolean
 }
 
-type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none';
+type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none'
 
 const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   value,
@@ -27,136 +27,135 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   editRightMargin = -18,
   editable = true,
 }) => {
-  const [editableValue, setEditableValue] = useState(false);
-  const [editValue, setEditValue] = useState(value);
-  const [editState, setEditState] = useState<EditStateType>('none');
+  const [editableValue, setEditableValue] = useState(false)
+  const [editValue, setEditValue] = useState(value)
+  const [editState, setEditState] = useState<EditStateType>('none')
 
   const displayValue = useMemo(() => {
     if (!value) {
-      return '';
+      return ''
     }
 
-    return reverseString(value);
-  }, [value]);
+    return reverseString(value)
+  }, [value])
 
   const activateEditMode = (): void => {
-    setEditableValue(true);
-  };
+    setEditableValue(true)
+  }
 
   const deactivateEditMode = (): void => {
-    setEditableValue(false);
-  };
+    setEditableValue(false)
+  }
 
   const saveEdit = (): void => {
     if (!editableValue) {
-      return;
+      return
     }
 
-    deactivateEditMode();
-    onChange(editValue);
-  };
+    deactivateEditMode()
+    onChange(editValue)
+  }
 
   const cancelEdit = (): void => {
-    deactivateEditMode();
-    setEditValue(value);
-  };
+    deactivateEditMode()
+    setEditValue(value)
+  }
 
   const changeEditValue = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (!editableValue) {
-      return;
+      return
     }
 
-    setEditValue(e.target.value);
-  };
+    setEditValue(e.target.value)
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (!editableValue) {
-      return;
+      return
     }
 
     if (e.key === 'Enter') {
-      saveEdit();
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      cancelEdit()
     }
-    else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
+  }
 
   const onClickEditConfirm = (e: React.MouseEvent<HTMLDivElement>): void => {
-    e.preventDefault();
-    e.stopPropagation();
-    setEditState('confirm');
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setEditState('confirm')
+  }
 
   const onClickEditCancel = (e: React.MouseEvent<HTMLDivElement>): void => {
-    e.preventDefault();
-    e.stopPropagation();
-    setEditState('cancel');
-  };
+    e.preventDefault()
+    e.stopPropagation()
+    setEditState('cancel')
+  }
 
   const onBlurEdit = (): void => {
-    setEditState('blur');
-  };
+    setEditState('blur')
+  }
 
   useEffect(() => {
     switch (editState) {
       case 'none':
-        return;
+        return
       case 'cancel':
-        cancelEdit();
-        break;
+        cancelEdit()
+        break
       case 'blur':
       case 'confirm':
-        saveEdit();
-        break;
+        saveEdit()
+        break
     }
 
-    setEditState('none');
-    setEditableValue(false);
-  }, [editState]);
+    setEditState('none')
+    setEditableValue(false)
+  }, [editState])
 
   const marginRight = useMemo(() => {
     if (editableValue) {
-      return editRightMargin;
+      return editRightMargin
     }
 
-    return 0;
-  }, [editableValue, editRightMargin]);
+    return 0
+  }, [editableValue, editRightMargin])
 
   return (
     <ArgumentEditBoxWrapper $marginRight={marginRight}>
       {editableValue
         ? (
-          <div className='editable-wrapper'>
-            <input
-              className='edit-input'
-              value={editValue}
-              onChange={changeEditValue}
-              onKeyDown={handleKeyDown}
-              onBlur={onBlurEdit}
-            />
-            <div className='button-wrapper'>
-              <div className='icon-wrapper' onMouseDown={onClickEditConfirm}>
-                <IconEditConfirm className='edit-confirm-icon' />
-              </div>
-              <div className='icon-wrapper' onMouseDown={onClickEditCancel}>
-                <IconEditCancel className='edit-cancel-icon' />
+            <div className='editable-wrapper'>
+              <input
+                className='edit-input'
+                value={editValue}
+                onChange={changeEditValue}
+                onKeyDown={handleKeyDown}
+                onBlur={onBlurEdit}
+              />
+              <div className='button-wrapper'>
+                <div className='icon-wrapper' onMouseDown={onClickEditConfirm}>
+                  <IconEditConfirm className='edit-confirm-icon' />
+                </div>
+                <div className='icon-wrapper' onMouseDown={onClickEditCancel}>
+                  <IconEditCancel className='edit-cancel-icon' />
+                </div>
               </div>
             </div>
-          </div>
-        )
+          )
         : (
-          <div className='display-wrapper'>
-            <span className='display-value'>{displayValue}</span>
-            {editable && (
-              <div className='icon-wrapper' onClick={activateEditMode}>
-                <IconPencil className='edit-icon' />
-              </div>
-            )}
-          </div>
-        )}
+            <div className='display-wrapper'>
+              <span className='display-value'>{displayValue}</span>
+              {editable && (
+                <div className='icon-wrapper' onClick={activateEditMode}>
+                  <IconPencil className='edit-icon' />
+                </div>
+              )}
+            </div>
+          )}
     </ArgumentEditBoxWrapper>
-  );
-};
+  )
+}
 
-export default ArgumentEditBox;
+export default ArgumentEditBox

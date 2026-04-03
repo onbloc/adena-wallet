@@ -1,17 +1,17 @@
-import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image';
+import NFTCardImage from '@components/molecules/nft-card-image/nft-card-image'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   GRC721Model,
-} from '@types';
+} from '@types'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   NFTAssetImageCardWrapper,
-} from './nft-asset-image-card.styles';
+} from './nft-asset-image-card.styles'
 
 export interface NFTAssetImageCardProps {
   asset: GRC721Model
@@ -34,21 +34,21 @@ const NFTAssetImageCard: React.FC<NFTAssetImageCardProps> = ({
       enabled: asset.isTokenUri,
       refetchOnMount: true,
     },
-  );
+  )
 
   const isFetchedTokenUriWithEnabled = useMemo(() => {
     if (asset.isTokenUri) {
-      return true;
+      return true
     }
 
-    return isFetchedTokenUri;
-  }, [asset, isFetchedTokenUri]);
+    return isFetchedTokenUri
+  }, [asset, isFetchedTokenUri])
 
   return (
     <NFTAssetImageCardWrapper>
       <NFTCardImage image={tokenUri} isFetched={isFetchedTokenUriWithEnabled} />
     </NFTAssetImageCardWrapper>
-  );
-};
+  )
+}
 
-export default NFTAssetImageCard;
+export default NFTAssetImageCard

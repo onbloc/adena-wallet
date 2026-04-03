@@ -1,7 +1,7 @@
-import IconRight from '@assets/icon-right';
-import React from 'react';
+import IconRight from '@assets/icon-right'
+import React from 'react'
 
-import * as S from './document-signer.styles';
+import * as S from './document-signer.styles'
 
 interface DocumentSignerProps {
   signerCount: number
@@ -12,7 +12,7 @@ const DocumentSigner = ({
   signerCount,
   onClickSetting,
 }: DocumentSignerProps): React.ReactElement<any> => {
-  const hasSetting = !!onClickSetting;
+  const hasSetting = !!onClickSetting
   return (
     <S.DocumentSignersContainer>
       <S.DocumentSignersWrapper>
@@ -28,7 +28,7 @@ const DocumentSigner = ({
         </div>
       </S.DocumentSignersWrapper>
     </S.DocumentSignersContainer>
-  );
-};
+  )
+}
 
-export default DocumentSigner;
+export default DocumentSigner

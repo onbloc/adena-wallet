@@ -1,13 +1,13 @@
-import CancelIcon from '@assets/cancel-small.svg';
-import TransferAddressBookIcon from '@assets/transfer-address-book.svg';
-import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list';
+import CancelIcon from '@assets/cancel-small.svg'
+import TransferAddressBookIcon from '@assets/transfer-address-book.svg'
+import AddressBookList from '@components/pages/transfer-input/address-book-list/address-book-list'
 import React, {
   useEffect, useRef,
-} from 'react';
+} from 'react'
 
 import {
   AddressInputWrapper,
-} from './address-input.styles';
+} from './address-input.styles'
 
 export interface AddressInputProps {
   opened: boolean
@@ -40,37 +40,37 @@ const AddressInput: React.FC<AddressInputProps> = ({
   onChangeAddress,
   onClickAddressBook,
 }) => {
-  const addressInputRef = useRef<HTMLTextAreaElement>(null);
+  const addressInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (addressInputRef.current) {
-      addressInputRef.current.style.height = 'auto';
-      addressInputRef.current.style.height = `${addressInputRef.current.scrollHeight}px`;
+      addressInputRef.current.style.height = 'auto'
+      addressInputRef.current.style.height = `${addressInputRef.current.scrollHeight}px`
     }
-  }, [address]);
+  }, [address])
 
   return (
     <AddressInputWrapper className={`${hasError ? 'error' : ''} ${opened ? 'opened' : ''}`}>
       <div className='input-wrapper'>
         {selected
           ? (
-            <div className='selected-title-wrapper'>
-              <span className='name'>{selectedName}</span>
-              <span className='description'>{selectedDescription}</span>
-            </div>
-          )
+              <div className='selected-title-wrapper'>
+                <span className='name'>{selectedName}</span>
+                <span className='description'>{selectedDescription}</span>
+              </div>
+            )
           : (
-            <textarea
-              ref={addressInputRef}
-              className='address-input'
-              value={address}
-              onChange={(event): void => onChangeAddress(event.target.value)}
-              placeholder='Recipient’s Gno.land Address'
-              autoComplete='off'
-              maxLength={40}
-              rows={1}
-            />
-          )}
+              <textarea
+                ref={addressInputRef}
+                className='address-input'
+                value={address}
+                onChange={(event): void => onChangeAddress(event.target.value)}
+                placeholder='Recipient’s Gno.land Address'
+                autoComplete='off'
+                maxLength={40}
+                rows={1}
+              />
+            )}
 
         <div
           className='address-book-icon-wrapper'
@@ -94,7 +94,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
 
       {hasError && <span className='error-message'>{errorMessage}</span>}
     </AddressInputWrapper>
-  );
-};
+  )
+}
 
-export default AddressInput;
+export default AddressInput

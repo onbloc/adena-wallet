@@ -1,5 +1,0 @@
-import{i as e}from"./_polyfill-node.global-CL4hvcq6.js";import{n as t,t as n}from"./additional-token-search-list-BnGdvOG8.js";var r,i,a,o;e((()=>{t(),r={title:`components/manage-token/AdditionalTokenSearchList`,component:n},i=[{tokenId:`token1`,name:`GnoSwap`,symbol:`GNS`,chainId:`test3`,path:`gno.land/gnoswap`,pathInfo:`gnoswap`,decimals:6},{tokenId:`token2`,name:`Gnoswim`,symbol:`SWIM`,chainId:`test3`,path:`gno.land/gnoswim`,pathInfo:`gnoswim`,decimals:6},{tokenId:`token3`,name:`Gnosmosi`,symbol:`OSMO`,chainId:`test3`,path:`gno.land/gnosmo.`,pathInfo:`gnosmo.`,decimals:6},{tokenId:`token4`,name:`Gnostu..`,symbol:`GNOSTU`,chainId:`test3`,path:`o.land/gnostuck`,pathInfo:`gnostuck`,decimals:6}],a={args:{tokenInfos:i}},a.parameters={...a.parameters,docs:{...a.parameters?.docs,source:{originalSource:`{
-  args: {
-    tokenInfos: tokenInfos
-  }
-}`,...a.parameters?.docs?.source}}},o=[`Default`]}))();export{a as Default,o as __namedExportsOrder,r as default};

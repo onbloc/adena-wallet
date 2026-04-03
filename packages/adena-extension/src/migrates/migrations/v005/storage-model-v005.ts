@@ -1,7 +1,7 @@
 export type StorageModelV005 = {
   version: 5
   data: StorageModelDataV005
-};
+}
 
 export type StorageModelDataV005 = {
   NETWORKS: NetworksModelV005
@@ -17,7 +17,7 @@ export type StorageModelDataV005 = {
   QUESTIONNAIRE_EXPIRED_DATE: QuestionnaireExpiredDateModelV005
   WALLET_CREATION_GUIDE_CONFIRM_DATE: WalletCreationGuideConfirmDateModelV005
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: AddAccountGuideConfirmDateModelV005
-};
+}
 
 export type NetworksModelV005 = {
   id: string
@@ -33,25 +33,25 @@ export type NetworksModelV005 = {
   apiUrl: string
   linkUrl: string
   deleted?: boolean
-}[];
+}[]
 
-export type CurrentChainIdModelV005 = string;
+export type CurrentChainIdModelV005 = string
 
-export type CurrentNetworkIdModelV005 = string;
+export type CurrentNetworkIdModelV005 = string
 
-export type SerializedModelV005 = string;
+export type SerializedModelV005 = string
 
-export type QuestionnaireExpiredDateModelV005 = number | null;
+export type QuestionnaireExpiredDateModelV005 = number | null
 
-export type WalletCreationGuideConfirmDateModelV005 = number | null;
+export type WalletCreationGuideConfirmDateModelV005 = number | null
 
-export type AddAccountGuideConfirmDateModelV005 = number | null;
+export type AddAccountGuideConfirmDateModelV005 = number | null
 
 export type WalletModelV005 = {
   accounts: AccountDataModelV005[]
   keyrings: KeyringDataModelV005[]
   currentAccountId?: string
-};
+}
 
 type AccountDataModelV005 = {
   id?: string
@@ -62,7 +62,7 @@ type AccountDataModelV005 = {
   hdPath?: number
   publicKey: number[]
   addressBytes?: number[]
-};
+}
 
 type KeyringDataModelV005 = {
   id?: string
@@ -72,13 +72,13 @@ type KeyringDataModelV005 = {
   seed?: number[]
   mnemonic?: string
   addressBytes?: number[]
-};
+}
 
-export type EncryptedStoredPasswordModelV005 = string;
+export type EncryptedStoredPasswordModelV005 = string
 
-export type CurrentAccountIdModelV005 = string;
+export type CurrentAccountIdModelV005 = string
 
-export type AccountNamesModelV005 = { [key in string]: string };
+export type AccountNamesModelV005 = { [key in string]: string }
 
 export type EstablishSitesModelV005 = {
   [key in string]: {
@@ -89,9 +89,9 @@ export type EstablishSitesModelV005 = {
     favicon: string | null
     establishedTime: string
   }[];
-};
+}
 
-export type AddressBookModelV005 = string;
+export type AddressBookModelV005 = string
 
 export type AccountTokenMetainfoModelV005 = {
   [key in string]: {
@@ -115,4 +115,4 @@ export type AccountTokenMetainfoModelV005 = {
     channel?: string
     port?: string
   }[];
-};
+}

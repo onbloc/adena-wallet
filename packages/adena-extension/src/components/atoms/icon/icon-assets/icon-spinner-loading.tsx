@@ -1,9 +1,9 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 import styled, {
   keyframes,
-} from 'styled-components';
+} from 'styled-components'
 
 const rotate = keyframes`
   from {
@@ -16,14 +16,14 @@ const rotate = keyframes`
     -o-transform: rotate(360deg);
     transform: rotate(360deg);
   }
-`;
+`
 
 const SVG = styled.svg`
   width: 00px;
   height: 00px;
   margin: 0 auto;
   animation: ${rotate} 1.5s infinite;
-`;
+`
 
 const IconSpinnerLoading = ({
   className,
@@ -61,7 +61,7 @@ const IconSpinnerLoading = ({
         </linearGradient>
       </defs>
     </SVG>
-  );
-};
+  )
+}
 
-export default IconSpinnerLoading;
+export default IconSpinnerLoading

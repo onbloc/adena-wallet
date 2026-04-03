@@ -1,7 +1,7 @@
 import {
   getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const NFTCollectionAssetsWrapper = styled.div`
   position: relative;
@@ -27,4 +27,4 @@ export const NFTCollectionAssetsWrapper = styled.div`
     left: 0;
     background-color: ${getTheme('neutral', '_8')};
   }
-`;
+`

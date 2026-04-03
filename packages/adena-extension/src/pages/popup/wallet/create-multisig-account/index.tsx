@@ -2,112 +2,112 @@ import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
-} from '@adena-wallet/sdk';
+} from '@adena-wallet/sdk'
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   CreateMultisigAccount,
-} from '@components/molecules/create-multisig-account';
+} from '@components/molecules/create-multisig-account'
 import {
   useAdenaContext,
-} from '@hooks/use-context';
+} from '@hooks/use-context'
 import {
   useCurrentAccount,
-} from '@hooks/use-current-account';
+} from '@hooks/use-current-account'
 import {
   InjectionMessage, InjectionMessageInstance,
-} from '@inject/message';
+} from '@inject/message'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   MultisigConfig,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 import {
   useLocation, useNavigate,
-} from 'react-router';
+} from 'react-router'
 
 const CreateMultisigAccountContainer: React.FC = () => {
-  const normalNavigate = useNavigate();
+  const normalNavigate = useNavigate()
   const {
     walletService, multisigService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     currentAccount, changeCurrentAccount,
-  } = useCurrentAccount();
-  const location = useLocation();
+  } = useCurrentAccount()
+  const location = useLocation()
 
-  const [hostname, setHostname] = useState('');
-  const [requestData, setRequestData] = useState<InjectionMessage>();
-  const [favicon, setFavicon] = useState<any>(null);
-  const [multisigConfig, setMultisigConfig] = useState<MultisigConfig | null>(null);
-  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT');
-  const [response, setResponse] = useState<InjectionMessage | null>(null);
+  const [hostname, setHostname] = useState('')
+  const [requestData, setRequestData] = useState<InjectionMessage>()
+  const [favicon, setFavicon] = useState<any>(null)
+  const [multisigConfig, setMultisigConfig] = useState<MultisigConfig | null>(null)
+  const [processType, setProcessType] = useState<'INIT' | 'PROCESSING' | 'DONE'>('INIT')
+  const [response, setResponse] = useState<InjectionMessage | null>(null)
 
-  const processing = useMemo(() => processType !== 'INIT', [processType]);
-  const done = useMemo(() => processType === 'DONE', [processType]);
+  const processing = useMemo(() => processType !== 'INIT', [processType])
+  const done = useMemo(() => processType === 'DONE', [processType])
 
   useEffect(() => {
-    checkLockWallet();
-  }, [walletService]);
+    checkLockWallet()
+  }, [walletService])
 
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
-  };
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search))
+  }
 
   useEffect(() => {
     if (location.search) {
-      initRequestData();
+      initRequestData()
     }
-  }, [location]);
+  }, [location])
 
   const initRequestData = (): void => {
-    const data = parseParameters(location.search);
-    const parsedData = decodeParameter(data['data']);
+    const data = parseParameters(location.search)
+    const parsedData = decodeParameter(data['data'])
     setRequestData({
       ...parsedData,
       hostname: data['hostname'],
-    });
-  };
+    })
+  }
 
   useEffect(() => {
     if (currentAccount && requestData) {
-      initFavicon();
-      initMultisigConfig();
+      initFavicon()
+      initMultisigConfig()
     }
-  }, [currentAccount, requestData]);
+  }, [currentAccount, requestData])
 
   const initFavicon = async (): Promise<void> => {
     const faviconData = await createFaviconByHostname(
       requestData?.hostname ? `${requestData?.protocol}//${requestData?.hostname}` : '',
-    );
-    setFavicon(faviconData);
-  };
+    )
+    setFavicon(faviconData)
+  }
 
   const initMultisigConfig = (): void => {
     if (!requestData?.data) {
-      return;
+      return
     }
 
     const {
       signers, threshold, noSort,
-    } = requestData.data;
+    } = requestData.data
 
     setMultisigConfig({
       signers,
       threshold,
       noSort,
-    });
-    setHostname(requestData?.hostname ?? '');
-  };
+    })
+    setHostname(requestData?.hostname ?? '')
+  }
 
   const createMultisigAccount = async (): Promise<void> => {
     if (!multisigConfig) {
@@ -118,19 +118,19 @@ const CreateMultisigAccountContainer: React.FC = () => {
           },
           requestData?.key,
         ),
-      );
-      return;
+      )
+      return
     }
     try {
-      setProcessType('PROCESSING');
+      setProcessType('PROCESSING')
 
       const {
         multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys,
       }
-        = await multisigService.createMultisigAccount(multisigConfig);
+        = await multisigService.createMultisigAccount(multisigConfig)
 
-      const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
-      const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));
+      const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey))
+      const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes))
 
       const multisigAccount = await walletService.addMultisigAccount(
         publicKeyBytesArray,
@@ -138,9 +138,9 @@ const CreateMultisigAccountContainer: React.FC = () => {
         multisigConfig,
         multisigAddress,
         signerPublicKeys,
-      );
+      )
 
-      await changeCurrentAccount(multisigAccount);
+      await changeCurrentAccount(multisigAccount)
 
       setResponse(
         InjectionMessageInstance.success(
@@ -151,11 +151,10 @@ const CreateMultisigAccountContainer: React.FC = () => {
           },
           requestData?.key,
         ),
-      );
-    }
-    catch (e) {
+      )
+    } catch (e) {
       if (e instanceof Error) {
-        const message = e.message;
+        const message = e.message
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_ACCOUNT_FAILED,
@@ -166,20 +165,19 @@ const CreateMultisigAccountContainer: React.FC = () => {
             },
             requestData?.key,
           ),
-        );
+        )
       }
+    } finally {
+      setProcessType('DONE')
     }
-    finally {
-      setProcessType('DONE');
-    }
-  };
+  }
 
   const onClickConfirm = (): void => {
     if (!currentAccount) {
-      return;
+      return
     }
-    createMultisigAccount();
-  };
+    createMultisigAccount()
+  }
 
   const onClickCancel = (): void => {
     chrome.runtime.sendMessage(
@@ -189,14 +187,14 @@ const CreateMultisigAccountContainer: React.FC = () => {
         },
         requestData?.key,
       ),
-    );
-  };
+    )
+  }
 
   const onResponse = useCallback(() => {
     if (response) {
-      chrome.runtime.sendMessage(response);
+      chrome.runtime.sendMessage(response)
     }
-  }, [response]);
+  }, [response])
 
   return (
     <CreateMultisigAccount
@@ -211,7 +209,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
       onClickCancel={onClickCancel}
       onResponse={onResponse}
     />
-  );
-};
+  )
+}
 
-export default CreateMultisigAccountContainer;
+export default CreateMultisigAccountContainer

@@ -1,6 +1,6 @@
 import {
   useEffect, useState,
-} from 'react';
+} from 'react'
 
 interface UseDebounceReturn<T> {
   debouncedValue: T
@@ -9,25 +9,25 @@ interface UseDebounceReturn<T> {
 }
 
 export const useDebounce = <T>(value: T, delay: number): UseDebounceReturn<T> => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  const [isLoading, setIsLoading] = useState(false);
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    setIsLoading(true);
+    setIsLoading(true)
     const handler = setTimeout(() => {
-      setIsLoading(false);
-      setDebouncedValue(value);
-    }, delay);
+      setIsLoading(false)
+      setDebouncedValue(value)
+    }, delay)
 
     // Clean up the timeout if value or delay changes
     return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
+      clearTimeout(handler)
+    }
+  }, [value, delay])
 
   return {
     debouncedValue,
     setDebouncedValue,
     isLoading,
-  };
-};
+  }
+}

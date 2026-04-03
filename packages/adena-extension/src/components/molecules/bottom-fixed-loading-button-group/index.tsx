@@ -1,21 +1,21 @@
 import {
   Button, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   IconButtonLoading,
-} from '@components/atoms/icon/icon-assets';
-import mixins from '@styles/mixins';
+} from '@components/atoms/icon/icon-assets'
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
+} from '@styles/theme'
 import React, {
   ReactElement, useCallback, useMemo,
-} from 'react';
-import styled from 'styled-components';
+} from 'react'
+import styled from 'styled-components'
 
 import {
   ApproveHoldButton,
-} from '../approve-hold-button/approve-hold-button';
+} from '../approve-hold-button/approve-hold-button'
 
 interface ButtonProps {
   primary?: boolean
@@ -37,7 +37,7 @@ interface BottomFixedLoadingButtonGroupProps {
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
-  return `${buttonProps.primary && 'primary'} ${buttonProps.disabled && 'disabled'}`;
+  return `${buttonProps.primary && 'primary'} ${buttonProps.disabled && 'disabled'}`
 }
 
 export const BottomFixedLoadingButtonGroup = ({
@@ -46,26 +46,26 @@ export const BottomFixedLoadingButtonGroup = ({
   filled,
 }: BottomFixedLoadingButtonGroupProps): ReactElement<any> => {
   const leftClassName = useMemo(() => {
-    return mapClassName(leftButton);
-  }, [leftButton]);
+    return mapClassName(leftButton)
+  }, [leftButton])
 
   const onClickLeftButton = useCallback(() => {
-    leftButton.onClick();
-  }, [leftButton]);
+    leftButton.onClick()
+  }, [leftButton])
 
   // Check if rightButton is hold type
-  const isHoldButton = 'type' in rightButton && rightButton.type === 'hold';
+  const isHoldButton = 'type' in rightButton && rightButton.type === 'hold'
 
   const rightClassName = useMemo(() => {
-    if (isHoldButton) return '';
-    return mapClassName(rightButton as ButtonProps);
-  }, [rightButton, isHoldButton]);
+    if (isHoldButton) return ''
+    return mapClassName(rightButton as ButtonProps)
+  }, [rightButton, isHoldButton])
 
   const onClickRightButton = useCallback(() => {
     if (!isHoldButton) {
-      (rightButton as ButtonProps).onClick();
+      (rightButton as ButtonProps).onClick()
     }
-  }, [rightButton, isHoldButton]);
+  }, [rightButton, isHoldButton])
 
   return (
     <ButtonWrap $filled={filled}>
@@ -78,23 +78,23 @@ export const BottomFixedLoadingButtonGroup = ({
 
       {isHoldButton
         ? (
-          <ApproveHoldButton
-            onFinishHold={
-              (rightButton as HoldButtonProps).onFinishHold
-            }
-          />
-        )
+            <ApproveHoldButton
+              onFinishHold={
+                (rightButton as HoldButtonProps).onFinishHold
+              }
+            />
+          )
         : (
-          <LoadingButton
-            className={rightClassName}
-            loading={(rightButton as ButtonProps).loading}
-            text={(rightButton as ButtonProps).text}
-            onClick={onClickRightButton}
-          />
-        )}
+            <LoadingButton
+              className={rightClassName}
+              loading={(rightButton as ButtonProps).loading}
+              text={(rightButton as ButtonProps).text}
+              onClick={onClickRightButton}
+            />
+          )}
     </ButtonWrap>
-  );
-};
+  )
+}
 
 interface LoadingButtonProps {
   loading?: boolean
@@ -113,8 +113,8 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
     <Button className={className} fullWidth onClick={onClick}>
       {loading ? <IconButtonLoading /> : <Text type='body1Bold'>{text}</Text>}
     </Button>
-  );
-};
+  )
+}
 
 const ButtonWrap = styled.div<{
   $filled?: boolean
@@ -175,4 +175,4 @@ const ButtonWrap = styled.div<{
       background-color: ${getTheme('primary', '_9')};
     }
   }
-`;
+`

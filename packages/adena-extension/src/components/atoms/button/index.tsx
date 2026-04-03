@@ -1,17 +1,19 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   getTheme,
-} from '@styles/theme';
-import React, { CSSProperties, type JSX } from 'react';
+} from '@styles/theme'
+import React, {
+  CSSProperties, type JSX,
+} from 'react'
 import styled, {
   css,
-} from 'styled-components';
+} from 'styled-components'
 
-type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
+type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never }
 type XOR<T, U>
-  = T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+  = T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U
 
-type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom';
+type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom'
 
 export const modeVariants = {
   normal: css`
@@ -67,7 +69,7 @@ export const modeVariants = {
       color: ${getTheme('neutral', '_5')};
     } */
   `,
-};
+}
 
 export type ButtonProps = XOR<
   {
@@ -96,7 +98,7 @@ export type ButtonProps = XOR<
     tabIndex?: number
     bgColor?: string
   }
->;
+>
 
 export const Button = ({
   disabled = false,
@@ -108,8 +110,8 @@ export const Button = ({
     <ButtonWrapper disabled={disabled} hierarchy={hierarchy} height={height} {...props}>
       {props.children}
     </ButtonWrapper>
-  );
-};
+  )
+}
 
 const ButtonWrapper = styled.button.withConfig({
   shouldForwardProp: prop =>
@@ -121,29 +123,29 @@ const ButtonWrapper = styled.button.withConfig({
   width: ${({
     width, fullWidth,
   }): string => {
-    if (width) return typeof width === 'number' ? `${width}px` : width;
-    if (fullWidth) return '100%';
-    return 'auto';
+    if (width) return typeof width === 'number' ? `${width}px` : width
+    if (fullWidth) return '100%'
+    return 'auto'
   }};
   height: ${({
     height,
   }): string => {
-    if (height) return typeof height === 'number' ? height + 'px' : height;
-    return 'auto';
+    if (height) return typeof height === 'number' ? height + 'px' : height
+    return 'auto'
   }};
   margin: ${(props): any => props.margin};
   ${({
     hierarchy, bgColor,
   }): any => {
-    if (hierarchy === 'primary') return modeVariants.primary;
-    if (hierarchy === 'normal') return modeVariants.normal;
-    if (hierarchy === 'ghost') return modeVariants.ghost;
-    if (hierarchy === 'dark') return modeVariants.dark;
-    if (hierarchy === 'danger') return modeVariants.danger;
+    if (hierarchy === 'primary') return modeVariants.primary
+    if (hierarchy === 'normal') return modeVariants.normal
+    if (hierarchy === 'ghost') return modeVariants.ghost
+    if (hierarchy === 'dark') return modeVariants.dark
+    if (hierarchy === 'danger') return modeVariants.danger
     if (hierarchy === 'custom')
       return css`
         background-color: ${bgColor};
-      `;
+      `
   }};
   border-radius: ${({
     radius,
@@ -153,4 +155,4 @@ const ButtonWrapper = styled.button.withConfig({
   background-color: ${({
     bgColor,
   }): string | undefined => bgColor};
-`;
+`

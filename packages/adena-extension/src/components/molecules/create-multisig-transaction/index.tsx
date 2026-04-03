@@ -1,40 +1,40 @@
-import IconArraowDown from '@assets/arrowS-down-gray.svg';
-import IconArraowUp from '@assets/arrowS-up-gray.svg';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import IconArraowDown from '@assets/arrowS-down-gray.svg'
+import IconArraowUp from '@assets/arrowS-up-gray.svg'
+import UnknownLogo from '@assets/common-unknown-logo.svg'
 import {
   Button, Text,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedLoadingButtonGroup,
-} from '@components/molecules';
-import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
+} from '@components/molecules'
+import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen'
 import {
   GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect';
+} from '@inject/message/methods/gno-connect'
 import {
   ContractMessage, SignerInfo, SignerStatusType,
-} from '@inject/types';
+} from '@inject/types'
 import {
   NetworkFee as NetworkFeeType,
-} from '@types';
+} from '@types'
 import {
   MultisigConfig,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 
 import {
   ApproveTransactionLoading,
-} from '../approve-transaction-loading';
-import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
-import DocumentSigner from '../document-signer/document-signer';
-import MultisigThreshold from '../multisig-threshold/multisig-threshold';
-import NetworkFee from '../network-fee/network-fee';
+} from '../approve-transaction-loading'
+import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box'
+import DocumentSigner from '../document-signer/document-signer'
+import MultisigThreshold from '../multisig-threshold/multisig-threshold'
+import NetworkFee from '../network-fee/network-fee'
 import {
   CreateMultisigTransactionSignerWrapper,
   CreateMultisigTransactionWrapper,
-} from './create-multisig-transaction.styles';
+} from './create-multisig-transaction.styles'
 
 export interface CreateMultisigTransactionProps {
   loading: boolean
@@ -94,75 +94,75 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
   onClickCancel,
   openScannerLink,
 }) => {
-  const [openedSigners, setOpenedSigners] = useState(false);
+  const [openedSigners, setOpenedSigners] = useState(false)
 
-  const threshold = multisigConfig?.threshold || 0;
-  const signers = multisigConfig?.signers || [];
-  const signerCount = signers.length;
+  const threshold = multisigConfig?.threshold || 0
+  const signers = multisigConfig?.signers || []
+  const signerCount = signers.length
 
   const signerInfos: SignerInfo[] = useMemo(() => {
     return signers.map(address => ({
       address,
       status: SignerStatusType.NONE,
-    }));
-  }, [signers]);
+    }))
+  }, [signers])
 
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
-      return true;
+      return true
     }
 
     if (isErrorNetworkFee) {
-      return true;
+      return true
     }
 
-    return Number(networkFee?.amount || 0) <= 0;
-  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee]);
+    return Number(networkFee?.amount || 0) <= 0
+  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee])
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee';
+      return 'Insufficient network fee'
     }
 
-    return '';
-  }, [isErrorNetworkFee]);
+    return ''
+  }, [isErrorNetworkFee])
 
   const onChangeMemo = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (hasMemo) {
-        return;
+        return
       }
 
-      const value = e.target.value;
-      changeMemo(value);
+      const value = e.target.value
+      changeMemo(value)
     },
     [hasMemo, changeMemo],
-  );
+  )
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledApprove) {
-      return;
+      return
     }
 
-    onClickConfirm();
-  }, [onClickConfirm, disabledApprove]);
+    onClickConfirm()
+  }, [onClickConfirm, disabledApprove])
 
   const onClickSignersSetting = useCallback(() => {
-    setOpenedSigners(true);
-  }, []);
+    setOpenedSigners(true)
+  }, [])
 
   const onClickSignersBack = useCallback(() => {
-    setOpenedSigners(false);
-  }, []);
+    setOpenedSigners(false)
+  }, [])
 
   useEffect(() => {
     if (done) {
-      onResponse();
+      onResponse()
     }
-  }, [done, onResponse]);
+  }, [done, onResponse])
 
   if (loading) {
-    return <ApproveTransactionLoading rightButtonText='Approve' />;
+    return <ApproveTransactionLoading rightButtonText='Approve' />
   }
 
   if (openedSigners) {
@@ -170,7 +170,7 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
       <CreateMultisigTransactionSignerWrapper>
         <DocumentSignerListScreen signerInfos={signerInfos} onClickBack={onClickSignersBack} />
       </CreateMultisigTransactionSignerWrapper>
-    );
+    )
   }
 
   return (
@@ -204,18 +204,18 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         <span className='key'>Memo:</span>
         {hasMemo
           ? (
-            <span className='value'>{memo}</span>
-          )
+              <span className='value'>{memo}</span>
+            )
           : (
-            <input
-              type='text'
-              className='value'
-              value={memo}
-              onChange={onChangeMemo}
-              autoComplete='off'
-              placeholder='(Optional)'
-            />
-          )}
+              <input
+                type='text'
+                className='value'
+                value={memo}
+                onChange={onChangeMemo}
+                autoComplete='off'
+                placeholder='(Optional)'
+              />
+            )}
       </div>
 
       <div className='fee-amount-wrapper'>
@@ -237,17 +237,17 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         >
           {opened
             ? (
-              <>
-                <>Hide Transaction Data</>
-                <img src={IconArraowUp} />
-              </>
-            )
+                <>
+                  <>Hide Transaction Data</>
+                  <img src={IconArraowUp} />
+                </>
+              )
             : (
-              <>
-                <>View Transaction Data</>
-                <img src={IconArraowDown} />
-              </>
-            )}
+                <>
+                  <>View Transaction Data</>
+                  <img src={IconArraowDown} />
+                </>
+              )}
         </Button>
 
         {opened && (
@@ -277,5 +277,5 @@ export const CreateMultisigTransaction: React.FC<CreateMultisigTransactionProps>
         }}
       />
     </CreateMultisigTransactionWrapper>
-  );
-};
+  )
+}

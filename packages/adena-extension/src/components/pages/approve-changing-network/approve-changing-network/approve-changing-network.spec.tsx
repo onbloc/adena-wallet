@@ -1,24 +1,24 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import ApproveChangingNetwork, {
   ApproveChangingNetworkProps,
-} from './approve-changing-network';
+} from './approve-changing-network'
 
 describe('ApproveChangingNetwork Component', () => {
   it('ApproveChangingNetwork render', () => {
@@ -33,18 +33,18 @@ describe('ApproveChangingNetwork Component', () => {
       processing: false,
       done: false,
       changeNetwork: () => {
-        return;
+        return
       },
       cancel: () => {
-        return;
+        return
       },
       onResponse: () => {
-        return;
+        return
       },
       onTimeout: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -53,6 +53,6 @@ describe('ApproveChangingNetwork Component', () => {
           <ApproveChangingNetwork {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

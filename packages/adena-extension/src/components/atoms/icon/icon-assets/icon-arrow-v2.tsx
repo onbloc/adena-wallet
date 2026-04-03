@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconArrowV2 = ({
   className,
@@ -24,7 +24,7 @@ const IconArrowV2 = ({
         strokeLinejoin='round'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconArrowV2;
+export default IconArrowV2

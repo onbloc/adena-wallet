@@ -1,10 +1,10 @@
 import React, {
   ReactNode,
-} from 'react';
+} from 'react'
 
 import {
   SubHeaderWrapper,
-} from './sub-header.styles';
+} from './sub-header.styles'
 
 export interface SubHeaderProps {
   title: string
@@ -37,5 +37,5 @@ export const SubHeader: React.FC<SubHeaderProps> = ({
         </div>
       )}
     </SubHeaderWrapper>
-  );
-};
+  )
+}

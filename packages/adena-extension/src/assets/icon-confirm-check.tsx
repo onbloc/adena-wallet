@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconConfirmCheck = ({
   fill = '#11D695',
@@ -11,6 +13,6 @@ const IconConfirmCheck = ({
       fill={fill}
     />
   </svg>
-);
+)
 
-export default IconConfirmCheck;
+export default IconConfirmCheck

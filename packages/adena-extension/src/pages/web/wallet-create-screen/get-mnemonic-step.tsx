@@ -1,44 +1,44 @@
-import IconWarning from '@assets/web/warning.svg';
+import IconWarning from '@assets/web/warning.svg'
 import {
   stringFromBase64,
-} from '@common/utils/encoding-util';
+} from '@common/utils/encoding-util'
 import {
   Row, View, WebButton, WebCheckBox, WebImg, WebText,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   WebCopyButton,
-} from '@components/atoms/web-copy-button';
+} from '@components/atoms/web-copy-button'
 import {
   WebHoldButton,
-} from '@components/atoms/web-hold-button';
+} from '@components/atoms/web-hold-button'
 import {
   WebSeedBox,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   UseWalletCreateReturn,
-} from '@hooks/web/use-wallet-create-screen';
+} from '@hooks/web/use-wallet-create-screen'
 import {
   ReactElement, useMemo, useState,
-} from 'react';
+} from 'react'
 import styled, {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`;
+`
 
 const StyledMessageBox = styled(View)`
   row-gap: 16px;
-`;
+`
 
 const StyledWarnBox = styled(Row)`
   column-gap: 8px;
   padding: 8px;
   border-radius: 8px;
   background: rgba(251, 191, 36, 0.08);
-`;
+`
 
 const GetMnemonicStep = ({
   useWalletCreateScreenReturn,
@@ -47,25 +47,25 @@ const GetMnemonicStep = ({
 }): ReactElement<any> => {
   const {
     seeds, onClickNext,
-  } = useWalletCreateScreenReturn;
-  const theme = useTheme();
-  const [showBlur, setShowBlur] = useState(true);
-  const [ableToReveal, setAbleToReveal] = useState(false);
-  const [agreeAbleToReveals, setAgreeAbleToReveals] = useState(false);
-  const [checkSavedMnemonic, setCheckSavedMnemonic] = useState(false);
-  const [copied, setCopied] = useState(false);
+  } = useWalletCreateScreenReturn
+  const theme = useTheme()
+  const [showBlur, setShowBlur] = useState(true)
+  const [ableToReveal, setAbleToReveal] = useState(false)
+  const [agreeAbleToReveals, setAgreeAbleToReveals] = useState(false)
+  const [checkSavedMnemonic, setCheckSavedMnemonic] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const warningCopiedMessage = useMemo(() => {
     if (!copied) {
-      return '';
+      return ''
     }
-    return 'You have copied sensitive info. Make sure you do not paste it in public or shared environments, and clear your clipboard as soon as you’ve used it.';
-  }, [copied]);
+    return 'You have copied sensitive info. Make sure you do not paste it in public or shared environments, and clear your clipboard as soon as you’ve used it.'
+  }, [copied])
 
   const onCopy = (): void => {
-    setCopied(true);
-    navigator.clipboard.writeText(stringFromBase64(seeds));
-  };
+    setCopied(true)
+    navigator.clipboard.writeText(stringFromBase64(seeds))
+  }
 
   return (
     <StyledContainer>
@@ -97,15 +97,34 @@ const GetMnemonicStep = ({
 
         {ableToReveal
           ? (
-            <>
-              <Row style={{
-                justifyContent: 'center',
-                columnGap: 12,
-              }}
-              >
-                <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
-                <WebCopyButton width={80} copyText='' onCopy={onCopy} />
-              </Row>
+              <>
+                <Row style={{
+                  justifyContent: 'center',
+                  columnGap: 12,
+                }}
+                >
+                  <WebHoldButton onFinishHold={(response): void => setShowBlur(!response)} />
+                  <WebCopyButton width={80} copyText='' onCopy={onCopy} />
+                </Row>
+                <Row style={{
+                  columnGap: 8,
+                  alignItems: 'center',
+                  marginTop: 8,
+                }}
+                >
+                  <WebCheckBox
+                    checked={checkSavedMnemonic}
+                    onClick={(): void => {
+                      setCheckSavedMnemonic(!checkSavedMnemonic)
+                    }}
+                  />
+                  <WebText type='body5' color={theme.webNeutral._500}>
+                    I have saved my seed phrase.
+                  </WebText>
+                </Row>
+              </>
+            )
+          : (
               <Row style={{
                 columnGap: 8,
                 alignItems: 'center',
@@ -113,68 +132,49 @@ const GetMnemonicStep = ({
               }}
               >
                 <WebCheckBox
-                  checked={checkSavedMnemonic}
+                  checked={agreeAbleToReveals}
                   onClick={(): void => {
-                    setCheckSavedMnemonic(!checkSavedMnemonic);
+                    setAgreeAbleToReveals(!agreeAbleToReveals)
                   }}
                 />
                 <WebText type='body5' color={theme.webNeutral._500}>
-                  I have saved my seed phrase.
+                  This phrase will only be stored on this device. Adena can’t recover it for you.
                 </WebText>
               </Row>
-            </>
-          )
-          : (
-            <Row style={{
-              columnGap: 8,
-              alignItems: 'center',
-              marginTop: 8,
-            }}
-            >
-              <WebCheckBox
-                checked={agreeAbleToReveals}
-                onClick={(): void => {
-                  setAgreeAbleToReveals(!agreeAbleToReveals);
-                }}
-              />
-              <WebText type='body5' color={theme.webNeutral._500}>
-                This phrase will only be stored on this device. Adena can’t recover it for you.
-              </WebText>
-            </Row>
-          )}
+            )}
       </View>
 
       {ableToReveal
         ? (
-          <WebButton
-            figure='primary'
-            size='small'
-            onClick={onClickNext}
-            disabled={!checkSavedMnemonic}
-            style={{
-              justifyContent: 'center',
-            }}
-            text='Next'
-            rightIcon='chevronRight'
-          />
-        )
+            <WebButton
+              figure='primary'
+              size='small'
+              onClick={onClickNext}
+              disabled={!checkSavedMnemonic}
+              style={{
+                justifyContent: 'center',
+              }}
+              text='Next'
+              rightIcon='chevronRight'
+            />
+          )
         : (
-          <WebButton
-            figure='primary'
-            size='small'
-            onClick={(): void => {
-              setAbleToReveal(true);
-            }}
-            disabled={!agreeAbleToReveals}
-            style={{
-              justifyContent: 'center',
-            }}
-          >
-            <WebText type='title4'>Reveal Seed Phrase</WebText>
-          </WebButton>
-        )}
+            <WebButton
+              figure='primary'
+              size='small'
+              onClick={(): void => {
+                setAbleToReveal(true)
+              }}
+              disabled={!agreeAbleToReveals}
+              style={{
+                justifyContent: 'center',
+              }}
+            >
+              <WebText type='title4'>Reveal Seed Phrase</WebText>
+            </WebButton>
+          )}
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default GetMnemonicStep;
+export default GetMnemonicStep

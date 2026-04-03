@@ -1,6 +1,6 @@
 import {
   KeyringType,
-} from 'adena-module';
+} from 'adena-module'
 
 export interface SideMenuAccountInfo {
   accountId: string

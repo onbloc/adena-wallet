@@ -1,8 +1,8 @@
-import React from 'react';
+import React from 'react'
 
 import {
   BalanceInputWrapper,
-} from './balance-input.styles';
+} from './balance-input.styles'
 
 export interface BalanceInputProps {
   hasError: boolean
@@ -41,7 +41,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
 
       <span className='description'>{description}</span>
     </BalanceInputWrapper>
-  );
-};
+  )
+}
 
-export default BalanceInput;
+export default BalanceInput

@@ -1,11 +1,11 @@
 import React, {
   useCallback, useState,
-} from 'react';
+} from 'react'
 
-import WebHelpTooltip from '../web-help-tooltip/web-help-tooltip';
+import WebHelpTooltip from '../web-help-tooltip/web-help-tooltip'
 import {
   WebHelpOverlayItemWrapper, WebHelpOverlayWrapper,
-} from './web-help-overlay.styles';
+} from './web-help-overlay.styles'
 
 export interface OverlayItem {
   x: number
@@ -26,44 +26,44 @@ export interface WebHelpOverlayProps {
 const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({
   items, onFinish,
 }) => {
-  const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [currentItemIndex, setCurrentItemIndex] = useState(0)
 
   const nextItem = useCallback(() => {
-    const hasNext = currentItemIndex + 1 < items.length;
+    const hasNext = currentItemIndex + 1 < items.length
     if (!hasNext) {
-      onFinish();
-      return;
+      onFinish()
+      return
     }
-    setCurrentItemIndex(prev => prev + 1);
-  }, [currentItemIndex, items]);
+    setCurrentItemIndex(prev => prev + 1)
+  }, [currentItemIndex, items])
 
   return (
     <WebHelpOverlayWrapper>
       {items.map((item, index) =>
         index <= currentItemIndex
           ? (
-            <WebHelpOverlayItemWrapper
-              key={index}
-              className={index === currentItemIndex ? 'visible' : ''}
-              x={item.x}
-              y={item.y}
-            >
-              <WebHelpTooltip
-                securityRate={item.tooltipInfo.securityRate}
-                convenienceRate={item.tooltipInfo.convenienceRate}
-                position={item.position}
-                confirm={nextItem}
+              <WebHelpOverlayItemWrapper
+                key={index}
+                className={index === currentItemIndex ? 'visible' : ''}
+                x={item.x}
+                y={item.y}
               >
-                {item.tooltipInfo.content}
-              </WebHelpTooltip>
-            </WebHelpOverlayItemWrapper>
-          )
+                <WebHelpTooltip
+                  securityRate={item.tooltipInfo.securityRate}
+                  convenienceRate={item.tooltipInfo.convenienceRate}
+                  position={item.position}
+                  confirm={nextItem}
+                >
+                  {item.tooltipInfo.content}
+                </WebHelpTooltip>
+              </WebHelpOverlayItemWrapper>
+            )
           : (
-            <React.Fragment key={index} />
-          ),
+              <React.Fragment key={index} />
+            ),
       )}
     </WebHelpOverlayWrapper>
-  );
-};
+  )
+}
 
-export default WebHelpOverlay;
+export default WebHelpOverlay

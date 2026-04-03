@@ -1,9 +1,9 @@
 import {
   RouteParams, RoutePath,
-} from '@types';
+} from '@types'
 import {
   NavigateOptions, useLocation, useNavigate,
-} from 'react-router';
+} from 'react-router'
 
 type NavigateProps<key extends keyof RouteParams> = key extends unknown
   ? null extends RouteParams[key]
@@ -25,8 +25,8 @@ type NavigateProps<key extends keyof RouteParams> = key extends unknown
           preventScrollReset?: NavigateOptions['preventScrollReset']
           relative?: NavigateOptions['relative']
         },
-    ]
-  : never;
+      ]
+  : never
 
 const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   navigate: <RouteName extends keyof RouteParams>(...args: NavigateProps<RouteName>) => void
@@ -34,37 +34,36 @@ const useAppNavigate = <RouteName extends keyof RouteParams>(): {
   goBack: () => void
   reload: () => void
 } => {
-  const params = useLocation().state as RouteParams[RouteName];
+  const params = useLocation().state as RouteParams[RouteName]
 
-  const baseNavigate = useNavigate();
+  const baseNavigate = useNavigate()
 
   const navigate = <RouteName extends keyof RouteParams>(
     ...args: NavigateProps<RouteName>
   ): void => {
-    const [path, params] = args;
-    baseNavigate(path, params);
-  };
+    const [path, params] = args
+    baseNavigate(path, params)
+  }
 
   const goBack = (): void => {
     if (window?.history?.length > 1) {
-      baseNavigate(-1);
-    }
-    else {
+      baseNavigate(-1)
+    } else {
       navigate(RoutePath.Home, {
-      });
+      })
     }
-  };
+  }
 
   const reload = (): void => {
-    window.location.reload();
-  };
+    window.location.reload()
+  }
 
   return {
     navigate,
     params,
     goBack,
     reload,
-  };
-};
+  }
+}
 
-export default useAppNavigate;
+export default useAppNavigate

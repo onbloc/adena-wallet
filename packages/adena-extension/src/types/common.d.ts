@@ -1,8 +1,8 @@
 import {
   EVENT_KEYS,
-} from '@common/constants/event-key.constant';
+} from '@common/constants/event-key.constant'
 
-export const _ = '';
+export const _ = ''
 
 declare global {
   interface Window {

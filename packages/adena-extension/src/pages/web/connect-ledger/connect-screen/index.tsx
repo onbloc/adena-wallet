@@ -1,46 +1,46 @@
 import {
   WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant';
+} from '@common/constants/ui.constant'
 import {
   WebMain,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   WebMainHeader,
-} from '@components/pages/web/main-header';
-import useAppNavigate from '@hooks/use-app-navigate';
-import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen';
+} from '@components/pages/web/main-header'
+import useAppNavigate from '@hooks/use-app-navigate'
+import useConnectLedgerScreen from '@hooks/web/connect-ledger/use-connect-ledger-screen'
 import {
   RoutePath,
-} from '@types';
+} from '@types'
 import {
   ReactElement, useMemo,
-} from 'react';
+} from 'react'
 
-import ConnectFail from './connect-fail';
-import ConnectInit from './connect-init';
-import ConnectRequest from './connect-request';
-import ConnectRequestWallet from './connect-request-wallet';
-import ConnectRequestWalletLoad from './connect-request-wallet-load';
+import ConnectFail from './connect-fail'
+import ConnectInit from './connect-init'
+import ConnectRequest from './connect-request'
+import ConnectRequestWallet from './connect-request-wallet'
+import ConnectRequestWalletLoad from './connect-request-wallet-load'
 
 const ConnectLedgerScreen = (): ReactElement<any> => {
-  const useConnectLedgerScreenReturn = useConnectLedgerScreen();
+  const useConnectLedgerScreenReturn = useConnectLedgerScreen()
   const {
     indicatorInfo, connectState, initWallet, requestPermission, setConnectState,
   }
-    = useConnectLedgerScreenReturn;
+    = useConnectLedgerScreenReturn
   const {
     navigate,
-  } = useAppNavigate();
+  } = useAppNavigate()
 
   const topSpacing = useMemo(() => {
     if (connectState === 'REQUEST_WALLET_LOAD' || connectState === 'NOT_PERMISSION') {
-      return null;
+      return null
     }
     return {
       default: WEB_TOP_SPACING,
       responsive: WEB_TOP_SPACING_RESPONSIVE,
-    };
-  }, [connectState]);
+    }
+  }, [connectState])
 
   return (
     <WebMain
@@ -52,10 +52,9 @@ const ConnectLedgerScreen = (): ReactElement<any> => {
           stepLength={indicatorInfo.stepLength}
           onClickGoBack={(): void => {
             if (indicatorInfo.stepNo === 0) {
-              navigate(RoutePath.WebSelectHardWallet);
-            }
-            else {
-              setConnectState('INIT');
+              navigate(RoutePath.WebSelectHardWallet)
+            } else {
+              setConnectState('INIT')
             }
           }}
           currentStep={connectState === 'REQUEST' ? -1 : indicatorInfo.stepNo}
@@ -67,7 +66,7 @@ const ConnectLedgerScreen = (): ReactElement<any> => {
       {(connectState === 'REQUEST_WALLET' || connectState === 'FAILED') && <ConnectRequestWallet />}
       {connectState === 'REQUEST_WALLET_LOAD' && <ConnectRequestWalletLoad />}
     </WebMain>
-  );
-};
+  )
+}
 
-export default ConnectLedgerScreen;
+export default ConnectLedgerScreen

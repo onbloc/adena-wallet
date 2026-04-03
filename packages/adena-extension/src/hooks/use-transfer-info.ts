@@ -1,12 +1,12 @@
 import {
   TransferState,
-} from '@states';
+} from '@states'
 import {
   useRecoilState,
-} from 'recoil';
+} from 'recoil'
 import {
   TransferInfo,
-} from 'src/states/transfer';
+} from 'src/states/transfer'
 
 interface UseTransferInfoReturn {
   memorizedTransferInfo: TransferInfo | null
@@ -17,15 +17,15 @@ interface UseTransferInfoReturn {
 export const useTransferInfo = (): UseTransferInfoReturn => {
   const [memorizedTransferInfo, setMemorizedTransferInfo] = useRecoilState(
     TransferState.memorizedTransferInfo,
-  );
+  )
 
   const clear = (): void => {
-    setMemorizedTransferInfo(null);
-  };
+    setMemorizedTransferInfo(null)
+  }
 
   return {
     memorizedTransferInfo,
     setMemorizedTransferInfo,
     clear,
-  };
-};
+  }
+}

@@ -23,7 +23,7 @@ export const makeAllRealmsQuery = (): string => `
     }
   }
 }
-`;
+`
 
 export const makeGRC721TransferEventsQuery = (packagePath: string, address: string): string => `
 {
@@ -67,7 +67,7 @@ export const makeGRC721TransferEventsQuery = (packagePath: string, address: stri
     }
   }
 }
-`;
+`
 export const makeGRC721TransferEventsQueryWithCursor = (
   packagePath: string,
   address: string,
@@ -124,7 +124,7 @@ export const makeGRC721TransferEventsQueryWithCursor = (
     }
   }
 }
-`;
+`
 
 export const makeAllTransferEventsQueryBy = (address: string): string => `
 {
@@ -158,7 +158,7 @@ export const makeAllTransferEventsQueryBy = (address: string): string => `
       }
     }
   }
-}`;
+}`
 
 export const makeAllTransferEventsQueryWithCursorBy = (address: string): string => `
 {
@@ -203,4 +203,4 @@ export const makeAllTransferEventsQueryWithCursorBy = (address: string): string 
       }
     }
   }
-}`;
+}`

@@ -1,15 +1,17 @@
-import React, { CSSProperties, type JSX } from 'react';
-import styled from 'styled-components';
+import React, {
+  CSSProperties, type JSX,
+} from 'react'
+import styled from 'styled-components'
 
 import {
   View,
-} from '../base';
+} from '../base'
 import {
   WebButton,
-} from '../web-button';
+} from '../web-button'
 import {
   WebText,
-} from '../web-text';
+} from '../web-text'
 export interface WebMainButtonProps {
   buttonRef?: React.RefObject<HTMLButtonElement | null>
   figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
@@ -26,7 +28,7 @@ const StyledContainer = styled(WebButton)`
   padding: 12px 16px;
   align-items: flex-start;
   justify-content: space-between;
-`;
+`
 
 const StyledImageWrapper = styled(View)`
   width: 24px;
@@ -36,7 +38,7 @@ const StyledImageWrapper = styled(View)`
   svg {
     width: 100%;
   }
-`;
+`
 
 const WebMainButton: React.FC<WebMainButtonProps> = ({
   buttonRef,
@@ -63,7 +65,7 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
         {text}
       </WebText>
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default WebMainButton;
+export default WebMainButton

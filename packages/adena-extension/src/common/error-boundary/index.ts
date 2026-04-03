@@ -1,2 +1,2 @@
-export * from './app-provider-error-boundary';
-export * from './fallback';
+export * from './app-provider-error-boundary'
+export * from './fallback'

@@ -1,21 +1,21 @@
-import AddPackageIcon from '@assets/addpkg.svg';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import ContractIcon from '@assets/contract.svg';
-import FailedIcon from '@assets/failed.svg';
-import SuccessIcon from '@assets/success.svg';
+import AddPackageIcon from '@assets/addpkg.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg'
+import ContractIcon from '@assets/contract.svg'
+import FailedIcon from '@assets/failed.svg'
+import SuccessIcon from '@assets/success.svg'
 import {
   TokenBalance,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import React, {
   useMemo, useState,
-} from 'react';
+} from 'react'
 
 import {
   TransactionHistoryListItemWrapper,
-} from './transaction-history-list-item.styles';
+} from './transaction-history-list-item.styles'
 
 export interface TransactionHistoryListItemProps {
   hash: string
@@ -51,68 +51,68 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
     valueType,
     queryGRC721TokenUri,
     onClickItem,
-  } = args;
-  const [hasLogoError, setHasLogoError] = useState(false);
-  const [isLoadedLogo, setIsLoadedLogo] = useState(false);
+  } = args
+  const [hasLogoError, setHasLogoError] = useState(false)
+  const [isLoadedLogo, setIsLoadedLogo] = useState(false)
 
   const tokenUriQuery
     = type === 'TRANSFER_GRC721' && queryGRC721TokenUri !== undefined
       ? queryGRC721TokenUri(logo || '', '0')
-      : null;
+      : null
 
   const logoImage = useMemo(() => {
     if (hasLogoError) {
-      return `${UnknownTokenIcon}`;
+      return `${UnknownTokenIcon}`
     }
 
     if (type === 'TRANSFER_GRC721' && tokenUriQuery) {
       if (!isLoadedLogo) {
-        return `${UnknownTokenIcon}`;
+        return `${UnknownTokenIcon}`
       }
 
-      return tokenUriQuery?.data || `${UnknownTokenIcon}`;
+      return tokenUriQuery?.data || `${UnknownTokenIcon}`
     }
 
     if (type === 'ADD_PACKAGE') {
-      return `${AddPackageIcon}`;
+      return `${AddPackageIcon}`
     }
 
     if (type === 'CONTRACT_CALL') {
-      return `${ContractIcon}`;
+      return `${ContractIcon}`
     }
 
     if (type === 'MULTI_CONTRACT_CALL') {
-      return `${ContractIcon}`;
+      return `${ContractIcon}`
     }
 
     if (!logo) {
-      return `${UnknownTokenIcon}`;
+      return `${UnknownTokenIcon}`
     }
 
-    return `${logo}`;
-  }, [isLoadedLogo, hasLogoError, type, logo, tokenUriQuery]);
+    return `${logo}`
+  }, [isLoadedLogo, hasLogoError, type, logo, tokenUriQuery])
 
   const handleLogoError = (): void => {
-    setHasLogoError(true);
-  };
+    setHasLogoError(true)
+  }
 
   const handleLoadLogo = (): void => {
-    setIsLoadedLogo(true);
-  };
+    setIsLoadedLogo(true)
+  }
 
   const getValueTypeClassName = useMemo(() => {
     if (valueType === 'ACTIVE') {
-      return 'active';
+      return 'active'
     }
     if (valueType === 'BLUR') {
-      return 'blur';
+      return 'blur'
     }
-    return '';
-  }, [valueType]);
+    return ''
+  }, [valueType])
 
   const withSignAmount = useMemo(() => {
-    return valueType === 'ACTIVE';
-  }, [valueType]);
+    return valueType === 'ACTIVE'
+  }, [valueType])
 
   return (
     <TransactionHistoryListItemWrapper onClick={(): void => onClickItem(hash)}>
@@ -142,25 +142,25 @@ const TransactionHistoryListItem: React.FC<TransactionHistoryListItemProps> = (a
       <div className={`value-wrapper ${getValueTypeClassName}`}>
         {type === 'MULTI_CONTRACT_CALL'
           ? (
-            <span className='value more'>More</span>
-          )
+              <span className='value more'>More</span>
+            )
           : type === 'TRANSFER_GRC721'
             ? (
-              <span className='value grc721'>{`${amount.denom} #${amount.value}`}</span>
-            )
+                <span className='value grc721'>{`${amount.denom} #${amount.value}`}</span>
+              )
             : (
-              <TokenBalance
-                value={amount.value}
-                denom={amount.denom}
-                fontStyleKey='body2Reg'
-                minimumFontSize='11px'
-                orientation='HORIZONTAL'
-                withSign={withSignAmount}
-              />
-            )}
+                <TokenBalance
+                  value={amount.value}
+                  denom={amount.denom}
+                  fontStyleKey='body2Reg'
+                  minimumFontSize='11px'
+                  orientation='HORIZONTAL'
+                  withSign={withSignAmount}
+                />
+              )}
       </div>
     </TransactionHistoryListItemWrapper>
-  );
-};
+  )
+}
 
-export default TransactionHistoryListItem;
+export default TransactionHistoryListItem

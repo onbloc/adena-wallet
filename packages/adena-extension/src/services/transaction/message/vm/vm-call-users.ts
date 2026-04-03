@@ -1,10 +1,10 @@
 import {
   TRANSACTION_MESSAGE_SEND_OF_REGISTER,
-} from '@common/constants/tx.constant';
+} from '@common/constants/tx.constant'
 
 import {
   createMessageOfVmCall,
-} from './vm';
+} from './vm'
 
 export const createMessageOfVmRegister = (info: {
   address: string
@@ -22,8 +22,8 @@ export const createMessageOfVmRegister = (info: {
     args: string[]
   }
 } => {
-  const invitor = info.invitor ?? '';
-  const send = info.send ?? TRANSACTION_MESSAGE_SEND_OF_REGISTER;
+  const invitor = info.invitor ?? ''
+  const send = info.send ?? TRANSACTION_MESSAGE_SEND_OF_REGISTER
   return createMessageOfVmCall({
     caller: info.address,
     pkgPath: 'gno.land/r/users',
@@ -31,8 +31,8 @@ export const createMessageOfVmRegister = (info: {
     func: 'Register',
     args: [invitor, info.accountName, info.accountProfile],
     send: send,
-  });
-};
+  })
+}
 
 export const createMessageOfVmInvite = (info: {
   address: string
@@ -54,5 +54,5 @@ export const createMessageOfVmInvite = (info: {
     func: 'Invite',
     args: [info.invitee],
     send: '',
-  });
-};
+  })
+}

@@ -1,25 +1,25 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ArrowLeftIcon from '@assets/arrowL-left.svg'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg'
 import {
   BaseError,
-} from '@common/errors';
+} from '@common/errors'
 import {
   SubHeader,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   BottomFixedButtonGroup,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   TokenModel,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 
-import AddressInput from '../address-input/address-input';
-import BalanceInput from '../balance-input/balance-input';
-import MemoInput from '../memo-input/memo-input';
+import AddressInput from '../address-input/address-input'
+import BalanceInput from '../balance-input/balance-input'
+import MemoInput from '../memo-input/memo-input'
 import {
   TransferInputWrapper,
-} from './transfer-input.styles';
+} from './transfer-input.styles'
 
 export interface TransferInputProps {
   tokenMetainfo?: TokenModel
@@ -75,17 +75,17 @@ const TransferInput: React.FC<TransferInputProps> = ({
     <TransferInputWrapper>
       {hasBackButton
         ? (
-          <SubHeader
-            title={`Send ${tokenMetainfo?.symbol || ''}`}
-            leftElement={{
-              element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-              onClick: onClickBack,
-            }}
-          />
-        )
+            <SubHeader
+              title={`Send ${tokenMetainfo?.symbol || ''}`}
+              leftElement={{
+                element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+                onClick: onClickBack,
+              }}
+            />
+          )
         : (
-          <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
-        )}
+            <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
+          )}
       <div className='logo-wrapper'>
         <img className='logo' src={tokenMetainfo?.image || UnknownTokenIcon} alt='token image' />
       </div>
@@ -113,7 +113,7 @@ const TransferInput: React.FC<TransferInputProps> = ({
         filled
       />
     </TransferInputWrapper>
-  );
-};
+  )
+}
 
-export default TransferInput;
+export default TransferInput

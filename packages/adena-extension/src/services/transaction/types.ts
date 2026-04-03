@@ -1,9 +1,9 @@
 import {
   Tx,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   ResponseDeliverTx,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 
 export interface ITransactionGasService {
   getGasPrice: () => Promise<number | null>

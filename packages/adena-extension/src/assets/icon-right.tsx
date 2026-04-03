@@ -1,4 +1,6 @@
-import React, { type JSX } from 'react';
+import React, {
+  type JSX,
+} from 'react'
 
 const IconRight = (): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'>
@@ -10,6 +12,6 @@ const IconRight = (): JSX.Element => (
       strokeLinejoin='round'
     />
   </svg>
-);
+)
 
-export default IconRight;
+export default IconRight

@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconTokenAdded = ({
   className,
@@ -18,7 +18,7 @@ const IconTokenAdded = ({
     >
       <path d='M12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0ZM11.04 4.08H13.2V11.04H20.16V13.2H13.2V20.16H11.04V13.2H4.08V11.04H11.04V4.08Z' />
     </svg>
-  );
-};
+  )
+}
 
-export default IconTokenAdded;
+export default IconTokenAdded

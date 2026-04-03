@@ -1,6 +1,6 @@
 import React, {
   ReactElement,
-} from 'react';
+} from 'react'
 
 const IconCancel = ({
   className,
@@ -37,7 +37,7 @@ const IconCancel = ({
         strokeLinecap='round'
       />
     </svg>
-  );
-};
+  )
+}
 
-export default IconCancel;
+export default IconCancel

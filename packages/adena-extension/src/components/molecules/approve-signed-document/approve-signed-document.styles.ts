@@ -1,15 +1,15 @@
-import mixins from '@styles/mixins';
+import mixins from '@styles/mixins'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const ApproveSignedDocumentSignerWrapper = styled.div`
   ${mixins.flex({
     justify: 'flex-start',
   })};
   padding: 24px 20px;
-`;
+`
 
 export const ApproveSignedDocumentWrapper = styled.div<{
   $isErrorNetworkFee: boolean
@@ -205,4 +205,4 @@ export const ApproveSignedDocumentWrapper = styled.div<{
 
     margin-bottom: 20px;
   }
-`;
+`

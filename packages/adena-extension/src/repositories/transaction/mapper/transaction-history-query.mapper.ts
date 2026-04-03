@@ -1,15 +1,15 @@
 import {
   GNOT_TOKEN,
-} from '@common/constants/token.constant';
+} from '@common/constants/token.constant'
 import {
   parseTokenAmount,
-} from '@common/utils/amount-utils';
+} from '@common/utils/amount-utils'
 import {
   formatAddress,
-} from '@common/utils/client-utils';
+} from '@common/utils/client-utils'
 import {
   TransactionInfo,
-} from '@types';
+} from '@types'
 
 import {
   AddPackageValue,
@@ -17,16 +17,16 @@ import {
   MsgCallValue,
   MsgRunValue,
   TransactionResponse,
-} from '../response/transaction-history-query-response';
+} from '../response/transaction-history-query-response'
 
 function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE' | 'BLUR' {
   if (!success) {
-    return 'BLUR';
+    return 'BLUR'
   }
   if (received) {
-    return 'ACTIVE';
+    return 'ACTIVE'
   }
-  return 'DEFAULT';
+  return 'DEFAULT'
 }
 
 function getDefaultMessage<T = any>(
@@ -36,13 +36,13 @@ function getDefaultMessage<T = any>(
 ): T {
   return messages.sort((m1, m2) => {
     if (m1.value?.func === 'Approve') {
-      return 1;
+      return 1
     }
     if (m2.value?.func === 'Approve') {
-      return -1;
+      return -1
     }
-    return 0;
-  })[0] as T;
+    return 0
+  })[0] as T
 }
 
 export function mapTransactionEdgeByAddress(
@@ -50,36 +50,36 @@ export function mapTransactionEdgeByAddress(
   address: string,
 ): TransactionInfo {
   if (!transaction?.messages?.length || transaction?.messages?.length > 1) {
-    return mapVMTransaction(transaction);
+    return mapVMTransaction(transaction)
   }
 
-  const message = transaction.messages[0];
+  const message = transaction.messages[0]
   switch (message.typeUrl) {
     case 'send':
       // send native token
       if (message.value.from_address === address) {
-        return mapSendTransactionByBankMsgSend(transaction);
+        return mapSendTransactionByBankMsgSend(transaction)
       }
       // receive native token
-      return mapReceivedTransactionByBankMsgSend(transaction);
+      return mapReceivedTransactionByBankMsgSend(transaction)
     case 'exec':
       // receive grc20 or grc721 token
       if (
         ['Transfer', 'TransferFrom'].includes(message.value.func)
         && message.value.caller !== address
       ) {
-        return mapReceivedTransactionByMsgCall(transaction);
+        return mapReceivedTransactionByMsgCall(transaction)
       }
-      return mapVMTransaction(transaction);
+      return mapVMTransaction(transaction)
     default:
-      return mapVMTransaction(transaction);
+      return mapVMTransaction(transaction)
   }
 }
 
 export function mapSendTransactionByBankMsgSend(
   tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
-  const firstMessage = getDefaultMessage(tx.messages);
+  const firstMessage = getDefaultMessage(tx.messages)
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -104,13 +104,13 @@ export function mapSendTransactionByBankMsgSend(
       value: tx.gas_fee.amount.toString(),
       denom: tx.gas_fee.denom,
     },
-  };
+  }
 }
 
 export function mapReceivedTransactionByMsgCall(
   tx: TransactionResponse<MsgCallValue>,
 ): TransactionInfo {
-  const firstMessage = getDefaultMessage(tx.messages);
+  const firstMessage = getDefaultMessage(tx.messages)
   if (firstMessage.value.func === 'TransferFrom' && tx.messages.length === 1) {
     return {
       hash: tx.hash,
@@ -136,7 +136,7 @@ export function mapReceivedTransactionByMsgCall(
         value: `${tx.gas_fee.amount || '0'}`,
         denom: `${tx.gas_fee.denom}`,
       },
-    };
+    }
   }
 
   return {
@@ -163,13 +163,13 @@ export function mapReceivedTransactionByMsgCall(
       value: `${tx.gas_fee.amount || '0'}`,
       denom: `${tx.gas_fee.denom}`,
     },
-  };
+  }
 }
 
 export function mapReceivedTransactionByBankMsgSend(
   tx: TransactionResponse<BankSendValue>,
 ): TransactionInfo {
-  const firstMessage = getDefaultMessage(tx.messages);
+  const firstMessage = getDefaultMessage(tx.messages)
   return {
     hash: tx.hash,
     height: tx.block_height,
@@ -194,17 +194,17 @@ export function mapReceivedTransactionByBankMsgSend(
       value: tx.gas_fee.amount.toString(),
       denom: tx.gas_fee.denom,
     },
-  };
+  }
 }
 
 export function mapVMTransaction(
   tx: TransactionResponse<AddPackageValue | MsgRunValue | MsgCallValue>,
 ): TransactionInfo {
-  const firstMessage = getDefaultMessage(tx.messages);
+  const firstMessage = getDefaultMessage(tx.messages)
 
   if (tx.messages.length > 1) {
-    const isAddPackage = isAddPackageValue(firstMessage.value);
-    const messageValue: any = firstMessage.value;
+    const isAddPackage = isAddPackageValue(firstMessage.value)
+    const messageValue: any = firstMessage.value
     return {
       hash: tx.hash,
       height: tx.block_height,
@@ -228,7 +228,7 @@ export function mapVMTransaction(
         value: `${tx.gas_fee.amount || '0'}`,
         denom: `${tx.gas_fee.denom}`,
       },
-    };
+    }
   }
 
   if (firstMessage.value === 'MsgAddPackage') {
@@ -251,18 +251,18 @@ export function mapVMTransaction(
         value: `${tx.gas_fee.amount || '0'}`,
         denom: `${tx.gas_fee.denom}`,
       },
-    };
+    }
   }
 
   if (isMsgCallValue(firstMessage.value)) {
-    const messageValue = firstMessage.value as MsgCallValue;
-    const isTransfer = messageValue.func === 'Transfer';
-    const isTransferGRC721 = messageValue.func === 'TransferFrom';
+    const messageValue = firstMessage.value as MsgCallValue
+    const isTransfer = messageValue.func === 'Transfer'
+    const isTransferGRC721 = messageValue.func === 'TransferFrom'
 
     if (isTransfer) {
-      const fromAddress = messageValue.caller || '';
-      const toAddress = messageValue.args?.[0] || '';
-      const sendAmount = messageValue.args?.[1] || '0';
+      const fromAddress = messageValue.caller || ''
+      const toAddress = messageValue.args?.[0] || ''
+      const sendAmount = messageValue.args?.[1] || '0'
 
       return {
         hash: tx.hash,
@@ -287,12 +287,12 @@ export function mapVMTransaction(
           value: tx.gas_fee.amount.toString(),
           denom: tx.gas_fee.denom,
         },
-      };
+      }
     }
 
     if (isTransferGRC721) {
-      const fromAddress = messageValue.args?.[0] || '';
-      const toAddress = messageValue.args?.[1] || '';
+      const fromAddress = messageValue.args?.[0] || ''
+      const toAddress = messageValue.args?.[1] || ''
 
       return {
         hash: tx.hash,
@@ -317,7 +317,7 @@ export function mapVMTransaction(
           value: tx.gas_fee.amount.toString(),
           denom: tx.gas_fee.denom,
         },
-      };
+      }
     }
 
     return {
@@ -338,7 +338,7 @@ export function mapVMTransaction(
         value: `${tx.gas_fee.amount || '0'}`,
         denom: `${tx.gas_fee.denom}`,
       },
-    };
+    }
   }
 
   return {
@@ -359,15 +359,15 @@ export function mapVMTransaction(
       value: `${tx.gas_fee.amount || '0'}`,
       denom: `${tx.gas_fee.denom}`,
     },
-  };
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isAddPackageValue(value: any): value is AddPackageValue {
-  return value.creator !== undefined && value.package !== undefined;
+  return value.creator !== undefined && value.package !== undefined
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isMsgCallValue(value: any): value is MsgCallValue {
-  return value.caller !== undefined && value.pkg_path !== undefined;
+  return value.caller !== undefined && value.pkg_path !== undefined
 }

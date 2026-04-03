@@ -1,6 +1,6 @@
 import {
   Event, EventStatus,
-} from './types';
+} from './types'
 
 export interface EventStore<T = unknown> {
   addEvent: (

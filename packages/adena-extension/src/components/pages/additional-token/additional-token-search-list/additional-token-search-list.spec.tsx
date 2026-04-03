@@ -1,33 +1,33 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalPopupStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import AdditionalTokenSearchList, {
   AdditionalTokenSearchListProps,
-} from './additional-token-search-list';
+} from './additional-token-search-list'
 
 describe('AdditionalTokenSearchList Component', () => {
   it('AdditionalTokenSearchList render', () => {
     const args: AdditionalTokenSearchListProps = {
       tokenInfos: [],
       onClickListItem: () => {
-        return;
+        return
       },
-    };
+    }
 
     render(
       <RecoilRoot>
@@ -36,6 +36,6 @@ describe('AdditionalTokenSearchList Component', () => {
           <AdditionalTokenSearchList {...args} />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

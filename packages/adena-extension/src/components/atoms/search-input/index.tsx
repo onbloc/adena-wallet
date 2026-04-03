@@ -1,9 +1,9 @@
-import SearchIcon from '@assets/common-search.svg';
-import React from 'react';
+import SearchIcon from '@assets/common-search.svg'
+import React from 'react'
 
 import {
   SearchInputWrapper,
-} from './search-input.styles';
+} from './search-input.styles'
 
 interface AdditionalButtonOption {
   button: React.ReactNode
@@ -40,5 +40,5 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         </div>
       )}
     </SearchInputWrapper>
-  );
-};
+  )
+}

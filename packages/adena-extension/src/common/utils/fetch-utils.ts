@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios from 'axios'
 import {
   v1,
-} from 'uuid';
+} from 'uuid'
 
 export interface RPCRequest {
   id: string
@@ -26,11 +26,11 @@ export async function fetchHealth(url: string): Promise<{
       timeout: 5000,
     })
     .then(response => response.status === 200)
-    .catch(() => false);
+    .catch(() => false)
   return {
     url,
     healthy,
-  };
+  }
 }
 
 export function makeRPCRequest({
@@ -47,7 +47,7 @@ export function makeRPCRequest({
     jsonrpc: '2.0',
     method: method,
     params: params || [],
-  };
+  }
 }
 
 export function makeIndexerRPCRequest({
@@ -64,9 +64,9 @@ export function makeIndexerRPCRequest({
     jsonrpc: '2.0',
     method: method,
     params: params || [],
-  };
+  }
 }
 
 function makeRandId(): number {
-  return Math.floor(Math.random() * 10 ** 16);
+  return Math.floor(Math.random() * 10 ** 16)
 }

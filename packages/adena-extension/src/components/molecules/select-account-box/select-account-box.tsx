@@ -1,25 +1,25 @@
-import IconArrowDown from '@assets/arrowS-down-gray.svg';
-import IconLoadingCircle from '@assets/web/loading-circle.svg';
+import IconArrowDown from '@assets/arrowS-down-gray.svg'
+import IconLoadingCircle from '@assets/web/loading-circle.svg'
 import {
   WebImg, WebText,
-} from '@components/atoms';
+} from '@components/atoms'
 import React, {
   useCallback,
-} from 'react';
+} from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   StyledLoadingWrapper,
   StyledLoadMore,
   StyledSelectAccountBox,
   StyledSelectAccountContent,
-} from './select-account-box.styles';
+} from './select-account-box.styles'
 import {
   AccountInfo,
-} from './select-account-box.types';
-import SelectAccountBoxItem from './select-account-box-item';
+} from './select-account-box.types'
+import SelectAccountBoxItem from './select-account-box-item'
 
 export interface SelectAccountBoxProps {
   isLoading: boolean
@@ -34,29 +34,29 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
   select,
   loadAccounts,
 }) => {
-  const theme = useTheme();
-  const hasAccount = accounts.length > 0;
+  const theme = useTheme()
+  const hasAccount = accounts.length > 0
 
   const onClickLoadMore = useCallback(() => {
     if (isLoading) {
-      return;
+      return
     }
 
-    return loadAccounts();
-  }, [isLoading, loadAccounts]);
+    return loadAccounts()
+  }, [isLoading, loadAccounts])
 
   return (
     <StyledSelectAccountBox>
       <StyledSelectAccountContent>
         {hasAccount
           ? (
-            accounts.map((account, index) => (
-              <SelectAccountBoxItem key={index} account={account} select={select} />
-            ))
-          )
+              accounts.map((account, index) => (
+                <SelectAccountBoxItem key={index} account={account} select={select} />
+              ))
+            )
           : (
-            <WebText type='body4'>No data to display</WebText>
-          )}
+              <WebText type='body4'>No data to display</WebText>
+            )}
       </StyledSelectAccountContent>
 
       <StyledLoadMore onClick={onClickLoadMore} disabled={isLoading}>
@@ -65,16 +65,16 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
         </WebText>
         {!isLoading
           ? (
-            <WebImg src={IconArrowDown} />
-          )
+              <WebImg src={IconArrowDown} />
+            )
           : (
-            <StyledLoadingWrapper>
-              <WebImg src={IconLoadingCircle} />
-            </StyledLoadingWrapper>
-          )}
+              <StyledLoadingWrapper>
+                <WebImg src={IconLoadingCircle} />
+              </StyledLoadingWrapper>
+            )}
       </StyledLoadMore>
     </StyledSelectAccountBox>
-  );
-};
+  )
+}
 
-export default SelectAccountBox;
+export default SelectAccountBox

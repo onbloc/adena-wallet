@@ -1,6 +1,6 @@
 import {
   atom,
-} from 'recoil';
+} from 'recoil'
 
 interface SiteInfo {
   symbol: string
@@ -15,4 +15,4 @@ interface SiteInfo {
 export const sites = atom<Array<SiteInfo>>({
   key: 'explore/sites',
   default: [],
-});
+})

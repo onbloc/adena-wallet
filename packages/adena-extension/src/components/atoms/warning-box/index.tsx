@@ -1,11 +1,13 @@
 import {
   Text,
-} from '@components/atoms';
-import mixins from '@styles/mixins';
-import React, { type JSX } from 'react';
+} from '@components/atoms'
+import mixins from '@styles/mixins'
+import React, {
+  type JSX,
+} from 'react'
 import styled, {
   CSSProperties, useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 type WarningKeyType
   = | 'revealPassword'
@@ -13,7 +15,7 @@ type WarningKeyType
     | 'approachPassword'
     | 'approachPrivate'
     | 'approachNetwork'
-    | 'addingNetwork';
+    | 'addingNetwork'
 
 interface TextProperty {
   title?: string
@@ -57,12 +59,12 @@ const warningType: { [key in WarningKeyType]: TextProperty } = {
     subTitle:
       'You’re adding an unverified network.\nAdena doesn’t verify custom networks.\nOnly add networks that you trust.',
   },
-};
+}
 
 export const WarningBox = ({
   type, margin, padding,
 }: WarningBoxProps): JSX.Element => {
-  const theme = useTheme();
+  const theme = useTheme()
   return (
     <Wrapper margin={margin} padding={padding}>
       {warningType[type].title && (
@@ -76,8 +78,8 @@ export const WarningBox = ({
         </Text>
       )}
     </Wrapper>
-  );
-};
+  )
+}
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
   ${mixins.flex({
@@ -91,4 +93,4 @@ const Wrapper = styled.div<WarningBoxStyleProps>`
   background-color: rgba(231, 50, 59, 0.1);
   border: 1px solid rgba(231, 50, 59, 0.1);
   margin: ${(props): CSSProperties['margin'] => props.margin};
-`;
+`

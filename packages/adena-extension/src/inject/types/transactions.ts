@@ -1,42 +1,42 @@
 import {
   MsgAddPackage, MsgCall, MsgSend,
-} from '@gnolang/gno-js-client';
+} from '@gnolang/gno-js-client'
 import {
   MsgRun,
-} from '@gnolang/gno-js-client';
+} from '@gnolang/gno-js-client'
 import {
   BroadcastTxCommitResult,
-} from '@gnolang/tm2-js-client';
+} from '@gnolang/tm2-js-client'
 import {
   GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect';
+} from '@inject/message/methods/gno-connect'
 
 import {
   AdenaResponse,
-} from '.';
+} from '.'
 
 export const EMessageType = {
   BANK_MSG_SEND: '/bank.MsgSend',
   VM_CALL: '/vm.m_call',
   VM_ADDPKG: '/vm.m_addpkg',
   VM_RUN: '/vm.m_run',
-} as const;
+} as const
 
-export type EMessageType = (typeof EMessageType)[keyof typeof EMessageType];
+export type EMessageType = (typeof EMessageType)[keyof typeof EMessageType]
 
 export const FUNCTION_NAME_MAP: Record<EMessageType, string> = {
   [EMessageType.BANK_MSG_SEND]: 'Transfer',
   [EMessageType.VM_ADDPKG]: 'AddPackage',
   [EMessageType.VM_RUN]: 'Run',
   [EMessageType.VM_CALL]: 'Call',
-};
+}
 
-export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun;
+export type TMessage = MsgAddPackage | MsgCall | MsgSend | MsgRun
 
 export type ContractMessage = {
   type: EMessageType
   value: TMessage
-};
+}
 
 export type TransactionParams = {
   messages: ContractMessage[]
@@ -46,7 +46,7 @@ export type TransactionParams = {
     rpcUrl: string
   }
   arguments?: GnoArgumentInfo[] | null
-};
+}
 
 export interface ContractOptions {
   withNotification?: boolean
@@ -74,14 +74,14 @@ export interface BaseDocument {
 }
 
 // TODO: BroadcastTxCommitResult isn't correct in case of a VM call
-export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>;
+export type DoContractResponse = AdenaResponse<BroadcastTxCommitResult>
 
-export type AdenaDoContract = (params: TransactionParams) => Promise<DoContractResponse>;
+export type AdenaDoContract = (params: TransactionParams) => Promise<DoContractResponse>
 
 type SignTxResponseData = {
   encodedTransaction: string
-};
+}
 
-export type SignTxResponse = AdenaResponse<SignTxResponseData>;
+export type SignTxResponse = AdenaResponse<SignTxResponseData>
 
-export type AdenaSignTx = (params: TransactionParams) => Promise<SignTxResponse>;
+export type AdenaSignTx = (params: TransactionParams) => Promise<SignTxResponse>

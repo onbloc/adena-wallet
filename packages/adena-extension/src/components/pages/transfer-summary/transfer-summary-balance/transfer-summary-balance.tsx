@@ -1,11 +1,11 @@
 import {
   TokenBalance,
-} from '@components/molecules';
-import React from 'react';
+} from '@components/molecules'
+import React from 'react'
 
 import {
   TransferSummaryBalanceWrapper,
-} from './transfer-summary-balance.styles';
+} from './transfer-summary-balance.styles'
 
 export interface TransferSummaryBalanceProps {
   tokenImage: string
@@ -31,7 +31,7 @@ const TransferSummaryBalance: React.FC<TransferSummaryBalanceProps> = ({
         />
       </span>
     </TransferSummaryBalanceWrapper>
-  );
-};
+  )
+}
 
-export default TransferSummaryBalance;
+export default TransferSummaryBalance

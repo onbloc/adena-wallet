@@ -1,24 +1,24 @@
 import {
-  describe, it,
-} from 'vitest';
-import {
   GlobalWebStyle,
-} from '@styles/global-style';
-import theme from '@styles/theme';
+} from '@styles/global-style'
+import theme from '@styles/theme'
 import {
   render,
-} from '@testing-library/react';
-import React from 'react';
+} from '@testing-library/react'
+import React from 'react'
 import {
   RecoilRoot,
-} from 'recoil';
+} from 'recoil'
 import {
   ThemeProvider,
-} from 'styled-components';
+} from 'styled-components'
+import {
+  describe, it,
+} from 'vitest'
 
 import {
   WebSecurityHeader,
-} from '.';
+} from '.'
 
 describe('WebSecurityHeader Component', () => {
   it('WebSecurityHeader render', () => {
@@ -30,10 +30,10 @@ describe('WebSecurityHeader Component', () => {
             currentStep={0}
             stepLength={2}
             visibleBackButton={true}
-            onClickGoBack={(): void => { return; }}
+            onClickGoBack={(): void => { return }}
           />
         </ThemeProvider>
       </RecoilRoot>,
-    );
-  });
-});
+    )
+  })
+})

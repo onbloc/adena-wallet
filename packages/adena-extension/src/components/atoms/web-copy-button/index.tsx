@@ -1,17 +1,17 @@
-import IconCopy from '@assets/web/icon-copy';
+import IconCopy from '@assets/web/icon-copy'
 import React, {
   CSSProperties, useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 import styled, {
   css, RuleSet, useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   Row, View,
-} from '../base';
+} from '../base'
 import {
   WebText,
-} from '../web-text';
+} from '../web-text'
 
 interface WebCopyButtonProps {
   width?: CSSProperties['width']
@@ -65,10 +65,10 @@ const StyledContainer = styled(Row).withConfig({
           background: rgba(255, 255, 255, 0.08);
         `
       : ''}
-`;
+`
 
-const CLEAR_CLIPBOARD_TIMEOUT = 30_000; // 30 seconds
-const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000; // 2 seconds
+const CLEAR_CLIPBOARD_TIMEOUT = 30_000 // 30 seconds
+const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000 // 2 seconds
 
 export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   width = 'fit-content',
@@ -77,57 +77,57 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   clearClipboardTimeout = CLEAR_CLIPBOARD_TIMEOUT,
   onCopy,
 }) => {
-  const theme = useTheme();
-  const [clicked, setClicked] = useState(false);
-  const [clickedAt, setClickedAt] = useState(0);
-  const [mouseover, setMouseover] = useState(false);
+  const theme = useTheme()
+  const [clicked, setClicked] = useState(false)
+  const [clickedAt, setClickedAt] = useState(0)
+  const [mouseover, setMouseover] = useState(false)
 
   const buttonStr = useMemo(() => {
     if (clicked) {
-      return 'Copied!';
+      return 'Copied!'
     }
-    return 'Copy';
-  }, [clicked]);
+    return 'Copy'
+  }, [clicked])
 
   const activated = useMemo(() => {
-    return mouseover || clicked;
-  }, [mouseover, clicked]);
+    return mouseover || clicked
+  }, [mouseover, clicked])
 
   const onMouseDown = useCallback(() => {
     if (clicked) {
-      return;
+      return
     }
-    setClicked(true);
-    setClickedAt(Date.now());
+    setClicked(true)
+    setClickedAt(Date.now())
 
-    navigator.clipboard.writeText(copyText);
-    onCopy && onCopy();
+    navigator.clipboard.writeText(copyText)
+    onCopy && onCopy()
 
     setTimeout(() => {
-      setClicked(false);
-    }, COPY_TOOLTIP_DISPLAY_TIMEOUT);
-  }, [clicked, copyText, onCopy]);
+      setClicked(false)
+    }, COPY_TOOLTIP_DISPLAY_TIMEOUT)
+  }, [clicked, copyText, onCopy])
 
   const onMouseOver = useCallback(() => {
-    setMouseover(true);
-  }, []);
+    setMouseover(true)
+  }, [])
 
   const onMouseLeave = useCallback(() => {
-    setMouseover(false);
-  }, []);
+    setMouseover(false)
+  }, [])
 
   useEffect(() => {
-    console.log('clear start clipboard');
+    console.log('clear start clipboard')
 
     const timeout = setTimeout(() => {
-      console.log('clear clipboard');
-      navigator?.clipboard?.writeText('');
-    }, clearClipboardTimeout);
+      console.log('clear clipboard')
+      navigator?.clipboard?.writeText('')
+    }, clearClipboardTimeout)
 
     return () => {
-      clearTimeout(timeout);
-    };
-  }, [clickedAt, clearClipboardTimeout]);
+      clearTimeout(timeout)
+    }
+  }, [clickedAt, clearClipboardTimeout])
 
   return (
     <StyledContainer
@@ -143,20 +143,20 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
     >
       {clicked
         ? (
-          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
-            {buttonStr}
-          </WebText>
-        )
-        : (
-          <React.Fragment>
-            <View>
-              <IconCopy />
-            </View>
-            <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
+            <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
               {buttonStr}
             </WebText>
-          </React.Fragment>
-        )}
+          )
+        : (
+            <React.Fragment>
+              <View>
+                <IconCopy />
+              </View>
+              <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
+                {buttonStr}
+              </WebText>
+            </React.Fragment>
+          )}
     </StyledContainer>
-  );
-};
+  )
+}

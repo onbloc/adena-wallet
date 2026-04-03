@@ -1,28 +1,28 @@
 import {
   TransactionHistoryMapper,
-} from '@repositories/transaction/mapper/transaction-history-mapper';
+} from '@repositories/transaction/mapper/transaction-history-mapper'
 import {
   keepPreviousData, useQuery, useQueryClient,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   TransactionInfo,
-} from '@types';
+} from '@types'
 
 import {
   useGetAllGRC721Collections,
-} from './nft/use-get-all-grc721-collections';
+} from './nft/use-get-all-grc721-collections'
 import {
   useAdenaContext,
-} from './use-context';
+} from './use-context'
 import {
   useGRC20Tokens,
-} from './use-grc20-tokens';
+} from './use-grc20-tokens'
 import {
   useNetwork,
-} from './use-network';
+} from './use-network'
 import {
   useTokenMetainfo,
-} from './use-token-metainfo';
+} from './use-token-metainfo'
 
 export interface UseMakeTransactionsWithTimeReturn {
   status: 'pending' | 'error' | 'success'
@@ -41,22 +41,22 @@ export const useMakeTransactionsWithTime = (
 ): UseMakeTransactionsWithTimeReturn => {
   const {
     currentNetwork,
-  } = useNetwork();
+  } = useNetwork()
   const {
     transactionHistoryService,
-  } = useAdenaContext();
+  } = useAdenaContext()
   const {
     allTokenMetainfos, tokenLogoMap, getTokenAmount,
-  } = useTokenMetainfo();
+  } = useTokenMetainfo()
   const {
     isFetched: isFetchedTokens,
-  } = useGRC20Tokens();
+  } = useGRC20Tokens()
   const {
     data: grc721Collections = [], isFetched: isFetchedGRC721Collections,
   }
-    = useGetAllGRC721Collections();
+    = useGetAllGRC721Collections()
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
 
   const {
     status, isLoading, isFetched, isFetching, data,
@@ -64,26 +64,26 @@ export const useMakeTransactionsWithTime = (
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, Object.values(tokenLogoMap).length, transactions?.length, key || ''],
     queryFn: () => {
       if (!transactions || !grc721Collections) {
-        return null;
+        return null
       }
 
       return Promise.all(
         transactions.map(async (transaction) => {
-          let time: string | null = transaction.date;
+          let time: string | null = transaction.date
 
           if (!transactionHistoryService.supportedApi) {
             time = await queryClient.fetchQuery({
               queryKey: ['blockTime', currentNetwork.networkId, transaction.height || 1],
               queryFn: () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
               staleTime: Infinity,
-            });
+            })
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
-            const amount = transaction.amount;
+            const amount = transaction.amount
             const collection = grc721Collections.find(
               collection => collection.packagePath === amount.denom,
-            );
+            )
             return {
               ...transaction,
               amount: {
@@ -98,7 +98,7 @@ export const useMakeTransactionsWithTime = (
               ),
               logo: collection?.packagePath || '',
               date: time || '',
-            };
+            }
           }
           return {
             ...transaction,
@@ -111,16 +111,16 @@ export const useMakeTransactionsWithTime = (
             ),
             logo: tokenLogoMap?.[transaction.amount.denom] || '',
             date: time || '',
-          };
+          }
         }),
-      );
+      )
     },
     select: (data) => {
       if (!data) {
-        return null;
+        return null
       }
 
-      return TransactionHistoryMapper.queryToDisplay(data);
+      return TransactionHistoryMapper.queryToDisplay(data)
     },
     enabled:
       !!transactionHistoryService.supported
@@ -130,7 +130,7 @@ export const useMakeTransactionsWithTime = (
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
     placeholderData: keepPreviousData,
-  });
+  })
 
   return {
     status,
@@ -138,5 +138,5 @@ export const useMakeTransactionsWithTime = (
     isFetched,
     isFetching,
     data,
-  };
-};
+  }
+}

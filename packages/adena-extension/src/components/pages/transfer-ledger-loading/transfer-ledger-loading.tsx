@@ -1,22 +1,22 @@
 import {
   Icon,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   Datatable,
-} from '@components/atoms/datatable';
+} from '@components/atoms/datatable'
 import {
   BottomFixedButton, TitleWithDesc,
-} from '@components/molecules';
+} from '@components/molecules'
 import {
   Document,
-} from 'adena-module';
+} from 'adena-module'
 import React, {
   useMemo,
-} from 'react';
+} from 'react'
 
 import {
   TransferLedgerLoadingWrapper,
-} from './transfer-ledger-loading.styles';
+} from './transfer-ledger-loading.styles'
 
 export interface TransferLedgerLoadingProps {
   document: Document | null
@@ -26,7 +26,7 @@ export interface TransferLedgerLoadingProps {
 const text = {
   title: 'Requesting Approval\non Hardware Wallet',
   desc: 'Please approve this transaction on your\nledger device to proceed.',
-};
+}
 
 const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
   document,
@@ -34,11 +34,11 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
 }) => {
   const documentData = useMemo(() => {
     if (!document) {
-      return null;
+      return null
     }
     const gasFee = document.fee.amount[0]
       ? `${document.fee.amount[0]?.amount}${document.fee.amount[0]?.denom}`
-      : '';
+      : ''
     return [
       {
         key: 'Chain ID',
@@ -60,8 +60,8 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
         key: 'Gas Wanted',
         value: document.fee.gas,
       },
-    ];
-  }, [document]);
+    ]
+  }, [document])
 
   return (
     <TransferLedgerLoadingWrapper>
@@ -75,7 +75,7 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
       )}
       <BottomFixedButton text='Cancel' onClick={onClickCancel} />
     </TransferLedgerLoadingWrapper>
-  );
-};
+  )
+}
 
-export default TransferLedgerLoading;
+export default TransferLedgerLoading

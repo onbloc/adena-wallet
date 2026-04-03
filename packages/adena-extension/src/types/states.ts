@@ -1,6 +1,6 @@
 import {
   TokenModel,
-} from './';
+} from './'
 
 export interface TokenBalanceType extends TokenModel {
   amount: Amount
@@ -42,7 +42,7 @@ export interface NetworkMetainfo {
  * FINISH: When deserialization is complete
  * FAIL: When deserialization has failed
  */
-export type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE';
+export type StateType = 'CREATE' | 'LOGIN' | 'LOADING' | 'FINISH' | 'FAIL' | 'NONE'
 
 export interface SeedState {
   type: 'SEED'
@@ -60,6 +60,6 @@ export interface GoogleState {
   privateKey: string
 }
 
-export type CreateAccountState = SeedState | LedgerState | GoogleState;
+export type CreateAccountState = SeedState | LedgerState | GoogleState
 
-export type WindowSizeType = 'EXPAND' | 'DEFAULT';
+export type WindowSizeType = 'EXPAND' | 'DEFAULT'

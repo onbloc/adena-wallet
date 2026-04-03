@@ -1,3 +1,3 @@
 export {
   default,
-} from './signature-list-item';
+} from './signature-list-item'

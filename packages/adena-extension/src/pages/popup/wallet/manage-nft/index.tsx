@@ -1,60 +1,60 @@
-import ManageCollections from '@components/pages/manage-nft/manage-collections/manage-collections';
+import ManageCollections from '@components/pages/manage-nft/manage-collections/manage-collections'
 import {
   ManageTokenLayout,
-} from '@components/pages/manage-token-layout';
+} from '@components/pages/manage-token-layout'
 import {
   useNFTCollectionHandler,
-} from '@hooks/nft/use-collection-handler';
+} from '@hooks/nft/use-collection-handler'
 import {
   useGetGRC721Balance,
-} from '@hooks/nft/use-get-grc721-balance';
+} from '@hooks/nft/use-get-grc721-balance'
 import {
   useGetGRC721Collections,
-} from '@hooks/nft/use-get-grc721-collections';
+} from '@hooks/nft/use-get-grc721-collections'
 import {
   useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri';
-import useAppNavigate from '@hooks/use-app-navigate';
+} from '@hooks/nft/use-get-grc721-token-uri'
+import useAppNavigate from '@hooks/use-app-navigate'
 import {
   ManageGRC721Info,
-} from '@types';
+} from '@types'
 import React, {
   useCallback, useEffect, useMemo, useState,
-} from 'react';
+} from 'react'
 
 const ManageNFTContainer: React.FC = () => {
   const {
     goBack,
-  } = useAppNavigate();
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [isClose, setIsClose] = useState(false);
+  } = useAppNavigate()
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [isClose, setIsClose] = useState(false)
   const {
     data: collections, refetch: refetchCollections,
   } = useGetGRC721Collections({
     refetchOnMount: true,
-  });
+  })
   const {
     showCollection, hideCollection,
-  } = useNFTCollectionHandler();
+  } = useNFTCollectionHandler()
 
   useEffect(() => {
     if (isClose) {
-      goBack();
+      goBack()
     }
-  }, [isClose]);
+  }, [isClose])
 
   const filteredCollections: ManageGRC721Info[] = useMemo(() => {
     if (!collections) {
-      return [];
+      return []
     }
 
-    const comparedKeyword = searchKeyword.toLowerCase();
+    const comparedKeyword = searchKeyword.toLowerCase()
     const filteredCollections = collections
       .filter((collection) => {
-        if (comparedKeyword === '') return true;
-        if (collection.name.toLowerCase().includes(comparedKeyword)) return true;
-        if (collection.symbol.toLowerCase().includes(comparedKeyword)) return true;
-        return false;
+        if (comparedKeyword === '') return true
+        if (collection.name.toLowerCase().includes(comparedKeyword)) return true
+        if (collection.symbol.toLowerCase().includes(comparedKeyword)) return true
+        return false
       })
       .map((collection) => {
         return {
@@ -62,30 +62,29 @@ const ManageNFTContainer: React.FC = () => {
           type: 'grc721' as const,
           balance: '0',
           logo: collection.isTokenUri ? collection.packagePath : '',
-        };
-      });
-    return filteredCollections;
-  }, [searchKeyword, collections]);
+        }
+      })
+    return filteredCollections
+  }, [searchKeyword, collections])
 
   const onChangeKeyword = useCallback((keyword: string) => {
-    setSearchKeyword(keyword);
-  }, []);
+    setSearchKeyword(keyword)
+  }, [])
 
   const onToggleActiveItem = useCallback(
     (packagePath: string, activated: boolean) => {
       if (activated) {
-        showCollection(packagePath).then(() => refetchCollections());
-      }
-      else {
-        hideCollection(packagePath).then(() => refetchCollections());
+        showCollection(packagePath).then(() => refetchCollections())
+      } else {
+        hideCollection(packagePath).then(() => refetchCollections())
       }
     },
     [showCollection, hideCollection],
-  );
+  )
 
   const onClickClose = useCallback(() => {
-    setIsClose(true);
-  }, []);
+    setIsClose(true)
+  }, [])
 
   return (
     <ManageTokenLayout>
@@ -99,7 +98,7 @@ const ManageNFTContainer: React.FC = () => {
         onToggleActiveItem={onToggleActiveItem}
       />
     </ManageTokenLayout>
-  );
-};
+  )
+}
 
-export default ManageNFTContainer;
+export default ManageNFTContainer

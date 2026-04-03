@@ -1,10 +1,10 @@
 import {
   View,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   fonts, getTheme,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const AdditionalTokenPathInputWrapper = styled(View)`
   width: 100%;
@@ -27,4 +27,4 @@ export const AdditionalTokenPathInputWrapper = styled(View)`
     padding: 0 8px;
     height: 18px;
   }
-`;
+`

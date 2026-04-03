@@ -1,17 +1,17 @@
 import {
   Row, WebCheckBox, WebText,
-} from '@components/atoms';
-import React from 'react';
+} from '@components/atoms'
+import React from 'react'
 import {
   useTheme,
-} from 'styled-components';
+} from 'styled-components'
 
 import {
   AccountInfo,
-} from './select-account-box.types';
+} from './select-account-box.types'
 import {
   StyledSelectAccountBoxItem,
-} from './select-account-box-item.styles';
+} from './select-account-box-item.styles'
 
 const SelectAccountBoxItem: React.FC<{
   account: AccountInfo
@@ -19,10 +19,10 @@ const SelectAccountBoxItem: React.FC<{
 }> = ({
   account, select,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme()
   const {
     address, hdPath, index, selected, stored,
-  } = account;
+  } = account
 
   return (
     <StyledSelectAccountBoxItem key={index}>
@@ -35,13 +35,13 @@ const SelectAccountBoxItem: React.FC<{
       </Row>
       {stored
         ? (
-          <WebCheckBox checked disabled />
-        )
+            <WebCheckBox checked disabled />
+          )
         : (
-          <WebCheckBox checked={selected} onClick={(): void => select(address)} />
-        )}
+            <WebCheckBox checked={selected} onClick={(): void => select(address)} />
+          )}
     </StyledSelectAccountBoxItem>
-  );
-};
+  )
+}
 
-export default SelectAccountBoxItem;
+export default SelectAccountBoxItem

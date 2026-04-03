@@ -1,15 +1,15 @@
-import TransactionHistoryListItem from '@components/molecules/transaction-history/transaction-history-list-item/transaction-history-list-item';
+import TransactionHistoryListItem from '@components/molecules/transaction-history/transaction-history-list-item/transaction-history-list-item'
 import {
   UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tanstack/react-query'
 import {
   TransactionInfo,
-} from '@types';
-import React from 'react';
+} from '@types'
+import React from 'react'
 
 import {
   TransactionHistoryListWrapper,
-} from './transaction-history-list.styles';
+} from './transaction-history-list.styles'
 
 export interface TransactionHistoryListProps {
   title: string
@@ -42,7 +42,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
         ))}
       </div>
     </TransactionHistoryListWrapper>
-  );
-};
+  )
+}
 
-export default TransactionHistoryList;
+export default TransactionHistoryList

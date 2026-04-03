@@ -1,7 +1,7 @@
 import {
   webFonts,
-} from '@styles/theme';
-import styled from 'styled-components';
+} from '@styles/theme'
+import styled from 'styled-components'
 
 export const WalletCreationHelpOverlayItem = styled.span`
   color: ${({
@@ -14,4 +14,4 @@ export const WalletCreationHelpOverlayItem = styled.span`
   b {
     font-weight: 600;
   }
-`;
+`

@@ -1,12 +1,12 @@
-import IconCheck from '@assets/web/web-check-circle.svg';
+import IconCheck from '@assets/web/web-check-circle.svg'
 import {
   Row, View, WebButton, WebImg, WebInput,
-} from '@components/atoms';
+} from '@components/atoms'
 import {
   WebTitleWithDescription,
-} from '@components/molecules';
-import React from 'react';
-import styled from 'styled-components';
+} from '@components/molecules'
+import React from 'react'
+import styled from 'styled-components'
 
 interface SetupMultisigCompleteScreenProps {
   address: string
@@ -53,26 +53,26 @@ const SetupMultisigCompleteScreen: React.FC<SetupMultisigCompleteScreenProps> = 
         />
       </StyledButtonBox>
     </StyledContainer>
-  );
-};
+  )
+}
 
-export default SetupMultisigCompleteScreen;
+export default SetupMultisigCompleteScreen
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
   height: 350px;
-`;
+`
 
 const StyledInputBox = styled(Row)`
   gap: 12px;
   width: calc(100% + 30px);
-`;
+`
 
 const StyledInput = styled(WebInput)`
   width: 100%;
-`;
+`
 
 const StyledButtonBox = styled(View)`
   align-items: flex-start;
-`;
+`
