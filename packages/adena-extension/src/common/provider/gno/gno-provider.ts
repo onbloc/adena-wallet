@@ -4,8 +4,12 @@ import {
   INVALID_PUBLIC_KEY_ERROR_TYPE,
   UNKNOWN_ADDRESS_ERROR_TYPE,
 } from '@common/constants/tx-error.constant';
-import { parseTokenAmount } from '@common/utils/amount-utils';
-import { GnoJSONRPCProvider } from '@gnolang/gno-js-client';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
+import {
+  GnoJSONRPCProvider,
+} from '@gnolang/gno-js-client';
 import {
   ABCIEndpoint,
   ABCIResponse,
@@ -23,9 +27,14 @@ import {
   Tx,
   uint8ArrayToBase64,
 } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import {
+  ResponseDeliverTx,
+} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
 import axios from 'axios';
-import { AccountInfo, GnoDocumentInfo, VMQueryType } from './types';
+
+import {
+  AccountInfo, GnoDocumentInfo, VMQueryType,
+} from './types';
 import {
   fetchABCIResponse,
   isHttpsAvailable,
@@ -50,23 +59,18 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
   public async getAccountNumber(address: string, height?: number | undefined): Promise<number> {
     return this.getAccountInfo(address, height)
-      .then((account) => Number(account?.accountNumber ?? 0))
+      .then(account => Number(account?.accountNumber ?? 0))
       .catch(() => 0);
   }
 
   public async getAccountSequence(address: string, height?: number | undefined): Promise<number> {
     return this.getAccountInfo(address, height)
-      .then((account) => Number(account?.sequence ?? 0))
+      .then(account => Number(account?.sequence ?? 0))
       .catch(() => 0);
   }
 
   public async getGasPrice(height?: number | undefined): Promise<number> {
-    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, [
-      'auth/gasprice',
-      '',
-      `${height ?? 0}`,
-      false,
-    ]);
+    const requestBody = newRequest(ABCIEndpoint.ABCI_QUERY, ['auth/gasprice', '', `${height ?? 0}`, false]);
 
     const abciResponse = await postABCIResponse(this.baseURL, requestBody).catch(() => null);
 
@@ -77,8 +81,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
     }
 
     const gasPrice = parseABCI<{
-      gas: number;
-      price: string;
+      gas: number
+      price: string
     }>(abciData);
 
     const priceAmount = parseTokenAmount(gasPrice.price);
@@ -129,7 +133,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
         accountNumber,
         sequence,
       };
-    } catch (e) {
+    }
+    catch (e) {
       console.info(e);
       return inActiveAccount;
     }
@@ -140,7 +145,7 @@ export class GnoProvider extends GnoJSONRPCProvider {
     functionName: string,
     params: (string | number)[],
   ): Promise<string | null> {
-    const paramValues = params.map((param) =>
+    const paramValues = params.map(param =>
       typeof param === 'number' ? `${param}` : `"${param}"`,
     );
     const expression = `${functionName}(${paramValues.join(',')})`;
@@ -185,7 +190,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
     const abciResponse = await axios.post<RPCResponse<ABCIResponse>>(
       this.baseURL,
       params.request,
-      {},
+      {
+      },
     );
 
     const responseValue = abciResponse.data.result?.response.Value;
@@ -197,15 +203,15 @@ export class GnoProvider extends GnoJSONRPCProvider {
 
     if (simulateResult.response_base?.error) {
       if (
-        simulateResult.response_base.error.type_url === INVALID_PUBLIC_KEY_ERROR_TYPE ||
-        simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
+        simulateResult.response_base.error.type_url === INVALID_PUBLIC_KEY_ERROR_TYPE
+        || simulateResult.response_base.error.type_url === UNKNOWN_ADDRESS_ERROR_TYPE
       ) {
         throw new Error(INVALID_PUBLIC_KEY_ERROR_TYPE);
       }
 
       if (
-        simulateResult.response_base.error.type_url === INSUFFICIENT_FUNDS_ERROR_TYPE ||
-        simulateResult.response_base.error.type_url === INSUFFICIENT_COINS_ERROR_TYPE
+        simulateResult.response_base.error.type_url === INSUFFICIENT_FUNDS_ERROR_TYPE
+        || simulateResult.response_base.error.type_url === INSUFFICIENT_COINS_ERROR_TYPE
       ) {
         throw new Error(simulateResult.response_base.error.type_url);
       }
@@ -242,7 +248,8 @@ export class GnoProvider extends GnoJSONRPCProvider {
       }
 
       return parseABCI<GnoDocumentInfo>(abciData);
-    } catch (e) {
+    }
+    catch (e) {
       console.info(e);
     }
 

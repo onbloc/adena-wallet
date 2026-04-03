@@ -1,25 +1,33 @@
-import React, { useCallback, useMemo } from 'react';
-
-import { AddCustomNetworkWrapper } from './add-custom-network.styles';
 import LeftArrowIcon from '@assets/arrowL-left.svg';
-import { SubHeader, WarningBox, CustomNetworkInput } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
+import {
+  CustomNetworkInput, SubHeader, WarningBox,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
+import React, {
+  useCallback, useMemo,
+} from 'react';
+
+import {
+  AddCustomNetworkWrapper,
+} from './add-custom-network.styles';
 
 export interface AddCustomNetworkProps {
-  name: string;
-  rpcUrl: string;
-  rpcUrlError?: string;
-  indexerUrl: string;
-  indexerUrlError?: string;
-  chainId: string;
-  chainIdError?: string;
-  changeName: (name: string) => void;
-  changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
-  changeChainId: (chainId: string) => void;
-  save: () => void;
-  cancel: () => void;
-  moveBack: () => void;
+  name: string
+  rpcUrl: string
+  rpcUrlError?: string
+  indexerUrl: string
+  indexerUrlError?: string
+  chainId: string
+  chainIdError?: string
+  changeName: (name: string) => void
+  changeRPCUrl: (rpcUrl: string) => void
+  changeIndexerUrl: (indexerUrl: string) => void
+  changeChainId: (chainId: string) => void
+  save: () => void
+  cancel: () => void
+  moveBack: () => void
 }
 
 const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
@@ -65,7 +73,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <SubHeader
         title='Add Custom Network'
         leftElement={{
-          element: <img src={LeftArrowIcon} alt={'back icon'} />,
+          element: <img src={LeftArrowIcon} alt='back icon' />,
           onClick: onClickBack,
         }}
       />

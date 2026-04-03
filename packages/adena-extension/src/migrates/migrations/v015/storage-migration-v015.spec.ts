@@ -1,5 +1,10 @@
-import { decryptAES } from 'adena-module';
-import { StorageMigration015 } from './storage-migration-v015';
+import {
+  decryptAES,
+} from 'adena-module';
+
+import {
+  StorageMigration015,
+} from './storage-migration-v015';
 
 const mockStorageData = {
   NETWORKS: [],
@@ -8,15 +13,20 @@ const mockStorageData = {
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
-  ACCOUNT_NAMES: {},
-  ESTABLISH_SITES: {},
+  ACCOUNT_NAMES: {
+  },
+  ESTABLISH_SITES: {
+  },
   ADDRESS_BOOK: '',
-  ACCOUNT_TOKEN_METAINFOS: {},
+  ACCOUNT_TOKEN_METAINFOS: {
+  },
   QUESTIONNAIRE_EXPIRED_DATE: null,
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
-  ACCOUNT_GRC721_COLLECTIONS: {},
-  ACCOUNT_GRC721_PINNED_PACKAGES: {},
+  ACCOUNT_GRC721_COLLECTIONS: {
+  },
+  ACCOUNT_GRC721_PINNED_PACKAGES: {
+  },
 };
 
 describe('serialized wallet migration V015', () => {
@@ -48,8 +58,10 @@ describe('serialized wallet migration V015', () => {
 
     expect(result.version).toBe(15);
     expect(result.data).not.toBeNull();
-    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
+    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({
+    });
+    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({
+    });
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);
@@ -65,7 +77,10 @@ describe('serialized wallet migration V015', () => {
   it('up failed throw error', async () => {
     const mockData: any = {
       version: 1,
-      data: { ...mockStorageData, SERIALIZED: null },
+      data: {
+        ...mockStorageData,
+        SERIALIZED: null,
+      },
     };
     const migration = new StorageMigration015();
 

@@ -1,14 +1,25 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-
-import { CommonFullContentLayout } from '@components/atoms';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
 import ChangeNetwork from '@components/pages/change-network/change-network/change-network';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useNetwork } from '@hooks/use-network';
-import { RoutePath } from '@types';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo,
+} from 'react';
 
 const ChangeNetworkContainer: React.FC = () => {
-  const { navigate, goBack } = useAppNavigate();
-  const { modified, currentNetwork, networks, setModified, changeNetwork } = useNetwork();
+  const {
+    navigate, goBack,
+  } = useAppNavigate();
+  const {
+    modified, currentNetwork, networks, setModified, changeNetwork,
+  } = useNetwork();
 
   useEffect(() => {
     if (modified) {
@@ -17,7 +28,7 @@ const ChangeNetworkContainer: React.FC = () => {
   }, [modified]);
 
   const displayNetworks = useMemo(() => {
-    return networks.filter((network) => network.deleted !== true);
+    return networks.filter(network => network.deleted !== true);
   }, [networks]);
 
   const loading = useMemo(() => {
@@ -31,7 +42,9 @@ const ChangeNetworkContainer: React.FC = () => {
   const moveEditPage = useCallback(
     (networkId: string) => {
       navigate(RoutePath.EditCustomNetwork, {
-        state: { networkId },
+        state: {
+          networkId,
+        },
       });
     },
     [navigate],

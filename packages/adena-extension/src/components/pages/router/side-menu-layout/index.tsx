@@ -1,12 +1,19 @@
-import React, { useCallback } from 'react';
-import { Portal } from '@components/atoms';
-import { SideMenuBackground, SideMenuContent, SideMenuOverlay } from './side-menu-layout.styles';
+import {
+  Portal,
+} from '@components/atoms';
+import React, {
+  useCallback,
+} from 'react';
+
 import SideMenuContainer from './side-menu-container';
+import {
+  SideMenuBackground, SideMenuContent, SideMenuOverlay,
+} from './side-menu-layout.styles';
 
 interface SideMenuLayoutProps {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  selector?: string;
+  open: boolean
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  selector?: string
 }
 
 export const SideMenuLayout: React.FC<SideMenuLayoutProps> = ({

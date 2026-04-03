@@ -1,22 +1,46 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  HISTORY_FETCH_INTERVAL_TIME,
+} from '@common/constants/interval.constant';
+import {
+  TransactionHistory,
+} from '@components/molecules';
+import {
+  useGetAllGRC721Collections,
+} from '@hooks/nft/use-get-all-grc721-collections';
+import {
+  useGetGRC721TokenUri,
+} from '@hooks/nft/use-get-grc721-token-uri';
+import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import useScrollHistory from '@hooks/use-scroll-history';
+import {
+  useTransactionHistory,
+} from '@hooks/wallet/transaction-history/use-transaction-history';
+import {
+  useTransactionHistoryPage,
+} from '@hooks/wallet/transaction-history/use-transaction-history-page';
+import mixins from '@styles/mixins';
+import {
+  fonts,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 import styled from 'styled-components';
 
-import { HISTORY_FETCH_INTERVAL_TIME } from '@common/constants/interval.constant';
-import { TransactionHistory } from '@components/molecules';
-import { useGetAllGRC721Collections } from '@hooks/nft/use-get-all-grc721-collections';
-import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
-import useScrollHistory from '@hooks/use-scroll-history';
-import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
-import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
-import mixins from '@styles/mixins';
-import { fonts } from '@styles/theme';
-import { RoutePath } from '@types';
-
 const StyledHistoryLayout = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: calc(100vh - 48px - 60px);
   padding: 24px 20px;
@@ -32,22 +56,36 @@ const StyledTitle = styled.span`
 `;
 
 const HistoryContainer: React.FC = () => {
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const [bodyElement, setBodyElement] = useState<HTMLBodyElement | undefined>();
-  const { currentAddress } = useCurrentAccount();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
   const [loadingNextFetch, setLoadingNextFetch] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { saveScrollPosition } = useScrollHistory(scrollRef);
-  const { currentNetwork } = useNetwork();
+  const {
+    saveScrollPosition,
+  } = useScrollHistory(scrollRef);
+  const {
+    currentNetwork,
+  } = useNetwork();
 
-  useGetAllGRC721Collections({ refetchOnMount: true });
+  useGetAllGRC721Collections({
+    refetchOnMount: true,
+  });
 
   const isUsedApi = useMemo(() => {
     return !!currentNetwork.apiUrl;
   }, [currentNetwork]);
 
-  const pageTransactionHistoryQuery = useTransactionHistoryPage({ enabled: isUsedApi });
-  const commonTransactionHistoryQuery = useTransactionHistory({ enabled: !isUsedApi });
+  const pageTransactionHistoryQuery = useTransactionHistoryPage({
+    enabled: isUsedApi,
+  });
+  const commonTransactionHistoryQuery = useTransactionHistory({
+    enabled: !isUsedApi,
+  });
 
   const transactionHistoryQuery = useMemo(() => {
     if (isUsedApi) {
@@ -56,8 +94,10 @@ const HistoryContainer: React.FC = () => {
     return commonTransactionHistoryQuery;
   }, [isUsedApi, commonTransactionHistoryQuery, pageTransactionHistoryQuery]);
 
-  const { isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch } =
-    transactionHistoryQuery;
+  const {
+    isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch,
+  }
+    = transactionHistoryQuery;
 
   useEffect(() => {
     refetch();
@@ -96,12 +136,14 @@ const HistoryContainer: React.FC = () => {
 
   const onClickItem = useCallback(
     (hash: string) => {
-      const transactions = data?.flatMap((group) => group.transactions) ?? [];
-      const transactionInfo = transactions.find((transaction) => transaction.hash === hash);
+      const transactions = data?.flatMap(group => group.transactions) ?? [];
+      const transactionInfo = transactions.find(transaction => transaction.hash === hash);
       if (transactionInfo) {
         saveScrollPosition(scrollRef.current?.scrollTop || 0);
         navigate(RoutePath.TransactionDetail, {
-          state: { transactionInfo },
+          state: {
+            transactionInfo,
+          },
         });
       }
     },

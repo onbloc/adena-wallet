@@ -1,10 +1,25 @@
-import { WalletResponseFailureType } from '@adena-wallet/sdk';
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { HandlerMethod } from '.';
-import { CommandMessageData } from './command-message';
-import { InjectionMessage, InjectionMessageInstance } from './message';
-import { existsPopups, removePopups } from './methods';
-import { InjectCore } from './methods/core';
+import {
+  WalletResponseFailureType,
+} from '@adena-wallet/sdk';
+import {
+  MemoryProvider,
+} from '@common/provider/memory/memory-provider';
+
+import {
+  HandlerMethod,
+} from '.';
+import {
+  CommandMessageData,
+} from './command-message';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from './message';
+import {
+  existsPopups, removePopups,
+} from './methods';
+import {
+  InjectCore,
+} from './methods/core';
 
 export class MessageHandler {
   public static createHandler = (
@@ -30,10 +45,12 @@ export class MessageHandler {
             sendResponse(message);
             break;
         }
-      } else {
+      }
+      else {
         sendResponse(message);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(error);
     }
     return true;
@@ -52,13 +69,15 @@ export class MessageHandler {
     try {
       const currentAccountId = await core.getCurrentAccountId();
       existsWallet = currentAccountId?.length > 0;
-    } catch (e) {
+    }
+    catch (_e) {
       existsWallet = false;
     }
 
     if (!existsWallet) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, message.key),
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
+        }, message.key),
       );
       return;
     }

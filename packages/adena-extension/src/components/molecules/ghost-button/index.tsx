@@ -1,17 +1,23 @@
+import {
+  Button,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-import { Button } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
-
 interface GhostButtonsProps {
-  left: string;
-  right: string;
-  className?: string;
+  left: string
+  right: string
+  className?: string
 }
 
 const GhostBtnWrap = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   gap: 10px;
 `;
@@ -25,7 +31,9 @@ const GhostBtn = styled(Button)`
   }
 `;
 
-export const GhostButtons = ({ left, right, className }: GhostButtonsProps): JSX.Element => {
+export const GhostButtons = ({
+  left, right, className,
+}: GhostButtonsProps): JSX.Element => {
   return (
     <GhostBtnWrap className={className}>
       <GhostBtn fullWidth height='48px' hierarchy='ghost' disabled>

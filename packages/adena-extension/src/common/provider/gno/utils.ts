@@ -1,5 +1,9 @@
-import { BinaryReader } from '@bufbuild/protobuf/wire';
-import { ABCIResponse, RPCRequest, RPCResponse } from '@gnolang/tm2-js-client';
+import {
+  BinaryReader,
+} from '@bufbuild/protobuf/wire';
+import {
+  ABCIResponse, RPCRequest, RPCResponse,
+} from '@gnolang/tm2-js-client';
 
 const HTTP_PROTOCOL = 'http';
 const HTTPS_PROTOCOL = 'https';
@@ -70,7 +74,8 @@ export const isHttpsAvailable = async (domain: string): Promise<boolean> => {
       cache: 'force-cache',
     });
     return response.ok;
-  } catch {
+  }
+  catch {
     return false;
   }
 };

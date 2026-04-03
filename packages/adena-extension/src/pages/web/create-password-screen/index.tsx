@@ -1,10 +1,13 @@
-import { useCallback, useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconConfirmCheck from '@assets/icon-confirm-check';
-import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
-import { EvaluatePasswordResult } from '@common/utils/password-utils';
+import {
+  ADENA_TERMS_PAGE,
+} from '@common/constants/resource.constant';
+import {
+  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
+import {
+  EvaluatePasswordResult,
+} from '@common/utils/password-utils';
 import {
   Pressable,
   Row,
@@ -15,12 +18,26 @@ import {
   WebMain,
   WebText,
 } from '@components/atoms';
-import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
-import { WebMainHeader } from '@components/pages/web/main-header';
+import {
+  TermsCheckbox, WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
-import { RoutePath } from '@types';
+import {
+  useCreatePasswordScreen,
+} from '@hooks/web/common/use-create-password-screen';
+import {
+  RoutePath,
+} from '@types';
+import {
+  useCallback, useMemo,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -52,7 +69,9 @@ const StyledLink = styled(Pressable)`
 `;
 
 const CreatePasswordScreen = (): JSX.Element => {
-  const { openLink } = useLink();
+  const {
+    openLink,
+  } = useLink();
   const {
     indicatorInfo,
     passwordState,
@@ -65,7 +84,9 @@ const CreatePasswordScreen = (): JSX.Element => {
     clearPassword,
   } = useCreatePasswordScreen();
 
-  const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
+  const {
+    goBack,
+  } = useAppNavigate<RoutePath.WebCreatePassword>();
 
   const moveAdenaTermsPage = useCallback(() => {
     openLink(ADENA_TERMS_PAGE);
@@ -106,7 +127,10 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='password'
                 placeholder='Password'
-                style={{ width: '100%', flexShrink: 0 }}
+                style={{
+                  width: '100%',
+                  flexShrink: 0,
+                }}
                 value={passwordState.value}
                 onChange={passwordState.onChange}
                 onKeyDown={onKeyDown}
@@ -126,7 +150,9 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='confirmPassword'
                 placeholder='Confirm Password'
-                style={{ width: '100%' }}
+                style={{
+                  width: '100%',
+                }}
                 value={confirmPasswordState.value}
                 onChange={confirmPasswordState.onChange}
                 onKeyDown={onKeyDown}
@@ -142,7 +168,7 @@ const CreatePasswordScreen = (): JSX.Element => {
           onChange={termsState.onChange}
           text='I agree to the&nbsp;'
           tabIndex={3}
-          margin={'0'}
+          margin='0'
         >
           <StyledLink onClick={moveAdenaTermsPage} tabIndex={4}>
             Terms of Use
@@ -182,7 +208,10 @@ const EvaluationPasswordResultDescription = ({
   }, [complexity]);
 
   return (
-    <Row style={{ gap: 6 }}>
+    <Row style={{
+      gap: 6,
+    }}
+    >
       <IconConfirmCheck fill={complexityColor} />
       <WebText type='body5' color={complexityColor}>
         {complexityText}

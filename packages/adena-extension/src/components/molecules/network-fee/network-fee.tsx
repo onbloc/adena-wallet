@@ -1,7 +1,11 @@
-import React, { useMemo } from 'react';
-
 import IconRight from '@assets/icon-right';
-import { TokenBalance } from '@components/molecules';
+import {
+  TokenBalance,
+} from '@components/molecules';
+import React, {
+  useMemo,
+} from 'react';
+
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
@@ -9,12 +13,12 @@ import {
 } from './network-fee.styles';
 
 export interface NetworkFeeProps {
-  value: string;
-  denom: string;
-  isLoading?: boolean;
-  isError?: boolean;
-  errorMessage?: string;
-  onClickSetting?: () => void;
+  value: string
+  denom: string
+  isLoading?: boolean
+  isError?: boolean
+  errorMessage?: string
+  onClickSetting?: () => void
 }
 
 const NetworkFee: React.FC<NetworkFeeProps> = ({
@@ -48,7 +52,7 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   return (
     <NetworkFeeContainer>
       <NetworkFeeWrapper error={hasError && !isEmptyValue ? 1 : 0}>
-        <span className='key'>{'Network Fee'}</span>
+        <span className='key'>Network Fee</span>
 
         <div className='network-fee-amount-wrapper'>
           <NetworkFeeAmount value={value} denom={denom} isLoading={isLoading} />
@@ -67,10 +71,12 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 };
 
 const NetworkFeeAmount: React.FC<{
-  value: string;
-  denom: string;
-  isLoading: boolean;
-}> = ({ value, denom, isLoading }) => {
+  value: string
+  denom: string
+  isLoading: boolean
+}> = ({
+  value, denom, isLoading,
+}) => {
   const hasNetworkFee = !!Number(value) && !!denom;
 
   if (isLoading) {
@@ -78,7 +84,7 @@ const NetworkFeeAmount: React.FC<{
   }
 
   if (!hasNetworkFee) {
-    return <span className='value'>{'-'}</span>;
+    return <span className='value'>-</span>;
   }
 
   return (

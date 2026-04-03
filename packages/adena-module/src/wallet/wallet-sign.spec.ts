@@ -1,23 +1,31 @@
-import { ABCIAccount, JSONRPCProvider, Provider } from '@gnolang/tm2-js-client';
-import { AdenaWallet, Document, txToDocument } from './..';
+import {
+  ABCIAccount, JSONRPCProvider, Provider,
+} from "@gnolang/tm2-js-client";
+import {
+  beforeEach, describe, expect, it, vi,
+} from "vitest";
 
-const mnemonic =
-  'source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast';
+import {
+  AdenaWallet, Document, txToDocument,
+} from "./../index.js";
+
+const mnemonic
+  = "source bonus chronic canvas draft south burst lottery vacant surface solve popular case indicate oppose farm nothing bullet exhibit title speed wink action roast";
 
 function makeDocument(body: string): Document {
   return {
     msgs: [
       {
-        type: '/vm.m_addpkg',
+        type: "/vm.m_addpkg",
         value: {
-          creator: 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5',
-          deposit: '1ugnot',
+          creator: "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5",
+          deposit: "1ugnot",
           package: {
-            name: 'hello',
-            path: 'gno.land/r/demo/hello',
+            name: "hello",
+            path: "gno.land/r/demo/hello",
             files: [
               {
-                name: 'hello.gno',
+                name: "hello.gno",
                 body: body,
               },
             ],
@@ -28,74 +36,76 @@ function makeDocument(body: string): Document {
     fee: {
       amount: [
         {
-          amount: '1',
-          denom: 'ugnot',
+          amount: "1",
+          denom: "ugnot",
         },
       ],
-      gas: '5000000',
+      gas: "5000000",
     },
-    chain_id: 'dev',
-    memo: '',
-    account_number: '0',
-    sequence: '1',
+    chain_id: "dev",
+    memo: "",
+    account_number: "0",
+    sequence: "1",
   };
 }
 
-describe('Transaction Sign', () => {
+describe("Transaction Sign", () => {
   let mockProvider: Provider;
 
   beforeEach(() => {
-    mockProvider = new JSONRPCProvider('');
-    mockProvider.getStatus = jest.fn().mockResolvedValue('0');
-    mockProvider.getStatus = jest.fn().mockResolvedValue({
+    mockProvider = new JSONRPCProvider("");
+    mockProvider.getStatus = vi.fn().mockResolvedValue("0");
+    mockProvider.getStatus = vi.fn().mockResolvedValue({
       node_info: {
-        node_info: 'dev',
+        node_info: "dev",
       },
     });
     const mockAccount: ABCIAccount = {
       BaseAccount: {
-        address: '',
-        coins: '',
+        address: "",
+        coins: "",
         public_key: null,
-        account_number: '0',
-        sequence: '1'
-      }
-    }
-    mockProvider.getAccount = jest.fn().mockResolvedValue(mockAccount);
+        account_number: "0",
+        sequence: "1",
+      },
+    };
+    mockProvider.getAccount = vi.fn().mockResolvedValue(mockAccount);
   });
 
-  it('default success', async () => {
+  it("default success", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const body = 'package hello\n// test\n';
+    const body = "package hello\n// test\n";
     const document = makeDocument(body);
-    const { signed, signature } = await wallet.sign(mockProvider, document);
+    const {
+      signed, signature,
+    } = await wallet.sign(mockProvider, document);
 
     const signedTx = txToDocument(signed);
     console.log(signedTx);
     expect(signature).toHaveLength(1);
   });
 
-  it('"&" includes success', async () => {
+  it("\"&\" includes success", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const body = 'package hello\n\nfunc main() {\n    // &\n}\n';
+    const body = "package hello\n\nfunc main() {\n    // &\n}\n";
     const document = makeDocument(body);
     const signature = await wallet.sign(mockProvider, document);
 
     expect(signature.signature).toHaveLength(1);
   });
 
-  it('">" includes success', async () => {
+  it("\">\" includes success", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const body = 'package hello\n\nfunc main() {\n    // >\n}\n';
+    const body = "package hello\n\nfunc main() {\n    // >\n}\n";
     const document = makeDocument(body);
     const signature = await wallet.sign(mockProvider, document);
 
     expect(signature.signature).toHaveLength(1);
   });
 
-  it('"<" includes success', async () => {
+  it("\"<\" includes success", async () => {
     const wallet = await AdenaWallet.createByMnemonic(mnemonic);
-    const body = 'package hello\n\nfunc main() {\n    // <\n}\n';
+    const body = "package hello\n\nfunc main() {\n    // <\n}\n";
     const document = makeDocument(body);
     const signature = await wallet.sign(mockProvider, document);
 

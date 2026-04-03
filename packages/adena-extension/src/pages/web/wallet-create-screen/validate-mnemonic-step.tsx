@@ -1,11 +1,22 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  stringFromBase64,
+} from '@common/utils/encoding-util';
+import {
+  View, WebButton, WebText,
+} from '@components/atoms';
+import {
+  WebSeedValidateInputItem,
+} from '@components/atoms/web-seed-validate-input-item';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  UseWalletCreateReturn,
+} from '@hooks/web/use-wallet-create-screen';
+import {
+  ReactElement, useCallback, useEffect, useMemo, useState,
+} from 'react';
 import styled from 'styled-components';
-
-import { stringFromBase64 } from '@common/utils/encoding-util';
-import { View, WebButton, WebText } from '@components/atoms';
-import { WebSeedValidateInputItem } from '@components/atoms/web-seed-validate-input-item';
-import { WebTitleWithDescription } from '@components/molecules';
-import { UseWalletCreateReturn } from '@hooks/web/use-wallet-create-screen';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -15,9 +26,11 @@ const StyledContainer = styled(View)`
 const ValidateMnemonicStep = ({
   useWalletCreateScreenReturn,
 }: {
-  useWalletCreateScreenReturn: UseWalletCreateReturn;
+  useWalletCreateScreenReturn: UseWalletCreateReturn
 }): ReactElement => {
-  const { seeds, onClickNext } = useWalletCreateScreenReturn;
+  const {
+    seeds, onClickNext,
+  } = useWalletCreateScreenReturn;
 
   const [firstSeed, setFirstSeed] = useState('');
   const [secondSeed, setSecondSeed] = useState('');
@@ -42,8 +55,8 @@ const ValidateMnemonicStep = ({
     let currentSeeds = stringFromBase64(seeds);
 
     const currentSeedsArray = currentSeeds.split(' ');
-    const firstSeedIndex = currentSeedsArray.findIndex((word) => word === firstSeed);
-    const secondSeedIndex = currentSeedsArray.findIndex((word) => word === secondSeed);
+    const firstSeedIndex = currentSeedsArray.findIndex(word => word === firstSeed);
+    const secondSeedIndex = currentSeedsArray.findIndex(word => word === secondSeed);
 
     currentSeeds = '';
 
@@ -72,7 +85,9 @@ const ValidateMnemonicStep = ({
     setSecondSeedError(false);
   }, []);
   useEffect(() => {
-    const randomIndexes = Array.from({ length: 2 }, () => Math.floor(Math.random() * 12)).sort(
+    const randomIndexes = Array.from({
+      length: 2,
+    }, () => Math.floor(Math.random() * 12)).sort(
       (a, b) => a - b,
     );
     setValidateSeedIndexes(randomIndexes);
@@ -87,7 +102,11 @@ const ValidateMnemonicStep = ({
       />
 
       {hasValidatedIndexes && (
-        <View style={{ width: '100%', gap: 16 }}>
+        <View style={{
+          width: '100%',
+          gap: 16,
+        }}
+        >
           <WebSeedValidateInputItem
             index={validateSeedIndexes[0]}
             value={firstSeed}
@@ -109,7 +128,9 @@ const ValidateMnemonicStep = ({
         onClick={validate}
         disabled={!availableToNext}
         rightIcon='chevronRight'
-        style={{ justifyContent: 'center' }}
+        style={{
+          justifyContent: 'center',
+        }}
       >
         <WebText type='title4'>Next</WebText>
       </WebButton>

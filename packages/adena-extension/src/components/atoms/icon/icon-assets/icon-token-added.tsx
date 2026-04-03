@@ -1,6 +1,12 @@
-import React, { ReactElement } from 'react';
+import React, {
+  ReactElement,
+} from 'react';
 
-const IconTokenAdded = ({ className }: { className: string }): ReactElement => {
+const IconTokenAdded = ({
+  className,
+}: {
+  className: string
+}): ReactElement => {
   return (
     <svg
       className={className}

@@ -1,6 +1,10 @@
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NFTCollectionAssetCardWrapper = styled(View)`
@@ -13,7 +17,11 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
   cursor: pointer;
 
   .info-static-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })}
+    ${mixins.flex({
+      direction: 'row',
+      align: 'center',
+      justify: 'center',
+    })}
     position: absolute;
     top: 10px;
     width: 132px;
@@ -37,7 +45,11 @@ export const NFTCollectionAssetCardWrapper = styled(View)`
     }
 
     .id-wrapper {
-      ${mixins.flex({ direction: 'column', align: 'flex-end', justify: 'flex-end' })}
+      ${mixins.flex({
+        direction: 'column',
+        align: 'flex-end',
+        justify: 'flex-end',
+      })}
       width: auto;
       flex-shrink: 0;
       ${fonts.captionBold}

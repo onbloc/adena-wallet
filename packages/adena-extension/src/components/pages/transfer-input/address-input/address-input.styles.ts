@@ -1,14 +1,22 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const AddressInputWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   position: relative;
   width: 100%;
 
   .input-wrapper {
-    ${mixins.flex({ direction: 'row', justify: 'normal' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'normal',
+    })};
     width: 100%;
     min-height: 48px;
     padding: 12px 16px;

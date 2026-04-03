@@ -1,7 +1,10 @@
+import {
+  Pressable, Row, View,
+} from '@components/atoms';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
-
-import { Pressable, Row, View } from '@components/atoms';
-import { fonts, getTheme } from '@styles/theme';
 
 export const StyledWrapper = styled(View)`
   width: 100%;
@@ -11,7 +14,9 @@ export const StyledWrapper = styled(View)`
 export const StyledTableWrapper = styled(View)`
   width: 100%;
   border-radius: 18px;
-  background: ${({ theme }): string => theme.neutral._9};
+  background: ${({
+    theme,
+  }): string => theme.neutral._9};
 `;
 
 export const StyledResultRow = styled(Row)`
@@ -20,7 +25,9 @@ export const StyledResultRow = styled(Row)`
   align-items: center;
   height: 40px;
   padding: 0 18px;
-  border-bottom: 2px solid ${({ theme }): string => theme.neutral._8};
+  border-bottom: 2px solid ${({
+    theme,
+  }): string => theme.neutral._8};
 
   &:last-child {
     border-bottom: none;
@@ -29,7 +36,9 @@ export const StyledResultRow = styled(Row)`
 
 export const StyledResultColumnName = styled(Row)`
   flex-shrink: 0;
-  color: ${({ theme }): string => theme.neutral.a};
+  color: ${({
+    theme,
+  }): string => theme.neutral.a};
   justify-content: flex-start;
   align-items: center;
   ${fonts.body1Reg};
@@ -37,7 +46,9 @@ export const StyledResultColumnName = styled(Row)`
 
 export const StyledResultColumnValue = styled(Row)`
   gap: 5px;
-  color: ${({ theme }): string => theme.neutral._1};
+  color: ${({
+    theme,
+  }): string => theme.neutral._1};
   justify-content: flex-end;
   align-items: center;
   ${fonts.body1Reg};
@@ -45,7 +56,9 @@ export const StyledResultColumnValue = styled(Row)`
 
 export const StyledInfoWrapper = styled(View)`
   gap: 8px;
-  color: ${({ theme }): string => theme.neutral._1};
+  color: ${({
+    theme,
+  }): string => theme.neutral._1};
   justify-content: flex-end;
   align-items: center;
   ${fonts.body1Reg};
@@ -54,7 +67,9 @@ export const StyledInfoWrapper = styled(View)`
 export const StyledInfoButton = styled(Pressable)`
   flex-direction: row;
   gap: 4px;
-  color: ${({ theme }): string => theme.neutral._1};
+  color: ${({
+    theme,
+  }): string => theme.neutral._1};
   justify-content: center;
   align-items: center;
 `;

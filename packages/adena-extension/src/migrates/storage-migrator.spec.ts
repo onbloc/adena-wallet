@@ -1,5 +1,9 @@
-import { StorageModelV001 } from './migrations/v001/storage-model-v001';
-import { StorageMigrator } from './storage-migrator';
+import {
+  StorageModelV001,
+} from './migrations/v001/storage-model-v001';
+import {
+  StorageMigrator,
+} from './storage-migrator';
 
 const mockStorageV001: StorageModelV001 = {
   version: 1,
@@ -10,8 +14,10 @@ const mockStorageV001: StorageModelV001 = {
     SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
     ENCRYPTED_STORED_PASSWORD: '',
     CURRENT_ACCOUNT_ID: '',
-    ACCOUNT_NAMES: {},
-    ESTABLISH_SITES: {},
+    ACCOUNT_NAMES: {
+    },
+    ESTABLISH_SITES: {
+    },
     ADDRESS_BOOK: {
       'account 1': [
         {
@@ -22,7 +28,8 @@ const mockStorageV001: StorageModelV001 = {
         },
       ],
     },
-    ACCOUNT_TOKEN_METAINFOS: {},
+    ACCOUNT_TOKEN_METAINFOS: {
+    },
   },
 };
 
@@ -31,7 +38,8 @@ const storage = {
     return;
   },
   async get(): Promise<object> {
-    return {};
+    return {
+    };
   },
 };
 
@@ -40,7 +48,7 @@ describe('StorageMigrator', () => {
     const mockValue = {
       ADENA_DATA: JSON.stringify(mockStorageV001),
     };
-    storage.get = jest.fn().mockResolvedValue(mockValue);
+    storage.get = vi.fn().mockResolvedValue(mockValue);
   });
 
   it('getCurrent success', async () => {
@@ -56,8 +64,10 @@ describe('StorageMigrator', () => {
     expect(current.data.SERIALIZED).not.toBe('');
     expect(current.data.ENCRYPTED_STORED_PASSWORD).toBe('');
     expect(current.data.CURRENT_ACCOUNT_ID).toBe('');
-    expect(current.data.ACCOUNT_NAMES).toEqual({});
-    expect(current.data.ESTABLISH_SITES).toEqual({});
+    expect(current.data.ACCOUNT_NAMES).toEqual({
+    });
+    expect(current.data.ESTABLISH_SITES).toEqual({
+    });
     expect(current.data.ADDRESS_BOOK).toHaveProperty('account 1');
   });
 
@@ -74,8 +84,10 @@ describe('StorageMigrator', () => {
     expect(migrated?.data.CURRENT_NETWORK_ID).toBe('');
     expect(migrated?.data.ENCRYPTED_STORED_PASSWORD).toBe('');
     expect(migrated?.data.CURRENT_ACCOUNT_ID).toBe('');
-    expect(migrated?.data.ACCOUNT_NAMES).toEqual({});
-    expect(migrated?.data.ESTABLISH_SITES).toEqual({});
+    expect(migrated?.data.ACCOUNT_NAMES).toEqual({
+    });
+    expect(migrated?.data.ESTABLISH_SITES).toEqual({
+    });
     expect(migrated?.data.ADDRESS_BOOK).toBe('');
   });
 

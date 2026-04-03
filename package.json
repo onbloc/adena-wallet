@@ -5,26 +5,22 @@
   "license": "Adena License",
   "private": true,
   "scripts": {
-    "setup": "yarn install && yarn allow-scripts",
-    "develop": "yarn workspace adena-extension build:dev",
-    "build": "yarn build:module && yarn build:service && yarn",
-    "build:module": "yarn workspaces foreach -ptR --from '{adena-module,adena-torus-signin}' run build",
-    "build:service": "yarn workspace adena-extension build",
+    "setup": "pnpm install && pnpm allow-scripts",
+    "develop": "pnpm --filter adena-extension build:dev",
+    "build": "pnpm build:module && pnpm build:service && pnpm install",
+    "build:module": "pnpm --filter adena-module --filter adena-torus-signin run build",
+    "build:service": "pnpm --filter adena-extension build",
+    "build:storybook": "pnpm --filter adena-extension build:storybook",
     "version:qa": "sh scripts/update-build-version.sh",
     "version:package": "sh scripts/update-package-version.sh",
     "tag": "sh scripts/create-tag.sh",
     "test": "jest --passWithNoTests"
-  },
-  "resolutions": {
-    "@storybook/react-docgen-typescript-plugin": "npm:react-docgen-typescript-plugin@1.0.5",
-    "ws": "8.18.0"
   },
   "devDependencies": {
     "@babel/core": "7.23.9",
     "@babel/runtime": "7.23.9",
     "@lavamoat/allow-scripts": "3.0.3",
     "@lavamoat/preinstall-always-fail": "2.0.0",
-    "@yarnpkg/sdks": "3.1.0",
     "babel-loader": "9.1.3",
     "eslint": "8.56.0",
     "file-loader": "6.2.0",
@@ -35,9 +31,6 @@
     "tsconfig-paths-webpack-plugin": "4.1.0",
     "typescript": "4.9.5"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
@@ -50,5 +43,24 @@
       "@storybook/react>@storybook/docs-tools>@storybook/core-common>esbuild": false
     }
   },
-  "packageManager": "yarn@4.9.2"
+  "pnpm": {
+    "overrides": {
+      "@storybook/react-docgen-typescript-plugin": "npm:react-docgen-typescript-plugin@1.0.5",
+      "ws": "8.18.0",
+      "@types/minimatch": "5.1.2"
+    },
+    "packageExtensions": {
+      "@walletconnect/socket-transport@*": {
+        "dependencies": {
+          "ws": "8.18.0"
+        }
+      },
+      "@walletconnect/jsonrpc-ws-connection@*": {
+        "dependencies": {
+          "ws": "8.18.0"
+        }
+      }
+    }
+  },
+  "packageManager": "pnpm@9.15.4"
 }

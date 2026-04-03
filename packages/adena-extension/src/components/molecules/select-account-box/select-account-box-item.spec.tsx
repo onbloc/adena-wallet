@@ -1,9 +1,18 @@
-import React from 'react';
-import { GlobalWebStyle } from '@styles/global-style';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import SelectAccountBoxItem from './select-account-box-item';
 
 describe('SelectAccountBoxItem Component', () => {

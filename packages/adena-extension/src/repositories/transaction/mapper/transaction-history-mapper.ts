@@ -1,5 +1,10 @@
-import { dateToLocal, formatAddress, getDateText } from '@common/utils/client-utils';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import {
+  dateToLocal, formatAddress, getDateText,
+} from '@common/utils/client-utils';
+import {
+  TransactionInfo, TransactionWithPageInfo,
+} from '@types';
+
 import {
   TransactionHistoryItem,
   TransactionHistoryResponse,
@@ -44,19 +49,29 @@ function isHistoryItemVmMAddPkg(
 export class TransactionHistoryMapper {
   public static queryToDisplay(
     transactions: TransactionInfo[],
-  ): { title: string; transactions: TransactionInfo[] }[] {
-    const initValue: { title: string; transactions: TransactionInfo[] }[] = [];
+  ): {
+    title: string
+    transactions: TransactionInfo[]
+  }[] {
+    const initValue: {
+      title: string
+      transactions: TransactionInfo[]
+    }[] = [];
 
     return transactions.reduce(
-      (accum: { title: string; transactions: TransactionInfo[] }[], current) => {
+      (accum: {
+        title: string
+        transactions: TransactionInfo[]
+      }[], current) => {
         const title = getDateText(current.date.slice(0, 10));
-        const accumIndex = accum.findIndex((item) => item.title === title);
+        const accumIndex = accum.findIndex(item => item.title === title);
         if (accumIndex < 0) {
           accum.push({
             title,
             transactions: [current],
           });
-        } else {
+        }
+        else {
           accum[accumIndex].transactions.push(current);
         }
         return accum;
@@ -79,8 +94,10 @@ export class TransactionHistoryMapper {
       };
     }
 
-    const { page, items } = response;
-    const mappedTxs = items.map((item) =>
+    const {
+      page, items,
+    } = response;
+    const mappedTxs = items.map(item =>
       TransactionHistoryMapper.mappedHistoryItem(item, callerAddress),
     );
     return {
@@ -175,8 +192,8 @@ export class TransactionHistoryMapper {
       valueType = isReceived ? 'ACTIVE' : 'DEFAULT';
     }
 
-    const description =
-      historyItem.func[0].messageType === '/bank.MsgSend'
+    const description
+      = historyItem.func[0].messageType === '/bank.MsgSend'
         ? `To: ${formatAddress(historyItem.toAddress, 4)}`
         : `From: ${formatAddress(historyItem.fromAddress, 4)}`;
 

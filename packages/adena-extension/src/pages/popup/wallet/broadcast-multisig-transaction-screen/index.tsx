@@ -1,15 +1,26 @@
-import { MultisigTransactionProvider } from '@common/provider';
-import { CommonFullContentLayout } from '@components/atoms';
-import { useMultisigTransactionContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  MultisigTransactionProvider,
+} from '@common/provider';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
+import {
+  useMultisigTransactionContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
 import React from 'react';
+
 import BroadcastTransactionLoading from '../broadcast-transaction-screen/loading';
 import BroadcastTransactionResult from './result';
 import BroadcastMultisigTransactionUpload from './upload';
 
 const BroadcastMultisigTransactionContent: React.FC = () => {
-  const { currentAddress } = useCurrentAccount();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
   const {
     transaction,
     signatures,

@@ -1,4 +1,6 @@
-import { StorageManager } from '@common/storage/storage-manager';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
 
 type LocalValueType = 'CURRENT_ACCOUNT_ID' | 'ACCOUNT_NAMES';
 
@@ -24,7 +26,9 @@ export class WalletAccountRepository {
     return true;
   };
 
-  public getAccountNames = async (): Promise<{ [x: string]: string }> => {
+  public getAccountNames = async (): Promise<{
+    [x: string]: string
+  }> => {
     const accountNames = await this.localStorage.getToObject<{ [key in string]: string }>(
       'ACCOUNT_NAMES',
     );
@@ -42,7 +46,8 @@ export class WalletAccountRepository {
     const accountNames = await this.getAccountNames();
     try {
       delete accountNames[accountId];
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
     await this.localStorage.setByObject('ACCOUNT_NAMES', accountNames);
@@ -50,7 +55,8 @@ export class WalletAccountRepository {
   };
 
   public deleteAccountNames = async (): Promise<boolean> => {
-    await this.localStorage.setByObject('ACCOUNT_NAMES', {});
+    await this.localStorage.setByObject('ACCOUNT_NAMES', {
+    });
     return true;
   };
 }

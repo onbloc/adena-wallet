@@ -60,9 +60,9 @@ To set up a local environment, clone this repository and run the following comma
 ```
  nvm use
 
- yarn install
+ pnpm install
 ​
- yarn build
+ pnpm build
 ```
 
 ​

@@ -1,20 +1,26 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-import { Text, Button } from '@components/atoms';
+import {
+  Button, Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  ReactElement, useCallback, useMemo,
+} from 'react';
+import styled from 'styled-components';
 
 interface ButtonProps {
-  primary?: boolean;
-  disabled?: boolean;
-  text: string;
-  onClick: () => void;
+  primary?: boolean
+  disabled?: boolean
+  text: string
+  onClick: () => void
 }
 
 interface BottomFixedButtonGroupProps {
-  leftButton: ButtonProps;
-  rightButton: ButtonProps;
-  filled?: boolean;
+  leftButton: ButtonProps
+  rightButton: ButtonProps
+  filled?: boolean
 }
 
 function mapClassName(buttonProps: ButtonProps): string {
@@ -54,18 +60,33 @@ export const BottomFixedButtonGroup = ({
   );
 };
 
-const ButtonWrap = styled.div<{ $filled?: boolean }>`
-  ${mixins.flex({ direction: 'row', align: 'flex-start' })};
+const ButtonWrap = styled.div<{
+  $filled?: boolean
+}>`
+  ${mixins.flex({
+    direction: 'row',
+    align: 'flex-start',
+  })};
   position: fixed;
   left: 0px;
   width: 100%;
   padding: 0 20px;
-  height: ${({ $filled }): '48px' | '96px' => ($filled ? '96px' : '48px')};
-  bottom: ${({ $filled }): '0' | '24px' => ($filled ? '0' : '24px')};
-  ${({ $filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
+  height: ${({
+    $filled,
+  }): '48px' | '96px' => ($filled ? '96px' : '48px')};
+  bottom: ${({
+    $filled,
+  }): '0' | '24px' => ($filled ? '0' : '24px')};
+  ${({
+    $filled,
+  }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
     $filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
-  ${({ $filled }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
-  background-color: ${({ $filled, theme }): string => ($filled ? theme.neutral._8 : 'transparent')};
+  ${({
+    $filled,
+  }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
+  background-color: ${({
+    $filled, theme,
+  }): string => ($filled ? theme.neutral._8 : 'transparent')};
   z-index: 1;
 
   & > button {

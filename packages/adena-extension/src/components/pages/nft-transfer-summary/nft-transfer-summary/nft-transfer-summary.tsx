@@ -1,34 +1,46 @@
-import React, { useMemo } from 'react';
-
-import { SubHeader } from '@components/atoms';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
-import { NFTTransferSummaryWrapper } from './nft-transfer-summary.styles';
-
-import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
-import { BottomFixedButtonGroup } from '@components/molecules';
+import {
+  TransactionValidationError,
+} from '@common/errors/validation/transaction-validation-error';
+import {
+  SubHeader,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
 import NetworkFee from '@components/molecules/network-fee/network-fee';
 import NFTAssetImageCard from '@components/molecules/nft-asset-image-card/nft-asset-image-card';
 import TransferSummaryAddress from '@components/pages/transfer-summary/transfer-summary-address/transfer-summary-address';
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { GRC721Model, NetworkFee as NetworkFeeType } from '@types';
+import {
+  UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  GRC721Model, NetworkFee as NetworkFeeType,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  NFTTransferSummaryWrapper,
+} from './nft-transfer-summary.styles';
 
 export interface NFTTransferSummaryProps {
-  grc721Token: GRC721Model;
-  toAddress: string;
-  networkFee: NetworkFeeType | null;
-  memo: string;
-  isErrorNetworkFee?: boolean;
+  grc721Token: GRC721Model
+  toAddress: string
+  networkFee: NetworkFeeType | null
+  memo: string
+  isErrorNetworkFee?: boolean
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
     options?: UseQueryOptions<string | null, Error>,
-  ) => UseQueryResult<string | null>;
-  onClickBack: () => void;
-  onClickCancel: () => void;
-  onClickSend: () => void;
-  onClickNetworkFeeSetting: () => void;
+  ) => UseQueryResult<string | null>
+  onClickBack: () => void
+  onClickCancel: () => void
+  onClickSend: () => void
+  onClickNetworkFeeSetting: () => void
 }
 
 const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
@@ -58,7 +70,7 @@ const NFTTransferSummary: React.FC<NFTTransferSummaryProps> = ({
       <div className='sub-header-wrapper'>
         <SubHeader
           leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+            element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
             onClick: onClickBack,
           }}
           title={title}

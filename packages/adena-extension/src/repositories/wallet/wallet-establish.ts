@@ -1,14 +1,16 @@
-import { StorageManager } from '@common/storage/storage-manager';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
 
 type LocalValueType = 'ESTABLISH_SITES';
 
 export interface EstablishSite {
-  hostname: string;
-  chainId: string;
-  account: string;
-  name: string;
-  favicon: string | null;
-  establishedTime: string;
+  hostname: string
+  chainId: string
+  account: string
+  name: string
+  favicon: string | null
+  establishedTime: string
 }
 
 export class WalletEstablishRepository {
@@ -18,7 +20,9 @@ export class WalletEstablishRepository {
     this.localStorage = localStorage;
   }
 
-  public getEstablishedSites = async (): Promise<{ [x: string]: any }> => {
+  public getEstablishedSites = async (): Promise<{
+    [x: string]: any
+  }> => {
     const establishedSites = await this.localStorage.getToObject('ESTABLISH_SITES');
     return establishedSites;
   };

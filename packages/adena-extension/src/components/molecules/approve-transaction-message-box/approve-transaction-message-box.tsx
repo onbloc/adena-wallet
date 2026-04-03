@@ -1,17 +1,25 @@
-import React, { useMemo } from 'react';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage,
+} from '@inject/types';
+import React, {
+  useMemo,
+} from 'react';
 
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
 import ApproveTransactionMessage from '../approve-transaction-message/approve-transaction-message';
-import { ApproveTransactionMessageBoxWrapper } from './approve-transaction-message-box.styles';
+import {
+  ApproveTransactionMessageBoxWrapper,
+} from './approve-transaction-message-box.styles';
 
 export interface ApproveTransactionMessageBoxProps {
-  messages: ContractMessage[];
-  argumentInfos?: GnoArgumentInfo[];
-  changeMessages?: (messages: ContractMessage[]) => void;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  editable?: boolean;
-  messageErrors?: (string | undefined)[];
+  messages: ContractMessage[]
+  argumentInfos?: GnoArgumentInfo[]
+  changeMessages?: (messages: ContractMessage[]) => void
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  editable?: boolean
+  messageErrors?: (string | undefined)[]
 }
 
 const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> = ({
@@ -32,7 +40,8 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
         acc[info.index] = info.key;
         return acc;
       },
-      {} as Record<number, string>,
+      {
+      } as Record<number, string>,
     );
   }, [argumentInfos]);
 

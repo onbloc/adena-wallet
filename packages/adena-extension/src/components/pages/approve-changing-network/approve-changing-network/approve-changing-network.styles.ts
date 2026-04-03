@@ -10,7 +10,10 @@ export const ApproveChangingNetworkWrapper = styled.div`
   padding: 24px 20px;
 
   .title-container {
-    ${mixins.flex({ align: 'normal', justify: 'normal' })};
+    ${mixins.flex({
+      align: 'normal',
+      justify: 'normal',
+    })};
     width: 100%;
     height: 152px;
     margin-bottom: 16px;
@@ -34,7 +37,11 @@ export const ApproveChangingNetworkWrapper = styled.div`
   }
 
   .info-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'flex-start', justify: 'normal' })};
+    ${mixins.flex({
+      direction: 'row',
+      align: 'flex-start',
+      justify: 'normal',
+    })};
     width: fit-content;
 
     .icon-arrow {

@@ -1,44 +1,60 @@
-import { PasswordValidationError } from '@common/errors';
-import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
+import {
+  PasswordValidationError,
+} from '@common/errors';
+import {
+  evaluatePassword, EvaluatePasswordResult,
+} from '@common/utils/password-utils';
 import {
   validateEmptyPassword,
   validateNotMatchConfirmPassword,
   validatePasswordComplexity,
 } from '@common/validation';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
-import { CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState } from '@types';
-import { AdenaWallet } from 'adena-module';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  CreateAccountState, GoogleState, LedgerState, RoutePath, SeedState,
+} from '@types';
+import {
+  AdenaWallet,
+} from 'adena-module';
+import {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 
 export type UseCreatePasswordReturn = {
   pwdState: {
-    value: string;
-    evaluationResult: EvaluatePasswordResult | null;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    error: boolean;
-    ref: React.RefObject<HTMLInputElement>;
-  };
+    value: string
+    evaluationResult: EvaluatePasswordResult | null
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    error: boolean
+    ref: React.RefObject<HTMLInputElement>
+  }
   confirmPwdState: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    error: boolean;
-  };
+    value: string
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    error: boolean
+  }
   termsState: {
-    value: boolean;
-    onChange: () => void;
-  };
-  errorMessage: string;
+    value: boolean
+    onChange: () => void
+  }
+  errorMessage: string
   buttonState: {
-    onClick: () => void;
-    disabled: boolean;
-  };
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+    onClick: () => void
+    disabled: boolean
+  }
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
 };
 
 export const useCreatePassword = (): UseCreatePasswordReturn => {
-  const { navigate, params } = useAppNavigate<RoutePath.CreatePassword>();
-  const { walletService, accountService } = useAdenaContext();
+  const {
+    navigate, params,
+  } = useAppNavigate<RoutePath.CreatePassword>();
+  const {
+    walletService, accountService,
+  } = useAdenaContext();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     pwd: '',
@@ -47,7 +63,9 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   const [terms, setTerms] = useState(false);
   const [isPwdError, setIsPwdError] = useState(false);
   const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
-  const { pwd, confirmPwd } = inputs;
+  const {
+    pwd, confirmPwd,
+  } = inputs;
   const [errorMessage, setErrorMessage] = useState('');
   const [activated, setActivated] = useState(false);
 
@@ -98,8 +116,13 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setInputs((input) => ({ ...input, [name]: value }));
+      const {
+        name, value,
+      } = e.target;
+      setInputs(input => ({
+        ...input,
+        [name]: value,
+      }));
     },
     [pwd, confirmPwd],
   );
@@ -109,7 +132,8 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     const confirmPassword = confirmPwd;
     try {
       if (validateNotMatchConfirmPassword(password, confirmPassword)) return true;
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof PasswordValidationError) {
         switch (error.getType()) {
           case 'NOT_MATCH_CONFIRM_PASSWORD':
@@ -132,7 +156,8 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       validateEmptyPassword(password);
       validatePasswordComplexity(password);
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       console.log(error);
       setIsPwdError(true);
       if (error instanceof PasswordValidationError) {
@@ -170,7 +195,8 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.changePassword(pwd);
       clearPassword();
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
       return 'FAIL';
     }
@@ -185,7 +211,8 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
       await accountService.changeCurrentAccount(wallet.currentAccount);
       await walletService.saveWallet(wallet, pwd);
       clearPassword();
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
       return 'FAIL';
     }
@@ -201,7 +228,9 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
     await accountService.clear();
     const result = await createAccounts();
     if (result === 'FINISH') {
-      navigate(RoutePath.LaunchAdena, { state: params });
+      navigate(RoutePath.LaunchAdena, {
+        state: params,
+      });
       setActivated(false);
       return;
     }
@@ -216,7 +245,10 @@ export const useCreatePassword = (): UseCreatePasswordReturn => {
   };
 
   const clearPassword = (): void => {
-    setInputs({ pwd: '', confirmPwd: '' });
+    setInputs({
+      pwd: '',
+      confirmPwd: '',
+    });
   };
 
   return {

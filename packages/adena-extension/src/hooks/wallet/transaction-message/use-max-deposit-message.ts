@@ -1,19 +1,20 @@
-import React from 'react';
-
-import { ContractMessage, FUNCTION_NAME_MAP } from '@inject/types';
+import {
+  ContractMessage, FUNCTION_NAME_MAP,
+} from '@inject/types';
 import {
   AddPackageValue,
   MsgRunValue,
 } from '@repositories/transaction/response/transaction-history-query-response';
+import React from 'react';
 
 interface UseMaxDepositMessageReturn {
-  type: string;
-  isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  maxDeposit: string;
-  functionName: string;
-  title: string;
-  changeMaxDeposit: (maxDeposit: string) => void;
+  type: string
+  isOpen: boolean
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+  maxDeposit: string
+  functionName: string
+  title: string
+  changeMaxDeposit: (maxDeposit: string) => void
 }
 
 export const useMaxDepositMessage = (
@@ -21,10 +22,14 @@ export const useMaxDepositMessage = (
   message: ContractMessage,
   changeMessage: (index: number, messages: ContractMessage) => void,
 ): UseMaxDepositMessageReturn => {
-  const { type } = message;
+  const {
+    type,
+  } = message;
   const [isOpen, setIsOpen] = React.useState(true);
 
-  const { max_deposit } = message.value as AddPackageValue | MsgRunValue;
+  const {
+    max_deposit,
+  } = message.value as AddPackageValue | MsgRunValue;
 
   const maxDeposit = React.useMemo(() => {
     return max_deposit || '';

@@ -1,13 +1,19 @@
-import React from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import lockLogo from '@assets/icon-lock.svg';
-import { Text, Icon, Button } from '@components/atoms';
-import { getTheme } from '@styles/theme';
-
-import { RoutePath } from '@types';
-import mixins from '@styles/mixins';
+import {
+  Button, Icon, Text,
+} from '@components/atoms';
 import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import React from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const text = {
   title: 'Forgot Password?',
@@ -16,20 +22,30 @@ const text = {
 
 export const ForgotPassword = (): JSX.Element => {
   const theme = useTheme();
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
 
   const onClickLearnMore = (): void => {
     try {
-      const adenaDocsUrl =
-        'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
-      chrome.tabs.create({ url: adenaDocsUrl });
-    } catch (e) {
+      const adenaDocsUrl
+        = 'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
+      chrome.tabs.create({
+        url: adenaDocsUrl,
+      });
+    }
+    catch (e) {
       console.error(e);
     }
   };
 
   const onClickHaveNotSeedPhrase = (): void => {
-    navigate(RoutePath.ResetWallet, { state: { from: 'forgot-password' }, replace: true });
+    navigate(RoutePath.ResetWallet, {
+      state: {
+        from: 'forgot-password',
+      },
+      replace: true,
+    });
   };
 
   const onClickForgotButton = (): void => {
@@ -62,7 +78,9 @@ export const ForgotPassword = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 50px;
@@ -85,7 +103,9 @@ const LearnMore = styled.button`
 `;
 
 const TextStyled = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   width: 100%;
   color: ${getTheme('neutral', 'a')};
   gap: 6px;

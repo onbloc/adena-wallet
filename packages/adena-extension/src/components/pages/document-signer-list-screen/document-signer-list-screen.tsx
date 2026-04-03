@@ -1,14 +1,18 @@
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import {
+  SubHeader,
+} from '@components/atoms';
+import DocumentSignerList from '@components/molecules/document-signer-list/document-signer-list';
+import {
+  SignerInfo,
+} from '@inject/types';
 import React from 'react';
+
 import * as S from './document-signer-list-screen.styles';
 
-import { SubHeader } from '@components/atoms';
-import ArrowLeftIcon from '@assets/arrowL-left.svg';
-import DocumentSignerList from '@components/molecules/document-signer-list/document-signer-list';
-import { SignerInfo } from '@inject/types';
-
 interface DocumentSignerListProps {
-  signerInfos: SignerInfo[];
-  onClickBack: () => void;
+  signerInfos: SignerInfo[]
+  onClickBack: () => void
 }
 
 const DocumentSignerListScreen = ({
@@ -21,7 +25,7 @@ const DocumentSignerListScreen = ({
         title='Multisig Signers'
         leftElement={{
           onClick: onClickBack,
-          element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
+          element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
         }}
       />
 

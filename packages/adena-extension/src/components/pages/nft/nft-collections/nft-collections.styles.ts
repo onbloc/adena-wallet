@@ -1,4 +1,6 @@
-import { getTheme } from '@styles/theme';
+import {
+  getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NFTCollectionsWrapper = styled.div`

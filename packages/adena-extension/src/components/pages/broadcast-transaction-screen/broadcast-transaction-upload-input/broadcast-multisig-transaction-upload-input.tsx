@@ -1,12 +1,21 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { useTheme } from 'styled-components';
-
-import { useAdenaContext } from '@hooks/use-context';
-
 import IconFile from '@assets/file.svg';
 import IconUpload from '@assets/icon-upload';
-import { ErrorText, Text, WebImg } from '@components/atoms';
-import { RawTx } from 'adena-module';
+import {
+  ErrorText, Text, WebImg,
+} from '@components/atoms';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  RawTx,
+} from 'adena-module';
+import React, {
+  useCallback, useMemo, useState,
+} from 'react';
+import {
+  useTheme,
+} from 'styled-components';
+
 import {
   StyledHiddenInput,
   StyledInputLabel,
@@ -14,10 +23,10 @@ import {
 } from './broadcast-transaction-upload-input.styles';
 
 export interface BroadcastMultisigTransactionUploadInputProps {
-  currentAddress: string | null;
-  transaction: RawTx | null;
-  uploadTransaction: (text: string) => boolean;
-  validatePublicKey?: boolean;
+  currentAddress: string | null
+  transaction: RawTx | null
+  uploadTransaction: (text: string) => boolean
+  validatePublicKey?: boolean
 }
 
 const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransactionUploadInputProps> = ({
@@ -27,7 +36,9 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
   validatePublicKey = true,
 }) => {
   const theme = useTheme();
-  const { multisigService } = useAdenaContext();
+  const {
+    multisigService,
+  } = useAdenaContext();
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,23 +103,28 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
 
         setErrorMessage(null);
         setFileName(file.name);
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Upload failed:', error);
 
         if (error instanceof Error) {
           if (error.message.includes('Public key not found')) {
             setErrorMessage('Your account has not been initialized.');
-          } else if (error.message.includes('not sent any transactions')) {
+          }
+          else if (error.message.includes('not sent any transactions')) {
             setErrorMessage('Your account has not been initialized.');
-          } else {
+          }
+          else {
             setErrorMessage(error.message);
           }
-        } else {
+        }
+        else {
           setErrorMessage('Upload failed. Please try again.');
         }
 
         setFileName(null);
-      } finally {
+      }
+      finally {
         setLoading(false);
       }
     },
@@ -122,7 +138,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
           <React.Fragment>
             <IconUpload fill='inherit' />
             <Text type='body2Reg' color='inherit'>
-              {'Drag & drop a file or click to upload'}
+              Drag & drop a file or click to upload
             </Text>
           </React.Fragment>
         )}
@@ -130,7 +146,7 @@ const BroadcastMultisigTransactionUploadInput: React.FC<BroadcastMultisigTransac
           <React.Fragment>
             <IconUpload fill='inherit' />
             <Text type='body2Reg' color={theme.neutral.a}>
-              {'Uploading file...'}
+              Uploading file...
             </Text>
           </React.Fragment>
         )}

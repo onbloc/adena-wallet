@@ -1,47 +1,38 @@
-import { CommonError } from '@common/errors/common';
-import { StorageMigrator, StorageModelLatest } from '@migrates/storage-migrator';
-import { Storage } from '.';
+import {
+  CommonError,
+} from '@common/errors/common';
+import {
+  StorageMigrator, StorageModelLatest,
+} from '@migrates/storage-migrator';
+
+import {
+  Storage,
+} from '.';
 
 // Define the valid types of storage keys
-type StorageKeyTypes =
-  | 'NETWORKS'
-  | 'CURRENT_CHAIN_ID'
-  | 'CURRENT_NETWORK_ID'
-  | 'SERIALIZED'
-  | 'ENCRYPTED_STORED_PASSWORD'
-  | 'CURRENT_ACCOUNT_ID'
-  | 'ACCOUNT_NAMES'
-  | 'ESTABLISH_SITES'
-  | 'ADDRESS_BOOK'
-  | 'ACCOUNT_TOKEN_METAINFOS'
-  | 'QUESTIONNAIRE_EXPIRED_DATE'
-  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
-  | 'ACCOUNT_GRC721_COLLECTIONS'
-  | 'ACCOUNT_GRC721_PINNED_PACKAGES';
+type StorageKeyTypes
+  = | 'NETWORKS'
+    | 'CURRENT_CHAIN_ID'
+    | 'CURRENT_NETWORK_ID'
+    | 'SERIALIZED'
+    | 'ENCRYPTED_STORED_PASSWORD'
+    | 'CURRENT_ACCOUNT_ID'
+    | 'ACCOUNT_NAMES'
+    | 'ESTABLISH_SITES'
+    | 'ADDRESS_BOOK'
+    | 'ACCOUNT_TOKEN_METAINFOS'
+    | 'QUESTIONNAIRE_EXPIRED_DATE'
+    | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE'
+    | 'ACCOUNT_GRC721_COLLECTIONS'
+    | 'ACCOUNT_GRC721_PINNED_PACKAGES';
 
 // List of all available storage keys
-const StorageKeys: StorageKeyTypes[] = [
-  'NETWORKS',
-  'CURRENT_CHAIN_ID',
-  'CURRENT_NETWORK_ID',
-  'SERIALIZED',
-  'ENCRYPTED_STORED_PASSWORD',
-  'CURRENT_ACCOUNT_ID',
-  'ACCOUNT_NAMES',
-  'ESTABLISH_SITES',
-  'ADDRESS_BOOK',
-  'ACCOUNT_TOKEN_METAINFOS',
-  'QUESTIONNAIRE_EXPIRED_DATE',
-  'WALLET_CREATION_GUIDE_CONFIRM_DATE',
-  'ADD_ACCOUNT_GUIDE_CONFIRM_DATE',
-  'ACCOUNT_GRC721_COLLECTIONS',
-  'ACCOUNT_GRC721_PINNED_PACKAGES',
-];
+const StorageKeys: StorageKeyTypes[] = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ACCOUNT_NAMES', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'QUESTIONNAIRE_EXPIRED_DATE', 'WALLET_CREATION_GUIDE_CONFIRM_DATE', 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE', 'ACCOUNT_GRC721_COLLECTIONS', 'ACCOUNT_GRC721_PINNED_PACKAGES'];
 
 // Function to validate if a given key is a valid storage key
 function isStorageKey(key: string): key is StorageKeyTypes {
-  return StorageKeys.some((storageKey) => storageKey === key);
+  return StorageKeys.some(storageKey => storageKey === key);
 }
 
 // Class to handle Chrome's local storage with migration support
@@ -81,7 +72,9 @@ export class ChromeLocalStorage implements Storage {
   };
 
   public clear = async (): Promise<void> => {
-    await this.storage.set({ [ChromeLocalStorage.StorageKey]: '{}' });
+    await this.storage.set({
+      [ChromeLocalStorage.StorageKey]: '{}',
+    });
     await this.storage.clear();
   };
 

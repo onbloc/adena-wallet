@@ -1,35 +1,64 @@
-import { hasPrivateKeyAccount, isSeedAccount } from 'adena-module';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-
-import { SCANNER_URL } from '@common/constants/resource.constant';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
 import {
   WALLET_EXPORT_ACCOUNT_ID,
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
-import { AdenaStorage } from '@common/storage';
-import { makeQueryString } from '@common/utils/string-utils';
-import { CommonFullContentLayout } from '@components/atoms';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  makeQueryString,
+} from '@common/utils/string-utils';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
 import AccountDetails from '@components/pages/account-details/account-details';
-import { useAccountName } from '@hooks/use-account-name';
+import {
+  useAccountName,
+} from '@hooks/use-account-name';
 import useLink from '@hooks/use-link';
-import { useLoadAccounts } from '@hooks/use-load-accounts';
-import { useNetwork } from '@hooks/use-network';
+import {
+  useLoadAccounts,
+} from '@hooks/use-load-accounts';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  hasPrivateKeyAccount, isSeedAccount,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useParams,
+} from 'react-router-dom';
 
 const ACCOUNT_NAME_LENGTH_LIMIT = 23;
 
 const AccountDetailsContainer: React.FC = () => {
-  const { openLink, openSecurity } = useLink();
-  const { accountId } = useParams();
-  const { accounts } = useLoadAccounts();
-  const { currentNetwork, scannerParameters } = useNetwork();
-  const { accountNames, changeAccountName } = useAccountName();
+  const {
+    openLink, openSecurity,
+  } = useLink();
+  const {
+    accountId,
+  } = useParams();
+  const {
+    accounts,
+  } = useLoadAccounts();
+  const {
+    currentNetwork, scannerParameters,
+  } = useNetwork();
+  const {
+    accountNames, changeAccountName,
+  } = useAccountName();
   const [originName, setOriginName] = useState('');
   const [name, setName] = useState('');
   const [address, setAddress] = useState<string>('');
 
   const account = useMemo(() => {
-    return accounts.find((current) => current.id === accountId);
+    return accounts.find(current => current.id === accountId);
   }, [accounts]);
 
   const hasSeedPhrase = useMemo(() => {

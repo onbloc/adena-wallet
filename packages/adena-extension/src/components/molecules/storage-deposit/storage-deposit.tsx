@@ -1,10 +1,16 @@
-import React, { useMemo } from 'react';
-
-import { GNOT_TOKEN } from '@common/constants/token.constant';
+import {
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { TokenBalance } from '@components/molecules';
+import {
+  TokenBalance,
+} from '@components/molecules';
 import theme from '@styles/theme';
 import BigNumber from 'bignumber.js';
+import React, {
+  useMemo,
+} from 'react';
+
 import {
   StorageDepositContainer,
   StorageDepositItemSkeletonBox,
@@ -13,13 +19,13 @@ import {
 
 export interface StorageDepositProps {
   storageDeposit: {
-    storageDeposit: number;
-    unlockDeposit: number;
-  };
-  isLoading?: boolean;
-  isError?: boolean;
-  errorMessage?: string;
-  showPlaceholder?: boolean;
+    storageDeposit: number
+    unlockDeposit: number
+  }
+  isLoading?: boolean
+  isError?: boolean
+  errorMessage?: string
+  showPlaceholder?: boolean
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -65,7 +71,7 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
     <StorageDepositContainer>
       <StorageDepositWrapper error={hasError ? 1 : 0}>
         <span className='key'>
-          {'Storage Deposit'}
+          Storage Deposit
 
           <InfoTooltip content={storageDepositTooltipMessage} />
         </span>
@@ -86,11 +92,13 @@ const StorageDeposit: React.FC<StorageDepositProps> = ({
 };
 
 const StorageDepositAmount: React.FC<{
-  value: number;
-  isRefundable: boolean;
-  isLoading: boolean;
-  showPlaceholder?: boolean;
-}> = ({ value, isRefundable, isLoading, showPlaceholder = false }) => {
+  value: number
+  isRefundable: boolean
+  isLoading: boolean
+  showPlaceholder?: boolean
+}> = ({
+  value, isRefundable, isLoading, showPlaceholder = false,
+}) => {
   const fontColor = isRefundable ? theme.green._5 : theme.neutral._1;
 
   const amount = useMemo(() => {
@@ -116,7 +124,7 @@ const StorageDepositAmount: React.FC<{
   }
 
   if (showPlaceholder) {
-    return <span className='value'>{'-'}</span>;
+    return <span className='value'>-</span>;
   }
 
   return (

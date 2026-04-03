@@ -1,16 +1,19 @@
+import blurBg from '@assets/blur-bg.svg';
+import {
+  Icon, Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text, Icon } from '@components/atoms';
-import blurBg from '@assets/blur-bg.svg';
-import mixins from '@styles/mixins';
-
 interface BlurScreenProps {
-  hasText?: boolean;
-  text?: string;
+  hasText?: boolean
+  text?: string
 }
 
-export const BlurScreen = ({ hasText, text }: BlurScreenProps): JSX.Element => {
+export const BlurScreen = ({
+  hasText, text,
+}: BlurScreenProps): JSX.Element => {
   return (
     <>
       <Wrapper hasText={hasText}>
@@ -21,10 +24,14 @@ export const BlurScreen = ({ hasText, text }: BlurScreenProps): JSX.Element => {
   );
 };
 
-const Wrapper = styled.div<{ hasText?: boolean }>`
+const Wrapper = styled.div<{
+  hasText?: boolean
+}>`
   ${mixins.flex()};
   ${mixins.positionCenter()};
-  gap: ${({ hasText }): false | '21px' | undefined => hasText && '21px'};
+  gap: ${({
+    hasText,
+  }): false | '21px' | undefined => hasText && '21px'};
   background: url(${blurBg}) no-repeat 100% 100% / 100% 100%;
   width: calc(100% - 12px);
   height: calc(100% - 12px);

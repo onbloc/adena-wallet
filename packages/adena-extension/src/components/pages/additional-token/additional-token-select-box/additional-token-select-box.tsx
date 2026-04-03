@@ -1,10 +1,19 @@
-import React, { useMemo } from 'react';
-import { AdditionalTokenSelectBoxWrapper } from './additional-token-select-box.styles';
-import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import { SearchInput } from '@components/atoms';
-import { AdditionalTokenSelectBoxProps } from '@types';
+import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import {
+  SearchInput,
+} from '@components/atoms';
+import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list';
+import {
+  AdditionalTokenSelectBoxProps,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  AdditionalTokenSelectBoxWrapper,
+} from './additional-token-select-box.styles';
 
 const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
   opened,
@@ -45,21 +54,25 @@ const AdditionalTokenSelectBox: React.FC<AdditionalTokenSelectBoxProps> = ({
           className={selected ? 'select-box selected' : 'select-box'}
           onClick={(): void => onClickOpenButton(!opened)}
         >
-          {selected ? (
-            <span className='title'>
-              <span className='name'>{selectedTokenName}</span>
-              <span className='symbol'>{selectedTokenSymbol}</span>
-            </span>
-          ) : (
-            <span className='title'>Select a GRC20 Token</span>
-          )}
+          {selected
+            ? (
+              <span className='title'>
+                <span className='name'>{selectedTokenName}</span>
+                <span className='symbol'>{selectedTokenSymbol}</span>
+              </span>
+            )
+            : (
+              <span className='title'>Select a GRC20 Token</span>
+            )}
 
           <span className='icon-wrapper'>
-            {opened ? (
-              <img src={`${ArrowUpIcon}`} alt='select box opened icon' />
-            ) : (
-              <img src={`${ArrowDownIcon}`} alt='select box unopened icon' />
-            )}
+            {opened
+              ? (
+                <img src={`${ArrowUpIcon}`} alt='select box opened icon' />
+              )
+              : (
+                <img src={`${ArrowDownIcon}`} alt='select box unopened icon' />
+              )}
           </span>
         </div>
         {opened && (

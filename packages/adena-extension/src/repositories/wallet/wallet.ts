@@ -1,13 +1,19 @@
-import { WalletError } from '@common/errors';
-import { StorageManager } from '@common/storage/storage-manager';
-import { clearInMemoryKey, decryptPassword, encryptPassword } from '@common/utils/crypto-utils';
+import {
+  WalletError,
+} from '@common/errors';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
+import {
+  clearInMemoryKey, decryptPassword, encryptPassword,
+} from '@common/utils/crypto-utils';
 
-type LocalValueType =
-  | 'SERIALIZED'
-  | 'ENCRYPTED_STORED_PASSWORD'
-  | 'QUESTIONNAIRE_EXPIRED_DATE'
-  | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
-  | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
+type LocalValueType
+  = | 'SERIALIZED'
+    | 'ENCRYPTED_STORED_PASSWORD'
+    | 'QUESTIONNAIRE_EXPIRED_DATE'
+    | 'WALLET_CREATION_GUIDE_CONFIRM_DATE'
+    | 'ADD_ACCOUNT_GUIDE_CONFIRM_DATE';
 type SessionValueType = 'ENCRYPTED_KEY' | 'ENCRYPTED_PASSWORD';
 
 export class WalletRepository {
@@ -49,7 +55,8 @@ export class WalletRepository {
       if (password === '') {
         throw new WalletError('NOT_FOUND_PASSWORD');
       }
-    } catch (e) {
+    }
+    catch (_e) {
       return false;
     }
 
@@ -57,8 +64,8 @@ export class WalletRepository {
   };
 
   public getSessionCryptPasswords = async (): Promise<{
-    iv: string;
-    encryptedPassword: string;
+    iv: string
+    encryptedPassword: string
   }> => {
     try {
       const iv = await this.sessionStorage.get('ENCRYPTED_KEY');
@@ -68,7 +75,8 @@ export class WalletRepository {
         iv,
         encryptedPassword,
       };
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to get session crypt passwords', e);
 
       return {
@@ -79,7 +87,9 @@ export class WalletRepository {
   };
 
   public getWalletPassword = async (): Promise<string> => {
-    const { iv, encryptedPassword } = await this.getSessionCryptPasswords();
+    const {
+      iv, encryptedPassword,
+    } = await this.getSessionCryptPasswords();
 
     if (iv === '' || encryptedPassword === '') {
       throw new WalletError('NOT_FOUND_PASSWORD');
@@ -87,7 +97,8 @@ export class WalletRepository {
 
     try {
       return decryptPassword(iv, encryptedPassword);
-    } catch (e) {
+    }
+    catch (e) {
       console.log('e', e);
       throw new WalletError('NOT_FOUND_PASSWORD');
     }
@@ -95,11 +106,14 @@ export class WalletRepository {
 
   public updateWalletPassword = async (password: string): Promise<boolean> => {
     try {
-      const { encryptedKey, encryptedPassword } = await encryptPassword(password);
+      const {
+        encryptedKey, encryptedPassword,
+      } = await encryptPassword(password);
       await this.sessionStorage.set('ENCRYPTED_KEY', encryptedKey);
       await this.sessionStorage.set('ENCRYPTED_PASSWORD', encryptedPassword);
       await this.localStorage.remove('ENCRYPTED_STORED_PASSWORD');
-    } catch (e) {
+    }
+    catch (e) {
       console.warn('Failed to update wallet password', e);
 
       return false;

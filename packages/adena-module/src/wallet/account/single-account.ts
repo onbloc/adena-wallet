@@ -1,7 +1,16 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Account, AccountInfo } from './account';
-import { isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType } from '../keyring';
-import { publicKeyToAddress } from '../../utils/address';
+import {
+  v4 as uuidv4,
+} from "uuid";
+
+import {
+  publicKeyToAddress,
+} from "../../utils/address.js";
+import {
+  isPrivateKeyKeyring, isWeb3AuthKeyring, Keyring, KeyringType,
+} from "../keyring/index.js";
+import {
+  Account, AccountInfo,
+} from "./account.js";
 
 export class SingleAccount implements Account {
   public readonly id;
@@ -16,7 +25,9 @@ export class SingleAccount implements Account {
 
   private _name: string;
 
-  constructor({ id, index, type, keyringId, publicKey, name }: AccountInfo) {
+  constructor({
+    id, index, type, keyringId, publicKey, name,
+  }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
     this.type = type;
@@ -59,10 +70,12 @@ export class SingleAccount implements Account {
 
   public static async createBy(keyring: Keyring, name: string) {
     if (!isPrivateKeyKeyring(keyring) && !isWeb3AuthKeyring(keyring)) {
-      throw new Error('Invalid account type');
+      throw new Error("Invalid account type");
     }
 
-    const { id: keyringId, type: type, publicKey } = keyring;
+    const {
+      id: keyringId, type: type, publicKey,
+    } = keyring;
     return new SingleAccount({
       keyringId,
       index: 1,

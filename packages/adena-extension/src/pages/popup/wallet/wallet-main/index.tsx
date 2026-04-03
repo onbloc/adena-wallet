@@ -1,11 +1,7 @@
-import { isAirgapAccount, isMultisigAccount } from 'adena-module';
-import BigNumber from 'bignumber.js';
-import { useCallback, useEffect, useMemo } from 'react';
-import { useRecoilState } from 'recoil';
-import styled from 'styled-components';
-
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { Button, Row, Text } from '@components/atoms';
+import {
+  Button, Row, Text,
+} from '@components/atoms';
 import IconThunder from '@components/atoms/icon/icon-assets/icon-thunder';
 import LoadingButton from '@components/atoms/loading-button/loading-button';
 import MainManageTokenButton from '@components/pages/main/main-manage-token-button/main-manage-token-button';
@@ -13,17 +9,48 @@ import MainNetworkLabel from '@components/pages/main/main-network-label/main-net
 import MainTokenBalance from '@components/pages/main/main-token-balance/main-token-balance';
 import TokenList from '@components/pages/wallet-main/token-list/token-list';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useFaucet } from '@hooks/use-faucet';
-import { useLoadImages } from '@hooks/use-load-images';
-import { useNetwork } from '@hooks/use-network';
-import { usePreventHistoryBack } from '@hooks/use-prevent-history-back';
-import { useToast } from '@hooks/use-toast';
-import { useTokenBalance } from '@hooks/use-token-balance';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { WalletState } from '@states';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useFaucet,
+} from '@hooks/use-faucet';
+import {
+  useLoadImages,
+} from '@hooks/use-load-images';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  usePreventHistoryBack,
+} from '@hooks/use-prevent-history-back';
+import {
+  useToast,
+} from '@hooks/use-toast';
+import {
+  useTokenBalance,
+} from '@hooks/use-token-balance';
+import {
+  useTokenMetainfo,
+} from '@hooks/use-token-metainfo';
+import {
+  WalletState,
+} from '@states';
 import mixins from '@styles/mixins';
-import { RoutePath } from '@types';
+import {
+  RoutePath,
+} from '@types';
+import {
+  isAirgapAccount, isMultisigAccount,
+} from 'adena-module';
+import BigNumber from 'bignumber.js';
+import {
+  useCallback, useEffect, useMemo,
+} from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
+import styled from 'styled-components';
 
 const REFETCH_INTERVAL = 3_000;
 
@@ -38,7 +65,9 @@ const Wrapper = styled.main`
     height: auto;
     top: 48px;
     left: 0;
-    background-color: ${({ theme }): string => theme.neutral._8};
+    background-color: ${({
+      theme,
+    }): string => theme.neutral._8};
   }
 
   .token-balance-wrapper {
@@ -48,7 +77,10 @@ const Wrapper = styled.main`
   }
 
   .main-button-wrapper {
-    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'space-between',
+    })};
     width: 100%;
     gap: 8px;
     margin: 14px 0px 30px;
@@ -72,17 +104,35 @@ const StyledFaucetButtonContent = styled(Row)`
 
 export const WalletMain = (): JSX.Element => {
   usePreventHistoryBack();
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
-  const { currentNetwork } = useNetwork();
-  const { currentAccount } = useCurrentAccount();
-  const { mainTokenBalance, currentBalances } = useTokenBalance();
-  const { refetchBalances } = useTokenBalance();
-  const { updateAllTokenMetainfos, getTokenImage } = useTokenMetainfo();
-  const { isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet } = useFaucet();
-  const { show } = useToast();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    mainTokenBalance, currentBalances,
+  } = useTokenBalance();
+  const {
+    refetchBalances,
+  } = useTokenBalance();
+  const {
+    updateAllTokenMetainfos, getTokenImage,
+  } = useTokenMetainfo();
+  const {
+    isSupported: supportedFaucet, isLoading: isFaucetLoading, faucet,
+  } = useFaucet();
+  const {
+    show,
+  } = useToast();
 
-  const { addLoadingImages, completeImageLoading } = useLoadImages();
+  const {
+    addLoadingImages, completeImageLoading,
+  } = useLoadImages();
 
   const showSignTxButton = useMemo(() => {
     if (!currentAccount) return false;
@@ -100,7 +150,11 @@ export const WalletMain = (): JSX.Element => {
   };
 
   const onClickDepositButton = (): void =>
-    navigate(RoutePath.WalletSearch, { state: { type: 'deposit' } });
+    navigate(RoutePath.WalletSearch, {
+      state: {
+        type: 'deposit',
+      },
+    });
 
   const onClickActionButton = (): void => {
     if (!currentAccount) {
@@ -114,7 +168,11 @@ export const WalletMain = (): JSX.Element => {
       navigate(RoutePath.BroadcastMultisigTransactionScreen);
       return;
     }
-    navigate(RoutePath.WalletSearch, { state: { type: 'send' } });
+    navigate(RoutePath.WalletSearch, {
+      state: {
+        type: 'send',
+      },
+    });
   };
 
   const onClickSignButton = (): void => {
@@ -164,8 +222,8 @@ export const WalletMain = (): JSX.Element => {
 
   const tokens = useMemo(() => {
     return currentBalances
-      .filter((tokenBalance) => tokenBalance.display)
-      .filter((tokenBalance) => !BigNumber(tokenBalance.amount.value).isNaN())
+      .filter(tokenBalance => tokenBalance.display)
+      .filter(tokenBalance => !BigNumber(tokenBalance.amount.value).isNaN())
       .map((tokenBalance) => {
         return {
           tokenId: tokenBalance.tokenId,
@@ -180,18 +238,20 @@ export const WalletMain = (): JSX.Element => {
   }, [currentBalances, getTokenImage]);
 
   const tokenImages = useMemo(() => {
-    return tokens.map((token) => token.logo);
+    return tokens.map(token => token.logo);
   }, [tokens]);
 
   const onClickTokenListItem = useCallback(
     (tokenId: string) => {
-      const tokenBalance = currentBalances.find((tokenBalance) => tokenBalance.tokenId === tokenId);
+      const tokenBalance = currentBalances.find(tokenBalance => tokenBalance.tokenId === tokenId);
       if (!tokenBalance) {
         window.alert('Token not found');
         return;
       }
       navigate(RoutePath.TokenDetails, {
-        state: { tokenBalance },
+        state: {
+          tokenBalance,
+        },
       });
     },
     [navigate, tokens],
@@ -220,30 +280,32 @@ export const WalletMain = (): JSX.Element => {
       </div>
 
       <div className='main-button-wrapper'>
-        {supportedFaucet ? (
-          <MainButton
-            hierarchy='dark'
-            as={LoadingButton}
-            loading={isFaucetLoading}
-            fullWidth
-            onClick={onClickFaucetButton}
-          >
-            <StyledFaucetButtonContent>
-              <IconThunder />
-              <Text type={'body1Bold'}>Faucet</Text>
-            </StyledFaucetButtonContent>
-          </MainButton>
-        ) : (
-          <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
-            <Text type={'body1Bold'}>Deposit</Text>
-          </MainButton>
-        )}
+        {supportedFaucet
+          ? (
+            <MainButton
+              hierarchy='dark'
+              as={LoadingButton}
+              loading={isFaucetLoading}
+              fullWidth
+              onClick={onClickFaucetButton}
+            >
+              <StyledFaucetButtonContent>
+                <IconThunder />
+                <Text type='body1Bold'>Faucet</Text>
+              </StyledFaucetButtonContent>
+            </MainButton>
+          )
+          : (
+            <MainButton hierarchy='dark' fullWidth onClick={onClickDepositButton}>
+              <Text type='body1Bold'>Deposit</Text>
+            </MainButton>
+          )}
         <MainButton hierarchy='dark' fullWidth onClick={onClickActionButton}>
-          <Text type={'body1Bold'}>{actionButtonText}</Text>
+          <Text type='body1Bold'>{actionButtonText}</Text>
         </MainButton>
         {showSignTxButton && (
           <MainButton hierarchy='dark' fullWidth onClick={onClickSignButton}>
-            <Text type={'body1Bold'}>Sign</Text>
+            <Text type='body1Bold'>Sign</Text>
           </MainButton>
         )}
       </div>

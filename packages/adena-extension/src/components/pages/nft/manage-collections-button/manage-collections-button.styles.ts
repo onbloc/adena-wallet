@@ -1,9 +1,13 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const ManageCollectionsButtonWrapper = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   flex-shrink: 0;
   width: auto;
   height: 24px;

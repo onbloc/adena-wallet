@@ -1,11 +1,15 @@
-import React, { useCallback } from 'react';
-import styled from 'styled-components';
-
-import { View, WebButton } from '@components/atoms';
-
 import AnimationLoginFailed from '@assets/web/lottie/login-failed.json';
-import { WebTitleWithDescription } from '@components/molecules';
+import {
+  View, WebButton,
+} from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import React, {
+  useCallback,
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -14,17 +18,22 @@ const StyledContainer = styled(View)`
 `;
 
 interface GoogleLoginRequestFailProps {
-  retry: () => void;
+  retry: () => void
 }
 
-const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({ retry }) => {
+const GoogleLoginRequestFail: React.FC<GoogleLoginRequestFailProps> = ({
+  retry,
+}) => {
   const onClickRetry = useCallback(() => {
     retry();
   }, [retry]);
 
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 16 }}>
+      <View style={{
+        marginBottom: 16,
+      }}
+      >
         <Lottie
           animationData={AnimationLoginFailed}
           height={120}

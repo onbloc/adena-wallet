@@ -1,6 +1,10 @@
-import { SkeletonBoxStyle, View } from '@components/atoms';
+import {
+  SkeletonBoxStyle, View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const NFTCollectionCardWrapper = styled(View)`
@@ -13,7 +17,11 @@ export const NFTCollectionCardWrapper = styled(View)`
   cursor: pointer;
 
   .info-static-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'center', justify: 'space-between' })}
+    ${mixins.flex({
+      direction: 'row',
+      align: 'center',
+      justify: 'space-between',
+    })}
     position: absolute;
     top: 10px;
     width: 132px;
@@ -28,7 +36,11 @@ export const NFTCollectionCardWrapper = styled(View)`
     cursor: default;
 
     .pin-wrapper {
-      ${mixins.flex({ direction: 'column', align: 'center', justify: 'center' })}
+      ${mixins.flex({
+        direction: 'column',
+        align: 'center',
+        justify: 'center',
+      })}
       width: 10px;
       height: 10px;
       cursor: pointer;
@@ -60,7 +72,11 @@ export const NFTCollectionCardWrapper = styled(View)`
     }
 
     .balance-wrapper {
-      ${mixins.flex({ direction: 'column', align: 'flex-end', justify: 'flex-end' })}
+      ${mixins.flex({
+        direction: 'column',
+        align: 'flex-end',
+        justify: 'flex-end',
+      })}
       width: auto;
       flex-shrink: 0;
       color: ${getTheme('neutral', 'a')};
@@ -91,7 +107,10 @@ export const NFTCollectionCardImageWrapper = styled(View)`
 `;
 
 export const NFTCollectionCardImageSkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
+  ${mixins.flex({
+    align: 'flex-end',
+    justify: 'space-between',
+  })}
   width: 100%;
   flex: 1;
   height: 100%;

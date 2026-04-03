@@ -1,7 +1,16 @@
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { parseTokenAmount } from '@common/utils/amount-utils';
-import { formatAddress } from '@common/utils/client-utils';
-import { TransactionInfo } from '@types';
+import {
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
+import {
+  formatAddress,
+} from '@common/utils/client-utils';
+import {
+  TransactionInfo,
+} from '@types';
+
 import {
   AddPackageValue,
   BankSendValue,
@@ -22,7 +31,7 @@ function mapValueType(success: boolean, received?: boolean): 'DEFAULT' | 'ACTIVE
 
 function getDefaultMessage<T = any>(
   messages: {
-    value: any;
+    value: any
   }[],
 ): T {
   return messages.sort((m1, m2) => {
@@ -56,8 +65,8 @@ export function mapTransactionEdgeByAddress(
     case 'exec':
       // receive grc20 or grc721 token
       if (
-        ['Transfer', 'TransferFrom'].includes(message.value.func) &&
-        message.value.caller !== address
+        ['Transfer', 'TransferFrom'].includes(message.value.func)
+        && message.value.caller !== address
       ) {
         return mapReceivedTransactionByMsgCall(transaction);
       }

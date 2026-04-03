@@ -1,23 +1,36 @@
-import { EnglishMnemonic } from 'adena-module';
-import { useCallback, useEffect, useState } from 'react';
-
-import { RoutePath } from '@types';
 import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  RoutePath,
+} from '@types';
+import {
+  EnglishMnemonic,
+} from 'adena-module';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
 
 const specialPatternCheck = /[{}[]\/?.,;:|\)*~`!^-_+<>@#$%&\\=\('"]/g;
 
 export const useEnterSeed = (): {
   seedState: {
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
-    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
-    error: boolean;
-    errorMessage: string;
-  };
-  termsState: { terms: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void };
-  buttonState: { onClick: () => Promise<void>; disabled: boolean };
+    value: string
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void
+    onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void
+    error: boolean
+    errorMessage: string
+  }
+  termsState: {
+    terms: boolean
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  }
+  buttonState: {
+    onClick: () => Promise<void>
+    disabled: boolean
+  }
 } => {
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const [seeds, setSeeds] = useState('');
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState(false);
@@ -57,7 +70,8 @@ export const useEnterSeed = (): {
         setError(false);
         return;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.log(e);
     }
     setError(true);

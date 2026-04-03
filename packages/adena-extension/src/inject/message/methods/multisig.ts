@@ -1,8 +1,19 @@
-import { WalletResponseRejectType } from '@adena-wallet/sdk';
-import { validateInjectionData } from '@common/validation/validation-transaction';
-import { RoutePath } from '@types';
-import { HandlerMethod } from '..';
-import { InjectionMessage, InjectionMessageInstance } from '../message';
+import {
+  WalletResponseRejectType,
+} from '@adena-wallet/sdk';
+import {
+  validateInjectionData,
+} from '@common/validation/validation-transaction';
+import {
+  RoutePath,
+} from '@types';
+
+import {
+  HandlerMethod,
+} from '..';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '../message';
 
 export const createMultisigAccount = async (
   requestData: InjectionMessage,
@@ -11,7 +22,8 @@ export const createMultisigAccount = async (
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigAccount,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };
@@ -29,7 +41,8 @@ export const createMultisigDocument = async (
   HandlerMethod.createPopup(
     RoutePath.CreateMultisigTransaction,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };
@@ -47,7 +60,8 @@ export const signMultisigDocument = async (
   HandlerMethod.createPopup(
     RoutePath.SignMultisigDocument,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };
@@ -65,7 +79,8 @@ export const broadcastMultisigTransaction = async (
   HandlerMethod.createPopup(
     RoutePath.BroadcastMultisigTransaction,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };

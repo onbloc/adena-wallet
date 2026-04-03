@@ -1,15 +1,22 @@
-import { FontsType } from '@styles/theme';
+import {
+  FontsType,
+} from '@styles/theme';
 import BigNumber from 'bignumber.js';
-import React, { useMemo } from 'react';
-import { HighlightNumberWrapper } from './highlight-number.styles';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  HighlightNumberWrapper,
+} from './highlight-number.styles';
 
 export interface HighlightNumberProps {
-  value: string;
-  fontColor?: string;
-  fontStyleKey?: FontsType;
-  minimumFontSize?: string;
-  lineHeight?: string;
-  withSign?: boolean;
+  value: string
+  fontColor?: string
+  fontStyleKey?: FontsType
+  minimumFontSize?: string
+  lineHeight?: string
+  withSign?: boolean
 }
 
 export const HighlightNumber: React.FC<HighlightNumberProps> = ({

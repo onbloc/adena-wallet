@@ -1,10 +1,14 @@
+import mixins from '@styles/mixins';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-import { fonts, getTheme } from '@styles/theme';
-import mixins from '@styles/mixins';
-
 export const SideMenuLinkWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: auto;
   padding: 16px 20px;

@@ -1,4 +1,6 @@
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
+import {
+  MemoryProvider,
+} from '@common/provider/memory/memory-provider';
 
 const MEMORY_KEY = 'encryptKey';
 
@@ -15,7 +17,8 @@ export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<Cr
     }
 
     return memoryProvider.get(MEMORY_KEY) || null;
-  } catch (e) {
+  }
+  catch (e) {
     console.error(e);
   }
 
@@ -32,7 +35,10 @@ export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<
 export const encryptPassword = async (
   key: CryptoKey,
   password: string,
-): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
+): Promise<{
+  encryptedKey: string
+  encryptedPassword: string
+}> => {
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const enc = new TextEncoder();
   const encrypted = await crypto.subtle.encrypt(

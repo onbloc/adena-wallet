@@ -1,14 +1,25 @@
 import UnknownAccountImage from '@assets/common-unknown-logo.svg';
-import { formatAddress } from '@common/utils/client-utils';
-import { SubHeader } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import React, { useMemo } from 'react';
-import { AccountInitializationInitWrapper } from './account-initialization-init.styles';
+import {
+  formatAddress,
+} from '@common/utils/client-utils';
+import {
+  SubHeader,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  AccountInitializationInitWrapper,
+} from './account-initialization-init.styles';
 
 export interface AccountInitializationInitProps {
-  address: string;
-  moveRequest: () => void;
-  moveBack: () => void;
+  address: string
+  moveRequest: () => void
+  moveBack: () => void
 }
 
 const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
@@ -32,9 +43,7 @@ const AccountInitializationInit: React.FC<AccountInitializationInitProps> = ({
         <div className='address-box'>{displayAddress}</div>
 
         <div className='warning-box'>
-          {
-            'Your account needs to be registered on-chain before you can send transactions on Gno.land. After the initialization, your transaction message will show up shortly.'
-          }
+          Your account needs to be registered on-chain before you can send transactions on Gno.land. After the initialization, your transaction message will show up shortly.
         </div>
       </div>
 

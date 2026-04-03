@@ -10,6 +10,9 @@ export const Row = styled(View)`
   align-items: center;
 `;
 
-export const Pressable = styled(View)<{ onClick: () => void; disabled?: boolean }>`
+export const Pressable = styled(View)<{
+  onClick: () => void
+  disabled?: boolean
+}>`
   cursor: pointer;
 `;

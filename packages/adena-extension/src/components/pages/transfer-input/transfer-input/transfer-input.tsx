@@ -1,54 +1,63 @@
-import React from 'react';
-
 import ArrowLeftIcon from '@assets/arrowL-left.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
-import { SubHeader } from '@components/atoms';
+import {
+  BaseError,
+} from '@common/errors';
+import {
+  SubHeader,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
+import {
+  TokenModel,
+} from '@types';
+import React from 'react';
+
 import AddressInput from '../address-input/address-input';
 import BalanceInput from '../balance-input/balance-input';
-import { TransferInputWrapper } from './transfer-input.styles';
-
-import { BaseError } from '@common/errors';
-import { BottomFixedButtonGroup } from '@components/molecules';
-import { TokenModel } from '@types';
 import MemoInput from '../memo-input/memo-input';
+import {
+  TransferInputWrapper,
+} from './transfer-input.styles';
 
 export interface TransferInputProps {
-  tokenMetainfo?: TokenModel;
+  tokenMetainfo?: TokenModel
   addressInput: {
-    opened: boolean;
-    hasError: boolean;
-    selected: boolean;
-    selectedName: string;
-    selectedDescription: string;
-    address: string;
-    errorMessage?: string;
+    opened: boolean
+    hasError: boolean
+    selected: boolean
+    selectedName: string
+    selectedDescription: string
+    address: string
+    errorMessage?: string
     addressBookInfos: {
-      addressBookId: string;
-      name: string;
-      description: string;
-    }[];
-    onClickInputIcon: (selected: boolean) => void;
-    onChangeAddress: (address: string) => void;
-    onClickAddressBook: (addressBookId: string) => void;
-  };
+      addressBookId: string
+      name: string
+      description: string
+    }[]
+    onClickInputIcon: (selected: boolean) => void
+    onChangeAddress: (address: string) => void
+    onClickAddressBook: (addressBookId: string) => void
+  }
   balanceInput: {
-    hasError: boolean;
-    amount: string;
-    denom: string;
-    description: string;
-    onChangeAmount: (value: string) => void;
-    onClickMax: () => void;
-  };
+    hasError: boolean
+    amount: string
+    denom: string
+    description: string
+    onChangeAmount: (value: string) => void
+    onClickMax: () => void
+  }
   memoInput: {
-    memo: string;
-    memoError?: BaseError | null;
-    onChangeMemo: (memo: string) => void;
-  };
-  isNext: boolean;
-  hasBackButton: boolean;
-  onClickBack: () => void;
-  onClickCancel: () => void;
-  onClickNext: () => void;
+    memo: string
+    memoError?: BaseError | null
+    onChangeMemo: (memo: string) => void
+  }
+  isNext: boolean
+  hasBackButton: boolean
+  onClickBack: () => void
+  onClickCancel: () => void
+  onClickNext: () => void
 }
 
 const TransferInput: React.FC<TransferInputProps> = ({
@@ -64,17 +73,19 @@ const TransferInput: React.FC<TransferInputProps> = ({
 }) => {
   return (
     <TransferInputWrapper>
-      {hasBackButton ? (
-        <SubHeader
-          title={`Send ${tokenMetainfo?.symbol || ''}`}
-          leftElement={{
-            element: <img src={`${ArrowLeftIcon}`} alt={'back image'} />,
-            onClick: onClickBack,
-          }}
-        />
-      ) : (
-        <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
-      )}
+      {hasBackButton
+        ? (
+          <SubHeader
+            title={`Send ${tokenMetainfo?.symbol || ''}`}
+            leftElement={{
+              element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
+              onClick: onClickBack,
+            }}
+          />
+        )
+        : (
+          <SubHeader title={`Send ${tokenMetainfo?.symbol || ''}`} />
+        )}
       <div className='logo-wrapper'>
         <img className='logo' src={tokenMetainfo?.image || UnknownTokenIcon} alt='token image' />
       </div>

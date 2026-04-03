@@ -1,4 +1,6 @@
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import styled from 'styled-components';
 
 export const NFTAssetImageCardWrapper = styled(View)`

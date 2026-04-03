@@ -1,10 +1,14 @@
-import { stringFromBase64 } from '@common/utils/encoding-util';
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  stringFromBase64,
+} from '@common/utils/encoding-util';
+import {
+  useEffect, useMemo, useRef,
+} from 'react';
 import styled from 'styled-components';
 
 interface WebSeedBoxProps {
-  seedString: string;
-  showBlur?: boolean;
+  seedString: string
+  showBlur?: boolean
 }
 
 const CanvasContainer = styled.div`
@@ -14,13 +18,17 @@ const CanvasContainer = styled.div`
   gap: 12px;
 `;
 
-const CanvasWrapper = styled.div<{ blur: boolean }>`
+const CanvasWrapper = styled.div<{
+  blur: boolean
+}>`
   position: relative;
   width: 100%;
   height: 40px;
   border-radius: 10px;
   border: 1px solid
-    ${({ blur, theme }): string => (blur ? theme.webNeutral._800 : theme.webNeutral._600)};
+    ${({
+      blur, theme,
+    }): string => (blur ? theme.webNeutral._800 : theme.webNeutral._600)};
   box-shadow:
     0px 0px 0px 3px rgba(255, 255, 255, 0.04),
     0px 1px 3px 0px rgba(0, 0, 0, 0.1),
@@ -32,7 +40,9 @@ const BOX_WIDTH = 185;
 const BOX_HEIGHT = 40;
 const NUMBER_BOX_WIDTH = 40;
 
-export const WebSeedBox = ({ seedString, showBlur = true }: WebSeedBoxProps): JSX.Element => {
+export const WebSeedBox = ({
+  seedString, showBlur = true,
+}: WebSeedBoxProps): JSX.Element => {
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
 
   const seedSize = useMemo(() => {
@@ -100,7 +110,9 @@ export const WebSeedBox = ({ seedString, showBlur = true }: WebSeedBoxProps): JS
 
   return (
     <CanvasContainer>
-      {Array.from({ length: seedSize }).map((_, index) => (
+      {Array.from({
+        length: seedSize,
+      }).map((_, index) => (
         <CanvasWrapper key={index} blur={showBlur}>
           <canvas
             ref={(el): HTMLCanvasElement | null => (canvasRefs.current[index] = el)}

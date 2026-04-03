@@ -1,5 +1,10 @@
-import { decryptAES } from 'adena-module';
-import { StorageMigration007 } from './storage-migration-v007';
+import {
+  decryptAES,
+} from 'adena-module';
+
+import {
+  StorageMigration007,
+} from './storage-migration-v007';
 
 const mockStorageData = {
   NETWORKS: [],
@@ -8,10 +13,13 @@ const mockStorageData = {
   SERIALIZED: 'U2FsdGVkX19eI8kOCI/T9o1Ru0b2wdj5rHxmG4QbLQ0yZH4kDa8/gg6Ac2JslvEm',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
-  ACCOUNT_NAMES: {},
-  ESTABLISH_SITES: {},
+  ACCOUNT_NAMES: {
+  },
+  ESTABLISH_SITES: {
+  },
   ADDRESS_BOOK: '',
-  ACCOUNT_TOKEN_METAINFOS: {},
+  ACCOUNT_TOKEN_METAINFOS: {
+  },
   QUESTIONNAIRE_EXPIRED_DATE: null,
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
@@ -31,8 +39,10 @@ describe('serialized wallet migration V007', () => {
     const migration = new StorageMigration007();
     const result = await migration.up(mockData);
 
-    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
+    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({
+    });
+    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({
+    });
   });
 
   it('up password success', async () => {
@@ -46,8 +56,10 @@ describe('serialized wallet migration V007', () => {
 
     expect(result.version).toBe(7);
     expect(result.data).not.toBeNull();
-    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({});
-    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({});
+    expect(result.data.ACCOUNT_GRC721_COLLECTIONS).toEqual({
+    });
+    expect(result.data.ACCOUNT_GRC721_PINNED_PACKAGES).toEqual({
+    });
 
     const serialized = result.data.SERIALIZED;
     const decrypted = await decryptAES(serialized, password);
@@ -60,7 +72,10 @@ describe('serialized wallet migration V007', () => {
   it('up failed throw error', async () => {
     const mockData: any = {
       version: 1,
-      data: { ...mockStorageData, SERIALIZED: null },
+      data: {
+        ...mockStorageData,
+        SERIALIZED: null,
+      },
     };
     const migration = new StorageMigration007();
 

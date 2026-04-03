@@ -1,21 +1,28 @@
+import {
+  FullButtonRightIcon,
+} from '@components/atoms';
+import {
+  BottomFixedButton,
+} from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import {
+  fonts,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
 import React from 'react';
 import styled from 'styled-components';
 
-import { FullButtonRightIcon } from '@components/atoms';
-import { BottomFixedButton } from '@components/molecules';
-import { RoutePath } from '@types';
-import mixins from '@styles/mixins';
-import { fonts } from '@styles/theme';
-import useAppNavigate from '@hooks/use-app-navigate';
-
 const menuMakerInfo: {
-  title: string;
+  title: string
   navigatePath:
     | RoutePath.ConnectedApps
     | RoutePath.AddressBook
     | RoutePath.ChangeNetwork
     | RoutePath.SecurityPrivacy
-    | RoutePath.AboutAdena;
+    | RoutePath.AboutAdena
 }[] = [
   {
     title: 'Connected Apps',
@@ -40,7 +47,9 @@ const menuMakerInfo: {
 ];
 
 export const Settings = (): JSX.Element => {
-  const { navigate, goBack } = useAppNavigate();
+  const {
+    navigate, goBack,
+  } = useAppNavigate();
 
   return (
     <Wrapper>
@@ -60,7 +69,9 @@ export const Settings = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 24px;

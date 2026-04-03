@@ -1,13 +1,24 @@
-import { useWalletContext } from './use-context';
-import { Account } from 'adena-module';
-import { useCurrentAccount } from './use-current-account';
+import {
+  Account,
+} from 'adena-module';
+
+import {
+  useWalletContext,
+} from './use-context';
+import {
+  useCurrentAccount,
+} from './use-current-account';
 
 export const useRemoveAccount = (): {
-  availRemoveAccount: () => Promise<boolean>;
-  removeAccount: (account: Account) => Promise<boolean>;
+  availRemoveAccount: () => Promise<boolean>
+  removeAccount: (account: Account) => Promise<boolean>
 } => {
-  const { wallet, updateWallet } = useWalletContext();
-  const { changeCurrentAccount } = useCurrentAccount();
+  const {
+    wallet, updateWallet,
+  } = useWalletContext();
+  const {
+    changeCurrentAccount,
+  } = useCurrentAccount();
 
   const availRemoveAccount = async (): Promise<boolean> => {
     const accounts = wallet?.accounts ?? [];
@@ -27,5 +38,8 @@ export const useRemoveAccount = (): {
     return true;
   };
 
-  return { availRemoveAccount, removeAccount };
+  return {
+    availRemoveAccount,
+    removeAccount,
+  };
 };

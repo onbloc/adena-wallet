@@ -1,39 +1,62 @@
-import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useMakeTransactionsWithTime,
+} from '@hooks/use-make-transactions-with-time';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTokenMetainfo,
+} from '@hooks/use-token-metainfo';
+import {
+  RefetchOptions, useInfiniteQuery,
+} from '@tanstack/react-query';
+import {
+  TransactionInfo, TransactionWithPageInfo,
+} from '@types';
+import {
+  useMemo,
+} from 'react';
 
 const REFETCH_INTERVAL = 3_000;
 
 export const useTransactionHistoryPage = ({
   enabled,
 }: {
-  enabled: boolean;
+  enabled: boolean
 }): {
   data:
     | {
-        title: string;
-        transactions: TransactionInfo[];
-      }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
+      title: string
+      transactions: TransactionInfo[]
+    }[]
+    | null
+  isFetched: boolean
+  status: 'loading' | 'error' | 'success'
+  isLoading: boolean
+  isFetching: boolean
+  isSupported: boolean
+  hasNextPage: boolean
+  fetchNextPage: () => Promise<boolean>
+  refetch: (options?: RefetchOptions) => void
 } => {
-  const { currentNetwork } = useNetwork();
-  const { currentAddress } = useCurrentAccount();
-  const { transactionHistoryService } = useAdenaContext();
-  const { tokenMetainfos } = useTokenMetainfo();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    currentAddress,
+  } = useCurrentAccount();
+  const {
+    transactionHistoryService,
+  } = useAdenaContext();
+  const {
+    tokenMetainfos,
+  } = useTokenMetainfo();
 
   const {
     data: allTransactions,
@@ -61,10 +84,10 @@ export const useTransactionHistoryPage = ({
     },
     {
       enabled:
-        !!currentAddress &&
-        tokenMetainfos.length > 0 &&
-        transactionHistoryService.supported &&
-        enabled,
+        !!currentAddress
+        && tokenMetainfos.length > 0
+        && transactionHistoryService.supported
+        && enabled,
       keepPreviousData: true,
       refetchInterval: REFETCH_INTERVAL,
     },
@@ -88,7 +111,9 @@ export const useTransactionHistoryPage = ({
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const {
+    data, isFetched, status, isLoading, isFetching,
+  } = useMakeTransactionsWithTime(
     `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
@@ -107,7 +132,7 @@ export const useTransactionHistoryPage = ({
     hasNextPage: hasNextPage !== false,
     fetchNextPage: (): Promise<boolean> => {
       return fetchNextPage()
-        .then((result) => !result.error)
+        .then(result => !result.error)
         .catch(() => false);
     },
     refetch: refetchTransactions,

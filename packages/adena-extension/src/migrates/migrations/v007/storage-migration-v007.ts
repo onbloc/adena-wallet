@@ -1,7 +1,16 @@
-import { StorageModel } from '@common/storage';
-import { Migration } from '@migrates/migrator';
-import { StorageModelDataV006 } from '../v006/storage-model-v006';
-import { StorageModelDataV007 } from './storage-model-v007';
+import {
+  StorageModel,
+} from '@common/storage';
+import {
+  Migration,
+} from '@migrates/migrator';
+
+import {
+  StorageModelDataV006,
+} from '../v006/storage-model-v006';
+import {
+  StorageModelDataV007,
+} from './storage-model-v007';
 
 export class StorageMigration007 implements Migration<StorageModelDataV007> {
   public readonly version = 7;
@@ -17,24 +26,16 @@ export class StorageMigration007 implements Migration<StorageModelDataV007> {
       version: this.version,
       data: {
         ...previous,
-        ACCOUNT_GRC721_COLLECTIONS: {},
-        ACCOUNT_GRC721_PINNED_PACKAGES: {},
+        ACCOUNT_GRC721_COLLECTIONS: {
+        },
+        ACCOUNT_GRC721_PINNED_PACKAGES: {
+        },
       },
     };
   }
 
   private validateModelV006(currentData: StorageModelDataV006): boolean {
-    const storageDataKeys = [
-      'NETWORKS',
-      'CURRENT_CHAIN_ID',
-      'CURRENT_NETWORK_ID',
-      'SERIALIZED',
-      'ENCRYPTED_STORED_PASSWORD',
-      'CURRENT_ACCOUNT_ID',
-      'ESTABLISH_SITES',
-      'ADDRESS_BOOK',
-      'ACCOUNT_TOKEN_METAINFOS',
-    ];
+    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS'];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);

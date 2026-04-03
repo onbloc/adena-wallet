@@ -1,22 +1,31 @@
+import mixins from '@styles/mixins';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
-
 export const ApproveTransactionNetworkFeeWrapper = styled.div`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   padding: 24px 20px;
 `;
 
-export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolean }>`
-  ${mixins.flex({ justify: 'flex-start' })};
+export const ApproveTransactionWrapper = styled.div<{
+  $isErrorNetworkFee: boolean
+}>`
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   padding: 0 20px;
   padding-bottom: 96px;
   align-self: center;
 
   .row {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     position: relative;
     padding: 10px 18px;
     justify-content: space-between;
@@ -65,7 +74,11 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
   }
 
   .domain-wrapper {
-    ${mixins.flex({ direction: 'row', align: 'center', justify: 'center' })};
+    ${mixins.flex({
+      direction: 'row',
+      align: 'center',
+      justify: 'center',
+    })};
     width: 100%;
     min-height: 41px;
     border-radius: 24px;
@@ -129,7 +142,9 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
   }
 
   .fee-amount-wrapper {
-    ${mixins.flex({ justify: 'flex-start' })};
+    ${mixins.flex({
+      justify: 'flex-start',
+    })};
     width: 100%;
     gap: 8px;
     margin-bottom: 8px;
@@ -212,7 +227,11 @@ export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolea
   }
 
   .error-detail-wrapper {
-    ${mixins.flex({ direction: 'column', justify: 'flex-start', align: 'stretch' })};
+    ${mixins.flex({
+      direction: 'column',
+      justify: 'flex-start',
+      align: 'stretch',
+    })};
     width: 100%;
     margin-top: 24px;
     gap: 16px;

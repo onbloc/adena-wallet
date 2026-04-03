@@ -1,24 +1,47 @@
-import { AdenaLedgerConnector, Document, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-
-import { WalletResponseRejectType, WalletResponseSuccessType } from '@adena-wallet/sdk';
-import { ApproveLedgerLoading } from '@components/molecules';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import {
+  WalletResponseRejectType, WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
+import {
+  ApproveLedgerLoading,
+} from '@components/molecules';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import {
+  AdenaLedgerConnector, Document, isLedgerAccount,
+} from 'adena-module';
+import React, {
+  useEffect, useState,
+} from 'react';
+import {
+  useLocation,
+} from 'react-router-dom';
 
 interface ApproveSignTransactionLedgerLoadingState {
-  requestData?: InjectionMessage;
-  document?: Document;
+  requestData?: InjectionMessage
+  document?: Document
 }
 
 const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
   const location = useLocation();
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
-  const { document, requestData } = location.state as ApproveSignTransactionLedgerLoadingState;
-  const { currentAccount } = useCurrentAccount();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    document, requestData,
+  } = location.state as ApproveSignTransactionLedgerLoadingState;
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
@@ -54,12 +77,16 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
 
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
-      .then(async ({ signed }) => {
+      .then(async ({
+        signed,
+      }) => {
         const encodedTransaction = transactionService.encodeTransaction(signed);
         chrome.runtime.sendMessage(
           InjectionMessageInstance.success(
             WalletResponseSuccessType.SIGN_SUCCESS,
-            { encodedTransaction },
+            {
+              encodedTransaction,
+            },
             requestData?.key,
           ),
         );
@@ -70,7 +97,8 @@ const ApproveSignTransactionLedgerLoadingContainer: React.FC = () => {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.SIGN_REJECTED,
-              {},
+              {
+              },
               requestData?.key,
             ),
           );

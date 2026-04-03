@@ -1,5 +1,9 @@
-import React, { ReactElement } from 'react';
-import styled, { keyframes } from 'styled-components';
+import React, {
+  ReactElement,
+} from 'react';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 const rotate = keyframes`
   from {

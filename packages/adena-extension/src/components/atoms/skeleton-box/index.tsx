@@ -1,5 +1,9 @@
-import { getTheme } from '@styles/theme';
-import styled, { keyframes } from 'styled-components';
+import {
+  getTheme,
+} from '@styles/theme';
+import styled, {
+  keyframes,
+} from 'styled-components';
 
 const pulseKeyframe = keyframes`
   0% {

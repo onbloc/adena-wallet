@@ -1,8 +1,15 @@
-import { POPUP_SESSION_DATA_KEY } from '@common/constants/storage.constant';
-import { POPUP_HEIGHT, POPUP_WIDTH } from '@common/constants/ui.constant';
-import { ChromeSessionStorage } from '@common/storage/chrome-session-storage';
+import {
+  POPUP_SESSION_DATA_KEY,
+} from '@common/constants/storage.constant';
+import {
+  POPUP_HEIGHT, POPUP_WIDTH,
+} from '@common/constants/ui.constant';
+import {
+  ChromeSessionStorage,
+} from '@common/storage/chrome-session-storage';
 
-export const createPopupWindow = async (popupPath: string, state: object = {}): Promise<void> => {
+export const createPopupWindow = async (popupPath: string, state: object = {
+}): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(`popup.html#${popupPath}`),
     type: 'popup',
@@ -22,7 +29,9 @@ export const createPopupWindow = async (popupPath: string, state: object = {}): 
 };
 
 export const isExtensionPopup = (): boolean => {
-  const views = chrome.extension.getViews({ type: 'popup' });
+  const views = chrome.extension.getViews({
+    type: 'popup',
+  });
   return views.length > 0 && views[0] === window;
 };
 
@@ -31,5 +40,7 @@ export const isSeparatePopupWindow = (): boolean => {
     return false;
   }
 
-  return window.opener || chrome.extension.getViews({ type: 'popup' }).length === 0;
+  return window.opener || chrome.extension.getViews({
+    type: 'popup',
+  }).length === 0;
 };

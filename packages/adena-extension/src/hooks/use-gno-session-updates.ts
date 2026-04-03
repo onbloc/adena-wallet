@@ -1,44 +1,45 @@
-import { useCallback, useEffect, useState } from 'react';
-
 import {
   GnoSessionState,
   GnoSessionUpdateType,
   PopupSessionUpdateMessage,
 } from '@inject/message/methods/gno-session';
+import {
+  useCallback, useEffect, useState,
+} from 'react';
 
 interface GnoSessionUpdates {
-  sessionId: string | null;
-  funcName: string | null;
-  pkgPath: string | null;
-  chainId: string | null;
-  rpc: string | null;
-  params: Record<string, string>;
-  mode: GnoSessionState['mode'];
-  address: string;
-  lastUpdate: GnoSessionUpdateType | null;
-  lastUpdateTime: number;
+  sessionId: string | null
+  funcName: string | null
+  pkgPath: string | null
+  chainId: string | null
+  rpc: string | null
+  params: Record<string, string>
+  mode: GnoSessionState['mode']
+  address: string
+  lastUpdate: GnoSessionUpdateType | null
+  lastUpdateTime: number
 }
 
 interface UseGnoSessionUpdatesOptions {
-  sessionId?: string;
-  funcName?: string;
-  pkgPath?: string;
+  sessionId?: string
+  funcName?: string
+  pkgPath?: string
   onParamsChange?: (
     params: Record<string, string>,
     paramName?: string,
     paramValue?: string,
-  ) => void;
-  onModeChange?: (mode: GnoSessionState['mode']) => void;
-  onAddressChange?: (address: string) => void;
-  loadInitialSession?: boolean;
+  ) => void
+  onModeChange?: (mode: GnoSessionState['mode']) => void
+  onAddressChange?: (address: string) => void
+  loadInitialSession?: boolean
 }
 
 interface UseGnoSessionUpdatesResult {
-  updates: GnoSessionUpdates;
-  isConnected: boolean;
-  loading: boolean;
-  registerSession: (sessionId: string) => void;
-  refresh: () => Promise<void>;
+  updates: GnoSessionUpdates
+  isConnected: boolean
+  loading: boolean
+  registerSession: (sessionId: string) => void
+  refresh: () => Promise<void>
 }
 
 const initialUpdates: GnoSessionUpdates = {
@@ -47,7 +48,8 @@ const initialUpdates: GnoSessionUpdates = {
   pkgPath: null,
   chainId: null,
   rpc: null,
-  params: {},
+  params: {
+  },
   mode: 'secure',
   address: '',
   lastUpdate: null,
@@ -65,13 +67,13 @@ function isPopupSessionUpdateMessage(message: unknown): message is PopupSessionU
   const msg = message as Record<string, unknown>;
 
   return (
-    'type' in msg &&
-    msg.type === 'POPUP_SESSION_UPDATE' &&
-    'data' in msg &&
-    typeof msg.data === 'object' &&
-    msg.data !== null &&
-    'updateType' in msg &&
-    typeof msg.updateType === 'string'
+    'type' in msg
+    && msg.type === 'POPUP_SESSION_UPDATE'
+    && 'data' in msg
+    && typeof msg.data === 'object'
+    && msg.data !== null
+    && 'updateType' in msg
+    && typeof msg.updateType === 'string'
   );
 }
 
@@ -94,7 +96,8 @@ function isPopupSessionUpdateMessage(message: unknown): message is PopupSessionU
  * ```
  */
 export function useGnoSessionUpdates(
-  options: UseGnoSessionUpdatesOptions = {},
+  options: UseGnoSessionUpdatesOptions = {
+  },
 ): UseGnoSessionUpdatesResult {
   const {
     sessionId: initialSessionId,
@@ -130,7 +133,8 @@ export function useGnoSessionUpdates(
           type: 'GET_GNO_SESSION',
           sessionId: activeSessionId,
         });
-      } else if (funcName && pkgPath) {
+      }
+      else if (funcName && pkgPath) {
         // Get active session by function
         session = await chrome.runtime.sendMessage({
           type: 'GET_ACTIVE_SESSION',
@@ -166,20 +170,14 @@ export function useGnoSessionUpdates(
           onAddressChange?.(session.address);
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error('[useGnoSessionUpdates] Failed to load initial session:', error);
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
-  }, [
-    activeSessionId,
-    funcName,
-    pkgPath,
-    loadInitialSession,
-    onParamsChange,
-    onModeChange,
-    onAddressChange,
-  ]);
+  }, [activeSessionId, funcName, pkgPath, loadInitialSession, onParamsChange, onModeChange, onAddressChange]);
 
   /**
    * Register this popup for a specific session
@@ -205,7 +203,9 @@ export function useGnoSessionUpdates(
         return;
       }
 
-      const { data, updateType } = message;
+      const {
+        data, updateType,
+      } = message;
 
       // Filter by sessionId if specified
       if (activeSessionId && data.sessionId !== activeSessionId) {
@@ -327,21 +327,23 @@ export function useUpdatedTransactionParams(
   funcName?: string,
   pkgPath?: string,
 ): {
-  params: Record<string, string>;
-  hasUpdates: boolean;
-  updateCount: number;
-  loading: boolean;
+  params: Record<string, string>
+  hasUpdates: boolean
+  updateCount: number
+  loading: boolean
 } {
   const [params, setParams] = useState(initialParams);
   const [updateCount, setUpdateCount] = useState(0);
 
-  const { loading } = useGnoSessionUpdates({
+  const {
+    loading,
+  } = useGnoSessionUpdates({
     sessionId,
     funcName,
     pkgPath,
     onParamsChange: (newParams) => {
       setParams(newParams);
-      setUpdateCount((prev) => prev + 1);
+      setUpdateCount(prev => prev + 1);
     },
   });
 

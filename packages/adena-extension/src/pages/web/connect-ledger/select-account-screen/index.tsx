@@ -1,11 +1,19 @@
 import IconLedger from '@assets/web/ledger.svg';
-import { View, WebButton, WebImg, WebMain } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
+import {
+  View, WebButton, WebImg, WebMain,
+} from '@components/atoms';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
 import SelectAccountBox from '@components/molecules/select-account-box/select-account-box';
-import { WebMainHeader } from '@components/pages/web/main-header';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useSelectAccountScreen from '@hooks/web/connect-ledger/use-select-account-screen';
-import { RoutePath } from '@types';
+import {
+  RoutePath,
+} from '@types';
 
 const ConnectLedgerSelectAccount = (): JSX.Element => {
   const {
@@ -17,7 +25,9 @@ const ConnectLedgerSelectAccount = (): JSX.Element => {
     onClickLoadMore,
     onClickNextButton,
   } = useSelectAccountScreen();
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
 
   return (
     <WebMain>

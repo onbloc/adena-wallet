@@ -1,28 +1,51 @@
-import { useMemo, useState } from 'react';
-import styled from 'styled-components';
-
 import AddPackageIcon from '@assets/addpkg.svg';
 import UnknownTokenIcon from '@assets/common-unknown-token.svg';
 import ContractIcon from '@assets/contract.svg';
 import IconShare from '@assets/icon-share';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { formatHash, getDateTimeText, getStatusStyle } from '@common/utils/client-utils';
-import { makeQueryString } from '@common/utils/string-utils';
-import { Button, CopyIconButton, Text } from '@components/atoms';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
+import {
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  formatHash, getDateTimeText, getStatusStyle,
+} from '@common/utils/client-utils';
+import {
+  makeQueryString,
+} from '@common/utils/string-utils';
+import {
+  Button, CopyIconButton, Text,
+} from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { TokenBalance } from '@components/molecules';
-import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import {
+  TokenBalance,
+} from '@components/molecules';
+import {
+  useGetGRC721TokenUri,
+} from '@hooks/nft/use-get-grc721-token-uri';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  useTokenMetainfo,
+} from '@hooks/use-token-metainfo';
 import mixins from '@styles/mixins';
-import theme, { fonts, getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
+import theme, {
+  fonts, getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  useMemo, useState,
+} from 'react';
+import styled from 'styled-components';
 
 interface DLProps {
-  color?: string;
+  color?: string
 }
 
 const storageDepositTooltipMessage = `The total amount of GNOT deposited or
@@ -33,14 +56,22 @@ export const TransactionDetail = (): JSX.Element => {
   const [hasLogoError, setHasLogoError] = useState(false);
   const [isLoadedLogo, setIsLoadedLogo] = useState(false);
 
-  const { openLink } = useLink();
-  const { convertDenom } = useTokenMetainfo();
-  const { currentNetwork, scannerParameters } = useNetwork();
-  const { goBack, params } = useAppNavigate<RoutePath.TransactionDetail>();
+  const {
+    openLink,
+  } = useLink();
+  const {
+    convertDenom,
+  } = useTokenMetainfo();
+  const {
+    currentNetwork, scannerParameters,
+  } = useNetwork();
+  const {
+    goBack, params,
+  } = useAppNavigate<RoutePath.TransactionDetail>();
 
   const transactionItem = params.transactionInfo;
-  const tokenUriQuery =
-    transactionItem?.type === 'TRANSFER_GRC721'
+  const tokenUriQuery
+    = transactionItem?.type === 'TRANSFER_GRC721'
       ? useGetGRC721TokenUri(transactionItem.logo, '0')
       : null;
 
@@ -110,147 +141,152 @@ export const TransactionDetail = (): JSX.Element => {
     openLink(openLinkUrl);
   };
 
-  return transactionItem ? (
-    <Wrapper>
-      <img
-        className='status-icon'
-        src={getStatusStyle(transactionItem.status).statusIcon}
-        alt='status icon'
-      />
-      <TokenBox color={getStatusStyle(transactionItem.status).color}>
+  return transactionItem
+    ? (
+      <Wrapper>
         <img
-          className='tx-symbol'
-          src={logoImage}
-          onLoad={handleLoadLogo}
-          onError={handleLogoError}
-          alt='logo image'
+          className='status-icon'
+          src={getStatusStyle(transactionItem.status).statusIcon}
+          alt='status icon'
         />
-        {transactionItem.type === 'TRANSFER' ? (
-          <TokenBalance
-            value={transactionItem.amount.value || '0'}
-            denom={transactionItem.amount.denom || '0'}
-            fontStyleKey='header6'
-            minimumFontSize='14px'
-            orientation='HORIZONTAL'
+        <TokenBox color={getStatusStyle(transactionItem.status).color}>
+          <img
+            className='tx-symbol'
+            src={logoImage}
+            onLoad={handleLoadLogo}
+            onError={handleLogoError}
+            alt='logo image'
           />
-        ) : (
-          <Text display={'flex'} className='main-text' type='header6'>
-            {transactionItem.title}
-            {transactionItem.extraInfo && (
-              <Text type='body2Bold' className='extra-info'>
-                {transactionItem.extraInfo}
+          {transactionItem.type === 'TRANSFER'
+            ? (
+              <TokenBalance
+                value={transactionItem.amount.value || '0'}
+                denom={transactionItem.amount.denom || '0'}
+                fontStyleKey='header6'
+                minimumFontSize='14px'
+                orientation='HORIZONTAL'
+              />
+            )
+            : (
+              <Text display='flex' className='main-text' type='header6'>
+                {transactionItem.title}
+                {transactionItem.extraInfo && (
+                  <Text type='body2Bold' className='extra-info'>
+                    {transactionItem.extraInfo}
+                  </Text>
+                )}
               </Text>
             )}
-          </Text>
-        )}
-      </TokenBox>
-      <DataBox>
-        <DLWrap>
-          <dt>Date</dt>
-          <dd>{transactionItem.date ? getDateTimeText(transactionItem.date) : '-'}</dd>
-        </DLWrap>
-        <DLWrap>
-          <dt>Type</dt>
-          <dd>
-            {transactionItem.typeName || ''}
-            {transactionItem.extraInfo && (
-              <Text className='extra-info' type='body3Bold'>
-                {transactionItem.extraInfo}
-              </Text>
-            )}
-          </dd>
-        </DLWrap>
-        <DLWrap color={getStatusStyle(transactionItem.status).color}>
-          <dt>Status</dt>
-          <StatusInfo>
-            <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
-            <dd
-              className='link-icon'
-              onClick={(): void | '' =>
-                transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')
-              }
-            >
-              <IconShare />
-            </dd>
-          </StatusInfo>
-        </DLWrap>
-        {transactionItem.to && (
+        </TokenBox>
+        <DataBox>
           <DLWrap>
-            <dt>To</dt>
+            <dt>Date</dt>
+            <dd>{transactionItem.date ? getDateTimeText(transactionItem.date) : '-'}</dd>
+          </DLWrap>
+          <DLWrap>
+            <dt>Type</dt>
             <dd>
-              {transactionItem.to}
-              <CopyIconButton className='copy-button' copyText={transactionItem.originTo || ''} />
+              {transactionItem.typeName || ''}
+              {transactionItem.extraInfo && (
+                <Text className='extra-info' type='body3Bold'>
+                  {transactionItem.extraInfo}
+                </Text>
+              )}
             </dd>
           </DLWrap>
-        )}
-        {transactionItem.from && (
+          <DLWrap color={getStatusStyle(transactionItem.status).color}>
+            <dt>Status</dt>
+            <StatusInfo>
+              <dd>{transactionItem.status === 'SUCCESS' ? 'Success' : 'Fail'}</dd>
+              <dd
+                className='link-icon'
+                onClick={(): void | '' =>
+                  transactionItem.hash && handleLinkClick(transactionItem.hash ?? '')}
+              >
+                <IconShare />
+              </dd>
+            </StatusInfo>
+          </DLWrap>
+          {transactionItem.to && (
+            <DLWrap>
+              <dt>To</dt>
+              <dd>
+                {transactionItem.to}
+                <CopyIconButton className='copy-button' copyText={transactionItem.originTo || ''} />
+              </dd>
+            </DLWrap>
+          )}
+          {transactionItem.from && (
+            <DLWrap>
+              <dt>From</dt>
+              <dd>
+                {transactionItem.from}
+                <CopyIconButton className='copy-button' copyText={transactionItem.originFrom || ''} />
+              </dd>
+            </DLWrap>
+          )}
           <DLWrap>
-            <dt>From</dt>
+            <dt>TxID</dt>
             <dd>
-              {transactionItem.from}
-              <CopyIconButton className='copy-button' copyText={transactionItem.originFrom || ''} />
+              {formatHash(transactionItem.hash)}
+              <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
             </dd>
           </DLWrap>
-        )}
-        <DLWrap>
-          <dt>TxID</dt>
-          <dd>
-            {formatHash(transactionItem.hash)}
-            <CopyIconButton className='copy-button' copyText={transactionItem.hash} />
-          </dd>
-        </DLWrap>
-        <DLWrap>
-          <dt>
-            {'Storage Deposit'}
-            <InfoTooltip content={storageDepositTooltipMessage} />
-          </dt>
-          <dd>
-            <TokenBalance
-              {...convertDenom(`${storageDeposit.amountValue}`, storageDeposit.amountDenom)}
-              minimumFontSize='12px'
-              fontStyleKey='body1Reg'
-              orientation='HORIZONTAL'
-              fontColor={storageDeposit.fontColor}
-              withSign={storageDeposit.isRefundable}
-            />
-          </dd>
-        </DLWrap>
-        {transactionItem.networkFee && (
           <DLWrap>
-            <dt>Network Fee</dt>
+            <dt>
+              Storage Deposit
+              <InfoTooltip content={storageDepositTooltipMessage} />
+            </dt>
             <dd>
               <TokenBalance
-                {...convertDenom(
-                  transactionItem.networkFee.value,
-                  transactionItem.networkFee.denom,
-                )}
+                {...convertDenom(`${storageDeposit.amountValue}`, storageDeposit.amountDenom)}
                 minimumFontSize='12px'
                 fontStyleKey='body1Reg'
                 orientation='HORIZONTAL'
+                fontColor={storageDeposit.fontColor}
+                withSign={storageDeposit.isRefundable}
               />
             </dd>
           </DLWrap>
-        )}
-      </DataBox>
-      <div className='button-wrapper'>
-        <Button
-          className='close-button'
-          margin='auto 0px 0px'
-          fullWidth
-          hierarchy='dark'
-          onClick={goBack}
-        >
-          <Text type='body1Bold'>Close</Text>
-        </Button>
-      </div>
-    </Wrapper>
-  ) : (
-    <></>
-  );
+          {transactionItem.networkFee && (
+            <DLWrap>
+              <dt>Network Fee</dt>
+              <dd>
+                <TokenBalance
+                  {...convertDenom(
+                    transactionItem.networkFee.value,
+                    transactionItem.networkFee.denom,
+                  )}
+                  minimumFontSize='12px'
+                  fontStyleKey='body1Reg'
+                  orientation='HORIZONTAL'
+                />
+              </dd>
+            </DLWrap>
+          )}
+        </DataBox>
+        <div className='button-wrapper'>
+          <Button
+            className='close-button'
+            margin='auto 0px 0px'
+            fullWidth
+            hierarchy='dark'
+            onClick={goBack}
+          >
+            <Text type='body1Bold'>Close</Text>
+          </Button>
+        </div>
+      </Wrapper>
+    )
+    : (
+      <></>
+    );
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   padding-top: 30px;
   overflow: auto;
@@ -274,13 +310,20 @@ const Wrapper = styled.main`
   }
 `;
 
-const TokenBox = styled.div<{ color: string }>`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+const TokenBox = styled.div<{
+  color: string
+}>`
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   flex-shrink: 0;
   width: 100%;
   height: 70px;
   background-color: ${getTheme('neutral', '_9')};
-  border: 1px solid ${({ color }): string => color};
+  border: 1px solid ${({
+    color,
+  }): string => color};
   border-radius: 18px;
   padding: 0px 15px;
   margin: 18px 0px 8px;
@@ -307,7 +350,10 @@ const DataBox = styled.div`
 `;
 
 const DLWrap = styled.dl<DLProps>`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   ${fonts.body1Reg};
   width: 100%;
   height: 40px;
@@ -321,12 +367,17 @@ const DLWrap = styled.dl<DLProps>`
   }
   dt {
     color: ${getTheme('neutral', 'a')};
-    ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'space-between',
+    })};
     gap: 4px;
   }
   dd {
     display: flex;
-    color: ${({ theme, color }): string => (color ? color : theme.neutral._1)};
+    color: ${({
+      theme, color,
+    }): string => (color ? color : theme.neutral._1)};
     align-items: center;
   }
 
@@ -336,7 +387,10 @@ const DLWrap = styled.dl<DLProps>`
 `;
 
 const StatusInfo = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   .link-icon {
     display: flex;
     cursor: pointer;

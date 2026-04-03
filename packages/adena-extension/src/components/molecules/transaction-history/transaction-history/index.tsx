@@ -1,10 +1,18 @@
-import React from 'react';
-import { useTheme } from 'styled-components';
-
-import { Text } from '@components/atoms';
+import {
+  Text,
+} from '@components/atoms';
 import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list';
-import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
+import {
+  UseQueryOptions, UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  TransactionInfo,
+} from '@types';
+import React from 'react';
+import {
+  useTheme,
+} from 'styled-components';
+
 import LoadingHistory from '../loading-history';
 import {
   TransactionHistoryDescriptionWrapper,
@@ -12,17 +20,17 @@ import {
 } from './transaction-history.styles';
 
 export interface TransactionHistoryProps {
-  status: 'error' | 'loading' | 'success';
+  status: 'error' | 'loading' | 'success'
   transactionInfoLists: {
-    title: string;
-    transactions: TransactionInfo[];
-  }[];
+    title: string
+    transactions: TransactionInfo[]
+  }[]
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
     options?: UseQueryOptions<string | null, Error>,
-  ) => UseQueryResult<string | null>;
-  onClickItem: (hash: string) => void;
+  ) => UseQueryResult<string | null>
+  onClickItem: (hash: string) => void
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({

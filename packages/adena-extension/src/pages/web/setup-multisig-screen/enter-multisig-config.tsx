@@ -1,25 +1,35 @@
+import IconAirgap from '@assets/web/airgap-green.svg';
+import {
+  View, WebButton, WebErrorText, WebImg,
+} from '@components/atoms';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
+import {
+  WebMultisigSignerInput,
+} from '@components/molecules/web-multisig-signer-input';
+import {
+  WebMultisigThresholdInput,
+} from '@components/molecules/web-multisig-threshold-input';
+import {
+  MultisigAccountMode,
+} from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import {
+  MultisigConfig,
+} from 'adena-module';
 import React from 'react';
 import styled from 'styled-components';
 
-import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
-import { MultisigConfig } from 'adena-module';
-
-import { View, WebButton, WebErrorText, WebImg } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
-import { WebMultisigSignerInput } from '@components/molecules/web-multisig-signer-input';
-import { WebMultisigThresholdInput } from '@components/molecules/web-multisig-threshold-input';
-import IconAirgap from '@assets/web/airgap-green.svg';
-
 interface SetupMultisigConfigProps {
-  currentAddress: string;
-  multisigConfig: MultisigConfig;
-  onSignerChange: (index: number, value: string) => void;
-  onAddSigner: () => void;
-  onRemoveSigner: (index: number) => void;
-  onThresholdChange: (threshold: number) => void;
-  onCreateMultisigAccount: () => Promise<void>;
-  multisigConfigError: string | null;
-  multisigAccountMode: MultisigAccountMode;
+  currentAddress: string
+  multisigConfig: MultisigConfig
+  onSignerChange: (index: number, value: string) => void
+  onAddSigner: () => void
+  onRemoveSigner: (index: number) => void
+  onThresholdChange: (threshold: number) => void
+  onCreateMultisigAccount: () => Promise<void>
+  multisigConfigError: string | null
+  multisigAccountMode: MultisigAccountMode
 }
 
 const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
@@ -33,18 +43,20 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
   onCreateMultisigAccount,
   multisigAccountMode,
 }) => {
-  const { signers, threshold } = multisigConfig;
+  const {
+    signers, threshold,
+  } = multisigConfig;
 
   const validSignersCount = React.useMemo(() => {
-    return Math.max(1, signers.filter((signer) => signer.trim() !== '').length);
+    return Math.max(1, signers.filter(signer => signer.trim() !== '').length);
   }, [signers]);
 
   const disabledNextButton = React.useMemo(() => {
-    if (signers.some((signer) => signer.trim() === '')) {
+    if (signers.some(signer => signer.trim() === '')) {
       return true;
     }
 
-    const validSigners = signers.filter((signer) => signer.trim() !== '');
+    const validSigners = signers.filter(signer => signer.trim() !== '');
 
     if (validSigners.length < 2) {
       return true;
@@ -63,14 +75,17 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
 
   return (
     <StyledContainer>
-      <View style={{ marginBottom: 8 }}>
+      <View style={{
+        marginBottom: 8,
+      }}
+      >
         <WebImg src={IconAirgap} size={88} />
       </View>
 
       <WebTitleWithDescription
         title='Set Up Multi-sig Account'
         description='Enter the required information for your multisig account. Please make sure all addresses and threshold are correct — they cannot be changed after setup.'
-        descriptionLetterSpacing={'-0.40px'}
+        descriptionLetterSpacing='-0.40px'
         marginBottom={-6}
       />
 
@@ -84,7 +99,10 @@ const SetupMultisigConfig: React.FC<SetupMultisigConfigProps> = ({
           onSignerChange={onSignerChange}
           multisigConfigError={multisigConfigError}
         />
-        <View style={{ rowGap: 12 }}>
+        <View style={{
+          rowGap: 12,
+        }}
+        >
           <WebMultisigThresholdInput
             threshold={threshold}
             onThresholdChange={onThresholdChange}

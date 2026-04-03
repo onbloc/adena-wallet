@@ -1,21 +1,31 @@
-import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { css, RuleSet, useTheme } from 'styled-components';
-
 import IconCopy from '@assets/web/icon-copy';
-import { Row, View } from '../base';
-import { WebText } from '../web-text';
+import React, {
+  CSSProperties, useCallback, useEffect, useMemo, useState,
+} from 'react';
+import styled, {
+  css, RuleSet, useTheme,
+} from 'styled-components';
+
+import {
+  Row, View,
+} from '../base';
+import {
+  WebText,
+} from '../web-text';
 
 interface WebCopyButtonProps {
-  width?: CSSProperties['width'];
-  height?: CSSProperties['height'];
-  copyText: string;
-  clearClipboardTimeout?: number;
-  onCopy?: () => void;
+  width?: CSSProperties['width']
+  height?: CSSProperties['height']
+  copyText: string
+  clearClipboardTimeout?: number
+  onCopy?: () => void
 }
 
 const StyledContainer = styled(Row).withConfig({
   shouldForwardProp: (prop): boolean => !['clicked'].includes(prop),
-})<{ clicked: boolean }>`
+})<{
+  clicked: boolean
+}>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -33,17 +43,23 @@ const StyledContainer = styled(Row).withConfig({
   }
 
   svg * {
-    stroke: ${({ theme }): string => theme.webNeutral._500};
+    stroke: ${({
+      theme,
+    }): string => theme.webNeutral._500};
   }
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
     svg * {
-      stroke: ${({ theme }): string => theme.webNeutral._100};
+      stroke: ${({
+        theme,
+      }): string => theme.webNeutral._100};
     }
   }
 
-  ${({ clicked }): RuleSet | string =>
+  ${({
+    clicked,
+  }): RuleSet | string =>
     clicked
       ? css`
           background: rgba(255, 255, 255, 0.08);
@@ -125,20 +141,22 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
       onMouseLeave={onMouseLeave}
       onMouseOut={onMouseLeave}
     >
-      {clicked ? (
-        <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
-          {buttonStr}
-        </WebText>
-      ) : (
-        <React.Fragment>
-          <View>
-            <IconCopy />
-          </View>
-          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
+      {clicked
+        ? (
+          <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='body6'>
             {buttonStr}
           </WebText>
-        </React.Fragment>
-      )}
+        )
+        : (
+          <React.Fragment>
+            <View>
+              <IconCopy />
+            </View>
+            <WebText color={activated ? theme.webNeutral._100 : theme.webNeutral._500} type='title6'>
+              {buttonStr}
+            </WebText>
+          </React.Fragment>
+        )}
     </StyledContainer>
   );
 };

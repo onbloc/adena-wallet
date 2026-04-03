@@ -1,12 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { ToastContent, ToastWrapper } from './toast.styles';
+import React, {
+  useEffect, useState,
+} from 'react';
+
+import {
+  ToastContent, ToastWrapper,
+} from './toast.styles';
 
 export interface ToastProps {
-  text: string;
-  onFinish: () => void;
+  text: string
+  onFinish: () => void
 }
 
-const Toast: React.FC<ToastProps> = ({ text, onFinish }) => {
+const Toast: React.FC<ToastProps> = ({
+  text, onFinish,
+}) => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

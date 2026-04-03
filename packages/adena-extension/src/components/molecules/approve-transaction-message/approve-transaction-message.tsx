@@ -1,17 +1,27 @@
-import React, { useMemo, useState } from 'react';
-
-import { formatAddress } from '@common/utils/client-utils';
-import { isBech32Address, reverseString } from '@common/utils/string-utils';
-import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
-import { ContractMessage, EMessageType, FUNCTION_NAME_MAP } from '@inject/types';
-import { MsgCallValue } from '@repositories/transaction/response/transaction-history-query-response';
-
 import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
 import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
-
 import IconLink from '@assets/icon-link';
+import {
+  formatAddress,
+} from '@common/utils/client-utils';
+import {
+  isBech32Address, reverseString,
+} from '@common/utils/string-utils';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
-import { useMaxDepositMessage } from '@hooks/wallet/transaction-message/use-max-deposit-message';
+import ArgumentEditBox from '@components/molecules/argument-edit-box/argument-edit-box';
+import {
+  useMaxDepositMessage,
+} from '@hooks/wallet/transaction-message/use-max-deposit-message';
+import {
+  ContractMessage, EMessageType, FUNCTION_NAME_MAP,
+} from '@inject/types';
+import {
+  MsgCallValue,
+} from '@repositories/transaction/response/transaction-history-query-response';
+import React, {
+  useMemo, useState,
+} from 'react';
+
 import {
   ApproveTransactionMessageArgumentsOpenerWrapper,
   ApproveTransactionMessageWrapper,
@@ -40,13 +50,13 @@ function makeTitle(index: number, functionName: string): string {
 }
 
 export interface ApproveTransactionMessageProps {
-  index: number;
-  message: ContractMessage;
-  argumentKeyMap?: Record<number, string>;
-  changeMessage: (index: number, messages: ContractMessage) => void;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  editable: boolean;
-  errorMessage?: string;
+  index: number
+  message: ContractMessage
+  argumentKeyMap?: Record<number, string>
+  changeMessage: (index: number, messages: ContractMessage) => void
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  editable: boolean
+  errorMessage?: string
 }
 
 const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
@@ -58,7 +68,9 @@ const ApproveTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { type } = message;
+  const {
+    type,
+  } = message;
 
   if (isMsgCall(type)) {
     return (
@@ -117,7 +129,9 @@ const DefaultTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   message,
   errorMessage,
 }) => {
-  const { type } = message;
+  const {
+    type,
+  } = message;
   const [isOpen, setIsOpen] = useState(true);
 
   const functionName = useMemo(() => {
@@ -160,7 +174,9 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { func, pkg_path, args, send, max_deposit } = message.value as MsgCallValue;
+  const {
+    func, pkg_path, args, send, max_deposit,
+  } = message.value as MsgCallValue;
   const [isOpen, setIsOpen] = useState(true);
 
   const functionName = useMemo(() => {
@@ -225,7 +241,9 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   }, [max_deposit]);
 
   const moveGnoscan = (): void => {
-    openScannerLink('/realms/details', { path: realmPathInfo.path });
+    openScannerLink('/realms/details', {
+      path: realmPathInfo.path,
+    });
   };
 
   const changeSendAmount = (sendAmount: string): void => {
@@ -255,7 +273,9 @@ const MsgCallTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   };
 
   const changeMaxDeposit = (maxDeposit: string): void => {
-    const updatedValue: typeof message.value & { max_deposit: string } = {
+    const updatedValue: typeof message.value & {
+      max_deposit: string
+    } = {
       ...message.value,
       max_deposit: maxDeposit,
     };
@@ -338,8 +358,10 @@ const MsgAddPkgTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
-    useMaxDepositMessage(index, message, changeMessage);
+  const {
+    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
+  }
+    = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
@@ -382,8 +404,10 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
   editable,
   errorMessage,
 }) => {
-  const { type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit } =
-    useMaxDepositMessage(index, message, changeMessage);
+  const {
+    type, isOpen, setIsOpen, maxDeposit, functionName, title, changeMaxDeposit,
+  }
+    = useMaxDepositMessage(index, message, changeMessage);
 
   return (
     <>
@@ -420,10 +444,12 @@ const MsgRunTransactionMessage: React.FC<ApproveTransactionMessageProps> = ({
 };
 
 const MessageBoxArgumentsOpener: React.FC<{
-  title: string;
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-}> = ({ title, isOpen, setIsOpen }) => {
+  title: string
+  isOpen: boolean
+  setIsOpen: (isOpen: boolean) => void
+}> = ({
+  title, isOpen, setIsOpen,
+}) => {
   const toggleIsOpen = (): void => {
     setIsOpen(!isOpen);
   };
@@ -441,11 +467,13 @@ const MessageBoxArgumentsOpener: React.FC<{
 export default ApproveTransactionMessage;
 
 const RealmPathInfo: React.FC<{
-  domain: string;
-  nameSpace: string;
-  namespaceSubPath: string;
-  contract: string;
-}> = ({ domain, nameSpace, namespaceSubPath, contract }) => {
+  domain: string
+  nameSpace: string
+  namespaceSubPath: string
+  contract: string
+}> = ({
+  domain, nameSpace, namespaceSubPath, contract,
+}) => {
   const displayDomain = useMemo(() => {
     return reverseString(domain);
   }, [domain]);

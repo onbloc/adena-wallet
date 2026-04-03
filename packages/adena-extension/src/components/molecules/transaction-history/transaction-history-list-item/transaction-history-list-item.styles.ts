@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransactionHistoryListItemWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'normal' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'normal',
+  })};
   width: 100%;
   height: 60px;
   padding: 12px 14px;
@@ -43,7 +48,9 @@ export const TransactionHistoryListItemWrapper = styled.div`
   }
 
   .title-wrapper {
-    ${mixins.flex({ align: 'flex-start' })};
+    ${mixins.flex({
+      align: 'flex-start',
+    })};
     width: 100%;
     margin: 0 12px;
 
@@ -78,7 +85,9 @@ export const TransactionHistoryListItemWrapper = styled.div`
   }
 
   .value-wrapper {
-    ${mixins.flex({ align: 'flex-end' })};
+    ${mixins.flex({
+      align: 'flex-end',
+    })};
     flex-wrap: wrap;
     width: fit-content;
     max-width: 150px;

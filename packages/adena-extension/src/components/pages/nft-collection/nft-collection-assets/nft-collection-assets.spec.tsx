@@ -1,11 +1,24 @@
-import React from 'react';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { UseQueryResult } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import NFTCollectionAssets, { NFTCollectionAssetsProps } from './nft-collection-assets';
+import {
+  UseQueryResult,
+} from '@tanstack/react-query';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import NFTCollectionAssets, {
+  NFTCollectionAssetsProps,
+} from './nft-collection-assets';
 
 describe('NFTCollectionAssets Component', () => {
   it('NFTCollectionAssets render', () => {
@@ -15,7 +28,8 @@ describe('NFTCollectionAssets Component', () => {
       moveAssetPage: () => {
         return;
       },
-      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
+      queryGRC721TokenUri: () => ({
+      }) as unknown as UseQueryResult<string | null>,
     };
 
     render(

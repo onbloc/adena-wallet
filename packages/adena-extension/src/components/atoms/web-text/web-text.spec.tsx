@@ -1,14 +1,24 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalWebStyle } from '@styles/global-style';
-import { WebText } from '.';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import {
+  WebText,
+} from '.';
 
 describe('WebText Component', () => {
   it('WebText render', () => {
-
     render(
       <RecoilRoot>
         <GlobalWebStyle />
@@ -16,7 +26,8 @@ describe('WebText Component', () => {
           <WebText
             type='title1'
             color='#000000'
-            style={{}}
+            style={{
+            }}
             textCenter
           >
             WebText

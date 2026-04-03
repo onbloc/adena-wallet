@@ -1,24 +1,31 @@
-import React, { useCallback, useState } from 'react';
+import React, {
+  useCallback, useState,
+} from 'react';
+
 import WebHelpTooltip from '../web-help-tooltip/web-help-tooltip';
-import { WebHelpOverlayItemWrapper, WebHelpOverlayWrapper } from './web-help-overlay.styles';
+import {
+  WebHelpOverlayItemWrapper, WebHelpOverlayWrapper,
+} from './web-help-overlay.styles';
 
 export interface OverlayItem {
-  x: number;
-  y: number;
-  position: 'top' | 'bottom';
+  x: number
+  y: number
+  position: 'top' | 'bottom'
   tooltipInfo: {
-    securityRate: number;
-    convenienceRate: number;
-    content: React.ReactNode;
-  };
+    securityRate: number
+    convenienceRate: number
+    content: React.ReactNode
+  }
 }
 
 export interface WebHelpOverlayProps {
-  items: OverlayItem[];
-  onFinish: () => void;
+  items: OverlayItem[]
+  onFinish: () => void
 }
 
-const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({ items, onFinish }) => {
+const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({
+  items, onFinish,
+}) => {
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
   const nextItem = useCallback(() => {
@@ -27,31 +34,33 @@ const WebHelpOverlay: React.FC<WebHelpOverlayProps> = ({ items, onFinish }) => {
       onFinish();
       return;
     }
-    setCurrentItemIndex((prev) => prev + 1);
+    setCurrentItemIndex(prev => prev + 1);
   }, [currentItemIndex, items]);
 
   return (
     <WebHelpOverlayWrapper>
       {items.map((item, index) =>
-        index <= currentItemIndex ? (
-          <WebHelpOverlayItemWrapper
-            key={index}
-            className={index === currentItemIndex ? 'visible' : ''}
-            x={item.x}
-            y={item.y}
-          >
-            <WebHelpTooltip
-              securityRate={item.tooltipInfo.securityRate}
-              convenienceRate={item.tooltipInfo.convenienceRate}
-              position={item.position}
-              confirm={nextItem}
+        index <= currentItemIndex
+          ? (
+            <WebHelpOverlayItemWrapper
+              key={index}
+              className={index === currentItemIndex ? 'visible' : ''}
+              x={item.x}
+              y={item.y}
             >
-              {item.tooltipInfo.content}
-            </WebHelpTooltip>
-          </WebHelpOverlayItemWrapper>
-        ) : (
-          <React.Fragment key={index} />
-        ),
+              <WebHelpTooltip
+                securityRate={item.tooltipInfo.securityRate}
+                convenienceRate={item.tooltipInfo.convenienceRate}
+                position={item.position}
+                confirm={nextItem}
+              >
+                {item.tooltipInfo.content}
+              </WebHelpTooltip>
+            </WebHelpOverlayItemWrapper>
+          )
+          : (
+            <React.Fragment key={index} />
+          ),
       )}
     </WebHelpOverlayWrapper>
   );

@@ -1,6 +1,8 @@
-/* eslint-disable react/no-unknown-property */
-
-const IconPencil = ({ className }: { className: string }): JSX.Element => (
+const IconPencil = ({
+  className,
+}: {
+  className: string
+}): JSX.Element => (
   <svg
     className={className}
     width='16'

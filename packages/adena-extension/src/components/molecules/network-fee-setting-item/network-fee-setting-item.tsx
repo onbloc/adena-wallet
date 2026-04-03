@@ -1,21 +1,30 @@
-import { GasToken } from '@common/constants/token.constant';
-import { GasInfo, NetworkFeeSettingType } from '@types';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  GasInfo, NetworkFeeSettingType,
+} from '@types';
 import BigNumber from 'bignumber.js';
-import React, { useMemo } from 'react';
-import { TokenBalance } from '../token-balance';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  TokenBalance,
+} from '../token-balance';
 import {
   NetworkFeeItemSkeletonBox,
   NetworkFeeSettingItemWrapper,
 } from './network-fee-setting-item.styles';
 
 export interface NetworkFeeSettingItemProps {
-  selected: boolean;
-  isLoading: boolean;
-  select: () => void;
+  selected: boolean
+  isLoading: boolean
+  select: () => void
   info: {
-    settingType: NetworkFeeSettingType;
-    gasInfo?: GasInfo | undefined;
-  };
+    settingType: NetworkFeeSettingType
+    gasInfo?: GasInfo | undefined
+  }
 }
 
 const networkFeeSettingTypeNames: { [key in NetworkFeeSettingType]: string } = {
@@ -81,17 +90,19 @@ const NetworkFeeSettingItem: React.FC<NetworkFeeSettingItemProps> = ({
     <NetworkFeeSettingItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
       <span className='title'>{settingTypeName}</span>
 
-      {hasGasInfo ? (
-        <TokenBalance
-          value={gasInfoAmount}
-          denom={gasInfoDenomination}
-          fontStyleKey='body2Reg'
-          minimumFontSize='11px'
-          orientation='HORIZONTAL'
-        />
-      ) : (
-        <span className='no-data'>{'-'}</span>
-      )}
+      {hasGasInfo
+        ? (
+          <TokenBalance
+            value={gasInfoAmount}
+            denom={gasInfoDenomination}
+            fontStyleKey='body2Reg'
+            minimumFontSize='11px'
+            orientation='HORIZONTAL'
+          />
+        )
+        : (
+          <span className='no-data'>-</span>
+        )}
     </NetworkFeeSettingItemWrapper>
   );
 };

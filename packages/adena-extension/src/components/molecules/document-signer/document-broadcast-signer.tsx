@@ -1,12 +1,12 @@
+import IconRight from '@assets/icon-right';
 import React from 'react';
+
 import * as S from './document-signer.styles';
 
-import IconRight from '@assets/icon-right';
-
 interface DocumentBroadcastSignerProps {
-  signerCount: number;
-  signedCount: number;
-  onClickSetting?: () => void;
+  signerCount: number
+  signedCount: number
+  onClickSetting?: () => void
 }
 
 const DocumentBroadcastSigner = ({
@@ -18,11 +18,14 @@ const DocumentBroadcastSigner = ({
   return (
     <S.DocumentSignersContainer>
       <S.DocumentSignersWrapper>
-        <span className='key'>{'Signer'}</span>
+        <span className='key'>Signer</span>
 
         <div className='document-signers-amount-wrapper'>
           <span className='value'>
-            {signedCount} of {signerCount}
+            {signedCount}
+            {' '}
+            of
+            {signerCount}
           </span>
           {hasSetting && (
             <button className='setting-button' onClick={onClickSetting}>

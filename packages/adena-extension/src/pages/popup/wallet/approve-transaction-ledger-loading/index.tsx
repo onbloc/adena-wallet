@@ -1,28 +1,57 @@
-import { TM2Error } from '@gnolang/tm2-js-client';
-import { AdenaLedgerConnector, isLedgerAccount } from 'adena-module';
-import React, { useEffect, useState } from 'react';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { ApproveLedgerLoading } from '@components/molecules';
+import {
+  ApproveLedgerLoading,
+} from '@components/molecules';
+import {
+  TM2Error,
+} from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
-import { InjectionMessageInstance } from '@inject/message';
-import { RoutePath } from '@types';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  InjectionMessageInstance,
+} from '@inject/message';
+import {
+  RoutePath,
+} from '@types';
+import {
+  AdenaLedgerConnector, isLedgerAccount,
+} from 'adena-module';
+import React, {
+  useEffect, useState,
+} from 'react';
 
 const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
-  const { params } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
-  const { document, requestData } = params;
-  const { currentAccount } = useCurrentAccount();
+  const {
+    params,
+  } = useAppNavigate<RoutePath.ApproveTransactionLoading>();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    document, requestData,
+  } = params;
+  const {
+    currentAccount,
+  } = useCurrentAccount();
   const [completed, setCompleted] = useState(false);
-  const { currentNetwork } = useNetwork();
+  const {
+    currentNetwork,
+  } = useNetwork();
 
   useEffect(() => {
     if (currentAccount) {
@@ -56,7 +85,9 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
 
     const result = await transactionService
       .createTransactionWithLedger(ledgerConnector, currentAccount, document)
-      .then(async ({ signed }) => {
+      .then(async ({
+        signed,
+      }) => {
         const hash = transactionService.createHash(signed);
         const response = await transactionService
           .sendTransactionByLedger(ledgerConnector, currentAccount, signed)
@@ -108,7 +139,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
           chrome.runtime.sendMessage(
             InjectionMessageInstance.failure(
               WalletResponseRejectType.TRANSACTION_REJECTED,
-              {},
+              {
+              },
               requestData?.key,
             ),
           );
@@ -126,7 +158,8 @@ const ApproveTransactionLedgerLoadingContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseRejectType.TRANSACTION_REJECTED,
-        {},
+        {
+        },
         requestData.key,
       ),
     );

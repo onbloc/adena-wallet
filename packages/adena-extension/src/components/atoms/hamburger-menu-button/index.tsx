@@ -1,11 +1,11 @@
-import styled from 'styled-components';
-
 import menu from '@assets/menu.svg';
+import styled from 'styled-components';
 
 let op;
 if (window.location.hash.indexOf('approve') === -1) {
   op = 1;
-} else {
+}
+else {
   op = 0;
 }
 

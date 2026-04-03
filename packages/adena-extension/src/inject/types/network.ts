@@ -1,9 +1,11 @@
-import { AdenaResponse } from '.';
+import {
+  AdenaResponse,
+} from '.';
 
 export type AddNetworkParams = {
-  chainId: string;
-  chainName: string;
-  rpcUrl: string;
+  chainId: string
+  chainName: string
+  rpcUrl: string
 };
 
 export type AddNetworkResponse = AdenaResponse<AddNetworkParams>;
@@ -17,7 +19,7 @@ export enum SwitchNetworkResponseType {
 }
 
 interface SwitchNetworkResponseData {
-  chainId: string;
+  chainId: string
 }
 
 export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>;
@@ -25,11 +27,11 @@ export type SwitchNetworkResponse = AdenaResponse<SwitchNetworkResponseData>;
 export type AdenaSwitchNetwork = (chainId: string) => Promise<SwitchNetworkResponse>;
 
 interface GetNetworkResponseData {
-  chainId: string;
-  networkName: string;
-  addressPrefix: string;
-  rpcUrl: string;
-  indexerUrl: string | null;
+  chainId: string
+  networkName: string
+  addressPrefix: string
+  rpcUrl: string
+  indexerUrl: string | null
 }
 
 export type GetNetworkResponse = AdenaResponse<GetNetworkResponseData>;

@@ -1,8 +1,19 @@
-import { WalletResponseRejectType } from '@adena-wallet/sdk';
-import { validateInjectionData } from '@common/validation/validation-transaction';
-import { RoutePath } from '@types';
-import { HandlerMethod } from '..';
-import { InjectionMessage, InjectionMessageInstance } from '../message';
+import {
+  WalletResponseRejectType,
+} from '@adena-wallet/sdk';
+import {
+  validateInjectionData,
+} from '@common/validation/validation-transaction';
+import {
+  RoutePath,
+} from '@types';
+
+import {
+  HandlerMethod,
+} from '..';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '../message';
 
 export const signAmino = async (
   requestData: InjectionMessage,
@@ -17,7 +28,8 @@ export const signAmino = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveSign,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };
@@ -35,7 +47,8 @@ export const signTransaction = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveSignTransaction,
     requestData,
-    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {}, requestData.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.SIGN_REJECTED, {
+    }, requestData.key),
     sendResponse,
   );
 };
@@ -55,7 +68,8 @@ export const doContract = async (
     requestData,
     InjectionMessageInstance.failure(
       WalletResponseRejectType.TRANSACTION_REJECTED,
-      {},
+      {
+      },
       requestData.key,
     ),
     sendResponse,

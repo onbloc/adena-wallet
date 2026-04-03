@@ -1,5 +1,9 @@
-import { LedgerConnector } from '@cosmjs/ledger-amino';
-import { RecordStore, openTransportReplayer } from '@ledgerhq/hw-transport-mocker';
+import {
+  LedgerConnector,
+} from "@cosmjs/ledger-amino";
+import {
+  openTransportReplayer, RecordStore,
+} from "@ledgerhq/hw-transport-mocker";
 
 export class MockLedgerConnector extends LedgerConnector {
   public static async create() {

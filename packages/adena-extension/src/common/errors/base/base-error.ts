@@ -1,7 +1,7 @@
 interface BaseErrorParams {
-  type: string;
-  status: number;
-  message?: string;
+  type: string
+  status: number
+  message?: string
 }
 
 export class BaseError extends Error {
@@ -12,7 +12,9 @@ export class BaseError extends Error {
   private occurredAt: number;
 
   constructor(errorInfo: BaseErrorParams) {
-    const { type, status } = errorInfo;
+    const {
+      type, status,
+    } = errorInfo;
     super(`${type} (status: ${status})`);
     this.status = status;
     this.type = type;

@@ -1,5 +1,9 @@
-import { FaucetResponse } from '@repositories/common/response';
-import { FaucetRepository } from '@repositories/faucet/faucet';
+import {
+  FaucetResponse,
+} from '@repositories/common/response';
+import {
+  FaucetRepository,
+} from '@repositories/faucet/faucet';
 
 export class FaucetService {
   private faucetRepository: FaucetRepository;

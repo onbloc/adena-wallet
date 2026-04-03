@@ -1,14 +1,22 @@
-import { webFonts } from '@styles/theme';
-import React, { useState } from 'react';
-import styled, { css, RuleSet } from 'styled-components';
-import { Row, View } from '@components/atoms';
+import {
+  Row, View,
+} from '@components/atoms';
+import {
+  webFonts,
+} from '@styles/theme';
+import React, {
+  useState,
+} from 'react';
+import styled, {
+  css, RuleSet,
+} from 'styled-components';
 
 interface StyleProps {
-  hover?: boolean;
-  focus?: boolean;
-  filled?: boolean;
-  error?: boolean;
-  disabled?: boolean;
+  hover?: boolean
+  focus?: boolean
+  filled?: boolean
+  error?: boolean
+  disabled?: boolean
 }
 
 const StyledContainer = styled(Row).withConfig({
@@ -20,17 +28,23 @@ const StyledContainer = styled(Row).withConfig({
   position: relative;
   overflow: hidden;
   border-radius: 10px;
-  border: 1px solid ${({ theme }): string => theme.webNeutral._800};
+  border: 1px solid ${({
+    theme,
+  }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
-  ${({ theme, hover, focus, filled }): RuleSet | string =>
+  ${({
+    theme, hover, focus, filled,
+  }): RuleSet | string =>
     hover || focus || filled
       ? css`
           border-color: ${theme.webNeutral._600};
         `
       : ''}
   
-  ${({ filled, disabled }): RuleSet | string =>
+  ${({
+    filled, disabled,
+  }): RuleSet | string =>
     filled && !disabled
       ? css`
           box-shadow:
@@ -40,7 +54,9 @@ const StyledContainer = styled(Row).withConfig({
         `
       : ''}
 
-  ${({ theme, error, disabled }): RuleSet | string =>
+  ${({
+    theme, error, disabled,
+  }): RuleSet | string =>
     error && !disabled
       ? css`
           background: #e0517014;
@@ -60,21 +76,31 @@ const StyledLabel = styled(View).withConfig({
   min-width: 106px;
   height: 100%;
   padding: 0 16px;
-  background: ${({ theme }): string => theme.webInput._100};
-  border-right: 1px solid ${({ theme }): string => theme.webNeutral._800};
+  background: ${({
+    theme,
+  }): string => theme.webInput._100};
+  border-right: 1px solid ${({
+    theme,
+  }): string => theme.webNeutral._800};
   align-items: center;
   justify-content: center;
-  color: ${({ theme }): string => theme.webNeutral._500};
+  color: ${({
+    theme,
+  }): string => theme.webNeutral._500};
   white-space: nowrap;
 
-  ${({ theme, hover, focus }): RuleSet | string =>
+  ${({
+    theme, hover, focus,
+  }): RuleSet | string =>
     hover || focus
       ? css`
           border-color: ${theme.webNeutral._600};
         `
       : ''}
 
-  ${({ theme, error, disabled }): RuleSet | string =>
+  ${({
+    theme, error, disabled,
+  }): RuleSet | string =>
     error && !disabled
       ? css`
           color: ${theme.webError._100};
@@ -96,13 +122,19 @@ const StyledInput = styled.input.withConfig({
   border: none;
   outline: none;
   box-shadow: none;
-  background: ${({ error, theme }): string =>
+  background: ${({
+    error, theme,
+  }): string =>
     error ? theme.webError._300 : theme.webNeutral._900};
-  color: ${({ theme, disabled }): string =>
+  color: ${({
+    theme, disabled,
+  }): string =>
     disabled ? theme.webNeutral._600 : theme.webNeutral._100};
 
   &::placeholder {
-    color: ${({ theme }): string => theme.webNeutral._600};
+    color: ${({
+      theme,
+    }): string => theme.webNeutral._600};
   }
 
   &:disabled {
@@ -111,12 +143,12 @@ const StyledInput = styled.input.withConfig({
 `;
 
 interface WebInputWithLabelProps {
-  label: string;
-  value: string;
-  error?: boolean;
-  disabled?: boolean;
-  onChange: (value: string) => void;
-  placeholder?: string;
+  label: string
+  value: string
+  error?: boolean
+  disabled?: boolean
+  onChange: (value: string) => void
+  placeholder?: string
 }
 
 export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({

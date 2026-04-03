@@ -1,20 +1,34 @@
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { useNetwork } from '@hooks/use-network';
-import { GRC721CollectionModel } from '@types';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  GRC721CollectionModel,
+} from '@types';
 
 interface UseNFTCollectionHandlerReturn {
-  addCollections: (collections: GRC721CollectionModel[]) => Promise<boolean>;
-  pinCollection: (packagePath: string) => Promise<boolean>;
-  unpinCollection: (packagePath: string) => Promise<boolean>;
-  showCollection: (packagePath: string) => Promise<boolean>;
-  hideCollection: (packagePath: string) => Promise<boolean>;
+  addCollections: (collections: GRC721CollectionModel[]) => Promise<boolean>
+  pinCollection: (packagePath: string) => Promise<boolean>
+  unpinCollection: (packagePath: string) => Promise<boolean>
+  showCollection: (packagePath: string) => Promise<boolean>
+  hideCollection: (packagePath: string) => Promise<boolean>
 }
 
 export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
-  const { tokenService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const {
+    tokenService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    currentNetwork,
+  } = useNetwork();
 
   const addCollections = async (collections: GRC721CollectionModel[]): Promise<boolean> => {
     if (!currentAccount) {
@@ -31,18 +45,18 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     );
 
     const addedCollections = collections
-      .map((collection) => ({ ...collection, display: true }))
+      .map(collection => ({
+        ...collection,
+        display: true,
+      }))
       .filter(
-        (c1) =>
+        c1 =>
           !storedCollections.find(
-            (c2) => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
+            c2 => c1.packagePath === c2.packagePath && c1.networkId === c2.networkId,
           ),
       );
 
-    return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [
-      ...storedCollections,
-      ...addedCollections,
-    ]);
+    return tokenService.saveAccountGRC721Collections(currentAccount.id, currentNetwork.chainId, [...storedCollections, ...addedCollections]);
   };
 
   const pinCollection = async (packagePath: string): Promise<boolean> => {
@@ -54,10 +68,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
       currentAccount.id,
       currentNetwork.chainId,
     );
-    return tokenService.saveAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId, [
-      ...pinnedCollections,
-      packagePath,
-    ]);
+    return tokenService.saveAccountGRC721PinnedPackages(currentAccount.id, currentNetwork.chainId, [...pinnedCollections, packagePath]);
   };
 
   const unpinCollection = async (packagePath: string): Promise<boolean> => {
@@ -72,7 +83,7 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     return tokenService.saveAccountGRC721PinnedPackages(
       currentAccount.id,
       currentNetwork.chainId,
-      pinnedCollections.filter((path) => path !== packagePath),
+      pinnedCollections.filter(path => path !== packagePath),
     );
   };
 
@@ -128,5 +139,11 @@ export const useNFTCollectionHandler = (): UseNFTCollectionHandlerReturn => {
     );
   };
 
-  return { addCollections, pinCollection, unpinCollection, showCollection, hideCollection };
+  return {
+    addCollections,
+    pinCollection,
+    unpinCollection,
+    showCollection,
+    hideCollection,
+  };
 };

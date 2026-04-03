@@ -1,8 +1,19 @@
-import { CommandHandler } from '@inject/message/command-handler';
-import { CommandMessage } from '@inject/message/command-message';
-import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
-import { GnoMessageInfo, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
-import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
+import {
+  CommandHandler,
+} from '@inject/message/command-handler';
+import {
+  CommandMessage,
+} from '@inject/message/command-message';
+
+import {
+  GnoMessageInfo, parseGnoMessageInfo, shouldIntercept,
+} from '../gno-connect';
+import {
+  GnoConnectInfoProvider,
+} from '../gno-connect-info-provider';
+import {
+  IInterceptor, InterceptorContext, InterceptorHandler,
+} from '../gno-interceptor.types';
 
 /**
  * Interceptor for anchor/link clicks
@@ -81,7 +92,8 @@ export class AnchorInterceptor implements IInterceptor {
       }
 
       this.handler(gnoMessageInfo, context);
-    } catch (error) {
+    }
+    catch (error) {
       console.warn(`${this.name} error:`, error);
     }
   }
@@ -95,7 +107,9 @@ export class AnchorInterceptor implements IInterceptor {
       return null;
     }
 
-    return { gnoConnectInfo };
+    return {
+      gnoConnectInfo,
+    };
   }
 
   /**

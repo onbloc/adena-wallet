@@ -1,5 +1,7 @@
+import {
+  GasToken,
+} from '@common/constants/token.constant';
 import BigNumber from 'bignumber.js';
-import { GasToken } from '@common/constants/token.constant';
 
 export const convertRawGasAmountToDisplayAmount = (rawAmount: string | number): string => {
   try {
@@ -12,7 +14,8 @@ export const convertRawGasAmountToDisplayAmount = (rawAmount: string | number): 
       .toFixed(GasToken.decimals)
       .replace(/(\.\d*?)0+$/, '$1')
       .replace(/\.$/, '');
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('[convertRawGasAmountToDisplayAmount] Failed to convert:', {
       rawAmount,
       error: e,

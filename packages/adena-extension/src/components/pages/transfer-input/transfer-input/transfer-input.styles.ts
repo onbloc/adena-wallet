@@ -2,7 +2,10 @@ import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   position: relative;
   width: 100%;
   width: 100%;

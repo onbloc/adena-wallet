@@ -1,7 +1,15 @@
-import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
-import { IInterceptor } from '../gno-interceptor.types';
-import { GnoSessionUpdateMessage } from '../gno-session';
-import { GnoWebEventWatcher } from '../gno-web-event-watcher';
+import {
+  GnoConnectInfoProvider,
+} from '../gno-connect-info-provider';
+import {
+  IInterceptor,
+} from '../gno-interceptor.types';
+import {
+  GnoSessionUpdateMessage,
+} from '../gno-session';
+import {
+  GnoWebEventWatcher,
+} from '../gno-web-event-watcher';
 
 /**
  * Interceptor for GnoWeb custom events
@@ -40,7 +48,8 @@ export class GnoWebEventWatcherInterceptor implements IInterceptor {
       document.addEventListener('DOMContentLoaded', () => {
         this.startWatcher();
       });
-    } else {
+    }
+    else {
       this.startWatcher();
     }
 

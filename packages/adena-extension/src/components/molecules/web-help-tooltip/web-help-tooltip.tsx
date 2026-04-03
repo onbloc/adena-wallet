@@ -1,21 +1,26 @@
-import { WebButton, WebImg, WebText } from '@components/atoms';
-import React, { PropsWithChildren } from 'react';
+import IconBoxArrow from '@assets/web/box-arrow.svg';
+import IconConvenienceRate from '@assets/web/convenience-rate.svg';
+import IconSecurityRate from '@assets/web/security-rate.svg';
+import {
+  WebButton, WebImg, WebText,
+} from '@components/atoms';
+import _ from 'lodash';
+import React, {
+  PropsWithChildren,
+} from 'react';
+
 import {
   WebHelpTooltipBoxArrowWrapper,
   WebHelpTooltipBoxWrapper,
   WebHelpTooltipEvaluation,
   WebHelpTooltipWrapper,
 } from './web-help-tooltip.styles';
-import IconBoxArrow from '@assets/web/box-arrow.svg';
-import IconSecurityRate from '@assets/web/security-rate.svg';
-import IconConvenienceRate from '@assets/web/convenience-rate.svg';
-import _ from 'lodash';
 
 export interface WebHelpTooltipProps {
-  securityRate: number;
-  convenienceRate: number;
-  position: 'top' | 'bottom';
-  confirm: () => void;
+  securityRate: number
+  convenienceRate: number
+  position: 'top' | 'bottom'
+  confirm: () => void
 }
 
 const WebHelpTooltip: React.FC<PropsWithChildren<WebHelpTooltipProps>> = ({

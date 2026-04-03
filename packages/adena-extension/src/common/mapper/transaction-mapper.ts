@@ -1,10 +1,14 @@
-import { ContractMessage } from '@inject/types';
-import { RawTxMessageType } from 'adena-module';
+import {
+  ContractMessage,
+} from '@inject/types';
+import {
+  RawTxMessageType,
+} from 'adena-module';
 
 export function mappedTransactionMessages(
   messages: {
-    type: string;
-    value: any;
+    type: string
+    value: any
   }[],
 ): ContractMessage[] {
   return messages
@@ -33,7 +37,7 @@ export function mappedTransactionMessages(
       }
       return null;
     })
-    .filter((message) => message !== null) as ContractMessage[];
+    .filter(message => message !== null) as ContractMessage[];
 }
 
 /**
@@ -92,7 +96,7 @@ export function mappedDocumentMessagesWithCaller(
       }
       return null;
     })
-    .filter((message) => message !== null) as any[];
+    .filter(message => message !== null) as any[];
 }
 
 export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessage[] {
@@ -127,5 +131,5 @@ export function mappedRawTxMessages(messages: RawTxMessageType[]): ContractMessa
       }
       return null;
     })
-    .filter((message) => message !== null) as any[];
+    .filter(message => message !== null) as any[];
 }

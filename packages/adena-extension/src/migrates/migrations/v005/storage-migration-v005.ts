@@ -1,7 +1,16 @@
-import { Migration } from '@migrates/migrator';
-import { StorageModel } from '@common/storage';
-import { StorageModelDataV004 } from '../v004/storage-model-v004';
-import { AddressBookModelV005, StorageModelDataV005 } from './storage-model-v005';
+import {
+  StorageModel,
+} from '@common/storage';
+import {
+  Migration,
+} from '@migrates/migrator';
+
+import {
+  StorageModelDataV004,
+} from '../v004/storage-model-v004';
+import {
+  AddressBookModelV005, StorageModelDataV005,
+} from './storage-model-v005';
 
 export class StorageMigration005 implements Migration<StorageModelDataV005> {
   public readonly version = 5;
@@ -26,20 +35,8 @@ export class StorageMigration005 implements Migration<StorageModelDataV005> {
   }
 
   private validateModelV004(currentData: StorageModelDataV004): boolean {
-    const storageDataKeys = [
-      'NETWORKS',
-      'CURRENT_CHAIN_ID',
-      'CURRENT_NETWORK_ID',
-      'SERIALIZED',
-      'ENCRYPTED_STORED_PASSWORD',
-      'CURRENT_ACCOUNT_ID',
-      'ACCOUNT_NAMES',
-      'ESTABLISH_SITES',
-      'ADDRESS_BOOK',
-      'ACCOUNT_TOKEN_METAINFOS',
-      'QUESTIONNAIRE_EXPIRED_DATE',
-    ];
-    const hasKeys = Object.keys(currentData).every((dataKey) => storageDataKeys.includes(dataKey));
+    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ACCOUNT_NAMES', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'QUESTIONNAIRE_EXPIRED_DATE'];
+    const hasKeys = Object.keys(currentData).every(dataKey => storageDataKeys.includes(dataKey));
     if (!hasKeys) {
       return false;
     }

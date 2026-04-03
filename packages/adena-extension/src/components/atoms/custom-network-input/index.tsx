@@ -1,19 +1,24 @@
-import React, { useCallback, useMemo } from 'react';
-import { CustomNetworkInputWrapper } from './custom-network-input.styles';
+import React, {
+  useCallback, useMemo,
+} from 'react';
+
+import {
+  CustomNetworkInputWrapper,
+} from './custom-network-input.styles';
 
 export interface CustomNetworkInputProps {
-  name: string;
-  rpcUrl: string;
-  rpcUrlError?: string;
-  indexerUrl: string;
-  indexerUrlError?: string;
-  chainId: string;
-  chainIdError?: string;
-  editType?: 'rpc-only' | 'all-default' | 'all';
-  changeName: (name: string) => void;
-  changeRPCUrl: (rpcUrl: string) => void;
-  changeIndexerUrl: (indexerUrl: string) => void;
-  changeChainId: (chainId: string) => void;
+  name: string
+  rpcUrl: string
+  rpcUrlError?: string
+  indexerUrl: string
+  indexerUrlError?: string
+  chainId: string
+  chainIdError?: string
+  editType?: 'rpc-only' | 'all-default' | 'all'
+  changeName: (name: string) => void
+  changeRPCUrl: (rpcUrl: string) => void
+  changeIndexerUrl: (indexerUrl: string) => void
+  changeChainId: (chainId: string) => void
 }
 
 export const CustomNetworkInput: React.FC<CustomNetworkInputProps> = ({

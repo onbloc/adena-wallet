@@ -1,5 +1,7 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const ApproveChangingNetworkItemWrapper = styled.div`

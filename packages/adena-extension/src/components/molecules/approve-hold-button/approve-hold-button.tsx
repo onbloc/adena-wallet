@@ -1,20 +1,36 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Text } from '@components/atoms';
-import { StyledHoldButton, StyledButtonContent } from './approve-hold-button.styles';
+import {
+  Text,
+} from '@components/atoms';
 import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+
+import {
+  StyledButtonContent, StyledHoldButton,
+} from './approve-hold-button.styles';
 
 interface HoldButtonProps {
-  onFinishHold: (finished: boolean) => void;
+  onFinishHold: (finished: boolean) => void
 }
 
 const APPROVE_HOLD_TOOLTIP_MESSAGE = (
   <>
-    <b style={{ fontWeight: 700 }}>WARNING:</b> Parameter changes have been detected. Hold to
+    <b style={{
+      fontWeight: 700,
+    }}
+    >
+      WARNING:
+    </b>
+    {' '}
+    Parameter changes have been detected. Hold to
     proceed only if you trust the updated parameters.
   </>
 );
 
-export const ApproveHoldButton: React.FC<HoldButtonProps> = ({ onFinishHold }) => {
+export const ApproveHoldButton: React.FC<HoldButtonProps> = ({
+  onFinishHold,
+}) => {
   const [pressed, setPressed] = useState(false);
   const [finish, setFinish] = useState(false);
 

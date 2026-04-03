@@ -1,10 +1,13 @@
+import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
+import {
+  View, WebButton,
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
 import React from 'react';
 import styled from 'styled-components';
-
-import { View, WebButton } from '@components/atoms';
-import LottieCompleteAQuestion from '@assets/web/lottie/complete-a-questionnaire.json';
-import { WebTitleWithDescription } from '@components/molecules';
-import Lottie from '@components/atoms/lottie';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -13,13 +16,20 @@ const StyledContainer = styled(View)`
 `;
 
 interface QuestionnaireInitStepProps {
-  initQuestion: () => void;
+  initQuestion: () => void
 }
 
-const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({ initQuestion }) => {
+const QuestionnaireInitStep: React.FC<QuestionnaireInitStepProps> = ({
+  initQuestion,
+}) => {
   return (
     <StyledContainer>
-      <View style={{ width: '100%', alignItems: 'center', gap: 40 }}>
+      <View style={{
+        width: '100%',
+        alignItems: 'center',
+        gap: 40,
+      }}
+      >
         <Lottie
           animationData={LottieCompleteAQuestion}
           height={120}

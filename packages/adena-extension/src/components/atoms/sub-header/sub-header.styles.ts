@@ -1,9 +1,13 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const SubHeaderWrapper = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: relative;
   width: 100%;
 

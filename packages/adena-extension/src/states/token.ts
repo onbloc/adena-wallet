@@ -1,6 +1,9 @@
-import { atom } from 'recoil';
-
-import { TokenModel } from '@types';
+import {
+  TokenModel,
+} from '@types';
+import {
+  atom,
+} from 'recoil';
 
 export const tokenMetainfos = atom<TokenModel[]>({
   key: 'token/tokenMetainfos',
@@ -14,5 +17,6 @@ export const accountTokenMetainfos = atom<TokenModel[]>({
 
 export const tokenLogoMap = atom<Record<string, string | null>>({
   key: 'token/tokenLogoMap',
-  default: {},
+  default: {
+  },
 });

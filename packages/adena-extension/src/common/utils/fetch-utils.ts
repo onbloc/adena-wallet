@@ -1,24 +1,31 @@
 import axios from 'axios';
-import { v1 } from 'uuid';
+import {
+  v1,
+} from 'uuid';
 
 export interface RPCRequest {
-  id: string;
-  jsonrpc: string;
-  method: string;
-  params: any[];
+  id: string
+  jsonrpc: string
+  method: string
+  params: any[]
 }
 
 export interface IndexerRPCRequest {
-  id: number;
-  jsonrpc: string;
-  method: string;
-  params: any[];
+  id: number
+  jsonrpc: string
+  method: string
+  params: any[]
 }
 
-export async function fetchHealth(url: string): Promise<{ url: string; healthy: boolean }> {
+export async function fetchHealth(url: string): Promise<{
+  url: string
+  healthy: boolean
+}> {
   const healthy = await axios
-    .get(url + '/health', { timeout: 5000 })
-    .then((response) => response.status === 200)
+    .get(url + '/health', {
+      timeout: 5000,
+    })
+    .then(response => response.status === 200)
     .catch(() => false);
   return {
     url,
@@ -31,9 +38,9 @@ export function makeRPCRequest({
   method,
   params,
 }: {
-  id?: string;
-  method: string;
-  params?: any[];
+  id?: string
+  method: string
+  params?: any[]
 }): RPCRequest {
   return {
     id: id || v1().toString(),
@@ -48,9 +55,9 @@ export function makeIndexerRPCRequest({
   method,
   params,
 }: {
-  id?: number;
-  method: string;
-  params?: any[];
+  id?: number
+  method: string
+  params?: any[]
 }): IndexerRPCRequest {
   return {
     id: id || makeRandId(),

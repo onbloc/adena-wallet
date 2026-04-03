@@ -1,5 +1,9 @@
-import { ChromeLocalStorage } from './chrome-local-storage';
-import { Storage } from './storage';
+import {
+  ChromeLocalStorage,
+} from './chrome-local-storage';
+import {
+  Storage,
+} from './storage';
 
 type objectType = { [key in string]: any };
 

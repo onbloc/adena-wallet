@@ -10,7 +10,8 @@ export function createNotification(id: string, title: string, message: string): 
     (notificationId) => {
       if (chrome.runtime.lastError) {
         console.error('Notification Error:', chrome.runtime.lastError.message);
-      } else {
+      }
+      else {
         console.log('Notification created:', notificationId);
       }
     },

@@ -1,14 +1,17 @@
-import React, { ErrorInfo } from 'react';
-
-import { CommonError } from '@common/errors/common';
+import {
+  CommonError,
+} from '@common/errors/common';
+import React, {
+  ErrorInfo,
+} from 'react';
 
 interface Props {
-  fallback: React.ReactNode;
-  children?: React.ReactNode;
+  fallback: React.ReactNode
+  children?: React.ReactNode
 }
 
 interface State {
-  hasError: boolean;
+  hasError: boolean
 }
 
 export class AppProviderErrorBoundary extends React.Component<Props, State> {
@@ -19,10 +22,14 @@ export class AppProviderErrorBoundary extends React.Component<Props, State> {
   public static getDerivedStateFromError(error: Error): State {
     if (error instanceof CommonError) {
       if (error.getStatus() === 401) {
-        return { hasError: true };
+        return {
+          hasError: true,
+        };
       }
     }
-    return { hasError: false };
+    return {
+      hasError: false,
+    };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {

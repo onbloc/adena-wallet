@@ -1,9 +1,14 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryBalanceWrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   height: auto;
   padding: 20px;

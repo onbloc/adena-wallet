@@ -1,13 +1,17 @@
+import {
+  Text,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
 import React from 'react';
 import styled from 'styled-components';
 
-import { Text } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
 import IconExpand from '../icon/icon-assets/icon-expand';
 
 interface PopWindowButtonProps {
-  onClick: () => void;
+  onClick: () => void
 }
 
 const StyledContainer = styled.div`
@@ -31,17 +35,23 @@ const StyledIconWrapper = styled.div`
 
   .icon-expand {
     transition: 0.2s;
-    fill: ${({ theme }): string => theme.neutral.a};
+    fill: ${({
+      theme,
+    }): string => theme.neutral.a};
   }
 
   &:hover .icon-expand {
-    fill: ${({ theme }): string => theme.neutral._1};
+    fill: ${({
+      theme,
+    }): string => theme.neutral._1};
   }
 `;
 
 const StyledTooltip = styled.div`
   position: fixed;
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   width: max-content;
   height: 25px;
   visibility: hidden;
@@ -54,7 +64,9 @@ const StyledTooltip = styled.div`
   transform: scale(0.6);
 `;
 
-export const PopWindowButton = ({ onClick }: PopWindowButtonProps): JSX.Element => {
+export const PopWindowButton = ({
+  onClick,
+}: PopWindowButtonProps): JSX.Element => {
   return (
     <StyledContainer>
       <StyledIconWrapper onClick={onClick}>

@@ -1,7 +1,16 @@
-import { StorageModel } from '@common/storage';
-import { encryptWalletPassword } from '@common/utils/crypto-utils';
-import { Migration } from '@migrates/migrator';
-import { AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy } from 'adena-module';
+import {
+  StorageModel,
+} from '@common/storage';
+import {
+  encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  Migration,
+} from '@migrates/migrator';
+import {
+  AdenaWallet, decryptAES, encryptAES, mnemonicToEntropy,
+} from 'adena-module';
+
 import {
   AddressBookModelV008,
   SerializedModelV008,
@@ -42,19 +51,7 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
   }
 
   private validateModelV008(currentData: StorageModelDataV008): boolean {
-    const storageDataKeys = [
-      'NETWORKS',
-      'CURRENT_CHAIN_ID',
-      'CURRENT_NETWORK_ID',
-      'SERIALIZED',
-      'ENCRYPTED_STORED_PASSWORD',
-      'CURRENT_ACCOUNT_ID',
-      'ESTABLISH_SITES',
-      'ADDRESS_BOOK',
-      'ACCOUNT_TOKEN_METAINFOS',
-      'ACCOUNT_GRC721_COLLECTIONS',
-      'ACCOUNT_GRC721_PINNED_PACKAGES',
-    ];
+    const storageDataKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS', 'ACCOUNT_GRC721_COLLECTIONS', 'ACCOUNT_GRC721_PINNED_PACKAGES'];
     const currentDataKeys = Object.keys(currentData);
     const hasKeys = storageDataKeys.every((dataKey) => {
       return currentDataKeys.includes(dataKey);
@@ -129,7 +126,10 @@ export class StorageMigration009 implements Migration<StorageModelDataV009> {
     const serializedWallet = await changedWallet.serialize(sha256Password);
 
     keyrings = [];
-    wallet = { accounts: [], keyrings: [] };
+    wallet = {
+      accounts: [],
+      keyrings: [],
+    };
     decrypted = '';
     changedWallet = new AdenaWallet();
 

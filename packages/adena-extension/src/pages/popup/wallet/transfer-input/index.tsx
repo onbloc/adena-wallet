@@ -1,42 +1,64 @@
-import BigNumber from 'bignumber.js';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { isNativeTokenModel } from '@common/validation/validation-token';
+import {
+  TransactionValidationError,
+} from '@common/errors/validation/transaction-validation-error';
+import {
+  calculateByteSize,
+} from '@common/utils/string-utils';
+import {
+  isNativeTokenModel,
+} from '@common/validation/validation-token';
 import TransferInput from '@components/pages/transfer-input/transfer-input/transfer-input';
-import { useAddressBookInput } from '@hooks/use-address-book-input';
-import { useBalanceInput } from '@hooks/use-balance-input';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import useHistoryData from '@hooks/use-history-data';
-import { RoutePath } from '@types';
-
-import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
-import { calculateByteSize } from '@common/utils/string-utils';
+import {
+  useAddressBookInput,
+} from '@hooks/use-address-book-input';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useNetwork } from '@hooks/use-network';
+import {
+  useBalanceInput,
+} from '@hooks/use-balance-input';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
+import {
+  useNetwork,
+} from '@hooks/use-network';
 import useSessionParams from '@hooks/use-session-state';
-import { useTransferInfo } from '@hooks/use-transfer-info';
-import { TokenModel } from '@types';
+import {
+  useTransferInfo,
+} from '@hooks/use-transfer-info';
+import {
+  RoutePath,
+} from '@types';
+import {
+  TokenModel,
+} from '@types';
+import BigNumber from 'bignumber.js';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 interface HistoryData {
-  isTokenSearch: boolean;
-  tokenMetainfo: TokenModel;
-  balanceAmount: string;
+  isTokenSearch: boolean
+  tokenMetainfo: TokenModel
+  balanceAmount: string
   addressInput: {
-    selected: boolean;
+    selected: boolean
     selectedAddressBook: {
-      id: string;
-      name: string;
-      address: string;
-      createdAt: string;
-    } | null;
-    address?: string;
-  };
+      id: string
+      name: string
+      address: string
+      createdAt: string
+    } | null
+    address?: string
+  }
 }
 
 const MEMO_MAX_BYTES = 65_536; // 2 ** 16
 
 const TransferInputContainer: React.FC = () => {
-  const { navigate, goBack } = useAppNavigate<RoutePath.TransferInput>();
+  const {
+    navigate, goBack,
+  } = useAppNavigate<RoutePath.TransferInput>();
   const {
     isPopup,
     params,
@@ -46,10 +68,18 @@ const TransferInputContainer: React.FC = () => {
   const [tokenMetainfo, setTokenMetainfo] = useState<TokenModel | undefined>(params?.tokenBalance);
   const addressBookInput = useAddressBookInput();
   const balanceInput = useBalanceInput(tokenMetainfo);
-  const { currentAccount } = useCurrentAccount();
-  const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
-  const { currentNetwork } = useNetwork();
-  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    getHistoryData, setHistoryData,
+  } = useHistoryData<HistoryData>();
+  const {
+    currentNetwork,
+  } = useNetwork();
+  const {
+    memorizedTransferInfo, clear: clearMemorizedTransferInfo,
+  } = useTransferInfo();
   const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
 
   const memoError = useMemo(() => {
@@ -109,9 +139,9 @@ const TransferInputContainer: React.FC = () => {
     if (!tokenMetainfo) {
       return;
     }
-    const validAddress =
-      addressBookInput.validateAddressBookInput() &&
-      (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
+    const validAddress
+      = addressBookInput.validateAddressBookInput()
+        && (isNativeTokenModel(tokenMetainfo) || (await addressBookInput.validateEqualAddress()));
     const validBalance = balanceInput.validateBalanceInput();
     if (validAddress && validBalance) {
       saveHistoryData();
@@ -175,7 +205,11 @@ const TransferInputContainer: React.FC = () => {
       tokenMetainfo={tokenMetainfo}
       addressInput={addressBookInput}
       balanceInput={balanceInput}
-      memoInput={{ memo, onChangeMemo, memoError }}
+      memoInput={{
+        memo,
+        onChangeMemo,
+        memoError,
+      }}
       isNext={isNext}
       onClickBack={goBack}
       onClickCancel={onClickCancel}

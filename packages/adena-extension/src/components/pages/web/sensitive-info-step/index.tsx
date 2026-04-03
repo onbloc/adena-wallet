@@ -1,12 +1,18 @@
-import { ReactElement } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAlert from '@assets/web/alert-rounded.svg';
 import IconLink from '@assets/web/external-link.svg';
-
-import { Pressable, Row, View, WebButton, WebImg, WebText } from '@components/atoms';
+import {
+  Pressable, Row, View, WebButton, WebImg, WebText,
+} from '@components/atoms';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
 import useLink from '@hooks/use-link';
-import { WebTitleWithDescription } from '@components/molecules';
+import {
+  ReactElement,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -16,9 +22,9 @@ const StyledContainer = styled(View)`
 `;
 
 export type SensitiveInfoStepProps = {
-  link: string;
-  desc: string;
-  onClickNext: () => void;
+  link: string
+  desc: string
+  onClickNext: () => void
 };
 
 export const SensitiveInfoStep = ({
@@ -27,11 +33,17 @@ export const SensitiveInfoStep = ({
   onClickNext,
 }: SensitiveInfoStepProps): ReactElement => {
   const theme = useTheme();
-  const { openLink } = useLink();
+  const {
+    openLink,
+  } = useLink();
 
   return (
     <StyledContainer>
-      <View style={{ rowGap: 32, alignItems: 'flex-start' }}>
+      <View style={{
+        rowGap: 32,
+        alignItems: 'flex-start',
+      }}
+      >
         <WebImg src={IconAlert} size={88} />
         <WebTitleWithDescription title='Sensitive Information Ahead' description={desc} />
       </View>
@@ -41,14 +53,19 @@ export const SensitiveInfoStep = ({
         onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
-        style={{ marginTop: -8 }}
+        style={{
+          marginTop: -8,
+        }}
       />
       <Pressable
         onClick={(): void => {
           openLink(link);
         }}
       >
-        <Row style={{ columnGap: 6 }}>
+        <Row style={{
+          columnGap: 6,
+        }}
+        >
           <WebText type='title5' color={theme.webNeutral._600}>
             Learn More
           </WebText>

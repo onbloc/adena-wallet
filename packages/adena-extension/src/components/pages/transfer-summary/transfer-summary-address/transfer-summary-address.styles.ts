@@ -1,4 +1,6 @@
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const TransferSummaryAddressWrapper = styled.div`

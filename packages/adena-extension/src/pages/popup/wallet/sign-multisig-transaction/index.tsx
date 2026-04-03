@@ -1,50 +1,85 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { GasToken } from '@common/constants/token.constant';
-import { mappedRawTxMessages } from '@common/mapper/transaction-mapper';
+import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  mappedRawTxMessages,
+} from '@common/mapper/transaction-mapper';
 import {
   createFaviconByHostname,
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { convertRawGasAmountToDisplayAmount } from '@common/utils/gas-utils';
-import { validateInjectionDataWithAddress } from '@common/validation/validation-transaction';
-import { ApproveSignedDocument } from '@components/molecules';
+import {
+  convertRawGasAmountToDisplayAmount,
+} from '@common/utils/gas-utils';
+import {
+  validateInjectionDataWithAddress,
+} from '@common/validation/validation-transaction';
+import {
+  ApproveSignedDocument,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 import useLink from '@hooks/use-link';
-import { useNetwork } from '@hooks/use-network';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, MultisigTransactionDocument, Signature } from '@inject/types';
-import { NetworkFee, RoutePath } from '@types';
-import { Account, isAirgapAccount, isLedgerAccount } from 'adena-module';
+import {
+  useNetwork,
+} from '@hooks/use-network';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage, MultisigTransactionDocument, Signature,
+} from '@inject/types';
+import {
+  NetworkFee, RoutePath,
+} from '@types';
+import {
+  Account, isAirgapAccount, isLedgerAccount,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useLocation, useNavigate,
+} from 'react-router-dom';
 
 interface SignMultisigTransactionRequestData {
-  multisigDocument: MultisigTransactionDocument;
-  multisigSignatures?: Signature[];
+  multisigDocument: MultisigTransactionDocument
+  multisigSignatures?: Signature[]
 }
 
 interface TransactionData {
-  messages: readonly any[];
-  contracts: { type: string; function: string; value: any }[];
-  gasWanted: string;
-  gasFee: string;
-  memo: string;
+  messages: readonly any[]
+  contracts: {
+    type: string
+    function: string
+    value: any
+  }[]
+  gasWanted: string
+  gasFee: string
+  memo: string
 }
 
 /**
  * Map MultisigTransactionDocument to TransactionData for UI
  */
 function mappedTransactionData(txDocument: MultisigTransactionDocument): TransactionData {
-  const { tx } = txDocument;
+  const {
+    tx,
+  } = txDocument;
   return {
     messages: tx.msg,
     contracts: tx.msg.map((message: any) => {
@@ -52,7 +87,8 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
       let functionName = '';
       if (messageType === '/bank.MsgSend') {
         functionName = 'Transfer';
-      } else if (messageType === '/vm.m_call') {
+      }
+      else if (messageType === '/vm.m_call') {
         functionName = message?.func || '';
       }
       return {
@@ -69,13 +105,25 @@ function mappedTransactionData(txDocument: MultisigTransactionDocument): Transac
 
 const SignMultisigTransactionContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { navigate } = useAppNavigate();
-  const { gnoProvider } = useWalletContext();
-  const { walletService, multisigService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { currentNetwork } = useNetwork();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    gnoProvider,
+  } = useWalletContext();
+  const {
+    walletService, multisigService,
+  } = useAdenaContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    currentNetwork,
+  } = useNetwork();
   const location = useLocation();
-  const { openScannerLink } = useLink();
+  const {
+    openScannerLink,
+  } = useLink();
 
   const [requestData, setRequestData] = useState<InjectionMessage>();
   const [transactionData, setTransactionData] = useState<TransactionData>();
@@ -124,7 +172,10 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
   const displayNetworkFee: NetworkFee = useMemo(() => {
     if (!networkFee) {
-      return { amount: '', denom: '' };
+      return {
+        amount: '',
+        denom: '',
+      };
     }
 
     return {
@@ -167,7 +218,7 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -179,7 +230,10 @@ const SignMultisigTransactionContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
   };
 
   useEffect(() => {
@@ -227,7 +281,9 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
     try {
       const data = requestData.data as SignMultisigTransactionRequestData;
-      const { multisigDocument, multisigSignatures = [] } = data;
+      const {
+        multisigDocument, multisigSignatures = [],
+      } = data;
 
       setMultisigDocument(multisigDocument);
       setMultisigSignatures(multisigSignatures);
@@ -237,7 +293,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setTransactionMessages(mappedRawTxMessages(data.multisigDocument.tx.msg));
       setWithSaveFile(!!requestData.data?.withSaveFile);
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       const error: any = e;
       if (error?.message === 'Transaction signing request was rejected by the user') {
@@ -258,7 +315,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          {},
+          {
+          },
           requestData?.key,
         ),
       );
@@ -292,7 +350,10 @@ const SignMultisigTransactionContainer: React.FC = () => {
         InjectionMessageInstance.success(
           WalletResponseSuccessType.SIGN_MULTISIG_TRANSACTION_SUCCESS,
           {
-            result: { multisigDocument: multisigDocument, multisigSignatures: updatedSignatures },
+            result: {
+              multisigDocument: multisigDocument,
+              multisigSignatures: updatedSignatures,
+            },
             signature: newSignature,
           },
           requestData?.key,
@@ -301,7 +362,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
 
       setProcessType('DONE');
       return true;
-    } catch (e) {
+    }
+    catch (e) {
       setProcessType('DONE');
       handleSignError(e);
       return false;
@@ -318,7 +380,11 @@ const SignMultisigTransactionContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
-          { error: { message } },
+          {
+            error: {
+              message,
+            },
+          },
           requestData?.key,
         ),
       );
@@ -328,7 +394,11 @@ const SignMultisigTransactionContainer: React.FC = () => {
     setResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.SIGN_MULTISIG_TRANSACTION_FAILED,
-        { error: { message: 'Unknown error occurred' } },
+        {
+          error: {
+            message: 'Unknown error occurred',
+          },
+        },
         requestData?.key,
       ),
     );
@@ -361,7 +431,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseRejectType.SIGN_REJECTED,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );
@@ -377,7 +448,8 @@ const SignMultisigTransactionContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NETWORK_TIMEOUT,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );

@@ -1,19 +1,36 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedButton, BottomFixedLoadingButtonGroup } from '@components/molecules';
-
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
 import IconFailed from '@assets/connect-fail-permission.svg';
-import { TransactionErrorDetail as TransactionErrorDetailType } from '@common/utils/transaction-error-detail';
+import {
+  TransactionErrorDetail as TransactionErrorDetailType,
+} from '@common/utils/transaction-error-detail';
+import {
+  Button, Text,
+} from '@components/atoms';
+import {
+  BottomFixedButton, BottomFixedLoadingButtonGroup,
+} from '@components/molecules';
 import NetworkFeeSetting from '@components/pages/network-fee-setting/network-fee-setting/network-fee-setting';
-import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
-import { ApproveTransactionLoading } from '../approve-transaction-loading';
+import {
+  UseNetworkFeeReturn,
+} from '@hooks/wallet/use-network-fee';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage,
+} from '@inject/types';
+import {
+  NetworkFee as NetworkFeeType,
+} from '@types';
+import React, {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
+
+import {
+  ApproveTransactionLoading,
+} from '../approve-transaction-loading';
 import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import NetworkFee from '../network-fee/network-fee';
 import StorageDeposit from '../storage-deposit/storage-deposit';
@@ -23,48 +40,48 @@ import {
 } from './approve-transaction.styles';
 
 export interface ApproveTransactionProps {
-  loading: boolean;
-  title: string;
-  logo: string;
-  domain: string;
+  loading: boolean
+  title: string
+  logo: string
+  domain: string
   contracts: {
-    type: string;
-    function: string;
-    value: string;
-  }[];
-  memo: string;
-  hasMemo: boolean;
-  currentBalance?: number;
-  isErrorNetworkFee?: boolean;
-  networkFee: NetworkFeeType | null;
-  transactionData: string;
-  opened: boolean;
-  argumentInfos?: GnoArgumentInfo[];
-  processing: boolean;
-  done: boolean;
-  transactionMessages: ContractMessage[];
-  maxDepositAmount?: number;
-  changeTransactionMessages: (messages: ContractMessage[]) => void;
-  changeMemo: (memo: string) => void;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  onToggleTransactionData: (opened: boolean) => void;
-  onResponse: () => void;
-  onTimeout: () => void;
-  onClickConfirm: () => void;
-  onClickCancel: () => void;
-  useNetworkFeeReturn: UseNetworkFeeReturn;
-  requiresHoldConfirmation?: boolean;
-  onFinishHold?: (finished: boolean) => void;
+    type: string
+    function: string
+    value: string
+  }[]
+  memo: string
+  hasMemo: boolean
+  currentBalance?: number
+  isErrorNetworkFee?: boolean
+  networkFee: NetworkFeeType | null
+  transactionData: string
+  opened: boolean
+  argumentInfos?: GnoArgumentInfo[]
+  processing: boolean
+  done: boolean
+  transactionMessages: ContractMessage[]
+  maxDepositAmount?: number
+  changeTransactionMessages: (messages: ContractMessage[]) => void
+  changeMemo: (memo: string) => void
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  onToggleTransactionData: (opened: boolean) => void
+  onResponse: () => void
+  onTimeout: () => void
+  onClickConfirm: () => void
+  onClickCancel: () => void
+  useNetworkFeeReturn: UseNetworkFeeReturn
+  requiresHoldConfirmation?: boolean
+  onFinishHold?: (finished: boolean) => void
   /** When set, shows detailed error UI instead of calling onResponse immediately (user must tap Close) */
-  errorDetail?: TransactionErrorDetailType | null;
+  errorDetail?: TransactionErrorDetailType | null
   /** Called when user closes the error view; send failure response then close popup */
-  onCloseWithResponse?: () => void;
+  onCloseWithResponse?: () => void
   /** Global error banner message shown between fee section and transaction data (from simulate error) */
-  simulateErrorBannerMessage?: string | null;
+  simulateErrorBannerMessage?: string | null
   /** Per-message validation errors - array aligned with transactionMessages */
-  messageErrors?: (string | undefined)[];
+  messageErrors?: (string | undefined)[]
   /** Whether argument type validation failed (disables Approve) */
-  hasArgumentValidationError?: boolean;
+  hasArgumentValidationError?: boolean
 }
 
 export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
@@ -123,14 +140,7 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [
-    requiresHoldConfirmation,
-    isErrorNetworkFee,
-    useNetworkFeeReturn.isLoading,
-    useNetworkFeeReturn.isSimulateError,
-    hasArgumentValidationError,
-    networkFee,
-  ]);
+  }, [requiresHoldConfirmation, isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, hasArgumentValidationError, networkFee]);
 
   const isMaxDepositError = useMemo(() => {
     if (!maxDepositAmount || currentBalance === undefined) {
@@ -203,7 +213,10 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
     if (simulateErrorBannerMessage && !hasScrolledToError.current) {
       hasScrolledToError.current = true;
       requestAnimationFrame(() => {
-        errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        errorBannerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
       });
     }
     if (!simulateErrorBannerMessage) {
@@ -256,9 +269,11 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
                 hierarchy='custom'
                 bgColor='transparent'
                 className='error-detail-raw-toggle'
-                onClick={(): void => setShowRawError((v) => !v)}
+                onClick={(): void => setShowRawError(v => !v)}
               >
-                {showRawError ? 'Hide' : 'Show'} error details
+                {showRawError ? 'Hide' : 'Show'}
+                {' '}
+                error details
               </Button>
               {showRawError && (
                 <div className='error-detail-raw-box'>{errorDetail.rawError}</div>
@@ -292,18 +307,20 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
 
       <div className={hasMemo ? 'memo-wrapper row' : 'memo-wrapper editable row'}>
         <span className='key'>Memo:</span>
-        {hasMemo ? (
-          <span className={'value'}>{memo}</span>
-        ) : (
-          <input
-            type='text'
-            className={'value'}
-            value={memo}
-            onChange={onChangeMemo}
-            autoComplete='off'
-            placeholder='(Optional)'
-          />
-        )}
+        {hasMemo
+          ? (
+            <span className='value'>{memo}</span>
+          )
+          : (
+            <input
+              type='text'
+              className='value'
+              value={memo}
+              onChange={onChangeMemo}
+              autoComplete='off'
+              placeholder='(Optional)'
+            />
+          )}
       </div>
 
       <div className='fee-amount-wrapper'>
@@ -342,17 +359,19 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} />
-            </>
-          )}
+          {opened
+            ? (
+              <>
+                <>Hide Transaction Data</>
+                <img src={IconArraowUp} />
+              </>
+            )
+            : (
+              <>
+                <>View Transaction Data</>
+                <img src={IconArraowDown} />
+              </>
+            )}
         </Button>
 
         {opened && (
@@ -376,16 +395,16 @@ export const ApproveTransaction: React.FC<ApproveTransactionProps> = ({
         rightButton={
           requiresHoldConfirmation && onFinishHold
             ? {
-                type: 'hold',
-                onFinishHold,
-              }
+              type: 'hold',
+              onFinishHold,
+            }
             : {
-                primary: true,
-                disabled: disabledApprove,
-                text: 'Approve',
-                loading: processing,
-                onClick: onClickConfirmButton,
-              }
+              primary: true,
+              disabled: disabledApprove,
+              text: 'Approve',
+              loading: processing,
+              onClick: onClickConfirmButton,
+            }
         }
       />
     </ApproveTransactionWrapper>

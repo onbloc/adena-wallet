@@ -1,6 +1,9 @@
-import { atom } from 'recoil';
-
-import { AccountTokenBalance, Amount, TokenBalanceType } from '@types';
+import {
+  AccountTokenBalance, Amount, TokenBalanceType,
+} from '@types';
+import {
+  atom,
+} from 'recoil';
 
 export const isLoading = atom({
   key: 'balance/is-loading',
@@ -29,5 +32,6 @@ export const displayTokenBalances = atom<TokenBalanceType[]>({
 
 export const accountNativeBalances = atom<{ [key in string]: TokenBalanceType }>({
   key: 'balance/account-native-balances',
-  default: {},
+  default: {
+  },
 });

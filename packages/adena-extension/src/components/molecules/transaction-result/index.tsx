@@ -1,21 +1,29 @@
-import React, { useMemo } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
 import IconSubmit from '@assets/submit.svg';
 import ExternalLinkIcon from '@assets/web/external-link.svg';
-import { CommonFullContentLayout, Text, View } from '@components/atoms';
-import { BottomFixedButton } from '../bottom-fixed-button';
+import {
+  CommonFullContentLayout, Text, View,
+} from '@components/atoms';
+import React, {
+  useMemo,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
+
+import {
+  BottomFixedButton,
+} from '../bottom-fixed-button';
 
 export interface TransactionResultProps {
-  status: 'SUCCESS' | 'FAILED';
-  errorMessage?: string | null;
-  onClickViewHistory: () => void;
-  onClickViewGnoscan: () => void;
-  onClickClose: () => void;
-  successIconSrc?: string;
-  successButtonText?: string;
-  failedButtonText?: string;
+  status: 'SUCCESS' | 'FAILED'
+  errorMessage?: string | null
+  onClickViewHistory: () => void
+  onClickViewGnoscan: () => void
+  onClickClose: () => void
+  successIconSrc?: string
+  successButtonText?: string
+  failedButtonText?: string
 }
 
 const TransactionResult: React.FC<TransactionResultProps> = ({
@@ -42,11 +50,13 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
   return (
     <CommonFullContentLayout>
       <StyledResultWrapper>
-        {isSuccess ? (
-          <img src={successIconSrc || IconSubmit} alt='result icon' />
-        ) : (
-          <IconAccountInitializeFailed />
-        )}
+        {isSuccess
+          ? (
+            <img src={successIconSrc || IconSubmit} alt='result icon' />
+          )
+          : (
+            <IconAccountInitializeFailed />
+          )}
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
             {isSuccess ? 'Transaction Submitted' : 'Transaction Failed'}
@@ -60,7 +70,9 @@ const TransactionResult: React.FC<TransactionResultProps> = ({
         {!isSuccess && (
           <StyledErrorWrapper>
             <Text type='captionReg'>
-              <StyledErrorTitle>ERROR:</StyledErrorTitle> {failureErrorMessage}
+              <StyledErrorTitle>ERROR:</StyledErrorTitle>
+              {' '}
+              {failureErrorMessage}
             </Text>
           </StyledErrorWrapper>
         )}
@@ -119,7 +131,9 @@ const StyledScannerButton = styled.button`
   gap: 4px;
   cursor: pointer;
   text-decoration: underline;
-  color: ${({ theme }): string => theme.neutral.a};
+  color: ${({
+    theme,
+  }): string => theme.neutral.a};
   transition: 0.2s;
   opacity: 1;
 

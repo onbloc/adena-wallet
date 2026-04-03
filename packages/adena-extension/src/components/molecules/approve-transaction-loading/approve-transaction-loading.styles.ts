@@ -1,11 +1,16 @@
+import {
+  SkeletonBoxStyle,
+} from '@components/atoms';
+import mixins from '@styles/mixins';
+import {
+  getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
-import { SkeletonBoxStyle } from '@components/atoms';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-
 export const ApproveTransactionLoadingWrapper = styled.div`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   padding: 35px 20px 0;
 
   .l-approve {
@@ -21,7 +26,10 @@ export const ApproveTransactionLoadingWrapper = styled.div`
 `;
 
 export const ApproveTransactionLoadingSkeletonBox = styled(SkeletonBoxStyle)`
-  ${mixins.flex({ align: 'flex-end', justify: 'space-between' })}
+  ${mixins.flex({
+    align: 'flex-end',
+    justify: 'space-between',
+  })}
   width: 80px;
   height: 80px;
   margin: 35px 0px 24px;
@@ -29,7 +37,10 @@ export const ApproveTransactionLoadingSkeletonBox = styled(SkeletonBoxStyle)`
 `;
 
 export const ApproveTransactionLoadingRoundedBox = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   height: 41px;
   background-color: ${getTheme('neutral', '_9')};
@@ -37,10 +48,12 @@ export const ApproveTransactionLoadingRoundedBox = styled.div`
 `;
 
 export const ApproveTransactionLoadingAllRadiusBox = styled(ApproveTransactionLoadingRoundedBox)<{
-  align?: string;
+  align?: string
 }>`
   border-radius: 24px;
-  justify-content: ${({ align }): string | undefined => align && align};
+  justify-content: ${({
+    align,
+  }): string | undefined => align && align};
 `;
 
 export const ApproveTransactionLoadingTopRadiusBox = styled(ApproveTransactionLoadingRoundedBox)`

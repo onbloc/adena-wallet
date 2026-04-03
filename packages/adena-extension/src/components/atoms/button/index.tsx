@@ -1,11 +1,17 @@
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
-import React, { CSSProperties } from 'react';
-import styled, { css } from 'styled-components';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  CSSProperties,
+} from 'react';
+import styled, {
+  css,
+} from 'styled-components';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
-type XOR<T, U> =
-  T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+type XOR<T, U>
+  = T | U extends Record<string, unknown> ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
 
 type ButtonHierarchy = 'normal' | 'primary' | 'ghost' | 'dark' | 'danger' | 'custom';
 
@@ -67,30 +73,30 @@ export const modeVariants = {
 
 export type ButtonProps = XOR<
   {
-    fullWidth?: boolean;
-    height?: CSSProperties['height'];
-    hierarchy?: ButtonHierarchy;
-    children: React.ReactNode;
-    margin?: CSSProperties['margin'];
-    radius?: string;
-    className?: string;
-    disabled?: boolean;
-    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown;
-    tabIndex?: number;
-    bgColor?: string;
+    fullWidth?: boolean
+    height?: CSSProperties['height']
+    hierarchy?: ButtonHierarchy
+    children: React.ReactNode
+    margin?: CSSProperties['margin']
+    radius?: string
+    className?: string
+    disabled?: boolean
+    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown
+    tabIndex?: number
+    bgColor?: string
   },
   {
-    width?: CSSProperties['width'];
-    height?: CSSProperties['height'];
-    hierarchy?: ButtonHierarchy;
-    children: React.ReactNode;
-    margin?: CSSProperties['margin'];
-    radius?: string;
-    className?: string;
-    disabled?: boolean;
-    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown;
-    tabIndex?: number;
-    bgColor?: string;
+    width?: CSSProperties['width']
+    height?: CSSProperties['height']
+    hierarchy?: ButtonHierarchy
+    children: React.ReactNode
+    margin?: CSSProperties['margin']
+    radius?: string
+    className?: string
+    disabled?: boolean
+    onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown
+    tabIndex?: number
+    bgColor?: string
   }
 >;
 
@@ -108,21 +114,29 @@ export const Button = ({
 };
 
 const ButtonWrapper = styled.button.withConfig({
-  shouldForwardProp: (prop) =>
+  shouldForwardProp: prop =>
     !['width', 'height', 'hierarchy', 'margin', 'radius', 'fullWidth', 'bgColor'].includes(prop),
 })<ButtonProps>`
-  ${mixins.flex({ direction: 'row' })};
-  width: ${({ width, fullWidth }): string => {
+  ${mixins.flex({
+    direction: 'row',
+  })};
+  width: ${({
+    width, fullWidth,
+  }): string => {
     if (width) return typeof width === 'number' ? `${width}px` : width;
     if (fullWidth) return '100%';
     return 'auto';
   }};
-  height: ${({ height }): string => {
+  height: ${({
+    height,
+  }): string => {
     if (height) return typeof height === 'number' ? height + 'px' : height;
     return 'auto';
   }};
   margin: ${(props): any => props.margin};
-  ${({ hierarchy, bgColor }): any => {
+  ${({
+    hierarchy, bgColor,
+  }): any => {
     if (hierarchy === 'primary') return modeVariants.primary;
     if (hierarchy === 'normal') return modeVariants.normal;
     if (hierarchy === 'ghost') return modeVariants.ghost;
@@ -133,8 +147,12 @@ const ButtonWrapper = styled.button.withConfig({
         background-color: ${bgColor};
       `;
   }};
-  border-radius: ${({ radius }): string => (radius ? radius : '30px')};
+  border-radius: ${({
+    radius,
+  }): string => (radius ? radius : '30px')};
   transition: all 0.4s ease;
   color: ${getTheme('neutral', '_1')};
-  background-color: ${({ bgColor }): string | undefined => bgColor};
+  background-color: ${({
+    bgColor,
+  }): string | undefined => bgColor};
 `;

@@ -1,4 +1,16 @@
 import {
+  GasToken,
+} from '@common/constants/token.constant';
+import {
+  DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED,
+} from '@common/constants/tx.constant';
+import {
+  mappedDocumentMessagesWithCaller,
+} from '@common/mapper/transaction-mapper';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
+import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   defaultAddressPrefix,
@@ -15,18 +27,16 @@ import {
   Wallet,
 } from 'adena-module';
 
-import { GasToken } from '@common/constants/token.constant';
-import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
-import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { WalletService } from '..';
+import {
+  WalletService,
+} from '..';
 
 export interface EncodeTxSignature {
   pubKey: {
-    typeUrl: string | undefined;
-    value: string | undefined;
-  };
-  signature: string;
+    typeUrl: string | undefined
+    value: string | undefined
+  }
+  signature: string
 }
 
 export class TransactionService {
@@ -105,8 +115,10 @@ export class TransactionService {
   ): Promise<EncodeTxSignature> => {
     const provider = this.getGnoProvider();
     const wallet = await this.walletService.loadWallet();
-    const { signature } = await wallet.signByAccountId(provider, account.id, document);
-    const signatures = signature.map((s) => ({
+    const {
+      signature,
+    } = await wallet.signByAccountId(provider, account.id, document);
+    const signatures = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
@@ -127,17 +139,25 @@ export class TransactionService {
     wallet: Wallet,
     account: Account,
     document: Document,
-  ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
+  ): Promise<{
+    signed: Tx
+    signature: EncodeTxSignature[]
+  }> => {
     const provider = this.getGnoProvider();
-    const { signed, signature } = await wallet.signByAccountId(provider, account.id, document);
-    const encodedSignature = signature.map((s) => ({
+    const {
+      signed, signature,
+    } = await wallet.signByAccountId(provider, account.id, document);
+    const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
-    return { signed, signature: encodedSignature };
+    return {
+      signed,
+      signature: encodedSignature,
+    };
   };
 
   /**
@@ -152,18 +172,26 @@ export class TransactionService {
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
     document: Document,
-  ): Promise<{ signed: Tx; signature: EncodeTxSignature[] }> => {
+  ): Promise<{
+    signed: Tx
+    signature: EncodeTxSignature[]
+  }> => {
     const provider = this.getGnoProvider();
     const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
-    const { signed, signature } = await keyring.sign(provider, document, account.hdPath);
-    const encodedSignature = signature.map((s) => ({
+    const {
+      signed, signature,
+    } = await keyring.sign(provider, document, account.hdPath);
+    const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
         value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
       },
       signature: uint8ArrayToBase64(s.signature),
     }));
-    return { signed, signature: encodedSignature };
+    return {
+      signed,
+      signature: encodedSignature,
+    };
   };
 
   /**

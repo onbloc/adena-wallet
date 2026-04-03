@@ -1,19 +1,34 @@
-import { ReactElement, useCallback, useRef } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconCreate from '@assets/web/icon-create';
 import IconGoogle from '@assets/web/icon-google';
 import IconImport from '@assets/web/icon-import';
 import IconThunder from '@assets/web/round-thunder.svg';
 import IconWarning from '@assets/web/warning.svg';
-import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
-import { Row, View, WebImg, WebMain, WebText } from '@components/atoms';
+import {
+  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
+} from '@common/constants/ui.constant';
+import {
+  Row, View, WebImg, WebMain, WebText,
+} from '@components/atoms';
 import WebMainButton from '@components/atoms/web-main-button';
-import { WebMainHeader } from '@components/pages/web/main-header';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useWalletContext } from '@hooks/use-context';
-import { getTheme } from '@styles/theme';
-import { RoutePath } from '@types';
+import {
+  useWalletContext,
+} from '@hooks/use-context';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  RoutePath,
+} from '@types';
+import {
+  ReactElement, useCallback, useRef,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledWarnBox = styled(Row)`
   column-gap: 4px;
@@ -24,9 +39,13 @@ const StyledWarnBox = styled(Row)`
 `;
 
 const AdvancedOptionScreen = (): ReactElement => {
-  const { navigate } = useAppNavigate();
+  const {
+    navigate,
+  } = useAppNavigate();
   const theme = useTheme();
-  const { wallet } = useWalletContext();
+  const {
+    wallet,
+  } = useWalletContext();
   const createWalletButtonRef = useRef<HTMLButtonElement>(null);
   const importWalletButtonRef = useRef<HTMLButtonElement>(null);
   const signInWithGoogleButtonRef = useRef<HTMLButtonElement>(null);
@@ -60,7 +79,12 @@ const AdvancedOptionScreen = (): ReactElement => {
         }}
       />
       <WebImg src={IconThunder} size={88} />
-      <View style={{ width: '100%', rowGap: 16, paddingTop: 8 }}>
+      <View style={{
+        width: '100%',
+        rowGap: 16,
+        paddingTop: 8,
+      }}
+      >
         <WebText type='headline2'>Advanced Options</WebText>
         <StyledWarnBox>
           <WebImg src={IconWarning} size={20} />
@@ -71,7 +95,11 @@ const AdvancedOptionScreen = (): ReactElement => {
         </StyledWarnBox>
       </View>
 
-      <Row style={{ width: '100%', columnGap: 12 }}>
+      <Row style={{
+        width: '100%',
+        columnGap: 12,
+      }}
+      >
         <WebMainButton
           buttonRef={createWalletButtonRef}
           figure='primary'

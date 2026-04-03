@@ -1,15 +1,22 @@
-import React, { useCallback } from 'react';
-import styled, { useTheme } from 'styled-components';
-
-import { Text, Button, Copy } from '@components/atoms';
+import {
+  Button, Copy, Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
+import {
+  getTheme,
+} from '@styles/theme';
+import React, {
+  useCallback,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 interface SeedViewAndCopyProps {
-  showBlurScreen: boolean;
-  setShowBlurScreen: React.Dispatch<React.SetStateAction<boolean>>;
-  copyStr: string;
-  toggleText: string;
+  showBlurScreen: boolean
+  setShowBlurScreen: React.Dispatch<React.SetStateAction<boolean>>
+  copyStr: string
+  toggleText: string
 }
 
 export const SeedViewAndCopy = ({
@@ -34,14 +41,19 @@ export const SeedViewAndCopy = ({
 };
 
 const Wrapper = styled.div`
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   width: 100%;
   margin: 12px auto auto;
   padding: 0px 45px;
 `;
 
 const ButtonStyle = styled(Button)`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;

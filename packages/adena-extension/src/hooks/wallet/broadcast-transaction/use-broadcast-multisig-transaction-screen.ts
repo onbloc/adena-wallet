@@ -1,15 +1,20 @@
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { useCallback, useMemo, useState } from 'react';
-
+import {
+  makeGnotAmountByRaw,
+} from '@common/utils/amount-utils';
+import {
+  MsgEndpoint,
+} from '@gnolang/gno-js-client';
 import {
   useAdenaContext,
   useMultisigTransactionContext,
   useWalletContext,
 } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-
-import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
-import { Signature } from '@inject/types';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  Signature,
+} from '@inject/types';
 import {
   isMultisigAccount,
   RawBankSendMessage,
@@ -19,21 +24,24 @@ import {
   RawVmRunMessage,
   SignerPublicKeyInfo,
 } from 'adena-module';
+import {
+  useCallback, useMemo, useState,
+} from 'react';
 
 export type BroadcastTransactionState = 'IDLE' | 'LOADING' | 'SUCCESS' | 'FAILED';
 
 export type SignatureUploadError = 'INVALID_FORMAT' | 'INVALID_SIGNER' | 'DUPLICATE' | null;
 
 export interface SignatureUploadResult {
-  success: boolean;
-  error: SignatureUploadError;
+  success: boolean
+  error: SignatureUploadError
 }
 
 export interface TransactionDisplayInfo {
-  name: string;
-  value: string;
-  type: 'TEXT' | 'COIN' | 'ADDRESS';
-  extra: string | null;
+  name: string
+  value: string
+  type: 'TEXT' | 'COIN' | 'ADDRESS'
+  extra: string | null
 }
 
 function makeTransactionInfo(
@@ -77,7 +85,9 @@ function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[
 
   switch (firstMessageType) {
     case MsgEndpoint.MSG_SEND: {
-      const { to_address, amount } = firstMessage as RawBankSendMessage;
+      const {
+        to_address, amount,
+      } = firstMessage as RawBankSendMessage;
       const amountValue = makeGnotAmountByRaw(amount);
       const amountStr = `${amountValue?.value} ${amountValue?.denom}`;
       infos.push(makeTransactionInfo('To', to_address, 'ADDRESS'));
@@ -85,19 +95,25 @@ function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[
       break;
     }
     case MsgEndpoint.MSG_CALL: {
-      const { pkg_path, func } = firstMessage as RawVmCallMessage;
+      const {
+        pkg_path, func,
+      } = firstMessage as RawVmCallMessage;
       infos.push(makeTransactionInfo('Path', pkg_path));
       infos.push(makeTransactionInfo('Function', func));
       break;
     }
     case MsgEndpoint.MSG_ADD_PKG: {
-      const { package: pkg } = firstMessage as RawVmAddPackageMessage;
+      const {
+        package: pkg,
+      } = firstMessage as RawVmAddPackageMessage;
       infos.push(makeTransactionInfo('Path', pkg.path));
       infos.push(makeTransactionInfo('Name', pkg.name));
       break;
     }
     case MsgEndpoint.MSG_RUN: {
-      const { package: pkg } = firstMessage as RawVmRunMessage;
+      const {
+        package: pkg,
+      } = firstMessage as RawVmRunMessage;
       if (pkg) {
         infos.push(makeTransactionInfo('Path', pkg.path));
         infos.push(makeTransactionInfo('Name', pkg.name));
@@ -114,24 +130,32 @@ function mapMultisigTransactionInfo(transaction: RawTx): TransactionDisplayInfo[
 }
 
 export interface UseBroadcastMultisigTransactionScreenReturn {
-  broadcastTransactionState: BroadcastTransactionState;
-  broadcast: () => Promise<boolean>;
-  txHash: string | null;
-  errorMessage: string | null;
-  uploadMultisigTransaction: (text: string) => boolean;
-  uploadSignature: (text: string) => SignatureUploadResult;
-  transactionInfos: TransactionDisplayInfo[] | null;
-  rawTransaction: string;
-  signerPublicKeys: SignerPublicKeyInfo[];
-  threshold: number;
+  broadcastTransactionState: BroadcastTransactionState
+  broadcast: () => Promise<boolean>
+  txHash: string | null
+  errorMessage: string | null
+  uploadMultisigTransaction: (text: string) => boolean
+  uploadSignature: (text: string) => SignatureUploadResult
+  transactionInfos: TransactionDisplayInfo[] | null
+  rawTransaction: string
+  signerPublicKeys: SignerPublicKeyInfo[]
+  threshold: number
 }
 
 const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactionScreenReturn => {
-  const { wallet } = useWalletContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { multisigService } = useAdenaContext();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    multisigService,
+  } = useAdenaContext();
 
-  const { transaction, setTransaction, signatures, addSignature } = useMultisigTransactionContext();
+  const {
+    transaction, setTransaction, signatures, addSignature,
+  } = useMultisigTransactionContext();
 
   const [broadcastTransactionState, setBroadcastTransactionState] = useState<
     BroadcastTransactionState
@@ -188,10 +212,10 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
             return false;
           }
           return (
-            msgType === MsgEndpoint.MSG_SEND ||
-            msgType === MsgEndpoint.MSG_CALL ||
-            msgType === MsgEndpoint.MSG_ADD_PKG ||
-            msgType === MsgEndpoint.MSG_RUN
+            msgType === MsgEndpoint.MSG_SEND
+            || msgType === MsgEndpoint.MSG_CALL
+            || msgType === MsgEndpoint.MSG_ADD_PKG
+            || msgType === MsgEndpoint.MSG_RUN
           );
         });
 
@@ -201,7 +225,8 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
         setTransaction(rawTx);
         return true;
-      } catch (error) {
+      }
+      catch (error) {
         console.error(error);
         setTransaction(null);
         return false;
@@ -216,35 +241,51 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
         const signature = JSON.parse(text) as Signature;
 
         if (
-          !signature.pub_key ||
-          !signature.pub_key.value ||
-          !signature.signature ||
-          signature.pub_key['@type'] !== '/tm.PubKeySecp256k1'
+          !signature.pub_key
+          || !signature.pub_key.value
+          || !signature.signature
+          || signature.pub_key['@type'] !== '/tm.PubKeySecp256k1'
         ) {
-          return { success: false, error: 'INVALID_FORMAT' };
+          return {
+            success: false,
+            error: 'INVALID_FORMAT',
+          };
         }
 
         const isValidSigner = signerPublicKeys.some(
-          (signer) => signer.publicKey.value === signature.pub_key?.value,
+          signer => signer.publicKey.value === signature.pub_key?.value,
         );
 
         if (!isValidSigner) {
           console.warn('Invalid signer: not in signerPublicKeys');
-          return { success: false, error: 'INVALID_SIGNER' };
+          return {
+            success: false,
+            error: 'INVALID_SIGNER',
+          };
         }
 
-        const isDuplicate = signatures.some((sig) => sig.pub_key.value === signature.pub_key.value);
+        const isDuplicate = signatures.some(sig => sig.pub_key.value === signature.pub_key.value);
 
         if (isDuplicate) {
           console.warn('Duplicate signature');
-          return { success: false, error: 'DUPLICATE' };
+          return {
+            success: false,
+            error: 'DUPLICATE',
+          };
         }
 
         addSignature(signature);
-        return { success: true, error: null };
-      } catch (error) {
+        return {
+          success: true,
+          error: null,
+        };
+      }
+      catch (error) {
         console.error(error);
-        return { success: false, error: 'INVALID_FORMAT' };
+        return {
+          success: false,
+          error: 'INVALID_FORMAT',
+        };
       }
     },
     [signatures, addSignature, signerPublicKeys],
@@ -270,23 +311,25 @@ const useBroadcastMultisigTransactionScreen = (): UseBroadcastMultisigTransactio
 
       const broadcastResult = await multisigService.broadcastTxCommit(combinedTx.tx);
 
-      const isSuccessBroadcasting =
-        broadcastResult?.hash &&
-        broadcastResult.check_tx?.ResponseBase?.Error === null &&
-        broadcastResult.deliver_tx?.ResponseBase?.Error === null;
+      const isSuccessBroadcasting
+        = broadcastResult?.hash
+          && broadcastResult.check_tx?.ResponseBase?.Error === null
+          && broadcastResult.deliver_tx?.ResponseBase?.Error === null;
 
       if (isSuccessBroadcasting) {
         setTxHash(broadcastResult.hash);
         setBroadcastTransactionState('SUCCESS');
         return true;
-      } else {
+      }
+      else {
         const checkError = broadcastResult.check_tx?.ResponseBase?.Error;
         const deliverError = broadcastResult.deliver_tx?.ResponseBase?.Error;
         setErrorMessage(checkError?.message || deliverError?.message || 'Unknown error');
         setBroadcastTransactionState('FAILED');
         return false;
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       setErrorMessage(e instanceof Error ? e.message : 'Unknown error');
       setBroadcastTransactionState('FAILED');

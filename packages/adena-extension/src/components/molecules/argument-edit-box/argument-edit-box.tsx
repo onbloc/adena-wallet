@@ -1,17 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
-
-import { ArgumentEditBoxWrapper } from './argument-edit-box.styles';
-
 import IconEditCancel from '@assets/icon-edit-cancel';
 import IconEditConfirm from '@assets/icon-edit-confirm';
 import IconPencil from '@assets/icon-pencil';
-import { reverseString } from '@common/utils/string-utils';
+import {
+  reverseString,
+} from '@common/utils/string-utils';
+import React, {
+  useEffect, useMemo, useState,
+} from 'react';
+
+import {
+  ArgumentEditBoxWrapper,
+} from './argument-edit-box.styles';
 
 export interface ArgumentEditBoxProps {
-  editRightMargin?: number;
-  value: string;
-  onChange: (value: string) => void;
-  editable?: boolean;
+  editRightMargin?: number
+  value: string
+  onChange: (value: string) => void
+  editable?: boolean
 }
 
 type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none';
@@ -71,7 +76,8 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
 
     if (e.key === 'Enter') {
       saveEdit();
-    } else if (e.key === 'Escape') {
+    }
+    else if (e.key === 'Escape') {
       cancelEdit();
     }
   };
@@ -119,34 +125,36 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
 
   return (
     <ArgumentEditBoxWrapper $marginRight={marginRight}>
-      {editableValue ? (
-        <div className='editable-wrapper'>
-          <input
-            className='edit-input'
-            value={editValue}
-            onChange={changeEditValue}
-            onKeyDown={handleKeyDown}
-            onBlur={onBlurEdit}
-          />
-          <div className='button-wrapper'>
-            <div className='icon-wrapper' onMouseDown={onClickEditConfirm}>
-              <IconEditConfirm className='edit-confirm-icon' />
-            </div>
-            <div className='icon-wrapper' onMouseDown={onClickEditCancel}>
-              <IconEditCancel className='edit-cancel-icon' />
+      {editableValue
+        ? (
+          <div className='editable-wrapper'>
+            <input
+              className='edit-input'
+              value={editValue}
+              onChange={changeEditValue}
+              onKeyDown={handleKeyDown}
+              onBlur={onBlurEdit}
+            />
+            <div className='button-wrapper'>
+              <div className='icon-wrapper' onMouseDown={onClickEditConfirm}>
+                <IconEditConfirm className='edit-confirm-icon' />
+              </div>
+              <div className='icon-wrapper' onMouseDown={onClickEditCancel}>
+                <IconEditCancel className='edit-cancel-icon' />
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className='display-wrapper'>
-          <span className='display-value'>{displayValue}</span>
-          {editable && (
-            <div className='icon-wrapper' onClick={activateEditMode}>
-              <IconPencil className='edit-icon' />
-            </div>
-          )}
-        </div>
-      )}
+        )
+        : (
+          <div className='display-wrapper'>
+            <span className='display-value'>{displayValue}</span>
+            {editable && (
+              <div className='icon-wrapper' onClick={activateEditMode}>
+                <IconPencil className='edit-icon' />
+              </div>
+            )}
+          </div>
+        )}
     </ArgumentEditBoxWrapper>
   );
 };

@@ -1,11 +1,15 @@
-import { validateAddress } from 'adena-module';
-import gnotLogo from '@assets/gnot-logo.svg';
-import contractLogo from '@assets/contract.svg';
 import addPkgLogo from '@assets/addpkg.svg';
-import success from '@assets/success.svg';
+import contractLogo from '@assets/contract.svg';
 import failed from '@assets/failed.svg';
+import gnotLogo from '@assets/gnot-logo.svg';
+import success from '@assets/success.svg';
 import theme from '@styles/theme';
-import axios, { AxiosResponse } from 'axios';
+import {
+  validateAddress,
+} from 'adena-module';
+import axios, {
+  AxiosResponse,
+} from 'axios';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
@@ -37,15 +41,21 @@ export function getDateDiff(d: Date | string): number {
 }
 
 export function dateTimeFormatEn(d: Date | string): {
-  year: string;
-  month: string;
-  day: string;
-  time: string;
+  year: string
+  month: string
+  day: string
+  time: string
 } {
   const currDate = new Date(d);
-  const year = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(currDate);
-  const month = new Intl.DateTimeFormat('en', { month: 'short' }).format(currDate);
-  const day = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(currDate);
+  const year = new Intl.DateTimeFormat('en', {
+    year: 'numeric',
+  }).format(currDate);
+  const month = new Intl.DateTimeFormat('en', {
+    month: 'short',
+  }).format(currDate);
+  const day = new Intl.DateTimeFormat('en', {
+    day: '2-digit',
+  }).format(currDate);
   const time = new Intl.DateTimeFormat('en', {
     hour: '2-digit',
     minute: '2-digit',
@@ -73,9 +83,11 @@ export function parseTxsEachDate(txs: object[]): any {
 
     if (dateDiff === 0) {
       formatDate = 'Today';
-    } else if (dateDiff === 1) {
+    }
+    else if (dateDiff === 1) {
       formatDate = 'Yesterday';
-    } else {
+    }
+    else {
       const result = dateTimeFormatEn(currDate);
       formatDate = `${result.month} ${result.day}, ${result.year}`;
     }
@@ -84,26 +96,34 @@ export function parseTxsEachDate(txs: object[]): any {
     let txDesc;
     if (cur.func === 'Sent') {
       txDesc = `To: ${formatAddress(cur.to, 4)}`;
-    } else if (cur.func === 'Received') {
+    }
+    else if (cur.func === 'Received') {
       txDesc = `From: ${formatAddress(cur.from, 4)}`;
-    } else if (cur.type === '/vm.m_call') {
+    }
+    else if (cur.type === '/vm.m_call') {
       txDesc = `pkg: ${cur.pkg_path}`;
-    } else if (cur.type === '/vm.m_addpkg') {
+    }
+    else if (cur.type === '/vm.m_addpkg') {
       txFunc = 'AddPkg';
-    } else if (cur.type === '/vm.m_run') {
+    }
+    else if (cur.type === '/vm.m_run') {
       txDesc = 'Run';
-    } else {
+    }
+    else {
       txDesc = '';
     }
 
     let txLogo;
     if (cur.type === '/bank.MsgSend') {
       txLogo = gnotLogo;
-    } else if (cur.type === '/vm.m_call') {
+    }
+    else if (cur.type === '/vm.m_call') {
       txLogo = contractLogo;
-    } else if (cur.type === '/vm.m_addpkg') {
+    }
+    else if (cur.type === '/vm.m_addpkg') {
       txLogo = addPkgLogo;
-    } else {
+    }
+    else {
       txLogo = null;
     }
 
@@ -119,7 +139,8 @@ export function parseTxsEachDate(txs: object[]): any {
           protoType: cur,
         });
       }
-    } else {
+    }
+    else {
       if (!isFailedReceive(cur)) {
         o[k] = {
           date: formatDate,
@@ -139,16 +160,19 @@ export function parseTxsEachDate(txs: object[]): any {
       }
     }
     return o;
-  }, {});
+  }, {
+  });
 }
 
 const prettier = (target: any): any => {
   if (target === undefined) {
     return '0';
-  } else {
+  }
+  else {
     if (target !== 0) {
       return target.replace('gnot', '');
-    } else if (target === 0) {
+    }
+    else if (target === 0) {
       return '0';
     }
   }
@@ -157,7 +181,8 @@ const prettier = (target: any): any => {
 export function minifyStatus(status: string): string {
   if (status === 'Success') {
     return 'S';
-  } else {
+  }
+  else {
     return 'F';
   }
 }
@@ -178,7 +203,10 @@ export function removeUgly(target: any): any {
   return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
 }
 
-export function getStatusStyle(status: string): { color: string; statusIcon: any } {
+export function getStatusStyle(status: string): {
+  color: string
+  statusIcon: any
+} {
   switch (status) {
     case 'SUCCESS':
       return {
@@ -199,11 +227,15 @@ export function getStatusStyle(status: string): { color: string; statusIcon: any
 }
 
 export function minFractionDigits(v: number | string, minDigits: number): string {
-  return Number(v).toLocaleString('en-US', { minimumFractionDigits: minDigits });
+  return Number(v).toLocaleString('en-US', {
+    minimumFractionDigits: minDigits,
+  });
 }
 
 export function maxFractionDigits(v: number | string, maxDigits: number): string {
-  return Number(v).toLocaleString('en-US', { maximumFractionDigits: maxDigits });
+  return Number(v).toLocaleString('en-US', {
+    maximumFractionDigits: maxDigits,
+  });
 }
 
 export function parseFloatNum(v: number | string, fixed: number): string {
@@ -217,9 +249,11 @@ export function searchTextFilter(target: string, searchText: string): boolean {
 export function amountSetSymbol(v: number | string, full?: boolean): string {
   if (v === '0' || v === 0) {
     return String(v);
-  } else if (String(v).includes('-')) {
+  }
+  else if (String(v).includes('-')) {
     return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6);
-  } else {
+  }
+  else {
     return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`;
   }
 }
@@ -230,16 +264,21 @@ export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
   }
   if (v === 'Received') {
     return 'Receive';
-  } else v;
+  }
+  else v;
 }
 
-export const parseParameters = (url: string): { [x: string]: string } => {
+export const parseParameters = (url: string): {
+  [x: string]: string
+} => {
   const hash = url.split('?');
   if (hash.length < 2) {
-    return {};
+    return {
+    };
   }
 
-  const params: { [key in string]: string } = {};
+  const params: { [key in string]: string } = {
+  };
   for (const hashValue of hash) {
     for (const parameterValue of hashValue.split('&')) {
       const values = parameterValue.split('=');
@@ -258,7 +297,8 @@ export const encodeParameter = (data: { [key in string]: any }): string => {
   try {
     const encodedValue = encodeURI(JSON.stringify(data));
     return toBase64(encodedValue);
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -268,16 +308,19 @@ export const decodeParameter = (data: string): any => {
   try {
     const decodedValue = JSON.parse(decodeURI(fromBase64(data)));
     return decodedValue;
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
-  return {};
+  return {
+  };
 };
 
 export const toBase64 = (data: string): string => {
   try {
     return btoa(data);
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -286,7 +329,8 @@ export const toBase64 = (data: string): string => {
 export const fromBase64 = (data: string): string => {
   try {
     return atob(data);
-  } catch (error) {
+  }
+  catch (error) {
     console.log(error);
   }
   return '';
@@ -295,10 +339,11 @@ export const fromBase64 = (data: string): string => {
 export const createImageByURI = async (uri: string): Promise<string | null> => {
   try {
     const imageData = await fetchArrayData(uri);
-    const encodeImageData =
-      'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
+    const encodeImageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
     return encodeImageData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -308,7 +353,8 @@ export const createFaviconByHostname = async (baseUrl: string): Promise<string |
   try {
     const faviconData = await fetchFavicon(baseUrl);
     return faviconData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -344,18 +390,23 @@ const fetchFavicon = async (baseUrl: string): Promise<any> => {
 
 const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> => {
   return axios
-    .get(uri, { responseType: 'arraybuffer' })
-    .then((response) => (response.headers['content-type'].startsWith('image') ? response : null))
+    .get(uri, {
+      responseType: 'arraybuffer',
+    })
+    .then(response => (response.headers['content-type'].startsWith('image') ? response : null))
     .catch(() => null);
 };
 
 export const createImageDataBySvg = async (imageUri: string): Promise<string | null> => {
   try {
-    const response = await axios.get(imageUri, { responseType: 'arraybuffer' });
-    const imageData =
-      'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
+    const response = await axios.get(imageUri, {
+      responseType: 'arraybuffer',
+    });
+    const imageData
+      = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
     return imageData;
-  } catch (e) {
+  }
+  catch (e) {
     console.log(e);
   }
   return null;
@@ -378,7 +429,10 @@ export const optimizeNumber = (value: BigNumber, multiply: BigNumber): BigNumber
   return currentAmount;
 };
 
-export const dateToLocal = (utcDateStr: string): { value: string; offsetHours: number } => {
+export const dateToLocal = (utcDateStr: string): {
+  value: string
+  offsetHours: number
+} => {
   const hasTimezone = `${utcDateStr}`.includes('Z');
   const timezoneOffset = new Date().getTimezoneOffset();
   let currentDate = dayjs(utcDateStr);
@@ -402,7 +456,8 @@ export const getDateText = (date: string): string => {
   let formatDate = '';
   if (today.year === result.year && today.month === result.month && today.day === result.day) {
     formatDate = 'Today';
-  } else {
+  }
+  else {
     formatDate = `${result.month} ${result.day}, ${result.year}`;
   }
   return formatDate;

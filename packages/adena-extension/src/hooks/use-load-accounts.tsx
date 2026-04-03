@@ -1,22 +1,37 @@
-import { useRecoilState } from 'recoil';
-import { Account } from 'adena-module';
+import {
+  WalletState,
+} from '@states';
+import {
+  StateType,
+} from '@types';
+import {
+  Account,
+} from 'adena-module';
+import {
+  useRecoilState,
+} from 'recoil';
 
-import { useWalletContext } from './use-context';
-import { useWalletAccounts } from './use-wallet-accounts';
-
-import { WalletState } from '@states';
-import { StateType } from '@types';
+import {
+  useWalletContext,
+} from './use-context';
+import {
+  useWalletAccounts,
+} from './use-wallet-accounts';
 
 export type UseLoadAccountsReturn = {
-  state: StateType;
-  accounts: Array<Account>;
-  loadAccounts: () => Promise<boolean>;
-  addAccounts: (addedAccounts: Array<Account>) => Promise<boolean>;
+  state: StateType
+  accounts: Array<Account>
+  loadAccounts: () => Promise<boolean>
+  addAccounts: (addedAccounts: Array<Account>) => Promise<boolean>
 };
 
 export const useLoadAccounts = (): UseLoadAccountsReturn => {
-  const { wallet, initWallet } = useWalletContext();
-  const { accounts } = useWalletAccounts();
+  const {
+    wallet, initWallet,
+  } = useWalletContext();
+  const {
+    accounts,
+  } = useWalletAccounts();
   const [state] = useRecoilState(WalletState.state);
 
   const loadAccounts = async (): Promise<boolean> => {
@@ -34,5 +49,10 @@ export const useLoadAccounts = (): UseLoadAccountsReturn => {
     return true;
   };
 
-  return { state, accounts, loadAccounts, addAccounts };
+  return {
+    state,
+    accounts,
+    loadAccounts,
+    addAccounts,
+  };
 };

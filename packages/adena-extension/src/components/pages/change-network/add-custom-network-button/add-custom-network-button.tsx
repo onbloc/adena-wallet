@@ -1,11 +1,17 @@
-import React, { useCallback } from 'react';
-import { UnderlineTextButton } from '@components/molecules';
+import {
+  UnderlineTextButton,
+} from '@components/molecules';
+import React, {
+  useCallback,
+} from 'react';
 
 export interface AddCustomNetworkButtonProps {
-  onClick: () => void;
+  onClick: () => void
 }
 
-const AddCustomNetworkButton: React.FC<AddCustomNetworkButtonProps> = ({ onClick }) => {
+const AddCustomNetworkButton: React.FC<AddCustomNetworkButtonProps> = ({
+  onClick,
+}) => {
   const onClickButton = useCallback(() => {
     onClick();
   }, [onClick]);

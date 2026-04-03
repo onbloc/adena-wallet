@@ -1,7 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { MultisigConfig } from 'adena-module';
-
 import {
   WalletResponseFailureType,
   WalletResponseRejectType,
@@ -12,16 +8,39 @@ import {
   decodeParameter,
   parseParameters,
 } from '@common/utils/client-utils';
-import { CreateMultisigAccount } from '@components/molecules/create-multisig-account';
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
-import { RoutePath } from '@types';
+import {
+  CreateMultisigAccount,
+} from '@components/molecules/create-multisig-account';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message';
+import {
+  RoutePath,
+} from '@types';
+import {
+  MultisigConfig,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import {
+  useLocation, useNavigate,
+} from 'react-router-dom';
 
 const CreateMultisigAccountContainer: React.FC = () => {
   const normalNavigate = useNavigate();
-  const { walletService, multisigService } = useAdenaContext();
-  const { currentAccount, changeCurrentAccount } = useCurrentAccount();
+  const {
+    walletService, multisigService,
+  } = useAdenaContext();
+  const {
+    currentAccount, changeCurrentAccount,
+  } = useCurrentAccount();
   const location = useLocation();
 
   const [hostname, setHostname] = useState('');
@@ -41,7 +60,7 @@ const CreateMultisigAccountContainer: React.FC = () => {
   const checkLockWallet = (): void => {
     walletService
       .isLocked()
-      .then((locked) => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
+      .then(locked => locked && normalNavigate(RoutePath.ApproveLogin + location.search));
   };
 
   useEffect(() => {
@@ -53,7 +72,10 @@ const CreateMultisigAccountContainer: React.FC = () => {
   const initRequestData = (): void => {
     const data = parseParameters(location.search);
     const parsedData = decodeParameter(data['data']);
-    setRequestData({ ...parsedData, hostname: data['hostname'] });
+    setRequestData({
+      ...parsedData,
+      hostname: data['hostname'],
+    });
   };
 
   useEffect(() => {
@@ -75,7 +97,9 @@ const CreateMultisigAccountContainer: React.FC = () => {
       return;
     }
 
-    const { signers, threshold, noSort } = requestData.data;
+    const {
+      signers, threshold, noSort,
+    } = requestData.data;
 
     setMultisigConfig({
       signers,
@@ -90,7 +114,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
       setResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.UNEXPECTED_ERROR,
-          {},
+          {
+          },
           requestData?.key,
         ),
       );
@@ -99,8 +124,10 @@ const CreateMultisigAccountContainer: React.FC = () => {
     try {
       setProcessType('PROCESSING');
 
-      const { multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys } =
-        await multisigService.createMultisigAccount(multisigConfig);
+      const {
+        multisigAddress, multisigAddressBytes, multisigPubKey, signerPublicKeys,
+      }
+        = await multisigService.createMultisigAccount(multisigConfig);
 
       const publicKeyBytesArray = Uint8Array.from(Object.values(multisigPubKey));
       const addressBytesArray = Uint8Array.from(Object.values(multisigAddressBytes));
@@ -125,18 +152,24 @@ const CreateMultisigAccountContainer: React.FC = () => {
           requestData?.key,
         ),
       );
-    } catch (e) {
+    }
+    catch (e) {
       if (e instanceof Error) {
         const message = e.message;
         setResponse(
           InjectionMessageInstance.failure(
             WalletResponseFailureType.CREATE_MULTISIG_ACCOUNT_FAILED,
-            { error: { message } },
+            {
+              error: {
+                message,
+              },
+            },
             requestData?.key,
           ),
         );
       }
-    } finally {
+    }
+    finally {
       setProcessType('DONE');
     }
   };
@@ -152,7 +185,8 @@ const CreateMultisigAccountContainer: React.FC = () => {
     chrome.runtime.sendMessage(
       InjectionMessageInstance.failure(
         WalletResponseRejectType.CREATE_MULTISIG_ACCOUNT_REJECTED,
-        {},
+        {
+        },
         requestData?.key,
       ),
     );

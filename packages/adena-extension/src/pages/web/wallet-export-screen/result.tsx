@@ -1,18 +1,43 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconWarning from '@assets/web/warning.svg';
-import { WALLET_EXPORT_TYPE_STORAGE_KEY } from '@common/constants/storage.constant';
-import { AdenaStorage } from '@common/storage';
-import { stringFromBase64, stringToBase64 } from '@common/utils/encoding-util';
-import { Row, View, WebButton, WebImg, WebText } from '@components/atoms';
-import { WebCopyButton } from '@components/atoms/web-copy-button';
-import { WebHoldButton } from '@components/atoms/web-hold-button';
-import { WebSeedBox } from '@components/molecules';
-import { WebPrivateKeyBox } from '@components/molecules/web-private-key-box';
-import { ExportType } from '@hooks/web/wallet-export/use-wallet-export-screen';
-import { getTheme } from '@styles/theme';
-import { Wallet } from 'adena-module';
+import {
+  WALLET_EXPORT_TYPE_STORAGE_KEY,
+} from '@common/constants/storage.constant';
+import {
+  AdenaStorage,
+} from '@common/storage';
+import {
+  stringFromBase64, stringToBase64,
+} from '@common/utils/encoding-util';
+import {
+  Row, View, WebButton, WebImg, WebText,
+} from '@components/atoms';
+import {
+  WebCopyButton,
+} from '@components/atoms/web-copy-button';
+import {
+  WebHoldButton,
+} from '@components/atoms/web-hold-button';
+import {
+  WebSeedBox,
+} from '@components/molecules';
+import {
+  WebPrivateKeyBox,
+} from '@components/molecules/web-private-key-box';
+import {
+  ExportType,
+} from '@hooks/web/wallet-export/use-wallet-export-screen';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  Wallet,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -25,11 +50,15 @@ const StyledMessageBox = styled(View)`
   row-gap: 12px;
 `;
 
-const StyledWarnBox = styled(Row)<{ center: boolean }>`
+const StyledWarnBox = styled(Row)<{
+  center: boolean
+}>`
   width: 100%;
   padding: 12px 8px;
   border-radius: 8px;
-  align-items: ${({ center }): string => (center ? 'center' : 'flex-start')};
+  align-items: ${({
+    center,
+  }): string => (center ? 'center' : 'flex-start')};
   gap: 4px;
   border: 1px solid ${getTheme('webWarning', '_100')}0a;
   background: ${getTheme('webWarning', '_100')}14;
@@ -42,11 +71,13 @@ const StyledInputBox = styled(View)`
 `;
 
 interface WalletExportResultProps {
-  exportType: ExportType;
-  exportData: Wallet | null;
+  exportType: ExportType
+  exportData: Wallet | null
 }
 
-const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exportData }) => {
+const WalletExportResult: React.FC<WalletExportResultProps> = ({
+  exportType, exportData,
+}) => {
   const theme = useTheme();
   const [blur, setBlur] = useState(true);
   const [initializedDone, setInitializedDone] = useState(false);
@@ -100,7 +131,8 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
 
     if (exportType === 'SEED_PHRASE') {
       navigator.clipboard.writeText(stringFromBase64(seeds));
-    } else {
+    }
+    else {
       exportData?.getPrivateKeyStr().then((result) => {
         navigator.clipboard.writeText(result);
       });
@@ -163,9 +195,13 @@ const WalletExportResult: React.FC<WalletExportResultProps> = ({ exportType, exp
         {exportType === 'PRIVATE_KEY' && (
           <WebPrivateKeyBox privateKey={privateKey} showBlur={blur} />
         )}
-        <Row style={{ gap: 16, justifyContent: 'center' }}>
+        <Row style={{
+          gap: 16,
+          justifyContent: 'center',
+        }}
+        >
           <WebHoldButton onFinishHold={onFinishHold} />
-          <WebCopyButton width={80} copyText={''} onCopy={onCopy} />
+          <WebCopyButton width={80} copyText='' onCopy={onCopy} />
         </Row>
       </StyledInputBox>
 

@@ -1,25 +1,30 @@
-import React from 'react';
-import styled, { css } from 'styled-components';
-
-import { Text, Icon } from '@components/atoms';
-import { FontsType, getTheme } from '@styles/theme';
+import {
+  Icon, Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
+import {
+  FontsType, getTheme,
+} from '@styles/theme';
+import React from 'react';
+import styled, {
+  css,
+} from 'styled-components';
 
 export type ButtonMode = 'DEFAULT' | 'DANGER' | 'HOVER';
 export type IconMode = 'ARROW' | 'WEBLINK';
 
 interface ButtonStyleProps {
-  mode?: ButtonMode;
-  gap?: string | number;
-  icon?: IconMode;
+  mode?: ButtonMode
+  gap?: string | number
+  icon?: IconMode
 }
 
 interface ButtonProps extends ButtonStyleProps {
-  title: string;
-  textType?: FontsType;
-  className?: string;
-  disabled?: boolean;
-  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown;
+  title: string
+  textType?: FontsType
+  className?: string
+  disabled?: boolean
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => unknown
 }
 
 export const FullButtonRightIcon = ({
@@ -47,29 +52,42 @@ export const FullButtonRightIcon = ({
 const defaultIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
     transition: 0.2s;
-    stroke: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
+    stroke: ${({
+      theme, mode,
+    }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
   }
   .icon-weblink * {
     transition: 0.2s;
-    fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
+    fill: ${({
+      theme, mode,
+    }): string => (mode === 'DANGER' ? theme.red.b : theme.neutral.a)};
   }
 `;
 
 const hoverIconStyle = css<ButtonStyleProps>`
   .icon-arrow-v2 * {
-    stroke: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
+    stroke: ${({
+      theme, mode,
+    }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
   }
   .icon-weblink * {
-    fill: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
+    fill: ${({
+      theme, mode,
+    }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
   }
 `;
 
 const ButtonWrapper = styled.button<ButtonStyleProps>`
   & + & {
-    margin-top: ${({ gap }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
+    margin-top: ${({
+      gap,
+    }): string | undefined => (typeof gap === 'number' ? gap + 'px' : gap)};
   }
   ${defaultIconStyle};
-  ${mixins.flex({ direction: 'row', justify: 'space-between' })};
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'space-between',
+  })};
   flex-shrink: 0;
   width: 100%;
   height: 54px;
@@ -77,7 +95,9 @@ const ButtonWrapper = styled.button<ButtonStyleProps>`
   border-radius: 18px;
   transition: all 0.3s ease;
   background-color: ${getTheme('neutral', '_7')};
-  color: ${({ theme, mode }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
+  color: ${({
+    theme, mode,
+  }): string => (mode === 'DANGER' ? theme.red._5 : theme.neutral._1)};
   &:hover {
     background-color: ${getTheme('neutral', 'b')};
     ${hoverIconStyle};

@@ -1,23 +1,46 @@
-import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
-import styled, { useTheme } from 'styled-components';
-
 import disconnected from '@assets/disconnected.svg';
 import DefaultImage from '@assets/favicon-default-small.svg';
-import { ListBox, ListHierarchy, Text } from '@components/atoms';
-import { CloseShadowButton, LoadingNft } from '@components/molecules';
+import {
+  ListBox, ListHierarchy, Text,
+} from '@components/atoms';
+import {
+  CloseShadowButton, LoadingNft,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { WalletState } from '@states';
+import {
+  useAdenaContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  WalletState,
+} from '@states';
 import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
+import {
+  getTheme,
+} from '@styles/theme';
+import {
+  useEffect, useState,
+} from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 export const ConnectedApps = (): JSX.Element => {
   const theme = useTheme();
-  const { establishService } = useAdenaContext();
-  const { currentAccount } = useCurrentAccount();
-  const { goBack } = useAppNavigate();
+  const {
+    establishService,
+  } = useAdenaContext();
+  const {
+    currentAccount,
+  } = useCurrentAccount();
+  const {
+    goBack,
+  } = useAppNavigate();
   const [state] = useRecoilState(WalletState.state);
   const [data, setData] = useState<any>([]);
 
@@ -44,23 +67,23 @@ export const ConnectedApps = (): JSX.Element => {
   const renderAppItem = (item: any, index: number): JSX.Element => {
     return (
       <ListBox
-        left={
+        left={(
           <img
             className='logo'
             src={item.favicon !== null ? item.favicon : DefaultImage}
             alt='logo image'
           />
-        }
-        center={
+        )}
+        center={(
           <Text type='body2Bold' className='connected-hostname'>
             {`${item.hostname}`}
           </Text>
-        }
-        right={
+        )}
+        right={(
           <DisconnectedBtn onClick={(): Promise<void> => onClickDisconnect(item)}>
             <img src={disconnected} alt='disconnected button' />
           </DisconnectedBtn>
-        }
+        )}
         cursor='default'
         hoverAction={false}
         key={index}
@@ -74,29 +97,36 @@ export const ConnectedApps = (): JSX.Element => {
       <Text type='header4' margin='0px 0px 12px'>
         Connected Apps
       </Text>
-      {state === 'FINISH' ? (
-        <>
-          {data.length > 0 ? (
-            data.map(renderAppItem)
-          ) : (
-            <Text className='desc' type='body1Reg' color={theme.neutral.a}>
-              No connections
-            </Text>
-          )}
+      {state === 'FINISH'
+        ? (
+          <>
+            {data.length > 0
+              ? (
+                data.map(renderAppItem)
+              )
+              : (
+                <Text className='desc' type='body1Reg' color={theme.neutral.a}>
+                  No connections
+                </Text>
+              )}
 
-          <div className='empty-box' />
+            <div className='empty-box' />
 
-          <CloseShadowButton onClick={goBack} />
-        </>
-      ) : (
-        <LoadingNft />
-      )}
+            <CloseShadowButton onClick={goBack} />
+          </>
+        )
+        : (
+          <LoadingNft />
+        )}
     </Wrapper>
   );
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -125,7 +155,9 @@ const Wrapper = styled.main`
   }
 
   .empty-box {
-    ${mixins.flex({ direction: 'row' })};
+    ${mixins.flex({
+      direction: 'row',
+    })};
     flex-shrink: 0;
     width: 100%;
     height: 96px;
@@ -134,7 +166,9 @@ const Wrapper = styled.main`
 `;
 
 const DisconnectedBtn = styled.button`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   flex-shrink: 0;
   width: 25px;
   height: 25px;

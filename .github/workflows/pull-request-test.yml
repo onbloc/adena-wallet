@@ -11,9 +11,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
       - run: |
-          yarn
-          yarn build:module
-      - run: yarn run test
+          pnpm install
+          pnpm build:module
+      - run: pnpm run test
 
   build-tests:
     runs-on: ubuntu-latest
@@ -21,10 +21,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
       - run: |
-          yarn
-          yarn build:module
-          yarn build:storybook
-          yarn build:service
+          pnpm install
+          pnpm build:module
+          pnpm build:storybook
+          pnpm build:service
 
   # TODO: Apply when you're done setting up your storybook environment
   # storybook-tests:

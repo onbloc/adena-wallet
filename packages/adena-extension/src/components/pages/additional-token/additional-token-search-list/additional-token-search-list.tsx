@@ -1,22 +1,29 @@
-import React, { useMemo } from 'react';
+import {
+  makeDisplayPackagePath,
+} from '@common/utils/string-utils';
+import {
+  TokenInfo,
+} from '@types';
+import React, {
+  useMemo,
+} from 'react';
+
 import {
   AdditionalTokenSearchListItemWrapper,
   AdditionalTokenSearchListWrapper,
 } from './additional-token-search-list.styles';
-import { TokenInfo } from '@types';
-import { makeDisplayPackagePath } from '@common/utils/string-utils';
 
 export interface AdditionalTokenSearchListProps {
-  tokenInfos: TokenInfo[];
-  onClickListItem: (tokenId: string) => void;
+  tokenInfos: TokenInfo[]
+  onClickListItem: (tokenId: string) => void
 }
 
 interface AdditionalTokenSearchListItem {
-  tokenId: string;
-  name: string;
-  symbol: string;
-  path: string;
-  onClickListItem: (tokenId: string) => void;
+  tokenId: string
+  name: string
+  symbol: string
+  path: string
+  onClickListItem: (tokenId: string) => void
 }
 
 const AdditionalTokenSearchListItem: React.FC<AdditionalTokenSearchListItem> = ({
@@ -56,20 +63,22 @@ const AdditionalTokenSearchList: React.FC<AdditionalTokenSearchListProps> = ({
   return (
     <AdditionalTokenSearchListWrapper>
       <div className='scroll-wrapper'>
-        {tokenInfos.length === 0 ? (
-          <span className='no-content'>No Tokens to Search</span>
-        ) : (
-          tokenInfos.map((tokenInfo, index) => (
-            <AdditionalTokenSearchListItem
-              key={index}
-              tokenId={tokenInfo.tokenId}
-              symbol={tokenInfo.symbol}
-              name={tokenInfo.name}
-              path={tokenInfo.pathInfo}
-              onClickListItem={onClickListItem}
-            />
-          ))
-        )}
+        {tokenInfos.length === 0
+          ? (
+            <span className='no-content'>No Tokens to Search</span>
+          )
+          : (
+            tokenInfos.map((tokenInfo, index) => (
+              <AdditionalTokenSearchListItem
+                key={index}
+                tokenId={tokenInfo.tokenId}
+                symbol={tokenInfo.symbol}
+                name={tokenInfo.name}
+                path={tokenInfo.pathInfo}
+                onClickListItem={onClickListItem}
+              />
+            ))
+          )}
       </div>
     </AdditionalTokenSearchListWrapper>
   );

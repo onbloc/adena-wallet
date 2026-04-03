@@ -6,26 +6,31 @@ import {
   Tx,
   TxSignature,
   uint8ArrayToBase64,
-} from '@gnolang/tm2-js-client';
+} from "@gnolang/tm2-js-client";
 import {
-  createCompactBitArray,
-  compactBitArraySetIndex,
   Multisignature,
   PubKeyMultisig,
-} from '@gnolang/tm2-js-client/bin/proto/tm2/multisig';
-import { PubKeySecp256k1 } from '@gnolang/tm2-js-client/bin/proto/tm2/tx';
-import Long from 'long';
-import { v4 as uuidv4 } from 'uuid';
+} from "@gnolang/tm2-js-client";
+import {
+  PubKeySecp256k1,
+} from "@gnolang/tm2-js-client";
+import {
+  v4 as uuidv4,
+} from "uuid";
 
 import {
+  compactBitArraySetIndex,
+  createCompactBitArray,
   decodeTxMessages,
   Document,
   documentToTx,
   fromBech32,
   MultisigConfig,
   SignerPublicKeyInfo,
-} from '../..';
-import { Keyring, KeyringData } from './keyring';
+} from "../..";
+import {
+  Keyring, KeyringData,
+} from "./keyring.js";
 
 /**
  * MultisigKeyring class
@@ -35,7 +40,7 @@ import { Keyring, KeyringData } from './keyring';
  */
 export class MultisigKeyring implements Keyring {
   public readonly id: string;
-  public readonly type = 'MULTISIG' as const;
+  public readonly type = "MULTISIG" as const;
   public readonly addressBytes: Uint8Array;
   public readonly publicKey: Uint8Array;
   public readonly multisigConfig: MultisigConfig;
@@ -43,7 +48,7 @@ export class MultisigKeyring implements Keyring {
 
   constructor(keyringData: KeyringData) {
     if (!keyringData.addressBytes || !keyringData.multisigConfig) {
-      throw new Error('Invalid parameter values');
+      throw new Error("Invalid parameter values");
     }
     this.id = keyringData.id || uuidv4();
     this.addressBytes = Uint8Array.from(keyringData.addressBytes);
@@ -79,10 +84,10 @@ export class MultisigKeyring implements Keyring {
     _provider: Provider,
     _document: Document,
   ): Promise<{
-    signed: Tx;
-    signature: TxSignature[];
+    signed: Tx
+    signature: TxSignature[]
   }> {
-    throw new Error('Multisig accounts cannot sign directly. Use individual signer accounts.');
+    throw new Error("Multisig accounts cannot sign directly. Use individual signer accounts.");
   }
 
   /**
@@ -93,15 +98,15 @@ export class MultisigKeyring implements Keyring {
    * @returns Unsigned transaction and sign request payload
    */
   async createSignRequest(document: Document): Promise<{
-    unsignedTx: Tx;
+    unsignedTx: Tx
     signRequest: {
-      chain_id: string;
-      account_number: string;
-      sequence: string;
-      fee: any;
-      msgs: any[];
-      memo: string;
-    };
+      chain_id: string
+      account_number: string
+      sequence: string
+      fee: Document["fee"]
+      msgs: unknown[]
+      memo: string
+    }
   }> {
     const unsignedTx = documentToTx(document);
 
@@ -128,9 +133,9 @@ export class MultisigKeyring implements Keyring {
   async combineSignatures(
     unsignedTx: Tx,
     individualSignatures: Array<{
-      signerAddress: string;
-      signature: Uint8Array;
-      pubkey: Uint8Array;
+      signerAddress: string
+      signature: Uint8Array
+      pubkey: Uint8Array
     }>,
   ): Promise<Tx> {
     // 1. Validate threshold
@@ -142,9 +147,9 @@ export class MultisigKeyring implements Keyring {
 
     // 2. Map signer addresses to indices and sort by index
     const signerData: Array<{
-      index: number;
-      signature: Uint8Array;
-      pubkey: Uint8Array;
+      index: number
+      signature: Uint8Array
+      pubkey: Uint8Array
     }> = [];
 
     for (const sig of individualSignatures) {
@@ -164,22 +169,30 @@ export class MultisigKeyring implements Keyring {
 
     // 3. Create CompactBitArray
     const bitArray = createCompactBitArray(this.signers.length);
-    signerData.forEach(({ index }) => {
+    signerData.forEach(({
+      index,
+    }) => {
       compactBitArraySetIndex(bitArray, index, true);
     });
 
     // 4. Create Multisignature
     const multisig = Multisignature.create({
       bit_array: bitArray,
-      sigs: signerData.map(({ signature }) => signature),
+      sigs: signerData.map(({
+        signature,
+      }) => signature),
     });
 
     // 5. Create PubKeyMultisig
     const multisigPubkey = PubKeyMultisig.create({
-      k: Long.fromNumber(this.threshold),
-      pub_keys: signerData.map(({ pubkey }) => ({
-        type_url: '/tm.PubKeySecp256k1',
-        value: PubKeySecp256k1.encode({ key: pubkey }).finish(),
+      k: BigInt(this.threshold),
+      pub_keys: signerData.map(({
+        pubkey,
+      }) => ({
+        type_url: "/tm.PubKeySecp256k1",
+        value: PubKeySecp256k1.encode({
+          key: pubkey,
+        }).finish(),
       })),
     });
 
@@ -189,7 +202,7 @@ export class MultisigKeyring implements Keyring {
       signatures: [
         {
           pub_key: {
-            type_url: '/tm.PubKeyMultisig',
+            type_url: "/tm.PubKeyMultisig",
             value: PubKeyMultisig.encode(multisigPubkey).finish(),
           },
           signature: Multisignature.encode(multisig).finish(),
@@ -229,9 +242,11 @@ export class MultisigKeyring implements Keyring {
     multisigConfig: MultisigConfig,
     signerPublicKeys?: SignerPublicKeyInfo[],
   ): Promise<MultisigKeyring> {
-    const { data: addressBytes } = fromBech32(address);
+    const {
+      data: addressBytes,
+    } = fromBech32(address);
     return new MultisigKeyring({
-      type: 'MULTISIG',
+      type: "MULTISIG",
       addressBytes: [...addressBytes],
       publicKey: [...publicKey],
       multisigConfig,

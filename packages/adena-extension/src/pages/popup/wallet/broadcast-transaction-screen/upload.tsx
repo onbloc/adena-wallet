@@ -1,16 +1,29 @@
-import { Tx } from '@gnolang/tm2-js-client';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import IconHelp from '@assets/help.svg';
-import { ADENA_SETUP_AIRGAP_HELP_PAGE } from '@common/constants/resource.constant';
-import { CommonFullContentLayout, Pressable, Text, View } from '@components/atoms';
-import { BottomFixedButtonGroup } from '@components/molecules';
+import {
+  ADENA_SETUP_AIRGAP_HELP_PAGE,
+} from '@common/constants/resource.constant';
+import {
+  CommonFullContentLayout, Pressable, Text, View,
+} from '@components/atoms';
+import {
+  BottomFixedButtonGroup,
+} from '@components/molecules';
 import BroadcastTransactionUploadInput from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-input/broadcast-transaction-upload-input';
 import BroadcastTransactionUploadResult from '@components/pages/broadcast-transaction-screen/broadcast-transaction-upload-result/broadcast-transaction-upload-result';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
 import useAppNavigate from '@hooks/use-app-navigate';
 import useLink from '@hooks/use-link';
-import { TransactionDisplayInfo } from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+import {
+  TransactionDisplayInfo,
+} from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+import React, {
+  useCallback, useEffect, useMemo, useState,
+} from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
 const StyledWrapper = styled(View)`
   width: 100%;
@@ -36,11 +49,11 @@ const StyledHelpWrapper = styled(Pressable)`
 `;
 
 interface BroadcastTransactionUploadProps {
-  transaction: Tx | null;
-  transactionInfos: TransactionDisplayInfo[];
-  rawTransaction: string;
-  broadcast: () => Promise<boolean>;
-  uploadTransaction: (text: string) => boolean;
+  transaction: Tx | null
+  transactionInfos: TransactionDisplayInfo[]
+  rawTransaction: string
+  broadcast: () => Promise<boolean>
+  uploadTransaction: (text: string) => boolean
 }
 
 const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
@@ -52,8 +65,12 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
 }) => {
   const theme = useTheme();
   const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const { openLink } = useLink();
-  const { goBack } = useAppNavigate();
+  const {
+    openLink,
+  } = useLink();
+  const {
+    goBack,
+  } = useAppNavigate();
 
   const loadedTransaction = useMemo(() => {
     return transaction !== null && transactionInfos.length > 0;
@@ -94,7 +111,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
       <StyledWrapper>
         <StyledHeaderWrapper>
           <Text type='header4' textAlign='center'>
-            {'Broadcast Transaction'}
+            Broadcast Transaction
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
             {'Upload a signed transaction file to\nAdena to broadcast it.'}
@@ -117,7 +134,7 @@ const BroadcastTransactionUpload: React.FC<BroadcastTransactionUploadProps> = ({
         {!loadedTransaction && (
           <StyledHelpWrapper onClick={onClickHelp}>
             <Text type='body1Reg' color={theme.neutral.a}>
-              {'How does it work'}
+              How does it work
             </Text>
             <img src={IconHelp} alt='help icon' />
           </StyledHelpWrapper>

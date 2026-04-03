@@ -1,5 +1,10 @@
-import { CommandKeyType } from '@common/constants/command-key.constant';
-import { GnoConnectInfo, GnoMessageInfo } from './methods/gno-connect';
+import {
+  CommandKeyType,
+} from '@common/constants/command-key.constant';
+
+import {
+  GnoConnectInfo, GnoMessageInfo,
+} from './methods/gno-connect';
 type StatusType = 'command';
 
 export function isCommandMessageData(data: any): data is CommandMessageData {
@@ -7,16 +12,16 @@ export function isCommandMessageData(data: any): data is CommandMessageData {
 }
 
 export interface CommandMessageData<T = any> {
-  key: string;
-  code: number;
-  status: StatusType;
-  command: CommandKeyType;
-  data: T;
+  key: string
+  code: number
+  status: StatusType
+  command: CommandKeyType
+  data: T
 }
 
 export interface CheckMetadataMessageData {
-  gnoMessageInfo: GnoMessageInfo | null;
-  gnoConnectInfo: GnoConnectInfo | null;
+  gnoMessageInfo: GnoMessageInfo | null
+  gnoConnectInfo: GnoConnectInfo | null
 }
 
 export class CommandMessage {

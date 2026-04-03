@@ -1,15 +1,23 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const MemoInputWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   width: 100%;
   height: auto;
   gap: 12px;
 
   .memo-input {
-    ${mixins.flex({ direction: 'row', justify: 'normal' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'normal',
+    })};
     width: 100%;
     height: auto;
     padding: 12px 16px;
@@ -26,7 +34,11 @@ export const MemoInputWrapper = styled.div`
   }
 
   .warning-wrapper {
-    ${mixins.flex({ direction: 'row', justify: 'normal', align: 'flex-start' })};
+    ${mixins.flex({
+      direction: 'row',
+      justify: 'normal',
+      align: 'flex-start',
+    })};
     width: 100%;
     border-radius: 8px;
     border: 1px solid ${getTheme('red', '_8')}0d;

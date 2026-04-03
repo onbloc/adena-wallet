@@ -1,67 +1,131 @@
-import { StorageModel } from '@common/storage';
-import { StorageModelDataV001, StorageModelV001 } from './migrations/v001/storage-model-v001';
-import { StorageMigration002 } from './migrations/v002/storage-migration-v002';
-import { StorageModelV002 } from './migrations/v002/storage-model-v002';
-import { StorageMigration003 } from './migrations/v003/storage-migration-v003';
-import { StorageModelV003 } from './migrations/v003/storage-model-v003';
-import { StorageMigration004 } from './migrations/v004/storage-migration-v004';
-import { StorageModelV004 } from './migrations/v004/storage-model-v004';
-import { StorageMigration005 } from './migrations/v005/storage-migration-v005';
-import { StorageModelV005 } from './migrations/v005/storage-model-v005';
-import { StorageMigration006 } from './migrations/v006/storage-migration-v006';
-import { StorageModelV006 } from './migrations/v006/storage-model-v006';
-import { StorageMigration007 } from './migrations/v007/storage-migration-v007';
-import { StorageModelV007 } from './migrations/v007/storage-model-v007';
-import { StorageMigration008 } from './migrations/v008/storage-migration-v008';
-import { StorageModelV008 } from './migrations/v008/storage-model-v008';
-import { StorageMigration009 } from './migrations/v009/storage-migration-v009';
-import { StorageModelV009 } from './migrations/v009/storage-model-v009';
-import { StorageMigration010 } from './migrations/v010/storage-migration-v010';
-import { StorageModelV010 } from './migrations/v010/storage-model-v010';
-import { StorageMigration011 } from './migrations/v011/storage-migration-v011';
-import { StorageModelV011 } from './migrations/v011/storage-model-v011';
-import { StorageMigration012 } from './migrations/v012/storage-migration-v012';
-import { StorageModelV012 } from './migrations/v012/storage-model-v012';
-import { StorageMigration013 } from './migrations/v013/storage-migration-v013';
-import { StorageModelV013 } from './migrations/v013/storage-model-v013';
-import { StorageMigration014 } from './migrations/v014/storage-migration-v014';
-import { StorageModelV014 } from './migrations/v014/storage-model-v014';
-import { StorageMigration015 } from './migrations/v015/storage-migration-v015';
-import { StorageModelV015 } from './migrations/v015/storage-model-v015';
-import { StorageMigration016 } from './migrations/v016/storage-migration-v016';
-import { StorageModelV016 } from './migrations/v016/storage-model-v016';
-import { StorageMigration017 } from './migrations/v017/storage-migration-v017';
-import { StorageModelDataV017, StorageModelV017 } from './migrations/v017/storage-model-v017';
-import { Migration, Migrator } from './migrator';
+import {
+  StorageModel,
+} from '@common/storage';
 
-const LegacyStorageKeys = [
-  'NETWORKS',
-  'CURRENT_CHAIN_ID',
-  'CURRENT_NETWORK_ID',
-  'SERIALIZED',
-  'ENCRYPTED_STORED_PASSWORD',
-  'CURRENT_ACCOUNT_ID',
-  'ACCOUNT_NAMES',
-  'ESTABLISH_SITES',
-  'ADDRESS_BOOK',
-  'ACCOUNT_TOKEN_METAINFOS',
-];
+import {
+  StorageModelDataV001, StorageModelV001,
+} from './migrations/v001/storage-model-v001';
+import {
+  StorageMigration002,
+} from './migrations/v002/storage-migration-v002';
+import {
+  StorageModelV002,
+} from './migrations/v002/storage-model-v002';
+import {
+  StorageMigration003,
+} from './migrations/v003/storage-migration-v003';
+import {
+  StorageModelV003,
+} from './migrations/v003/storage-model-v003';
+import {
+  StorageMigration004,
+} from './migrations/v004/storage-migration-v004';
+import {
+  StorageModelV004,
+} from './migrations/v004/storage-model-v004';
+import {
+  StorageMigration005,
+} from './migrations/v005/storage-migration-v005';
+import {
+  StorageModelV005,
+} from './migrations/v005/storage-model-v005';
+import {
+  StorageMigration006,
+} from './migrations/v006/storage-migration-v006';
+import {
+  StorageModelV006,
+} from './migrations/v006/storage-model-v006';
+import {
+  StorageMigration007,
+} from './migrations/v007/storage-migration-v007';
+import {
+  StorageModelV007,
+} from './migrations/v007/storage-model-v007';
+import {
+  StorageMigration008,
+} from './migrations/v008/storage-migration-v008';
+import {
+  StorageModelV008,
+} from './migrations/v008/storage-model-v008';
+import {
+  StorageMigration009,
+} from './migrations/v009/storage-migration-v009';
+import {
+  StorageModelV009,
+} from './migrations/v009/storage-model-v009';
+import {
+  StorageMigration010,
+} from './migrations/v010/storage-migration-v010';
+import {
+  StorageModelV010,
+} from './migrations/v010/storage-model-v010';
+import {
+  StorageMigration011,
+} from './migrations/v011/storage-migration-v011';
+import {
+  StorageModelV011,
+} from './migrations/v011/storage-model-v011';
+import {
+  StorageMigration012,
+} from './migrations/v012/storage-migration-v012';
+import {
+  StorageModelV012,
+} from './migrations/v012/storage-model-v012';
+import {
+  StorageMigration013,
+} from './migrations/v013/storage-migration-v013';
+import {
+  StorageModelV013,
+} from './migrations/v013/storage-model-v013';
+import {
+  StorageMigration014,
+} from './migrations/v014/storage-migration-v014';
+import {
+  StorageModelV014,
+} from './migrations/v014/storage-model-v014';
+import {
+  StorageMigration015,
+} from './migrations/v015/storage-migration-v015';
+import {
+  StorageModelV015,
+} from './migrations/v015/storage-model-v015';
+import {
+  StorageMigration016,
+} from './migrations/v016/storage-migration-v016';
+import {
+  StorageModelV016,
+} from './migrations/v016/storage-model-v016';
+import {
+  StorageMigration017,
+} from './migrations/v017/storage-migration-v017';
+import {
+  StorageModelDataV017, StorageModelV017,
+} from './migrations/v017/storage-model-v017';
+import {
+  Migration, Migrator,
+} from './migrator';
+
+const LegacyStorageKeys = ['NETWORKS', 'CURRENT_CHAIN_ID', 'CURRENT_NETWORK_ID', 'SERIALIZED', 'ENCRYPTED_STORED_PASSWORD', 'CURRENT_ACCOUNT_ID', 'ACCOUNT_NAMES', 'ESTABLISH_SITES', 'ADDRESS_BOOK', 'ACCOUNT_TOKEN_METAINFOS'];
 
 // The latest storage model type
 export type StorageModelLatest = StorageModelV017;
 
 // Default data structure for version 1 storage model
 const defaultData: StorageModelDataV001 = {
-  ACCOUNT_NAMES: {},
-  ADDRESS_BOOK: {},
+  ACCOUNT_NAMES: {
+  },
+  ADDRESS_BOOK: {
+  },
   CURRENT_ACCOUNT_ID: '',
   CURRENT_CHAIN_ID: '',
   CURRENT_NETWORK_ID: '',
-  ESTABLISH_SITES: {},
+  ESTABLISH_SITES: {
+  },
   NETWORKS: [],
   ENCRYPTED_STORED_PASSWORD: '',
   SERIALIZED: '',
-  ACCOUNT_TOKEN_METAINFOS: {},
+  ACCOUNT_TOKEN_METAINFOS: {
+  },
 };
 
 const defaultLegacyData: StorageModelDataV017 = {
@@ -71,21 +135,32 @@ const defaultLegacyData: StorageModelDataV017 = {
   SERIALIZED: '',
   ENCRYPTED_STORED_PASSWORD: '',
   CURRENT_ACCOUNT_ID: '',
-  ACCOUNT_NAMES: {},
-  ESTABLISH_SITES: {},
+  ACCOUNT_NAMES: {
+  },
+  ESTABLISH_SITES: {
+  },
   ADDRESS_BOOK: '',
-  ACCOUNT_TOKEN_METAINFOS: {},
+  ACCOUNT_TOKEN_METAINFOS: {
+  },
   QUESTIONNAIRE_EXPIRED_DATE: null,
   WALLET_CREATION_GUIDE_CONFIRM_DATE: null,
   ADD_ACCOUNT_GUIDE_CONFIRM_DATE: null,
-  ACCOUNT_GRC721_COLLECTIONS: {},
-  ACCOUNT_GRC721_PINNED_PACKAGES: {},
+  ACCOUNT_GRC721_COLLECTIONS: {
+  },
+  ACCOUNT_GRC721_PINNED_PACKAGES: {
+  },
 };
 
 // Storage interface with set and get methods
 interface Storage {
-  set(items: { [key: string]: any }): Promise<void>;
-  get(keys?: string | string[] | { [key: string]: any } | null): Promise<{ [key: string]: any }>;
+  set(items: {
+    [key: string]: any
+  }): Promise<void>
+  get(keys?: string | string[] | {
+    [key: string]: any
+  } | null): Promise<{
+    [key: string]: any
+  }>
 }
 
 // Handles storage migrations and serialization/deserialization of storage data
@@ -100,7 +175,7 @@ export class StorageMigrator implements Migrator {
   // Validates if the data can be saved
   async saveable(): Promise<boolean> {
     const current = await this.getCurrent();
-    const latestVersion = Math.max(...this.migrations.map((m) => m.version));
+    const latestVersion = Math.max(...this.migrations.map(m => m.version));
     if (current.data.SERIALIZED === '') {
       return false;
     }
@@ -141,7 +216,8 @@ export class StorageMigrator implements Migrator {
     if (data) {
       try {
         jsonData = JSON.parse(data);
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Migrate', e);
       }
     }
@@ -166,7 +242,10 @@ export class StorageMigrator implements Migrator {
     | StorageModelV004
     | StorageModelV003
     | StorageModelV002
-    | { version: number; data: StorageModelDataV001 }
+    | {
+      version: number
+      data: StorageModelDataV001
+    }
   > {
     const storedValues = await this.storage.get(StorageMigrator.StorageKey);
     const data = await this.deserialize(storedValues[StorageMigrator.StorageKey]);
@@ -187,12 +266,13 @@ export class StorageMigrator implements Migrator {
       const currentVersion = current.version || 1;
       const migrations = this.migrations
         .sort((a, b) => a.version - b.version)
-        .filter((migration) => migration.version > currentVersion);
+        .filter(migration => migration.version > currentVersion);
 
       for (const migration of migrations) {
         latest = await migration.up(latest, password);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error);
       await this.backup(current);
       return null;
@@ -215,7 +295,9 @@ export class StorageMigrator implements Migrator {
   private async backup(current: StorageModel): Promise<void> {
     const backupStorageKey = `${StorageMigrator.StorageKey}_${Date.now()}`;
     const savedData = await this.serialize(current);
-    await this.storage.set({ [backupStorageKey]: savedData });
+    await this.storage.set({
+      [backupStorageKey]: savedData,
+    });
   }
 
   // Maps JSON data to the corresponding storage model version
@@ -320,23 +402,6 @@ export class StorageMigrator implements Migrator {
   }
 
   static migrations(): Migration[] {
-    return [
-      new StorageMigration002(),
-      new StorageMigration003(),
-      new StorageMigration004(),
-      new StorageMigration005(),
-      new StorageMigration006(),
-      new StorageMigration007(),
-      new StorageMigration008(),
-      new StorageMigration009(),
-      new StorageMigration010(),
-      new StorageMigration011(),
-      new StorageMigration012(),
-      new StorageMigration013(),
-      new StorageMigration014(),
-      new StorageMigration015(),
-      new StorageMigration016(),
-      new StorageMigration017(),
-    ];
+    return [new StorageMigration002(), new StorageMigration003(), new StorageMigration004(), new StorageMigration005(), new StorageMigration006(), new StorageMigration007(), new StorageMigration008(), new StorageMigration009(), new StorageMigration010(), new StorageMigration011(), new StorageMigration012(), new StorageMigration013(), new StorageMigration014(), new StorageMigration015(), new StorageMigration016(), new StorageMigration017()];
   }
 }

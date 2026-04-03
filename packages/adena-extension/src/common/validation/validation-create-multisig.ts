@@ -1,14 +1,18 @@
-import { parseTokenAmount } from '@common/utils/amount-utils';
-import { validateAddress } from 'adena-module';
+import {
+  parseTokenAmount,
+} from '@common/utils/amount-utils';
+import {
+  validateAddress,
+} from 'adena-module';
 
 /**
  * Validates signers array format and minimum count
  */
 export const validateMultisigSigners = (signers: any): boolean => {
   return (
-    Array.isArray(signers) &&
-    signers.length >= 2 &&
-    signers.every((signer) => typeof signer === 'string' && validateAddress(signer))
+    Array.isArray(signers)
+    && signers.length >= 2
+    && signers.every(signer => typeof signer === 'string' && validateAddress(signer))
   );
 };
 

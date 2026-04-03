@@ -1,14 +1,19 @@
-import { GnoProvider } from '@common/provider/gno/gno-provider';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
 import {
   ITransactionHistoryIndexerRepository,
   ITransactionHistoryRepository,
 } from '@repositories/transaction/types';
-import { TransactionWithPageInfo } from '@types';
+import {
+  TransactionWithPageInfo,
+} from '@types';
 
 export class TransactionHistoryService {
   private transactionHistoryRepository: ITransactionHistoryRepository;
   private gnoProvider: GnoProvider | null;
-  private blockTimeMap: { [key in number]: string } = {};
+  private blockTimeMap: { [key in number]: string } = {
+  };
 
   constructor(
     gnoProvider: GnoProvider | null,

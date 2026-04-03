@@ -1,14 +1,15 @@
-import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
-
 import useAppNavigate from '@hooks/use-app-navigate';
-import { RoutePath } from '@types';
-
+import {
+  useWallet,
+} from '@hooks/use-wallet';
+import NotFoundScreen from '@pages/web/404';
 import AccountAddScreen from '@pages/web/account-add-screen';
 import AccountAddedCompleteScreen from '@pages/web/account-added-complete-screen';
 import AccountImportScreen from '@pages/web/account-import-screen';
 import AdvancedOptionScreen from '@pages/web/advanced-option-screen';
-import { ConnectLedgerScreen, ConnectLedgerSelectAccount } from '@pages/web/connect-ledger';
+import {
+  ConnectLedgerScreen, ConnectLedgerSelectAccount,
+} from '@pages/web/connect-ledger';
 import CreatePasswordScreen from '@pages/web/create-password-screen';
 import GoogleLoginScreen from '@pages/web/google-login-screen';
 import LandingScreen from '@pages/web/landing-screen';
@@ -20,17 +21,28 @@ import WalletAllSetScreen from '@pages/web/wallet-all-set-screen';
 import WalletCreateScreen from '@pages/web/wallet-create-screen';
 import WalletExportScreen from '@pages/web/wallet-export-screen';
 import WalletImportScreen from '@pages/web/wallet-import-screen';
+import {
+  RoutePath,
+} from '@types';
+import {
+  useEffect,
+} from 'react';
+import {
+  Route, Routes,
+} from 'react-router-dom';
 
-import { useWallet } from '@hooks/use-wallet';
-import NotFoundScreen from '@pages/web/404';
 import Header from './Header';
 
 export const WebRouter = (): JSX.Element => {
   const pathname = window?.location?.pathname || '';
   const isRegister = pathname.startsWith('/register.html');
   const isExport = pathname.startsWith('/security.html');
-  const { navigate } = useAppNavigate();
-  const { existWallet, lockedWallet } = useWallet();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const {
+    existWallet, lockedWallet,
+  } = useWallet();
 
   useEffect(() => {
     if (existWallet && lockedWallet) {
@@ -75,7 +87,7 @@ export const WebRouter = (): JSX.Element => {
             element={<AccountAddedCompleteScreen />}
           />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
-          <Route path={'*'} element={<NotFoundScreen />} />
+          <Route path='*' element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -89,7 +101,7 @@ export const WebRouter = (): JSX.Element => {
           <Route path={RoutePath.Home} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebWalletExport} element={<WalletExportScreen />} />
           <Route path={RoutePath.WebQuestionnaire} element={<QuestionnaireScreen />} />
-          <Route path={'*'} element={<NotFoundScreen />} />
+          <Route path='*' element={<NotFoundScreen />} />
         </Routes>
       </>
     );
@@ -98,7 +110,7 @@ export const WebRouter = (): JSX.Element => {
   return (
     <>
       <Header />
-      <Route path={'*'} element={<NotFoundScreen />} />
+      <Route path='*' element={<NotFoundScreen />} />
     </>
   );
 };

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "gnoland1",
+    "default": true,
+    "main": true,
+    "chainId": "gnoland1",
+    "chainName": "Gno.land",
+    "networkId": "gnoland1",
+    "networkName": "Beta Mainnet",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.betanet.testnets.gno.land:443",
+    "indexerUrl": "https://gnoland1.indexer.onbloc.xyz",
+    "gnoUrl": "https://betanet.testnets.gno.land",
+    "apiUrl": "https://gnoland1.api.onbloc.xyz",
+    "linkUrl": "https://gnoscan.io"
+  },
+  {
+    "id": "staging",
+    "default": true,
+    "main": false,
+    "chainId": "staging",
+    "chainName": "Gno.land",
+    "networkId": "staging",
+    "networkName": "Staging",
+    "addressPrefix": "g",
+    "rpcUrl": "https://rpc.staging.gno.land:443",
+    "indexerUrl": "https://staging.indexer.onbloc.xyz",
+    "gnoUrl": "https://staging.gno.land",
+    "apiUrl": "https://staging.api.onbloc.xyz",
+    "linkUrl": "https://gnoscan.io"
+  },
+  {
+    "id": "dev",
+    "default": true,
+    "main": false,
+    "chainId": "dev",
+    "chainName": "Gno.land",
+    "networkId": "dev",
+    "networkName": "Local",
+    "addressPrefix": "g",
+    "rpcUrl": "http://127.0.0.1:26657",
+    "indexerUrl": "",
+    "gnoUrl": "http://127.0.0.1:8888",
+    "apiUrl": "",
+    "linkUrl": "http://127.0.0.1:3000"
+  },
+  {
+    "id": "gnoswap",
+    "default": false,
+    "main": false,
+    "chainId": "dev.gnoswap",
+    "chainName": "GnoSwap Dev",
+    "networkId": "dev.gnoswap",
+    "networkName": "GnoSwap Dev",
+    "addressPrefix": "g",
+    "rpcUrl": "https://dev.rpc.gnoswap.io",
+    "indexerUrl": "https://indexer-gnoswap.in.onbloc.xyz",
+    "gnoUrl": "https://gno.land",
+    "apiUrl": "",
+    "linkUrl": "https://gnoscan.io"
+  }
+]

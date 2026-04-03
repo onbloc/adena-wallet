@@ -1,12 +1,19 @@
-import React, { useMemo } from 'react';
-import { TransferSummaryAddressWrapper } from './transfer-summary-address.styles';
+import React, {
+  useMemo,
+} from 'react';
+
+import {
+  TransferSummaryAddressWrapper,
+} from './transfer-summary-address.styles';
 
 export interface TransferSummaryAddressProps {
-  toAddress: string;
-  memo: string;
+  toAddress: string
+  memo: string
 }
 
-const TransferSummaryAddress: React.FC<TransferSummaryAddressProps> = ({ toAddress, memo }) => {
+const TransferSummaryAddress: React.FC<TransferSummaryAddressProps> = ({
+  toAddress, memo,
+}) => {
   const memoMessage = useMemo(() => {
     const prefix = 'Memo:';
     if (!memo) {

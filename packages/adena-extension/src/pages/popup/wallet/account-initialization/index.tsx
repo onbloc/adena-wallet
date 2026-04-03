@@ -1,15 +1,25 @@
-import { CommonFullContentLayout } from '@components/atoms';
+import {
+  CommonFullContentLayout,
+} from '@components/atoms';
 import AccountInitializationPage from '@components/pages/account-initialization/account-initialization';
-import { useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
+import {
+  useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
 
 /**
  * The page to initialize your account is deprecated for now.
  * Keep it for account initialization.
  */
 export default function AccountInitialization(): JSX.Element {
-  const { wallet } = useWalletContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
 
   const moveBack = (): void => {
     history.back();

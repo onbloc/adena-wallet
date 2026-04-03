@@ -3,27 +3,23 @@
     "jsx": "react-jsx",
     "outDir": "./dist/",
     "types": [
-      "node",
-      "jest",
       "@types/react",
       "@types/react-dom",
-      "@types/styled-components",
       "@types/chrome",
       "wicg-file-system-access"
     ],
     "noImplicitAny": true,
-    "module": "esnext",
-    "target": "es5",
-    "moduleResolution": "node",
+    "module": "es2022",
+    "target": "es2020",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
     "skipLibCheck": true,
     "strict": true,
-    "allowJs": true,
-    "downlevelIteration": true,
-    "lib": ["dom", "es5", "es6"],
+    "lib": ["dom", "es2022"],
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "paths": {
       "@types": ["src/types"],
@@ -45,5 +41,6 @@
       "@public/*": ["public/*"]
     }
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "exclude": ["./src/**/*.spec.*", "./src/**/*.test.*", "./src/**/*.stories.*"]
 }

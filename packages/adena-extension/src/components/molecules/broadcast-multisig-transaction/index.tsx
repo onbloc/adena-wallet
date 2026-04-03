@@ -1,59 +1,75 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-
-import { Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo } from 'adena-module';
-import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
-import { ContractMessage, Signature, SignerInfo } from '@inject/types';
-import { NetworkFee as NetworkFeeType } from '@types';
-import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
-
-import { Button, Text } from '@components/atoms';
-import { BottomFixedLoadingButtonGroup } from '@components/molecules';
-
-import {
-  ApproveTransactionWrapper,
-  ApproveTransactionNetworkFeeWrapper,
-} from '../approve-transaction/approve-transaction.styles';
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
 import UnknownLogo from '@assets/common-unknown-logo.svg';
-import { ApproveTransactionLoading } from '../approve-transaction-loading';
-import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
-import NetworkFee from '../network-fee/network-fee';
+import {
+  createMultisigSignerInfoList, filterValidSignatures,
+} from '@common/utils/multisig-utils';
+import {
+  Button, Text,
+} from '@components/atoms';
+import {
+  BottomFixedLoadingButtonGroup,
+} from '@components/molecules';
 import DocumentSignerListScreen from '@components/pages/document-signer-list-screen/document-signer-list-screen';
-import MultisigBroadcastThreshold from '../multisig-threshold/multisig-broadcast-threshold';
+import {
+  GnoArgumentInfo,
+} from '@inject/message/methods/gno-connect';
+import {
+  ContractMessage, Signature, SignerInfo,
+} from '@inject/types';
+import {
+  NetworkFee as NetworkFeeType,
+} from '@types';
+import {
+  Account, isMultisigAccount, MultisigConfig, SignerPublicKeyInfo,
+} from 'adena-module';
+import React, {
+  useCallback, useEffect, useMemo,
+} from 'react';
+
+import {
+  ApproveTransactionNetworkFeeWrapper,
+  ApproveTransactionWrapper,
+} from '../approve-transaction/approve-transaction.styles';
+import {
+  ApproveTransactionLoading,
+} from '../approve-transaction-loading';
+import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
 import DocumentBroadcastSigner from '../document-signer/document-broadcast-signer';
+import MultisigBroadcastThreshold from '../multisig-threshold/multisig-broadcast-threshold';
+import NetworkFee from '../network-fee/network-fee';
 
 export interface BroadcastMultisigTransactionProps {
-  loading: boolean;
-  title: string;
-  logo: string;
-  domain: string;
+  loading: boolean
+  title: string
+  logo: string
+  domain: string
   contracts: {
-    type: string;
-    function: string;
-    value: string;
-  }[];
-  memo: string;
-  hasMemo: boolean;
-  currentBalance?: number;
-  isErrorNetworkFee?: boolean;
-  isNetworkFeeLoading?: boolean;
-  networkFee: NetworkFeeType;
-  transactionData: string;
-  opened: boolean;
-  argumentInfos?: GnoArgumentInfo[];
-  processing: boolean;
-  done: boolean;
-  transactionMessages: ContractMessage[];
-  multisigConfig: MultisigConfig | null;
-  signatures: Signature[];
-  currentAccount: Account | null;
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
-  onToggleTransactionData: (opened: boolean) => void;
-  onResponse: () => void;
-  onTimeout: () => void;
-  onClickConfirm: () => void;
-  onClickCancel: () => void;
+    type: string
+    function: string
+    value: string
+  }[]
+  memo: string
+  hasMemo: boolean
+  currentBalance?: number
+  isErrorNetworkFee?: boolean
+  isNetworkFeeLoading?: boolean
+  networkFee: NetworkFeeType
+  transactionData: string
+  opened: boolean
+  argumentInfos?: GnoArgumentInfo[]
+  processing: boolean
+  done: boolean
+  transactionMessages: ContractMessage[]
+  multisigConfig: MultisigConfig | null
+  signatures: Signature[]
+  currentAccount: Account | null
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
+  onToggleTransactionData: (opened: boolean) => void
+  onResponse: () => void
+  onTimeout: () => void
+  onClickConfirm: () => void
+  onClickCancel: () => void
 }
 
 export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransactionProps> = ({
@@ -120,14 +136,7 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
     }
 
     return Number(networkFee?.amount || 0) <= 0;
-  }, [
-    isErrorNetworkFee,
-    isNetworkFeeLoading,
-    networkFee,
-    multisigConfig,
-    validSignatures,
-    threshold,
-  ]);
+  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee, multisigConfig, validSignatures, threshold]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
@@ -222,17 +231,19 @@ export const BroadcastMultisigTransaction: React.FC<BroadcastMultisigTransaction
           className='visible-button'
           onClick={(): void => onToggleTransactionData(!opened)}
         >
-          {opened ? (
-            <>
-              <>Hide Transaction Data</>
-              <img src={IconArraowUp} alt='collapse' />
-            </>
-          ) : (
-            <>
-              <>View Transaction Data</>
-              <img src={IconArraowDown} alt='expand' />
-            </>
-          )}
+          {opened
+            ? (
+              <>
+                <>Hide Transaction Data</>
+                <img src={IconArraowUp} alt='collapse' />
+              </>
+            )
+            : (
+              <>
+                <>View Transaction Data</>
+                <img src={IconArraowDown} alt='expand' />
+              </>
+            )}
         </Button>
 
         {opened && (

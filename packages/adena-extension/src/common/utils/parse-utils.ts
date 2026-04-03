@@ -1,18 +1,18 @@
 export const parseGRC20ByABCIRender = (
   response: string,
 ): {
-  tokenName: string;
-  tokenSymbol: string;
-  tokenDecimals: number;
-  totalSupply: bigint;
-  knownAccounts: bigint;
+  tokenName: string
+  tokenSymbol: string
+  tokenDecimals: number
+  totalSupply: bigint
+  knownAccounts: bigint
 } => {
   if (!response) {
     throw new Error('failed parse grc20 token render');
   }
 
-  const regex =
-    /#\s(?<tokenName>.+)\s\(\$(?<tokenSymbol>.+)\)\s*\* \*\*Decimals\*\*: (?<tokenDecimals>\d+)\s*\* \*\*Total supply\*\*: (?<totalSupply>\d+)\s*\* \*\*Known accounts\*\*: (?<knownAccounts>\d+)/;
+  const regex
+    = /#\s(?<tokenName>.+)\s\(\$(?<tokenSymbol>.+)\)\s*\* \*\*Decimals\*\*: (?<tokenDecimals>\d+)\s*\* \*\*Total supply\*\*: (?<totalSupply>\d+)\s*\* \*\*Known accounts\*\*: (?<knownAccounts>\d+)/;
 
   const match = response.match(regex);
 
@@ -35,10 +35,10 @@ export const parseGRC20ByABCIRender = (
 export const parseReamPathItemsByPath = (
   realmPath: string,
 ): {
-  domain: string;
-  type: string;
-  namespace: string;
-  remainPath: string;
+  domain: string
+  type: string
+  namespace: string
+  remainPath: string
 } => {
   const pathItems = realmPath.split('/');
   if (pathItems.length < 4) {
@@ -68,9 +68,9 @@ export const parseReamPathItemsByPath = (
 export const parseGRC20ByFileContents = (
   contents: string,
 ): {
-  tokenName: string;
-  tokenSymbol: string;
-  tokenDecimals: number;
+  tokenName: string
+  tokenSymbol: string
+  tokenDecimals: number
 } | null => {
   const newBankerRegex = /grc20\.NewBanker\(([^)]+)\)/;
   const match = contents.match(newBankerRegex);
@@ -80,7 +80,7 @@ export const parseGRC20ByFileContents = (
     return null;
   }
 
-  const args = matchLine.split(',').map((arg) => arg.trim());
+  const args = matchLine.split(',').map(arg => arg.trim());
   if (args.length < 3) {
     return null;
   }
@@ -101,7 +101,7 @@ function checkImport(code: string, importPath: string): boolean {
   const match = code.match(importRegex);
   if (!match) return false;
 
-  const imports = match[1].split('\n').map((line) =>
+  const imports = match[1].split('\n').map(line =>
     line
       .trim()
       .replace(/"/g, '')
@@ -111,7 +111,7 @@ function checkImport(code: string, importPath: string): boolean {
 }
 
 interface MethodSignature {
-  [methodName: string]: string;
+  [methodName: string]: string
 }
 
 function escapeRegExp(string: string): string {
@@ -127,7 +127,8 @@ function extractMethods(code: string, typeName: string): MethodSignature {
   );
 
   let match: RegExpExecArray | null;
-  const methods: MethodSignature = {};
+  const methods: MethodSignature = {
+  };
 
   while ((match = methodRegex.exec(code)) !== null) {
     const methodName = match[1];
@@ -140,14 +141,16 @@ function extractMethods(code: string, typeName: string): MethodSignature {
 }
 
 interface InterfaceCheckResult {
-  implementsInterface: boolean;
-  missingMethods: string[];
+  implementsInterface: boolean
+  missingMethods: string[]
 }
 
 function checkInterfaceImplementation(
   code: string,
   typeName: string,
-  interfaceDef: { [key: string]: string },
+  interfaceDef: {
+    [key: string]: string
+  },
 ): InterfaceCheckResult {
   const methods = extractMethods(code, typeName);
   const missingMethods: string[] = [];
@@ -165,16 +168,16 @@ function checkInterfaceImplementation(
 }
 
 interface GRC721Meta {
-  variableName: string;
-  name: string;
-  symbol: string;
-  isTokenUri: boolean;
-  isMetadata: boolean;
+  variableName: string
+  name: string
+  symbol: string
+  isTokenUri: boolean
+  isMetadata: boolean
 }
 
 function parseGRC721NewFunctions(code: string): GRC721Meta | null {
-  const grcNewRegex =
-    /([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*grc721\.New\w+\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g;
+  const grcNewRegex
+    = /([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*grc721\.New\w+\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g;
   let match: RegExpExecArray | null;
 
   while ((match = grcNewRegex.exec(code)) !== null) {

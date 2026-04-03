@@ -1,10 +1,21 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalWebStyle } from '@styles/global-style';
-import { WebMain } from '.';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import {
+  WebMain,
+} from '.';
 
 describe('WebMain Component', () => {
   it('WebMain render', () => {
@@ -12,7 +23,7 @@ describe('WebMain Component', () => {
       <RecoilRoot>
         <GlobalWebStyle />
         <ThemeProvider theme={theme}>
-          <WebMain >Web Main</WebMain>
+          <WebMain>Web Main</WebMain>
         </ThemeProvider>
       </RecoilRoot>,
     );

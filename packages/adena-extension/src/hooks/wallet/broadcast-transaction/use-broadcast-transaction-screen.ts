@@ -1,5 +1,22 @@
-import { MsgEndpoint } from '@gnolang/gno-js-client';
-import { Tx } from '@gnolang/tm2-js-client';
+import {
+  makeGnotAmountByRaw,
+} from '@common/utils/amount-utils';
+import {
+  MsgEndpoint,
+} from '@gnolang/gno-js-client';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
+import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useAdenaContext, useWalletContext,
+} from '@hooks/use-context';
+import {
+  useCurrentAccount,
+} from '@hooks/use-current-account';
+import {
+  RoutePath,
+} from '@types';
 import {
   RawBankSendMessage,
   RawTx,
@@ -8,21 +25,17 @@ import {
   RawVmRunMessage,
   strToSignedTx,
 } from 'adena-module';
-import { useCallback, useMemo, useState } from 'react';
-
-import { makeGnotAmountByRaw } from '@common/utils/amount-utils';
-import useAppNavigate from '@hooks/use-app-navigate';
-import { useAdenaContext, useWalletContext } from '@hooks/use-context';
-import { useCurrentAccount } from '@hooks/use-current-account';
-import { RoutePath } from '@types';
+import {
+  useCallback, useMemo, useState,
+} from 'react';
 
 export type BroadcastTransactionState = 'UPLOAD_TRANSACTION' | 'LOADING' | 'FAILED' | 'SUCCESS';
 
 export interface TransactionDisplayInfo {
-  name: string;
-  value: string;
-  type: 'TEXT' | 'COIN' | 'ADDRESS';
-  extra: string | null;
+  name: string
+  value: string
+  type: 'TEXT' | 'COIN' | 'ADDRESS'
+  extra: string | null
 }
 
 function makeTransactionInfo(
@@ -63,12 +76,7 @@ function mapBankSendTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
 
-  return [
-    makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo),
-    makeTransactionInfo('To', message.to_address, 'ADDRESS'),
-    makeTransactionInfo('Amount', amountStr),
-    makeTransactionInfo('Network Fee', networkFeeStr),
-  ];
+  return [makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo), makeTransactionInfo('To', message.to_address, 'ADDRESS'), makeTransactionInfo('Amount', amountStr), makeTransactionInfo('Network Fee', networkFeeStr)];
 }
 
 function mapVmCallTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
@@ -77,12 +85,7 @@ function mapVmCallTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
 
-  return [
-    makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo),
-    makeTransactionInfo('Path', message.pkg_path),
-    makeTransactionInfo('Function', message.func),
-    makeTransactionInfo('Network Fee', networkFeeStr),
-  ];
+  return [makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo), makeTransactionInfo('Path', message.pkg_path), makeTransactionInfo('Function', message.func), makeTransactionInfo('Network Fee', networkFeeStr)];
 }
 
 function mapVmAddPackageTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
@@ -91,12 +94,7 @@ function mapVmAddPackageTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] 
   const networkFeeStr = `${networkFee?.value} ${networkFee?.denom}`;
   const extraInfo = rawTx.msg.length > 1 ? `${rawTx.msg.length}` : '';
 
-  return [
-    makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo),
-    makeTransactionInfo('Path', message.package?.path || message.package?.Path),
-    makeTransactionInfo('Name', message.package?.name || message.package?.Name),
-    makeTransactionInfo('Network Fee', networkFeeStr),
-  ];
+  return [makeTransactionInfo('Type', makeTypeName(rawTx), 'TEXT', extraInfo), makeTransactionInfo('Path', message.package?.path || message.package?.Path), makeTransactionInfo('Name', message.package?.name || message.package?.Name), makeTransactionInfo('Network Fee', networkFeeStr)];
 }
 
 function mapTransactionInfo(rawTx: RawTx): TransactionDisplayInfo[] {
@@ -154,21 +152,29 @@ function matchTransactionCaller(rawTx: RawTx, caller: string): boolean {
 }
 
 export interface UseBroadcastTransactionScreenReturn {
-  transaction: Tx | null;
-  broadcastTransactionState: BroadcastTransactionState;
-  transactionInfos: TransactionDisplayInfo[] | null;
-  rawTransaction: string;
-  broadcast: () => Promise<boolean>;
-  uploadTransaction: (text: string) => boolean;
+  transaction: Tx | null
+  broadcastTransactionState: BroadcastTransactionState
+  transactionInfos: TransactionDisplayInfo[] | null
+  rawTransaction: string
+  broadcast: () => Promise<boolean>
+  uploadTransaction: (text: string) => boolean
 }
 
 const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn => {
-  const { wallet } = useWalletContext();
-  const { transactionService } = useAdenaContext();
-  const { currentAccount, currentAddress } = useCurrentAccount();
-  const { navigate } = useAppNavigate();
-  const [broadcastTransactionState, setBroadcastTransactionState] =
-    useState<BroadcastTransactionState>('UPLOAD_TRANSACTION');
+  const {
+    wallet,
+  } = useWalletContext();
+  const {
+    transactionService,
+  } = useAdenaContext();
+  const {
+    currentAccount, currentAddress,
+  } = useCurrentAccount();
+  const {
+    navigate,
+  } = useAppNavigate();
+  const [broadcastTransactionState, setBroadcastTransactionState]
+    = useState<BroadcastTransactionState>('UPLOAD_TRANSACTION');
   const [transaction, setTransaction] = useState<Tx | null>(null);
   const [rawTransaction, setRawTransaction] = useState<RawTx | null>(null);
 
@@ -199,7 +205,8 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
       setTransaction(transaction);
       setRawTransaction(rawTx);
       return transaction !== null;
-    } catch (error) {
+    }
+    catch (error) {
       setTransaction(null);
       setRawTransaction(null);
       console.error(error);
@@ -224,7 +231,8 @@ const useBroadcastTransactionScreen = (): UseBroadcastTransactionScreenReturn =>
 
     if (isSuccessBroadcasting) {
       navigate(RoutePath.History);
-    } else {
+    }
+    else {
       setBroadcastTransactionState('FAILED');
     }
     return isSuccessBroadcasting;

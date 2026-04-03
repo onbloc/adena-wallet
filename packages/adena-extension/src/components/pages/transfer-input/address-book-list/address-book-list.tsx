@@ -1,23 +1,29 @@
+import {
+  Text,
+} from '@components/atoms';
 import React from 'react';
-import { useTheme } from 'styled-components';
+import {
+  useTheme,
+} from 'styled-components';
 
-import { AddressBookListWrapper, AddressBookListItemWrapper } from './address-book-list.styles';
-import { Text } from '@components/atoms';
+import {
+  AddressBookListItemWrapper, AddressBookListWrapper,
+} from './address-book-list.styles';
 
 export interface AddressBookListProps {
   addressBookInfos: {
-    addressBookId: string;
-    name: string;
-    description: string;
-  }[];
-  onClickItem: (addressBookId: string) => void;
+    addressBookId: string
+    name: string
+    description: string
+  }[]
+  onClickItem: (addressBookId: string) => void
 }
 
 interface AddressBookListItemProps {
-  addressBookId: string;
-  name: string;
-  address: string;
-  onClickItem: (addressBookId: string) => void;
+  addressBookId: string
+  name: string
+  address: string
+  onClickItem: (addressBookId: string) => void
 }
 
 const AddressBookListItem: React.FC<AddressBookListItemProps> = ({
@@ -34,7 +40,9 @@ const AddressBookListItem: React.FC<AddressBookListItemProps> = ({
   );
 };
 
-const AddressBookList: React.FC<AddressBookListProps> = ({ addressBookInfos, onClickItem }) => {
+const AddressBookList: React.FC<AddressBookListProps> = ({
+  addressBookInfos, onClickItem,
+}) => {
   const theme = useTheme();
   return (
     <AddressBookListWrapper>

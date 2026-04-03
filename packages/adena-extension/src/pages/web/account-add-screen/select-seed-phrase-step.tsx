@@ -1,12 +1,21 @@
-import { ReactElement, useCallback, useMemo } from 'react';
-import styled from 'styled-components';
-
 import IconSelectAccount from '@assets/web/select-account.svg';
-import { View, WebButton, WebImg } from '@components/atoms';
-import { WebTitleWithDescription } from '@components/molecules';
+import {
+  View, WebButton, WebImg,
+} from '@components/atoms';
+import {
+  WebTitleWithDescription,
+} from '@components/molecules';
 import SelectSeedPhraseBox from '@components/molecules/select-seed-phrase-box/select-seed-phrase-box';
-import { WebMainHeader } from '@components/pages/web/main-header';
-import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
+import {
+  WebMainHeader,
+} from '@components/pages/web/main-header';
+import {
+  UseAccountAddScreenReturn,
+} from '@hooks/web/use-account-add-screen';
+import {
+  ReactElement, useCallback, useMemo,
+} from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
@@ -18,14 +27,16 @@ const SelectSeedPhraseStep = ({
   setSelectedKeyringId,
   useAccountAddScreenReturn,
 }: {
-  selectedKeyringId?: string;
-  setSelectedKeyringId: (keyringId?: string) => void;
-  useAccountAddScreenReturn: UseAccountAddScreenReturn;
+  selectedKeyringId?: string
+  setSelectedKeyringId: (keyringId?: string) => void
+  useAccountAddScreenReturn: UseAccountAddScreenReturn
 }): ReactElement => {
-  const { indicatorInfo, keyringInfos, onClickNext, onClickGoBack } = useAccountAddScreenReturn;
+  const {
+    indicatorInfo, keyringInfos, onClickNext, onClickGoBack,
+  } = useAccountAddScreenReturn;
 
   const seedPhraseInfos = useMemo(() => {
-    return keyringInfos.map((keyringInfo) => ({
+    return keyringInfos.map(keyringInfo => ({
       ...keyringInfo,
       selected: keyringInfo.keyringId === selectedKeyringId,
     }));

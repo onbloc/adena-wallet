@@ -1,18 +1,12 @@
-import { AxiosInstance } from 'axios';
-
-import { StorageManager } from '@common/storage/storage-manager';
-import { TokenMapper } from './mapper/token-mapper';
 import {
-  AccountAssetsResponse,
-  GRC20TokenResponse,
-  IBCNativeTokenResponse,
-  IBCTokenResponse,
-  NativeTokenResponse,
-  TokenMetaResponse,
-} from './response/token-asset-response';
-
-import { GNOT_TOKEN } from '@common/constants/token.constant';
-import { GnoProvider } from '@common/provider/gno/gno-provider';
+  GNOT_TOKEN,
+} from '@common/constants/token.constant';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
+import {
+  StorageManager,
+} from '@common/storage/storage-manager';
 import {
   parseGRC20ByABCIRender,
   parseGRC20ByFileContents,
@@ -29,16 +23,37 @@ import {
   NetworkMetainfo,
   TokenModel,
 } from '@types';
+import {
+  AxiosInstance,
+} from 'axios';
 import BigNumber from 'bignumber.js';
-import { mapGRC20TokenModel, mapGRC721CollectionModel } from './mapper/token-query.mapper';
-import { AppInfoResponse } from './response';
+
+import {
+  TokenMapper,
+} from './mapper/token-mapper';
+import {
+  mapGRC20TokenModel, mapGRC721CollectionModel,
+} from './mapper/token-query.mapper';
+import {
+  AppInfoResponse,
+} from './response';
+import {
+  AccountAssetsResponse,
+  GRC20TokenResponse,
+  IBCNativeTokenResponse,
+  IBCTokenResponse,
+  NativeTokenResponse,
+  TokenMetaResponse,
+} from './response/token-asset-response';
 import {
   makeAllRealmsQuery,
   makeAllTransferEventsQueryBy,
   makeGRC721TransferEventsQuery,
   makeGRC721TransferEventsQueryWithCursor,
 } from './token.queries';
-import { ITokenRepository } from './types';
+import {
+  ITokenRepository,
+} from './types';
 
 enum LocalValueType {
   AccountTokenMetainfos = 'ACCOUNT_TOKEN_METAINFOS',
@@ -66,8 +81,8 @@ const DEFAULT_TOKEN_METAINFOS: NativeTokenModel[] = [
 ];
 
 export class TokenRepository implements ITokenRepository {
-  private static GNO_TOKEN_RESOURCE_URI =
-    'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
+  private static GNO_TOKEN_RESOURCE_URI
+    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   private static APP_INFO_URI = '/resources/apps/apps.json';
 
@@ -123,11 +138,10 @@ export class TokenRepository implements ITokenRepository {
     }
 
     return Promise.all([
-      this.fetchNativeTokenAssets(),
-      this.fetchGRC20TokenAssets(),
+      this.fetchNativeTokenAssets(), this.fetchGRC20TokenAssets(),
       // this.fetchIBCNativeTokenAssets(),
       // this.fetchIBCTokenAssets(),
-    ]).then((data) => data.flat());
+    ]).then(data => data.flat());
   };
 
   public fetchAppInfos = async (): Promise<Array<AppInfoResponse>> => {
@@ -141,8 +155,11 @@ export class TokenRepository implements ITokenRepository {
     }>(LocalValueType.AccountTokenMetainfos);
 
     return (
-      accountTokenMetainfos[accountId] ??
-      DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId }))
+      accountTokenMetainfos[accountId]
+      ?? DEFAULT_TOKEN_METAINFOS.map(token => ({
+        ...token,
+        networkId: this.networkId,
+      }))
     );
   };
 
@@ -159,7 +176,7 @@ export class TokenRepository implements ITokenRepository {
     };
 
     const filteredTokenMetainfos = tokenMetainfos.filter((info1, index) => {
-      return tokenMetainfos.findIndex((info2) => isUnique(info1, info2)) === index;
+      return tokenMetainfos.findIndex(info2 => isUnique(info1, info2)) === index;
     });
 
     const changedAccountTokenMetainfos = {
@@ -192,7 +209,8 @@ export class TokenRepository implements ITokenRepository {
   };
 
   public deleteAllTokenMetainfo = async (): Promise<boolean> => {
-    await this.localStorage.setByObject(LocalValueType.AccountTokenMetainfos, {});
+    await this.localStorage.setByObject(LocalValueType.AccountTokenMetainfos, {
+    });
     return true;
   };
 
@@ -230,9 +248,9 @@ export class TokenRepository implements ITokenRepository {
       const tokens = await TokenRepository.fetch<TokenMetaResponse>(
         this.networkInstance,
         this.apiUrl + '/v1/tokens?limit=100',
-      ).then((data) => data?.items || []);
+      ).then(data => data?.items || []);
 
-      return tokens.map((token) => ({
+      return tokens.map(token => ({
         main: false,
         tokenId: token.path,
         pkgPath: token.path,
@@ -252,14 +270,14 @@ export class TokenRepository implements ITokenRepository {
 
     const allRealmsQuery = makeAllRealmsQuery();
     return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
-      (result) =>
+      result =>
         result?.data?.transactions
           ? result?.data?.transactions
-              .flatMap((tx: any) => tx.messages)
-              .map((message: any) =>
-                mapGRC20TokenModel(this.networkMetainfo?.networkId || '', message),
-              )
-              .filter((tokenInfo: GRC20TokenModel | null) => !!tokenInfo)
+            .flatMap((tx: any) => tx.messages)
+            .map((message: any) =>
+              mapGRC20TokenModel(this.networkMetainfo?.networkId || '', message),
+            )
+            .filter((tokenInfo: GRC20TokenModel | null) => !!tokenInfo)
           : [],
     );
   };
@@ -269,11 +287,11 @@ export class TokenRepository implements ITokenRepository {
       const tokens = await TokenRepository.fetch<TokenMetaResponse>(
         this.networkInstance,
         this.apiUrl + '/v1/token-meta',
-      ).then((data) => data?.items || []);
+      ).then(data => data?.items || []);
 
       return tokens
-        .filter((token) => token.tokenType === 'GRC721')
-        .map((token) => ({
+        .filter(token => token.tokenType === 'GRC721')
+        .map(token => ({
           tokenId: token.path,
           networkId: this.networkId,
           display: false,
@@ -292,14 +310,14 @@ export class TokenRepository implements ITokenRepository {
 
     const allRealmsQuery = makeAllRealmsQuery();
     return TokenRepository.postGraphQuery(this.networkInstance, this.queryUrl, allRealmsQuery).then(
-      (result) =>
+      result =>
         result?.data?.transactions
           ? result?.data?.transactions
-              .flatMap((tx: any) => tx.messages)
-              .map((message: any) =>
-                mapGRC721CollectionModel(this.networkMetainfo?.networkId || '', message),
-              )
-              .filter((collection: GRC721CollectionModel | null) => !!collection)
+            .flatMap((tx: any) => tx.messages)
+            .map((message: any) =>
+              mapGRC721CollectionModel(this.networkMetainfo?.networkId || '', message),
+            )
+            .filter((collection: GRC721CollectionModel | null) => !!collection)
           : [],
     );
   }
@@ -310,8 +328,8 @@ export class TokenRepository implements ITokenRepository {
         this.networkInstance,
         this.apiUrl + '/v1/accounts/' + address,
       )
-        .then((data) => data?.data?.assets || [])
-        .then((assets) => [...new Set(assets.map((asset) => asset.packagePath))]);
+        .then(data => data?.data?.assets || [])
+        .then(assets => [...new Set(assets.map(asset => asset.packagePath))]);
 
       return packages;
     }
@@ -379,9 +397,7 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'TokenURI', [
-      tokenId,
-    ]);
+    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'TokenURI', [tokenId]);
 
     if (!response) {
       throw new Error('not found token uri');
@@ -419,9 +435,7 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [
-      address,
-    ]);
+    const response = await this.gnoProvider.getValueByEvaluateExpression(packagePath, 'BalanceOf', [address]);
 
     if (!response || BigNumber(response).isNaN()) {
       throw new Error('not found token uri');
@@ -436,10 +450,10 @@ export class TokenRepository implements ITokenRepository {
     }
 
     const events: {
-      type: string;
-      pkg_path: string;
-      func: string;
-      attrs: { [key in string]: string }[];
+      type: string
+      pkg_path: string
+      func: string
+      attrs: { [key in string]: string }[]
     }[] = [];
 
     if (this.apiUrl) {
@@ -448,35 +462,36 @@ export class TokenRepository implements ITokenRepository {
         address,
       );
       const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
+        type: string
+        pkg_path: string
+        func: string
+        attrs: { [key in string]: string }[]
       }[] = await TokenRepository.postGraphQuery(
         this.networkInstance,
         this.queryUrl || this.apiUrl,
         grc721TransferEventsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions?.edges.flatMap(
-              (edge: any) => edge.transaction.response.events,
-            )
+            (edge: any) => edge.transaction.response.events,
+          )
           : [],
       );
 
       events.push(...resultEvents);
-    } else {
+    }
+    else {
       const grc721TransferEventsQuery = makeGRC721TransferEventsQuery(packagePath, address);
       const resultEvents: {
-        type: string;
-        pkg_path: string;
-        func: string;
-        attrs: { [key in string]: string }[];
+        type: string
+        pkg_path: string
+        func: string
+        attrs: { [key in string]: string }[]
       }[] = await TokenRepository.postGraphQuery(
         this.networkInstance,
         this.queryUrl || '',
         grc721TransferEventsQuery,
-      ).then((result) =>
+      ).then(result =>
         result?.data?.transactions
           ? result?.data?.transactions?.flatMap((transaction: any) => transaction?.response?.events)
           : [],
@@ -494,9 +509,9 @@ export class TokenRepository implements ITokenRepository {
         continue;
       }
 
-      const tokenIdValue = event.attrs.find((attr) => attr.key === 'tid')?.value;
-      const toValue = event.attrs.find((attr) => attr.key === 'to')?.value;
-      const fromValue = event.attrs.find((attr) => attr.key === 'from')?.value;
+      const tokenIdValue = event.attrs.find(attr => attr.key === 'tid')?.value;
+      const toValue = event.attrs.find(attr => attr.key === 'to')?.value;
+      const fromValue = event.attrs.find(attr => attr.key === 'from')?.value;
 
       if (tokenIdValue === undefined || toValue === undefined || fromValue === undefined) {
         continue;
@@ -553,12 +568,14 @@ export class TokenRepository implements ITokenRepository {
     networkId: string,
     collections: GRC721CollectionModel[],
   ): Promise<boolean> {
-    const accountGRC721CollectionsMap =
-      (await this.localStorage.getToObject<{
+    const accountGRC721CollectionsMap
+      = (await this.localStorage.getToObject<{
         [key in string]: { [key in string]: GRC721CollectionModel[] };
-      }>(LocalValueType.AccountGRC721Collections)) || {};
+      }>(LocalValueType.AccountGRC721Collections)) || {
+      };
 
-    const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {};
+    const currentAccountCollections = accountGRC721CollectionsMap?.[accountId] || {
+    };
 
     await this.localStorage.setByObject(LocalValueType.AccountGRC721Collections, {
       ...accountGRC721CollectionsMap,
@@ -591,12 +608,14 @@ export class TokenRepository implements ITokenRepository {
     networkId: string,
     packagePaths: string[],
   ): Promise<boolean> {
-    const accountGRC721PinnedPackagesMap =
-      (await this.localStorage.getToObject<{
+    const accountGRC721PinnedPackagesMap
+      = (await this.localStorage.getToObject<{
         [key in string]: { [key in string]: string[] };
-      }>(LocalValueType.AccountGRC721PinnedPackages)) || {};
+      }>(LocalValueType.AccountGRC721PinnedPackages)) || {
+      };
 
-    const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {};
+    const currentAccountPinnedPackages = accountGRC721PinnedPackagesMap?.[accountId] || {
+    };
 
     await this.localStorage.setByObject(LocalValueType.AccountGRC721PinnedPackages, {
       ...accountGRC721PinnedPackagesMap,
@@ -610,13 +629,16 @@ export class TokenRepository implements ITokenRepository {
   }
 
   private fetchNativeTokenAssets = async (): Promise<NativeTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
+    const requestUri
+      = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/gno-native/${this.networkId}.json`;
     return this.networkInstance
       .get<NativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromNativeTokenMetainfos(this.networkId, response.data))
       .catch(() =>
-        DEFAULT_TOKEN_METAINFOS.map((token) => ({ ...token, networkId: this.networkId })),
+        DEFAULT_TOKEN_METAINFOS.map(token => ({
+          ...token,
+          networkId: this.networkId,
+        })),
       );
   };
 
@@ -624,25 +646,25 @@ export class TokenRepository implements ITokenRepository {
     const requestUri = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/grc20/${this.networkId}.json`;
     return this.networkInstance
       .get<GRC20TokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromGRC20TokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
   private fetchIBCNativeTokenAssets = async (): Promise<IBCNativeTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
+    const requestUri
+      = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-native/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCNativeTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCNativeMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromIBCNativeMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
   private fetchIBCTokenAssets = async (): Promise<IBCTokenModel[]> => {
-    const requestUri =
-      TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
+    const requestUri
+      = TokenRepository.GNO_TOKEN_RESOURCE_URI + `/ibc-tokens/${this.networkId}.json`;
     return this.networkInstance
       .get<IBCTokenResponse>(requestUri)
-      .then((response) => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
+      .then(response => TokenMapper.fromIBCTokenMetainfos(this.networkId, response.data))
       .catch(() => []);
   };
 
@@ -653,7 +675,9 @@ export class TokenRepository implements ITokenRepository {
       throw new Error('Gno provider not initialized.');
     }
 
-    const { tokenName, tokenSymbol, tokenDecimals } = await this.gnoProvider
+    const {
+      tokenName, tokenSymbol, tokenDecimals,
+    } = await this.gnoProvider
       .getRenderOutput(packagePath, '')
       .then(parseGRC20ByABCIRender);
 
@@ -749,7 +773,7 @@ export class TokenRepository implements ITokenRepository {
   ): Promise<T | null> => {
     return axiosInstance
       .get<any>(url)
-      .then((response) => response.data?.data || null)
+      .then(response => response.data?.data || null)
       .catch((e) => {
         console.log(e);
         return null;
@@ -775,10 +799,11 @@ export class TokenRepository implements ITokenRepository {
           query,
         },
         {
-          headers: header || {},
+          headers: header || {
+          },
         },
       )
-      .then((response) => response.data)
+      .then(response => response.data)
       .catch((e) => {
         console.log(e);
         return null;

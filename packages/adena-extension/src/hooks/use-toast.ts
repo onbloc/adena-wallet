@@ -1,11 +1,17 @@
-import { CommonState } from '@states';
-import { useEffect } from 'react';
-import { useRecoilState } from 'recoil';
+import {
+  CommonState,
+} from '@states';
+import {
+  useEffect,
+} from 'react';
+import {
+  useRecoilState,
+} from 'recoil';
 
 export type UseToastReturn = {
-  message: string | null;
-  show: (message: string) => void;
-  clear: () => void;
+  message: string | null
+  show: (message: string) => void
+  clear: () => void
 };
 
 export const useToast = (): UseToastReturn => {

@@ -1,8 +1,16 @@
-export * from './address';
-export { arrayContentEquals, arrayContentStartsWith } from './arrays';
-export { assert, assertDefined, assertDefinedAndNotNull } from './assert';
-export * from './data';
-export * from './messages';
-export { sleep } from './sleep';
-export { isDefined, isNonNullObject, isUint8Array } from './typechecks';
-export * from './multisig';
+export * from "./address.js";
+export {
+  arrayContentEquals, arrayContentStartsWith,
+} from "./arrays.js";
+export {
+  assert, assertDefined, assertDefinedAndNotNull,
+} from "./assert.js";
+export * from "./data.js";
+export * from "./messages.js";
+export * from "./multisig.js";
+export {
+  sleep,
+} from "./sleep.js";
+export {
+  isDefined, isNonNullObject, isUint8Array,
+} from "./typechecks.js";

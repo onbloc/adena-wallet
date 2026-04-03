@@ -1,10 +1,13 @@
 import React from 'react';
-import { SideMenuLinkWrapper } from './side-menu-link.styles';
+
+import {
+  SideMenuLinkWrapper,
+} from './side-menu-link.styles';
 
 export interface SideMenuLinkProps {
-  icon: string;
-  text: string;
-  onClick: () => void;
+  icon: string
+  text: string
+  onClick: () => void
 }
 
 const SideMenuLink: React.FC<SideMenuLinkProps> = ({

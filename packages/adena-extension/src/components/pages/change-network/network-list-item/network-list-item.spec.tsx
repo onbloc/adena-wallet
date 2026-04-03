@@ -1,11 +1,22 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
-import theme from '@styles/theme';
-import { GlobalPopupStyle } from '@styles/global-style';
-import NetworkListItem, { NetworkListItemProps } from './network-list-item';
 import CHAIN_DATA from '@resources/chains/chains.json';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
+import theme from '@styles/theme';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import NetworkListItem, {
+  NetworkListItemProps,
+} from './network-list-item';
 
 describe('NetworkListItem Component', () => {
   it('NetworkListItem render', () => {

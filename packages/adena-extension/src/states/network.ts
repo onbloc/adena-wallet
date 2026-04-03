@@ -1,6 +1,9 @@
-import { atom } from 'recoil';
-
-import { NetworkMetainfo } from '@types';
+import {
+  NetworkMetainfo,
+} from '@types';
+import {
+  atom,
+} from 'recoil';
 
 export const networkMetainfos = atom<NetworkMetainfo[]>({
   key: 'network/networkMetainfos',

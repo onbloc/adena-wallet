@@ -1,19 +1,35 @@
-import React, { ReactElement } from 'react';
-import { PopupRouter } from '@router/popup/index';
+import {
+  useInitWallet,
+} from '@hooks/use-init-wallet';
+import useLink from '@hooks/use-link';
+import {
+  useWallet,
+} from '@hooks/use-wallet';
+import {
+  PopupRouter,
+} from '@router/popup/index';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
+import React, {
+  ReactElement,
+} from 'react';
+import {
+  HashRouter,
+} from 'react-router-dom';
 
 import AppProvider from './app-provider';
 import useApp from './use-app';
-import { GlobalPopupStyle } from '@styles/global-style';
-import { HashRouter } from 'react-router-dom';
-import { useInitWallet } from '@hooks/use-init-wallet';
-import { useWallet } from '@hooks/use-wallet';
-import useLink from '@hooks/use-link';
 
 const RunApp = (): ReactElement => {
   useApp();
   useInitWallet();
-  const { existWallet, isLoadingExistWallet, isLoadingLockedWallet } = useWallet();
-  const { openRegister } = useLink();
+  const {
+    existWallet, isLoadingExistWallet, isLoadingLockedWallet,
+  } = useWallet();
+  const {
+    openRegister,
+  } = useLink();
 
   if (isLoadingExistWallet === false && existWallet === false) {
     openRegister();

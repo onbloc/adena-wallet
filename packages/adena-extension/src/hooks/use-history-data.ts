@@ -1,11 +1,17 @@
-import { CommonState } from '@states';
-import { useLocation } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import {
+  CommonState,
+} from '@states';
+import {
+  useLocation,
+} from 'react-router-dom';
+import {
+  useRecoilState,
+} from 'recoil';
 
 export type UstHistoryDataReturn<T> = {
-  getHistoryData: () => T | undefined;
-  setHistoryData: (value: T | undefined) => void;
-  clearHistoryData: (pathname: string) => void;
+  getHistoryData: () => T | undefined
+  setHistoryData: (value: T | undefined) => void
+  clearHistoryData: (pathname: string) => void
 };
 
 const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
@@ -39,7 +45,11 @@ const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
     setHistoryDataByPathname(pathname, undefined);
   }
 
-  return { getHistoryData, setHistoryData, clearHistoryData };
+  return {
+    getHistoryData,
+    setHistoryData,
+    clearHistoryData,
+  };
 };
 
 export default useHistoryData;

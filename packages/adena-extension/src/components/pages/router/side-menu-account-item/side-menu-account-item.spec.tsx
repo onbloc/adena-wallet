@@ -1,10 +1,21 @@
-import React from 'react';
-import { GlobalPopupStyle } from '@styles/global-style';
+import {
+  GlobalPopupStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { render } from '@testing-library/react';
-import { SideMenuAccountItemProps } from '@types';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
+import {
+  render,
+} from '@testing-library/react';
+import {
+  SideMenuAccountItemProps,
+} from '@types';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
 import SideMenuAccountItem from './side-menu-account-item';
 
 describe('SideMenuAccountItem Component', () => {

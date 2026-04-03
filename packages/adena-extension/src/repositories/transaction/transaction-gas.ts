@@ -1,9 +1,22 @@
-import { GnoProvider } from '@common/provider/gno/gno-provider';
-import { Tx } from '@gnolang/tm2-js-client';
-import { ResponseDeliverTx } from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
-import { NetworkMetainfo } from '@types';
-import { AxiosInstance } from 'axios';
-import { ITransactionGasRepository } from './types';
+import {
+  GnoProvider,
+} from '@common/provider/gno/gno-provider';
+import {
+  Tx,
+} from '@gnolang/tm2-js-client';
+import {
+  ResponseDeliverTx,
+} from '@gnolang/tm2-js-client/bin/proto/tm2/abci';
+import {
+  NetworkMetainfo,
+} from '@types';
+import {
+  AxiosInstance,
+} from 'axios';
+
+import {
+  ITransactionGasRepository,
+} from './types';
 
 export class TransactionGasRepository implements ITransactionGasRepository {
   private gnoProvider: GnoProvider | null;
@@ -65,7 +78,7 @@ export class TransactionGasRepository implements ITransactionGasRepository {
   ): Promise<T | null> => {
     return networkInstance
       .post<T>(url, data)
-      .then((response) => response.data)
+      .then(response => response.data)
       .catch((e) => {
         console.log(e);
         return null;

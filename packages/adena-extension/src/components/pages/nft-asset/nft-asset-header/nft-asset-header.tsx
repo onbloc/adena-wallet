@@ -1,5 +1,3 @@
-import React, { useMemo } from 'react';
-
 import LeftArrowIcon from '@assets/arrowL-left.svg';
 import IconEtc from '@assets/etc.svg';
 import IconHide from '@assets/icon-hide';
@@ -7,19 +5,24 @@ import IconLink from '@assets/icon-link';
 import IconPin from '@assets/icon-pin';
 import IconShow from '@assets/icon-show';
 import IconUnpin from '@assets/icon-unpin';
-import { SubHeader } from '@components/atoms';
+import {
+  SubHeader,
+} from '@components/atoms';
 import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
+import React, {
+  useMemo,
+} from 'react';
 
 export interface NFTAssetHeaderProps {
-  title: string;
-  pinned: boolean;
-  visible: boolean;
-  moveBack: () => void;
-  openGnoscanCollection: () => void;
-  pinCollection: () => void;
-  unpinCollection: () => void;
-  showCollection: () => void;
-  hideCollection: () => void;
+  title: string
+  pinned: boolean
+  visible: boolean
+  moveBack: () => void
+  openGnoscanCollection: () => void
+  pinCollection: () => void
+  unpinCollection: () => void
+  showCollection: () => void
+  hideCollection: () => void
 }
 
 const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
@@ -58,7 +61,7 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
     <SubHeader
       title={title}
       leftElement={{
-        element: <img src={LeftArrowIcon} alt={'back icon'} />,
+        element: <img src={LeftArrowIcon} alt='back icon' />,
         onClick: moveBack,
       }}
       rightElement={{

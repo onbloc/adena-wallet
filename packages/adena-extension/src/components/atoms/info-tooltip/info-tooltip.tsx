@@ -1,28 +1,35 @@
-import React, { useEffect, useRef, useState } from 'react';
-
 import IconHelp from '@assets/icon-help';
-import { InfoTooltipContainer, InfoTooltipTooltipBoxWrapper } from './info-tooltip.styles';
+import React, {
+  useEffect, useRef, useState,
+} from 'react';
+
+import {
+  InfoTooltipContainer, InfoTooltipTooltipBoxWrapper,
+} from './info-tooltip.styles';
 
 export interface InfoTooltipProps {
-  content: React.ReactNode;
-  iconColor?: string;
+  content: React.ReactNode
+  iconColor?: string
 }
 
 interface TooltipPosition {
-  left?: number;
-  right?: number;
-  top?: number;
-  transform?: string;
+  left?: number
+  right?: number
+  top?: number
+  transform?: string
 }
 
 interface ArrowPosition {
-  left: string;
-  transform: string;
+  left: string
+  transform: string
 }
 
-const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
+const InfoTooltip: React.FC<InfoTooltipProps> = ({
+  content, iconColor,
+}) => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({});
+  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
+  });
   const [arrowPosition, setArrowPosition] = useState<ArrowPosition>({
     left: '50%',
     transform: 'translateX(-50%)',
@@ -56,7 +63,8 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, iconColor }) => {
       leftPosition = margin;
       const containerRelativeToNewTooltip = containerCenterX - leftPosition;
       arrowLeft = (containerRelativeToNewTooltip / tooltipWidth) * 100;
-    } else if (leftPosition + tooltipWidth > viewportWidth - margin) {
+    }
+    else if (leftPosition + tooltipWidth > viewportWidth - margin) {
       leftPosition = viewportWidth - tooltipWidth - margin;
 
       const containerRelativeToNewTooltip = containerCenterX - leftPosition;

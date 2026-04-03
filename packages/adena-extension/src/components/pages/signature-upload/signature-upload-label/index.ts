@@ -1,1 +1,3 @@
-export { default } from './signature-upload-label';
+export {
+  default,
+} from './signature-upload-label';

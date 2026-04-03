@@ -1,4 +1,6 @@
-import { BaseError } from '../base';
+import {
+  BaseError,
+} from '../base';
 
 const ERROR_VALUE = {
   EMPTY_PASSWORD: {

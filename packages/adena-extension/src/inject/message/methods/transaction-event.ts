@@ -1,13 +1,34 @@
-import { WalletResponseFailureType, WalletResponseSuccessType } from '@adena-wallet/sdk';
-import { SCANNER_URL } from '@common/constants/resource.constant';
-import { Event, EventStatus, EventStore } from '@common/event-store';
-import { MemoryProvider } from '@common/provider/memory/memory-provider';
-import { fromBase64, toBase64 } from '@common/utils/client-utils';
-import { BroadcastTxCommitResult, BroadcastTxSyncResult } from '@gnolang/tm2-js-client';
-import { CommandMessageData } from '@inject/message/command-message';
-import { InjectionMessage, InjectionMessageInstance } from '@inject/message/message';
-import { InjectCore } from './core';
-import { createNotification } from './notification';
+import {
+  WalletResponseFailureType, WalletResponseSuccessType,
+} from '@adena-wallet/sdk';
+import {
+  SCANNER_URL,
+} from '@common/constants/resource.constant';
+import {
+  Event, EventStatus, EventStore,
+} from '@common/event-store';
+import {
+  MemoryProvider,
+} from '@common/provider/memory/memory-provider';
+import {
+  fromBase64, toBase64,
+} from '@common/utils/client-utils';
+import {
+  BroadcastTxCommitResult, BroadcastTxSyncResult,
+} from '@gnolang/tm2-js-client';
+import {
+  CommandMessageData,
+} from '@inject/message/command-message';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '@inject/message/message';
+
+import {
+  InjectCore,
+} from './core';
+import {
+  createNotification,
+} from './notification';
 
 export async function addTransactionEvent(
   inMemoryProvider: MemoryProvider,
@@ -23,8 +44,8 @@ export async function addTransactionEvent(
   const transactionHash = message?.data?.hash;
 
   if (
-    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS &&
-    messageType !== WalletResponseFailureType.TRANSACTION_FAILED
+    messageType !== WalletResponseSuccessType.TRANSACTION_SUCCESS
+    && messageType !== WalletResponseFailureType.TRANSACTION_FAILED
   ) {
     return null;
   }

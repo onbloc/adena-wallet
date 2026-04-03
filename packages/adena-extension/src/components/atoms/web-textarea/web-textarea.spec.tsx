@@ -1,14 +1,24 @@
-import React from 'react';
-import { RecoilRoot } from 'recoil';
-import { ThemeProvider } from 'styled-components';
-import { render } from '@testing-library/react';
+import {
+  GlobalWebStyle,
+} from '@styles/global-style';
 import theme from '@styles/theme';
-import { GlobalWebStyle } from '@styles/global-style';
-import { WebTextarea } from '.';
+import {
+  render,
+} from '@testing-library/react';
+import React from 'react';
+import {
+  RecoilRoot,
+} from 'recoil';
+import {
+  ThemeProvider,
+} from 'styled-components';
+
+import {
+  WebTextarea,
+} from '.';
 
 describe('WebTextarea Component', () => {
   it('WebTextarea render', () => {
-
     render(
       <RecoilRoot>
         <GlobalWebStyle />

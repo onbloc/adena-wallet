@@ -1,4 +1,6 @@
-import { CommandMessage, CommandMessageData } from '@inject/message/command-message';
+import {
+  CommandMessage, CommandMessageData,
+} from '@inject/message/command-message';
 import CryptoJS from 'crypto-js';
 
 const salt = 'W9+fs3FJ9p5KdR1XzQy2A6ZT4vjN8LvM9J8pVZmN9rU=';
@@ -14,8 +16,13 @@ export const encryptWalletPassword = (password: string): string => {
 // Sends a message to the background script to encrypt a password
 export const encryptPassword = async (
   password: string,
-): Promise<{ encryptedKey: string; encryptedPassword: string }> => {
-  const result = await sendMessage(CommandMessage.command('encryptPassword', { password }));
+): Promise<{
+  encryptedKey: string
+  encryptedPassword: string
+}> => {
+  const result = await sendMessage(CommandMessage.command('encryptPassword', {
+    password,
+  }));
   if (!result || result.code !== 200) {
     throw new Error('Encryption key not initialized.');
   }
@@ -55,7 +62,8 @@ async function sendMessage<T = any>(
       console.warn(error);
       return null;
     });
-  } catch (e) {
+  }
+  catch (e) {
     console.warn('Failed to send message', e);
   }
   return null;

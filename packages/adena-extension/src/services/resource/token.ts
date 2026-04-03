@@ -1,8 +1,15 @@
-import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
-import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
-import { AppInfoResponse } from '@repositories/common/response';
-import { ITokenRepository } from '@repositories/common/types';
-
+import {
+  parseReamPathItemsByPath,
+} from '@common/utils/parse-utils';
+import {
+  isGRC20TokenModel, isNativeTokenModel,
+} from '@common/validation/validation-token';
+import {
+  AppInfoResponse,
+} from '@repositories/common/response';
+import {
+  ITokenRepository,
+} from '@repositories/common/types';
 import {
   AccountTokenBalance,
   GRC20TokenModel,
@@ -54,7 +61,7 @@ export class TokenService {
   public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
     return this.tokenRepository
       .fetchAllGRC20Tokens()
-      .then((tokens) => tokens.filter((token) => !!token));
+      .then(tokens => tokens.filter(token => !!token));
   }
 
   /**
@@ -71,7 +78,8 @@ export class TokenService {
     // validate realm path
     try {
       parseReamPathItemsByPath(tokenPath);
-    } catch {
+    }
+    catch {
       return null;
     }
 
@@ -106,11 +114,11 @@ export class TokenService {
    * @returns
    */
   public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
-    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter((token) => token.main);
+    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter(token => token.main);
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
-        const previousInfo = storedTokenMetainfos.find((token2) =>
+        const previousInfo = storedTokenMetainfos.find(token2 =>
           this.equalsToken(token1, token2),
         );
         if (previousInfo) {
@@ -122,8 +130,8 @@ export class TokenService {
         }
         return token1;
       }),
-      ...storedTokenMetainfos.filter((token1) =>
-        fetchedTokenMetainfos.every((token2) => !this.equalsToken(token1, token2)),
+      ...storedTokenMetainfos.filter(token1 =>
+        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2)),
       ),
     ]);
     return true;
@@ -137,24 +145,24 @@ export class TokenService {
    */
   public async getTokenMetainfosByAccountId(accountId: string): Promise<
     {
-      image: string;
-      main: boolean;
-      tokenId: string;
-      networkId: string;
-      display: boolean;
-      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
-      name: string;
-      symbol: string;
-      decimals: number;
-      description?: string | undefined;
-      websiteUrl?: string | undefined;
+      image: string
+      main: boolean
+      tokenId: string
+      networkId: string
+      display: boolean
+      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens'
+      name: string
+      symbol: string
+      decimals: number
+      description?: string | undefined
+      websiteUrl?: string | undefined
     }[]
   > {
     const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
-    return storedTokenMetainfos.map((token1) => ({
+    return storedTokenMetainfos.map(token1 => ({
       ...token1,
       image:
-        this.getTokenMetainfos().find((token2) => this.equalsToken(token1, token2))?.image || '',
+        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || '',
     }));
   }
 
@@ -171,11 +179,13 @@ export class TokenService {
   ): Promise<boolean> {
     const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
     const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
-      const tokenMetaInfo = fetchedTokenMetainfos.find((token2) =>
+      const tokenMetaInfo = fetchedTokenMetainfos.find(token2 =>
         this.equalsToken(token1, token2),
       );
       if (tokenMetaInfo) {
-        const { image, description } = tokenMetaInfo;
+        const {
+          image, description,
+        } = tokenMetaInfo;
         return {
           ...token1,
           image,

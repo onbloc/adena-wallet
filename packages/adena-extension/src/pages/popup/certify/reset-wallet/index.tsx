@@ -1,24 +1,37 @@
-import React from 'react';
-import styled, { useTheme } from 'styled-components';
-
 import removeIcon from '@assets/icon-remove-blur.svg';
-import { Text } from '@components/atoms';
-import { CancelAndConfirmButton } from '@components/molecules';
-import { RoutePath } from '@types';
-import { useClear } from '@hooks/use-clear';
-import mixins from '@styles/mixins';
+import {
+  Text,
+} from '@components/atoms';
+import {
+  CancelAndConfirmButton,
+} from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import {
+  useClear,
+} from '@hooks/use-clear';
+import mixins from '@styles/mixins';
+import {
+  RoutePath,
+} from '@types';
+import React from 'react';
+import styled, {
+  useTheme,
+} from 'styled-components';
 
-const content =
-  'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
+const content
+  = 'This will remove all accounts from this wallet. As your seed phrase and keys are only stored on this device, Adena cannot recover them once reset.';
 
-const forgotPasswordContent =
-  'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
+const forgotPasswordContent
+  = 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.';
 
 export const ResetWallet = (): JSX.Element => {
   const theme = useTheme();
-  const { navigate, goBack, params } = useAppNavigate<RoutePath.ResetWallet>();
-  const { clear } = useClear();
+  const {
+    navigate, goBack, params,
+  } = useAppNavigate<RoutePath.ResetWallet>();
+  const {
+    clear,
+  } = useClear();
 
   const resetButtonClick = (): void => {
     clear().then(() => navigate(RoutePath.Home));
@@ -34,7 +47,9 @@ export const ResetWallet = (): JSX.Element => {
         {params?.from === 'forgot-password' ? forgotPasswordContent : content}
       </Text>
       <CancelAndConfirmButton
-        cancelButtonProps={{ onClick: goBack }}
+        cancelButtonProps={{
+          onClick: goBack,
+        }}
         confirmButtonProps={{
           onClick: resetButtonClick,
           text: 'Reset',
@@ -46,7 +61,9 @@ export const ResetWallet = (): JSX.Element => {
 };
 
 const Wrapper = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
   width: 100%;
   height: 100%;
   padding-top: 56px;

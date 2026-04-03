@@ -1,21 +1,33 @@
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
 import styled from 'styled-components';
 
 export const DocumentSignerListWrapper = styled.div`
-  ${mixins.flex({ align: 'normal', justify: 'normal' })};
+  ${mixins.flex({
+    align: 'normal',
+    justify: 'normal',
+  })};
   gap: 12px;
   width: 100%;
   height: auto;
 `;
 
-export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>`
-  ${mixins.flex({ direction: 'row', justify: 'flex-start' })};
+export const DocumentSignerListItemWrapper = styled.div<{
+  borderColor: string
+}>`
+  ${mixins.flex({
+    direction: 'row',
+    justify: 'flex-start',
+  })};
   padding: 10px 14px;
   width: 100%;
   height: auto;
   background: ${getTheme('neutral', '_9')};
-  border: 1px solid ${({ borderColor }): string => borderColor};
+  border: 1px solid ${({
+    borderColor,
+  }): string => borderColor};
   border-radius: 18px;
   transition: 0.2s;
 
@@ -27,12 +39,18 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
     height: 34px;
 
     .logo {
-      ${mixins.flex({ direction: 'row', justify: 'center', align: 'center' })};
+      ${mixins.flex({
+        direction: 'row',
+        justify: 'center',
+        align: 'center',
+      })};
       ${fonts.body1Reg};
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background-color: ${({ theme }): string => theme.neutral._5};
+      background-color: ${({
+        theme,
+      }): string => theme.neutral._5};
     }
 
     .badge {
@@ -45,12 +63,18 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
   }
 
   .title-wrapper {
-    ${mixins.flex({ align: 'flex-start' })};
+    ${mixins.flex({
+      align: 'flex-start',
+    })};
     width: 100%;
     margin: 0 12px;
 
     .title {
-      ${mixins.flex({ direction: 'row', justify: 'center', align: 'center' })};
+      ${mixins.flex({
+        direction: 'row',
+        justify: 'center',
+        align: 'center',
+      })};
       ${fonts.body3Bold};
       /* display: inline-flex;
       align-items: center; */
@@ -90,7 +114,11 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
     }
 
     .description {
-      ${mixins.flex({ direction: 'row', justify: 'center', align: 'center' })};
+      ${mixins.flex({
+        direction: 'row',
+        justify: 'center',
+        align: 'center',
+      })};
       ${fonts.body3Reg};
       gap: 5px;
       color: ${getTheme('neutral', 'a')};
@@ -99,7 +127,9 @@ export const DocumentSignerListItemWrapper = styled.div<{ borderColor: string }>
   }
 
   .value-wrapper {
-    ${mixins.flex({ align: 'flex-end' })};
+    ${mixins.flex({
+      align: 'flex-end',
+    })};
     flex-wrap: wrap;
     width: fit-content;
     max-width: 150px;

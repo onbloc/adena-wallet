@@ -1,16 +1,22 @@
+import IconConnectFail from '@assets/connect-fail-permission.svg';
+import {
+  TitleWithDesc,
+} from '@components/molecules';
+import mixins from '@styles/mixins';
 import React from 'react';
 import styled from 'styled-components';
 
-import IconConnectFail from '@assets/connect-fail-permission.svg';
-import { TitleWithDesc } from '@components/molecules';
-import mixins from '@styles/mixins';
-
 const Container = styled.main`
-  ${mixins.flex({ justify: 'flex-start' })};
+  ${mixins.flex({
+    justify: 'flex-start',
+  })};
 `;
 
 const Wrapper = styled.div`
-  ${mixins.flex({ align: 'flex-start', justify: 'flex-start' })};
+  ${mixins.flex({
+    align: 'flex-start',
+    justify: 'flex-start',
+  })};
   position: relative;
   width: 100%;
   gap: 16px;

@@ -1,8 +1,19 @@
-import { WalletResponseFailureType, WalletResponseRejectType } from '@adena-wallet/sdk';
-import { NetworkMetainfo, RoutePath } from '@types';
-import { HandlerMethod } from '..';
-import { InjectionMessage, InjectionMessageInstance } from '../message';
-import { InjectCore } from './core';
+import {
+  WalletResponseFailureType, WalletResponseRejectType,
+} from '@adena-wallet/sdk';
+import {
+  NetworkMetainfo, RoutePath,
+} from '@types';
+
+import {
+  HandlerMethod,
+} from '..';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '../message';
+import {
+  InjectCore,
+} from './core';
 
 function matchChainId(network: NetworkMetainfo, chainId: string): boolean {
   return network.chainId === chainId;
@@ -28,7 +39,8 @@ export const addNetwork = async (
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.INVALID_FORMAT,
-          {},
+          {
+          },
           requestData.key,
         ),
       );
@@ -38,24 +50,26 @@ export const addNetwork = async (
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.INVALID_FORMAT,
-          {},
+          {
+          },
           requestData.key,
         ),
       );
       return;
     }
     const networks = await core.chainService.getNetworks();
-    const existNetwork =
-      networks.findIndex(
-        (current) =>
-          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl)) &&
-          current.deleted !== true,
+    const existNetwork
+      = networks.findIndex(
+        current =>
+          (matchChainId(current, chainId) || matchRPCUrl(current, rpcUrl))
+          && current.deleted !== true,
       ) > -1;
     if (existNetwork) {
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.NETWORK_ALREADY_EXISTS,
-          {},
+          {
+          },
           requestData.key,
         ),
       );
@@ -67,16 +81,19 @@ export const addNetwork = async (
       requestData,
       InjectionMessageInstance.failure(
         WalletResponseRejectType.ADD_NETWORK_REJECTED,
-        {},
+        {
+        },
         requestData.key,
       ),
       sendResponse,
     );
-  } else {
+  }
+  else {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.WALLET_LOCKED,
-        {},
+        {
+        },
         requestData.key,
       ),
     );
@@ -93,7 +110,8 @@ export const switchNetwork = async (
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.INVALID_FORMAT,
-        {},
+        {
+        },
         requestData.key,
       ),
     );
@@ -113,13 +131,14 @@ export const switchNetwork = async (
   }
 
   const networks = await core.chainService.getNetworks();
-  const existNetwork =
-    networks.findIndex((current) => current.chainId === chainId && current.deleted !== true) > -1;
+  const existNetwork
+    = networks.findIndex(current => current.chainId === chainId && current.deleted !== true) > -1;
   if (!existNetwork) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.UNADDED_NETWORK,
-        {},
+        {
+        },
         requestData.key,
       ),
     );
@@ -131,7 +150,8 @@ export const switchNetwork = async (
     requestData,
     InjectionMessageInstance.failure(
       WalletResponseRejectType.SWITCH_NETWORK_REJECTED,
-      {},
+      {
+      },
       requestData.key,
     ),
     sendResponse,

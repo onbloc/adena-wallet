@@ -1,8 +1,19 @@
-import { NetworkMetainfo, TransactionWithPageInfo } from '@types';
-import { AxiosInstance } from 'axios';
-import { TransactionHistoryMapper } from './mapper/transaction-history-mapper';
-import { TransactionHistoryResponse } from './response/transaction-history-response';
-import { ITransactionHistoryRepository } from './types';
+import {
+  NetworkMetainfo, TransactionWithPageInfo,
+} from '@types';
+import {
+  AxiosInstance,
+} from 'axios';
+
+import {
+  TransactionHistoryMapper,
+} from './mapper/transaction-history-mapper';
+import {
+  TransactionHistoryResponse,
+} from './response/transaction-history-response';
+import {
+  ITransactionHistoryRepository,
+} from './types';
 
 export class TransactionHistoryApiRepository implements ITransactionHistoryRepository {
   private axiosInstance: AxiosInstance;

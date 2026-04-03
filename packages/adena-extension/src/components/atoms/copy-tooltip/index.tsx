@@ -1,18 +1,26 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import styled from 'styled-components';
-import { Text } from '@components/atoms';
+import {
+  Text,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import {
+  fonts, getTheme,
+} from '@styles/theme';
+import React, {
+  useCallback, useEffect, useState,
+} from 'react';
+import styled from 'styled-components';
 
 interface CopyTooltipProps {
-  children: React.ReactNode;
-  copyText: string;
-  position?: 'top' | 'bottom';
-  className?: string;
+  children: React.ReactNode
+  copyText: string
+  position?: 'top' | 'bottom'
+  className?: string
 }
 
 const ToolTipInner = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   ${fonts.body2Reg};
   position: absolute;
   width: max-content;
@@ -35,7 +43,9 @@ const ToolTipInner = styled.div`
 `;
 
 const ToolTipWrap = styled.div`
-  ${mixins.flex({ direction: 'row' })};
+  ${mixins.flex({
+    direction: 'row',
+  })};
   position: relative;
   cursor: pointer;
   &:hover .tooltip,

@@ -1,18 +1,27 @@
 import {
+  QUESTIONNAIRE_EXPIRATION_MIN,
+} from '@common/constants/storage.constant';
+import {
+  WalletError,
+} from '@common/errors/wallet/wallet-error';
+import {
+  encryptSha256Password, encryptWalletPassword,
+} from '@common/utils/crypto-utils';
+import {
+  WalletRepository,
+} from '@repositories/wallet';
+import {
   AdenaWallet,
   MultisigAccount,
-  MultisigKeyring,
-  Wallet,
   MultisigConfig,
+  MultisigKeyring,
   SignerPublicKeyInfo,
+  Wallet,
 } from 'adena-module';
 import dayjs from 'dayjs';
-import { v4 as uuidv4 } from 'uuid';
-
-import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
-import { WalletError } from '@common/errors/wallet/wallet-error';
-import { encryptSha256Password, encryptWalletPassword } from '@common/utils/crypto-utils';
-import { WalletRepository } from '@repositories/wallet';
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 export class WalletService {
   private _id: string;
@@ -30,7 +39,7 @@ export class WalletService {
   public existsWallet = (): Promise<boolean> => {
     return this.walletRepository
       .getSerializedWallet()
-      .then((serializedWallet) => !!serializedWallet)
+      .then(serializedWallet => !!serializedWallet)
       .catch(() => false);
   };
 
@@ -46,8 +55,8 @@ export class WalletService {
     mnemonic,
     password,
   }: {
-    mnemonic: string;
-    password: string;
+    mnemonic: string
+    password: string
   }): Promise<AdenaWallet> => {
     const wallet = await this.createWalletByMnemonic(mnemonic);
     await this.saveWallet(wallet, password);
@@ -94,7 +103,8 @@ export class WalletService {
     try {
       const existsPassword = await this.walletRepository.existsWalletPassword();
       return !existsPassword;
-    } catch (e) {
+    }
+    catch (_e) {
       return true;
     }
   };
@@ -119,7 +129,8 @@ export class WalletService {
     try {
       const wallet = await AdenaWallet.createByMnemonic(mnemonic, accountPaths);
       return wallet;
-    } catch (e) {
+    }
+    catch (_e) {
       throw new WalletError('FAILED_TO_CREATE');
     }
   };
@@ -137,8 +148,11 @@ export class WalletService {
     await this.walletRepository.updateWalletPassword(encryptedPassword);
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    } catch (e) {
+      chrome?.action?.setPopup({
+        popup: 'popup.html',
+      });
+    }
+    catch (e) {
       console.error(e);
     }
   };
@@ -150,8 +164,11 @@ export class WalletService {
 
     await this.walletRepository.updateSerializedWallet(serializedWallet);
     try {
-      chrome?.action?.setPopup({ popup: 'popup.html' });
-    } catch (e) {
+      chrome?.action?.setPopup({
+        popup: 'popup.html',
+      });
+    }
+    catch (e) {
       console.error(e);
     }
   };
@@ -213,7 +230,8 @@ export class WalletService {
       await this.updateWallet(clonedWallet);
 
       return multisigAccount;
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Failed to add multisig account:', error);
       throw error;
     }
@@ -232,7 +250,8 @@ export class WalletService {
       const walletInstance = await AdenaWallet.deserialize(serializedWallet, password);
 
       return walletInstance;
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       throw new WalletError('FAILED_TO_LOAD');
     }
@@ -241,7 +260,8 @@ export class WalletService {
   public lockWallet = async (): Promise<void> => {
     try {
       await this.walletRepository.deleteWalletPassword();
-    } catch (e) {
+    }
+    catch (_e) {
       throw new WalletError('FAILED_TO_LOAD');
     }
   };
@@ -260,7 +280,8 @@ export class WalletService {
       if (wallet) {
         return this.updatePassword(password);
       }
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
     }
     return false;
@@ -279,7 +300,8 @@ export class WalletService {
     try {
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
-    } catch (e) {
+    }
+    catch (e) {
       console.error(e);
       return false;
     }
@@ -319,8 +341,11 @@ export class WalletService {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     try {
-      chrome?.action?.setPopup({ popup: '' });
-    } catch (e) {
+      chrome?.action?.setPopup({
+        popup: '',
+      });
+    }
+    catch (e) {
       console.error(e);
     }
     return true;

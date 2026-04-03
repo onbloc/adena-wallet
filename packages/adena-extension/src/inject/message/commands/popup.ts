@@ -11,7 +11,8 @@ export const clearPopup = async (): Promise<void> => {
     }
   });
 
-  chrome.tabs.query({}, (tabs) => {
+  chrome.tabs.query({
+  }, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.url?.includes(chrome.runtime.id)) {
         if (!tab.id) {

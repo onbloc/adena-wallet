@@ -3,11 +3,22 @@ import {
   WalletResponseRejectType,
   WalletResponseSuccessType,
 } from '@adena-wallet/sdk';
-import { getSiteName } from '@common/utils/client-utils';
-import { RoutePath } from '@types';
-import { HandlerMethod } from '..';
-import { InjectionMessage, InjectionMessageInstance } from '../message';
-import { InjectCore } from './core';
+import {
+  getSiteName,
+} from '@common/utils/client-utils';
+import {
+  RoutePath,
+} from '@types';
+
+import {
+  HandlerMethod,
+} from '..';
+import {
+  InjectionMessage, InjectionMessageInstance,
+} from '../message';
+import {
+  InjectCore,
+} from './core';
 
 export const getAccount = async (
   core: InjectCore,
@@ -22,7 +33,8 @@ export const getAccount = async (
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.WALLET_LOCKED,
-          {},
+          {
+          },
           requestData.key,
         ),
       );
@@ -33,7 +45,8 @@ export const getAccount = async (
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
+        }, requestData.key),
       );
       return;
     }
@@ -46,15 +59,21 @@ export const getAccount = async (
     sendResponse(
       InjectionMessageInstance.success(
         WalletResponseSuccessType.GET_ACCOUNT_SUCCESS,
-        { ...accountInfo, chainId: network.chainId },
+        {
+          ...accountInfo,
+          chainId: network.chainId,
+        },
         requestData.key,
       ),
     );
-  } catch (error) {
+  }
+  catch (error) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NO_ACCOUNT,
-        { error: error?.toString() },
+        {
+          error: error?.toString(),
+        },
         requestData.key,
       ),
     );
@@ -74,7 +93,8 @@ export const getNetwork = async (
       sendResponse(
         InjectionMessageInstance.failure(
           WalletResponseFailureType.WALLET_LOCKED,
-          {},
+          {
+          },
           requestData.key,
         ),
       );
@@ -85,7 +105,8 @@ export const getNetwork = async (
     const network = await core.getCurrentNetwork();
     if (!currentAccountAddress || !network) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
+        }, requestData.key),
       );
       return;
     }
@@ -103,9 +124,11 @@ export const getNetwork = async (
         requestData.key,
       ),
     );
-  } catch (error) {
+  }
+  catch (_error) {
     sendResponse(
-      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, requestData.key),
+      InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
+      }, requestData.key),
     );
   }
 };
@@ -126,7 +149,8 @@ export const addEstablish = async (
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.ALREADY_CONNECTED,
-        {},
+        {
+        },
         message.key,
       ),
     );
@@ -136,7 +160,8 @@ export const addEstablish = async (
   HandlerMethod.createPopup(
     RoutePath.ApproveEstablish,
     message,
-    InjectionMessageInstance.failure(WalletResponseRejectType.CONNECTION_REJECTED, {}, message.key),
+    InjectionMessageInstance.failure(WalletResponseRejectType.CONNECTION_REJECTED, {
+    }, message.key),
     sendResponse,
   );
   return true;

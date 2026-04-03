@@ -1,6 +1,10 @@
+import {
+  View,
+} from '@components/atoms';
+import {
+  fonts,
+} from '@styles/theme';
 import styled from 'styled-components';
-import { View } from '@components/atoms';
-import { fonts } from '@styles/theme';
 
 export const ToastWrapper = styled(View)`
   position: absolute;
@@ -26,7 +30,9 @@ export const ToastContent = styled(View)`
   padding: 2px 16px;
   color: #fff;
   border-radius: 12.5px;
-  background-color: ${({ theme }): string => theme.neutral._9};
+  background-color: ${({
+    theme,
+  }): string => theme.neutral._9};
   ${fonts.body2Reg}
   white-space: nowrap;
   pointer-events: none;

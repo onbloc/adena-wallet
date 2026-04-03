@@ -1,11 +1,17 @@
-import { TransferState } from '@states';
-import { useRecoilState } from 'recoil';
-import { TransferInfo } from 'src/states/transfer';
+import {
+  TransferState,
+} from '@states';
+import {
+  useRecoilState,
+} from 'recoil';
+import {
+  TransferInfo,
+} from 'src/states/transfer';
 
 interface UseTransferInfoReturn {
-  memorizedTransferInfo: TransferInfo | null;
-  setMemorizedTransferInfo: (transferInfo: TransferInfo) => void;
-  clear: () => void;
+  memorizedTransferInfo: TransferInfo | null
+  setMemorizedTransferInfo: (transferInfo: TransferInfo) => void
+  clear: () => void
 }
 
 export const useTransferInfo = (): UseTransferInfoReturn => {

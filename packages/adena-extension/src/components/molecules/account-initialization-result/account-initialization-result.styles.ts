@@ -1,16 +1,24 @@
-import { View } from '@components/atoms';
+import {
+  View,
+} from '@components/atoms';
 import mixins from '@styles/mixins';
 import styled from 'styled-components';
 
 export const AccountInitializationResultWrapper = styled(View)`
-  ${mixins.flex({ align: 'center', justify: 'center' })};
+  ${mixins.flex({
+    align: 'center',
+    justify: 'center',
+  })};
   width: 100%;
   height: auto;
   gap: 24px;
   padding: 56px 20px 20px;
 
   .image-wrapper {
-    ${mixins.flex({ align: 'center', justify: 'center' })};
+    ${mixins.flex({
+      align: 'center',
+      justify: 'center',
+    })};
     width: 100%;
     height: 100%;
 
@@ -21,7 +29,11 @@ export const AccountInitializationResultWrapper = styled(View)`
   }
 
   .content-wrapper {
-    ${mixins.flex({ direction: 'column', align: 'center', justify: 'center' })};
+    ${mixins.flex({
+      direction: 'column',
+      align: 'center',
+      justify: 'center',
+    })};
     width: 100%;
     height: auto;
 
