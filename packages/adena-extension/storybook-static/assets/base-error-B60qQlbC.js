@@ -1,1 +1,0 @@
-class r extends Error{constructor(s){const{type:t,status:e}=s;super(`${t} (status: ${e})`),this.getStatus=()=>this.status,this.getType=()=>this.type,this.getOccuredAt=()=>this.occurredAt,this.status=e,this.type=t,this.occurredAt=Date.now(),this.message=s.message??`${t}`,Object.setPrototypeOf(this,r.prototype)}}export{r as B};

@@ -1,0 +1,5 @@
+import{n as e}from"./chunk-zsgVPwQN.js";import{_ as t,g as n,i as r,o as i,rt as a,t as o}from"./iframe-BclzClxJ.js";var s,c,l,u=e((()=>{r(),a(),t(),s=o(),c=n.div`
+  color: ${({color:e})=>e||`#FAFCFF`};
+  ${({type:e})=>i[e]}
+  white-space: pre-wrap;
+`,l=({type:e,color:t,style:n,children:r,textCenter:i,...a})=>(0,s.jsx)(c,{type:e,style:{color:t,textAlign:i?`center`:`initial`,...n},...a,children:r}),l.__docgenInfo={description:``,methods:[],displayName:`WebText`,props:{type:{required:!0,tsType:{name:`WebFontType`},description:``},children:{required:!0,tsType:{name:`union`,raw:`string | number`,elements:[{name:`string`},{name:`number`}]},description:``},color:{required:!1,tsType:{name:`CSSProperties['color']`,raw:`CSSProperties['color']`},description:``},style:{required:!1,tsType:{name:`ReactCSSProperties`,raw:`React.CSSProperties`},description:``},textCenter:{required:!1,tsType:{name:`boolean`},description:``}}}}));export{u as n,l as t};

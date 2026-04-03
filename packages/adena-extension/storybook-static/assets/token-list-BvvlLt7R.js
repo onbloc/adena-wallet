@@ -1,5 +1,0 @@
-import{m as o,j as e}from"./global-style-Be4sOX77.js";import{T as s}from"./token-list-item-rSSnvhc0.js";import{d as m}from"./theme-D2qI5cuM.js";const p=m.div`
-  ${o.flex({align:"normal",justify:"normal"})};
-  width: 100%;
-  height: auto;
-`,d=({tokens:n,completeImageLoading:t,onClickTokenItem:r})=>e.jsx(p,{children:n.map((i,a)=>e.jsx(s,{token:i,completeImageLoading:t,onClickTokenItem:r},a))});d.__docgenInfo={description:"",methods:[],displayName:"TokenList",props:{tokens:{required:!0,tsType:{name:"Array",elements:[{name:"MainToken"}],raw:"Array<MainToken>"},description:""},completeImageLoading:{required:!0,tsType:{name:"signature",type:"function",raw:"(imageUrl: string) => void",signature:{arguments:[{type:{name:"string"},name:"imageUrl"}],return:{name:"void"}}},description:""},onClickTokenItem:{required:!0,tsType:{name:"signature",type:"function",raw:"(tokenId: string) => void",signature:{arguments:[{type:{name:"string"},name:"tokenId"}],return:{name:"void"}}},description:""}}};export{d as T};

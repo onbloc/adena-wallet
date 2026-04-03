@@ -18,51 +18,23 @@
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "service-worker-loader.js",
-    "type": "module"
+    "service_worker": "src/background.ts"
   },
-  "permissions": [
-    "unlimitedStorage",
-    "storage",
-    "tabs",
-    "alarms",
-    "notifications"
-  ],
+  "permissions": ["unlimitedStorage", "storage", "tabs", "alarms", "notifications"],
   "content_scripts": [
     {
-      "js": [
-        "assets/content.ts-loader-m-vc9xiw.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "matches": ["<all_urls>"],
+      "js": ["src/content.ts"]
     }
   ],
   "web_accessible_resources": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "resources": [
-        "src/inject.ts",
-        "resources/*",
-        "assets/command-handler-CmRHWkei.js",
-        "assets/message-handler-D1EeVfGA.js",
-        "assets/theme-D2qI5cuM.js",
-        "assets/index-BAMY2Nnw.js",
-        "assets/client-utils-zr3RfGzN.js",
-        "assets/index-y5y07clE.js",
-        "assets/gte-LYzHDOB4.js",
-        "assets/main-BEJZyd-V.js",
-        "assets/router-BzcCdFuP.js",
-        "assets/token.constant-C-ogqcde.js",
-        "assets/bignumber-B1z4pYDt.js",
-        "assets/string-utils-Bff5ZSZ1.js",
-        "assets/base-error-B60qQlbC.js",
-        "assets/chains-C5osHhKP.js",
-        "assets/content.ts-DHn987-F.js"
-      ],
-      "use_dynamic_url": false
+      "resources": ["src/inject.ts"],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["resources/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {

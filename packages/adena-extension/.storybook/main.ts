@@ -14,17 +14,12 @@ const storybookConfig: StorybookConfig = {
 
   async viteFinal(config: InlineConfig) {
     const { resolve } = await import('path');
-    const { nodePolyfills } = await import('vite-plugin-node-polyfills');
-    const shimsDir = resolve(__dirname, '../node_modules/vite-plugin-node-polyfills/shims');
+    const { default: nodePolyfills } = await import('@rolldown/plugin-node-polyfills');
 
-    config.plugins?.push(nodePolyfills({ globals: { process: true, Buffer: true } }));
+    config.plugins?.push(nodePolyfills());
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
-      // polyfill shim aliases for pnpm strict mode
-      'vite-plugin-node-polyfills/shims/buffer': resolve(shimsDir, 'buffer/dist/index.js'),
-      'vite-plugin-node-polyfills/shims/process': resolve(shimsDir, 'process/dist/index.js'),
-      'vite-plugin-node-polyfills/shims/global': resolve(shimsDir, 'global/dist/index.js'),
       // path aliases (match vite.config.ts)
       '@types': resolve(__dirname, '../src/types'),
       '@hooks': resolve(__dirname, '../src/hooks'),

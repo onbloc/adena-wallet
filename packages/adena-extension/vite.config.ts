@@ -1,6 +1,7 @@
 import {
   crx,
 } from '@crxjs/vite-plugin';
+import nodePolyfills from '@rolldown/plugin-node-polyfills';
 import react from '@vitejs/plugin-react';
 import {
   resolve,
@@ -8,37 +9,21 @@ import {
 import {
   defineConfig,
 } from 'vite';
-import {
-  nodePolyfills,
-} from 'vite-plugin-node-polyfills';
 
 import manifest from './public/manifest.json';
 
-// Resolve polyfill shim paths so workspace packages (adena-module, etc.) can
-// import them even under pnpm strict mode.
-const shimsDir = resolve(
-  __dirname,
-  'node_modules/vite-plugin-node-polyfills/shims',
-);
+const isStorybook = process.argv[1]?.includes('storybook');
 
 export default defineConfig({
   plugins: [
     react(),
-    crx({
+    !isStorybook && crx({
       manifest,
     }),
-    nodePolyfills({
-      globals: {
-        process: true,
-        Buffer: true,
-      },
-    }),
+    nodePolyfills(),
   ],
   resolve: {
     alias: {
-      'vite-plugin-node-polyfills/shims/buffer': resolve(shimsDir, 'buffer/dist/index.js'),
-      'vite-plugin-node-polyfills/shims/process': resolve(shimsDir, 'process/dist/index.js'),
-      'vite-plugin-node-polyfills/shims/global': resolve(shimsDir, 'global/dist/index.js'),
       '@types': resolve(__dirname, 'src/types'),
       '@hooks': resolve(__dirname, 'src/hooks'),
       '@ui': resolve(__dirname, 'src/ui'),
@@ -62,11 +47,7 @@ export default defineConfig({
   build: {
     sourcemap: true,
     target: 'chrome100',
-    commonjsOptions: {
-      // Pre-transform CJS deps so polyfill shims resolve from the extension context
-      include: [/node_modules/, /adena-module/, /adena-torus-signin/],
-    },
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         register: resolve(__dirname, 'register.html'),
         security: resolve(__dirname, 'security.html'),

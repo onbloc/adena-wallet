@@ -1,0 +1,3 @@
+import{n as e}from"./chunk-zsgVPwQN.js";import{n as t,r as n}from"./additional-token-type-selector-Dsixfrcv.js";var r,i,a;e((()=>{n(),r={title:`components/manage-token/AdditionalTokenTypeSelector`,component:t},i={args:{}},i.parameters={...i.parameters,docs:{...i.parameters?.docs,source:{originalSource:`{
+  args: {}
+}`,...i.parameters?.docs?.source}}},a=[`Default`]}))();export{i as Default,a as __namedExportsOrder,r as default};

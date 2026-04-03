@@ -1,5 +1,0 @@
-import{A as n}from"./additional-token-search-list-BSrOoFjc.js";import"./global-style-Be4sOX77.js";import"./theme-D2qI5cuM.js";import"./index-BAMY2Nnw.js";import"./string-utils-Bff5ZSZ1.js";import"./client-utils-zr3RfGzN.js";import"./index-y5y07clE.js";import"./gte-LYzHDOB4.js";const c={title:"components/manage-token/AdditionalTokenSearchList",component:n},t=[{tokenId:"token1",name:"GnoSwap",symbol:"GNS",chainId:"test3",path:"gno.land/gnoswap",pathInfo:"gnoswap",decimals:6},{tokenId:"token2",name:"Gnoswim",symbol:"SWIM",chainId:"test3",path:"gno.land/gnoswim",pathInfo:"gnoswim",decimals:6},{tokenId:"token3",name:"Gnosmosi",symbol:"OSMO",chainId:"test3",path:"gno.land/gnosmo.",pathInfo:"gnosmo.",decimals:6},{tokenId:"token4",name:"Gnostu..",symbol:"GNOSTU",chainId:"test3",path:"o.land/gnostuck",pathInfo:"gnostuck",decimals:6}],o={args:{tokenInfos:t}};o.parameters={...o.parameters,docs:{...o.parameters?.docs,source:{originalSource:`{
-  args: {
-    tokenInfos: tokenInfos
-  }
-}`,...o.parameters?.docs?.source}}};const l=["Default"];export{o as Default,l as __namedExportsOrder,c as default};
