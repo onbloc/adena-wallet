@@ -1,33 +1,25 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg'
-import {
-  CustomNetworkInput, SubHeader, WarningBox,
-} from '@components/atoms'
-import {
-  BottomFixedButtonGroup,
-} from '@components/molecules'
-import React, {
-  useCallback, useMemo,
-} from 'react'
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import { CustomNetworkInput, SubHeader, WarningBox } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import React, { useCallback, useMemo } from 'react';
 
-import {
-  AddCustomNetworkWrapper,
-} from './add-custom-network.styles'
+import { AddCustomNetworkWrapper } from './add-custom-network.styles';
 
 export interface AddCustomNetworkProps {
-  name: string
-  rpcUrl: string
-  rpcUrlError?: string
-  indexerUrl: string
-  indexerUrlError?: string
-  chainId: string
-  chainIdError?: string
-  changeName: (name: string) => void
-  changeRPCUrl: (rpcUrl: string) => void
-  changeIndexerUrl: (indexerUrl: string) => void
-  changeChainId: (chainId: string) => void
-  save: () => void
-  cancel: () => void
-  moveBack: () => void
+  name: string;
+  rpcUrl: string;
+  rpcUrlError?: string;
+  indexerUrl: string;
+  indexerUrlError?: string;
+  chainId: string;
+  chainIdError?: string;
+  changeName: (name: string) => void;
+  changeRPCUrl: (rpcUrl: string) => void;
+  changeIndexerUrl: (indexerUrl: string) => void;
+  changeChainId: (chainId: string) => void;
+  save: () => void;
+  cancel: () => void;
+  moveBack: () => void;
 }
 
 const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
@@ -44,29 +36,29 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
   changeChainId,
   save,
   cancel,
-  moveBack,
+  moveBack
 }) => {
   const isSavable = useMemo(() => {
     if (rpcUrlError) {
-      return false
+      return false;
     }
-    return name.length > 0 && rpcUrl.length > 0 && chainId.length > 0
-  }, [name, rpcUrl, chainId, rpcUrlError])
+    return name.length > 0 && rpcUrl.length > 0 && chainId.length > 0;
+  }, [name, rpcUrl, chainId, rpcUrlError]);
 
   const onClickBack = useCallback(() => {
-    moveBack()
-  }, [moveBack])
+    moveBack();
+  }, [moveBack]);
 
   const onClickCancel = useCallback(() => {
-    cancel()
-  }, [cancel])
+    cancel();
+  }, [cancel]);
 
   const onClickSave = useCallback(() => {
     if (!isSavable) {
-      return
+      return;
     }
-    save()
-  }, [isSavable, save])
+    save();
+  }, [isSavable, save]);
 
   return (
     <AddCustomNetworkWrapper>
@@ -74,7 +66,7 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
         title='Add Custom Network'
         leftElement={{
           element: <img src={LeftArrowIcon} alt='back icon' />,
-          onClick: onClickBack,
+          onClick: onClickBack
         }}
       />
       <WarningBox type='approachNetwork' padding='10px 18px' margin='12px 0px 20px' />
@@ -94,18 +86,18 @@ const AddCustomNetwork: React.FC<AddCustomNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel,
+          onClick: onClickCancel
         }}
         rightButton={{
           primary: true,
           disabled: !isSavable,
           text: 'Save',
-          onClick: onClickSave,
+          onClick: onClickSave
         }}
         filled
       />
     </AddCustomNetworkWrapper>
-  )
-}
+  );
+};
 
-export default AddCustomNetwork
+export default AddCustomNetwork;

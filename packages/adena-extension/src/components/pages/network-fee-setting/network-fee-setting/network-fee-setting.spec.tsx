@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  NetworkFeeSettingType,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NetworkFeeSetting, {
-  NetworkFeeSettingProps,
-} from './network-fee-setting'
+import NetworkFeeSetting, { NetworkFeeSettingProps } from './network-fee-setting';
 
 describe('NetworkFeeSetting Component', () => {
   it('NetworkFeeSetting render', () => {
@@ -29,21 +15,21 @@ describe('NetworkFeeSetting Component', () => {
       gasAdjustment: '1.5',
       isFetchedPriceTiers: true,
       setGasAdjustment: () => {
-        return
+        return;
       },
       networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
       changedGasInfo: null,
       setNetworkFeeSetting: () => {
-        return
+        return;
       },
       networkFeeSettings: [],
       onClickBack: () => {
-        return
+        return;
       },
       onClickSave: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -51,7 +37,7 @@ describe('NetworkFeeSetting Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkFeeSetting {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

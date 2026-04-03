@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import AccountDetails, {
-  AccountDetailsProps,
-} from '.'
+import AccountDetails, { AccountDetailsProps } from '.';
 
 describe('AccountDetails Component', () => {
   it('AccountDetails render', () => {
@@ -29,21 +17,21 @@ describe('AccountDetails Component', () => {
       name: '',
       address: '',
       moveGnoscan: () => {
-        return
+        return;
       },
       moveRevealSeedPhrase: () => {
-        return
+        return;
       },
       moveExportPrivateKey: () => {
-        return
+        return;
       },
       setName: () => {
-        return
+        return;
       },
       reset: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -51,7 +39,7 @@ describe('AccountDetails Component', () => {
         <ThemeProvider theme={theme}>
           <AccountDetails {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

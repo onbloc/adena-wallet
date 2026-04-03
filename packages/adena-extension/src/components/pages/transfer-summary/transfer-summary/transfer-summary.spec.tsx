@@ -1,26 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  NetworkFeeSettingType,
-} from '@types'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import TransferSummary, {
-  TransferSummaryProps,
-} from './transfer-summary'
+import TransferSummary, { TransferSummaryProps } from './transfer-summary';
 
 describe('TransferSummary Component', () => {
   it('TransferSummary render', () => {
@@ -34,7 +20,7 @@ describe('TransferSummary Component', () => {
         symbol: 'GNOT',
         type: 'gno-native',
         decimals: 6,
-        display: true,
+        display: true
       },
       currentBalance: 1000000,
       useNetworkFeeReturn: {
@@ -49,42 +35,42 @@ describe('TransferSummary Component', () => {
         networkFeeSettings: null,
         gasAdjustment: '0',
         setGasAdjustment: () => {
-          return
+          return;
         },
         setNetworkFeeSetting: () => {
-          return
+          return;
         },
         save: () => {
-          return
+          return;
         },
         isFetchedPriceTiers: false,
-        isFetchedEstimateGasInfo: false,
+        isFetchedEstimateGasInfo: false
       },
       tokenImage: '',
       transferBalance: {
         value: '4,000.123',
-        denom: 'GNOT',
+        denom: 'GNOT'
       },
       toAddress: '',
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT',
+        denom: 'GNOT'
       },
       memo: '',
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickSend: () => {
-        return
+        return;
       },
       onClickNetworkFeeSetting: () => {
-        return
+        return;
       },
-      isErrorNetworkFee: false,
-    }
+      isErrorNetworkFee: false
+    };
 
     render(
       <RecoilRoot>
@@ -92,7 +78,7 @@ describe('TransferSummary Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummary {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

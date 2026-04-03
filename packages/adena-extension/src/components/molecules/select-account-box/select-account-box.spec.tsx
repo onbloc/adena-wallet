@@ -1,24 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import SelectAccountBox, {
-  SelectAccountBoxProps,
-} from './select-account-box'
+import SelectAccountBox, { SelectAccountBoxProps } from './select-account-box';
 
 describe('SelectAccountBox Component', () => {
   it('SelectAccountBox render', () => {
@@ -26,12 +14,12 @@ describe('SelectAccountBox Component', () => {
       accounts: [],
       isLoading: false,
       loadAccounts: async () => {
-        return
+        return;
       },
       select: async () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -39,7 +27,7 @@ describe('SelectAccountBox Component', () => {
         <ThemeProvider theme={theme}>
           <SelectAccountBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,37 +1,31 @@
-import {
-  CommonState,
-} from '@states'
-import {
-  useEffect,
-} from 'react'
-import {
-  useRecoilState,
-} from 'recoil'
+import { CommonState } from '@states';
+import { useEffect } from 'react';
+import { useRecoilState } from 'recoil';
 
 export type UseToastReturn = {
-  message: string | null
-  show: (message: string) => void
-  clear: () => void
-}
+  message: string | null;
+  show: (message: string) => void;
+  clear: () => void;
+};
 
 export const useToast = (): UseToastReturn => {
-  const [message, setMessage] = useRecoilState(CommonState.toastMessage)
+  const [message, setMessage] = useRecoilState(CommonState.toastMessage);
 
   const show = (message: string): void => {
-    setMessage(message)
-  }
+    setMessage(message);
+  };
 
   const clear = (): void => {
-    setMessage(null)
-  }
+    setMessage(null);
+  };
 
   useEffect(() => {
-    setMessage(null)
-  }, [])
+    setMessage(null);
+  }, []);
 
   return {
     message,
     show,
-    clear,
-  }
-}
+    clear
+  };
+};

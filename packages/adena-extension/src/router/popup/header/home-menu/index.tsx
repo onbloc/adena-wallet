@@ -1,32 +1,22 @@
-import logo from '@assets/logo-withIcon.svg'
-import {
-  HamburgerMenuBtn,
-} from '@components/atoms'
-import {
-  SideMenuLayout,
-} from '@components/pages/router/side-menu-layout'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX, useState,
-} from 'react'
-import styled from 'styled-components'
+import logo from '@assets/logo-withIcon.svg';
+import { HamburgerMenuBtn } from '@components/atoms';
+import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import React, { type JSX, useState } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
-`
+`;
 
 const Header = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })}
   width: 100%;
   height: 100%;
@@ -35,15 +25,11 @@ const Header = styled.div`
   & > img {
     ${mixins.positionCenter()}
   }
-`
+`;
 
-export const HomeMenu = ({
-  entry,
-}: {
-  entry: string
-}): JSX.Element => {
-  const [open, setOpen] = useState(false)
-  const toggleMenuHandler = (): void => setOpen(!open)
+export const HomeMenu = ({ entry }: { entry: string }): JSX.Element => {
+  const [open, setOpen] = useState(false);
+  const toggleMenuHandler = (): void => setOpen(!open);
 
   return (
     <Wrapper>
@@ -58,5 +44,5 @@ export const HomeMenu = ({
       </Header>
       {entry !== RoutePath.ApproveTransaction && <SideMenuLayout open={open} setOpen={setOpen} />}
     </Wrapper>
-  )
-}
+  );
+};

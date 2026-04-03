@@ -1,29 +1,21 @@
-import DefaultFavicon from '@assets/favicon-default.svg'
-import {
-  Text,
-} from '@components/atoms'
-import {
-  ApproveLoading, BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
-import React, {
-  useEffect,
-} from 'react'
+import DefaultFavicon from '@assets/favicon-default.svg';
+import { Text } from '@components/atoms';
+import { ApproveLoading, BottomFixedLoadingButtonGroup } from '@components/molecules';
+import React, { useEffect } from 'react';
 
-import {
-  WalletConnectWrapper,
-} from './wallet-connect.styles'
+import { WalletConnectWrapper } from './wallet-connect.styles';
 
 export interface WalletConnectProps {
-  loading: boolean
-  app: string
-  logo: string
-  domain: string
-  processing: boolean
-  done: boolean
-  onClickConnect: () => void
-  onClickCancel: () => void
-  onResponse: () => void
-  onTimeout: () => void
+  loading: boolean;
+  app: string;
+  logo: string;
+  domain: string;
+  processing: boolean;
+  done: boolean;
+  onClickConnect: () => void;
+  onClickCancel: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const WalletConnect: React.FC<WalletConnectProps> = ({
@@ -35,17 +27,17 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
   done,
   onClickConnect,
   onClickCancel,
-  onResponse,
+  onResponse
 }) => {
   if (loading) {
-    return <ApproveLoading rightButtonText='Connect' />
+    return <ApproveLoading rightButtonText='Connect' />;
   }
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   return (
     <WalletConnectWrapper>
@@ -83,17 +75,17 @@ const WalletConnect: React.FC<WalletConnectProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel,
+          onClick: onClickCancel
         }}
         rightButton={{
           primary: true,
           loading: processing,
           text: 'Connect',
-          onClick: onClickConnect,
+          onClick: onClickConnect
         }}
       />
     </WalletConnectWrapper>
-  )
-}
+  );
+};
 
-export default WalletConnect
+export default WalletConnect;

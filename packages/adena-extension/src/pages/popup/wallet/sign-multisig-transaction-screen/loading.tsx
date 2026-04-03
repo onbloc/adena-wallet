@@ -1,13 +1,11 @@
 import {
-  CommonFullContentLayout, Spinner, Text, View,
-} from '@components/atoms'
-import React from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  CommonFullContentLayout, Spinner, Text, View
+} from '@components/atoms';
+import React from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const SignTransactionLoading: React.FC = () => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <CommonFullContentLayout>
@@ -23,20 +21,20 @@ const SignTransactionLoading: React.FC = () => {
         </StyledDescriptionWrapper>
       </StyledLoadingWrapper>
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default SignTransactionLoading
+export default SignTransactionLoading;
 
 const StyledLoadingWrapper = styled(View)`
   margin-top: 56px;
   gap: 23px;
   justify-content: center;
   align-items: center;
-`
+`;
 
 const StyledDescriptionWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`
+`;

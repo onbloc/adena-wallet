@@ -1,16 +1,8 @@
-import {
-  v4 as uuidv4,
-} from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  isLedgerKeyring, Keyring, KeyringType,
-} from "../../wallet/keyring/index.js";
-import {
-  publicKeyToAddress,
-} from "./../../utils/address.js";
-import {
-  Account, AccountInfo,
-} from "./account.js";
+import { isLedgerKeyring, Keyring, KeyringType } from '../../wallet/keyring/index.js';
+import { publicKeyToAddress } from './../../utils/address.js';
+import { Account, AccountInfo } from './account.js';
 
 export class LedgerAccount implements Account {
   public readonly id;
@@ -28,7 +20,7 @@ export class LedgerAccount implements Account {
   private _name: string;
 
   constructor({
-    id, index, keyringId, type, publicKey, name, hdPath,
+    id, index, keyringId, type, publicKey, name, hdPath
   }: AccountInfo) {
     this.id = id || uuidv4();
     this._index = index;
@@ -67,26 +59,24 @@ export class LedgerAccount implements Account {
       keyringId: this.keyringId,
       hdPath: this.hdPath,
       publicKey: Array.from(this.publicKey),
-      name: this._name,
+      name: this._name
     };
   }
 
   public static async createBy(keyring: Keyring, name: string, hdPath: number) {
     if (!isLedgerKeyring(keyring)) {
-      throw new Error("Invalid account type");
+      throw new Error('Invalid account type');
     }
 
     const publicKey = await keyring.getPublicKey(hdPath);
-    const {
-      id: keyringId, type,
-    } = keyring;
+    const { id: keyringId, type } = keyring;
     return new LedgerAccount({
       keyringId,
       index: 1,
       type,
       publicKey: Array.from(publicKey),
       name,
-      hdPath,
+      hdPath
     });
   }
 
@@ -98,7 +88,7 @@ export class LedgerAccount implements Account {
       keyringId: accountInfo.keyringId,
       hdPath: accountInfo.hdPath,
       publicKey: accountInfo.publicKey,
-      name: accountInfo.name,
+      name: accountInfo.name
     });
   }
 }

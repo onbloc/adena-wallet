@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTTransferInput, {
-  NFTTransferInputProps,
-} from './nft-transfer-input'
+import NFTTransferInput, { NFTTransferInputProps } from './nft-transfer-input';
 
 describe('NFTTransferInput Component', () => {
   it('NFTTransferInput render', () => {
@@ -35,10 +21,9 @@ describe('NFTTransferInput Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
       addressInput: {
         opened: false,
         hasError: false,
@@ -49,33 +34,33 @@ describe('NFTTransferInput Component', () => {
         address: '',
         addressBookInfos: [],
         onClickInputIcon: () => {
-          return
+          return;
         },
         onChangeAddress: () => {
-          return
+          return;
         },
         onClickAddressBook: () => {
-          return
-        },
+          return;
+        }
       },
       memoInput: {
         memo: '',
         onChangeMemo: () => {
-          return
-        },
+          return;
+        }
       },
       isNext: true,
       hasBackButton: true,
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickNext: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -83,7 +68,7 @@ describe('NFTTransferInput Component', () => {
         <ThemeProvider theme={theme}>
           <NFTTransferInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

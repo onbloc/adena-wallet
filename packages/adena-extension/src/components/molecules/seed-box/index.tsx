@@ -1,22 +1,16 @@
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
-import {
-  BlurScreen, Text,
-} from '../../atoms'
+import { BlurScreen, Text } from '../../atoms';
 
 interface SeedScrollBoxProps {
-  seeds: string[]
-  hasBlurScreen?: boolean
-  hasBlurText?: boolean
-  blurScreenText?: string
-  className?: string
+  seeds: string[];
+  hasBlurScreen?: boolean;
+  hasBlurText?: boolean;
+  blurScreenText?: string;
+  className?: string;
 }
 
 const Wrapper = styled.div`
@@ -27,7 +21,7 @@ const Wrapper = styled.div`
   background-color: ${getTheme('neutral', '_9')};
   border-radius: 18px;
   padding: 8px;
-`
+`;
 
 const Inner = styled.div`
   width: 100%;
@@ -38,18 +32,16 @@ const Inner = styled.div`
   gap: 20px;
   padding: 10px 18px;
   .seed-text {
-    ${mixins.flex({
-      direction: 'row',
-    })}
+    ${mixins.flex({ direction: 'row' })}
   }
-`
+`;
 
 export const SeedBox = ({
   seeds,
   hasBlurScreen = false,
   hasBlurText = false,
   blurScreenText = '',
-  className = '',
+  className = ''
 }: SeedScrollBoxProps): JSX.Element => {
   return (
     <Wrapper className={className}>
@@ -62,5 +54,5 @@ export const SeedBox = ({
       </Inner>
       {hasBlurScreen && <BlurScreen hasText={hasBlurText} text={blurScreenText} />}
     </Wrapper>
-  )
-}
+  );
+};

@@ -1,28 +1,14 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  AdditionalTokenProps,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { AdditionalTokenProps } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  AddingType,
-} from '../additional-token-type-selector'
-import AdditionalToken from '.'
+import { AddingType } from '../additional-token-type-selector';
+import AdditionalToken from '.';
 
 describe('AdditionalToken Component', () => {
   it('AdditionalToken render', () => {
@@ -39,30 +25,30 @@ describe('AdditionalToken Component', () => {
       isLoadingSelectedGRC20Token: false,
       errorManualGRC20Token: null,
       selectAddingType: () => {
-        return
+        return;
       },
       onChangeKeyword: () => {
-        return
+        return;
       },
       onChangeManualTokenPath: () => {
-        return
+        return;
       },
       onClickOpenButton: () => {
-        return
+        return;
       },
       onClickListItem: () => {
-        return
+        return;
       },
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickAdd: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -70,7 +56,7 @@ describe('AdditionalToken Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalToken {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,12 +1,6 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
-const IconEditSmall = ({
-  className,
-}: {
-  className?: string
-}): JSX.Element => (
+const IconEditSmall = ({ className }: { className?: string }): JSX.Element => (
   <svg
     className={className}
     width='10'
@@ -24,6 +18,6 @@ const IconEditSmall = ({
       fill='#777777'
     />
   </svg>
-)
+);
 
-export default IconEditSmall
+export default IconEditSmall;

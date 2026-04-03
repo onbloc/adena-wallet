@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTCollectionCard, {
-  NFTCollectionCardProps,
-} from './nft-collection-card'
+import NFTCollectionCard, { NFTCollectionCardProps } from './nft-collection-card';
 
 describe('NFTCollectionCard Component', () => {
   it('NFTCollectionCard render', () => {
@@ -36,23 +22,21 @@ describe('NFTCollectionCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
       pin: () => {
-        return
+        return;
       },
       unpin: () => {
-        return
+        return;
       },
       moveCollectionPage: () => {
-        return
+        return;
       },
       exitsPinnedCollections: () => false,
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
-      queryGRC721Balance: () => ({
-      }) as unknown as UseQueryResult<number | null>,
-    }
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
+      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>
+    };
 
     render(
       <RecoilRoot>
@@ -60,7 +44,7 @@ describe('NFTCollectionCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

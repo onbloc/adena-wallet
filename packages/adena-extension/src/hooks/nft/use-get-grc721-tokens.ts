@@ -1,43 +1,27 @@
-import {
-  useAdenaContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import {
-  useQuery, UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  GRC721CollectionModel, GRC721Model,
-} from '@types'
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { GRC721CollectionModel, GRC721Model } from '@types';
 
 export const useGetGRC721Tokens = (
   collection: GRC721CollectionModel | null,
-  options?: Omit<UseQueryOptions<GRC721Model[] | null, Error>, 'queryKey' | 'queryFn'>,
+  options?: Omit<UseQueryOptions<GRC721Model[] | null, Error>, 'queryKey' | 'queryFn'>
 ): UseQueryResult<GRC721Model[] | null> => {
-  const {
-    tokenService,
-  } = useAdenaContext()
-  const {
-    currentAddress,
-  } = useCurrentAccount()
-  const {
-    currentNetwork,
-  } = useNetwork()
+  const { tokenService } = useAdenaContext();
+  const { currentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
 
   return useQuery<GRC721Model[] | null, Error>({
     queryKey: ['nft/useGetGRC721Tokens', currentAddress || '', currentNetwork.chainId, collection?.packagePath],
     queryFn: async () => {
       if (!currentAddress || !collection) {
-        return null
+        return null;
       }
 
       const tokens = await tokenService
         .fetchGRC721Tokens(collection.packagePath, currentAddress)
-        .catch(() => [])
+        .catch(() => []);
 
       return tokens
         .map(token => ({
@@ -45,12 +29,12 @@ export const useGetGRC721Tokens = (
           name: collection.name,
           symbol: collection.symbol,
           isTokenUri: collection.isTokenUri,
-          isMetadata: collection.isMetadata,
+          isMetadata: collection.isMetadata
         }))
-        .reverse()
+        .reverse();
     },
     staleTime: 1_000,
     refetchOnMount: true,
-    ...options,
-  })
-}
+    ...options
+  });
+};

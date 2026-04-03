@@ -1,31 +1,21 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const CreateMultisigTransactionSignerWrapper = styled.div`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding: 24px 20px;
-`
+`;
 
-export const CreateMultisigTransactionWrapper = styled.div<{
-  $isErrorNetworkFee: boolean
-}>`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+export const CreateMultisigTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolean }>`
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding: 0 20px;
   padding-bottom: 96px;
   align-self: center;
 
   .row {
-    ${mixins.flex({
-      direction: 'row',
-    })};
+    ${mixins.flex({ direction: 'row' })};
     position: relative;
     padding: 10px 18px;
     justify-content: space-between;
@@ -77,7 +67,7 @@ export const CreateMultisigTransactionWrapper = styled.div<{
     ${mixins.flex({
       direction: 'row',
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     min-height: 41px;
@@ -142,9 +132,7 @@ export const CreateMultisigTransactionWrapper = styled.div<{
   }
 
   .fee-amount-wrapper {
-    ${mixins.flex({
-      justify: 'flex-start',
-    })};
+    ${mixins.flex({ justify: 'flex-start' })};
     width: 100%;
     gap: 8px;
     margin-bottom: 8px;
@@ -205,4 +193,4 @@ export const CreateMultisigTransactionWrapper = styled.div<{
 
     margin-bottom: 20px;
   }
-`
+`;

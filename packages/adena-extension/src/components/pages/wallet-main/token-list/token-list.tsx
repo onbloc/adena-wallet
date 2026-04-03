@@ -1,23 +1,19 @@
-import {
-  MainToken,
-} from '@types'
-import React from 'react'
+import { MainToken } from '@types';
+import React from 'react';
 
-import TokenListItem from '../token-list-item/token-list-item'
-import {
-  TokenListWrapper,
-} from './token-list.styles'
+import TokenListItem from '../token-list-item/token-list-item';
+import { TokenListWrapper } from './token-list.styles';
 
 export interface TokenListProps {
-  tokens: Array<MainToken>
-  completeImageLoading: (imageUrl: string) => void
-  onClickTokenItem: (tokenId: string) => void
+  tokens: Array<MainToken>;
+  completeImageLoading: (imageUrl: string) => void;
+  onClickTokenItem: (tokenId: string) => void;
 }
 
 const TokenList: React.FC<TokenListProps> = ({
   tokens,
   completeImageLoading,
-  onClickTokenItem,
+  onClickTokenItem
 }) => {
   return (
     <TokenListWrapper>
@@ -30,7 +26,7 @@ const TokenList: React.FC<TokenListProps> = ({
         />
       ))}
     </TokenListWrapper>
-  )
-}
+  );
+};
 
-export default TokenList
+export default TokenList;

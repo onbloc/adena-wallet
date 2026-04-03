@@ -1,13 +1,11 @@
-import {
-  View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import { View } from '@components/atoms';
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const AccountInitializationResultWrapper = styled(View)`
   ${mixins.flex({
     align: 'center',
-    justify: 'center',
+    justify: 'center'
   })};
   width: 100%;
   height: auto;
@@ -17,7 +15,7 @@ export const AccountInitializationResultWrapper = styled(View)`
   .image-wrapper {
     ${mixins.flex({
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     height: 100%;
@@ -32,7 +30,7 @@ export const AccountInitializationResultWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     height: auto;
@@ -41,4 +39,4 @@ export const AccountInitializationResultWrapper = styled(View)`
       text-align: center;
     }
   }
-`
+`;

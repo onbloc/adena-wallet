@@ -1,15 +1,7 @@
-import {
-  parseReamPathItemsByPath,
-} from '@common/utils/parse-utils'
-import {
-  isGRC20TokenModel, isNativeTokenModel,
-} from '@common/validation/validation-token'
-import {
-  AppInfoResponse,
-} from '@repositories/common/response'
-import {
-  ITokenRepository,
-} from '@repositories/common/types'
+import { parseReamPathItemsByPath } from '@common/utils/parse-utils';
+import { isGRC20TokenModel, isNativeTokenModel } from '@common/validation/validation-token';
+import { AppInfoResponse } from '@repositories/common/response';
+import { ITokenRepository } from '@repositories/common/types';
 import {
   AccountTokenBalance,
   GRC20TokenModel,
@@ -17,25 +9,25 @@ import {
   GRC721MetadataModel,
   GRC721Model,
   NetworkMetainfo,
-  TokenModel,
-} from '@types'
+  TokenModel
+} from '@types';
 
 export class TokenService {
-  private tokenRepository: ITokenRepository
+  private tokenRepository: ITokenRepository;
 
-  private tokenMetaInfos: TokenModel[]
+  private tokenMetaInfos: TokenModel[];
 
   constructor(tokenRepository: ITokenRepository) {
-    this.tokenRepository = tokenRepository
-    this.tokenMetaInfos = []
+    this.tokenRepository = tokenRepository;
+    this.tokenMetaInfos = [];
   }
 
   public setNetworkMetainfo(networkMetainfo: NetworkMetainfo): void {
-    this.tokenRepository.setNetworkMetainfo(networkMetainfo)
+    this.tokenRepository.setNetworkMetainfo(networkMetainfo);
   }
 
   public getTokenMetainfos(): TokenModel[] {
-    return this.tokenMetaInfos
+    return this.tokenMetaInfos;
   }
 
   /**
@@ -45,12 +37,12 @@ export class TokenService {
    */
   public async fetchTokenMetainfos(): Promise<TokenModel[]> {
     if (this.tokenMetaInfos.length > 0) {
-      return this.tokenMetaInfos
+      return this.tokenMetaInfos;
     }
 
-    const tokenMetaInfos = await this.tokenRepository.fetchTokenMetainfos()
-    this.tokenMetaInfos = tokenMetaInfos
-    return this.tokenMetaInfos
+    const tokenMetaInfos = await this.tokenRepository.fetchTokenMetainfos();
+    this.tokenMetaInfos = tokenMetaInfos;
+    return this.tokenMetaInfos;
   }
 
   /**
@@ -61,7 +53,7 @@ export class TokenService {
   public async fetchGRC20Tokens(): Promise<GRC20TokenModel[]> {
     return this.tokenRepository
       .fetchAllGRC20Tokens()
-      .then(tokens => tokens.filter(token => !!token))
+      .then(tokens => tokens.filter(token => !!token));
   }
 
   /**
@@ -72,18 +64,18 @@ export class TokenService {
    */
   public async fetchGRC20Token(tokenPath: string): Promise<GRC20TokenModel | null> {
     if (!tokenPath) {
-      return null
+      return null;
     }
 
     // validate realm path
     try {
-      parseReamPathItemsByPath(tokenPath)
+      parseReamPathItemsByPath(tokenPath);
     }
     catch {
-      return null
+      return null;
     }
 
-    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null)
+    return this.tokenRepository.fetchGRC20TokenByPackagePath(tokenPath).catch(() => null);
   }
 
   /**
@@ -93,8 +85,8 @@ export class TokenService {
    * @returns
    */
   public async fetchAllTransferPackagesBy(address: string): Promise<string[]> {
-    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1)
-    return transferPackages
+    const transferPackages = await this.tokenRepository.fetchAllTransferPackagesBy(address, 1);
+    return transferPackages;
   }
 
   /**
@@ -103,8 +95,8 @@ export class TokenService {
    * @returns
    */
   public async getAppInfos(): Promise<AppInfoResponse[]> {
-    const response = await this.tokenRepository.fetchAppInfos()
-    return response
+    const response = await this.tokenRepository.fetchAppInfos();
+    return response;
   }
 
   /**
@@ -114,27 +106,27 @@ export class TokenService {
    * @returns
    */
   public async initAccountTokenMetainfos(accountId: string): Promise<boolean> {
-    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter(token => token.main)
-    const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId)
+    const fetchedTokenMetainfos = (await this.fetchTokenMetainfos()).filter(token => token.main);
+    const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     await this.tokenRepository.updateTokenMetainfos(accountId, [
       ...fetchedTokenMetainfos.map((token1) => {
         const previousInfo = storedTokenMetainfos.find(token2 =>
-          this.equalsToken(token1, token2),
-        )
+          this.equalsToken(token1, token2)
+        );
         if (previousInfo) {
           return {
             ...token1,
             tokenId: previousInfo.tokenId,
-            display: previousInfo.display,
-          }
+            display: previousInfo.display
+          };
         }
-        return token1
+        return token1;
       }),
       ...storedTokenMetainfos.filter(token1 =>
-        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2)),
-      ),
-    ])
-    return true
+        fetchedTokenMetainfos.every(token2 => !this.equalsToken(token1, token2))
+      )
+    ]);
+    return true;
   }
 
   /**
@@ -145,25 +137,25 @@ export class TokenService {
    */
   public async getTokenMetainfosByAccountId(accountId: string): Promise<
     {
-      image: string
-      main: boolean
-      tokenId: string
-      networkId: string
-      display: boolean
-      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens'
-      name: string
-      symbol: string
-      decimals: number
-      description?: string | undefined
-      websiteUrl?: string | undefined
+      image: string;
+      main: boolean;
+      tokenId: string;
+      networkId: string;
+      display: boolean;
+      type: 'gno-native' | 'grc20' | 'ibc-native' | 'ibc-tokens';
+      name: string;
+      symbol: string;
+      decimals: number;
+      description?: string | undefined;
+      websiteUrl?: string | undefined;
     }[]
   > {
-    const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId)
+    const storedTokenMetainfos = await this.tokenRepository.getAccountTokenMetainfos(accountId);
     return storedTokenMetainfos.map(token1 => ({
       ...token1,
       image:
-        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || '',
-    }))
+        this.getTokenMetainfos().find(token2 => this.equalsToken(token1, token2))?.image || ''
+    }));
   }
 
   /**
@@ -175,27 +167,25 @@ export class TokenService {
    */
   public async updateTokenMetainfosByAccountId(
     accountId: string,
-    tokenMetainfos: TokenModel[],
+    tokenMetainfos: TokenModel[]
   ): Promise<boolean> {
-    const fetchedTokenMetainfos = await this.fetchTokenMetainfos()
+    const fetchedTokenMetainfos = await this.fetchTokenMetainfos();
     const changedTokenMetaInfos = tokenMetainfos.map((token1) => {
       const tokenMetaInfo = fetchedTokenMetainfos.find(token2 =>
-        this.equalsToken(token1, token2),
-      )
+        this.equalsToken(token1, token2)
+      );
       if (tokenMetaInfo) {
-        const {
-          image, description,
-        } = tokenMetaInfo
+        const { image, description } = tokenMetaInfo;
         return {
           ...token1,
           image,
-          description,
-        }
+          description
+        };
       }
-      return token1
-    })
-    await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos)
-    return true
+      return token1;
+    });
+    await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetaInfos);
+    return true;
   }
 
   /**
@@ -205,15 +195,15 @@ export class TokenService {
    * @returns
    */
   public async updateAccountTokenMetainfos(
-    accountTokenMetainfos: AccountTokenBalance[],
+    accountTokenMetainfos: AccountTokenBalance[]
   ): Promise<boolean> {
     for (const accountTokenMetainfo of accountTokenMetainfos) {
       await this.tokenRepository.updateTokenMetainfos(
         accountTokenMetainfo.accountId,
-        accountTokenMetainfo.tokenBalances,
-      )
+        accountTokenMetainfo.tokenBalances
+      );
     }
-    return true
+    return true;
   }
 
   /**
@@ -227,21 +217,21 @@ export class TokenService {
   public async changeAccountTokenMetainfoDisplay(
     accountId: string,
     tokenId: string,
-    display: boolean,
+    display: boolean
   ): Promise<boolean> {
-    const storedTokenMetainfos = await this.getTokenMetainfosByAccountId(accountId)
+    const storedTokenMetainfos = await this.getTokenMetainfosByAccountId(accountId);
     const changedTokenMetainfos = storedTokenMetainfos.map((metainfo) => {
       if (metainfo.tokenId === tokenId) {
         return {
           ...metainfo,
-          display,
-        }
+          display
+        };
       }
-      return metainfo
-    })
+      return metainfo;
+    });
 
-    await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetainfos)
-    return true
+    await this.tokenRepository.updateTokenMetainfos(accountId, changedTokenMetainfos);
+    return true;
   }
 
   /**
@@ -251,8 +241,8 @@ export class TokenService {
    * @returns
    */
   public async deleteAccountTokenMetainfos(accountId: string): Promise<boolean> {
-    await this.tokenRepository.deleteTokenMetainfos(accountId)
-    return true
+    await this.tokenRepository.deleteTokenMetainfos(accountId);
+    return true;
   }
 
   /**
@@ -261,7 +251,7 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC721Collections(): Promise<GRC721CollectionModel[]> {
-    return this.tokenRepository.fetchGRC721Collections()
+    return this.tokenRepository.fetchGRC721Collections();
   }
 
   /**
@@ -271,7 +261,7 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC721Collection(packagePath: string): Promise<GRC721CollectionModel> {
-    return this.tokenRepository.fetchGRC721CollectionByPackagePath(packagePath)
+    return this.tokenRepository.fetchGRC721CollectionByPackagePath(packagePath);
   }
 
   /**
@@ -282,7 +272,7 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC721TokenUri(packagePath: string, tokenId: string): Promise<string> {
-    return this.tokenRepository.fetchGRC721TokenUriBy(packagePath, tokenId)
+    return this.tokenRepository.fetchGRC721TokenUriBy(packagePath, tokenId);
   }
 
   /**
@@ -294,9 +284,9 @@ export class TokenService {
    */
   public async fetchGRC721TokenMetadata(
     packagePath: string,
-    tokenId: string,
+    tokenId: string
   ): Promise<GRC721MetadataModel> {
-    return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId)
+    return this.tokenRepository.fetchGRC721TokenMetadataBy(packagePath, tokenId);
   }
 
   /**
@@ -307,7 +297,7 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC721Balance(packagePath: string, address: string): Promise<number> {
-    return this.tokenRepository.fetchGRC721BalanceBy(packagePath, address)
+    return this.tokenRepository.fetchGRC721BalanceBy(packagePath, address);
   }
 
   /**
@@ -318,7 +308,7 @@ export class TokenService {
    * @returns
    */
   public async fetchGRC721Tokens(packagePath: string, address: string): Promise<GRC721Model[]> {
-    return this.tokenRepository.fetchGRC721TokensBy(packagePath, address)
+    return this.tokenRepository.fetchGRC721TokensBy(packagePath, address);
   }
 
   /**
@@ -330,9 +320,9 @@ export class TokenService {
    */
   public async getAccountGRC721Collections(
     accountId: string,
-    networkId: string,
+    networkId: string
   ): Promise<GRC721CollectionModel[]> {
-    return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId)
+    return this.tokenRepository.getAccountGRC721CollectionsBy(accountId, networkId);
   }
 
   /**
@@ -346,9 +336,9 @@ export class TokenService {
   public async saveAccountGRC721Collections(
     accountId: string,
     networkId: string,
-    collections: GRC721CollectionModel[],
+    collections: GRC721CollectionModel[]
   ): Promise<boolean> {
-    return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections)
+    return this.tokenRepository.saveAccountGRC721CollectionsBy(accountId, networkId, collections);
   }
 
   /**
@@ -360,9 +350,9 @@ export class TokenService {
    */
   public async getAccountGRC721PinnedPackages(
     accountId: string,
-    networkId: string,
+    networkId: string
   ): Promise<string[]> {
-    return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId)
+    return this.tokenRepository.getAccountGRC721PinnedPackagesBy(accountId, networkId);
   }
 
   /**
@@ -376,13 +366,13 @@ export class TokenService {
   public async saveAccountGRC721PinnedPackages(
     accountId: string,
     networkId: string,
-    packagePaths: string[],
+    packagePaths: string[]
   ): Promise<boolean> {
     return this.tokenRepository.saveAccountGRC721PinnedPackagesBy(
       accountId,
       networkId,
-      packagePaths,
-    )
+      packagePaths
+    );
   }
 
   /**
@@ -391,17 +381,17 @@ export class TokenService {
    * @returns
    */
   public clear = async (): Promise<boolean> => {
-    await this.tokenRepository.deleteAllTokenMetainfo()
-    return true
-  }
+    await this.tokenRepository.deleteAllTokenMetainfo();
+    return true;
+  };
 
   private equalsToken(token1: TokenModel, token2: TokenModel): boolean {
     if (isNativeTokenModel(token1)) {
-      return token1.symbol === token2.symbol
+      return token1.symbol === token2.symbol;
     }
     if (isGRC20TokenModel(token1) && isGRC20TokenModel(token2)) {
-      return token1.pkgPath === token2.pkgPath
+      return token1.pkgPath === token2.pkgPath;
     }
-    return false
+    return false;
   }
 }

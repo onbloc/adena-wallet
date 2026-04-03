@@ -1,46 +1,32 @@
-import {
-  Text,
-} from '@components/atoms'
-import {
-  LoadingNft,
-} from '@components/molecules'
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  GRC721CollectionModel,
-} from '@types'
-import React, {
-  useCallback, useMemo,
-} from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import { Text } from '@components/atoms';
+import { LoadingNft } from '@components/molecules';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { GRC721CollectionModel } from '@types';
+import React, { useCallback, useMemo } from 'react';
+import { useTheme } from 'styled-components';
 
-import ManageCollectionsButton from '../manage-collections-button/manage-collections-button'
-import NFTCollectionCard from '../nft-collection-card/nft-collection-card'
-import {
-  NFTCollectionsWrapper,
-} from './nft-collections.styles'
+import ManageCollectionsButton from '../manage-collections-button/manage-collections-button';
+import NFTCollectionCard from '../nft-collection-card/nft-collection-card';
+import { NFTCollectionsWrapper } from './nft-collections.styles';
 
 export interface NFTCollectionsProps {
-  collections: GRC721CollectionModel[] | null | undefined
-  isFetchedCollections: boolean
-  pinnedCollections: string[] | null | undefined
-  isFetchedPinnedCollections: boolean
-  pin: (packagePath: string) => Promise<void>
-  unpin: (packagePath: string) => Promise<void>
+  collections: GRC721CollectionModel[] | null | undefined;
+  isFetchedCollections: boolean;
+  pinnedCollections: string[] | null | undefined;
+  isFetchedPinnedCollections: boolean;
+  pin: (packagePath: string) => Promise<void>;
+  unpin: (packagePath: string) => Promise<void>;
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<number | null>
-  moveCollectionPage: (collection: GRC721CollectionModel) => void
-  moveManageCollectionsPage: () => void
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<number | null>;
+  moveCollectionPage: (collection: GRC721CollectionModel) => void;
+  moveManageCollectionsPage: () => void;
 }
 
 const NFTCollections: React.FC<NFTCollectionsProps> = ({
@@ -53,66 +39,66 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
   queryGRC721TokenUri,
   queryGRC721Balance,
   moveCollectionPage,
-  moveManageCollectionsPage,
+  moveManageCollectionsPage
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   const isLoading = useMemo(() => {
     if (!isFetchedCollections || !isFetchedPinnedCollections) {
-      return true
+      return true;
     }
 
-    return collections === null
-  }, [isFetchedCollections, isFetchedPinnedCollections, collections])
+    return collections === null;
+  }, [isFetchedCollections, isFetchedPinnedCollections, collections]);
 
   const isEmptyCollections = useMemo(() => {
-    return collections?.length === 0
-  }, [collections])
+    return collections?.length === 0;
+  }, [collections]);
 
   const displayCollections = useMemo(() => {
-    return collections?.filter(collection => collection.display)
-  }, [collections])
+    return collections?.filter(collection => collection.display);
+  }, [collections]);
 
   const isEmptyDisplayCollections = useMemo(() => {
-    return displayCollections?.filter(collection => collection.display).length === 0
-  }, [displayCollections])
+    return displayCollections?.filter(collection => collection.display).length === 0;
+  }, [displayCollections]);
 
   const sortedCollections = useMemo(() => {
     if (!Array.isArray(displayCollections)) {
-      return displayCollections
+      return displayCollections;
     }
 
     if (!Array.isArray(pinnedCollections)) {
-      return null
+      return null;
     }
 
     const pinned = pinnedCollections
       .map(packagePath =>
-        displayCollections.find(collection => collection.packagePath === packagePath),
+        displayCollections.find(collection => collection.packagePath === packagePath)
       )
-      .filter(collection => !!collection) as GRC721CollectionModel[]
+      .filter(collection => !!collection) as GRC721CollectionModel[];
 
     const unpinned = displayCollections.filter(
-      collection => !pinnedCollections.includes(collection.packagePath),
-    )
+      collection => !pinnedCollections.includes(collection.packagePath)
+    );
 
-    return [...pinned, ...unpinned]
-  }, [pinnedCollections, displayCollections])
+    return [...pinned, ...unpinned];
+  }, [pinnedCollections, displayCollections]);
 
   const exitsPinnedCollections = useCallback(
     (collection: GRC721CollectionModel) => {
       if (!pinnedCollections) {
-        return false
+        return false;
       }
 
-      return pinnedCollections.findIndex(path => path === collection.packagePath) > -1
+      return pinnedCollections.findIndex(path => path === collection.packagePath) > -1;
     },
-    [pinnedCollections],
-  )
+    [pinnedCollections]
+  );
 
   const onClickManageCollectionsButton = useCallback(() => {
-    moveManageCollectionsPage()
-  }, [moveManageCollectionsPage])
+    moveManageCollectionsPage();
+  }, [moveManageCollectionsPage]);
 
   if (isEmptyCollections) {
     return (
@@ -121,7 +107,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
           No NFTs to display
         </Text>
       </NFTCollectionsWrapper>
-    )
+    );
   }
 
   if (isEmptyDisplayCollections) {
@@ -129,7 +115,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
       <NFTCollectionsWrapper className='non-items'>
         <ManageCollectionsButton onClick={onClickManageCollectionsButton} />
       </NFTCollectionsWrapper>
-    )
+    );
   }
 
   return (
@@ -140,10 +126,10 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
             key={index}
             grc721Collection={collection}
             pin={(collection: GRC721CollectionModel): void => {
-              pin(collection.packagePath)
+              pin(collection.packagePath);
             }}
             unpin={(collection: GRC721CollectionModel): void => {
-              unpin(collection.packagePath)
+              unpin(collection.packagePath);
             }}
             exitsPinnedCollections={exitsPinnedCollections}
             queryGRC721Balance={queryGRC721Balance}
@@ -163,7 +149,7 @@ const NFTCollections: React.FC<NFTCollectionsProps> = ({
         </div>
       )}
     </NFTCollectionsWrapper>
-  )
-}
+  );
+};
 
-export default NFTCollections
+export default NFTCollections;

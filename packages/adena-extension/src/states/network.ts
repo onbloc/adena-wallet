@@ -1,21 +1,17 @@
-import {
-  NetworkMetainfo,
-} from '@types'
-import {
-  atom,
-} from 'recoil'
+import { NetworkMetainfo } from '@types';
+import { atom } from 'recoil';
 
 export const networkMetainfos = atom<NetworkMetainfo[]>({
   key: 'network/networkMetainfos',
-  default: [],
-})
+  default: []
+});
 
 export const currentNetwork = atom<NetworkMetainfo | null>({
   key: 'network/current-network',
-  default: null,
-})
+  default: null
+});
 
 export const modified = atom<boolean>({
   key: 'network/modified',
-  default: false,
-})
+  default: false
+});

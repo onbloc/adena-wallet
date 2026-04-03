@@ -1,47 +1,37 @@
-import {
-  useAdenaContext, useMultisigTransactionContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import {
-  useCallback, useState,
-} from 'react'
+import { useAdenaContext, useMultisigTransactionContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useCallback, useState } from 'react';
 
-export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED'
+export type SignTransactionState = 'IDLE' | 'SIGNING' | 'SUCCESS' | 'FAILED';
 
 export interface UseSignMultisigTransactionScreenReturn {
-  signTransactionState: SignTransactionState
-  errorMessage: string | null
-  signTransaction: () => Promise<boolean>
-  resetSignState: () => void
+  signTransactionState: SignTransactionState;
+  errorMessage: string | null;
+  signTransaction: () => Promise<boolean>;
+  resetSignState: () => void;
 }
 
 const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenReturn => {
-  const [signTransactionState, setSignTransactionState] = useState<SignTransactionState>('IDLE')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [signTransactionState, setSignTransactionState] = useState<SignTransactionState>('IDLE');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const {
-    multisigService,
-  } = useAdenaContext()
-  const {
-    currentAccount, currentAddress,
-  } = useCurrentAccount()
+  const { multisigService } = useAdenaContext();
+  const { currentAccount, currentAddress } = useCurrentAccount();
   const {
     transaction,
     chainId,
     accountNumber,
     sequence,
-    addSignature,
-  } = useMultisigTransactionContext()
+    addSignature
+  } = useMultisigTransactionContext();
 
   const signTransaction = useCallback(async (): Promise<boolean> => {
     if (!transaction || !currentAccount || !currentAddress) {
-      return false
+      return false;
     }
 
     try {
-      setSignTransactionState('SIGNING')
+      setSignTransactionState('SIGNING');
 
       const newSignature = await multisigService.signMultisigTransaction(
         currentAccount,
@@ -49,41 +39,41 @@ const useSignMultisigTransactionScreen = (): UseSignMultisigTransactionScreenRet
         chainId,
         transaction,
         accountNumber,
-        sequence,
-      )
+        sequence
+      );
 
-      const fileSaved = await multisigService.saveSignatureToFile(newSignature)
+      const fileSaved = await multisigService.saveSignatureToFile(newSignature);
 
       if (!fileSaved) {
-        setSignTransactionState('IDLE')
-        return false
+        setSignTransactionState('IDLE');
+        return false;
       }
 
-      addSignature(newSignature)
-      setSignTransactionState('SUCCESS')
-      return true
+      addSignature(newSignature);
+      setSignTransactionState('SUCCESS');
+      return true;
     }
     catch (e) {
-      console.error('Sign failed:', e)
+      console.error('Sign failed:', e);
       if (e instanceof Error && e.message.includes('Public key not found')) {
-        setErrorMessage(e.message)
+        setErrorMessage(e.message);
       }
-      setSignTransactionState('FAILED')
-      return false
+      setSignTransactionState('FAILED');
+      return false;
     }
-  }, [currentAccount, currentAddress, chainId, transaction, accountNumber, sequence, multisigService, addSignature])
+  }, [currentAccount, currentAddress, chainId, transaction, accountNumber, sequence, multisigService, addSignature]);
 
   const resetSignState = useCallback(() => {
-    setSignTransactionState('IDLE')
-    setErrorMessage(null)
-  }, [])
+    setSignTransactionState('IDLE');
+    setErrorMessage(null);
+  }, []);
 
   return {
     signTransactionState,
     errorMessage,
     signTransaction,
-    resetSignState,
-  }
-}
+    resetSignState
+  };
+};
 
-export default useSignMultisigTransactionScreen
+export default useSignMultisigTransactionScreen;

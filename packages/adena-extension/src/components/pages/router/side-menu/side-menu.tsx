@@ -1,24 +1,16 @@
-import IconHelp from '@assets/help-fill.svg'
-import IconAdd from '@assets/icon-add'
-import IconLock from '@assets/icon-side-menu-lock.svg'
-import IconSetting from '@assets/icon-side-menu-setting.svg'
-import LogoAdena from '@assets/logo-withIcon.svg'
-import IconRestore from '@assets/restore.svg'
-import {
-  Icon,
-} from '@components/atoms'
-import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list'
-import SideMenuLink from '@components/pages/router/side-menu-link/side-menu-link'
-import {
-  RoutePath, SideMenuProps,
-} from '@types'
-import React, {
-  useCallback,
-} from 'react'
+import IconHelp from '@assets/help-fill.svg';
+import IconAdd from '@assets/icon-add';
+import IconLock from '@assets/icon-side-menu-lock.svg';
+import IconSetting from '@assets/icon-side-menu-setting.svg';
+import LogoAdena from '@assets/logo-withIcon.svg';
+import IconRestore from '@assets/restore.svg';
+import { Icon } from '@components/atoms';
+import SideMenuAccountList from '@components/pages/router/side-menu-account-list/side-menu-account-list';
+import SideMenuLink from '@components/pages/router/side-menu-link/side-menu-link';
+import { RoutePath, SideMenuProps } from '@types';
+import React, { useCallback } from 'react';
 
-import {
-  SideMenuWrapper,
-} from './side-menu.styles'
+import { SideMenuWrapper } from './side-menu.styles';
 
 const SideMenu: React.FC<SideMenuProps> = ({
   scannerUrl,
@@ -33,49 +25,49 @@ const SideMenu: React.FC<SideMenuProps> = ({
   openRegister,
   changeAccount,
   lock,
-  close,
+  close
 }) => {
   const moveGnoscan = useCallback(
     (address: string) => {
       const openLinkUrl = scannerQueryString
         ? `${scannerUrl}/account/${address}?${scannerQueryString}`
-        : `${scannerUrl}/account/${address}`
-      openLink(openLinkUrl)
+        : `${scannerUrl}/account/${address}`;
+      openLink(openLinkUrl);
     },
-    [openLink],
-  )
+    [openLink]
+  );
 
   const moveAccountDetail = useCallback(
     (accountId: string) => {
-      movePage(RoutePath.AccountDetails.replace(':accountId', accountId))
+      movePage(RoutePath.AccountDetails.replace(':accountId', accountId));
     },
-    [movePage],
-  )
+    [movePage]
+  );
 
   const onClickClose = useCallback(() => {
-    close()
-  }, [close])
+    close();
+  }, [close]);
 
   const onClickAddAccount = useCallback(() => {
-    openRegister()
-    window.close()
-  }, [openRegister])
+    openRegister();
+    window.close();
+  }, [openRegister]);
 
   const onClickRestoreWallet = useCallback(() => {
-    movePage(RoutePath.EnterSeedPhrase)
-  }, [movePage])
+    movePage(RoutePath.EnterSeedPhrase);
+  }, [movePage]);
 
   const onClickHelpAndSupport = useCallback(() => {
-    openLink('https://docs.adena.app/resources/faq')
-  }, [openLink])
+    openLink('https://docs.adena.app/resources/faq');
+  }, [openLink]);
 
   const onClickSetting = useCallback(() => {
-    movePage(RoutePath.Setting)
-  }, [movePage])
+    movePage(RoutePath.Setting);
+  }, [movePage]);
 
   const onClickLockWallet = useCallback(() => {
-    lock()
-  }, [lock])
+    lock();
+  }, [lock]);
 
   return (
     <SideMenuWrapper>
@@ -122,7 +114,7 @@ const SideMenu: React.FC<SideMenuProps> = ({
             )}
       </div>
     </SideMenuWrapper>
-  )
-}
+  );
+};
 
-export default SideMenu
+export default SideMenu;

@@ -1,94 +1,92 @@
-import {
-  MemoryProvider,
-} from '@common/provider/memory/memory-provider'
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
-const MEMORY_KEY = 'encryptKey'
+const MEMORY_KEY = 'encryptKey';
 
-const KEY_LENGTH = 256 // AES-256 key length
-const IV_LENGTH = 12 // GCM nonce length (12 bytes is recommended)
+const KEY_LENGTH = 256; // AES-256 key length
+const IV_LENGTH = 12; // GCM nonce length (12 bytes is recommended)
 
 export async function getInMemoryKey(memoryProvider: MemoryProvider): Promise<CryptoKey | null> {
   try {
-    const key = memoryProvider?.get(MEMORY_KEY) || null
+    const key = memoryProvider?.get(MEMORY_KEY) || null;
     if (!key) {
-      const generated = await generateInMemoryKey()
+      const generated = await generateInMemoryKey();
 
-      memoryProvider.set(MEMORY_KEY, generated)
+      memoryProvider.set(MEMORY_KEY, generated);
     }
 
-    return memoryProvider.get(MEMORY_KEY) || null
+    return memoryProvider.get(MEMORY_KEY) || null;
   }
   catch (e) {
-    console.error(e)
+    console.error(e);
   }
 
-  return null
+  return null;
 }
 
 export async function clearInMemoryKey(memoryProvider: MemoryProvider): Promise<void> {
-  const random = await generateInMemoryKey()
-  memoryProvider.set(MEMORY_KEY, random)
-  memoryProvider.set(MEMORY_KEY, null)
+  const random = await generateInMemoryKey();
+  memoryProvider.set(MEMORY_KEY, random);
+  memoryProvider.set(MEMORY_KEY, null);
 }
 
 // Encrypts a password using AES-GCM
 export const encryptPassword = async (
   key: CryptoKey,
-  password: string,
+  password: string
 ): Promise<{
-  encryptedKey: string
-  encryptedPassword: string
+  encryptedKey: string;
+  encryptedPassword: string;
 }> => {
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
-  const enc = new TextEncoder()
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+  const enc = new TextEncoder();
   const encrypted = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv,
+      iv
     },
     key,
-    enc.encode(password),
-  )
+    enc.encode(password)
+  );
 
   return {
     encryptedKey: Buffer.from(iv).toString('base64'),
-    encryptedPassword: Buffer.from(encrypted).toString('base64'),
-  }
-}
+    encryptedPassword: Buffer.from(encrypted).toString('base64')
+  };
+};
 
 // Decrypts a password using AES-GCM
 export const decryptPassword = async (
   key: CryptoKey,
   iv: string,
-  encryptedPassword: string,
+  encryptedPassword: string
 ): Promise<string> => {
   if (!key || !iv || !encryptedPassword) {
-    return ''
+    return '';
   }
 
-  const encryptedData = Buffer.from(encryptedPassword, 'base64')
-  const ivBytes = Buffer.from(iv, 'base64')
-  const dec = new TextDecoder()
+  const encryptedData = Buffer.from(encryptedPassword, 'base64');
+  const ivBytes = Buffer.from(iv, 'base64');
+  const dec = new TextDecoder();
 
   const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: ivBytes,
+      iv: ivBytes
     },
     key,
-    encryptedData,
-  )
+    encryptedData
+  );
 
-  return dec.decode(decrypted)
-}
+  return dec.decode(decrypted);
+};
 
 const generateInMemoryKey = async (): Promise<CryptoKey> => {
   return crypto.subtle.generateKey(
     {
       name: 'AES-GCM',
-      length: KEY_LENGTH,
+      length: KEY_LENGTH
     },
     true,
-    ['encrypt', 'decrypt'],
-  )
-}
+    ['encrypt', 'decrypt']
+  );
+};

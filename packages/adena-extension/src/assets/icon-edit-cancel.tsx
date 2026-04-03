@@ -1,11 +1,5 @@
-import type {
-  JSX,
-} from 'react'
-const IconEditCancel = ({
-  className,
-}: {
-  className: string
-}): JSX.Element => (
+import type { JSX } from 'react';
+const IconEditCancel = ({ className }: { className: string }): JSX.Element => (
   <svg
     className={className}
     width='16'
@@ -35,6 +29,6 @@ const IconEditCancel = ({
       strokeLinecap='round'
     />
   </svg>
-)
+);
 
-export default IconEditCancel
+export default IconEditCancel;

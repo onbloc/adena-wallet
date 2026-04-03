@@ -1,30 +1,26 @@
-import IconAirgap from '@assets/web/airgap-green.svg'
-import IconLink from '@assets/web/link.svg'
+import IconAirgap from '@assets/web/airgap-green.svg';
+import IconLink from '@assets/web/link.svg';
 import {
   ADENA_SETUP_AIRGAP_HELP_PAGE,
-  GNO_CLI_HELP_PAGE,
-} from '@common/constants/resource.constant'
+  GNO_CLI_HELP_PAGE
+} from '@common/constants/resource.constant';
 import {
-  Pressable, Row, View, WebButton, WebImg, WebText,
-} from '@components/atoms'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box'
-import useLink from '@hooks/use-link'
-import React, {
-  useCallback,
-} from 'react'
-import styled from 'styled-components'
+  Pressable, Row, View, WebButton, WebImg, WebText
+} from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
+import useLink from '@hooks/use-link';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
 const StyledButtonWrapper = styled(View)`
   align-items: flex-start;
-`
+`;
 
 const StyledLinkWrapper = styled(Row)`
   gap: 6px;
@@ -33,37 +29,28 @@ const StyledLinkWrapper = styled(Row)`
   & > * {
     color: #6c717a;
   }
-`
+`;
 
 const description = `The air-gapped signing mechanism allows for offline transaction signing for maximum
 security. To send transactions, you must create a signed transaction file in your air-gapped
-device using the Gno CLI and transfer it to Adena for broadcasting.`
+device using the Gno CLI and transfer it to Adena for broadcasting.`;
 
-interface SetupAirgapInitProps {
-  initSetup: () => void
-}
+interface SetupAirgapInitProps { initSetup: () => void }
 
-const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({
-  initSetup,
-}) => {
-  const {
-    openLink,
-  } = useLink()
+const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({ initSetup }) => {
+  const { openLink } = useLink();
 
   const moveGnoCliHelp = useCallback(() => {
-    openLink(GNO_CLI_HELP_PAGE)
-  }, [openLink])
+    openLink(GNO_CLI_HELP_PAGE);
+  }, [openLink]);
 
   const moveAirgapSignHelp = useCallback(() => {
-    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE)
-  }, [openLink])
+    openLink(ADENA_SETUP_AIRGAP_HELP_PAGE);
+  }, [openLink]);
 
   return (
     <StyledContainer>
-      <View style={{
-        marginBottom: 8,
-      }}
-      >
+      <View style={{ marginBottom: 8 }}>
         <WebImg src={IconAirgap} size={88} />
       </View>
 
@@ -87,10 +74,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({
         />
       </StyledButtonWrapper>
 
-      <View style={{
-        gap: 8,
-      }}
-      >
+      <View style={{ gap: 8 }}>
         <Pressable onClick={moveGnoCliHelp}>
           <StyledLinkWrapper>
             <WebText type='title6' color='#6C717A'>
@@ -110,7 +94,7 @@ const SetupAirgapInit: React.FC<SetupAirgapInitProps> = ({
         </Pressable>
       </View>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetupAirgapInit
+export default SetupAirgapInit;

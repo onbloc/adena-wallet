@@ -1,21 +1,17 @@
-import ManageTokenList from '@components/molecules/manage-token-list/manage-token-list'
-import {
-  ManageTokenInfo,
-} from '@types'
-import React from 'react'
+import ManageTokenList from '@components/molecules/manage-token-list/manage-token-list';
+import { ManageTokenInfo } from '@types';
+import React from 'react';
 
-import ManageTokenSearchInput from '../manage-token-search-input/manage-token-search-input'
-import {
-  ManageTokenSearchWrapper,
-} from './manage-token.styles'
+import ManageTokenSearchInput from '../manage-token-search-input/manage-token-search-input';
+import { ManageTokenSearchWrapper } from './manage-token.styles';
 
 export interface ManageTokenSearchProps {
-  keyword: string
-  tokens: ManageTokenInfo[]
-  onClickAdded: () => void
-  onClickClose: () => void
-  onChangeKeyword: (keyword: string) => void
-  onToggleActiveItem: (tokenId: string, activated: boolean) => void
+  keyword: string;
+  tokens: ManageTokenInfo[];
+  onClickAdded: () => void;
+  onClickClose: () => void;
+  onChangeKeyword: (keyword: string) => void;
+  onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }
 
 const ManageTokenSearch: React.FC<ManageTokenSearchProps> = ({
@@ -24,7 +20,7 @@ const ManageTokenSearch: React.FC<ManageTokenSearchProps> = ({
   onClickClose,
   onClickAdded,
   onChangeKeyword,
-  onToggleActiveItem,
+  onToggleActiveItem
 }) => {
   return (
     <ManageTokenSearchWrapper>
@@ -46,7 +42,7 @@ const ManageTokenSearch: React.FC<ManageTokenSearchProps> = ({
         </button>
       </div>
     </ManageTokenSearchWrapper>
-  )
-}
+  );
+};
 
-export default ManageTokenSearch
+export default ManageTokenSearch;

@@ -1,19 +1,17 @@
-import React from 'react'
+import React from 'react';
 
-import {
-  ApproveAddingNetworkTableWrapper,
-} from './approve-adding-network-table.styles'
+import { ApproveAddingNetworkTableWrapper } from './approve-adding-network-table.styles';
 
 export interface ApproveAddingNetworkTableProps {
-  name: string
-  rpcUrl: string
-  chainId: string
+  name: string;
+  rpcUrl: string;
+  chainId: string;
 }
 
 const ApproveAddingNetworkTable: React.FC<ApproveAddingNetworkTableProps> = ({
   name,
   rpcUrl,
-  chainId,
+  chainId
 }) => {
   return (
     <ApproveAddingNetworkTableWrapper>
@@ -30,7 +28,7 @@ const ApproveAddingNetworkTable: React.FC<ApproveAddingNetworkTableProps> = ({
         <span className='value'>{chainId}</span>
       </div>
     </ApproveAddingNetworkTableWrapper>
-  )
-}
+  );
+};
 
-export default ApproveAddingNetworkTable
+export default ApproveAddingNetworkTable;

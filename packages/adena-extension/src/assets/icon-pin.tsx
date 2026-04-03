@@ -1,12 +1,6 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
-const IconPin = ({
-  className,
-}: {
-  className?: string
-}): JSX.Element => (
+const IconPin = ({ className }: { className?: string }): JSX.Element => (
   <svg
     className={className}
     xmlns='http://www.w3.org/2000/svg'
@@ -22,6 +16,6 @@ const IconPin = ({
       fill='white'
     />
   </svg>
-)
+);
 
-export default IconPin
+export default IconPin;

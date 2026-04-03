@@ -1,44 +1,34 @@
-import LottieWeb, {
-  AnimationConfigWithData, AnimationItem,
-} from 'lottie-web'
+import LottieWeb, { AnimationConfigWithData, AnimationItem } from 'lottie-web';
 import React, {
-  HTMLAttributes, useEffect, useMemo, useRef, useState,
-} from 'react'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+  HTMLAttributes, useEffect, useMemo, useRef, useState
+} from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
 type LottieProps = {
-  animationData: any
-  loop?: boolean
-  autoplay?: boolean
-  speed?: number
-  isPaused?: boolean
-  isStopped?: boolean
-  width?: number
-  height?: number
-  visibleSize?: number
-} & HTMLAttributes<HTMLDivElement>
+  animationData: any;
+  loop?: boolean;
+  autoplay?: boolean;
+  speed?: number;
+  isPaused?: boolean;
+  isStopped?: boolean;
+  width?: number;
+  height?: number;
+  visibleSize?: number;
+} & HTMLAttributes<HTMLDivElement>;
 
-const StyledContainer = styled.div.withConfig({
-  shouldForwardProp: prop => !['visibleSize', 'isOverflow'].includes(prop),
-})<{
-  width?: number
-  height?: number
-  visibleSize: number
-  isOverflow: boolean
+const StyledContainer = styled.div.withConfig({ shouldForwardProp: prop => !['visibleSize', 'isOverflow'].includes(prop) })<{
+  width?: number;
+  height?: number;
+  visibleSize: number;
+  isOverflow: boolean;
 }>`
   display: flex;
   position: relative;
-  width: ${({
-    width,
-  }): string => (width ? `${width}px` : 'auto')};
-  height: ${({
-    height,
-  }): string => (height ? `${height}px` : 'auto')};
+  width: ${({ width }): string => (width ? `${width}px` : 'auto')};
+  height: ${({ height }): string => (height ? `${height}px` : 'auto')};
 
   ${({
-    isOverflow, visibleSize, width, height,
+    isOverflow, visibleSize, width, height
   }): RuleSet =>
     isOverflow
       ? css`
@@ -57,7 +47,7 @@ const StyledContainer = styled.div.withConfig({
             height: ${height ? `${height}px` : 'auto'} !important;
           }
         `}
-`
+`;
 
 const Lottie: React.FC<LottieProps> = ({
   animationData,
@@ -69,19 +59,19 @@ const Lottie: React.FC<LottieProps> = ({
   visibleSize,
   ...restProps
 }) => {
-  const animationContainer = useRef<HTMLDivElement>(null)
-  const [animationInstance, setAnimationInstance] = useState<AnimationItem | null>(null)
+  const animationContainer = useRef<HTMLDivElement>(null);
+  const [animationInstance, setAnimationInstance] = useState<AnimationItem | null>(null);
 
   const isOverflow = useMemo(() => {
     if (!visibleSize) {
-      return false
+      return false;
     }
-    return true
-  }, [visibleSize])
+    return true;
+  }, [visibleSize]);
 
   useEffect(() => {
     if (!animationContainer.current) {
-      return
+      return;
     }
     const animationOptions: AnimationConfigWithData<'svg'> = {
       container: animationContainer.current,
@@ -89,37 +79,35 @@ const Lottie: React.FC<LottieProps> = ({
       loop,
       autoplay,
       animationData,
-      rendererSettings: {
-        className: 'lottie-player',
-      },
-    }
+      rendererSettings: { className: 'lottie-player' }
+    };
 
-    const animation = LottieWeb.loadAnimation<'svg'>(animationOptions)
-    setAnimationInstance(animation)
+    const animation = LottieWeb.loadAnimation<'svg'>(animationOptions);
+    setAnimationInstance(animation);
 
     return () => {
-      animation.destroy()
-    }
-  }, [animationContainer.current, animationData, loop, autoplay])
+      animation.destroy();
+    };
+  }, [animationContainer.current, animationData, loop, autoplay]);
 
   useEffect(() => {
     if (animationInstance !== null) {
       if (isPaused) {
-        animationInstance.pause()
+        animationInstance.pause();
       }
       else {
-        animationInstance.play()
+        animationInstance.play();
       }
 
       if (isStopped) {
-        animationInstance.stop()
+        animationInstance.stop();
       }
 
       if (speed !== undefined) {
-        animationInstance.setSpeed(speed)
+        animationInstance.setSpeed(speed);
       }
     }
-  }, [isPaused, isStopped, speed, animationInstance])
+  }, [isPaused, isStopped, speed, animationInstance]);
 
   return (
     <StyledContainer
@@ -128,7 +116,7 @@ const Lottie: React.FC<LottieProps> = ({
       visibleSize={visibleSize || 0}
       {...restProps}
     />
-  )
-}
+  );
+};
 
-export default Lottie
+export default Lottie;

@@ -1,22 +1,14 @@
-import {
-  GasToken,
-} from '@common/constants/token.constant'
-import {
-  DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED,
-} from '@common/constants/tx.constant'
-import {
-  mappedDocumentMessagesWithCaller,
-} from '@common/mapper/transaction-mapper'
-import {
-  GnoProvider,
-} from '@common/provider/gno/gno-provider'
+import { GasToken } from '@common/constants/token.constant';
+import { DEFAULT_GAS_FEE, DEFAULT_GAS_WANTED } from '@common/constants/tx.constant';
+import { mappedDocumentMessagesWithCaller } from '@common/mapper/transaction-mapper';
+import { GnoProvider } from '@common/provider/gno/gno-provider';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   defaultAddressPrefix,
   Tx,
-  uint8ArrayToBase64,
-} from '@gnolang/tm2-js-client'
+  uint8ArrayToBase64
+} from '@gnolang/tm2-js-client';
 import {
   Account,
   AdenaLedgerConnector,
@@ -24,40 +16,38 @@ import {
   LedgerAccount,
   LedgerKeyring,
   sha256,
-  Wallet,
-} from 'adena-module'
+  Wallet
+} from 'adena-module';
 
-import {
-  WalletService,
-} from '..'
+import { WalletService } from '..';
 
 export interface EncodeTxSignature {
   pubKey: {
-    typeUrl: string | undefined
-    value: string | undefined
-  }
-  signature: string
+    typeUrl: string | undefined;
+    value: string | undefined;
+  };
+  signature: string;
 }
 
 export class TransactionService {
-  private walletService: WalletService
+  private walletService: WalletService;
 
-  private gnoProvider: GnoProvider | null
+  private gnoProvider: GnoProvider | null;
 
   constructor(walletService: WalletService, gnoProvider: GnoProvider | null) {
-    this.walletService = walletService
-    this.gnoProvider = gnoProvider
+    this.walletService = walletService;
+    this.gnoProvider = gnoProvider;
   }
 
   public getGnoProvider(): GnoProvider {
     if (!this.gnoProvider) {
-      throw new Error('Gno provider not initialized.')
+      throw new Error('Gno provider not initialized.');
     }
-    return this.gnoProvider
+    return this.gnoProvider;
   }
 
   public setGnoProvider(gnoProvider: GnoProvider): void {
-    this.gnoProvider = gnoProvider
+    this.gnoProvider = gnoProvider;
   }
 
   /**
@@ -78,30 +68,30 @@ export class TransactionService {
     messages: any[],
     gasWanted?: bigint,
     gasFee?: number,
-    memo?: string | undefined,
+    memo?: string | undefined
   ): Promise<Document> => {
-    const provider = this.getGnoProvider()
-    const address = await account.getAddress(defaultAddressPrefix)
-    const accountInfo = await provider.getAccountInfo(address).catch(() => null)
-    const accountNumber = accountInfo?.accountNumber ?? 0
-    const accountSequence = accountInfo?.sequence ?? 0
+    const provider = this.getGnoProvider();
+    const address = await account.getAddress(defaultAddressPrefix);
+    const accountInfo = await provider.getAccountInfo(address).catch(() => null);
+    const accountNumber = accountInfo?.accountNumber ?? 0;
+    const accountSequence = accountInfo?.sequence ?? 0;
     return {
       msgs: mappedDocumentMessagesWithCaller(messages, address),
       fee: {
         amount: [
           {
             denom: GasToken.denom,
-            amount: (gasFee || DEFAULT_GAS_FEE).toString(),
-          },
+            amount: (gasFee || DEFAULT_GAS_FEE).toString()
+          }
         ],
-        gas: (gasWanted || DEFAULT_GAS_WANTED).toString(),
+        gas: (gasWanted || DEFAULT_GAS_WANTED).toString()
       },
       chain_id: chainId,
       memo: memo || '',
       account_number: accountNumber.toString(),
-      sequence: accountSequence.toString(),
-    }
-  }
+      sequence: accountSequence.toString()
+    };
+  };
 
   /** Create a signature
    *
@@ -111,22 +101,20 @@ export class TransactionService {
    */
   public createSignature = async (
     account: Account,
-    document: Document,
+    document: Document
   ): Promise<EncodeTxSignature> => {
-    const provider = this.getGnoProvider()
-    const wallet = await this.walletService.loadWallet()
-    const {
-      signature,
-    } = await wallet.signByAccountId(provider, account.id, document)
+    const provider = this.getGnoProvider();
+    const wallet = await this.walletService.loadWallet();
+    const { signature } = await wallet.signByAccountId(provider, account.id, document);
     const signatures = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
       },
-      signature: uint8ArrayToBase64(s.signature),
-    }))
-    return signatures[0]
-  }
+      signature: uint8ArrayToBase64(s.signature)
+    }));
+    return signatures[0];
+  };
 
   /**
    * This function creates a transaction.
@@ -138,27 +126,25 @@ export class TransactionService {
   public createTransaction = async (
     wallet: Wallet,
     account: Account,
-    document: Document,
+    document: Document
   ): Promise<{
-    signed: Tx
-    signature: EncodeTxSignature[]
+    signed: Tx;
+    signature: EncodeTxSignature[];
   }> => {
-    const provider = this.getGnoProvider()
-    const {
-      signed, signature,
-    } = await wallet.signByAccountId(provider, account.id, document)
+    const provider = this.getGnoProvider();
+    const { signed, signature } = await wallet.signByAccountId(provider, account.id, document);
     const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
       },
-      signature: uint8ArrayToBase64(s.signature),
-    }))
+      signature: uint8ArrayToBase64(s.signature)
+    }));
     return {
       signed,
-      signature: encodedSignature,
-    }
-  }
+      signature: encodedSignature
+    };
+  };
 
   /**
    * This function creates a transaction.
@@ -171,28 +157,26 @@ export class TransactionService {
   public createTransactionWithLedger = async (
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
-    document: Document,
+    document: Document
   ): Promise<{
-    signed: Tx
-    signature: EncodeTxSignature[]
+    signed: Tx;
+    signature: EncodeTxSignature[];
   }> => {
-    const provider = this.getGnoProvider()
-    const keyring = await LedgerKeyring.fromLedger(ledgerConnector)
-    const {
-      signed, signature,
-    } = await keyring.sign(provider, document, account.hdPath)
+    const provider = this.getGnoProvider();
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
+    const { signed, signature } = await keyring.sign(provider, document, account.hdPath);
     const encodedSignature = signature.map(s => ({
       pubKey: {
         typeUrl: s?.pub_key?.type_url,
-        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined,
+        value: s?.pub_key?.value ? uint8ArrayToBase64(s.pub_key.value as Uint8Array) : undefined
       },
-      signature: uint8ArrayToBase64(s.signature),
-    }))
+      signature: uint8ArrayToBase64(s.signature)
+    }));
     return {
       signed,
-      signature: encodedSignature,
-    }
-  }
+      signature: encodedSignature
+    };
+  };
 
   /**
    * This function sends a transaction to gnoland
@@ -207,16 +191,16 @@ export class TransactionService {
     wallet: Wallet,
     account: Account,
     transaction: Tx,
-    commit?: boolean,
+    commit?: boolean
   ): Promise<BroadcastTxCommitResult | BroadcastTxSyncResult> => {
-    const provider = this.getGnoProvider()
+    const provider = this.getGnoProvider();
     const broadcastTx = commit
       ? wallet.broadcastTxCommit.bind(wallet)
-      : wallet.broadcastTxSync.bind(wallet)
+      : wallet.broadcastTxSync.bind(wallet);
 
-    const result = await broadcastTx(provider, account.id, transaction)
-    return result
-  }
+    const result = await broadcastTx(provider, account.id, transaction);
+    return result;
+  };
 
   /**
    * This function sends a transaction to gnoland
@@ -231,17 +215,17 @@ export class TransactionService {
     ledgerConnector: AdenaLedgerConnector,
     account: LedgerAccount,
     transaction: Tx,
-    commit?: boolean,
+    commit?: boolean
   ): Promise<BroadcastTxCommitResult | BroadcastTxSyncResult> => {
-    const provider = this.getGnoProvider()
-    const keyring = await LedgerKeyring.fromLedger(ledgerConnector)
+    const provider = this.getGnoProvider();
+    const keyring = await LedgerKeyring.fromLedger(ledgerConnector);
     const broadcastTx = commit
       ? keyring.broadcastTxCommit.bind(keyring)
-      : keyring.broadcastTxSync.bind(keyring)
+      : keyring.broadcastTxSync.bind(keyring);
 
-    const result = await broadcastTx(provider, transaction, account.hdPath)
-    return result
-  }
+    const result = await broadcastTx(provider, transaction, account.hdPath);
+    return result;
+  };
 
   /**
    * create a transaction hash
@@ -250,8 +234,8 @@ export class TransactionService {
    * @returns
    */
   public createHash(transaction: Tx): string {
-    const hash = sha256(Tx.encode(transaction).finish())
-    return Buffer.from(hash).toString('base64')
+    const hash = sha256(Tx.encode(transaction).finish());
+    return Buffer.from(hash).toString('base64');
   }
 
   /**
@@ -261,6 +245,6 @@ export class TransactionService {
    * @returns
    */
   public encodeTransaction(transaction: Tx): string {
-    return uint8ArrayToBase64(Tx.encode(transaction).finish())
+    return uint8ArrayToBase64(Tx.encode(transaction).finish());
   }
 }

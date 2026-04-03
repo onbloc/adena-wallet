@@ -1,13 +1,7 @@
-import {
-  ripemd160 as nobleRipemd160,
-} from "@noble/hashes/legacy.js";
+import { ripemd160 as nobleRipemd160 } from '@noble/hashes/legacy.js';
 
-import {
-  HashFunction,
-} from "./hash.js";
-import {
-  toRealUint8Array,
-} from "./utils.js";
+import { HashFunction } from './hash.js';
+import { toRealUint8Array } from './utils.js';
 
 export class Ripemd160 implements HashFunction {
   public readonly blockSize = 512 / 8;

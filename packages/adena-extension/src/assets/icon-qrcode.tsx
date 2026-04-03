@@ -1,6 +1,4 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
 const IconQRCode = (): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'>
@@ -42,6 +40,6 @@ const IconQRCode = (): JSX.Element => (
       </clipPath>
     </defs>
   </svg>
-)
+);
 
-export default IconQRCode
+export default IconQRCode;

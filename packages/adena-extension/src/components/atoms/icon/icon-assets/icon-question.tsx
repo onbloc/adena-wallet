@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconQuestion = ({
-  className,
-}: {
-  className?: string
-}): ReactElement<any> => {
+const IconQuestion = ({ className }: { className?: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -28,7 +22,7 @@ const IconQuestion = ({
         </clipPath>
       </defs>
     </svg>
-  )
-}
+  );
+};
 
-export default IconQuestion
+export default IconQuestion;

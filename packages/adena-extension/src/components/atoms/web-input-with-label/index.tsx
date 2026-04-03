@@ -1,40 +1,30 @@
-import {
-  Row, View,
-} from '@components/atoms'
-import {
-  webFonts,
-} from '@styles/theme'
-import React, {
-  useState,
-} from 'react'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import { Row, View } from '@components/atoms';
+import { webFonts } from '@styles/theme';
+import React, { useState } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface StyleProps {
-  hover?: boolean
-  focus?: boolean
-  filled?: boolean
-  error?: boolean
-  disabled?: boolean
+  hover?: boolean;
+  focus?: boolean;
+  filled?: boolean;
+  error?: boolean;
+  disabled?: boolean;
 }
 
 const StyledContainer = styled(Row).withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
 })<StyleProps>`
   width: 100%;
   height: 40px;
   position: relative;
   overflow: hidden;
   border-radius: 10px;
-  border: 1px solid ${({
-    theme,
-  }): string => theme.webNeutral._800};
+  border: 1px solid ${({ theme }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
   ${({
-    theme, hover, focus, filled,
+    theme, hover, focus, filled
   }): RuleSet | string =>
     hover || focus || filled
       ? css`
@@ -42,9 +32,7 @@ const StyledContainer = styled(Row).withConfig({
         `
       : ''}
   
-  ${({
-    filled, disabled,
-  }): RuleSet | string =>
+  ${({ filled, disabled }): RuleSet | string =>
     filled && !disabled
       ? css`
           box-shadow:
@@ -54,9 +42,7 @@ const StyledContainer = styled(Row).withConfig({
         `
       : ''}
 
-  ${({
-    theme, error, disabled,
-  }): RuleSet | string =>
+  ${({ theme, error, disabled }): RuleSet | string =>
     error && !disabled
       ? css`
           background: #e0517014;
@@ -67,40 +53,30 @@ const StyledContainer = styled(Row).withConfig({
             0px 1px 2px 0px rgba(0, 0, 0, 0.06);
         `
       : ''}
-`
+`;
 
 const StyledLabel = styled(View).withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
 })<StyleProps>`
   min-width: 106px;
   height: 100%;
   padding: 0 16px;
-  background: ${({
-    theme,
-  }): string => theme.webInput._100};
-  border-right: 1px solid ${({
-    theme,
-  }): string => theme.webNeutral._800};
+  background: ${({ theme }): string => theme.webInput._100};
+  border-right: 1px solid ${({ theme }): string => theme.webNeutral._800};
   align-items: center;
   justify-content: center;
-  color: ${({
-    theme,
-  }): string => theme.webNeutral._500};
+  color: ${({ theme }): string => theme.webNeutral._500};
   white-space: nowrap;
 
-  ${({
-    theme, hover, focus,
-  }): RuleSet | string =>
+  ${({ theme, hover, focus }): RuleSet | string =>
     hover || focus
       ? css`
           border-color: ${theme.webNeutral._600};
         `
       : ''}
 
-  ${({
-    theme, error, disabled,
-  }): RuleSet | string =>
+  ${({ theme, error, disabled }): RuleSet | string =>
     error && !disabled
       ? css`
           color: ${theme.webError._100};
@@ -108,11 +84,11 @@ const StyledLabel = styled(View).withConfig({
           border-color: ${theme.webError._200};
         `
       : ''}
-`
+`;
 
 const StyledInput = styled.input.withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop),
+    !['hover', 'focus', 'filled', 'error', 'disabled'].includes(prop)
 })<StyleProps>`
   flex: 1;
   width: 100%;
@@ -122,33 +98,27 @@ const StyledInput = styled.input.withConfig({
   border: none;
   outline: none;
   box-shadow: none;
-  background: ${({
-    error, theme,
-  }): string =>
+  background: ${({ error, theme }): string =>
     error ? theme.webError._300 : theme.webNeutral._900};
-  color: ${({
-    theme, disabled,
-  }): string =>
+  color: ${({ theme, disabled }): string =>
     disabled ? theme.webNeutral._600 : theme.webNeutral._100};
 
   &::placeholder {
-    color: ${({
-      theme,
-    }): string => theme.webNeutral._600};
+    color: ${({ theme }): string => theme.webNeutral._600};
   }
 
   &:disabled {
     cursor: default;
   }
-`
+`;
 
 interface WebInputWithLabelProps {
-  label: string
-  value: string
-  error?: boolean
-  disabled?: boolean
-  onChange: (value: string) => void
-  placeholder?: string
+  label: string;
+  value: string;
+  error?: boolean;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }
 
 export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
@@ -157,11 +127,11 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
   error = false,
   disabled = false,
   onChange,
-  placeholder,
+  placeholder
 }) => {
-  const [hover, setHover] = useState(false)
-  const [focus, setFocus] = useState(false)
-  const filled = value.length > 0
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
+  const filled = value.length > 0;
 
   return (
     <StyledContainer
@@ -196,5 +166,5 @@ export const WebInputWithLabel: React.FC<WebInputWithLabelProps> = ({
         disabled={disabled}
       />
     </StyledContainer>
-  )
-}
+  );
+};

@@ -1,22 +1,18 @@
 import React, {
-  CSSProperties, useCallback, useEffect, useState,
-} from 'react'
+  CSSProperties, useCallback, useEffect, useState
+} from 'react';
 import styled, {
-  css, keyframes, RuleSet, useTheme,
-} from 'styled-components'
+  css, keyframes, RuleSet, useTheme
+} from 'styled-components';
 
-import {
-  View,
-} from '../base'
-import {
-  WebText,
-} from '../web-text'
+import { View } from '../base';
+import { WebText } from '../web-text';
 
 interface WebHoldButtonProps {
-  width?: CSSProperties['width']
-  height?: CSSProperties['height']
-  text?: string
-  onFinishHold: (result: boolean) => void
+  width?: CSSProperties['width'];
+  height?: CSSProperties['height'];
+  text?: string;
+  onFinishHold: (result: boolean) => void;
 }
 
 const fill = keyframes`
@@ -26,11 +22,11 @@ const fill = keyframes`
   to {
    width: 100%;
   }
-`
+`;
 
 const StyledContainer = styled(View)<{
-  pressed: boolean
-  finish: boolean
+  pressed: boolean;
+  finish: boolean;
 }>`
   position: relative;
   overflow: hidden;
@@ -45,9 +41,7 @@ const StyledContainer = styled(View)<{
   user-select: none;
   box-shadow: 0 0 0 1px #212429 inset;
 
-  ${({
-    pressed, finish,
-  }): RuleSet =>
+  ${({ pressed, finish }): RuleSet =>
     pressed || finish
       ? css`
           box-shadow:
@@ -75,69 +69,69 @@ const StyledContainer = styled(View)<{
             box-shadow: 0 0 0 1px #ffffff14 inset;
           }
         `}
-`
+`;
 
 export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
   width = 'fit-content',
   height = 32,
   text = 'Hold to Reveal',
-  onFinishHold,
+  onFinishHold
 }) => {
-  const theme = useTheme()
-  const [pressed, setPressed] = useState(false)
-  const [mouseover, setMouseover] = useState(false)
-  const [finish, setFinish] = useState(false)
+  const theme = useTheme();
+  const [pressed, setPressed] = useState(false);
+  const [mouseover, setMouseover] = useState(false);
+  const [finish, setFinish] = useState(false);
 
   const endEvent = useCallback((): void => {
-    setMouseover(false)
+    setMouseover(false);
     if (pressed) {
-      setPressed(false)
+      setPressed(false);
     }
-  }, [pressed])
+  }, [pressed]);
 
   const onMouseDown = useCallback(() => {
     if (finish) {
-      setFinish(false)
-      return
+      setFinish(false);
+      return;
     }
-    setMouseover(true)
-    setPressed(true)
-  }, [finish, endEvent])
+    setMouseover(true);
+    setPressed(true);
+  }, [finish, endEvent]);
 
   const onMouseOver = useCallback(() => {
-    setMouseover(true)
-  }, [])
+    setMouseover(true);
+  }, []);
 
   const onMouseUp = useCallback(() => {
-    endEvent()
-  }, [endEvent])
+    endEvent();
+  }, [endEvent]);
 
   const onMouseLeave = useCallback(() => {
-    endEvent()
-  }, [endEvent])
+    endEvent();
+  }, [endEvent]);
 
   useEffect(() => {
-    onFinishHold(finish)
-  }, [finish])
+    onFinishHold(finish);
+  }, [finish]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    let timer: NodeJS.Timeout;
     if (pressed) {
       timer = setTimeout(() => {
-        setFinish(true)
-      }, 3000)
+        setFinish(true);
+      }, 3000);
     }
 
     return () => {
-      clearTimeout(timer)
-    }
-  }, [pressed, onFinishHold])
+      clearTimeout(timer);
+    };
+  }, [pressed, onFinishHold]);
 
   return (
     <StyledContainer
       style={{
         width,
-        height,
+        height
       }}
       pressed={pressed}
       finish={finish}
@@ -154,5 +148,5 @@ export const WebHoldButton: React.FC<WebHoldButtonProps> = ({
         {text}
       </WebText>
     </StyledContainer>
-  )
-}
+  );
+};

@@ -1,33 +1,23 @@
-import {
-  WEB_CONTENT_WIDTH,
-} from '@common/constants/ui.constant'
-import mixins from '@styles/mixins'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import { WEB_CONTENT_WIDTH } from '@common/constants/ui.constant';
+import mixins from '@styles/mixins';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface WebMainProps {
-  width?: React.CSSProperties['width']
-  spacing?: number | null
-  responsiveSpacing?: number | null
+  width?: React.CSSProperties['width'];
+  spacing?: number | null;
+  responsiveSpacing?: number | null;
 }
 
-export const WebMain = styled.main.withConfig({
-  shouldForwardProp: (prop): boolean => !['width', 'spacing', 'responsiveSpacing'].includes(prop),
-})<WebMainProps>`
+export const WebMain = styled.main.withConfig({ shouldForwardProp: (prop): boolean => !['width', 'spacing', 'responsiveSpacing'].includes(prop) })<WebMainProps>`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })}
-  width: ${({
-    width,
-  }): React.CSSProperties['width'] => width ?? `${WEB_CONTENT_WIDTH}px`};
+  width: ${({ width }): React.CSSProperties['width'] => width ?? `${WEB_CONTENT_WIDTH}px`};
   margin: 0 auto 0;
   row-gap: 24px;
 
-  ${({
-    spacing,
-  }): RuleSet =>
+  ${({ spacing }): RuleSet =>
     spacing
       ? css`
           height: calc(100vh - 80px);
@@ -40,9 +30,7 @@ export const WebMain = styled.main.withConfig({
           justify-content: center;
         `}
 
-  ${({
-    responsiveSpacing,
-  }): RuleSet =>
+  ${({ responsiveSpacing }): RuleSet =>
     responsiveSpacing
       ? css`
           @media (max-height: 850px) {
@@ -52,4 +40,4 @@ export const WebMain = styled.main.withConfig({
           }
         `
       : css``}
-`
+`;

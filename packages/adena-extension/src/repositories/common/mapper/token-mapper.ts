@@ -3,33 +3,33 @@ import {
   IBCNativeTokenModel,
   IBCTokenModel,
   NativeTokenModel,
-  TokenModel,
-} from '@types'
+  TokenModel
+} from '@types';
 
 import {
   SearchGRC20Token,
-  SearchGRC20TokenResponse,
-} from '../response/search-grc20-token-response'
+  SearchGRC20TokenResponse
+} from '../response/search-grc20-token-response';
 import {
   GRC20TokenResponse,
   IBCNativeTokenResponse,
   IBCTokenResponse,
-  NativeTokenResponse,
-} from '../response/token-asset-response'
+  NativeTokenResponse
+} from '../response/token-asset-response';
 
 export class TokenMapper {
   private static IMAGE_BASE_URI
-    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main'
+    = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main';
 
   public static fromNativeTokenMetainfos(
     networkId: string,
-    response: NativeTokenResponse,
+    response: NativeTokenResponse
   ): NativeTokenModel[] {
     return response.map((token) => {
       const {
-        decimals, denom, image, name, symbol, description, website_url,
-      } = token
-      const isGNOT = denom === 'ugnot'
+        decimals, denom, image, name, symbol, description, website_url
+      } = token;
+      const isGNOT = denom === 'ugnot';
       return {
         main: isGNOT,
         display: isGNOT,
@@ -42,19 +42,19 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
-      }
-    })
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : ''
+      };
+    });
   }
 
   public static fromGRC20TokenMetainfos(
     networkId: string,
-    response: GRC20TokenResponse,
+    response: GRC20TokenResponse
   ): GRC20TokenModel[] {
     return response.map((token) => {
       const {
-        decimals, pkg_path, image, name, symbol, description, website_url,
-      } = token
+        decimals, pkg_path, image, name, symbol, description, website_url
+      } = token;
       return {
         main: false,
         display: false,
@@ -67,19 +67,19 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
-      }
-    })
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : ''
+      };
+    });
   }
 
   public static fromIBCNativeMetainfos(
     networkId: string,
-    response: IBCNativeTokenResponse,
+    response: IBCNativeTokenResponse
   ): IBCNativeTokenModel[] {
     return response.map((token) => {
       const {
-        decimals, denom, image, name, symbol, description, website_url,
-      } = token
+        decimals, denom, image, name, symbol, description, website_url
+      } = token;
       return {
         main: false,
         display: false,
@@ -92,19 +92,19 @@ export class TokenMapper {
         decimals,
         description,
         websiteUrl: website_url,
-        image: image ? TokenMapper.IMAGE_BASE_URI + image : '',
-      }
-    })
+        image: image ? TokenMapper.IMAGE_BASE_URI + image : ''
+      };
+    });
   }
 
   public static fromIBCTokenMetainfos(
     networkId: string,
-    response: IBCTokenResponse,
+    response: IBCTokenResponse
   ): IBCTokenModel[] {
     return response.map((token) => {
       const {
-        website_url, origin_chain, origin_denom, origin_type, symbol,
-      } = token
+        website_url, origin_chain, origin_denom, origin_type, symbol
+      } = token;
       return {
         main: false,
         display: false,
@@ -115,50 +115,50 @@ export class TokenMapper {
         originChain: origin_chain,
         originDenom: origin_denom,
         originType: origin_type,
-        ...token,
-      }
-    })
+        ...token
+      };
+    });
   }
 
   public static fromSearchTokensResponse(
     networkId: string,
     response: SearchGRC20TokenResponse | null,
-    tokenInfos?: TokenModel[],
+    tokenInfos?: TokenModel[]
   ): GRC20TokenModel[] {
     if (response === null) {
-      return []
+      return [];
     }
-    return response.map(token => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos))
+    return response.map(token => this.mappedMetainfoBySearchToken(networkId, token, tokenInfos));
   }
 
   private static mappedAddtionalTokenBySearchToken(searchToken: SearchGRC20Token): {
-    name: string
-    symbol: string
-    decimals: number
-    tokenId: string
-    path: string
+    name: string;
+    symbol: string;
+    decimals: number;
+    tokenId: string;
+    path: string;
   } {
     const {
-      name, symbol, decimals, pkg_path: pkgPath,
-    } = searchToken
+      name, symbol, decimals, pkg_path: pkgPath
+    } = searchToken;
     return {
       name,
       symbol,
       decimals,
       tokenId: pkgPath,
-      path: pkgPath,
-    }
+      path: pkgPath
+    };
   }
 
   private static mappedMetainfoBySearchToken(
     networkId: string,
     searchToken: SearchGRC20Token,
-    tokenInfos?: TokenModel[],
+    tokenInfos?: TokenModel[]
   ): GRC20TokenModel {
-    const token = tokenInfos && tokenInfos.find(t => t.tokenId === pkgPath)
+    const token = tokenInfos && tokenInfos.find(t => t.tokenId === pkgPath);
     const {
-      decimals, name, pkg_path: pkgPath, symbol,
-    } = searchToken
+      decimals, name, pkg_path: pkgPath, symbol
+    } = searchToken;
     return {
       main: false,
       display: false,
@@ -169,7 +169,7 @@ export class TokenMapper {
       type: 'grc20',
       name,
       decimals,
-      image: token?.image ?? '',
-    }
+      image: token?.image ?? ''
+    };
   }
 }

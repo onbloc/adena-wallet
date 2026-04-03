@@ -1,105 +1,90 @@
-import {
-  WalletResponseFailureType,
-} from '@adena-wallet/sdk'
-import {
-  MemoryProvider,
-} from '@common/provider/memory/memory-provider'
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
-import {
-  HandlerMethod,
-} from '.'
-import {
-  CommandMessageData,
-} from './command-message'
-import {
-  InjectionMessage, InjectionMessageInstance,
-} from './message'
-import {
-  existsPopups, removePopups,
-} from './methods'
-import {
-  InjectCore,
-} from './methods/core'
+import { HandlerMethod } from '.';
+import { CommandMessageData } from './command-message';
+import { InjectionMessage, InjectionMessageInstance } from './message';
+import { existsPopups, removePopups } from './methods';
+import { InjectCore } from './methods/core';
 
 export class MessageHandler {
   public static createHandler = (
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage | CommandMessageData | any,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void,
+    sendResponse: (response?: InjectionMessage | CommandMessageData | any) => void
   ): boolean => {
     try {
       if (message?.status) {
-        const status = message?.status
+        const status = message?.status;
         switch (status) {
           case 'request':
-            this.requestHandler(inMemoryProvider, message, sender, sendResponse)
-            break
+            this.requestHandler(inMemoryProvider, message, sender, sendResponse);
+            break;
           case 'failure':
           case 'success':
-            sendResponse(message)
-            break
+            sendResponse(message);
+            break;
           case 'common':
           case 'response':
           default:
-            sendResponse(message)
-            break
+            sendResponse(message);
+            break;
         }
       }
       else {
-        sendResponse(message)
+        sendResponse(message);
       }
     }
     catch (error) {
-      console.warn(error)
+      console.warn(error);
     }
-    return true
-  }
+    return true;
+  };
 
   private static requestHandler = async (
     inMemoryProvider: MemoryProvider,
     message: InjectionMessage,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: any) => void,
+    sendResponse: (response?: any) => void
   ): Promise<true | undefined> => {
-    const core = new InjectCore(inMemoryProvider)
+    const core = new InjectCore(inMemoryProvider);
 
-    let existsWallet = false
+    let existsWallet = false;
 
     try {
-      const currentAccountId = await core.getCurrentAccountId()
-      existsWallet = currentAccountId?.length > 0
+      const currentAccountId = await core.getCurrentAccountId();
+      existsWallet = currentAccountId?.length > 0;
     }
     catch (_e) {
-      existsWallet = false
+      existsWallet = false;
     }
 
     if (!existsWallet) {
       sendResponse(
-        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {
-        }, message.key),
-      )
-      return
+        InjectionMessageInstance.failure(WalletResponseFailureType.NO_ACCOUNT, {}, message.key)
+      );
+      return;
     }
 
-    const isPopup = await existsPopups()
+    const isPopup = await existsPopups();
     if (isPopup) {
-      await removePopups()
+      await removePopups();
     }
 
     switch (message.type) {
       case 'DO_CONTRACT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.doContract(message, sendResponse)
+            HandlerMethod.doContract(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'GET_ACCOUNT':
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
-              HandlerMethod.getAccount(core, message, sendResponse)
+              HandlerMethod.getAccount(core, message, sendResponse);
             }
           })
           .catch(() => {
@@ -107,16 +92,16 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
                 message,
-                message.key,
-              ),
-            )
-          })
-        break
+                message.key
+              )
+            );
+          });
+        break;
       case 'GET_NETWORK':
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
-              HandlerMethod.getNetwork(core, message, sendResponse)
+              HandlerMethod.getNetwork(core, message, sendResponse);
             }
           })
           .catch(() => {
@@ -124,26 +109,26 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNRESOLVED_TRANSACTION_EXISTS,
                 message,
-                message.key,
-              ),
-            )
-          })
-        break
+                message.key
+              )
+            );
+          });
+        break;
       case 'ADD_ESTABLISH':
-        HandlerMethod.addEstablish(core, message, sendResponse)
-        break
+        HandlerMethod.addEstablish(core, message, sendResponse);
+        break;
       case 'ADD_NETWORK':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.addNetwork(core, message, sendResponse)
+            HandlerMethod.addNetwork(core, message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'SWITCH_NETWORK':
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
-              HandlerMethod.switchNetwork(core, message, sendResponse)
+              HandlerMethod.switchNetwork(core, message, sendResponse);
             }
           })
           .catch(() => {
@@ -151,59 +136,59 @@ export class MessageHandler {
               InjectionMessageInstance.failure(
                 WalletResponseFailureType.UNEXPECTED_ERROR,
                 message,
-                message.key,
-              ),
-            )
-          })
-        break
+                message.key
+              )
+            );
+          });
+        break;
       case 'SIGN_AMINO':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signAmino(message, sendResponse)
+            HandlerMethod.signAmino(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'SIGN_TX':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signTransaction(message, sendResponse)
+            HandlerMethod.signTransaction(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'CREATE_MULTISIG_ACCOUNT':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.createMultisigAccount(message, sendResponse)
+            HandlerMethod.createMultisigAccount(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'CREATE_MULTISIG_TRANSACTION':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.createMultisigDocument(message, sendResponse)
+            HandlerMethod.createMultisigDocument(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'SIGN_MULTISIG_TRANSACTION':
         HandlerMethod.checkEstablished(core, message, sendResponse).then((isEstablished) => {
           if (isEstablished) {
-            HandlerMethod.signMultisigDocument(message, sendResponse)
+            HandlerMethod.signMultisigDocument(message, sendResponse);
           }
-        })
-        break
+        });
+        break;
       case 'BROADCAST_MULTISIG_TRANSACTION':
         HandlerMethod.checkEstablished(core, message, sendResponse)
           .then((isEstablished) => {
             if (isEstablished) {
-              HandlerMethod.broadcastMultisigTransaction(message, sendResponse)
+              HandlerMethod.broadcastMultisigTransaction(message, sendResponse);
             }
           })
           .catch((e) => {
-            console.log(e, 'e')
-          })
-        break
+            console.log(e, 'e');
+          });
+        break;
       default:
-        break
+        break;
     }
-  }
+  };
 }

@@ -1,41 +1,27 @@
-import {
-  webFonts,
-} from '@styles/theme'
-import React, {
-  useCallback, useMemo, useState,
-} from 'react'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import { webFonts } from '@styles/theme';
+import React, { useCallback, useMemo, useState } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
-import {
-  Row, View,
-} from '../base'
+import { Row, View } from '../base';
 
 interface StyleProps {
-  hover?: boolean
-  focus?: boolean
-  filled?: boolean
-  error: boolean
+  hover?: boolean;
+  focus?: boolean;
+  filled?: boolean;
+  error: boolean;
 }
 
-const StyledContainer = styled(Row).withConfig({
-  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
-})<StyleProps & {
-  type: string
-}>`
+const StyledContainer = styled(Row).withConfig({ shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop) })<StyleProps & { type: string }>`
   width: 100%;
   height: 40px;
   position: relative;
   overflow: hidden;
   border-radius: 10px;
-  border: 1px solid ${({
-    theme,
-  }): string => theme.webNeutral._800};
+  border: 1px solid ${({ theme }): string => theme.webNeutral._800};
   ${webFonts.body4}
 
   ${({
-    theme, hover, focus, filled,
+    theme, hover, focus, filled
   }): RuleSet | string =>
     hover || focus || filled
       ? css`
@@ -43,9 +29,7 @@ const StyledContainer = styled(Row).withConfig({
         `
       : ''}
   
-  ${({
-    filled,
-  }): RuleSet | string =>
+  ${({ filled }): RuleSet | string =>
     filled
       ? css`
           box-shadow:
@@ -55,9 +39,7 @@ const StyledContainer = styled(Row).withConfig({
         `
       : ''}
 
-  ${({
-    theme, error,
-  }): RuleSet | string =>
+  ${({ theme, error }): RuleSet | string =>
     error
       ? css`
           background: #e0517014;
@@ -68,37 +50,25 @@ const StyledContainer = styled(Row).withConfig({
             0px 1px 2px 0px rgba(0, 0, 0, 0.06);
         `
       : ''}
-`
+`;
 
-const StyledTitle = styled(View).withConfig({
-  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
-})<StyleProps>`
+const StyledTitle = styled(View).withConfig({ shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop) })<StyleProps>`
   width: 40px;
   height: 100%;
-  background: ${({
-    theme,
-  }): string => theme.webInput._100};
-  border-right: 1px solid ${({
-    theme,
-  }): string => theme.webNeutral._800};
+  background: ${({ theme }): string => theme.webInput._100};
+  border-right: 1px solid ${({ theme }): string => theme.webNeutral._800};
   align-items: center;
   justify-content: center;
-  color: ${({
-    theme,
-  }): string => theme.webNeutral._500};
+  color: ${({ theme }): string => theme.webNeutral._500};
 
-  ${({
-    theme, hover, focus,
-  }): RuleSet | string =>
+  ${({ theme, hover, focus }): RuleSet | string =>
     hover || focus
       ? css`
           border-color: ${theme.webNeutral._600};
         `
       : ''}
 
-  ${({
-    theme, error,
-  }): RuleSet | string =>
+  ${({ theme, error }): RuleSet | string =>
     error
       ? css`
           color: ${theme.webError._100};
@@ -106,11 +76,9 @@ const StyledTitle = styled(View).withConfig({
           border-color: ${theme.webError._200};
         `
       : ''}
-`
+`;
 
-const StyledInput = styled.input.withConfig({
-  shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop),
-})<StyleProps>`
+const StyledInput = styled.input.withConfig({ shouldForwardProp: (prop): boolean => !['hover', 'focus', 'filled', 'error'].includes(prop) })<StyleProps>`
   flex: 1;
   width: 100%;
   height: 40px;
@@ -119,21 +87,17 @@ const StyledInput = styled.input.withConfig({
   border: none;
   outline: none;
   box-shadow: none;
-  background: ${({
-    error, theme,
-  }): string =>
+  background: ${({ error, theme }): string =>
     error ? theme.webError._300 : theme.webNeutral._900};
-  color: ${({
-    theme,
-  }): string => theme.webNeutral._100};
-`
+  color: ${({ theme }): string => theme.webNeutral._100};
+`;
 
 interface WebSeedInputItemProps {
-  type: string
-  index: number
-  value: string
-  error: boolean
-  onChange: (value: string) => void
+  type: string;
+  index: number;
+  value: string;
+  error: boolean;
+  onChange: (value: string) => void;
 }
 
 export const WebSeedInputItem: React.FC<WebSeedInputItemProps> = ({
@@ -141,22 +105,22 @@ export const WebSeedInputItem: React.FC<WebSeedInputItemProps> = ({
   index,
   value,
   error,
-  onChange,
+  onChange
 }) => {
-  const [hover, setHover] = useState(false)
-  const [focus, setFocus] = useState(false)
+  const [hover, setHover] = useState(false);
+  const [focus, setFocus] = useState(false);
 
   const filled = useMemo(() => {
-    return value.length > 0
-  }, [value])
+    return value.length > 0;
+  }, [value]);
 
   const onChangeInput = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value
-      onChange(value)
+      const value = event.target.value;
+      onChange(value);
     },
-    [onChange],
-  )
+    [onChange]
+  );
 
   return (
     <StyledContainer
@@ -182,5 +146,5 @@ export const WebSeedInputItem: React.FC<WebSeedInputItemProps> = ({
         error={error}
       />
     </StyledContainer>
-  )
-}
+  );
+};

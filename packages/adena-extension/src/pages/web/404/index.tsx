@@ -1,13 +1,9 @@
 import {
-  Row, View, WebButton, WebMain, WebText,
-} from '@components/atoms'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  ReactElement,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Row, View, WebButton, WebMain, WebText
+} from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { ReactElement } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledAbsoluteWrapper = styled(View)`
   position:absolute;
@@ -32,14 +28,14 @@ const StyledAbsoluteWrapper = styled(View)`
   align-items: center;
   overflow: hidden;
   pointer-events: none;
-`
+`;
 
 const StyledContainer = styled(View)`
   width: 100%;
   align-items: center;
   justify-content: center;
   row-gap: 24px;
-`
+`;
 
 const StyledLabel = styled(Row)`
   border-radius: 24px;
@@ -48,13 +44,11 @@ const StyledLabel = styled(Row)`
   backdrop-filter: blur(8px);
   padding: 8px;
   column-gap: 4px;
-`
+`;
 
 const NotFoundScreen = (): ReactElement<any> => {
-  const theme = useTheme()
-  const {
-    reload,
-  } = useAppNavigate()
+  const theme = useTheme();
+  const { reload } = useAppNavigate();
 
   return (
     <WebMain>
@@ -68,7 +62,7 @@ const NotFoundScreen = (): ReactElement<any> => {
 
         <View style={{
           alignItems: 'center',
-          rowGap: 8,
+          rowGap: 8
         }}
         >
           <WebText type='display5' textCenter>
@@ -83,12 +77,12 @@ const NotFoundScreen = (): ReactElement<any> => {
           size='small'
           text='Go Back'
           onClick={(): void => {
-            reload()
+            reload();
           }}
         />
       </StyledContainer>
     </WebMain>
-  )
-}
+  );
+};
 
-export default NotFoundScreen
+export default NotFoundScreen;

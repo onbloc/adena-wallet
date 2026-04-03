@@ -1,24 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  WebPrivateKeyBox,
-} from '.'
+import { WebPrivateKeyBox } from '.';
 
 describe('WebPrivateKeyBox Component', () => {
   it('WebPrivateKeyBox render', () => {
@@ -28,7 +16,7 @@ describe('WebPrivateKeyBox Component', () => {
         <ThemeProvider theme={theme}>
           <WebPrivateKeyBox privateKey='privateKey' showBlur />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

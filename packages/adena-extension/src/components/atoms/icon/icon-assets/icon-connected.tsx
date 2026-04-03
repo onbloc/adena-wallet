@@ -1,6 +1,4 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
 const IconConnected = (): ReactElement<any> => {
   return (
@@ -19,7 +17,7 @@ const IconConnected = (): ReactElement<any> => {
         fill='#40C55D'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconConnected
+export default IconConnected;

@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconSearch = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconSearch = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -31,7 +25,7 @@ const IconSearch = ({
         fill='#212128'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconSearch
+export default IconSearch;

@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it, vi,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it, vi } from 'vitest';
 
-import ApproveTransactionMessage, {
-  ApproveTransactionMessageProps,
-} from './approve-transaction-message'
+import ApproveTransactionMessage, { ApproveTransactionMessageProps } from './approve-transaction-message';
 
 describe('ApproveTransactionMessage Component', () => {
   it('ApproveTransactionMessage render', () => {
@@ -35,10 +23,10 @@ describe('ApproveTransactionMessage Component', () => {
           func: '',
           pkg_path: '',
           max_deposit: '',
-          send: '',
-        },
-      },
-    }
+          send: ''
+        }
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -46,7 +34,7 @@ describe('ApproveTransactionMessage Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveTransactionMessage {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

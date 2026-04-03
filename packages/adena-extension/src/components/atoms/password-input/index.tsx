@@ -1,59 +1,43 @@
-import {
-  EvaluatePasswordResult,
-} from '@common/utils/password-utils'
-import {
-  type JSX, useMemo,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import { EvaluatePasswordResult } from '@common/utils/password-utils';
+import { type JSX, useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
 
-import {
-  View,
-} from '../base'
-import {
-  DefaultInput,
-} from '../default-input'
-import {
-  Text,
-} from '../text'
+import { View } from '../base';
+import { DefaultInput } from '../default-input';
+import { Text } from '../text';
 
 interface PasswordInputProps extends React.ComponentPropsWithoutRef<'input'> {
-  evaluationResult?: EvaluatePasswordResult | null
-  error?: boolean
-  margin?: string
-  ref?: React.RefObject<HTMLInputElement | null>
+  evaluationResult?: EvaluatePasswordResult | null;
+  error?: boolean;
+  margin?: string;
+  ref?: React.RefObject<HTMLInputElement | null>;
 }
 
 const StyledPasswordInputContainer = styled(View)`
   position: relative;
   width: 100%;
   justify-content: center;
-`
+`;
 
-export const PasswordInput = ({
-  evaluationResult, ...rest
-}: PasswordInputProps): JSX.Element => {
-  const theme = useTheme()
+export const PasswordInput = ({ evaluationResult, ...rest }: PasswordInputProps): JSX.Element => {
+  const theme = useTheme();
 
   const complexityColor = useMemo(() => {
-    if (evaluationResult?.complexity === 'STRONG') return theme.webSuccess._100
-    if (evaluationResult?.complexity === 'MEDIUM') return theme.webWarning._100
-    return theme.webError._100
-  }, [evaluationResult])
+    if (evaluationResult?.complexity === 'STRONG') return theme.webSuccess._100;
+    if (evaluationResult?.complexity === 'MEDIUM') return theme.webWarning._100;
+    return theme.webError._100;
+  }, [evaluationResult]);
 
   const complexityText = useMemo(() => {
-    if (evaluationResult?.complexity === 'STRONG') return 'Strong'
-    if (evaluationResult?.complexity === 'MEDIUM') return 'Medium'
-    return 'Week'
-  }, [evaluationResult])
+    if (evaluationResult?.complexity === 'STRONG') return 'Strong';
+    if (evaluationResult?.complexity === 'MEDIUM') return 'Medium';
+    return 'Week';
+  }, [evaluationResult]);
 
   return (
     <StyledPasswordInputContainer>
       <DefaultInput
-        style={{
-          padding: evaluationResult?.valid ? '14px 60px 14px 16px' : '14px 16px',
-        }}
+        style={{ padding: evaluationResult?.valid ? '14px 60px 14px 16px' : '14px 16px' }}
         {...rest}
       />
       {evaluationResult?.valid && (
@@ -61,7 +45,7 @@ export const PasswordInput = ({
           style={{
             position: 'absolute',
             right: 16,
-            letterSpacing: '-2%',
+            letterSpacing: '-2%'
           }}
           type='body3Reg'
           color={complexityColor}
@@ -70,5 +54,5 @@ export const PasswordInput = ({
         </Text>
       )}
     </StyledPasswordInputContainer>
-  )
-}
+  );
+};

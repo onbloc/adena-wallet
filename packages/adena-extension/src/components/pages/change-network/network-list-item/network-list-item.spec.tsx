@@ -1,25 +1,13 @@
-import CHAIN_DATA from '@resources/chains/chains.json'
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import CHAIN_DATA from '@resources/chains/chains.json';
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NetworkListItem, {
-  NetworkListItemProps,
-} from './network-list-item'
+import NetworkListItem, { NetworkListItemProps } from './network-list-item';
 
 describe('NetworkListItem Component', () => {
   it('NetworkListItem render', () => {
@@ -28,12 +16,12 @@ describe('NetworkListItem Component', () => {
       locked: true,
       networkMetainfo: CHAIN_DATA[0],
       moveEditPage: () => {
-        return
+        return;
       },
       changeNetwork: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -41,7 +29,7 @@ describe('NetworkListItem Component', () => {
         <ThemeProvider theme={theme}>
           <NetworkListItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,62 +1,42 @@
-import lockLogo from '@assets/icon-lock.svg'
-import {
-  Button, Icon, Text,
-} from '@components/atoms'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import lockLogo from '@assets/icon-lock.svg';
+import { Button, Icon, Text } from '@components/atoms';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import React, { type JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const text = {
   title: 'Forgot Password?',
-  desc: 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.',
-}
+  desc: 'Adena cannot recover your password for you. You can only reset your password with your seed phrase.'
+};
 
 export const ForgotPassword = (): JSX.Element => {
-  const theme = useTheme()
-  const {
-    navigate,
-  } = useAppNavigate()
+  const theme = useTheme();
+  const { navigate } = useAppNavigate();
 
   const onClickLearnMore = (): void => {
     try {
       const adenaDocsUrl
-        = 'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet'
-      chrome.tabs.create({
-        url: adenaDocsUrl,
-      })
+        = 'https://docs.adena.app/resources/faq#i-got-locked-out-of-my-wallet-and-didnt-back-up-my-seed-phrase-is-there-a-way-to-recover-my-wallet';
+      chrome.tabs.create({ url: adenaDocsUrl });
     }
     catch (e) {
-      console.error(e)
+      console.error(e);
     }
-  }
+  };
 
   const onClickHaveNotSeedPhrase = (): void => {
     navigate(RoutePath.ResetWallet, {
-      state: {
-        from: 'forgot-password',
-      },
-      replace: true,
-    })
-  }
+      state: { from: 'forgot-password' },
+      replace: true
+    });
+  };
 
   const onClickForgotButton = (): void => {
-    navigate(RoutePath.EnterSeedPhrase, {
-      state: {
-        from: 'forgot-password',
-      },
-    })
-  }
+    navigate(RoutePath.EnterSeedPhrase, { state: { from: 'forgot-password' } });
+  };
 
   return (
     <Wrapper>
@@ -76,20 +56,18 @@ export const ForgotPassword = (): JSX.Element => {
         <Text type='body1Bold'>Next</Text>
       </Button>
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 50px;
   .seed-box {
     margin-top: 27px;
   }
-`
+`;
 
 const LearnMore = styled.button`
   font-size: 16px;
@@ -102,12 +80,10 @@ const LearnMore = styled.button`
     text-decoration-thickness: 1px;
     text-decoration-color: ${getTheme('primary', '_6')};
   }
-`
+`;
 
 const TextStyled = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-  })};
+  ${mixins.flex({ direction: 'row' })};
   width: 100%;
   color: ${getTheme('neutral', 'a')};
   gap: 6px;
@@ -127,4 +103,4 @@ const TextStyled = styled.div`
       stroke: ${getTheme('primary', '_6')};
     }
   }
-`
+`;

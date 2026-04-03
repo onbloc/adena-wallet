@@ -1,50 +1,38 @@
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  GRC721MetadataModel, GRC721Model,
-} from '@types'
-import React, {
-  useMemo,
-} from 'react'
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { GRC721MetadataModel, GRC721Model } from '@types';
+import React, { useMemo } from 'react';
 
-import {
-  NFTAssetMetadataWrapper,
-} from './nft-asset-metadata.styles'
+import { NFTAssetMetadataWrapper } from './nft-asset-metadata.styles';
 
 export interface NFTAssetMetadataProps {
-  asset: GRC721Model
+  asset: GRC721Model;
   queryGRC721TokenMetadata: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<GRC721MetadataModel | null>
+    options?: Omit<UseQueryOptions<GRC721MetadataModel | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<GRC721MetadataModel | null>;
 }
 
-const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({
-  asset, queryGRC721TokenMetadata,
-}) => {
-  const {
-    data: tokenMetadata, isFetched: isFetchedTokenMetadata,
-  } = queryGRC721TokenMetadata(
+const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({ asset, queryGRC721TokenMetadata }) => {
+  const { data: tokenMetadata, isFetched: isFetchedTokenMetadata } = queryGRC721TokenMetadata(
     asset.packagePath,
     asset.tokenId,
     {
       enabled: asset.isMetadata,
-      refetchOnMount: true,
-    },
-  )
+      refetchOnMount: true
+    }
+  );
 
   const isFetchedTokenMetadataWithEnabled = useMemo(() => {
     if (!asset.isMetadata) {
-      return false
+      return false;
     }
 
-    return isFetchedTokenMetadata && !!tokenMetadata
-  }, [asset, tokenMetadata, isFetchedTokenMetadata])
+    return isFetchedTokenMetadata && !!tokenMetadata;
+  }, [asset, tokenMetadata, isFetchedTokenMetadata]);
 
   if (!isFetchedTokenMetadataWithEnabled) {
-    return <React.Fragment />
+    return <React.Fragment />;
   }
 
   return (
@@ -67,7 +55,7 @@ const NFTAssetMetadata: React.FC<NFTAssetMetadataProps> = ({
         </div>
       </div>
     </NFTAssetMetadataWrapper>
-  )
-}
+  );
+};
 
-export default NFTAssetMetadata
+export default NFTAssetMetadata;

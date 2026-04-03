@@ -1,32 +1,20 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTCardImage, {
-  NFTCardImageProps,
-} from './nft-card-image'
+import NFTCardImage, { NFTCardImageProps } from './nft-card-image';
 
 describe('NFTCardImage Component', () => {
   it('NFTCardImage render', () => {
     const args: NFTCardImageProps = {
       image: '',
       isFetched: false,
-      hasBadge: false,
-    }
+      hasBadge: false
+    };
 
     render(
       <RecoilRoot>
@@ -34,7 +22,7 @@ describe('NFTCardImage Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCardImage {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

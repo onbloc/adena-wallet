@@ -1,44 +1,32 @@
-import ArrowLeftIcon from '@assets/arrowL-left.svg'
-import ArrowDownIcon from '@assets/transfer-arrow-down.svg'
-import {
-  SubHeader,
-} from '@components/atoms'
-import {
-  BottomFixedButtonGroup,
-} from '@components/molecules'
-import NetworkFee from '@components/molecules/network-fee/network-fee'
-import {
-  UseNetworkFeeReturn,
-} from '@hooks/wallet/use-network-fee'
-import {
-  Amount, NetworkFee as NetworkFeeType, TokenModel,
-} from '@types'
-import React, {
-  useMemo,
-} from 'react'
+import ArrowLeftIcon from '@assets/arrowL-left.svg';
+import ArrowDownIcon from '@assets/transfer-arrow-down.svg';
+import { SubHeader } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import NetworkFee from '@components/molecules/network-fee/network-fee';
+import { UseNetworkFeeReturn } from '@hooks/wallet/use-network-fee';
+import { Amount, NetworkFee as NetworkFeeType, TokenModel } from '@types';
+import React, { useMemo } from 'react';
 
-import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address'
-import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance'
-import {
-  TransferSummaryWrapper,
-} from './transfer-summary.styles'
+import TransferSummaryAddress from '../transfer-summary-address/transfer-summary-address';
+import TransferSummaryBalance from '../transfer-summary-balance/transfer-summary-balance';
+import { TransferSummaryWrapper } from './transfer-summary.styles';
 
 export interface TransferSummaryProps {
-  tokenMetainfo: TokenModel
-  tokenImage: string
-  transferBalance: Amount
-  toAddress: string
-  networkFee: NetworkFeeType | null
-  memo: string
-  currentBalance: number | null | undefined
-  useNetworkFeeReturn: UseNetworkFeeReturn
-  isErrorNetworkFee?: boolean
-  isLoadingNetworkFee?: boolean
-  simulateErrorBannerMessage?: string | null
-  onClickBack: () => void
-  onClickCancel: () => void
-  onClickSend: () => void
-  onClickNetworkFeeSetting: () => void
+  tokenMetainfo: TokenModel;
+  tokenImage: string;
+  transferBalance: Amount;
+  toAddress: string;
+  networkFee: NetworkFeeType | null;
+  memo: string;
+  currentBalance: number | null | undefined;
+  useNetworkFeeReturn: UseNetworkFeeReturn;
+  isErrorNetworkFee?: boolean;
+  isLoadingNetworkFee?: boolean;
+  simulateErrorBannerMessage?: string | null;
+  onClickBack: () => void;
+  onClickCancel: () => void;
+  onClickSend: () => void;
+  onClickNetworkFeeSetting: () => void;
 }
 
 const TransferSummary: React.FC<TransferSummaryProps> = ({
@@ -54,27 +42,27 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   onClickBack,
   onClickCancel,
   onClickSend,
-  onClickNetworkFeeSetting,
+  onClickNetworkFeeSetting
 }) => {
   const disabledSendButton = useMemo(() => {
     if (useNetworkFeeReturn.isLoading) {
-      return true
+      return true;
     }
 
     if (isErrorNetworkFee || useNetworkFeeReturn.isSimulateError) {
-      return true
+      return true;
     }
 
-    return Number(networkFee?.amount || 0) <= 0
-  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee])
+    return Number(networkFee?.amount || 0) <= 0;
+  }, [isErrorNetworkFee, useNetworkFeeReturn.isLoading, useNetworkFeeReturn.isSimulateError, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee'
+      return 'Insufficient network fee';
     }
 
-    return ''
-  }, [isErrorNetworkFee])
+    return '';
+  }, [isErrorNetworkFee]);
 
   return (
     <TransferSummaryWrapper>
@@ -82,7 +70,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <SubHeader
           leftElement={{
             element: <img src={`${ArrowLeftIcon}`} alt='back image' />,
-            onClick: onClickBack,
+            onClick: onClickBack
           }}
           title={`Sending ${tokenMetainfo.symbol}`}
         />
@@ -126,17 +114,17 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel,
+          onClick: onClickCancel
         }}
         rightButton={{
           text: 'Send',
           primary: true,
           onClick: onClickSend,
-          disabled: disabledSendButton,
+          disabled: disabledSendButton
         }}
       />
     </TransferSummaryWrapper>
-  )
-}
+  );
+};
 
-export default TransferSummary
+export default TransferSummary;

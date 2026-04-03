@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const BalanceInputWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: auto;
@@ -15,7 +13,7 @@ export const BalanceInputWrapper = styled.div`
   .input-wrapper {
     ${mixins.flex({
       direction: 'row',
-      justify: 'normal',
+      justify: 'normal'
     })};
     width: 100%;
     min-height: 48px;
@@ -66,4 +64,4 @@ export const BalanceInputWrapper = styled.div`
       color: ${getTheme('red', '_5')};
     }
   }
-`
+`;

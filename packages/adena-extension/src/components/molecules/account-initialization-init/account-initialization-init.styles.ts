@@ -1,11 +1,7 @@
-import {
-  View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  fonts,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { View } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AccountInitializationInitWrapper = styled(View)`
   width: 100%;
@@ -16,7 +12,7 @@ export const AccountInitializationInitWrapper = styled(View)`
   .image-wrapper {
     ${mixins.flex({
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     height: auto;
@@ -31,7 +27,7 @@ export const AccountInitializationInitWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     height: auto;
@@ -40,18 +36,14 @@ export const AccountInitializationInitWrapper = styled(View)`
     .address-box {
       ${mixins.flex({
         align: 'center',
-        justify: 'center',
+        justify: 'center'
       })};
       width: 100%;
       min-height: 41px;
       padding: 10px;
       border-radius: 24px;
-      color: ${({
-        theme,
-      }): string => theme.neutral._1};
-      background-color: ${({
-        theme,
-      }): string => theme.neutral._9};
+      color: ${({ theme }): string => theme.neutral._1};
+      background-color: ${({ theme }): string => theme.neutral._9};
       ${fonts.body2Reg}
     }
 
@@ -67,4 +59,4 @@ export const AccountInitializationInitWrapper = styled(View)`
       ${fonts.body2Reg}
     }
   }
-`
+`;

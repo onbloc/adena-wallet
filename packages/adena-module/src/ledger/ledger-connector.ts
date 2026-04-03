@@ -1,9 +1,7 @@
-import {
-  LedgerConnector as AminoLedgerConnector,
-} from "@cosmjs/ledger-amino";
-import Transport from "@ledgerhq/hw-transport";
-import TransportWebHID from "@ledgerhq/hw-transport-webhid";
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb";
+import { LedgerConnector as AminoLedgerConnector } from '@cosmjs/ledger-amino';
+import Transport from '@ledgerhq/hw-transport';
+import TransportWebHID from '@ledgerhq/hw-transport-webhid';
+import TransportWebUSB from '@ledgerhq/hw-transport-webusb';
 
 export class AdenaLedgerConnector extends AminoLedgerConnector {
   public static isSupportHID() {

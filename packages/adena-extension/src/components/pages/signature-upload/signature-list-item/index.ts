@@ -1,3 +1,1 @@
-export {
-  default,
-} from './signature-list-item'
+export { default } from './signature-list-item';

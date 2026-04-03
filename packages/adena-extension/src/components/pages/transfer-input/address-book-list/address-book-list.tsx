@@ -1,49 +1,41 @@
-import {
-  Text,
-} from '@components/atoms'
-import React from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import { Text } from '@components/atoms';
+import React from 'react';
+import { useTheme } from 'styled-components';
 
-import {
-  AddressBookListItemWrapper, AddressBookListWrapper,
-} from './address-book-list.styles'
+import { AddressBookListItemWrapper, AddressBookListWrapper } from './address-book-list.styles';
 
 export interface AddressBookListProps {
   addressBookInfos: {
-    addressBookId: string
-    name: string
-    description: string
-  }[]
-  onClickItem: (addressBookId: string) => void
+    addressBookId: string;
+    name: string;
+    description: string;
+  }[];
+  onClickItem: (addressBookId: string) => void;
 }
 
 interface AddressBookListItemProps {
-  addressBookId: string
-  name: string
-  address: string
-  onClickItem: (addressBookId: string) => void
+  addressBookId: string;
+  name: string;
+  address: string;
+  onClickItem: (addressBookId: string) => void;
 }
 
 const AddressBookListItem: React.FC<AddressBookListItemProps> = ({
   addressBookId,
   name,
   address,
-  onClickItem,
+  onClickItem
 }) => {
   return (
     <AddressBookListItemWrapper onClick={(): void => onClickItem(addressBookId)}>
       <div className='name'>{name}</div>
       <div className='address'>{address}</div>
     </AddressBookListItemWrapper>
-  )
-}
+  );
+};
 
-const AddressBookList: React.FC<AddressBookListProps> = ({
-  addressBookInfos, onClickItem,
-}) => {
-  const theme = useTheme()
+const AddressBookList: React.FC<AddressBookListProps> = ({ addressBookInfos, onClickItem }) => {
+  const theme = useTheme();
   return (
     <AddressBookListWrapper>
       {addressBookInfos.length === 0 && (
@@ -63,7 +55,7 @@ const AddressBookList: React.FC<AddressBookListProps> = ({
         />
       ))}
     </AddressBookListWrapper>
-  )
-}
+  );
+};
 
-export default AddressBookList
+export default AddressBookList;

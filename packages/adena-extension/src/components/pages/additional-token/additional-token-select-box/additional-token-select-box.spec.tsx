@@ -1,25 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  AdditionalTokenSelectBoxProps,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { AdditionalTokenSelectBoxProps } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import AdditionalTokenSelectBox from './additional-token-select-box'
+import AdditionalTokenSelectBox from './additional-token-select-box';
 
 describe('AdditionalTokenSelectBox Component', () => {
   it('AdditionalTokenSelectBox render', () => {
@@ -30,15 +18,15 @@ describe('AdditionalTokenSelectBox Component', () => {
       selectedInfo: null,
       tokenInfos: [],
       onChangeKeyword: () => {
-        return
+        return;
       },
       onClickListItem: () => {
-        return
+        return;
       },
       onClickOpenButton: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -46,7 +34,7 @@ describe('AdditionalTokenSelectBox Component', () => {
         <ThemeProvider theme={theme}>
           <AdditionalTokenSelectBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

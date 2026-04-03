@@ -1,71 +1,59 @@
-import logo from '@assets/logo-default-v2.svg'
-import {
-  ButtonMode, FullButtonRightIcon, Text,
-} from '@components/atoms'
-import {
-  BottomFixedButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
-import useLink from '@hooks/use-link'
-import mixins from '@styles/mixins'
-import React, {
-  type JSX, useEffect, useState,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import logo from '@assets/logo-default-v2.svg';
+import { ButtonMode, FullButtonRightIcon, Text } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import mixins from '@styles/mixins';
+import React, { type JSX, useEffect, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const menuMakerInfo = [
   {
     title: 'Website',
     navigatePath: 'https://adena.app/',
-    mode: 'DEFAULT',
+    mode: 'DEFAULT'
   },
   {
     title: 'Developer Docs',
     navigatePath: 'https://docs.adena.app/',
-    mode: 'DEFAULT',
+    mode: 'DEFAULT'
   },
   {
     title: 'GitHub',
     navigatePath: 'https://github.com/onbloc/adena-wallet',
-    mode: 'DEFAULT',
+    mode: 'DEFAULT'
   },
   {
     title: 'Help & Support',
     navigatePath: 'https://docs.adena.app/resources/faq',
-    mode: 'DEFAULT',
+    mode: 'DEFAULT'
   },
   {
     title: 'Terms of Use',
     navigatePath: 'https://adena.app/terms',
-    mode: 'DEFAULT',
+    mode: 'DEFAULT'
   },
   {
     title: 'Privacy Policy',
     navigatePath: 'https://adena.app/privacy',
-    mode: 'DEFAULT',
-  },
-]
+    mode: 'DEFAULT'
+  }
+];
 
 export const AboutAdena = (): JSX.Element => {
-  const theme = useTheme()
-  const {
-    openLink,
-  } = useLink()
-  const [version, setVersion] = useState('')
-  const {
-    goBack,
-  } = useAppNavigate()
+  const theme = useTheme();
+  const { openLink } = useLink();
+  const [version, setVersion] = useState('');
+  const { goBack } = useAppNavigate();
 
   useEffect(() => {
-    initVersion()
-  }, [])
+    initVersion();
+  }, []);
 
   const initVersion = (): void => {
-    const manifest = chrome.runtime.getManifest()
-    setVersion(`${manifest.version}`)
-  }
+    const manifest = chrome.runtime.getManifest();
+    setVersion(`${manifest.version}`);
+  };
 
   return (
     <Wrapper>
@@ -84,18 +72,16 @@ export const AboutAdena = (): JSX.Element => {
       ))}
       <BottomFixedButton onClick={goBack} />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 36px;
   padding-bottom: 116px;
   overflow-y: auto;
-`
+`;
 
-const Logo = styled.img``
+const Logo = styled.img``;

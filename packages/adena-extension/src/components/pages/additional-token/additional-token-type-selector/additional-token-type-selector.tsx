@@ -1,42 +1,40 @@
-import React, {
-  useCallback,
-} from 'react'
+import React, { useCallback } from 'react';
 
 import {
   StyledAdditionalTokenTypeSelector,
-  StyledAdditionalTokenTypeSelectorWrapper,
-} from './additional-token-type-selector.styles'
+  StyledAdditionalTokenTypeSelectorWrapper
+} from './additional-token-type-selector.styles';
 
 export enum AddingType {
   SEARCH,
-  MANUAL,
+  MANUAL
 }
 
 const displayTypeNames = {
   [AddingType.SEARCH]: 'Search',
-  [AddingType.MANUAL]: 'Manual',
-}
+  [AddingType.MANUAL]: 'Manual'
+};
 
 export interface AdditionalTokenTypeSelectorProps {
-  type: AddingType
-  setType: (type: AddingType) => void
+  type: AddingType;
+  setType: (type: AddingType) => void;
 }
 
 const AdditionalTokenTypeSelector: React.FC<AdditionalTokenTypeSelectorProps> = ({
   type,
-  setType,
+  setType
 }) => {
-  const types: AddingType[] = [AddingType.SEARCH, AddingType.MANUAL]
+  const types: AddingType[] = [AddingType.SEARCH, AddingType.MANUAL];
 
   const onClickSelector = useCallback(
     (selected: AddingType) => {
       if (selected === type) {
-        return
+        return;
       }
-      setType(selected)
+      setType(selected);
     },
-    [type],
-  )
+    [type]
+  );
 
   return (
     <StyledAdditionalTokenTypeSelectorWrapper>
@@ -50,7 +48,7 @@ const AdditionalTokenTypeSelector: React.FC<AdditionalTokenTypeSelectorProps> = 
         </StyledAdditionalTokenTypeSelector>
       ))}
     </StyledAdditionalTokenTypeSelectorWrapper>
-  )
-}
+  );
+};
 
-export default AdditionalTokenTypeSelector
+export default AdditionalTokenTypeSelector;

@@ -1,24 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  WebSecurityHeader,
-} from '.'
+import { WebSecurityHeader } from '.';
 
 describe('WebSecurityHeader Component', () => {
   it('WebSecurityHeader render', () => {
@@ -30,10 +18,10 @@ describe('WebSecurityHeader Component', () => {
             currentStep={0}
             stepLength={2}
             visibleBackButton={true}
-            onClickGoBack={(): void => { return }}
+            onClickGoBack={(): void => { return; }}
           />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

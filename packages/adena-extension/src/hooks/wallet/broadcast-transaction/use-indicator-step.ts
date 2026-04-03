@@ -1,106 +1,90 @@
-import {
-  useAdenaContext,
-} from '@hooks/use-context'
-import useQuestionnaire from '@hooks/web/use-questionnaire'
-import {
-  CommonState,
-} from '@states'
-import {
-  useQuery,
-} from '@tanstack/react-query'
-import _ from 'lodash'
-import {
-  useEffect, useMemo,
-} from 'react'
-import {
-  useRecoilState,
-} from 'recoil'
+import { useAdenaContext } from '@hooks/use-context';
+import useQuestionnaire from '@hooks/web/use-questionnaire';
+import { CommonState } from '@states';
+import { useQuery } from '@tanstack/react-query';
+import _ from 'lodash';
+import { useEffect, useMemo } from 'react';
+import { useRecoilState } from 'recoil';
 
 interface UseIndicatorStepProps<T extends string> {
-  stepMap?: Record<T, number>
-  currentState?: T
-  hasQuestionnaire?: boolean
+  stepMap?: Record<T, number>;
+  currentState?: T;
+  hasQuestionnaire?: boolean;
 }
 
 export interface UseIndicatorStepReturn {
-  stepNo: number
-  stepLength: number
+  stepNo: number;
+  stepLength: number;
 }
 
 const useIndicatorStep = <T extends string>({
   stepMap,
   currentState,
-  hasQuestionnaire = false,
+  hasQuestionnaire = false
 }: UseIndicatorStepProps<T>): UseIndicatorStepReturn => {
-  const {
-    walletService,
-  } = useAdenaContext()
-  const {
-    ableToSkipQuestionnaire,
-  } = useQuestionnaire()
+  const { walletService } = useAdenaContext();
+  const { ableToSkipQuestionnaire } = useQuestionnaire();
   const [webHeaderIndicatorLength, setWebHeaderIndicatorLength] = useRecoilState(
-    CommonState.webHeaderIndicatorLength,
-  )
+    CommonState.webHeaderIndicatorLength
+  );
 
   if (!stepMap) {
     return {
       stepNo: 0,
-      stepLength: webHeaderIndicatorLength,
-    }
+      stepLength: webHeaderIndicatorLength
+    };
   }
 
-  const {
-    data: stepLength = 0,
-  } = useQuery<number>({
+  const { data: stepLength = 0 } = useQuery<number>({
     queryKey: ['stepLength', hasQuestionnaire, stepMap, walletService],
     queryFn: async () => {
-      let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1
-      const existWallet = await walletService.existsWallet().catch(() => false)
+      let defaultStepLength = Math.max(..._.values<number>(stepMap)) + 1;
+      const existWallet = await walletService.existsWallet().catch(() => false);
       if (!existWallet) {
-        defaultStepLength = defaultStepLength + 1
+        defaultStepLength = defaultStepLength + 1;
       }
       if (hasQuestionnaire) {
         if (!existWallet) {
-          defaultStepLength = defaultStepLength + 1
+          defaultStepLength = defaultStepLength + 1;
         }
         else {
           const ableToSkipQuestionnaire = await walletService
             .isSkipQuestionnaire()
-            .catch(() => false)
+            .catch(() => false);
           if (!ableToSkipQuestionnaire) {
-            defaultStepLength = defaultStepLength + 1
+            defaultStepLength = defaultStepLength + 1;
           }
         }
       }
-      return defaultStepLength
-    },
-  })
+      return defaultStepLength;
+    }
+  });
 
   const existQuestionnaire = useMemo(() => {
-    return hasQuestionnaire && !ableToSkipQuestionnaire
-  }, [hasQuestionnaire, ableToSkipQuestionnaire])
+    return hasQuestionnaire && !ableToSkipQuestionnaire;
+  }, [hasQuestionnaire, ableToSkipQuestionnaire]);
 
   const currentStepNo = useMemo(() => {
     if (!currentState) {
-      return 0
+      return 0;
     }
-    const currentStep = stepMap[currentState] || 0
+    const currentStep = stepMap[currentState] || 0;
     if (currentStep > 0 && existQuestionnaire) {
-      return currentStep + 1
+      return currentStep + 1;
     }
-    return currentStep
-  }, [stepMap, currentState, existQuestionnaire])
+    return currentStep;
+  }, [stepMap, currentState, existQuestionnaire]);
 
   useEffect(() => {
     if (currentStepNo === 0) {
-      setWebHeaderIndicatorLength(stepLength)
+      setWebHeaderIndicatorLength(stepLength);
     }
-  }, [currentStepNo, stepLength])
+  }, [currentStepNo, stepLength]);
 
   return {
     stepNo: currentStepNo,
-    stepLength: webHeaderIndicatorLength,
-  }
-}
+    stepLength: webHeaderIndicatorLength
+  };
+};
 
-export default useIndicatorStep
+export default useIndicatorStep;

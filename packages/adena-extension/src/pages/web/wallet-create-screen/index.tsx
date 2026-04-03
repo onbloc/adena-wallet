@@ -1,29 +1,19 @@
-import {
-  ADENA_DOCS_PAGE,
-} from '@common/constants/resource.constant'
-import {
-  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
-import {
-  WebMain,
-} from '@components/atoms'
-import {
-  WebMainHeader,
-} from '@components/pages/web/main-header'
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step'
-import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen'
-import {
-  ReactElement,
-} from 'react'
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { WebMain } from '@components/atoms';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import useWalletCreateScreen from '@hooks/web/use-wallet-create-screen';
+import { ReactElement } from 'react';
 
-import GetMnemonicStep from './get-mnemonic-step'
-import ValidateMnemonicStep from './validate-mnemonic-step'
+import GetMnemonicStep from './get-mnemonic-step';
+import ValidateMnemonicStep from './validate-mnemonic-step';
 
 const WalletCreateScreen = (): ReactElement<any> => {
-  const useWalletCreateScreenReturn = useWalletCreateScreen()
+  const useWalletCreateScreenReturn = useWalletCreateScreen();
   const {
-    step, indicatorInfo, onClickGoBack, onClickNext,
-  } = useWalletCreateScreenReturn
+    step, indicatorInfo, onClickGoBack, onClickNext
+  } = useWalletCreateScreenReturn;
 
   return (
     <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
@@ -48,7 +38,7 @@ const WalletCreateScreen = (): ReactElement<any> => {
         <ValidateMnemonicStep useWalletCreateScreenReturn={useWalletCreateScreenReturn} />
       )}
     </WebMain>
-  )
-}
+  );
+};
 
-export default WalletCreateScreen
+export default WalletCreateScreen;

@@ -1,11 +1,7 @@
-import {
-  SkeletonBoxStyle, View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { SkeletonBoxStyle, View } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const NFTCardImageWrapper = styled(View)`
   width: 100%;
@@ -26,15 +22,15 @@ export const NFTCardImageWrapper = styled(View)`
     min-height: 100%;
     object-fit: cover;
   }
-`
+`;
 
 export const NFTCardImageSkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     align: 'flex-end',
-    justify: 'space-between',
+    justify: 'space-between'
   })}
   width: 100%;
   flex: 1;
   height: 100%;
   padding: 10px;
-`
+`;

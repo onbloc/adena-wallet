@@ -1,17 +1,11 @@
-import {
-  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
-import {
-  WebMain,
-} from '@components/atoms'
-import useQuestionnaireScreen from '@hooks/web/questionnaire/use-questionnaire-screen'
-import {
-  ReactElement, useMemo,
-} from 'react'
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { WebMain } from '@components/atoms';
+import useQuestionnaireScreen from '@hooks/web/questionnaire/use-questionnaire-screen';
+import { ReactElement, useMemo } from 'react';
 
-import QuestionnaireComplete from './complete'
-import QuestionnaireInitStep from './init-step'
-import QuestionnaireQuestion from './question'
+import QuestionnaireComplete from './complete';
+import QuestionnaireInitStep from './init-step';
+import QuestionnaireQuestion from './question';
 
 const QuestionnaireScreen = (): ReactElement<any> => {
   const {
@@ -21,18 +15,18 @@ const QuestionnaireScreen = (): ReactElement<any> => {
     initQuestion,
     nextQuestion,
     completeQuestion,
-    backStep,
-  } = useQuestionnaireScreen()
+    backStep
+  } = useQuestionnaireScreen();
 
   const topSpacing = useMemo(() => {
     if (questionnaireState === 'INIT' || questionnaireState === 'COMPLETE') {
-      return null
+      return null;
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE,
-    }
-  }, [questionnaireState])
+      responsive: WEB_TOP_SPACING_RESPONSIVE
+    };
+  }, [questionnaireState]);
 
   return (
     <WebMain
@@ -52,7 +46,7 @@ const QuestionnaireScreen = (): ReactElement<any> => {
         <QuestionnaireComplete completeQuestion={completeQuestion} />
       )}
     </WebMain>
-  )
-}
+  );
+};
 
-export default QuestionnaireScreen
+export default QuestionnaireScreen;

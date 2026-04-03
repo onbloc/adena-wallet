@@ -1,8 +1,6 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ApproveChangingNetworkItemWrapper = styled.div`
   ${mixins.flex()};
@@ -40,4 +38,4 @@ export const ApproveChangingNetworkItemWrapper = styled.div`
       -webkit-box-orient: vertical;
     }
   }
-`
+`;

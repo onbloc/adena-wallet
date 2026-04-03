@@ -1,49 +1,41 @@
-import IconArrowDown from '@assets/arrowS-down-gray.svg'
-import IconLoadingCircle from '@assets/web/loading-circle.svg'
-import {
-  WebImg, WebText,
-} from '@components/atoms'
-import React, {
-  useCallback,
-} from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import IconArrowDown from '@assets/arrowS-down-gray.svg';
+import IconLoadingCircle from '@assets/web/loading-circle.svg';
+import { WebImg, WebText } from '@components/atoms';
+import React, { useCallback } from 'react';
+import { useTheme } from 'styled-components';
 
 import {
   StyledLoadingWrapper,
   StyledLoadMore,
   StyledSelectAccountBox,
-  StyledSelectAccountContent,
-} from './select-account-box.styles'
-import {
-  AccountInfo,
-} from './select-account-box.types'
-import SelectAccountBoxItem from './select-account-box-item'
+  StyledSelectAccountContent
+} from './select-account-box.styles';
+import { AccountInfo } from './select-account-box.types';
+import SelectAccountBoxItem from './select-account-box-item';
 
 export interface SelectAccountBoxProps {
-  isLoading: boolean
-  accounts: AccountInfo[]
-  select: (address: string) => void
-  loadAccounts: () => Promise<void>
+  isLoading: boolean;
+  accounts: AccountInfo[];
+  select: (address: string) => void;
+  loadAccounts: () => Promise<void>;
 }
 
 const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
   accounts,
   isLoading,
   select,
-  loadAccounts,
+  loadAccounts
 }) => {
-  const theme = useTheme()
-  const hasAccount = accounts.length > 0
+  const theme = useTheme();
+  const hasAccount = accounts.length > 0;
 
   const onClickLoadMore = useCallback(() => {
     if (isLoading) {
-      return
+      return;
     }
 
-    return loadAccounts()
-  }, [isLoading, loadAccounts])
+    return loadAccounts();
+  }, [isLoading, loadAccounts]);
 
   return (
     <StyledSelectAccountBox>
@@ -74,7 +66,7 @@ const SelectAccountBox: React.FC<SelectAccountBoxProps> = ({
             )}
       </StyledLoadMore>
     </StyledSelectAccountBox>
-  )
-}
+  );
+};
 
-export default SelectAccountBox
+export default SelectAccountBox;

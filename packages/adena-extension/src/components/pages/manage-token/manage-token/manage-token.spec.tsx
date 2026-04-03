@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import ManageTokenSearch, {
-  ManageTokenSearchProps,
-} from '.'
+import ManageTokenSearch, { ManageTokenSearchProps } from '.';
 
 const tokens = [
   {
@@ -29,9 +17,9 @@ const tokens = [
     name: 'Gno.land',
     balance: {
       value: '240,255.241155',
-      denom: 'GNOT',
+      denom: 'GNOT'
     },
-    activated: true,
+    activated: true
   },
   {
     tokenId: 'token2',
@@ -41,11 +29,11 @@ const tokens = [
     name: 'GnoSwap',
     balance: {
       value: '252.844',
-      denom: 'GNS',
+      denom: 'GNS'
     },
-    activated: true,
-  },
-]
+    activated: true
+  }
+];
 
 describe('ManageTokenSearch Component', () => {
   it('ManageTokenSearch render', () => {
@@ -53,18 +41,18 @@ describe('ManageTokenSearch Component', () => {
       tokens,
       keyword: '',
       onChangeKeyword: () => {
-        return
+        return;
       },
       onClickAdded: () => {
-        return
+        return;
       },
       onClickClose: () => {
-        return
+        return;
       },
       onToggleActiveItem: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -72,7 +60,7 @@ describe('ManageTokenSearch Component', () => {
         <ThemeProvider theme={theme}>
           <ManageTokenSearch {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

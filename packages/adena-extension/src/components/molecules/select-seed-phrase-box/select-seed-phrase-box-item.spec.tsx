@@ -1,22 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item'
+import SelectSeedPhraseBoxItem from './select-seed-phrase-box-item';
 
 describe('SelectSeedPhraseBoxItem Component', () => {
   const args = {
@@ -24,12 +14,12 @@ describe('SelectSeedPhraseBoxItem Component', () => {
       index: 1,
       keyringId: 'id',
       accountCount: 1,
-      selected: false,
+      selected: false
     },
     select: (): void => {
-      return
-    },
-  }
+      return;
+    }
+  };
 
   it('SelectSeedPhraseBoxItem render', () => {
     render(
@@ -38,7 +28,7 @@ describe('SelectSeedPhraseBoxItem Component', () => {
         <ThemeProvider theme={theme}>
           <SelectSeedPhraseBoxItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

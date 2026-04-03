@@ -1,30 +1,22 @@
-import {
-  Account, AccountInfo,
-} from "./account.js";
-import {
-  LedgerAccount,
-} from "./ledger-account.js";
-import {
-  SeedAccount,
-} from "./seed-account.js";
-import {
-  SingleAccount,
-} from "./single-account.js";
+import { Account, AccountInfo } from './account.js';
+import { LedgerAccount } from './ledger-account.js';
+import { SeedAccount } from './seed-account.js';
+import { SingleAccount } from './single-account.js';
 
 export function isSeedAccount(account: Account): account is SeedAccount {
-  return account.type === "HD_WALLET";
+  return account.type === 'HD_WALLET';
 }
 
 export function isLedgerAccount(account: Account): account is LedgerAccount {
-  return account.type === "LEDGER";
+  return account.type === 'LEDGER';
 }
 
 export function isSingleAccount(account: Account): account is SingleAccount {
-  return account.type === "WEB3_AUTH" || account.type === "PRIVATE_KEY";
+  return account.type === 'WEB3_AUTH' || account.type === 'PRIVATE_KEY';
 }
 
 export function isAirgapAccount(account: Account): account is SingleAccount {
-  return account.type === "AIRGAP";
+  return account.type === 'AIRGAP';
 }
 
 export function hasPrivateKeyAccount(account: Account): boolean {
@@ -41,14 +33,14 @@ export function serializeAccount(account: Account) {
 
 export function deserializeAccount(plain: string) {
   const accountInfo: AccountInfo = JSON.parse(plain);
-  if (accountInfo.type === "HD_WALLET") {
+  if (accountInfo.type === 'HD_WALLET') {
     return SeedAccount.fromData(accountInfo);
   }
-  if (accountInfo.type === "LEDGER") {
+  if (accountInfo.type === 'LEDGER') {
     return LedgerAccount.fromData(accountInfo);
   }
-  if (accountInfo.type === "PRIVATE_KEY" || accountInfo.type === "WEB3_AUTH") {
+  if (accountInfo.type === 'PRIVATE_KEY' || accountInfo.type === 'WEB3_AUTH') {
     return SingleAccount.fromData(accountInfo);
   }
-  throw new Error("Invalid account type");
+  throw new Error('Invalid account type');
 }

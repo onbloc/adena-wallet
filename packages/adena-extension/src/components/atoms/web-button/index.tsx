@@ -1,67 +1,43 @@
-import IconRight from '@assets/web/chevron-right.svg'
-import {
-  getTheme, WebFontType,
-} from '@styles/theme'
-import React, {
-  ButtonHTMLAttributes, ReactElement, ReactNode,
-} from 'react'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import IconRight from '@assets/web/chevron-right.svg';
+import { getTheme, WebFontType } from '@styles/theme';
+import React, { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
-import {
-  Row, View,
-} from '../base'
-import {
-  WebImg,
-} from '../web-img'
-import {
-  WebText,
-} from '../web-text'
+import { Row, View } from '../base';
+import { WebImg } from '../web-img';
+import { WebText } from '../web-text';
 
 type WebButtonProps = {
-  buttonRef?: React.RefObject<HTMLButtonElement | null>
-  size: 'full' | 'large' | 'small'
-  textType?: WebFontType
-  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
-  fixed?: boolean
+  buttonRef?: React.RefObject<HTMLButtonElement | null>;
+  size: 'full' | 'large' | 'small';
+  textType?: WebFontType;
+  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
+  fixed?: boolean;
 } & (
   | {
-    text: string
-    rightIcon?: 'chevronRight'
+    text: string;
+    rightIcon?: 'chevronRight';
   }
-  | {
-    children: ReactNode
-  }
+  | { children: ReactNode }
 )
-& ButtonHTMLAttributes<HTMLButtonElement>
+& ButtonHTMLAttributes<HTMLButtonElement>;
 
-const StyledButtonBase = styled.button.withConfig({
-  shouldForwardProp: prop => !['ref', 'size', 'fixed', 'rightIcon'].includes(prop),
-})<{
-  size: 'full' | 'large' | 'small'
-  fixed?: boolean
+const StyledButtonBase = styled.button.withConfig({ shouldForwardProp: prop => !['ref', 'size', 'fixed', 'rightIcon'].includes(prop) })<{
+  size: 'full' | 'large' | 'small';
+  fixed?: boolean;
 }>`
   & {
     cursor: pointer;
     border: none;
-    border-radius: ${({
-      size,
-    }): string => (size === 'small' ? '12px' : '14px')};
-    padding: ${({
-      size,
-    }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
+    border-radius: ${({ size }): string => (size === 'small' ? '12px' : '14px')};
+    padding: ${({ size }): string => (size === 'large' ? '12px 16px 16px' : '8px 16px')};
     display: flex;
     flex-direction: row;
-    width: ${({
-      size,
-    }): string => (size === 'full' ? '100%' : 'auto')};
+    width: ${({ size }): string => (size === 'full' ? '100%' : 'auto')};
     height: 44px;
     justify-content: center;
     align-items: center;
-    ${({
-      fixed,
-    }): RuleSet | string =>
+    ${({ fixed }): RuleSet | string =>
       fixed
         ? css`
             flex-shrink: 0;
@@ -73,7 +49,7 @@ const StyledButtonBase = styled.button.withConfig({
       opacity: 0.4;
     }
   }
-`
+`;
 
 const StyledButtonPrimary = styled(StyledButtonBase)`
   & {
@@ -81,9 +57,7 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
     background: linear-gradient(180deg, #0059ff 0%, #004bd6 100%);
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
 
-    ${({
-      disabled,
-    }): RuleSet | string =>
+    ${({ disabled }): RuleSet | string =>
       !disabled
         ? css`
             &:hover {
@@ -104,7 +78,7 @@ const StyledButtonPrimary = styled(StyledButtonBase)`
           `
         : ''}
   }
-`
+`;
 
 const StyledButtonSecondary = styled(StyledButtonBase)`
   & {
@@ -112,9 +86,7 @@ const StyledButtonSecondary = styled(StyledButtonBase)`
     background: rgba(0, 89, 255, 0.16);
     box-shadow: 0 0 0 1px rgba(122, 169, 255, 0.24) inset;
 
-    ${({
-      disabled,
-    }): RuleSet | string =>
+    ${({ disabled }): RuleSet | string =>
       !disabled
         ? css`
             &:hover {
@@ -145,7 +117,7 @@ const StyledButtonSecondary = styled(StyledButtonBase)`
       background: rgba(0, 89, 255, 0.16);
     }
   }
-`
+`;
 
 const StyledButtonTertiary = styled(StyledButtonBase)`
   & {
@@ -157,9 +129,7 @@ const StyledButtonTertiary = styled(StyledButtonBase)`
       fill: ${getTheme('webNeutral', '_300')};
     }
 
-    ${({
-      disabled, theme,
-    }): RuleSet | string =>
+    ${({ disabled, theme }): RuleSet | string =>
       !disabled
         ? css`
             &:hover {
@@ -187,7 +157,7 @@ const StyledButtonTertiary = styled(StyledButtonBase)`
           `
         : ''}
   }
-`
+`;
 
 const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
   & {
@@ -201,9 +171,7 @@ const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
       fill: ${getTheme('webNeutral', '_300')};
     }
 
-    ${({
-      disabled, theme,
-    }): RuleSet | string =>
+    ${({ disabled, theme }): RuleSet | string =>
       !disabled
         ? css`
             &:hover {
@@ -224,7 +192,7 @@ const StyledButtonTertiarySmall = styled(StyledButtonTertiary)`
           `
         : ''}
   }
-`
+`;
 
 const StyledButtonQuaternary = styled(StyledButtonBase)`
   & {
@@ -243,7 +211,7 @@ const StyledButtonQuaternary = styled(StyledButtonBase)`
       background: rgba(255, 255, 255, 0.08);
     }
   }
-`
+`;
 
 const StyledButtonQuinary = styled(StyledButtonBase)`
   & {
@@ -263,7 +231,7 @@ const StyledButtonQuinary = styled(StyledButtonBase)`
       background: rgba(255, 255, 255, 0.08);
     }
   }
-`
+`;
 
 export const WebButton: React.FC<WebButtonProps> = ({
   buttonRef,
@@ -273,33 +241,33 @@ export const WebButton: React.FC<WebButtonProps> = ({
   fixed,
   ...rest
 }): ReactElement<any> => {
-  let StyledComponent
+  let StyledComponent;
   switch (figure) {
     case 'secondary':
-      StyledComponent = StyledButtonSecondary
-      break
+      StyledComponent = StyledButtonSecondary;
+      break;
     case 'tertiary':
       if (rest.size === 'small') {
-        StyledComponent = StyledButtonTertiarySmall
+        StyledComponent = StyledButtonTertiarySmall;
       }
       else {
-        StyledComponent = StyledButtonTertiary
+        StyledComponent = StyledButtonTertiary;
       }
-      break
+      break;
     case 'quaternary':
-      StyledComponent = StyledButtonQuaternary
-      break
+      StyledComponent = StyledButtonQuaternary;
+      break;
     case 'quinary':
-      StyledComponent = StyledButtonQuinary
-      break
+      StyledComponent = StyledButtonQuinary;
+      break;
     case 'primary':
     default:
-      StyledComponent = StyledButtonPrimary
+      StyledComponent = StyledButtonPrimary;
   }
 
-  const isRightButton = 'text' in rest && rest.rightIcon === 'chevronRight'
+  const isRightButton = 'text' in rest && rest.rightIcon === 'chevronRight';
 
-  const isFixed = fixed || rest.size === 'small'
+  const isFixed = fixed || rest.size === 'small';
 
   return (
     <StyledComponent ref={buttonRef} fixed={isFixed} {...rest}>
@@ -308,23 +276,17 @@ export const WebButton: React.FC<WebButtonProps> = ({
             <Row style={{
               gap: 4,
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'space-between'
             }}
             >
               {isRightButton && (
-                <View style={{
-                  width: 12,
-                }}
-                />
+                <View style={{ width: 12 }} />
               )}
               <WebText type={textType} color='inherit'>
                 {rest.text}
               </WebText>
               {isRightButton && (
-                <View style={{
-                  marginRight: 4,
-                }}
-                >
+                <View style={{ marginRight: 4 }}>
                   <WebImg src={IconRight} size={24} />
                 </View>
               )}
@@ -334,5 +296,5 @@ export const WebButton: React.FC<WebButtonProps> = ({
             children
           )}
     </StyledComponent>
-  )
-}
+  );
+};

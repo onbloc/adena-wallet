@@ -1,48 +1,40 @@
-import {
-  Text,
-} from '@components/atoms'
-import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list'
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  TransactionInfo,
-} from '@types'
-import React from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import { Text } from '@components/atoms';
+import TransactionHistoryList from '@components/molecules/transaction-history/transaction-history-list/transaction-history-list';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { TransactionInfo } from '@types';
+import React from 'react';
+import { useTheme } from 'styled-components';
 
-import LoadingHistory from '../loading-history'
+import LoadingHistory from '../loading-history';
 import {
   TransactionHistoryDescriptionWrapper,
-  TransactionHistoryWrapper,
-} from './transaction-history.styles'
+  TransactionHistoryWrapper
+} from './transaction-history.styles';
 
 export interface TransactionHistoryProps {
-  status: 'error' | 'pending' | 'success'
+  status: 'error' | 'pending' | 'success';
   transactionInfoLists: {
-    title: string
-    transactions: TransactionInfo[]
-  }[]
+    title: string;
+    transactions: TransactionInfo[];
+  }[];
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
-  onClickItem: (hash: string) => void
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<string | null>;
+  onClickItem: (hash: string) => void;
 }
 
 export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   status,
   transactionInfoLists,
   queryGRC721TokenUri,
-  onClickItem,
+  onClickItem
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
   if (transactionInfoLists.length === 0) {
     if (status === 'pending') {
-      return <LoadingHistory />
+      return <LoadingHistory />;
     }
     return (
       <TransactionHistoryDescriptionWrapper>
@@ -50,7 +42,7 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
           No transaction to display
         </Text>
       </TransactionHistoryDescriptionWrapper>
-    )
+    );
   }
 
   return (
@@ -64,5 +56,5 @@ export const TransactionHistory: React.FC<TransactionHistoryProps> = ({
         />
       ))}
     </TransactionHistoryWrapper>
-  )
-}
+  );
+};

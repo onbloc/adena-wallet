@@ -1,28 +1,16 @@
-import {
-  WebFontType,
-} from '@styles/theme'
-import React, {
-  useEffect, useState,
-} from 'react'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import { WebFontType } from '@styles/theme';
+import React, { useEffect, useState } from 'react';
+import styled, { css, RuleSet } from 'styled-components';
 
-import {
-  View,
-} from '../base'
-import {
-  WebText,
-} from '../web-text'
+import { View } from '../base';
+import { WebText } from '../web-text';
 
 export const StyledWrapper = styled(View)<{
-  active: boolean
-  height?: number
+  active: boolean;
+  height?: number;
 }>`
   width: fit-content;
-  height: ${({
-    height,
-  }): string => (height ? `${height}px` : '1em')};
+  height: ${({ height }): string => (height ? `${height}px` : '1em')};
   flex-direction: column;
   overflow: hidden;
 
@@ -36,9 +24,7 @@ export const StyledWrapper = styled(View)<{
     }
   }
 
-  ${({
-    active,
-  }): RuleSet | string =>
+  ${({ active }): RuleSet | string =>
     active
       ? css`
           & > * {
@@ -46,15 +32,15 @@ export const StyledWrapper = styled(View)<{
           }
         `
       : ''}
-`
+`;
 
 export interface RollingNumberProps {
-  value: number
-  height?: number
-  type: WebFontType
-  color?: string
-  style?: React.CSSProperties
-  textCenter?: boolean
+  value: number;
+  height?: number;
+  type: WebFontType;
+  color?: string;
+  style?: React.CSSProperties;
+  textCenter?: boolean;
 }
 
 const RollingNumber: React.FC<RollingNumberProps> = ({
@@ -63,25 +49,25 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
   type,
   color,
   style,
-  textCenter,
+  textCenter
 }) => {
-  const [currentValue, setCurrentValue] = useState(value)
-  const [animated, setAnimated] = useState(false)
+  const [currentValue, setCurrentValue] = useState(value);
+  const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
     if (currentValue !== value) {
-      setAnimated(true)
+      setAnimated(true);
     }
-  }, [value])
+  }, [value]);
 
   useEffect(() => {
     if (animated) {
       setTimeout(() => {
-        setAnimated(false)
-        setCurrentValue(value)
-      }, 200)
+        setAnimated(false);
+        setCurrentValue(value);
+      }, 200);
     }
-  }, [animated])
+  }, [animated]);
 
   return (
     <StyledWrapper active={animated} height={height}>
@@ -92,7 +78,7 @@ const RollingNumber: React.FC<RollingNumberProps> = ({
         {value}
       </WebText>
     </StyledWrapper>
-  )
-}
+  );
+};
 
-export default RollingNumber
+export default RollingNumber;

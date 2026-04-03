@@ -1,45 +1,41 @@
-import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed'
-import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success'
-import {
-  BottomFixedButton, BottomFixedButtonGroup, TitleWithDesc,
-} from '@components/molecules'
-import React from 'react'
+import IconAccountInitializeFailed from '@assets/icon-account-initialize-failed';
+import IconAccountInitializeSuccess from '@assets/icon-account-initialize-success';
+import { BottomFixedButton, BottomFixedButtonGroup, TitleWithDesc } from '@components/molecules';
+import React from 'react';
 
-import {
-  AccountInitializationResultWrapper,
-} from './account-initialization-result.styles'
+import { AccountInitializationResultWrapper } from './account-initialization-result.styles';
 
 export interface AccountInitializationResultProps {
-  state: 'LOADING' | 'SUCCESS' | 'FAILURE'
-  moveInit: () => void
-  moveBack: () => void
+  state: 'LOADING' | 'SUCCESS' | 'FAILURE';
+  moveInit: () => void;
+  moveBack: () => void;
 }
 
 const loadingImageMap = {
   LOADING: <IconAccountInitializeSuccess />,
   SUCCESS: <IconAccountInitializeSuccess />,
-  FAILURE: <IconAccountInitializeFailed />,
-}
+  FAILURE: <IconAccountInitializeFailed />
+};
 
 const contentMap = {
   LOADING: {
     title: 'Initializing...',
-    desc: 'Please wait a bit.\nYour transaction will show up soon.',
+    desc: 'Please wait a bit.\nYour transaction will show up soon.'
   },
   SUCCESS: {
     title: 'Initialization Success',
-    desc: 'Please wait a bit.\nYour transaction will show up soon.',
+    desc: 'Please wait a bit.\nYour transaction will show up soon.'
   },
   FAILURE: {
     title: 'Initialization Failed',
-    desc: 'Your account has failed to be\nregistered on chain. Please try again.',
-  },
-}
+    desc: 'Your account has failed to be\nregistered on chain. Please try again.'
+  }
+};
 
 const AccountInitializationResult: React.FC<AccountInitializationResultProps> = ({
   state,
   moveInit,
-  moveBack,
+  moveBack
 }) => {
   return (
     <AccountInitializationResultWrapper>
@@ -58,12 +54,12 @@ const AccountInitializationResult: React.FC<AccountInitializationResultProps> = 
             <BottomFixedButtonGroup
               leftButton={{
                 text: 'Cancel',
-                onClick: moveBack,
+                onClick: moveBack
               }}
               rightButton={{
                 text: 'Retry',
                 primary: true,
-                onClick: moveInit,
+                onClick: moveInit
               }}
             />
           )
@@ -71,7 +67,7 @@ const AccountInitializationResult: React.FC<AccountInitializationResultProps> = 
             <BottomFixedButton fill={false} text='Cancel' onClick={moveBack} />
           )}
     </AccountInitializationResultWrapper>
-  )
-}
+  );
+};
 
-export default AccountInitializationResult
+export default AccountInitializationResult;

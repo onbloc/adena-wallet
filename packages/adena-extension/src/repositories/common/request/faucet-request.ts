@@ -1,5 +1,5 @@
 export interface FaucetRequest {
-  to: string
+  to: string;
 
-  amount: string
+  amount: string;
 }

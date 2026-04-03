@@ -1,22 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import WebAnswerButton from './web-answer-button'
+import WebAnswerButton from './web-answer-button';
 
 describe('WebAnswerButton Component', () => {
   it('WebAnswerButton render', () => {
@@ -28,10 +18,10 @@ describe('WebAnswerButton Component', () => {
             correct
             selected
             answer='answer'
-            onClick={(): void => { return }}
+            onClick={(): void => { return; }}
           />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,62 +1,55 @@
-import LottieAccountSynced from '@assets/web/lottie/account-synced.json'
-import IconCheck from '@assets/web/web-check-circle.svg'
+import LottieAccountSynced from '@assets/web/lottie/account-synced.json';
+import IconCheck from '@assets/web/web-check-circle.svg';
 import {
-  Row, View, WebButton, WebImg, WebInput,
-} from '@components/atoms'
-import Lottie from '@components/atoms/lottie'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import React, {
-  useCallback,
-} from 'react'
-import styled from 'styled-components'
+  Row, View, WebButton, WebImg, WebInput
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import { WebTitleWithDescription } from '@components/molecules';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
   height: 350px;
-`
+`;
 
 const StyledInputBox = styled(Row)`
   gap: 12px;
   width: calc(100% + 30px);
-`
+`;
 
 const StyledInput = styled(WebInput)`
   width: 100%;
-`
+`;
 
 const StyledButtonBox = styled(View)`
   align-items: flex-start;
-`
+`;
 
 interface SetupAirgapCompleteScreenProps {
-  address: string
-  addAccount: (password?: string) => void
+  address: string;
+  addAccount: (password?: string) => void;
 }
 
 const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
   address,
-  addAccount,
+  addAccount
 }) => {
   const onClickNext = useCallback(() => {
-    addAccount()
-  }, [addAccount])
+    addAccount();
+  }, [addAccount]);
 
   return (
     <StyledContainer>
-      <View style={{
-        marginBottom: 8,
-      }}
-      >
+      <View style={{ marginBottom: 8 }}>
         <Lottie
           animationData={LottieAccountSynced}
           height={104}
           visibleSize={120}
           style={{
             marginLeft: -20,
-            marginBottom: -16,
+            marginBottom: -16
           }}
         />
       </View>
@@ -90,7 +83,7 @@ const SetupAirgapCompleteScreen: React.FC<SetupAirgapCompleteScreenProps> = ({
         />
       </StyledButtonBox>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetupAirgapCompleteScreen
+export default SetupAirgapCompleteScreen;

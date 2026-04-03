@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTAssetHeader, {
-  NFTAssetHeaderProps,
-} from './nft-asset-header'
+import NFTAssetHeader, { NFTAssetHeaderProps } from './nft-asset-header';
 
 describe('NFTAssetHeader Component', () => {
   it('NFTAssetHeader render', () => {
@@ -27,24 +15,24 @@ describe('NFTAssetHeader Component', () => {
       pinned: true,
       visible: true,
       moveBack: () => {
-        return
+        return;
       },
       openGnoscanCollection: () => {
-        return
+        return;
       },
       pinCollection: () => {
-        return
+        return;
       },
       unpinCollection: () => {
-        return
+        return;
       },
       showCollection: () => {
-        return
+        return;
       },
       hideCollection: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -52,7 +40,7 @@ describe('NFTAssetHeader Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetHeader {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

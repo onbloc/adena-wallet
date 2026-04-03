@@ -1,57 +1,51 @@
-import {
-  ContractMessage, FUNCTION_NAME_MAP,
-} from '@inject/types'
+import { ContractMessage, FUNCTION_NAME_MAP } from '@inject/types';
 import {
   AddPackageValue,
-  MsgRunValue,
-} from '@repositories/transaction/response/transaction-history-query-response'
-import React from 'react'
+  MsgRunValue
+} from '@repositories/transaction/response/transaction-history-query-response';
+import React from 'react';
 
 interface UseMaxDepositMessageReturn {
-  type: string
-  isOpen: boolean
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
-  maxDeposit: string
-  functionName: string
-  title: string
-  changeMaxDeposit: (maxDeposit: string) => void
+  type: string;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  maxDeposit: string;
+  functionName: string;
+  title: string;
+  changeMaxDeposit: (maxDeposit: string) => void;
 }
 
 export const useMaxDepositMessage = (
   index: number,
   message: ContractMessage,
-  changeMessage: (index: number, messages: ContractMessage) => void,
+  changeMessage: (index: number, messages: ContractMessage) => void
 ): UseMaxDepositMessageReturn => {
-  const {
-    type,
-  } = message
-  const [isOpen, setIsOpen] = React.useState(true)
+  const { type } = message;
+  const [isOpen, setIsOpen] = React.useState(true);
 
-  const {
-    max_deposit,
-  } = message.value as AddPackageValue | MsgRunValue
+  const { max_deposit } = message.value as AddPackageValue | MsgRunValue;
 
   const maxDeposit = React.useMemo(() => {
-    return max_deposit || ''
-  }, [max_deposit])
+    return max_deposit || '';
+  }, [max_deposit]);
 
   const functionName = React.useMemo(() => {
-    return FUNCTION_NAME_MAP[type] || 'Unknown'
-  }, [type])
+    return FUNCTION_NAME_MAP[type] || 'Unknown';
+  }, [type]);
 
   const title = React.useMemo(() => {
-    return makeTitle(index, functionName)
-  }, [functionName, index])
+    return makeTitle(index, functionName);
+  }, [functionName, index]);
 
   const changeMaxDeposit = (maxDeposit: string): void => {
     changeMessage(index, {
       ...message,
       value: {
         ...message.value,
-        max_deposit: maxDeposit,
-      },
-    })
-  }
+        max_deposit: maxDeposit
+      }
+    });
+  };
 
   return {
     type,
@@ -60,10 +54,10 @@ export const useMaxDepositMessage = (
     maxDeposit,
     functionName,
     title,
-    changeMaxDeposit,
-  }
-}
+    changeMaxDeposit
+  };
+};
 
 function makeTitle(index: number, functionName: string): string {
-  return `${index + 1}. ${functionName}`
+  return `${index + 1}. ${functionName}`;
 }

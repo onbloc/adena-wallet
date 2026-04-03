@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import BalanceInput, {
-  BalanceInputProps,
-} from './balance-input'
+import BalanceInput, { BalanceInputProps } from './balance-input';
 
 describe('BalanceInput Component', () => {
   it('BalanceInput render', () => {
@@ -28,12 +16,12 @@ describe('BalanceInput Component', () => {
       denom: 'GNOT',
       description: 'Insufficient balance',
       onChangeAmount: () => {
-        return
+        return;
       },
       onClickMax: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -41,7 +29,7 @@ describe('BalanceInput Component', () => {
         <ThemeProvider theme={theme}>
           <BalanceInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

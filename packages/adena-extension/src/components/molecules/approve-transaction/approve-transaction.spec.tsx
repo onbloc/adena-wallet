@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  NetworkFeeSettingType,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it, vi,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { NetworkFeeSettingType } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it, vi } from 'vitest';
 
-import {
-  ApproveTransaction, ApproveTransactionProps,
-} from '.'
+import { ApproveTransaction, ApproveTransactionProps } from '.';
 
 describe('ApproveTransaction Component', () => {
   it('ApproveTransaction render', () => {
@@ -34,40 +20,40 @@ describe('ApproveTransaction Component', () => {
       hasMemo: true,
       transactionMessages: [],
       changeTransactionMessages: () => {
-        return
+        return;
       },
       contracts: [
         {
           type: '/vm.m_call',
           function: 'GetBoardIDFromName',
-          value: '',
-        },
+          value: ''
+        }
       ],
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT',
+        denom: 'GNOT'
       },
       transactionData: '',
       opened: false,
       processing: false,
       done: false,
       changeMemo: () => {
-        return
+        return;
       },
       onResponse: () => {
-        return
+        return;
       },
       onTimeout: () => {
-        return
+        return;
       },
       onToggleTransactionData: () => {
-        return
+        return;
       },
       onClickConfirm: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       openScannerLink: vi.fn(),
       useNetworkFeeReturn: {
@@ -80,34 +66,34 @@ describe('ApproveTransaction Component', () => {
           gasPrice: 0.00000000048,
           gasUsed: 100000,
           gasWanted: 150000,
-          simulateErrorMessage: null,
+          simulateErrorMessage: null
         },
         currentStorageDeposits: {
           storageDeposit: 0,
           unlockDeposit: 0,
           storageUsage: 0,
-          releaseStorageUsage: 0,
+          releaseStorageUsage: 0
         },
         networkFee: {
           amount: '0.0048',
-          denom: 'GNOT',
+          denom: 'GNOT'
         },
         gasAdjustment: '1.5',
         setGasAdjustment: () => {
-          return
+          return;
         },
         currentGasFeeRawAmount: 4800,
         changedGasInfo: null,
         networkFeeSettingType: NetworkFeeSettingType.AVERAGE,
         networkFeeSettings: [],
         setNetworkFeeSetting: () => {
-          return
+          return;
         },
         save: () => {
-          return
-        },
-      },
-    }
+          return;
+        }
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -115,7 +101,7 @@ describe('ApproveTransaction Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveTransaction {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

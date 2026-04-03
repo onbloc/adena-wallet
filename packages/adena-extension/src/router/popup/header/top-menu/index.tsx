@@ -1,56 +1,32 @@
+import { createPopupWindow } from '@common/utils/browser-utils';
+import { formatAddress, formatNickname, getSiteName } from '@common/utils/client-utils';
 import {
-  createPopupWindow,
-} from '@common/utils/browser-utils'
-import {
-  formatAddress, formatNickname, getSiteName,
-} from '@common/utils/client-utils'
-import {
-  CopyTooltip, HamburgerMenuBtn, StatusDot, Text,
-} from '@components/atoms'
-import {
-  PopWindowButton,
-} from '@components/atoms/pop-window-button'
-import {
-  SideMenuLayout,
-} from '@components/pages/router/side-menu-layout'
-import {
-  useAccountName,
-} from '@hooks/use-account-name'
-import {
-  useAdenaContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import useSessionParams from '@hooks/use-session-state'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import React, {
-  type JSX, useEffect, useState,
-} from 'react'
-import {
-  useLocation,
-} from 'react-router'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  CopyTooltip, HamburgerMenuBtn, StatusDot, Text
+} from '@components/atoms';
+import { PopWindowButton } from '@components/atoms/pop-window-button';
+import { SideMenuLayout } from '@components/pages/router/side-menu-layout';
+import { useAccountName } from '@hooks/use-account-name';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useNetwork } from '@hooks/use-network';
+import useSessionParams from '@hooks/use-session-state';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import React, { type JSX, useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
+import styled, { useTheme } from 'styled-components';
 
 const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   padding: 0px 20px 0px 12px;
   border-bottom: 1px solid ${getTheme('neutral', '_7')};
-`
+`;
 
 const Header = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   height: 100%;
@@ -58,12 +34,12 @@ const Header = styled.div`
   & > img {
     ${mixins.positionCenter()}
   }
-`
+`;
 
 const StyledCenterWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: auto;
   height: 100%;
@@ -71,118 +47,104 @@ const StyledCenterWrapper = styled.div`
   & > img {
     ${mixins.positionCenter()}
   }
-`
+`;
 
 const StyledRightWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 15px;
   height: 100%;
-`
+`;
 
-export const TopMenu = ({
-  disabled,
-}: {
-  disabled?: boolean
-}): JSX.Element => {
-  const theme = useTheme()
-  const {
-    isPopup,
-  } = useSessionParams()
-  const {
-    establishService,
-  } = useAdenaContext()
-  const [open, setOpen] = useState(false)
-  const [hostname, setHostname] = useState('')
-  const [protocol, setProtocol] = useState('')
-  const [, setUrl] = useState('')
-  const {
-    currentAccount, currentAddress,
-  } = useCurrentAccount()
-  const toggleMenuHandler = (): void => setOpen(!open)
+export const TopMenu = ({ disabled }: { disabled?: boolean }): JSX.Element => {
+  const theme = useTheme();
+  const { isPopup } = useSessionParams();
+  const { establishService } = useAdenaContext();
+  const [open, setOpen] = useState(false);
+  const [hostname, setHostname] = useState('');
+  const [protocol, setProtocol] = useState('');
+  const [, setUrl] = useState('');
+  const { currentAccount, currentAddress } = useCurrentAccount();
+  const toggleMenuHandler = (): void => setOpen(!open);
 
-  const [isEstablish, setIsEstablish] = useState(false)
-  const location = useLocation()
-  const [currentAccountName, setCurrentAccountName] = useState('')
-  const {
-    accountNames,
-  } = useAccountName()
-  const {
-    currentNetwork,
-  } = useNetwork()
+  const [isEstablish, setIsEstablish] = useState(false);
+  const location = useLocation();
+  const [currentAccountName, setCurrentAccountName] = useState('');
+  const { accountNames } = useAccountName();
+  const { currentNetwork } = useNetwork();
 
   useEffect(() => {
-    initAccountInfo()
-  }, [currentAccount, hostname, accountNames])
+    initAccountInfo();
+  }, [currentAccount, hostname, accountNames]);
 
   useEffect(() => {
     getCurrentUrl().then(async (currentUrl) => {
-      const hostname = new URL(currentUrl as string).hostname
-      const href = new URL(currentUrl as string).href
-      const protocol = new URL(currentUrl as string).protocol
+      const hostname = new URL(currentUrl as string).hostname;
+      const href = new URL(currentUrl as string).href;
+      const protocol = new URL(currentUrl as string).protocol;
       if (hostname !== '') {
-        setHostname(hostname)
-        setUrl(href)
-        setProtocol(protocol)
+        setHostname(hostname);
+        setUrl(href);
+        setProtocol(protocol);
       }
-    })
-  }, [location.pathname])
+    });
+  }, [location.pathname]);
 
   useEffect(() => {
-    updateEstablished()
-  }, [location.pathname, hostname, currentAccount, currentNetwork])
+    updateEstablished();
+  }, [location.pathname, hostname, currentAccount, currentNetwork]);
 
   const initAccountInfo = async (): Promise<void> => {
     if (!currentAccount) {
-      return
+      return;
     }
-    const name = accountNames[currentAccount.id] || currentAccount.name
-    setCurrentAccountName(name ?? '')
+    const name = accountNames[currentAccount.id] || currentAccount.name;
+    setCurrentAccountName(name ?? '');
 
     if (hostname !== '') {
-      const siteName = getSiteName(protocol, hostname)
-      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName)
-      setIsEstablish(isEstablished)
+      const siteName = getSiteName(protocol, hostname);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName);
+      setIsEstablish(isEstablished);
     }
-  }
+  };
 
   const updateEstablished = async (): Promise<void> => {
     if (currentAccount && hostname !== '') {
-      const siteName = getSiteName(protocol, hostname)
-      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName)
-      setIsEstablish(isEstablished)
+      const siteName = getSiteName(protocol, hostname);
+      const isEstablished = await establishService.isEstablishedBy(currentAccount.id, siteName);
+      setIsEstablish(isEstablished);
     }
-  }
+  };
 
   const tooltipTextMaker = (hostname: string, isEstablish: boolean): string => {
-    let currentHostname = hostname
+    let currentHostname = hostname;
     if (!hostname.includes('.')) {
-      currentHostname = 'chrome-extension'
+      currentHostname = 'chrome-extension';
     }
     return isEstablish
       ? `You are connected to ${currentHostname}`
-      : `You are not connected to ${currentHostname}`
-  }
+      : `You are not connected to ${currentHostname}`;
+  };
 
   const getCurrentUrl = (): Promise<unknown> => {
     return new Promise((resolver) => {
       const queryOptions = {
         active: true,
-        lastFocusedWindow: true,
-      }
+        lastFocusedWindow: true
+      };
       chrome.tabs.query(queryOptions).then((currentTabs) => {
         if (currentTabs.length > 0 && currentTabs[0].url) {
-          resolver(currentTabs[0].url)
+          resolver(currentTabs[0].url);
         }
-      })
-    })
-  }
+      });
+    });
+  };
 
   const popupWindow = (): void => {
-    createPopupWindow(location.pathname, location.state)
-  }
+    createPopupWindow(location.pathname, location.state);
+  };
 
   return !disabled
     ? (
@@ -209,5 +171,5 @@ export const TopMenu = ({
       )
     : (
         <></>
-      )
-}
+      );
+};

@@ -6,53 +6,47 @@ import {
   MsgCall,
   MsgEndpoint,
   MsgRun,
-  MsgSend,
-} from "@gnolang/gno-js-client";
+  MsgSend
+} from '@gnolang/gno-js-client';
 import {
-  PubKeySecp256k1, Tx, TxFee, TxSignature,
-} from "@gnolang/tm2-js-client";
-import {
-  PubKeyMultisig,
-} from "@gnolang/tm2-js-client";
+  PubKeySecp256k1, Tx, TxFee, TxSignature
+} from '@gnolang/tm2-js-client';
+import { PubKeyMultisig } from '@gnolang/tm2-js-client';
 
-import {
-  fromBase64, toBase64,
-} from "../encoding/index.js";
-import {
-  ProtoMessage,
-} from "./multisig.js";
+import { fromBase64, toBase64 } from '../encoding/index.js';
+import { ProtoMessage } from './multisig.js';
 
 export interface Document {
-  chain_id: string
-  account_number: string
-  sequence: string
+  chain_id: string;
+  account_number: string;
+  sequence: string;
   fee: {
     amount: {
-      denom: string
-      amount: string
-    }[]
-    gas: string
-    granter?: string
-    payer?: string
-  }
+      denom: string;
+      amount: string;
+    }[];
+    gas: string;
+    granter?: string;
+    payer?: string;
+  };
   msgs: {
-    type: string
+    type: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely typed JSON document
-    value: any
-  }[]
-  memo: string
+    value: any;
+  }[];
+  memo: string;
   signatures?: {
     pub_key: {
-      "@type": string
-      threshold?: string
+      '@type': string;
+      threshold?: string;
       pubkeys?: {
-        "@type": string
-        value: string
-      }[]
-      value?: string
-    }
-    signature: string
-  }[]
+        '@type': string;
+        value: string;
+      }[];
+      value?: string;
+    };
+    signature: string;
+  }[];
 }
 
 export const decodeTxMessages = (messages: Any[]): ProtoMessage[] => {
@@ -61,29 +55,29 @@ export const decodeTxMessages = (messages: Any[]): ProtoMessage[] => {
       case MsgEndpoint.MSG_CALL: {
         const decodedMessage = MsgCall.decode(m.value);
         return {
-          "@type": m.type_url,
-          ...decodedMessage,
+          '@type': m.type_url,
+          ...decodedMessage
         };
       }
       case MsgEndpoint.MSG_SEND: {
         const decodedMessage = MsgSend.decode(m.value);
         return {
-          "@type": m.type_url,
-          ...decodedMessage,
+          '@type': m.type_url,
+          ...decodedMessage
         };
       }
       case MsgEndpoint.MSG_ADD_PKG: {
         const decodedMessage = MsgAddPackage.decode(m.value);
         return {
-          "@type": m.type_url,
-          ...decodedMessage,
+          '@type': m.type_url,
+          ...decodedMessage
         };
       }
       case MsgEndpoint.MSG_RUN: {
         const decodedMessage = MsgRun.decode(m.value);
         return {
-          "@type": m.type_url,
-          ...decodedMessage,
+          '@type': m.type_url,
+          ...decodedMessage
         };
       }
       default:
@@ -99,29 +93,29 @@ function createMemPackage(memPackage: RawMemPackage): MemPackage {
     files: memPackage.files.map(file =>
       MemFile.create({
         name: file.name,
-        body: file.body,
-      }),
-    ),
+        body: file.body
+      })
+    )
   });
 }
 
 function encodeMessageValue(message: {
-  type: string
+  type: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely-typed JSON document messages
-  value: any
+  value: any;
 }) {
   switch (message.type) {
     case MsgEndpoint.MSG_ADD_PKG: {
       const value = message.value;
       const msgAddPackage = MsgAddPackage.fromPartial({
         creator: value.creator,
-        send: value.send || "",
-        max_deposit: value?.max_deposit || "",
-        package: value.package ? MemPackage.fromPartial(value.package) : undefined,
+        send: value.send || '',
+        max_deposit: value?.max_deposit || '',
+        package: value.package ? MemPackage.fromPartial(value.package) : undefined
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_ADD_PKG,
-        value: MsgAddPackage.encode(msgAddPackage).finish(),
+        value: MsgAddPackage.encode(msgAddPackage).finish()
       });
     }
     case MsgEndpoint.MSG_CALL: {
@@ -135,37 +129,37 @@ function encodeMessageValue(message: {
         caller: message.value.caller,
         func: message.value.func,
         pkg_path: message.value.pkg_path,
-        send: message.value.send || "",
-        max_deposit: message.value.max_deposit || "",
+        send: message.value.send || '',
+        max_deposit: message.value.max_deposit || ''
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(result).finish(),
+        value: MsgCall.encode(result).finish()
       });
     }
     case MsgEndpoint.MSG_SEND: {
       return Any.create({
         type_url: MsgEndpoint.MSG_SEND,
-        value: MsgSend.encode(MsgSend.create(message.value)).finish(),
+        value: MsgSend.encode(MsgSend.create(message.value)).finish()
       });
     }
     case MsgEndpoint.MSG_RUN: {
       const value = message.value;
       const msgRun = MsgRun.create({
         caller: value.caller,
-        send: value.send || "",
+        send: value.send || '',
         package: value.package ? createMemPackage(value.package as unknown as RawMemPackage) : undefined,
-        max_deposit: value?.max_deposit || "",
+        max_deposit: value?.max_deposit || ''
       });
       return Any.create({
         type_url: MsgEndpoint.MSG_RUN,
-        value: MsgRun.encode(msgRun).finish(),
+        value: MsgRun.encode(msgRun).finish()
       });
     }
     default: {
       return Any.create({
         type_url: MsgEndpoint.MSG_CALL,
-        value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish(),
+        value: MsgCall.encode(MsgCall.fromJSON(message.value)).finish()
       });
     }
   }
@@ -173,40 +167,38 @@ function encodeMessageValue(message: {
 
 export function combineMultisigPublicKey(pubKeys: RawPubKey[], threshold: number): RawPubKey {
   if (pubKeys.length === 0) {
-    throw new Error("No public keys provided");
+    throw new Error('No public keys provided');
   }
 
   if (pubKeys.length < threshold) {
-    throw new Error("Insufficient public keys provided");
+    throw new Error('Insufficient public keys provided');
   }
 
   const multisigPubKey = {
     threshold: threshold,
     pubkeys:
       pubKeys?.map(pk => ({
-        type_url: pk["@type"],
-        value: PubKeySecp256k1.encode({
-          key: fromBase64(pk.value),
-        }).finish(),
-      })) || [],
+        type_url: pk['@type'],
+        value: PubKeySecp256k1.encode({ key: fromBase64(pk.value) }).finish()
+      })) || []
   };
 
   const resultPubKey = Any.create({
-    type_url: "/tm.PubKeyMultisig",
+    type_url: '/tm.PubKeyMultisig',
     value: PubKeyMultisig.encode({
       k: BigInt(multisigPubKey.threshold),
       pub_keys: multisigPubKey.pubkeys.map(pk =>
         Any.create({
           type_url: pk.type_url,
-          value: pk.value,
-        }),
-      ),
-    }).finish(),
+          value: pk.value
+        })
+      )
+    }).finish()
   });
 
   return {
-    "@type": resultPubKey.type_url,
-    value: toBase64(resultPubKey.value),
+    '@type': resultPubKey.type_url,
+    value: toBase64(resultPubKey.value)
   };
 }
 
@@ -217,47 +209,43 @@ export function documentToTx(document: Document): Tx {
     = document.signatures?.map((sig) => {
       let pubKeyAny: Any;
 
-      if (sig.pub_key["@type"] === "/tm.PubKeyMultisig") {
+      if (sig.pub_key['@type'] === '/tm.PubKeyMultisig') {
         const multisigPubKey = {
-          threshold: parseInt(sig.pub_key.threshold || "1"),
+          threshold: parseInt(sig.pub_key.threshold || '1'),
           pubkeys:
             sig.pub_key.pubkeys?.map(pk => ({
-              type_url: pk["@type"],
-              value: PubKeySecp256k1.encode({
-                key: fromBase64(pk.value),
-              }).finish(),
-            })) || [],
+              type_url: pk['@type'],
+              value: PubKeySecp256k1.encode({ key: fromBase64(pk.value) }).finish()
+            })) || []
         };
 
         pubKeyAny = Any.create({
-          type_url: sig.pub_key["@type"],
+          type_url: sig.pub_key['@type'],
           value: PubKeyMultisig.encode({
             k: BigInt(multisigPubKey.threshold),
             pub_keys: multisigPubKey.pubkeys.map(pk =>
               Any.create({
                 type_url: pk.type_url,
-                value: pk.value,
-              }),
-            ),
-          }).finish(),
+                value: pk.value
+              })
+            )
+          }).finish()
         });
       }
       else {
-        const publicKeyBytes = fromBase64(sig.pub_key.value || "");
-        const wrappedPublicKeyValue: PubKeySecp256k1 = {
-          key: publicKeyBytes,
-        };
+        const publicKeyBytes = fromBase64(sig.pub_key.value || '');
+        const wrappedPublicKeyValue: PubKeySecp256k1 = { key: publicKeyBytes };
         const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
 
         pubKeyAny = {
-          type_url: sig.pub_key["@type"],
-          value: encodedPublicKeyBytes,
+          type_url: sig.pub_key['@type'],
+          value: encodedPublicKeyBytes
         };
       }
 
       return TxSignature.create({
         pub_key: pubKeyAny,
-        signature: fromBase64(sig.signature),
+        signature: fromBase64(sig.signature)
       });
     }) || [];
 
@@ -267,10 +255,10 @@ export function documentToTx(document: Document): Tx {
       gas_wanted: BigInt(document.fee.gas),
       gas_fee: document.fee.amount
         .map(feeAmount => `${feeAmount.amount}${feeAmount.denom}`)
-        .join(","),
+        .join(',')
     }),
     signatures,
-    memo: document.memo,
+    memo: document.memo
   };
 }
 
@@ -282,18 +270,18 @@ export function documentToDefaultTx(document: Document): Tx {
       gas_wanted: BigInt(document.fee.gas),
       gas_fee: document.fee.amount
         .map(feeAmount => `${feeAmount.amount}${feeAmount.denom}`)
-        .join(","),
+        .join(',')
     }),
     signatures: [
       {
         pub_key: {
-          type_url: "",
-          value: new Uint8Array(),
+          type_url: '',
+          value: new Uint8Array()
         },
-        signature: new Uint8Array(),
-      },
+        signature: new Uint8Array()
+      }
     ],
-    memo: document.memo,
+    memo: document.memo
   };
 }
 
@@ -302,53 +290,53 @@ export function txToDocument(tx: Tx) {
 }
 
 export interface RawBankSendMessage {
-  "@type": string
-  from_address: string
-  to_address: string
-  amount: string
+  '@type': string;
+  from_address: string;
+  to_address: string;
+  amount: string;
 }
 
 export interface RawVmCallMessage {
-  "@type": string
-  caller: string
-  func: string
-  send: string
-  pkg_path: string
-  max_deposit: string
-  args: string[]
+  '@type': string;
+  caller: string;
+  func: string;
+  send: string;
+  pkg_path: string;
+  max_deposit: string;
+  args: string[];
 }
 
 export interface RawVmAddPackageMessage {
-  "@type": string
-  creator: string
-  send: string
-  max_deposit: string
-  package: RawMemPackage
+  '@type': string;
+  creator: string;
+  send: string;
+  max_deposit: string;
+  package: RawMemPackage;
 }
 
 export interface RawVmRunMessage {
-  "@type": string
-  caller: string
-  send: string
-  max_deposit: string
-  package: RawMemPackage
+  '@type': string;
+  caller: string;
+  send: string;
+  max_deposit: string;
+  package: RawMemPackage;
 }
 
 export interface RawMemPackage {
-  name: string
-  path: string
+  name: string;
+  path: string;
   files: {
-    name: string
-    body: string
-  }[]
+    name: string;
+    body: string;
+  }[];
   info?: {
-    type_url: string
-    value: string
-  }
+    type_url: string;
+    value: string;
+  };
   type?: {
-    type_url: string
-    value: string
-  }
+    type_url: string;
+    value: string;
+  };
 }
 
 export type RawTxMessageType
@@ -358,23 +346,23 @@ export type RawTxMessageType
     | RawVmRunMessage;
 
 export interface RawTx {
-  msg: RawTxMessageType[]
+  msg: RawTxMessageType[];
   fee: {
-    gas_wanted: string
-    gas_fee: string
-  }
-  signatures: RawSignature[] | null
-  memo: string
+    gas_wanted: string;
+    gas_fee: string;
+  };
+  signatures: RawSignature[] | null;
+  memo: string;
 }
 
 export interface RawPubKey {
-  "@type": string
-  value: string
+  '@type': string;
+  value: string;
 }
 
 export interface RawSignature {
-  pub_key: RawPubKey
-  signature: string
+  pub_key: RawPubKey;
+  signature: string;
 }
 
 /**
@@ -402,10 +390,8 @@ export const rawTxToTx = (rawTx: RawTx): Tx | null => {
     const document = rawTx;
     const messages: Any[] = document.msg
       .map(msg => ({
-        type: msg["@type"],
-        value: {
-          ...msg,
-        },
+        type: msg['@type'],
+        value: { ...msg }
       }))
       .map(encodeMessageValue);
     return {
@@ -413,10 +399,10 @@ export const rawTxToTx = (rawTx: RawTx): Tx | null => {
 
       fee: TxFee.create({
         gas_wanted: BigInt(document.fee.gas_wanted),
-        gas_fee: document.fee.gas_fee,
+        gas_fee: document.fee.gas_fee
       }),
       signatures: (document.signatures || []).map(rawSignatureToTxSignature),
-      memo: document.memo,
+      memo: document.memo
     };
   }
   catch (e) {
@@ -426,29 +412,27 @@ export const rawTxToTx = (rawTx: RawTx): Tx | null => {
 };
 
 const rawSignatureToTxSignature = (signature: RawSignature): TxSignature => {
-  const signatureType = signature.pub_key["@type"];
+  const signatureType = signature.pub_key['@type'];
 
-  if (signatureType === "/tm.PubKeyMultisig") {
+  if (signatureType === '/tm.PubKeyMultisig') {
     return TxSignature.create({
       pub_key: {
         type_url: signatureType,
-        value: fromBase64(signature.pub_key.value),
+        value: fromBase64(signature.pub_key.value)
       },
-      signature: fromBase64(signature.signature),
+      signature: fromBase64(signature.signature)
     });
   }
 
-  const publicKeyBytes = fromBase64(signature?.pub_key?.value || "");
-  const wrappedPublicKeyValue: PubKeySecp256k1 = {
-    key: publicKeyBytes,
-  };
+  const publicKeyBytes = fromBase64(signature?.pub_key?.value || '');
+  const wrappedPublicKeyValue: PubKeySecp256k1 = { key: publicKeyBytes };
   const encodedPublicKeyBytes = PubKeySecp256k1.encode(wrappedPublicKeyValue).finish();
-  const signatureBytes = fromBase64(signature?.signature || "");
+  const signatureBytes = fromBase64(signature?.signature || '');
   return TxSignature.create({
     pub_key: {
       type_url: signatureType,
-      value: encodedPublicKeyBytes,
+      value: encodedPublicKeyBytes
     },
-    signature: signatureBytes,
+    signature: signatureBytes
   });
 };

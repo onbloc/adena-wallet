@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AddressBookListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: auto;
@@ -19,12 +17,12 @@ export const AddressBookListWrapper = styled.div`
     align-items: center;
     padding: 13px 16px;
   }
-`
+`;
 
 export const AddressBookListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   min-height: 48px;
@@ -44,4 +42,4 @@ export const AddressBookListItemWrapper = styled.div`
   .address {
     color: ${getTheme('neutral', 'a')};
   }
-`
+`;

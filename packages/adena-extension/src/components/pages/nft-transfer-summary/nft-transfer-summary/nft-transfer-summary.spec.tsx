@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTTransferSummary, {
-  NFTTransferSummaryProps,
-} from './nft-transfer-summary'
+import NFTTransferSummary, { NFTTransferSummaryProps } from './nft-transfer-summary';
 
 describe('NFTTransferSummary Component', () => {
   it('NFTTransferSummary render', () => {
@@ -35,30 +21,29 @@ describe('NFTTransferSummary Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
       toAddress: '',
       networkFee: {
         amount: '0.0048',
-        denom: 'GNOT',
+        denom: 'GNOT'
       },
       memo: '',
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
       onClickBack: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onClickSend: () => {
-        return
+        return;
       },
       onClickNetworkFeeSetting: () => {
-        return
+        return;
       },
-      isErrorNetworkFee: false,
-    }
+      isErrorNetworkFee: false
+    };
 
     render(
       <RecoilRoot>
@@ -66,7 +51,7 @@ describe('NFTTransferSummary Component', () => {
         <ThemeProvider theme={theme}>
           <NFTTransferSummary {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

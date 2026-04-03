@@ -1,32 +1,26 @@
-import TransactionHistoryListItem from '@components/molecules/transaction-history/transaction-history-list-item/transaction-history-list-item'
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  TransactionInfo,
-} from '@types'
-import React from 'react'
+import TransactionHistoryListItem from '@components/molecules/transaction-history/transaction-history-list-item/transaction-history-list-item';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { TransactionInfo } from '@types';
+import React from 'react';
 
-import {
-  TransactionHistoryListWrapper,
-} from './transaction-history-list.styles'
+import { TransactionHistoryListWrapper } from './transaction-history-list.styles';
 
 export interface TransactionHistoryListProps {
-  title: string
-  transactions: TransactionInfo[]
+  title: string;
+  transactions: TransactionInfo[];
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
-  onClickItem: (hash: string) => void
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<string | null>;
+  onClickItem: (hash: string) => void;
 }
 
 const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
   title,
   transactions,
   queryGRC721TokenUri,
-  onClickItem,
+  onClickItem
 }) => {
   return (
     <TransactionHistoryListWrapper>
@@ -42,7 +36,7 @@ const TransactionHistoryList: React.FC<TransactionHistoryListProps> = ({
         ))}
       </div>
     </TransactionHistoryListWrapper>
-  )
-}
+  );
+};
 
-export default TransactionHistoryList
+export default TransactionHistoryList;

@@ -1,108 +1,82 @@
-import {
-  formatAddress, formatNickname,
-} from '@common/utils/client-utils'
-import {
-  addressValidationCheck,
-} from '@common/utils/client-utils'
-import {
-  AddressBookItem,
-} from '@repositories/wallet'
-import {
-  useCallback, useEffect, useState,
-} from 'react'
+import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { addressValidationCheck } from '@common/utils/client-utils';
+import { AddressBookItem } from '@repositories/wallet';
+import { useCallback, useEffect, useState } from 'react';
 
-import {
-  useAccountName,
-} from './use-account-name'
-import {
-  useAdenaContext, useWalletContext,
-} from './use-context'
-import {
-  useCurrentAccount,
-} from './use-current-account'
-import {
-  useNetwork,
-} from './use-network'
+import { useAccountName } from './use-account-name';
+import { useAdenaContext, useWalletContext } from './use-context';
+import { useCurrentAccount } from './use-current-account';
+import { useNetwork } from './use-network';
 
 export type UseAddressBookInputHookReturn = {
-  opened: boolean
-  hasError: boolean
-  errorMessage: string
-  selected: boolean
-  selectedAddressBook: AddressBookItem | null
-  selectedName: string
-  selectedDescription: string
-  address: string
+  opened: boolean;
+  hasError: boolean;
+  errorMessage: string;
+  selected: boolean;
+  selectedAddressBook: AddressBookItem | null;
+  selectedName: string;
+  selectedDescription: string;
+  address: string;
   addressBookInfos: {
-    addressBookId: string
-    name: string
-    description: string
-  }[]
-  resultAddress: string
-  setSelected: (selected: boolean) => void
-  setSelectedAddressBook: (selectedAddressBook: AddressBookItem | null) => void
-  setAddress: (address: string) => void
-  updateAddressBook: () => Promise<void>
-  onClickInputIcon: (selected: boolean) => void
-  onChangeAddress: (address: string) => void
-  onClickAddressBook: (addressBookId: string) => void
-  validateAddressBookInput: () => boolean
-  validateEqualAddress: () => Promise<boolean>
-}
+    addressBookId: string;
+    name: string;
+    description: string;
+  }[];
+  resultAddress: string;
+  setSelected: (selected: boolean) => void;
+  setSelectedAddressBook: (selectedAddressBook: AddressBookItem | null) => void;
+  setAddress: (address: string) => void;
+  updateAddressBook: () => Promise<void>;
+  onClickInputIcon: (selected: boolean) => void;
+  onChangeAddress: (address: string) => void;
+  onClickAddressBook: (addressBookId: string) => void;
+  validateAddressBookInput: () => boolean;
+  validateEqualAddress: () => Promise<boolean>;
+};
 
 export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
-  const {
-    addressBookService,
-  } = useAdenaContext()
-  const {
-    wallet,
-  } = useWalletContext()
-  const {
-    getCurrentAddress,
-  } = useCurrentAccount()
-  const {
-    currentNetwork,
-  } = useNetwork()
-  const [opened, setOpened] = useState(false)
-  const [selected, setSelected] = useState(false)
-  const [selectedAddressBook, setSelectedAddressBook] = useState<AddressBookItem | null>(null)
-  const [hasError, setHasError] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [address, setAddress] = useState('')
-  const [addressBooks, setAddressBooks] = useState<AddressBookItem[]>([])
-  const {
-    accountNames,
-  } = useAccountName()
+  const { addressBookService } = useAdenaContext();
+  const { wallet } = useWalletContext();
+  const { getCurrentAddress } = useCurrentAccount();
+  const { currentNetwork } = useNetwork();
+  const [opened, setOpened] = useState(false);
+  const [selected, setSelected] = useState(false);
+  const [selectedAddressBook, setSelectedAddressBook] = useState<AddressBookItem | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressBooks, setAddressBooks] = useState<AddressBookItem[]>([]);
+  const { accountNames } = useAccountName();
   const [addressBookInfos, setAddressBookInfos] = useState<
     {
-      addressBookId: string
-      name: string
-      description: string
+      addressBookId: string;
+      name: string;
+      description: string;
     }[]
-  >([])
+  >([]);
 
   const updateAddressBook = async (): Promise<void> => {
-    const addressBooks = await addressBookService.getAddressBook()
-    setAddressBooks(addressBooks)
-  }
+    const addressBooks = await addressBookService.getAddressBook();
+    setAddressBooks(addressBooks);
+  };
 
   const clearError = useCallback(() => {
-    setHasError(false)
-    setErrorMessage('Invalid address')
-  }, [])
+    setHasError(false);
+    setErrorMessage('Invalid address');
+  }, []);
 
   const getAddressBookInfos = useCallback(async () => {
-    const currentAccountInfos = []
-    const addressPrefix = currentNetwork?.addressPrefix || 'g'
-    const currentAddress = await getCurrentAddress(addressPrefix)
+    const currentAccountInfos = [];
+    const addressPrefix = currentNetwork?.addressPrefix || 'g';
+    const currentAddress = await getCurrentAddress(addressPrefix);
     for (const account of wallet?.accounts || []) {
-      const address = await account.getAddress(addressPrefix)
+      const address = await account.getAddress(addressPrefix);
       if (address !== currentAddress) {
         currentAccountInfos.push({
           addressBookId: account.id,
           name: formatNickname(accountNames[account.id], 12),
-          description: `(${formatAddress(address)})`,
-        })
+          description: `(${formatAddress(address)})`
+        });
       }
     }
     const addressBookInfos = addressBooks
@@ -111,118 +85,118 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
         return {
           addressBookId: addressBook.id,
           name: formatNickname(addressBook.name, 12),
-          description: `(${formatAddress(addressBook.address)})`,
-        }
-      })
+          description: `(${formatAddress(addressBook.address)})`
+        };
+      });
 
-    return [...currentAccountInfos, ...addressBookInfos]
-  }, [addressBooks, wallet?.accounts])
+    return [...currentAccountInfos, ...addressBookInfos];
+  }, [addressBooks, wallet?.accounts]);
 
   const getSelectedAddressBookInfos = useCallback(() => {
     if (selectedAddressBook === null) {
       return {
         name: '',
-        description: '',
-      }
+        description: ''
+      };
     }
     return {
       name: formatNickname(selectedAddressBook.name, 12),
-      description: `(${formatAddress(selectedAddressBook.address)})`,
-    }
-  }, [selectedAddressBook])
+      description: `(${formatAddress(selectedAddressBook.address)})`
+    };
+  }, [selectedAddressBook]);
 
   const getResultAddress = useCallback(() => {
     if (selected) {
-      return selectedAddressBook?.address ?? ''
+      return selectedAddressBook?.address ?? '';
     }
-    return address
-  }, [selected, selectedAddressBook, address])
+    return address;
+  }, [selected, selectedAddressBook, address]);
 
   const onClickInputIcon = useCallback(
     (selected: boolean) => {
       if (selected === false) {
-        setSelected(false)
-        setAddress('')
-        setSelectedAddressBook(null)
-        setOpened(false)
+        setSelected(false);
+        setAddress('');
+        setSelectedAddressBook(null);
+        setOpened(false);
       }
       else {
-        setOpened(!opened)
+        setOpened(!opened);
       }
     },
-    [opened],
-  )
+    [opened]
+  );
 
   const onChangeAddress = useCallback(
     (address: string) => {
-      const regex = /^[a-zA-Z0-9]*$/
+      const regex = /^[a-zA-Z0-9]*$/;
       if (!regex.test(address)) {
-        return
+        return;
       }
-      setAddress(address)
+      setAddress(address);
       if (hasError) {
-        clearError()
+        clearError();
       }
     },
-    [hasError],
-  )
+    [hasError]
+  );
 
   const onClickAddressBook = useCallback(
     async (addressBookId: string) => {
       const selectedAddressBook = addressBooks.find(
-        addressBook => addressBook.id === addressBookId,
-      )
+        addressBook => addressBook.id === addressBookId
+      );
       if (selectedAddressBook) {
-        clearError()
-        setOpened(false)
-        setSelected(true)
-        setSelectedAddressBook(selectedAddressBook)
-        return
+        clearError();
+        setOpened(false);
+        setSelected(true);
+        setSelectedAddressBook(selectedAddressBook);
+        return;
       }
-      const selectedAccount = wallet?.accounts.find(account => account.id === addressBookId)
+      const selectedAccount = wallet?.accounts.find(account => account.id === addressBookId);
       if (selectedAccount) {
-        clearError()
-        setOpened(false)
-        setSelected(true)
-        const address = await selectedAccount.getAddress(currentNetwork?.addressPrefix || 'g')
+        clearError();
+        setOpened(false);
+        setSelected(true);
+        const address = await selectedAccount.getAddress(currentNetwork?.addressPrefix || 'g');
         setSelectedAddressBook({
           id: selectedAccount.id,
           name: selectedAccount.name,
           address,
-          createdAt: `${new Date().getTime()}`,
-        })
-        return
+          createdAt: `${new Date().getTime()}`
+        });
+        return;
       }
     },
-    [addressBooks, wallet?.accounts],
-  )
+    [addressBooks, wallet?.accounts]
+  );
 
   const validateAddressBookInput = useCallback(() => {
-    const address = getResultAddress()
+    const address = getResultAddress();
     if (!addressValidationCheck(address)) {
-      setHasError(true)
-      setErrorMessage('Invalid Address')
-      return false
+      setHasError(true);
+      setErrorMessage('Invalid Address');
+      return false;
     }
-    clearError()
-    return true
-  }, [selected, selectedAddressBook, address])
+    clearError();
+    return true;
+  }, [selected, selectedAddressBook, address]);
 
   const validateEqualAddress = useCallback(async () => {
-    const address = getResultAddress()
-    const currentAddress = await getCurrentAddress(currentNetwork?.addressPrefix)
+    const address = getResultAddress();
+    const currentAddress = await getCurrentAddress(currentNetwork?.addressPrefix);
     if (address === currentAddress) {
-      setHasError(true)
-      setErrorMessage('You can’t send GRC20 tokens to your own address')
-      return false
+      setHasError(true);
+      setErrorMessage('You can’t send GRC20 tokens to your own address');
+      return false;
     }
-    clearError()
-    return true
-  }, [selected, selectedAddressBook, address])
+    clearError();
+    return true;
+  }, [selected, selectedAddressBook, address]);
 
   useEffect(() => {
-    getAddressBookInfos().then(setAddressBookInfos)
-  }, [getAddressBookInfos])
+    getAddressBookInfos().then(setAddressBookInfos);
+  }, [getAddressBookInfos]);
 
   return {
     opened,
@@ -243,6 +217,6 @@ export const useAddressBookInput = (): UseAddressBookInputHookReturn => {
     onChangeAddress,
     onClickAddressBook,
     validateAddressBookInput,
-    validateEqualAddress,
-  }
-}
+    validateEqualAddress
+  };
+};

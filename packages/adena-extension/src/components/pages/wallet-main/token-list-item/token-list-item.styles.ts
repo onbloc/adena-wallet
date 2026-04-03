@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TokenListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   padding: 13px;
   width: 100%;
@@ -62,4 +60,4 @@ export const TokenListItemWrapper = styled.div`
     align-items: flex-start;
     justify-content: flex-end;
   }
-`
+`;

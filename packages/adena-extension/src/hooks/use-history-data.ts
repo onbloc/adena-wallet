@@ -1,55 +1,49 @@
-import {
-  CommonState,
-} from '@states'
-import {
-  useLocation,
-} from 'react-router'
-import {
-  useRecoilState,
-} from 'recoil'
+import { CommonState } from '@states';
+import { useLocation } from 'react-router';
+import { useRecoilState } from 'recoil';
 
 export type UstHistoryDataReturn<T> = {
-  getHistoryData: () => T | undefined
-  setHistoryData: (value: T | undefined) => void
-  clearHistoryData: (pathname: string) => void
-}
+  getHistoryData: () => T | undefined;
+  setHistoryData: (value: T | undefined) => void;
+  clearHistoryData: (pathname: string) => void;
+};
 
 const useHistoryData = <T>(): UstHistoryDataReturn<T> => {
-  const location = useLocation()
-  const [historyState, setHistoryState] = useRecoilState(CommonState.historyState)
+  const location = useLocation();
+  const [historyState, setHistoryState] = useRecoilState(CommonState.historyState);
 
   function getLocationPath(): string {
-    return location.pathname
+    return location.pathname;
   }
 
   function getHistoryData(): T | undefined {
-    const data = historyState[getLocationPath()]
+    const data = historyState[getLocationPath()];
     if (data) {
-      return data as T
+      return data as T;
     }
   }
 
   function setHistoryDataByPathname(pathname: string, value: T | undefined): void {
     const stateData = {
       ...historyState,
-      [pathname]: value,
-    }
-    setHistoryState(stateData)
+      [pathname]: value
+    };
+    setHistoryState(stateData);
   }
 
   function setHistoryData(value: T | undefined): void {
-    setHistoryDataByPathname(getLocationPath(), value)
+    setHistoryDataByPathname(getLocationPath(), value);
   }
 
   function clearHistoryData(pathname: string): void {
-    setHistoryDataByPathname(pathname, undefined)
+    setHistoryDataByPathname(pathname, undefined);
   }
 
   return {
     getHistoryData,
     setHistoryData,
-    clearHistoryData,
-  }
-}
+    clearHistoryData
+  };
+};
 
-export default useHistoryData
+export default useHistoryData;

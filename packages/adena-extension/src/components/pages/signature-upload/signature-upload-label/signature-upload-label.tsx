@@ -1,24 +1,18 @@
 // signature-upload-label.tsx
-import IconFile from '@assets/file.svg'
-import IconUpload from '@assets/icon-upload'
-import {
-  Text, WebImg,
-} from '@components/atoms'
-import React from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import IconFile from '@assets/file.svg';
+import IconUpload from '@assets/icon-upload';
+import { Text, WebImg } from '@components/atoms';
+import React from 'react';
+import { useTheme } from 'styled-components';
 
-import {
-  StyledInputLabel,
-} from './signature-upload-label.styles'
+import { StyledInputLabel } from './signature-upload-label.styles';
 
 interface SignatureUploadLabelProps {
-  loading: boolean
-  signedCount: number
-  threshold: number
-  hasSignatures: boolean
-  onDrop: (event: React.DragEvent<HTMLLabelElement>) => void
+  loading: boolean;
+  signedCount: number;
+  threshold: number;
+  hasSignatures: boolean;
+  onDrop: (event: React.DragEvent<HTMLLabelElement>) => void;
 }
 
 const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
@@ -26,9 +20,9 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
   signedCount,
   threshold,
   hasSignatures,
-  onDrop,
+  onDrop
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   if (loading) {
     return (
@@ -38,7 +32,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
           Uploading signatures...
         </Text>
       </StyledInputLabel>
-    )
+    );
   }
 
   if (hasSignatures) {
@@ -52,7 +46,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
           Click to upload more
         </Text>
       </StyledInputLabel>
-    )
+    );
   }
 
   return (
@@ -62,7 +56,7 @@ const SignatureUploadLabel: React.FC<SignatureUploadLabelProps> = ({
         Drag & drop signature files or click to upload
       </Text>
     </StyledInputLabel>
-  )
-}
+  );
+};
 
-export default SignatureUploadLabel
+export default SignatureUploadLabel;

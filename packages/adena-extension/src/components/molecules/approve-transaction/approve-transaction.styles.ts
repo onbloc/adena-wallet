@@ -1,31 +1,21 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ApproveTransactionNetworkFeeWrapper = styled.div`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   padding: 24px 20px;
-`
+`;
 
-export const ApproveTransactionWrapper = styled.div<{
-  $isErrorNetworkFee: boolean
-}>`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+export const ApproveTransactionWrapper = styled.div<{ $isErrorNetworkFee: boolean }>`
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   padding: 0 20px;
   padding-bottom: 96px;
   align-self: center;
 
   .row {
-    ${mixins.flex({
-      direction: 'row',
-    })};
+    ${mixins.flex({ direction: 'row' })};
     position: relative;
     padding: 10px 18px;
     justify-content: space-between;
@@ -77,7 +67,7 @@ export const ApproveTransactionWrapper = styled.div<{
     ${mixins.flex({
       direction: 'row',
       align: 'center',
-      justify: 'center',
+      justify: 'center'
     })};
     width: 100%;
     min-height: 41px;
@@ -142,9 +132,7 @@ export const ApproveTransactionWrapper = styled.div<{
   }
 
   .fee-amount-wrapper {
-    ${mixins.flex({
-      justify: 'flex-start',
-    })};
+    ${mixins.flex({ justify: 'flex-start' })};
     width: 100%;
     gap: 8px;
     margin-bottom: 8px;
@@ -230,7 +218,7 @@ export const ApproveTransactionWrapper = styled.div<{
     ${mixins.flex({
       direction: 'column',
       justify: 'flex-start',
-      align: 'stretch',
+      align: 'stretch'
     })};
     width: 100%;
     margin-top: 24px;
@@ -282,4 +270,4 @@ export const ApproveTransactionWrapper = styled.div<{
     white-space: pre-wrap;
     word-break: break-all;
   }
-`
+`;

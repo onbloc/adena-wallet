@@ -1,6 +1,4 @@
-import {
-  Event, EventStatus,
-} from './types'
+import { Event, EventStatus } from './types';
 
 export interface EventStore<T = unknown> {
   addEvent: (
@@ -8,26 +6,26 @@ export interface EventStore<T = unknown> {
     chainId: string,
     rpcUrl: string,
     isDefaultNetwork: boolean,
-    onEmit: (event: Event<T>) => Promise<void>,
-  ) => Event<T>
+    onEmit: (event: Event<T>) => Promise<void>
+  ) => Event<T>;
 
-  getEvent: (id: string) => Event<T> | null
+  getEvent: (id: string) => Event<T> | null;
 
-  hasEvent: (id: string) => boolean
+  hasEvent: (id: string) => boolean;
 
-  emitEvent: (id: string) => Promise<boolean>
+  emitEvent: (id: string) => Promise<boolean>;
 
-  emitAllEvents: () => Promise<Event<T>[]>
+  emitAllEvents: () => Promise<Event<T>[]>;
 
-  updatePendingEvents: () => Promise<Event<T>[]>
+  updatePendingEvents: () => Promise<Event<T>[]>;
 
-  removeEvent: (id: string) => Event<T> | null
+  removeEvent: (id: string) => Event<T> | null;
 
-  removeAllEvents: () => void
+  removeAllEvents: () => void;
 
-  count: () => number
+  count: () => number;
 
-  list: () => string[]
+  list: () => string[];
 
-  getStatus: (id: string) => EventStatus | null
+  getStatus: (id: string) => EventStatus | null;
 }

@@ -1,57 +1,45 @@
-import {
-  FullButtonRightIcon,
-} from '@components/atoms'
-import {
-  BottomFixedButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
-import {
-  fonts,
-} from '@styles/theme'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import { FullButtonRightIcon } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
+import { RoutePath } from '@types';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
 const menuMakerInfo: {
-  title: string
+  title: string;
   navigatePath:
     | RoutePath.ConnectedApps
     | RoutePath.AddressBook
     | RoutePath.ChangeNetwork
     | RoutePath.SecurityPrivacy
-    | RoutePath.AboutAdena
+    | RoutePath.AboutAdena;
 }[] = [
   {
     title: 'Connected Apps',
-    navigatePath: RoutePath.ConnectedApps,
+    navigatePath: RoutePath.ConnectedApps
   },
   {
     title: 'Address Book',
-    navigatePath: RoutePath.AddressBook,
+    navigatePath: RoutePath.AddressBook
   },
   {
     title: 'Change Network',
-    navigatePath: RoutePath.ChangeNetwork,
+    navigatePath: RoutePath.ChangeNetwork
   },
   {
     title: 'Security & Privacy',
-    navigatePath: RoutePath.SecurityPrivacy,
+    navigatePath: RoutePath.SecurityPrivacy
   },
   {
     title: 'About Adena',
-    navigatePath: RoutePath.AboutAdena,
-  },
-]
+    navigatePath: RoutePath.AboutAdena
+  }
+];
 
 export const Settings = (): JSX.Element => {
-  const {
-    navigate, goBack,
-  } = useAppNavigate()
+  const { navigate, goBack } = useAppNavigate();
 
   return (
     <Wrapper>
@@ -67,13 +55,11 @@ export const Settings = (): JSX.Element => {
       ))}
       <BottomFixedButton text='Close' onClick={goBack} />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 24px;
@@ -88,4 +74,4 @@ const Wrapper = styled.main`
       ${fonts.header4};
     }
   }
-`
+`;

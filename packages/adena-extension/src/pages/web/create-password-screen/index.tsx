@@ -1,13 +1,7 @@
-import IconConfirmCheck from '@assets/icon-confirm-check'
-import {
-  ADENA_TERMS_PAGE,
-} from '@common/constants/resource.constant'
-import {
-  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
-import {
-  EvaluatePasswordResult,
-} from '@common/utils/password-utils'
+import IconConfirmCheck from '@assets/icon-confirm-check';
+import { ADENA_TERMS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   Pressable,
   Row,
@@ -16,62 +10,48 @@ import {
   WebErrorText,
   WebInput,
   WebMain,
-  WebText,
-} from '@components/atoms'
-import {
-  TermsCheckbox, WebTitleWithDescription,
-} from '@components/molecules'
-import {
-  WebMainHeader,
-} from '@components/pages/web/main-header'
-import useAppNavigate from '@hooks/use-app-navigate'
-import useLink from '@hooks/use-link'
-import {
-  useCreatePasswordScreen,
-} from '@hooks/web/common/use-create-password-screen'
-import {
-  RoutePath,
-} from '@types'
-import {
-  type JSX, useCallback, useMemo,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  WebText
+} from '@components/atoms';
+import { TermsCheckbox, WebTitleWithDescription } from '@components/molecules';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import useAppNavigate from '@hooks/use-app-navigate';
+import useLink from '@hooks/use-link';
+import { useCreatePasswordScreen } from '@hooks/web/common/use-create-password-screen';
+import { RoutePath } from '@types';
+import { type JSX, useCallback, useMemo } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 330px;
   row-gap: 24px;
   align-items: flex-start;
-`
+`;
 
 const StyledInputContainer = styled(View)`
   width: 100%;
   row-gap: 16px;
-`
+`;
 
 const StyledInputBox = styled(View)`
   width: 100%;
   row-gap: 12px;
-`
+`;
 
 const StyledInputWrapper = styled(Row)`
   width: 100%;
   gap: 12px;
-`
+`;
 
 const StyledLink = styled(Pressable)`
   text-decoration: underline;
   &:hover {
     color: #0059ff;
   }
-`
+`;
 
 const CreatePasswordScreen = (): JSX.Element => {
-  const {
-    openLink,
-  } = useLink()
+  const { openLink } = useLink();
   const {
     indicatorInfo,
     passwordState,
@@ -81,29 +61,27 @@ const CreatePasswordScreen = (): JSX.Element => {
     buttonState,
     validateMatchPassword,
     onKeyDown,
-    clearPassword,
-  } = useCreatePasswordScreen()
+    clearPassword
+  } = useCreatePasswordScreen();
 
-  const {
-    goBack,
-  } = useAppNavigate<RoutePath.WebCreatePassword>()
+  const { goBack } = useAppNavigate<RoutePath.WebCreatePassword>();
 
   const moveAdenaTermsPage = useCallback(() => {
-    openLink(ADENA_TERMS_PAGE)
-  }, [openLink])
+    openLink(ADENA_TERMS_PAGE);
+  }, [openLink]);
 
   const onClickNext = (): void => {
     if (buttonState.disabled) {
-      return
+      return;
     }
 
     if (!validateMatchPassword()) {
-      return
+      return;
     }
 
-    clearPassword()
-    buttonState.onClick()
-  }
+    clearPassword();
+    buttonState.onClick();
+  };
 
   return (
     <WebMain spacing={WEB_TOP_SPACING} responsiveSpacing={WEB_TOP_SPACING_RESPONSIVE}>
@@ -129,7 +107,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 placeholder='Password'
                 style={{
                   width: '100%',
-                  flexShrink: 0,
+                  flexShrink: 0
                 }}
                 value={passwordState.value}
                 onChange={passwordState.onChange}
@@ -150,9 +128,7 @@ const CreatePasswordScreen = (): JSX.Element => {
                 type='password'
                 name='confirmPassword'
                 placeholder='Confirm Password'
-                style={{
-                  width: '100%',
-                }}
+                style={{ width: '100%' }}
                 value={confirmPasswordState.value}
                 onChange={confirmPasswordState.onChange}
                 onKeyDown={onKeyDown}
@@ -187,37 +163,32 @@ const CreatePasswordScreen = (): JSX.Element => {
         />
       </StyledContainer>
     </WebMain>
-  )
-}
+  );
+};
 
-const EvaluationPasswordResultDescription = ({
-  complexity,
-}: EvaluatePasswordResult): JSX.Element => {
-  const theme = useTheme()
+const EvaluationPasswordResultDescription = ({ complexity }: EvaluatePasswordResult): JSX.Element => {
+  const theme = useTheme();
 
   const complexityColor = useMemo(() => {
-    if (complexity === 'STRONG') return theme.webSuccess._100
-    if (complexity === 'MEDIUM') return theme.webWarning._100
-    return theme.webError._100
-  }, [complexity])
+    if (complexity === 'STRONG') return theme.webSuccess._100;
+    if (complexity === 'MEDIUM') return theme.webWarning._100;
+    return theme.webError._100;
+  }, [complexity]);
 
   const complexityText = useMemo(() => {
-    if (complexity === 'STRONG') return 'Strong'
-    if (complexity === 'MEDIUM') return 'Medium'
-    return 'Week'
-  }, [complexity])
+    if (complexity === 'STRONG') return 'Strong';
+    if (complexity === 'MEDIUM') return 'Medium';
+    return 'Week';
+  }, [complexity]);
 
   return (
-    <Row style={{
-      gap: 6,
-    }}
-    >
+    <Row style={{ gap: 6 }}>
       <IconConfirmCheck fill={complexityColor} />
       <WebText type='body5' color={complexityColor}>
         {complexityText}
       </WebText>
     </Row>
-  )
-}
+  );
+};
 
-export default CreatePasswordScreen
+export default CreatePasswordScreen;

@@ -1,16 +1,14 @@
-import React from 'react'
+import React from 'react';
 
-import {
-  BalanceInputWrapper,
-} from './balance-input.styles'
+import { BalanceInputWrapper } from './balance-input.styles';
 
 export interface BalanceInputProps {
-  hasError: boolean
-  amount: string
-  denom: string
-  description: string
-  onChangeAmount: (value: string) => void
-  onClickMax: () => void
+  hasError: boolean;
+  amount: string;
+  denom: string;
+  description: string;
+  onChangeAmount: (value: string) => void;
+  onClickMax: () => void;
 }
 
 const BalanceInput: React.FC<BalanceInputProps> = ({
@@ -19,7 +17,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
   denom,
   description,
   onChangeAmount,
-  onClickMax,
+  onClickMax
 }) => {
   return (
     <BalanceInputWrapper className={hasError ? 'error' : ''}>
@@ -41,7 +39,7 @@ const BalanceInput: React.FC<BalanceInputProps> = ({
 
       <span className='description'>{description}</span>
     </BalanceInputWrapper>
-  )
-}
+  );
+};
 
-export default BalanceInput
+export default BalanceInput;

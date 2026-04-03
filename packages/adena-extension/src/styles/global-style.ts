@@ -1,11 +1,7 @@
-import {
-  createGlobalStyle,
-} from 'styled-components'
+import { createGlobalStyle } from 'styled-components';
 
-import mixins from './mixins'
-import {
-  fonts,
-} from './theme'
+import mixins from './mixins';
+import { fonts } from './theme';
 
 export const GlobalWebStyle = createGlobalStyle`
   * {
@@ -27,7 +23,7 @@ export const GlobalWebStyle = createGlobalStyle`
     background: radial-gradient(100% 100% at 50% 0%, rgba(16, 18, 20, 0.00) 48.83%, rgba(0, 89, 255, 0.24) 100%);
     overflow: auto;
   }
-`
+`;
 
 export const GlobalPopupStyle = createGlobalStyle`
   html, body {
@@ -50,7 +46,7 @@ export const GlobalPopupStyle = createGlobalStyle`
   #popup {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal',
+      justify: 'normal'
     })};
     position: relative;
     width: 100%;
@@ -153,4 +149,4 @@ export const GlobalPopupStyle = createGlobalStyle`
     ${fonts.header7}
   }
 
-`
+`;

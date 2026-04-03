@@ -1,41 +1,29 @@
-import {
-  CommonFullContentLayout,
-} from '@components/atoms'
-import AccountInitializationPage from '@components/pages/account-initialization/account-initialization'
-import {
-  useWalletContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import type {
-  JSX,
-} from 'react'
+import { CommonFullContentLayout } from '@components/atoms';
+import AccountInitializationPage from '@components/pages/account-initialization/account-initialization';
+import { useWalletContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import type { JSX } from 'react';
 
 /**
  * The page to initialize your account is deprecated for now.
  * Keep it for account initialization.
  */
 export default function AccountInitialization(): JSX.Element {
-  const {
-    wallet,
-  } = useWalletContext()
-  const {
-    currentAccount, currentAddress,
-  } = useCurrentAccount()
+  const { wallet } = useWalletContext();
+  const { currentAccount, currentAddress } = useCurrentAccount();
 
   const moveBack = (): void => {
-    history.back()
-  }
+    history.back();
+  };
 
   const initializeAccount = async (): Promise<boolean> => {
     if (!wallet || !currentAccount) {
-      return false
+      return false;
     }
 
     // Change it to run an empty transaction that can be initialized.
-    return true
-  }
+    return true;
+  };
 
   return (
     <CommonFullContentLayout>
@@ -45,5 +33,5 @@ export default function AccountInitialization(): JSX.Element {
         initializeAccount={initializeAccount}
       />
     </CommonFullContentLayout>
-  )
+  );
 }

@@ -1,27 +1,23 @@
-import {
-  Loading,
-} from '@components/atoms'
-import React from 'react'
+import { Loading } from '@components/atoms';
+import React from 'react';
 
-import {
-  GhostButtons,
-} from '../ghost-button'
+import { GhostButtons } from '../ghost-button';
 import {
   ApproveLoadingAllRadiusBox,
   ApproveLoadingBottomRadiusBox,
   ApproveLoadingSkeletonBox,
   ApproveLoadingTopRadiusBox,
-  ApproveLoadingWrapper,
-} from './approve-loading.styles'
+  ApproveLoadingWrapper
+} from './approve-loading.styles';
 
 export interface ApproveLoadingProps {
-  leftButtonText?: string
-  rightButtonText?: string
+  leftButtonText?: string;
+  rightButtonText?: string;
 }
 
 export const ApproveLoading: React.FC<ApproveLoadingProps> = ({
   leftButtonText,
-  rightButtonText,
+  rightButtonText
 }) => {
   return (
     <ApproveLoadingWrapper>
@@ -48,5 +44,5 @@ export const ApproveLoading: React.FC<ApproveLoadingProps> = ({
         className='l-approve'
       />
     </ApproveLoadingWrapper>
-  )
-}
+  );
+};

@@ -1,59 +1,47 @@
-import checkOff from '@assets/check-off.svg'
-import checkOn from '@assets/check-on.svg'
-import mixins from '@styles/mixins'
-import {
-  fonts,
-} from '@styles/theme'
-import React, {
-  type JSX,
-} from 'react'
-import styled, {
-  CSSProp,
-} from 'styled-components'
+import checkOff from '@assets/check-off.svg';
+import checkOn from '@assets/check-on.svg';
+import mixins from '@styles/mixins';
+import { fonts } from '@styles/theme';
+import React, { type JSX } from 'react';
+import styled, { CSSProp } from 'styled-components';
 
-type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM'
+type CheckboxPos = 'CENTER' | 'TOP' | ' BOTTOM';
 interface TermsCheckboxProps {
-  checked: boolean
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  text?: string
-  children?: React.ReactNode
-  tabIndex: number
-  checkboxPos?: CheckboxPos
-  className?: string
-  margin?: string
-  id?: string
-  color?: string
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  text?: string;
+  children?: React.ReactNode;
+  tabIndex: number;
+  checkboxPos?: CheckboxPos;
+  className?: string;
+  margin?: string;
+  id?: string;
+  color?: string;
 }
 
-const Wrapper = styled.div<{
-  margin?: string
-}>`
+const Wrapper = styled.div<{ margin?: string }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
-  margin: ${({
-    margin,
-  }): string => margin ?? '0px 0px 10px'};
+  margin: ${({ margin }): string => margin ?? '0px 0px 10px'};
   ${fonts.body2Reg};
-`
+`;
 
 const Label = styled.label<{
-  checkboxPos: CheckboxPos
-  color?: string
+  checkboxPos: CheckboxPos;
+  color?: string;
 }>`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   position: relative;
   padding-left: 28px;
   cursor: pointer;
   &:before {
-    ${({
-      checkboxPos,
-    }): CSSProp =>
+    ${({ checkboxPos }): CSSProp =>
       checkboxPos === 'TOP' ? mixins.posTopLeft('2px') : mixins.posTopCenterLeft()};
     content: '';
     display: inline-block;
@@ -70,11 +58,9 @@ const Label = styled.label<{
   &,
   * {
     font: inherit;
-      color: ${({
-        color, theme,
-      }): string => color ?? theme.neutral.a};
+      color: ${({ color, theme }): string => color ?? theme.neutral.a};
   }
-`
+`;
 
 const Input = styled.input`
   display: none;
@@ -86,7 +72,7 @@ const Input = styled.input`
       background: url(${checkOn}) no-repeat center center;
     }
   }
-`
+`;
 
 export const TermsCheckbox = ({
   checked,
@@ -98,7 +84,7 @@ export const TermsCheckbox = ({
   className = '',
   margin,
   id = '',
-  color,
+  color
 }: TermsCheckboxProps): JSX.Element => {
   return (
     <Wrapper className={className} margin={margin} color={color}>
@@ -114,5 +100,5 @@ export const TermsCheckbox = ({
         {children}
       </Label>
     </Wrapper>
-  )
-}
+  );
+};

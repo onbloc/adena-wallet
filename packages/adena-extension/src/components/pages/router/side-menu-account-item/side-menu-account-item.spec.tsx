@@ -1,25 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  SideMenuAccountItemProps,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { SideMenuAccountItemProps } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import SideMenuAccountItem from './side-menu-account-item'
+import SideMenuAccountItem from './side-menu-account-item';
 
 describe('SideMenuAccountItem Component', () => {
   it('SideMenuAccountItem render', () => {
@@ -30,22 +18,22 @@ describe('SideMenuAccountItem Component', () => {
         name: '',
         address: '',
         balance: '',
-        type: 'HD_WALLET',
+        type: 'HD_WALLET'
       },
       focusedAccountId: '',
       focusAccountId: () => {
-        return
+        return;
       },
       changeAccount: () => {
-        return
+        return;
       },
       moveGnoscan: () => {
-        return
+        return;
       },
       moveAccountDetail: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -53,7 +41,7 @@ describe('SideMenuAccountItem Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenuAccountItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

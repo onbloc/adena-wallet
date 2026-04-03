@@ -1,16 +1,12 @@
-import {
-  Pressable, View, WebText,
-} from '@components/atoms'
-import styled from 'styled-components'
+import { Pressable, View, WebText } from '@components/atoms';
+import styled from 'styled-components';
 
 export const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 16px;
-`
+`;
 
-export const StyledAddButton = styled(Pressable)<{
-  isDisabled: boolean
-}>`
+export const StyledAddButton = styled(Pressable)<{ isDisabled: boolean }>`
   display: flex;
   width: 128px;
   height: 32px;
@@ -19,21 +15,13 @@ export const StyledAddButton = styled(Pressable)<{
   align-items: center;
   gap: 4px;
   border-radius: 8px;
-  background: ${({
-    isDisabled,
-  }): string =>
+  background: ${({ isDisabled }): string =>
     isDisabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.12)'};
   position: relative;
   transition: all 0.2s;
-  cursor: ${({
-    isDisabled,
-  }): string => (isDisabled ? 'not-allowed' : 'pointer')};
-  opacity: ${({
-    isDisabled,
-  }): string => (isDisabled ? '0.5' : '1')};
-  pointer-events: ${({
-    isDisabled,
-  }): string => (isDisabled ? 'none' : 'auto')};
+  cursor: ${({ isDisabled }): string => (isDisabled ? 'not-allowed' : 'pointer')};
+  opacity: ${({ isDisabled }): string => (isDisabled ? '0.5' : '1')};
+  pointer-events: ${({ isDisabled }): string => (isDisabled ? 'none' : 'auto')};
 
   &::before {
     content: '';
@@ -41,9 +29,7 @@ export const StyledAddButton = styled(Pressable)<{
     inset: 0;
     border-radius: 8px;
     padding: 1px;
-    background: ${({
-      isDisabled,
-    }): string =>
+    background: ${({ isDisabled }): string =>
       isDisabled
         ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%)'
         : 'linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%)'};
@@ -55,12 +41,10 @@ export const StyledAddButton = styled(Pressable)<{
   }
 
   &:hover {
-    background: ${({
-      isDisabled,
-    }): string =>
+    background: ${({ isDisabled }): string =>
       isDisabled ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.2)'};
   }
-`
+`;
 
 export const StyledCloseButton = styled.button`
   display: inline-flex;
@@ -77,29 +61,21 @@ export const StyledCloseButton = styled.button`
 
     line {
       transition: 0.2s;
-      stroke: ${({
-        theme,
-      }): string => theme.webNeutral._500};
+      stroke: ${({ theme }): string => theme.webNeutral._500};
     }
   }
 
   &:hover {
     svg {
       line {
-        stroke: ${({
-          theme,
-        }): string => theme.webNeutral._100};
+        stroke: ${({ theme }): string => theme.webNeutral._100};
       }
     }
   }
-`
+`;
 
-export const StyledButtonText = styled(WebText)<{
-  isDisabled: boolean
-}>`
-  color: ${({
-    theme, isDisabled,
-  }): string =>
+export const StyledButtonText = styled(WebText)<{ isDisabled: boolean }>`
+  color: ${({ theme, isDisabled }): string =>
     isDisabled ? theme.webNeutral._500 : theme.webNeutral._100};
   font-family: Inter;
   font-size: 12px;
@@ -107,7 +83,7 @@ export const StyledButtonText = styled(WebText)<{
   font-weight: 600;
   line-height: 16px;
   letter-spacing: -0.12px;
-`
+`;
 
 export const StyledInputRow = styled(View)`
   display: flex;
@@ -115,4 +91,4 @@ export const StyledInputRow = styled(View)`
   align-items: center;
   width: 100%;
   gap: 8px;
-`
+`;

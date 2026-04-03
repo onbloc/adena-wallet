@@ -1,38 +1,29 @@
-import {
-  WalletResponseFailureType,
-} from '@adena-wallet/sdk'
-import {
-  InjectionMessage, InjectionMessageInstance,
-} from '@inject/message'
-import {
-  Account, isMultisigAccount, RawTxMessageType,
-} from 'adena-module'
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { InjectionMessage, InjectionMessageInstance } from '@inject/message';
+import { Account, isMultisigAccount, RawTxMessageType } from 'adena-module';
 
 export const validateInjectionData = (requestData: InjectionMessage): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
-      {
-      },
-      requestData?.key,
-    )
+      {},
+      requestData?.key
+    );
   }
-  return null
-}
+  return null;
+};
 
 export const validateInjectionDataWithAddressByRawTx = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean,
+  skipCallerCheck?: boolean
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionTypeByRawTx(requestData)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
-      {
-        message: 'Unsupported transaction type',
-      },
-      requestData?.key,
-    )
+      { message: 'Unsupported transaction type' },
+      requestData?.key
+    );
   }
 
   if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
@@ -40,27 +31,26 @@ export const validateInjectionDataWithAddressByRawTx = (
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       {
         requestData,
-        address,
+        address
       },
-      requestData?.key,
-    )
+      requestData?.key
+    );
   }
 
-  return null
-}
+  return null;
+};
 
 export const validateInjectionDataWithAddress = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean,
+  skipCallerCheck?: boolean
 ): InjectionMessage | null => {
   if (!validateInjectionTransactionType(requestData)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.UNSUPPORTED_TYPE,
-      {
-      },
-      requestData?.key,
-    )
+      {},
+      requestData?.key
+    );
   }
 
   if (!validateInjectionTransactionMessageWithAddress(requestData, address, skipCallerCheck)) {
@@ -68,97 +58,95 @@ export const validateInjectionDataWithAddress = (
       WalletResponseFailureType.ACCOUNT_MISMATCH,
       {
         requestData,
-        address,
+        address
       },
-      requestData?.key,
-    )
+      requestData?.key
+    );
   }
 
-  return null
-}
+  return null;
+};
 
 export const validateInjectionDataForMultisig = (
   requestData: InjectionMessage,
   currentAccount: Account,
   address: string,
-  skipCallerCheck?: boolean,
+  skipCallerCheck?: boolean
 ): InjectionMessage | null => {
   if (!isMultisigAccount(currentAccount)) {
     return InjectionMessageInstance.failure(
       WalletResponseFailureType.CREATE_MULTISIG_TRANSACTION_FAILED,
-      {
-        error: 'The current account is not a multisig account.',
-      },
-      requestData?.key,
-    )
+      { error: 'The current account is not a multisig account.' },
+      requestData?.key
+    );
   }
 
-  return validateInjectionDataWithAddressByRawTx(requestData, address, skipCallerCheck)
-}
+  return validateInjectionDataWithAddressByRawTx(requestData, address, skipCallerCheck);
+};
 
 export const validateInjectionTransactionType = (requestData: InjectionMessage): any => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run']
+  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
 
-  const msgs = requestData.data?.messages || requestData.data?.msgs || []
-  return msgs.every((message: any) => messageTypes.includes(message?.type))
-}
+  const msgs = requestData.data?.messages || requestData.data?.msgs || [];
+  return msgs.every((message: any) => messageTypes.includes(message?.type));
+};
 
 export const validateInjectionTransactionTypeByRawTx = (requestData: InjectionMessage): any => {
-  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run']
+  const messageTypes = ['/bank.MsgSend', '/vm.m_call', '/vm.m_addpkg', '/vm.m_run'];
 
-  const msgs = requestData.data?.msg || []
-  return msgs.every((message: RawTxMessageType) => messageTypes.includes(message['@type']))
-}
+  const msgs = requestData.data?.msg || [];
+  return msgs.every((message: RawTxMessageType) => messageTypes.includes(message['@type']));
+};
 
 export const validateInjectionTransactionMessageWithAddress = (
   requestData: InjectionMessage,
   address: string,
-  skipCallerCheck?: boolean,
+  skipCallerCheck?: boolean
 ): boolean => {
   const messages
     = requestData.data?.msgs
       || requestData.data?.messages
       || requestData.data?.multisigDocument?.tx?.msgs
-      || []
+      || [];
   for (const message of messages) {
-    let messageAddress = ''
+    let messageAddress = '';
     switch (message?.type) {
       case '/bank.MsgSend':
-        messageAddress = message.value.from_address
-        break
+        messageAddress = message.value.from_address;
+        break;
       case '/vm.m_call':
-        messageAddress = message.value.caller
-        break
+        messageAddress = message.value.caller;
+        break;
       case '/vm.m_addpkg':
-        messageAddress = message.value.creator
-        break
+        messageAddress = message.value.creator;
+        break;
       case '/vm.m_run':
-        messageAddress = message.value.caller
-        break
+        messageAddress = message.value.caller;
+        break;
       default:
-        break
+        break;
     }
 
     if (!validateCallerAddress(messageAddress, address, skipCallerCheck)) {
-      return false
+      return false;
     }
   }
 
-  return true
-}
+  return true;
+};
 
 const validateCallerAddress = (
   messageAddress: any,
   currentAddress: string,
-  skipCallerCheck?: boolean,
+  skipCallerCheck?: boolean
 ): boolean => {
   if (messageAddress === '') {
-    return true
+    return true;
   }
 
   if (skipCallerCheck) {
-    return true
+    return true;
   }
 
-  return messageAddress === currentAddress
-}
+  return messageAddress === currentAddress;
+};

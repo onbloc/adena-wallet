@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  CustomNetworkInput, CustomNetworkInputProps,
-} from '.'
+import { CustomNetworkInput, CustomNetworkInputProps } from '.';
 
 describe('CustomNetworkInput Component', () => {
   it('CustomNetworkInput render', () => {
@@ -29,18 +17,18 @@ describe('CustomNetworkInput Component', () => {
       chainId: '',
       indexerUrl: '',
       changeIndexerUrl: () => {
-        return
+        return;
       },
       changeName: () => {
-        return
+        return;
       },
       changeRPCUrl: () => {
-        return
+        return;
       },
       changeChainId: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -48,7 +36,7 @@ describe('CustomNetworkInput Component', () => {
         <ThemeProvider theme={theme}>
           <CustomNetworkInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,61 +1,51 @@
-import IconSelectAccount from '@assets/web/select-account.svg'
-import {
-  View, WebButton, WebImg,
-} from '@components/atoms'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import SelectSeedPhraseBox from '@components/molecules/select-seed-phrase-box/select-seed-phrase-box'
-import {
-  WebMainHeader,
-} from '@components/pages/web/main-header'
-import {
-  UseAccountAddScreenReturn,
-} from '@hooks/web/use-account-add-screen'
-import {
-  ReactElement, useCallback, useMemo,
-} from 'react'
-import styled from 'styled-components'
+import IconSelectAccount from '@assets/web/select-account.svg';
+import { View, WebButton, WebImg } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+import SelectSeedPhraseBox from '@components/molecules/select-seed-phrase-box/select-seed-phrase-box';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import { UseAccountAddScreenReturn } from '@hooks/web/use-account-add-screen';
+import { ReactElement, useCallback, useMemo } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
 const SelectSeedPhraseStep = ({
   selectedKeyringId,
   setSelectedKeyringId,
-  useAccountAddScreenReturn,
+  useAccountAddScreenReturn
 }: {
-  selectedKeyringId?: string
-  setSelectedKeyringId: (keyringId?: string) => void
-  useAccountAddScreenReturn: UseAccountAddScreenReturn
+  selectedKeyringId?: string;
+  setSelectedKeyringId: (keyringId?: string) => void;
+  useAccountAddScreenReturn: UseAccountAddScreenReturn;
 }): ReactElement<any> => {
   const {
-    indicatorInfo, keyringInfos, onClickNext, onClickGoBack,
-  } = useAccountAddScreenReturn
+    indicatorInfo, keyringInfos, onClickNext, onClickGoBack
+  } = useAccountAddScreenReturn;
 
   const seedPhraseInfos = useMemo(() => {
     return keyringInfos.map(keyringInfo => ({
       ...keyringInfo,
-      selected: keyringInfo.keyringId === selectedKeyringId,
-    }))
-  }, [selectedKeyringId, keyringInfos])
+      selected: keyringInfo.keyringId === selectedKeyringId
+    }));
+  }, [selectedKeyringId, keyringInfos]);
 
   const disabledButton = useMemo(() => {
-    return !selectedKeyringId
-  }, [selectedKeyringId])
+    return !selectedKeyringId;
+  }, [selectedKeyringId]);
 
   const select = useCallback(
     (keyringId: string) => {
       if (selectedKeyringId === keyringId) {
-        setSelectedKeyringId('')
-        return
+        setSelectedKeyringId('');
+        return;
       }
-      setSelectedKeyringId(keyringId)
+      setSelectedKeyringId(keyringId);
     },
-    [selectedKeyringId],
-  )
+    [selectedKeyringId]
+  );
 
   return (
     <StyledContainer>
@@ -83,7 +73,7 @@ const SelectSeedPhraseStep = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SelectSeedPhraseStep
+export default SelectSeedPhraseStep;

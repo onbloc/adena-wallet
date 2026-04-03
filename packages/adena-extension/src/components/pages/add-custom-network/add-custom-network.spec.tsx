@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import AddCustomNetwork, {
-  AddCustomNetworkProps,
-} from '.'
+import AddCustomNetwork, { AddCustomNetworkProps } from '.';
 
 describe('AddCustomNetwork Component', () => {
   it('AddCustomNetwork render', () => {
@@ -30,27 +18,27 @@ describe('AddCustomNetwork Component', () => {
       indexerUrlError: '',
       chainId: '',
       changeName: () => {
-        return
+        return;
       },
       changeRPCUrl: () => {
-        return
+        return;
       },
       changeIndexerUrl: () => {
-        return
+        return;
       },
       changeChainId: () => {
-        return
+        return;
       },
       save: () => {
-        return
+        return;
       },
       cancel: () => {
-        return
+        return;
       },
       moveBack: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -58,7 +46,7 @@ describe('AddCustomNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <AddCustomNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import EditNetwork, {
-  EditNetworkProps,
-} from '.'
+import EditNetwork, { EditNetworkProps } from '.';
 
 describe('EditNetwork Component', () => {
   it('EditNetwork render', () => {
@@ -32,27 +20,27 @@ describe('EditNetwork Component', () => {
       savable: true,
       editType: 'all',
       changeName: () => {
-        return
+        return;
       },
       changeRPCUrl: () => {
-        return
+        return;
       },
       changeIndexerUrl: () => {
-        return
+        return;
       },
       changeChainId: () => {
-        return
+        return;
       },
       clearNetwork: () => {
-        return
+        return;
       },
       saveNetwork: () => {
-        return
+        return;
       },
       moveBack: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -60,7 +48,7 @@ describe('EditNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <EditNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

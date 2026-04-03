@@ -1,10 +1,6 @@
-import {
-  Row, View,
-} from '@components/atoms'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { Row, View } from '@components/atoms';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const StyledAdditionalTokenTypeSelectorWrapper = styled(Row)`
   display: flex;
@@ -16,7 +12,7 @@ export const StyledAdditionalTokenTypeSelectorWrapper = styled(Row)`
   align-items: center;
   border-radius: 30px;
   background-color: ${getTheme('neutral', '_9')};
-`
+`;
 
 export const StyledAdditionalTokenTypeSelector = styled(View)`
   display: flex;
@@ -33,4 +29,4 @@ export const StyledAdditionalTokenTypeSelector = styled(View)`
     color: ${getTheme('neutral', '_1')};
     background-color: ${getTheme('neutral', '_7')};
   }
-`
+`;

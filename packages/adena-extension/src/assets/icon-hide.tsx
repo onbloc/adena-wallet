@@ -1,12 +1,6 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
-const IconHide = ({
-  className,
-}: {
-  className?: string
-}): JSX.Element => (
+const IconHide = ({ className }: { className?: string }): JSX.Element => (
   <svg
     className={className}
     xmlns='http://www.w3.org/2000/svg'
@@ -27,6 +21,6 @@ const IconHide = ({
       </clipPath>
     </defs>
   </svg>
-)
+);
 
-export default IconHide
+export default IconHide;

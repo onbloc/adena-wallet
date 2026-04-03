@@ -1,12 +1,6 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
-const IconUnpin = ({
-  className,
-}: {
-  className?: string
-}): JSX.Element => (
+const IconUnpin = ({ className }: { className?: string }): JSX.Element => (
   <svg
     className={className}
     xmlns='http://www.w3.org/2000/svg'
@@ -35,6 +29,6 @@ const IconUnpin = ({
       </clipPath>
     </defs>
   </svg>
-)
+);
 
-export default IconUnpin
+export default IconUnpin;

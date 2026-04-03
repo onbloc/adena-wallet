@@ -1,56 +1,38 @@
-import UnknownTokenIcon from '@assets/common-unknown-token.svg'
-import ManageTokenSearch from '@components/pages/manage-token/manage-token'
-import {
-  ManageTokenLayout,
-} from '@components/pages/manage-token-layout'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import {
-  useTokenBalance,
-} from '@hooks/use-token-balance'
-import {
-  useTokenMetainfo,
-} from '@hooks/use-token-metainfo'
-import {
-  ManageTokenInfo, RoutePath,
-} from '@types'
-import BigNumber from 'bignumber.js'
+import UnknownTokenIcon from '@assets/common-unknown-token.svg';
+import ManageTokenSearch from '@components/pages/manage-token/manage-token';
+import { ManageTokenLayout } from '@components/pages/manage-token-layout';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useTokenBalance } from '@hooks/use-token-balance';
+import { useTokenMetainfo } from '@hooks/use-token-metainfo';
+import { ManageTokenInfo, RoutePath } from '@types';
+import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react'
+  useCallback, useEffect, useMemo, useState
+} from 'react';
 
 const ManageTokenSearchContainer: React.FC = () => {
-  const {
-    navigate, goBack,
-  } = useAppNavigate()
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [isClose, setIsClose] = useState(false)
-  const {
-    currentAccount,
-  } = useCurrentAccount()
-  const {
-    tokenLogoMap,
-  } = useTokenMetainfo()
-  const {
-    currentBalances, toggleDisplayOption,
-  } = useTokenBalance()
+  const { navigate, goBack } = useAppNavigate();
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [isClose, setIsClose] = useState(false);
+  const { currentAccount } = useCurrentAccount();
+  const { tokenLogoMap } = useTokenMetainfo();
+  const { currentBalances, toggleDisplayOption } = useTokenBalance();
 
   useEffect(() => {
     if (isClose) {
-      goBack()
+      goBack();
     }
-  }, [isClose])
+  }, [isClose]);
 
   const filteredTokens: ManageTokenInfo[] = useMemo(() => {
-    const comparedKeyword = searchKeyword.toLowerCase()
+    const comparedKeyword = searchKeyword.toLowerCase();
     const filteredTokens = currentBalances
       .filter((token) => {
-        if (comparedKeyword === '') return true
-        if (token.name.toLowerCase().includes(comparedKeyword)) return true
-        if (token.symbol.toLowerCase().includes(comparedKeyword)) return true
-        return false
+        if (comparedKeyword === '') return true;
+        if (token.name.toLowerCase().includes(comparedKeyword)) return true;
+        if (token.symbol.toLowerCase().includes(comparedKeyword)) return true;
+        return false;
       })
       .map((metainfo) => {
         return {
@@ -58,38 +40,38 @@ const ManageTokenSearchContainer: React.FC = () => {
           type: 'token' as const,
           balance: {
             value: BigNumber(metainfo.amount.value).toFormat(),
-            denom: metainfo.amount.denom,
+            denom: metainfo.amount.denom
           },
-          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`,
-        }
-      })
-    return filteredTokens
-  }, [searchKeyword, currentBalances, tokenLogoMap])
+          logo: tokenLogoMap[metainfo.tokenId] || `${UnknownTokenIcon}`
+        };
+      });
+    return filteredTokens;
+  }, [searchKeyword, currentBalances, tokenLogoMap]);
 
   const moveTokenAddedPage = useCallback(() => {
-    navigate(RoutePath.ManageTokenAdded)
-  }, [navigate])
+    navigate(RoutePath.ManageTokenAdded);
+  }, [navigate]);
 
   const onChangeKeyword = useCallback((keyword: string) => {
-    setSearchKeyword(keyword)
-  }, [])
+    setSearchKeyword(keyword);
+  }, []);
 
   const onToggleActiveItem = useCallback(
     (tokenId: string, activated: boolean) => {
       if (!currentAccount) {
-        return
+        return;
       }
-      const changedToken = currentBalances.find(token => tokenId === token.tokenId)
+      const changedToken = currentBalances.find(token => tokenId === token.tokenId);
       if (changedToken) {
-        toggleDisplayOption(currentAccount, changedToken, activated)
+        toggleDisplayOption(currentAccount, changedToken, activated);
       }
     },
-    [currentBalances],
-  )
+    [currentBalances]
+  );
 
   const onClickClose = useCallback(() => {
-    setIsClose(true)
-  }, [])
+    setIsClose(true);
+  }, []);
 
   return (
     <ManageTokenLayout>
@@ -102,7 +84,7 @@ const ManageTokenSearchContainer: React.FC = () => {
         onToggleActiveItem={onToggleActiveItem}
       />
     </ManageTokenLayout>
-  )
-}
+  );
+};
 
-export default ManageTokenSearchContainer
+export default ManageTokenSearchContainer;

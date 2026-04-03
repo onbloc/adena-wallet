@@ -1,34 +1,20 @@
-import {
-  Icon, IconName,
-} from '@components/atoms'
-import {
-  useWalletContext,
-} from '@hooks/use-context'
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import {
-  RoutePath,
-} from '@types'
-import {
-  type JSX, useCallback, useMemo,
-} from 'react'
-import React from 'react'
-import {
-  useMatch, useNavigate,
-} from 'react-router'
-import styled from 'styled-components'
+import { Icon, IconName } from '@components/atoms';
+import { useWalletContext } from '@hooks/use-context';
+import { useNetwork } from '@hooks/use-network';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import { type JSX, useCallback, useMemo } from 'react';
+import React from 'react';
+import { useMatch, useNavigate } from 'react-router';
+import styled from 'styled-components';
 
 const Wrapper = styled.nav`
   width: 100%;
   height: 60px;
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   background-color: ${getTheme('neutral', '_8')};
   filter: drop-shadow(0px -4px 4px rgba(0, 0, 0, 0.25));
@@ -51,58 +37,54 @@ const Wrapper = styled.nav`
       }
     }
   }
-`
+`;
 
 export const Navigation = (): JSX.Element => {
-  const navigate = useNavigate()
-  const matchedWallet = useMatch(RoutePath.Wallet)
-  const matchedExplore = useMatch(RoutePath.Explore)
-  const matchedNft = useMatch(RoutePath.Nft + '/*')
-  const matchedHistory = useMatch(RoutePath.History)
-  const matchedTokenDetails = useMatch(RoutePath.TokenDetails)
-  const {
-    failedNetwork,
-  } = useNetwork()
+  const navigate = useNavigate();
+  const matchedWallet = useMatch(RoutePath.Wallet);
+  const matchedExplore = useMatch(RoutePath.Explore);
+  const matchedNft = useMatch(RoutePath.Nft + '/*');
+  const matchedHistory = useMatch(RoutePath.History);
+  const matchedTokenDetails = useMatch(RoutePath.TokenDetails);
+  const { failedNetwork } = useNetwork();
 
-  const {
-    walletStatus,
-  } = useWalletContext()
+  const { walletStatus } = useWalletContext();
 
-  const isActiveWallet = walletStatus === 'FINISH'
+  const isActiveWallet = walletStatus === 'FINISH';
 
   const navigationItems = useMemo(
     () => [
       {
         iconName: 'iconWallet',
         active: !!matchedWallet || !!matchedTokenDetails,
-        routingAddress: RoutePath.Wallet,
+        routingAddress: RoutePath.Wallet
       },
       {
         iconName: 'iconGallery',
         active: !!matchedNft,
-        routingAddress: RoutePath.Nft,
+        routingAddress: RoutePath.Nft
       },
       {
         iconName: 'iconSearch',
         active: !!matchedExplore,
-        routingAddress: RoutePath.Explore,
+        routingAddress: RoutePath.Explore
       },
       {
         iconName: 'iconClock',
         active: !!matchedHistory,
-        routingAddress: RoutePath.History,
-      },
+        routingAddress: RoutePath.History
+      }
     ],
-    [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails],
-  )
+    [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails]
+  );
 
   const visibleNavigation = useMemo(() => {
     if (!isActiveWallet) {
-      return false
+      return false;
     }
 
     if (failedNetwork || failedNetwork === undefined) {
-      return false
+      return false;
     }
 
     return (
@@ -111,28 +93,26 @@ export const Navigation = (): JSX.Element => {
       || !!matchedNft
       || !!matchedHistory
       || !!matchedTokenDetails
-    )
-  }, [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails, isActiveWallet, failedNetwork])
+    );
+  }, [matchedWallet, matchedExplore, matchedNft, matchedHistory, matchedTokenDetails, isActiveWallet, failedNetwork]);
 
   const onClickNavigationItem = useCallback(
     (item: {
-      iconName: string
-      active: boolean
-      routingAddress: RoutePath
+      iconName: string;
+      active: boolean;
+      routingAddress: RoutePath;
     }) => {
       if (!isActiveWallet) {
-        return
+        return;
       }
 
-      navigate(item.routingAddress, {
-        replace: true,
-      })
+      navigate(item.routingAddress, { replace: true });
     },
-    [isActiveWallet],
-  )
+    [isActiveWallet]
+  );
 
   if (!visibleNavigation) {
-    return <React.Fragment />
+    return <React.Fragment />;
   }
 
   return (
@@ -145,5 +125,5 @@ export const Navigation = (): JSX.Element => {
         </div>
       ))}
     </Wrapper>
-  )
-}
+  );
+};

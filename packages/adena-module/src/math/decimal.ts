@@ -1,8 +1,6 @@
-import BN from "bn.js";
+import BN from 'bn.js';
 
-import {
-  Uint32, Uint53, Uint64,
-} from "./integers.js";
+import { Uint32, Uint53, Uint64 } from './integers.js';
 
 // Too large values lead to massive memory usage. Limit to something sensible.
 // The largest value we need is 18 (Ether).
@@ -25,36 +23,36 @@ export class Decimal {
     let whole: string;
     let fractional: string;
 
-    if (input === "") {
-      whole = "0";
-      fractional = "";
+    if (input === '') {
+      whole = '0';
+      fractional = '';
     }
     else if (input.search(/\./) === -1) {
       // integer format, no separator
       whole = input;
-      fractional = "";
+      fractional = '';
     }
     else {
-      const parts = input.split(".");
+      const parts = input.split('.');
       switch (parts.length) {
         case 0:
         case 1:
-          throw new Error("Fewer than two elements in split result. This must not happen here.");
+          throw new Error('Fewer than two elements in split result. This must not happen here.');
         case 2:
-          if (!parts[1]) throw new Error("Fractional part missing");
+          if (!parts[1]) throw new Error('Fractional part missing');
           whole = parts[0];
-          fractional = parts[1].replace(/0+$/, "");
+          fractional = parts[1].replace(/0+$/, '');
           break;
         default:
-          throw new Error("More than one separator found");
+          throw new Error('More than one separator found');
       }
     }
 
     if (fractional.length > fractionalDigits) {
-      throw new Error("Got more fractional digits than supported");
+      throw new Error('Got more fractional digits than supported');
     }
 
-    const quantity = `${whole}${fractional.padEnd(fractionalDigits, "0")}`;
+    const quantity = `${whole}${fractional.padEnd(fractionalDigits, '0')}`;
 
     return new Decimal(quantity, fractionalDigits);
   }
@@ -72,7 +70,7 @@ export class Decimal {
    */
   public static zero(fractionalDigits: number): Decimal {
     Decimal.verifyFractionalDigits(fractionalDigits);
-    return new Decimal("0", fractionalDigits);
+    return new Decimal('0', fractionalDigits);
   }
 
   /**
@@ -83,12 +81,12 @@ export class Decimal {
    */
   public static one(fractionalDigits: number): Decimal {
     Decimal.verifyFractionalDigits(fractionalDigits);
-    return new Decimal("1" + "0".repeat(fractionalDigits), fractionalDigits);
+    return new Decimal('1' + '0'.repeat(fractionalDigits), fractionalDigits);
   }
 
   private static verifyFractionalDigits(fractionalDigits: number): void {
-    if (!Number.isInteger(fractionalDigits)) throw new Error("Fractional digits is not an integer");
-    if (fractionalDigits < 0) throw new Error("Fractional digits must not be negative");
+    if (!Number.isInteger(fractionalDigits)) throw new Error('Fractional digits is not an integer');
+    if (fractionalDigits < 0) throw new Error('Fractional digits must not be negative');
     if (fractionalDigits > maxFractionalDigits) {
       throw new Error(`Fractional digits must not exceed ${maxFractionalDigits}`);
     }
@@ -96,7 +94,7 @@ export class Decimal {
 
   public static compare(a: Decimal, b: Decimal): number {
     if (a.fractionalDigits !== b.fractionalDigits)
-      throw new Error("Fractional digits do not match");
+      throw new Error('Fractional digits do not match');
     return a.data.atomics.cmp(new BN(b.atomics));
   }
 
@@ -109,20 +107,20 @@ export class Decimal {
   }
 
   private readonly data: {
-    readonly atomics: BN
-    readonly fractionalDigits: number
+    readonly atomics: BN;
+    readonly fractionalDigits: number;
   };
 
   private constructor(atomics: string, fractionalDigits: number) {
     if (!atomics.match(/^[0-9]+$/)) {
       throw new Error(
-        "Invalid string format. Only non-negative integers in decimal representation supported.",
+        'Invalid string format. Only non-negative integers in decimal representation supported.'
       );
     }
 
     this.data = {
       atomics: new BN(atomics),
-      fractionalDigits: fractionalDigits,
+      fractionalDigits: fractionalDigits
     };
   }
 
@@ -168,8 +166,8 @@ export class Decimal {
       return whole.toString();
     }
     else {
-      const fullFractionalPart = fractional.toString().padStart(this.data.fractionalDigits, "0");
-      const trimmedFractionalPart = fullFractionalPart.replace(/0+$/, "");
+      const fullFractionalPart = fractional.toString().padStart(this.data.fractionalDigits, '0');
+      const trimmedFractionalPart = fullFractionalPart.replace(/0+$/, '');
       return `${whole.toString()}.${trimmedFractionalPart}`;
     }
   }
@@ -180,7 +178,7 @@ export class Decimal {
    */
   public toFloatApproximation(): number {
     const out = Number(this.toString());
-    if (Number.isNaN(out)) throw new Error("Conversion to number failed");
+    if (Number.isNaN(out)) throw new Error('Conversion to number failed');
     return out;
   }
 
@@ -191,7 +189,7 @@ export class Decimal {
    */
   public plus(b: Decimal): Decimal {
     if (this.fractionalDigits !== b.fractionalDigits)
-      throw new Error("Fractional digits do not match");
+      throw new Error('Fractional digits do not match');
     const sum = this.data.atomics.add(new BN(b.atomics));
     return new Decimal(sum.toString(), this.fractionalDigits);
   }
@@ -204,9 +202,9 @@ export class Decimal {
    */
   public minus(b: Decimal): Decimal {
     if (this.fractionalDigits !== b.fractionalDigits)
-      throw new Error("Fractional digits do not match");
+      throw new Error('Fractional digits do not match');
     const difference = this.data.atomics.sub(new BN(b.atomics));
-    if (difference.ltn(0)) throw new Error("Difference must not be negative");
+    if (difference.ltn(0)) throw new Error('Difference must not be negative');
     return new Decimal(difference.toString(), this.fractionalDigits);
   }
 

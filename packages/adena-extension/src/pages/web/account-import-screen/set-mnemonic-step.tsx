@@ -1,35 +1,23 @@
 import {
-  Row, View, WebButton, WebCheckBox, WebText,
-} from '@components/atoms'
-import {
-  WebSeedInput, WebTitleWithDescription,
-} from '@components/molecules'
-import {
-  UseAccountImportReturn,
-} from '@hooks/web/use-account-import-screen'
-import {
-  ReactElement, useState,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Row, View, WebButton, WebCheckBox, WebText
+} from '@components/atoms';
+import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
+import { UseAccountImportReturn } from '@hooks/web/use-account-import-screen';
+import { ReactElement, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
-const SetMnemonicStep = ({
-  useAccountImportScreenReturn,
-}: {
-  useAccountImportScreenReturn: UseAccountImportReturn
-}): ReactElement<any> => {
+const SetMnemonicStep = ({ useAccountImportScreenReturn }: { useAccountImportScreenReturn: UseAccountImportReturn }): ReactElement<any> => {
   const {
-    errMsg, isValidForm, updateInputValue, setInputType, onClickNext,
+    errMsg, isValidForm, updateInputValue, setInputType, onClickNext
   }
-    = useAccountImportScreenReturn
-  const theme = useTheme()
-  const [agreeWarning, setAgreeWarning] = useState(false)
+    = useAccountImportScreenReturn;
+  const theme = useTheme();
+  const [agreeWarning, setAgreeWarning] = useState(false);
 
   return (
     <StyledContainer>
@@ -39,28 +27,26 @@ const SetMnemonicStep = ({
       />
       <View style={{
         paddingBottom: 8,
-        marginTop: -6,
+        marginTop: -6
       }}
       >
         <WebSeedInput
-          onChange={({
-            type, value,
-          }): void => {
-            updateInputValue(value)
-            setInputType(type)
+          onChange={({ type, value }): void => {
+            updateInputValue(value);
+            setInputType(type);
           }}
           errorMessage={errMsg}
         />
       </View>
       <Row style={{
         columnGap: 8,
-        alignItems: 'center',
+        alignItems: 'center'
       }}
       >
         <WebCheckBox
           checked={agreeWarning}
           onClick={(): void => {
-            setAgreeWarning(!agreeWarning)
+            setAgreeWarning(!agreeWarning);
           }}
         />
         <WebText type='body5' color={theme.webNeutral._500}>
@@ -77,7 +63,7 @@ const SetMnemonicStep = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetMnemonicStep
+export default SetMnemonicStep;

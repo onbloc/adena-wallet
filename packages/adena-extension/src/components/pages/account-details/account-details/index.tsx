@@ -1,29 +1,21 @@
-import {
-  CopyIconButton, FullButtonRightIcon,
-} from '@components/atoms'
-import {
-  QRCodeSVG,
-} from 'qrcode.react'
-import React, {
-  useCallback,
-} from 'react'
+import { CopyIconButton, FullButtonRightIcon } from '@components/atoms';
+import { QRCodeSVG } from 'qrcode.react';
+import React, { useCallback } from 'react';
 
-import AccountNameInput from '../account-name-input'
-import {
-  AccountDetailsWrapper,
-} from './account-details.styles'
+import AccountNameInput from '../account-name-input';
+import { AccountDetailsWrapper } from './account-details.styles';
 
 export interface AccountDetailsProps {
-  hasPrivateKey: boolean
-  hasSeedPhrase: boolean
-  originName: string
-  name: string
-  address: string
-  moveGnoscan: () => void
-  moveRevealSeedPhrase: () => void
-  moveExportPrivateKey: () => void
-  setName: (name: string) => void
-  reset: () => void
+  hasPrivateKey: boolean;
+  hasSeedPhrase: boolean;
+  originName: string;
+  name: string;
+  address: string;
+  moveGnoscan: () => void;
+  moveRevealSeedPhrase: () => void;
+  moveExportPrivateKey: () => void;
+  setName: (name: string) => void;
+  reset: () => void;
 }
 
 const AccountDetails: React.FC<AccountDetailsProps> = ({
@@ -36,25 +28,25 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
   reset,
   moveGnoscan,
   moveRevealSeedPhrase,
-  moveExportPrivateKey,
+  moveExportPrivateKey
 }) => {
   const onClickViewOnGnoscan = useCallback(() => {
-    moveGnoscan()
-  }, [moveGnoscan])
+    moveGnoscan();
+  }, [moveGnoscan]);
 
   const onClickExportPrivateKey = useCallback(() => {
     if (!hasPrivateKey) {
-      return
+      return;
     }
-    moveExportPrivateKey()
-  }, [hasPrivateKey, moveExportPrivateKey])
+    moveExportPrivateKey();
+  }, [hasPrivateKey, moveExportPrivateKey]);
 
   const onClickRevealSeedPhrase = useCallback(() => {
     if (!hasSeedPhrase) {
-      return
+      return;
     }
-    moveRevealSeedPhrase()
-  }, [hasSeedPhrase, moveRevealSeedPhrase])
+    moveRevealSeedPhrase();
+  }, [hasSeedPhrase, moveRevealSeedPhrase]);
 
   return (
     <AccountDetailsWrapper>
@@ -90,7 +82,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({
         />
       </div>
     </AccountDetailsWrapper>
-  )
-}
+  );
+};
 
-export default AccountDetails
+export default AccountDetails;

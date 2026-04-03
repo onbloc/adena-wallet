@@ -1,21 +1,15 @@
-import blurBg from '@assets/blur-bg.svg'
-import {
-  Icon, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import blurBg from '@assets/blur-bg.svg';
+import { Icon, Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
 interface BlurScreenProps {
-  hasText?: boolean
-  text?: string
+  hasText?: boolean;
+  text?: string;
 }
 
-export const BlurScreen = ({
-  hasText, text,
-}: BlurScreenProps): JSX.Element => {
+export const BlurScreen = ({ hasText, text }: BlurScreenProps): JSX.Element => {
   return (
     <>
       <Wrapper hasText={hasText}>
@@ -23,17 +17,13 @@ export const BlurScreen = ({
         {hasText && <Text type='captionReg'>{text}</Text>}
       </Wrapper>
     </>
-  )
-}
+  );
+};
 
-const Wrapper = styled.div<{
-  hasText?: boolean
-}>`
+const Wrapper = styled.div<{ hasText?: boolean }>`
   ${mixins.flex()};
   ${mixins.positionCenter()};
-  gap: ${({
-    hasText,
-  }): false | '21px' | undefined => hasText && '21px'};
+  gap: ${({ hasText }): false | '21px' | undefined => hasText && '21px'};
   background: url(${blurBg}) no-repeat 100% 100% / 100% 100%;
   width: calc(100% - 12px);
   height: calc(100% - 12px);
@@ -44,4 +34,4 @@ const Wrapper = styled.div<{
     width: 24px;
     height: 20px;
   }
-`
+`;

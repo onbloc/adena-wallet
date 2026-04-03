@@ -1,72 +1,68 @@
-import axios from 'axios'
-import {
-  v1,
-} from 'uuid'
+import axios from 'axios';
+import { v1 } from 'uuid';
 
 export interface RPCRequest {
-  id: string
-  jsonrpc: string
-  method: string
-  params: any[]
+  id: string;
+  jsonrpc: string;
+  method: string;
+  params: any[];
 }
 
 export interface IndexerRPCRequest {
-  id: number
-  jsonrpc: string
-  method: string
-  params: any[]
+  id: number;
+  jsonrpc: string;
+  method: string;
+  params: any[];
 }
 
 export async function fetchHealth(url: string): Promise<{
-  url: string
-  healthy: boolean
+  url: string;
+  healthy: boolean;
 }> {
   const healthy = await axios
-    .get(url + '/health', {
-      timeout: 5000,
-    })
+    .get(url + '/health', { timeout: 5000 })
     .then(response => response.status === 200)
-    .catch(() => false)
+    .catch(() => false);
   return {
     url,
-    healthy,
-  }
+    healthy
+  };
 }
 
 export function makeRPCRequest({
   id,
   method,
-  params,
+  params
 }: {
-  id?: string
-  method: string
-  params?: any[]
+  id?: string;
+  method: string;
+  params?: any[];
 }): RPCRequest {
   return {
     id: id || v1().toString(),
     jsonrpc: '2.0',
     method: method,
-    params: params || [],
-  }
+    params: params || []
+  };
 }
 
 export function makeIndexerRPCRequest({
   id,
   method,
-  params,
+  params
 }: {
-  id?: number
-  method: string
-  params?: any[]
+  id?: number;
+  method: string;
+  params?: any[];
 }): IndexerRPCRequest {
   return {
     id: id || makeRandId(),
     jsonrpc: '2.0',
     method: method,
-    params: params || [],
-  }
+    params: params || []
+  };
 }
 
 function makeRandId(): number {
-  return Math.floor(Math.random() * 10 ** 16)
+  return Math.floor(Math.random() * 10 ** 16);
 }

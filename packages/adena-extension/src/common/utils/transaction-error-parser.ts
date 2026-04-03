@@ -1,10 +1,8 @@
-import {
-  ContractMessage,
-} from '@inject/types'
+import { ContractMessage } from '@inject/types';
 
 export interface ParsedTransactionErrors {
-  globalErrorMessage: string | null
-  messageErrors: (string | undefined)[]
+  globalErrorMessage: string | null;
+  messageErrors: (string | undefined)[];
 }
 
 /**
@@ -17,51 +15,47 @@ export interface ParsedTransactionErrors {
  */
 export function parseSimulateErrors(
   simulateErrorMessage: string | null,
-  messages: ContractMessage[],
+  messages: ContractMessage[]
 ): ParsedTransactionErrors {
   const result: ParsedTransactionErrors = {
     globalErrorMessage: null,
-    messageErrors: new Array(messages.length).fill(undefined),
-  }
+    messageErrors: new Array(messages.length).fill(undefined)
+  };
 
   if (!simulateErrorMessage) {
-    return result
+    return result;
   }
 
-  const errorMsg = simulateErrorMessage.trim()
+  const errorMsg = simulateErrorMessage.trim();
 
-  const msgIndexMatch = errorMsg.match(/msg\s*(\d+)/i)
+  const msgIndexMatch = errorMsg.match(/msg\s*(\d+)/i);
   if (msgIndexMatch) {
-    const msgIndex = parseInt(msgIndexMatch[1], 10)
+    const msgIndex = parseInt(msgIndexMatch[1], 10);
     if (msgIndex >= 0 && msgIndex < messages.length) {
-      result.messageErrors[msgIndex] = 'Invalid parameter'
-      result.globalErrorMessage = errorMsg
-      return result
+      result.messageErrors[msgIndex] = 'Invalid parameter';
+      result.globalErrorMessage = errorMsg;
+      return result;
     }
   }
 
   for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i]
-    const pkgPath = (msg.value as {
-      pkg_path?: string
-    })?.pkg_path
-    const func = (msg.value as {
-      func?: string
-    })?.func
+    const msg = messages[i];
+    const pkgPath = (msg.value as { pkg_path?: string })?.pkg_path;
+    const func = (msg.value as { func?: string })?.func;
 
     if (pkgPath && errorMsg.includes(pkgPath)) {
-      result.messageErrors[i] = 'Invalid parameter'
-      result.globalErrorMessage = errorMsg
-      return result
+      result.messageErrors[i] = 'Invalid parameter';
+      result.globalErrorMessage = errorMsg;
+      return result;
     }
 
     if (func && errorMsg.includes(func)) {
-      result.messageErrors[i] = 'Invalid parameter'
-      result.globalErrorMessage = errorMsg
-      return result
+      result.messageErrors[i] = 'Invalid parameter';
+      result.globalErrorMessage = errorMsg;
+      return result;
     }
   }
 
-  result.globalErrorMessage = errorMsg
-  return result
+  result.globalErrorMessage = errorMsg;
+  return result;
 }

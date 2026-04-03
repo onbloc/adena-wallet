@@ -1,16 +1,8 @@
-import {
-  v4 as uuidv4,
-} from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  toBech32,
-} from "../../encoding/index.js";
-import {
-  isAddressKeyring, Keyring, KeyringType,
-} from "../keyring/index.js";
-import {
-  Account, AccountInfo,
-} from "./account.js";
+import { toBech32 } from '../../encoding/index.js';
+import { isAddressKeyring, Keyring, KeyringType } from '../keyring/index.js';
+import { Account, AccountInfo } from './account.js';
 
 export class AirgapAccount implements Account {
   public readonly id;
@@ -28,7 +20,7 @@ export class AirgapAccount implements Account {
   private _name: string;
 
   constructor({
-    id, index, type, keyringId, addressBytes, name,
+    id, index, type, keyringId, addressBytes, name
   }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
@@ -68,25 +60,23 @@ export class AirgapAccount implements Account {
       publicKey: Array.from(this.publicKey),
       addressBytes: Array.from(this.addressBytes),
       name: this._name,
-      hdPath: undefined,
+      hdPath: undefined
     };
   }
 
   public static async createBy(keyring: Keyring, name: string) {
     if (!isAddressKeyring(keyring)) {
-      throw new Error("Invalid account type");
+      throw new Error('Invalid account type');
     }
 
-    const {
-      id: keyringId, type: type, addressBytes,
-    } = keyring;
+    const { id: keyringId, type: type, addressBytes } = keyring;
     return new AirgapAccount({
       keyringId,
       index: 1,
       type,
       publicKey: [],
       addressBytes: Array.from(addressBytes),
-      name,
+      name
     });
   }
 
@@ -98,7 +88,7 @@ export class AirgapAccount implements Account {
       keyringId: accountInfo.keyringId,
       publicKey: accountInfo.publicKey,
       name: accountInfo.name,
-      addressBytes: accountInfo.addressBytes,
+      addressBytes: accountInfo.addressBytes
     });
   }
 }

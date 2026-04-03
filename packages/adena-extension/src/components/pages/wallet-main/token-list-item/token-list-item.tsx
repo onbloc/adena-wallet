@@ -1,31 +1,27 @@
-import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance'
-import {
-  MainToken,
-} from '@types'
-import React from 'react'
+import TokenListItemBalance from '@components/pages/wallet-main/token-list-item-balance/token-list-item-balance';
+import { MainToken } from '@types';
+import React from 'react';
 
-import {
-  TokenListItemWrapper,
-} from './token-list-item.styles'
+import { TokenListItemWrapper } from './token-list-item.styles';
 
 export interface TokenListItemProps {
-  token: MainToken
-  completeImageLoading: (imageUrl: string) => void
-  onClickTokenItem: (tokenId: string) => void
+  token: MainToken;
+  completeImageLoading: (imageUrl: string) => void;
+  onClickTokenItem: (tokenId: string) => void;
 }
 
 const TokenListItem: React.FC<TokenListItemProps> = ({
   token,
   completeImageLoading,
-  onClickTokenItem,
+  onClickTokenItem
 }) => {
   const {
-    tokenId, logo, name, balanceAmount,
-  } = token
+    tokenId, logo, name, balanceAmount
+  } = token;
 
   const onLoadImage = (): void => {
-    completeImageLoading(logo)
-  }
+    completeImageLoading(logo);
+  };
 
   return (
     <TokenListItemWrapper onClick={(): void => onClickTokenItem(tokenId)}>
@@ -49,7 +45,7 @@ const TokenListItem: React.FC<TokenListItemProps> = ({
         <TokenListItemBalance amount={balanceAmount} />
       </div>
     </TokenListItemWrapper>
-  )
-}
+  );
+};
 
-export default TokenListItem
+export default TokenListItem;

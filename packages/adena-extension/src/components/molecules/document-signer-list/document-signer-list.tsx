@@ -1,49 +1,29 @@
-import {
-  SCANNER_URL,
-} from '@common/constants/resource.constant'
-import {
-  makeQueryString,
-} from '@common/utils/string-utils'
-import useLink from '@hooks/use-link'
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import {
-  SignerInfo,
-} from '@inject/types'
-import {
-  useCallback,
-} from 'react'
+import { SCANNER_URL } from '@common/constants/resource.constant';
+import { makeQueryString } from '@common/utils/string-utils';
+import useLink from '@hooks/use-link';
+import { useNetwork } from '@hooks/use-network';
+import { SignerInfo } from '@inject/types';
+import { useCallback } from 'react';
 
-import {
-  DocumentSignerListWrapper,
-} from './document-signer-list.styles'
-import DocumentSignerListItem from './document-signer-list-item'
+import { DocumentSignerListWrapper } from './document-signer-list.styles';
+import DocumentSignerListItem from './document-signer-list-item';
 
-interface DocumentSignerListProps {
-  signerInfos: SignerInfo[]
-}
+interface DocumentSignerListProps { signerInfos: SignerInfo[] }
 
-const DocumentSignerList = ({
-  signerInfos,
-}: DocumentSignerListProps): React.ReactElement<any> => {
-  const {
-    openLink,
-  } = useLink()
-  const {
-    currentNetwork, scannerParameters,
-  } = useNetwork()
+const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.ReactElement<any> => {
+  const { openLink } = useLink();
+  const { currentNetwork, scannerParameters } = useNetwork();
 
   const handleLinkClick = useCallback(
     (address: string) => {
-      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL
+      const scannerUrl = currentNetwork.linkUrl || SCANNER_URL;
       const openLinkUrl = scannerParameters
         ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/account/${address}`
-      openLink(openLinkUrl)
+        : `${scannerUrl}/account/${address}`;
+      openLink(openLinkUrl);
     },
-    [currentNetwork, scannerParameters, openLink],
-  )
+    [currentNetwork, scannerParameters, openLink]
+  );
 
   return (
     <DocumentSignerListWrapper>
@@ -56,10 +36,10 @@ const DocumentSignerList = ({
             order={i + 1}
             onClickAddress={handleLinkClick}
           />
-        )
+        );
       })}
     </DocumentSignerListWrapper>
-  )
-}
+  );
+};
 
-export default DocumentSignerList
+export default DocumentSignerList;

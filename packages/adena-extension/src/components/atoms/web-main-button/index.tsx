@@ -1,25 +1,17 @@
-import React, {
-  CSSProperties, type JSX,
-} from 'react'
-import styled from 'styled-components'
+import React, { CSSProperties, type JSX } from 'react';
+import styled from 'styled-components';
 
-import {
-  View,
-} from '../base'
-import {
-  WebButton,
-} from '../web-button'
-import {
-  WebText,
-} from '../web-text'
+import { View } from '../base';
+import { WebButton } from '../web-button';
+import { WebText } from '../web-text';
 export interface WebMainButtonProps {
-  buttonRef?: React.RefObject<HTMLButtonElement | null>
-  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary'
-  text: string
-  width?: CSSProperties['width']
-  iconElement: JSX.Element
-  disabled?: boolean
-  onClick: () => void
+  buttonRef?: React.RefObject<HTMLButtonElement | null>;
+  figure: 'primary' | 'secondary' | 'tertiary' | 'quaternary' | 'quinary';
+  text: string;
+  width?: CSSProperties['width'];
+  iconElement: JSX.Element;
+  disabled?: boolean;
+  onClick: () => void;
 }
 
 const StyledContainer = styled(WebButton)`
@@ -28,7 +20,7 @@ const StyledContainer = styled(WebButton)`
   padding: 12px 16px;
   align-items: flex-start;
   justify-content: space-between;
-`
+`;
 
 const StyledImageWrapper = styled(View)`
   width: 24px;
@@ -38,7 +30,7 @@ const StyledImageWrapper = styled(View)`
   svg {
     width: 100%;
   }
-`
+`;
 
 const WebMainButton: React.FC<WebMainButtonProps> = ({
   buttonRef,
@@ -47,14 +39,12 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
   figure,
   width = '100%',
   disabled = false,
-  onClick,
+  onClick
 }) => {
   return (
     <StyledContainer
       buttonRef={buttonRef}
-      style={{
-        width,
-      }}
+      style={{ width }}
       figure={figure}
       size='large'
       disabled={disabled}
@@ -65,7 +55,7 @@ const WebMainButton: React.FC<WebMainButtonProps> = ({
         {text}
       </WebText>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default WebMainButton
+export default WebMainButton;

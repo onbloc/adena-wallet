@@ -1,70 +1,62 @@
-import {
-  CommandHandler,
-} from '@inject/message/command-handler'
-import {
-  CommandMessage,
-} from '@inject/message/command-message'
+import { CommandHandler } from '@inject/message/command-handler';
+import { CommandMessage } from '@inject/message/command-message';
 
 import {
   GnoMessageInfo,
   parseGnoExecFormInfo,
   parseGnoFormInfo,
   shouldInterceptExecForm,
-  shouldInterceptForm,
-} from '../gno-connect'
-import {
-  GnoConnectInfoProvider,
-} from '../gno-connect-info-provider'
-import {
-  IInterceptor, InterceptorContext, InterceptorHandler,
-} from '../gno-interceptor.types'
+  shouldInterceptForm
+} from '../gno-connect';
+import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
+import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
 
 /**
  * Interceptor for form submissions
  * Handles Gnoweb action function forms and exec forms
  */
 export class FormSubmitInterceptor implements IInterceptor {
-  public readonly name = 'FormSubmitInterceptor'
-  private isRegistered = false
-  private submitHandler: ((e: SubmitEvent) => void) | null = null
-  private readonly connectInfoProvider: GnoConnectInfoProvider
-  private readonly handler: InterceptorHandler
+  public readonly name = 'FormSubmitInterceptor';
+  private isRegistered = false;
+  private submitHandler: ((e: SubmitEvent) => void) | null = null;
+  private readonly connectInfoProvider: GnoConnectInfoProvider;
+  private readonly handler: InterceptorHandler;
 
   constructor(handler?: InterceptorHandler) {
-    this.connectInfoProvider = GnoConnectInfoProvider.getInstance()
-    this.handler = handler || this.defaultHandler
+    this.connectInfoProvider = GnoConnectInfoProvider.getInstance();
+    this.handler = handler || this.defaultHandler;
   }
 
   public shouldRegister(): boolean {
-    return this.connectInfoProvider.shouldRegister()
+    return this.connectInfoProvider.shouldRegister();
   }
 
   public register(): void {
     if (this.isRegistered) {
-      return
+      return;
     }
 
     if (!this.shouldRegister()) {
-      return
+      return;
     }
 
-    this.submitHandler = this.handleSubmit.bind(this)
-    document.addEventListener('submit', this.submitHandler, true)
-    this.isRegistered = true
+    this.submitHandler = this.handleSubmit.bind(this);
+    document.addEventListener('submit', this.submitHandler, true);
+    this.isRegistered = true;
   }
 
   public unregister(): void {
     if (!this.isRegistered || !this.submitHandler) {
-      return
+      return;
     }
 
-    document.removeEventListener('submit', this.submitHandler, true)
-    this.submitHandler = null
-    this.isRegistered = false
+    document.removeEventListener('submit', this.submitHandler, true);
+    this.submitHandler = null;
+    this.isRegistered = false;
   }
 
   public isActive(): boolean {
-    return this.isRegistered
+    return this.isRegistered;
   }
 
   /**
@@ -73,32 +65,32 @@ export class FormSubmitInterceptor implements IInterceptor {
    */
   private handleSubmit(e: SubmitEvent): void {
     try {
-      const form = e.target as HTMLFormElement
+      const form = e.target as HTMLFormElement;
       if (!form) {
-        return
+        return;
       }
 
       // Only process Gnoweb forms
       // If not a Gnoweb form, return early and let normal submission proceed
-      const gnoMessageInfo = this.parseFormData(form)
+      const gnoMessageInfo = this.parseFormData(form);
       if (gnoMessageInfo === null) {
         // Not a Gnoweb form - allow normal form submission
-        return
+        return;
       }
 
       // Gnoweb form detected - prevent default submission
-      e.preventDefault()
-      e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
 
-      const context = this.createContext()
+      const context = this.createContext();
       if (!context) {
-        return
+        return;
       }
 
-      this.handler(gnoMessageInfo, context)
+      this.handler(gnoMessageInfo, context);
     }
     catch (error) {
-      console.warn(`${this.name} error:`, error)
+      console.warn(`${this.name} error:`, error);
       // On error, allow normal form submission to proceed
     }
   }
@@ -110,30 +102,28 @@ export class FormSubmitInterceptor implements IInterceptor {
   private parseFormData(form: HTMLFormElement): GnoMessageInfo | null {
     // Check for Gnoweb action function form
     if (shouldInterceptForm(form)) {
-      return parseGnoFormInfo(form)
+      return parseGnoFormInfo(form);
     }
 
     // Check for Gnoweb exec form
     if (shouldInterceptExecForm(form)) {
-      return parseGnoExecFormInfo(form)
+      return parseGnoExecFormInfo(form);
     }
 
     // Not a Gnoweb form - return null to allow normal submission
-    return null
+    return null;
   }
 
   /**
    * Create interceptor context
    */
   private createContext(): InterceptorContext | null {
-    const gnoConnectInfo = this.connectInfoProvider.getConnectInfo()
+    const gnoConnectInfo = this.connectInfoProvider.getConnectInfo();
     if (!gnoConnectInfo) {
-      return null
+      return null;
     }
 
-    return {
-      gnoConnectInfo,
-    }
+    return { gnoConnectInfo };
   }
 
   /**
@@ -143,8 +133,8 @@ export class FormSubmitInterceptor implements IInterceptor {
     CommandHandler.createContentHandler(
       CommandMessage.command('checkMetadata', {
         gnoMessageInfo,
-        gnoConnectInfo: context.gnoConnectInfo,
-      }),
-    )
-  }
+        gnoConnectInfo: context.gnoConnectInfo
+      })
+    );
+  };
 }

@@ -1,32 +1,22 @@
-import {
-  defaultAddressPrefix,
-} from "@gnolang/tm2-js-client";
-import {
-  v4 as uuidv4,
-} from "uuid";
+import { defaultAddressPrefix } from '@gnolang/tm2-js-client';
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  toBech32,
-} from "../../encoding/index.js";
-import {
-  MultisigKeyring,
-} from "../keyring/multisig-keyring.js";
-import {
-  Account, AccountInfo,
-} from "./account.js";
+import { toBech32 } from '../../encoding/index.js';
+import { MultisigKeyring } from '../keyring/multisig-keyring.js';
+import { Account, AccountInfo } from './account.js';
 
 export interface MultisigConfig {
-  signers: string[]
-  threshold: number
-  noSort?: boolean
+  signers: string[];
+  threshold: number;
+  noSort?: boolean;
 }
 
 export interface SignerPublicKeyInfo {
-  address: string
+  address: string;
   publicKey: {
-    "@type": string
-    value: string
-  }
+    '@type': string;
+    value: string;
+  };
 }
 
 /**
@@ -35,7 +25,7 @@ export interface SignerPublicKeyInfo {
  */
 export class MultisigAccount implements Account {
   public readonly id: string;
-  public readonly type = "MULTISIG" as const;
+  public readonly type = 'MULTISIG' as const;
   public readonly keyringId: string;
   public readonly publicKey: Uint8Array;
   public readonly addressBytes: Uint8Array;
@@ -54,12 +44,12 @@ export class MultisigAccount implements Account {
     this.addressBytes = Uint8Array.from(accountInfo.addressBytes ?? []);
 
     if (!accountInfo.multisigConfig) {
-      throw new Error("MultisigConfig is required for MultisigAccount");
+      throw new Error('MultisigConfig is required for MultisigAccount');
     }
     this.multisigConfig = accountInfo.multisigConfig;
 
     if (!accountInfo.signerPublicKeys || accountInfo.signerPublicKeys.length === 0) {
-      throw new Error("SignerPublicKeys is required for MultisigAccount");
+      throw new Error('SignerPublicKeys is required for MultisigAccount');
     }
     this.signerPublicKeys = accountInfo.signerPublicKeys;
   }
@@ -106,7 +96,7 @@ export class MultisigAccount implements Account {
       addressBytes: Array.from(this.addressBytes),
       multisigConfig: this.multisigConfig,
       signerPublicKeys: this.signerPublicKeys,
-      hdPath: undefined,
+      hdPath: undefined
     };
   }
 
@@ -128,20 +118,20 @@ export class MultisigAccount implements Account {
   public static async createBy(
     keyring: MultisigKeyring,
     name: string,
-    index: number,
+    index: number
   ): Promise<MultisigAccount> {
     const publicKey = keyring.publicKey;
     const addressBytes = keyring.addressBytes;
 
     return new MultisigAccount({
       index: index,
-      type: "MULTISIG",
+      type: 'MULTISIG',
       name,
       keyringId: keyring.id,
       publicKey: Array.from(publicKey),
       addressBytes: Array.from(addressBytes),
       multisigConfig: keyring.multisigConfig,
-      signerPublicKeys: keyring.signerPublicKeys,
+      signerPublicKeys: keyring.signerPublicKeys
     });
   }
 
@@ -157,5 +147,5 @@ export class MultisigAccount implements Account {
  * Type guard to check if an account is a MultisigAccount
  */
 export function isMultisigAccount(account: Account): account is MultisigAccount {
-  return account.type === "MULTISIG";
+  return account.type === 'MULTISIG';
 }

@@ -1,26 +1,18 @@
-import {
-  xchacha20poly1305,
-} from "@noble/ciphers/chacha.js";
-import {
-  ed25519,
-} from "@noble/curves/ed25519.js";
-import {
-  argon2id,
-} from "@noble/hashes/argon2.js";
+import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
+import { ed25519 } from '@noble/curves/ed25519.js';
+import { argon2id } from '@noble/hashes/argon2.js';
 
-import {
-  isNonNullObject,
-} from "../utils/index.js";
+import { isNonNullObject } from '../utils/index.js';
 
 export interface Argon2idOptions {
   /** Output length in bytes */
-  readonly outputLength: number
+  readonly outputLength: number;
   /**
    * An integer between 1 and 4294967295 representing the computational difficulty.
    *
    * @see https://libsodium.gitbook.io/doc/password_hashing/default_phf#key-derivation
    */
-  readonly opsLimit: number
+  readonly opsLimit: number;
   /**
    * Memory limit measured in KiB (like argon2 command line tool)
    *
@@ -28,14 +20,14 @@ export interface Argon2idOptions {
    *
    * @see https://libsodium.gitbook.io/doc/password_hashing/default_phf#key-derivation
    */
-  readonly memLimitKib: number
+  readonly memLimitKib: number;
 }
 
 export function isArgon2idOptions(thing: unknown): thing is Argon2idOptions {
   if (!isNonNullObject(thing)) return false;
-  if (typeof (thing as Argon2idOptions).outputLength !== "number") return false;
-  if (typeof (thing as Argon2idOptions).opsLimit !== "number") return false;
-  if (typeof (thing as Argon2idOptions).memLimitKib !== "number") return false;
+  if (typeof (thing as Argon2idOptions).outputLength !== 'number') return false;
+  if (typeof (thing as Argon2idOptions).opsLimit !== 'number') return false;
+  if (typeof (thing as Argon2idOptions).memLimitKib !== 'number') return false;
   return true;
 }
 
@@ -43,13 +35,13 @@ export class Argon2id {
   public static async execute(
     password: string,
     salt: Uint8Array,
-    options: Argon2idOptions,
+    options: Argon2idOptions
   ): Promise<Uint8Array> {
     return argon2id(password, salt, {
       t: options.opsLimit,
       m: options.memLimitKib,
       p: 1,
-      dkLen: options.outputLength,
+      dkLen: options.outputLength
     });
   }
 }
@@ -95,7 +87,7 @@ export class Ed25519 {
 
   public static async createSignature(
     message: Uint8Array,
-    keyPair: Ed25519Keypair,
+    keyPair: Ed25519Keypair
   ): Promise<Uint8Array> {
     return ed25519.sign(message, keyPair.privkey);
   }
@@ -103,7 +95,7 @@ export class Ed25519 {
   public static async verifySignature(
     signature: Uint8Array,
     message: Uint8Array,
-    pubkey: Uint8Array,
+    pubkey: Uint8Array
   ): Promise<boolean> {
     return ed25519.verify(signature, message, pubkey);
   }
@@ -120,7 +112,7 @@ export class Xchacha20poly1305Ietf {
   public static async encrypt(
     message: Uint8Array,
     key: Uint8Array,
-    nonce: Uint8Array,
+    nonce: Uint8Array
   ): Promise<Uint8Array> {
     return xchacha20poly1305(key, nonce).encrypt(message);
   }
@@ -128,7 +120,7 @@ export class Xchacha20poly1305Ietf {
   public static async decrypt(
     ciphertext: Uint8Array,
     key: Uint8Array,
-    nonce: Uint8Array,
+    nonce: Uint8Array
   ): Promise<Uint8Array> {
     return xchacha20poly1305(key, nonce).decrypt(ciphertext);
   }

@@ -1,5 +1,5 @@
 // signature-upload-label.styles.ts
-import styled from 'styled-components'
+import styled from 'styled-components';
 
 export const StyledInputLabel = styled.label`
   display: flex;
@@ -10,33 +10,21 @@ export const StyledInputLabel = styled.label`
   justify-content: center;
   align-items: center;
   border-radius: 18px;
-  border: 1px solid ${({
-    theme,
-  }): string => theme.neutral._7};
-  background: ${({
-    theme,
-  }): string => theme.neutral._9};
-  color: ${({
-    theme,
-  }): string => theme.neutral.a};
+  border: 1px solid ${({ theme }): string => theme.neutral._7};
+  background: ${({ theme }): string => theme.neutral._9};
+  color: ${({ theme }): string => theme.neutral.a};
   transition: 0.2s;
   cursor: pointer;
 
   .icon {
     transition: 0.2s;
-    fill: ${({
-      theme,
-    }): string => theme.neutral.a};
+    fill: ${({ theme }): string => theme.neutral.a};
   }
 
   &:hover {
-    color: ${({
-      theme,
-    }): string => theme.neutral._1};
+    color: ${({ theme }): string => theme.neutral._1};
     .icon {
-      fill: ${({
-        theme,
-      }): string => theme.neutral._1};
+      fill: ${({ theme }): string => theme.neutral._1};
     }
   }
-`
+`;

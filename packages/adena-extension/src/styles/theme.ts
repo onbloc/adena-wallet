@@ -1,6 +1,4 @@
-import {
-  css, DefaultTheme, RuleSet,
-} from 'styled-components'
+import { css, DefaultTheme, RuleSet } from 'styled-components';
 
 enum WebNeutral {
   _0 = '#FFFFFF',
@@ -12,36 +10,28 @@ enum WebNeutral {
   _600 = '#6C717A',
   _700 = '#51555C',
   _800 = '#36383D',
-  _900 = '#101214',
+  _900 = '#101214'
 }
 
-enum WebPrimary {
-  _100 = '#0059FF',
-}
+enum WebPrimary { _100 = '#0059FF' }
 
-enum WebBase {
-  _100 = '#0C0D0F',
-}
+enum WebBase { _100 = '#0C0D0F' }
 
-enum WebInput {
-  _100 = '#181B1F',
-}
+enum WebInput { _100 = '#181B1F' }
 
 enum WebError {
   _100 = '#EB545E',
   _200 = '#5C2125',
-  _300 = '#1A1112',
+  _300 = '#1A1112'
 }
 
 enum WebSuccess {
   _100 = '#11D695',
   _200 = '#113D2F',
-  _300 = '#111A17',
+  _300 = '#111A17'
 }
 
-enum WebWarning {
-  _100 = '#FBC224',
-}
+enum WebWarning { _100 = '#FBC224' }
 
 enum Neutral {
   _1 = '#FFFFFF',
@@ -54,7 +44,7 @@ enum Neutral {
   _8 = '#212128',
   _9 = '#191920',
   a = '#777777',
-  b = '#454554',
+  b = '#454554'
 }
 
 enum Primary {
@@ -66,7 +56,7 @@ enum Primary {
   _6 = '#0059FF',
   _7 = '#0043C1',
   _8 = '#003290',
-  _9 = '#001D52',
+  _9 = '#001D52'
 }
 
 enum Red {
@@ -77,7 +67,7 @@ enum Red {
   _7 = '#BB0B00',
   _8 = '#FB923C',
   a = '#E7323B',
-  b = '#B62E29',
+  b = '#B62E29'
 }
 
 enum Green {
@@ -85,7 +75,7 @@ enum Green {
   _4 = '#5ADAB3',
   _5 = '#0DBE89',
   _6 = '#09A375',
-  _7 = '#057E5A',
+  _7 = '#057E5A'
 }
 
 export type WebFontType
@@ -112,7 +102,7 @@ export type WebFontType
     | 'display2'
     | 'display3'
     | 'display4'
-    | 'display5'
+    | 'display5';
 
 export const webFonts: Record<WebFontType, RuleSet> = {
   title1: css`
@@ -261,8 +251,8 @@ export const webFonts: Record<WebFontType, RuleSet> = {
     font-weight: 600;
     line-height: 52px; /* 118.182% */
     letter-spacing: -1.32px;
-  `,
-}
+  `
+};
 
 export const fonts: FontsKeyType = {
   header1: css`
@@ -379,8 +369,8 @@ export const fonts: FontsKeyType = {
     font-weight: 300;
     font-size: 11px;
     line-height: 16px;
-  `,
-} as const
+  `
+} as const;
 
 export type FontsType
   = | 'header1'
@@ -405,11 +395,11 @@ export type FontsType
     | 'light1Reg'
     | 'bold13'
     | 'light13'
-    | 'light11'
+    | 'light11';
 
-type FontsKeyType = { [key in FontsType]: RuleSet }
+type FontsKeyType = { [key in FontsType]: RuleSet };
 
-type ThemeType = typeof theme
+type ThemeType = typeof theme;
 
 const theme = {
   neutral: Neutral,
@@ -422,21 +412,16 @@ const theme = {
   webInput: WebInput,
   webError: WebError,
   webSuccess: WebSuccess,
-  webWarning: WebWarning,
-}
+  webWarning: WebWarning
+};
 
 export const getTheme
   = <T1 extends keyof DefaultTheme, T2 extends keyof DefaultTheme[T1]>(val1: T1, val2: T2) =>
-    ({
-      theme,
-    }: {
-      theme: DefaultTheme
-    }): DefaultTheme[T1][T2] =>
-      theme[val1][val2]
+    ({ theme }: { theme: DefaultTheme }): DefaultTheme[T1][T2] =>
+      theme[val1][val2];
 
-export default theme
+export default theme;
 
 declare module 'styled-components' {
-  export interface DefaultTheme extends ThemeType {
-  }
+  export interface DefaultTheme extends ThemeType {}
 }

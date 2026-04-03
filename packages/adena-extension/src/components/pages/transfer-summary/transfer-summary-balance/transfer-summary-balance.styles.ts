@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TransferSummaryBalanceWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   height: auto;
@@ -24,4 +22,4 @@ export const TransferSummaryBalanceWrapper = styled.div`
     display: contents;
     ${fonts.header5};
   }
-`
+`;

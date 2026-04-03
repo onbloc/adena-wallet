@@ -3,23 +3,23 @@ import {
   WalletResponseExecuteType,
   WalletResponseFailureType,
   WalletResponseStatus,
-  WalletResponseType,
-} from '@adena-wallet/sdk'
+  WalletResponseType
+} from '@adena-wallet/sdk';
 import {
   validateChainId,
   validateFee,
   validateMultisigSigners,
   validateMultisigThreshold,
   validateTransactionDocumentFee,
-  validateTransactionDocumentMessages,
-} from '@common/validation'
+  validateTransactionDocumentMessages
+} from '@common/validation';
 import {
   validateDoContractRequest,
   validateTransactionMessageOfAddPkg,
   validateTransactionMessageOfBankSend,
   validateTransactionMessageOfRun,
-  validateTransactionMessageOfVmCall,
-} from '@common/validation/validation-message'
+  validateTransactionMessageOfVmCall
+} from '@common/validation/validation-message';
 import {
   AddEstablishResponse,
   AddNetworkParams,
@@ -38,161 +38,151 @@ import {
   SignMultisigTransactionResponse,
   SignTxResponse,
   SwitchNetworkResponse,
-  TransactionParams,
-} from '@inject/types'
-import {
-  v4 as uuidv4,
-} from 'uuid'
+  TransactionParams
+} from '@inject/types';
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  InjectionMessage, InjectionMessageInstance,
-} from '../message'
+import { InjectionMessage, InjectionMessageInstance } from '../message';
 
-type Params = { [key in string]: any }
+type Params = { [key in string]: any };
 
 export class AdenaExecutor {
-  private eventKey
+  private eventKey;
 
-  private isListen
+  private isListen;
 
-  private eventMessage: InjectionMessage | undefined
+  private eventMessage: InjectionMessage | undefined;
 
-  private resolver: ((message: WalletResponse<unknown>) => void) | undefined
+  private resolver: ((message: WalletResponse<unknown>) => void) | undefined;
 
   private messages: {
     [key in string]: {
-      request: InjectionMessage
-      response: InjectionMessage | undefined
+      request: InjectionMessage;
+      response: InjectionMessage | undefined;
     };
-  } = {
-  }
+  } = {};
 
-  private static instance: AdenaExecutor | undefined = new AdenaExecutor()
+  private static instance: AdenaExecutor | undefined = new AdenaExecutor();
 
   constructor() {
-    this.eventKey = uuidv4()
-    this.isListen = false
+    this.eventKey = uuidv4();
+    this.isListen = false;
   }
 
   public static getInstance = (): AdenaExecutor => {
     if (!AdenaExecutor.instance) {
-      AdenaExecutor.instance = new AdenaExecutor()
+      AdenaExecutor.instance = new AdenaExecutor();
     }
     if (!AdenaExecutor.instance.isListen) {
-      AdenaExecutor.instance.listen()
+      AdenaExecutor.instance.listen();
     }
-    return AdenaExecutor.instance
-  }
+    return AdenaExecutor.instance;
+  };
 
   public addEstablish = (name?: string): Promise<AddEstablishResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, {
-      name: name ?? 'Unknown',
-    })
-    return this.sendEventMessage<Record<string, never>>(eventMessage)
-  }
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_ESTABLISH, { name: name ?? 'Unknown' });
+    return this.sendEventMessage<Record<string, never>>(eventMessage);
+  };
 
   public doContract = (
     params: TransactionParams,
-    options?: ContractOptions,
+    options?: ContractOptions
   ): Promise<DoContractResponse> => {
-    const result = this.validateContractMessage(params)
+    const result = this.validateContractMessage(params);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
 
-    const {
-      withNotification, isVisibleResult,
-    } = options ?? {
-    }
+    const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.DO_CONTRACT,
       {
         ...params,
-        isVisibleResult,
+        isVisibleResult
       },
-      withNotification,
-    )
-    return this.sendEventMessage(eventMessage)
-  }
+      withNotification
+    );
+    return this.sendEventMessage(eventMessage);
+  };
 
   public getAccount = (): Promise<GetAccountResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_ACCOUNT)
-    return this.sendEventMessage(eventMessage)
-  }
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_ACCOUNT);
+    return this.sendEventMessage(eventMessage);
+  };
 
   public getNetwork = (): Promise<GetNetworkResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_NETWORK)
-    return this.sendEventMessage(eventMessage)
-  }
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.GET_NETWORK);
+    return this.sendEventMessage(eventMessage);
+  };
 
   public signAmino = (params: TransactionParams): Promise<WalletResponse<unknown>> => {
-    const result = this.validateContractMessage(params)
+    const result = this.validateContractMessage(params);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_AMINO,
-      params,
-    )
-    return this.sendEventMessage(eventMessage)
-  }
+      params
+    );
+    return this.sendEventMessage(eventMessage);
+  };
 
   public signTx = (params: TransactionParams): Promise<SignTxResponse> => {
-    const result = this.validateContractMessage(params)
+    const result = this.validateContractMessage(params);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SIGN_TX,
-      params,
-    )
-    return this.sendEventMessage(eventMessage)
-  }
+      params
+    );
+    return this.sendEventMessage(eventMessage);
+  };
 
   public createMultisigAccount = (
-    params: CreateMultisigAccountParams,
+    params: CreateMultisigAccountParams
   ): Promise<CreateMultisigAccountResponse> => {
-    const result = this.validateCreateMultisigAccount(params)
+    const result = this.validateCreateMultisigAccount(params);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_ACCOUNT,
-      params,
-    )
+      params
+    );
 
-    return this.sendEventMessage(eventMessage)
-  }
+    return this.sendEventMessage(eventMessage);
+  };
 
   public createMultisigTransaction = (
     params: CreateMultisigTransactionParams,
-    withSaveFile = false,
+    withSaveFile = false
   ): Promise<CreateMultisigTransactionResponse> => {
-    const result = this.validateCreateMultisigTransaction(params)
+    const result = this.validateCreateMultisigTransaction(params);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.CREATE_MULTISIG_TRANSACTION,
       {
         ...params,
-        withSaveFile,
-      },
-    )
+        withSaveFile
+      }
+    );
 
-    return this.sendEventMessage(eventMessage)
-  }
+    return this.sendEventMessage(eventMessage);
+  };
 
   public signMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
-    withSaveFile = false,
+    withSaveFile = false
   ): Promise<SignMultisigTransactionResponse> => {
-    const result = this.validateMultisigTransaction(multisigDocument)
+    const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
 
     const eventMessage = AdenaExecutor.createEventMessage(
@@ -200,56 +190,49 @@ export class AdenaExecutor {
       {
         multisigDocument,
         multisigSignatures,
-        withSaveFile,
-      },
-    )
+        withSaveFile
+      }
+    );
 
-    return this.sendEventMessage(eventMessage)
-  }
+    return this.sendEventMessage(eventMessage);
+  };
 
   public broadcastMultisigTransaction = (
     multisigDocument: MultisigTransactionDocument,
     multisigSignatures?: Signature[],
-    options?: ContractOptions,
+    options?: ContractOptions
   ): Promise<BroadcastMultisigTransactionResponse> => {
-    const result = this.validateMultisigTransaction(multisigDocument)
+    const result = this.validateMultisigTransaction(multisigDocument);
     if (result) {
-      return this.sendEventMessage(result)
+      return this.sendEventMessage(result);
     }
 
-    const {
-      withNotification, isVisibleResult,
-    } = options ?? {
-    }
+    const { withNotification, isVisibleResult } = options ?? {};
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.BROADCAST_MULTISIG_TRANSACTION,
       {
         multisigDocument,
         multisigSignatures,
-        isVisibleResult,
+        isVisibleResult
       },
-      withNotification,
-    )
+      withNotification
+    );
 
-    return this.sendEventMessage(eventMessage)
-  }
+    return this.sendEventMessage(eventMessage);
+  };
 
   public addNetwork = (chain: AddNetworkParams): Promise<AddNetworkResponse> => {
-    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_NETWORK, {
-      ...chain,
-    })
-    return this.sendEventMessage(eventMessage)
-  }
+    const eventMessage = AdenaExecutor.createEventMessage(WalletResponseExecuteType.ADD_NETWORK, { ...chain });
+    return this.sendEventMessage(eventMessage);
+  };
 
   public switchNetwork = (chainId: string): Promise<SwitchNetworkResponse> => {
     const eventMessage = AdenaExecutor.createEventMessage(
       WalletResponseExecuteType.SWITCH_NETWORK,
-      {
-        chainId,
-      },
-    )
-    return this.sendEventMessage(eventMessage)
-  }
+      { chainId }
+    );
+    return this.sendEventMessage(eventMessage);
+  };
 
   /**
    * Validates an array of transaction messages.
@@ -264,35 +247,35 @@ export class AdenaExecutor {
         ? message
         : {
             type: message['@type'],
-            value: message,
-          }
+            value: message
+          };
       switch (messageData.type) {
         case '/bank.MsgSend':
           if (!validateTransactionMessageOfBankSend(messageData)) {
-            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
-          break
+          break;
         case '/vm.m_call':
           if (!validateTransactionMessageOfVmCall(messageData)) {
-            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
-          break
+          break;
         case '/vm.m_addpkg':
           if (!validateTransactionMessageOfAddPkg(messageData)) {
-            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
-          break
+          break;
         case '/vm.m_run':
           if (!validateTransactionMessageOfRun(messageData)) {
-            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+            return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
           }
-          break
+          break;
         default:
-          return InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE)
+          return InjectionMessageInstance.failure(WalletResponseFailureType.UNSUPPORTED_TYPE);
       }
     }
-    return undefined
-  }
+    return undefined;
+  };
 
   /**
    * Validates CreateMultisigAccountParams.
@@ -302,22 +285,22 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateCreateMultisigAccount = (
-    params: CreateMultisigAccountParams,
+    params: CreateMultisigAccountParams
   ): InjectionMessage | undefined => {
     if (!params) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
     if (!validateMultisigSigners(params.signers)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_SIGNERS);
     }
 
     if (!validateMultisigThreshold(params.threshold, params.signers.length)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_MULTISIG_THRESHOLD);
     }
 
-    return undefined
-  }
+    return undefined;
+  };
 
   /**
    * Validates CreateMultisigDocumentParams.
@@ -327,22 +310,22 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateCreateMultisigTransaction = (
-    params: CreateMultisigTransactionParams,
+    params: CreateMultisigTransactionParams
   ): InjectionMessage | undefined => {
     if (!params) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
     if (!validateFee(params.fee)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
     if (!validateTransactionDocumentMessages(params.messages)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    return this.validateMessages(params.messages)
-  }
+    return this.validateMessages(params.messages);
+  };
 
   /**
    * Validates SignMultisigTransactionDocument.
@@ -353,150 +336,136 @@ export class AdenaExecutor {
    * @returns InjectionMessage on validation failure, undefined on success
    */
   private validateMultisigTransaction = (
-    multisigDocument: MultisigTransactionDocument,
+    multisigDocument: MultisigTransactionDocument
   ): InjectionMessage | undefined => {
     if (!multisigDocument) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'Multisig document is missing.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Multisig document is missing.' });
     }
 
     if (!multisigDocument.tx) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'Transaction (tx) is missing in multisig document.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Transaction (tx) is missing in multisig document.' });
     }
 
     if (!validateChainId(multisigDocument.chainId)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'Invalid or unsupported chainId.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid or unsupported chainId.' });
     }
 
     if (!multisigDocument.accountNumber || typeof multisigDocument.accountNumber !== 'string') {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'accountNumber is missing or not a string.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'accountNumber is missing or not a string.' });
     }
 
     if (!multisigDocument.sequence || typeof multisigDocument.sequence !== 'string') {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'sequence is missing or not a string.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'sequence is missing or not a string.' });
     }
 
     if (!validateTransactionDocumentFee(multisigDocument.tx.fee)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'Invalid transaction fee format.',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid transaction fee format.' });
     }
 
     if (!validateTransactionDocumentMessages(multisigDocument.tx.msg)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, {
-        message: 'Invalid or missing transaction messages (msgs).',
-      })
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT, { message: 'Invalid or missing transaction messages (msgs).' });
     }
 
-    return this.validateMessages(multisigDocument.tx.msg)
-  }
+    return this.validateMessages(multisigDocument.tx.msg);
+  };
 
   private validateContractMessage = (params: TransactionParams): InjectionMessage | undefined => {
     if (!validateDoContractRequest(params)) {
-      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT)
+      return InjectionMessageInstance.failure(WalletResponseFailureType.INVALID_FORMAT);
     }
 
-    return this.validateMessages(params.messages)
-  }
+    return this.validateMessages(params.messages);
+  };
 
   private sendEventMessage = <T = unknown>(
-    eventMessage: InjectionMessage,
+    eventMessage: InjectionMessage
   ): Promise<WalletResponse<T>> => {
-    this.listen()
+    this.listen();
     this.eventMessage = {
       ...eventMessage,
       protocol: window.location.protocol,
       hostname: window.location.hostname,
-      key: this.eventKey,
-    }
+      key: this.eventKey
+    };
 
     try {
-      window.postMessage(this.eventMessage, window.location.origin)
+      window.postMessage(this.eventMessage, window.location.origin);
     }
     catch (error) {
-      console.warn(error)
+      console.warn(error);
     }
     this.messages[this.eventKey] = {
       request: this.eventMessage,
-      response: undefined,
-    }
+      response: undefined
+    };
 
     return new Promise<WalletResponse<T>>((resolver) => {
-      this.resolver = resolver as (message: WalletResponse<unknown>) => void
-    }).finally(() => this.unlisten())
-  }
+      this.resolver = resolver as (message: WalletResponse<unknown>) => void;
+    }).finally(() => this.unlisten());
+  };
 
   private listen = (): void => {
     if (this.isListen) {
-      return
+      return;
     }
-    this.isListen = true
-    window.addEventListener('message', this.messageHandler, true)
-  }
+    this.isListen = true;
+    window.addEventListener('message', this.messageHandler, true);
+  };
 
   public unlisten = (): void => {
-    this.isListen = false
-    window.removeEventListener('message', this.messageHandler, true)
-  }
+    this.isListen = false;
+    window.removeEventListener('message', this.messageHandler, true);
+  };
 
   private static createEventMessage = (
     type: WalletResponseType,
     params?: Params,
-    withNotification?: boolean,
+    withNotification?: boolean
   ): InjectionMessage => {
-    return InjectionMessageInstance.request(type, params, undefined, withNotification)
-  }
+    return InjectionMessageInstance.request(type, params, undefined, withNotification);
+  };
 
   private messageHandler = (event: MessageEvent<InjectionMessage>): void => {
     if (event.origin !== window.location.origin) {
-      console.warn(`Untrusted origin: ${event.origin}`)
-      return
+      console.warn(`Untrusted origin: ${event.origin}`);
+      return;
     }
 
-    const eventData = event.data
+    const eventData = event.data;
     if (eventData.status) {
       const {
-        key, status, data, code, message, type,
-      } = eventData
+        key, status, data, code, message, type
+      } = eventData;
       if (key === this.eventKey) {
         switch (eventData.status) {
           case 'response':
-            break
+            break;
           case 'success':
-            this.unlisten()
+            this.unlisten();
             this.resolver
             && this.resolver({
               status: status as WalletResponseStatus,
               data,
               code,
               message,
-              type,
-            })
-            break
+              type
+            });
+            break;
           case 'failure':
-            this.unlisten()
+            this.unlisten();
             this.resolver
             && this.resolver({
               status: status as WalletResponseStatus,
               data,
               code,
               message,
-              type,
-            })
-            break
+              type
+            });
+            break;
           default:
-            break
+            break;
         }
       }
     }
-  }
+  };
 }

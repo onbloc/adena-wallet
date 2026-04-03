@@ -1,77 +1,64 @@
-import {
-  Text,
-} from '@components/atoms'
-import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip'
-import React, {
-  useCallback, useEffect, useState,
-} from 'react'
+import { Text } from '@components/atoms';
+import InfoTooltip from '@components/atoms/info-tooltip/info-tooltip';
+import React, { useCallback, useEffect, useState } from 'react';
 
-import {
-  StyledButtonContent, StyledHoldButton,
-} from './approve-hold-button.styles'
+import { StyledButtonContent, StyledHoldButton } from './approve-hold-button.styles';
 
-interface HoldButtonProps {
-  onFinishHold: (finished: boolean) => void
-}
+interface HoldButtonProps { onFinishHold: (finished: boolean) => void }
 
 const APPROVE_HOLD_TOOLTIP_MESSAGE = (
   <>
-    <b style={{
-      fontWeight: 700,
-    }}
-    >
+    <b style={{ fontWeight: 700 }}>
       WARNING:
     </b>
     {' '}
     Parameter changes have been detected. Hold to
     proceed only if you trust the updated parameters.
   </>
-)
+);
 
-export const ApproveHoldButton: React.FC<HoldButtonProps> = ({
-  onFinishHold,
-}) => {
-  const [pressed, setPressed] = useState(false)
-  const [finish, setFinish] = useState(false)
+export const ApproveHoldButton: React.FC<HoldButtonProps> = ({ onFinishHold }) => {
+  const [pressed, setPressed] = useState(false);
+  const [finish, setFinish] = useState(false);
 
   const endEvent = useCallback((): void => {
     if (pressed) {
-      setPressed(false)
+      setPressed(false);
     }
-  }, [pressed])
+  }, [pressed]);
 
   const onMouseDown = useCallback(() => {
     if (finish) {
-      setFinish(false)
-      return
+      setFinish(false);
+      return;
     }
-    setPressed(true)
-  }, [finish])
+    setPressed(true);
+  }, [finish]);
 
   const onMouseUp = useCallback(() => {
-    endEvent()
-  }, [endEvent])
+    endEvent();
+  }, [endEvent]);
 
   const onMouseLeave = useCallback(() => {
-    endEvent()
-  }, [endEvent])
+    endEvent();
+  }, [endEvent]);
 
   useEffect(() => {
-    onFinishHold(finish)
-  }, [finish, onFinishHold])
+    onFinishHold(finish);
+  }, [finish, onFinishHold]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    let timer: NodeJS.Timeout;
     if (pressed) {
       timer = setTimeout(() => {
-        setFinish(true)
-      }, 3000)
+        setFinish(true);
+      }, 3000);
     }
 
     return () => {
-      clearTimeout(timer)
-    }
-  }, [pressed])
+      clearTimeout(timer);
+    };
+  }, [pressed]);
 
   return (
     <StyledHoldButton
@@ -86,5 +73,5 @@ export const ApproveHoldButton: React.FC<HoldButtonProps> = ({
         <InfoTooltip content={APPROVE_HOLD_TOOLTIP_MESSAGE} iconColor='#FFFFFF' />
       </StyledButtonContent>
     </StyledHoldButton>
-  )
-}
+  );
+};

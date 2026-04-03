@@ -1,13 +1,7 @@
-import {
-  sha256 as nobleSha256, sha512 as nobleSha512,
-} from "@noble/hashes/sha2.js";
+import { sha256 as nobleSha256, sha512 as nobleSha512 } from '@noble/hashes/sha2.js';
 
-import {
-  HashFunction,
-} from "./hash.js";
-import {
-  toRealUint8Array,
-} from "./utils.js";
+import { HashFunction } from './hash.js';
+import { toRealUint8Array } from './utils.js';
 
 export class Sha256 implements HashFunction {
   public readonly blockSize = 512 / 8;

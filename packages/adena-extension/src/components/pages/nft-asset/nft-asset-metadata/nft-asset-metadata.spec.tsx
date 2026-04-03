@@ -1,30 +1,14 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  GRC721MetadataModel,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import { GRC721MetadataModel } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTAssetMetadata, {
-  NFTAssetMetadataProps,
-} from './nft-asset-metadata'
+import NFTAssetMetadata, { NFTAssetMetadataProps } from './nft-asset-metadata';
 
 describe('NFTAssetMetadata Component', () => {
   it('NFTAssetMetadata render', () => {
@@ -38,11 +22,10 @@ describe('NFTAssetMetadata Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
-      queryGRC721TokenMetadata: () => ({
-      }) as unknown as UseQueryResult<GRC721MetadataModel | null>,
-    }
+      queryGRC721TokenMetadata: () => ({}) as unknown as UseQueryResult<GRC721MetadataModel | null>
+    };
 
     render(
       <RecoilRoot>
@@ -50,7 +33,7 @@ describe('NFTAssetMetadata Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetMetadata {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

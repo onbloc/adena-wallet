@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AccountDetailsWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: auto;
@@ -33,7 +31,7 @@ export const AccountDetailsWrapper = styled.div`
     .qrcode-address-wrapper {
       ${mixins.flex({
         direction: 'row',
-        justify: 'space-between',
+        justify: 'space-between'
       })};
       width: 100%;
       height: 42px;
@@ -52,4 +50,4 @@ export const AccountDetailsWrapper = styled.div`
       }
     }
   }
-`
+`;

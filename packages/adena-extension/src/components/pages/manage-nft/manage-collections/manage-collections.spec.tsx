@@ -1,47 +1,31 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import ManageCollections, {
-  ManageCollectionsProps,
-} from './manage-collections';
+import ManageCollections, { ManageCollectionsProps } from './manage-collections';
 
 -describe('ManageCollections Component', () => {
   it('ManageCollections render', () => {
     const args: ManageCollectionsProps = {
       collections: [],
       keyword: '',
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
-      queryGRC721Balance: () => ({
-      }) as unknown as UseQueryResult<number | null>,
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>,
+      queryGRC721Balance: () => ({}) as unknown as UseQueryResult<number | null>,
       onChangeKeyword: () => {
-        return
+        return;
       },
       onClickClose: () => {
-        return
+        return;
       },
       onToggleActiveItem: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -49,7 +33,7 @@ import ManageCollections, {
         <ThemeProvider theme={theme}>
           <ManageCollections {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

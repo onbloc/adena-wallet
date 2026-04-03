@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import TokenListItem, {
-  TokenListItemProps,
-} from './token-list-item'
+import TokenListItem, { TokenListItemProps } from './token-list-item';
 
 const token = {
   tokenId: 'token1',
@@ -26,21 +14,21 @@ const token = {
   name: 'Gno.land',
   balanceAmount: {
     value: '240,255.241155',
-    denom: 'GNOT',
-  },
-}
+    denom: 'GNOT'
+  }
+};
 
 describe('TokenListItem Component', () => {
   it('TokenListItem render', () => {
     const args: TokenListItemProps = {
       token,
       completeImageLoading: () => {
-        return
+        return;
       },
       onClickTokenItem: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -48,7 +36,7 @@ describe('TokenListItem Component', () => {
         <ThemeProvider theme={theme}>
           <TokenListItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

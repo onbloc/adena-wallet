@@ -1,29 +1,19 @@
-import IconShare from '@assets/icon-share'
-import SuccessIcon from '@assets/success.svg'
-import {
-  formatAddress,
-} from '@common/utils/client-utils'
-import {
-  CopyIconButton,
-} from '@components/atoms'
-import {
-  SignerStatusType,
-} from '@inject/types'
-import theme from '@styles/theme'
-import {
-  useMemo,
-} from 'react'
+import IconShare from '@assets/icon-share';
+import SuccessIcon from '@assets/success.svg';
+import { formatAddress } from '@common/utils/client-utils';
+import { CopyIconButton } from '@components/atoms';
+import { SignerStatusType } from '@inject/types';
+import theme from '@styles/theme';
+import { useMemo } from 'react';
 
-import {
-  DocumentSignerListItemWrapper,
-} from './document-signer-list.styles'
+import { DocumentSignerListItemWrapper } from './document-signer-list.styles';
 
 interface StatusStyle {
-  color: string
-  className: string
-  statusText: string
-  showLabel: boolean
-  showBadge: boolean
+  color: string;
+  className: string;
+  statusText: string;
+  showLabel: boolean;
+  showBadge: boolean;
 }
 
 function getStatusStyle(status: SignerStatusType): StatusStyle {
@@ -34,16 +24,16 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         className: 'signed',
         statusText: 'Signed',
         showLabel: true,
-        showBadge: true,
-      }
+        showBadge: true
+      };
     case 'UNSIGNED':
       return {
         color: theme.neutral.a,
         className: 'unsigned',
         statusText: 'Unsigned',
         showLabel: true,
-        showBadge: false,
-      }
+        showBadge: false
+      };
     case 'NONE':
     default:
       return {
@@ -51,29 +41,29 @@ function getStatusStyle(status: SignerStatusType): StatusStyle {
         className: 'unsigned',
         statusText: '',
         showLabel: false,
-        showBadge: false,
-      }
+        showBadge: false
+      };
   }
 }
 
 export interface DocumentSignerListItemProps {
-  signerAddress: string
-  order: number
-  status: SignerStatusType
-  onClickAddress: (address: string) => void
+  signerAddress: string;
+  order: number;
+  status: SignerStatusType;
+  onClickAddress: (address: string) => void;
 }
 
 const DocumentSignerListItem = ({
   signerAddress,
   order,
   status,
-  onClickAddress,
+  onClickAddress
 }: DocumentSignerListItemProps): React.ReactElement<any> => {
   const displaySignerAddress = useMemo(() => {
-    return formatAddress(signerAddress, 8)
-  }, [signerAddress])
+    return formatAddress(signerAddress, 8);
+  }, [signerAddress]);
 
-  const statusStyle = useMemo(() => getStatusStyle(status), [status])
+  const statusStyle = useMemo(() => getStatusStyle(status), [status]);
 
   return (
     <DocumentSignerListItemWrapper borderColor={statusStyle.color}>
@@ -104,7 +94,7 @@ const DocumentSignerListItem = ({
         </div>
       )}
     </DocumentSignerListItemWrapper>
-  )
-}
+  );
+};
 
-export default DocumentSignerListItem
+export default DocumentSignerListItem;

@@ -1,33 +1,23 @@
-import {
-  webFonts, WebFontType,
-} from '@styles/theme'
-import React, {
-  CSSProperties, ReactElement,
-} from 'react'
-import styled, {
-  RuleSet,
-} from 'styled-components'
+import { webFonts, WebFontType } from '@styles/theme';
+import React, { CSSProperties, ReactElement } from 'react';
+import styled, { RuleSet } from 'styled-components';
 
 type FormTextProps = {
-  type: WebFontType
-  children: string | number
-  color?: CSSProperties['color']
-  style?: React.CSSProperties
-  textCenter?: boolean
-}
+  type: WebFontType;
+  children: string | number;
+  color?: CSSProperties['color'];
+  style?: React.CSSProperties;
+  textCenter?: boolean;
+};
 
 const StyledContainer = styled.div<{
-  type: WebFontType
-  color?: CSSProperties['color']
+  type: WebFontType;
+  color?: CSSProperties['color'];
 }>`
-  color: ${({
-    color,
-  }): CSSProperties['color'] => (color ? color : '#FAFCFF')};
-  ${({
-    type,
-  }): RuleSet => webFonts[type]}
+  color: ${({ color }): CSSProperties['color'] => (color ? color : '#FAFCFF')};
+  ${({ type }): RuleSet => webFonts[type]}
   white-space: pre-wrap;
-`
+`;
 
 export const WebText = ({
   type,
@@ -43,11 +33,11 @@ export const WebText = ({
       style={{
         color,
         textAlign: textCenter ? 'center' : 'initial',
-        ...style,
+        ...style
       }}
       {...rest}
     >
       {children}
     </StyledContainer>
-  )
-}
+  );
+};

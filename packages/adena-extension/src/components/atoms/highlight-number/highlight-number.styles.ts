@@ -1,43 +1,33 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, FontsType,
-} from '@styles/theme'
-import styled, {
-  css, RuleSet,
-} from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, FontsType } from '@styles/theme';
+import styled, { css, RuleSet } from 'styled-components';
 
 interface HighlightNumberWrapperProps {
-  fontColor: string
-  fontStyleKey: FontsType
-  minimumFontSize: string
-  lineHeight?: string
+  fontColor: string;
+  fontStyleKey: FontsType;
+  minimumFontSize: string;
+  lineHeight?: string;
 }
 
 export const HighlightNumberWrapper = styled.div.withConfig({
   shouldForwardProp: (prop): boolean =>
-    !['fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight'].includes(prop),
+    !['fontColor', 'fontStyleKey', 'minimumFontSize', 'lineHeight'].includes(prop)
 })<HighlightNumberWrapperProps>`
   ${mixins.flex({
     direction: 'row',
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: fit-content;
   height: auto;
 
   .value {
     display: contents;
-    color: ${({
-      fontColor,
-    }): string => fontColor};
+    color: ${({ fontColor }): string => fontColor};
     text-align: bottom;
 
-    ${({
-      fontStyleKey,
-    }): RuleSet => fonts[fontStyleKey]};
-    ${({
-      lineHeight,
-    }): RuleSet =>
+    ${({ fontStyleKey }): RuleSet => fonts[fontStyleKey]};
+    ${({ lineHeight }): RuleSet =>
       lineHeight
         ? css`
             line-height: ${lineHeight};
@@ -45,9 +35,7 @@ export const HighlightNumberWrapper = styled.div.withConfig({
         : css``};
 
     &.decimal {
-      font-size: ${({
-        minimumFontSize,
-      }): string => minimumFontSize};
+      font-size: ${({ minimumFontSize }): string => minimumFontSize};
     }
   }
-`
+`;

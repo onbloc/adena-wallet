@@ -1,28 +1,18 @@
-import IconConnectFailPermission from '@assets/connect-fail-permission.svg'
-import {
-  Button, Text,
-} from '@components/atoms'
-import {
-  TitleWithDesc,
-} from '@components/molecules'
-import React from 'react'
+import IconConnectFailPermission from '@assets/connect-fail-permission.svg';
+import { Button, Text } from '@components/atoms';
+import { TitleWithDesc } from '@components/molecules';
+import React from 'react';
 
-import {
-  TransferLedgerRejectWrapper,
-} from './transfer-ledger-reject.styles'
+import { TransferLedgerRejectWrapper } from './transfer-ledger-reject.styles';
 
-export interface TransferLedgerRejectProps {
-  onClickClose: () => void
-}
+export interface TransferLedgerRejectProps { onClickClose: () => void }
 
 const text = {
   title: 'Transaction Rejected',
-  desc: 'The transaction has been rejected on\nyour ledger device. Please approve the\ntransaction in your wallet to complete\nthe transaction.',
-}
+  desc: 'The transaction has been rejected on\nyour ledger device. Please approve the\ntransaction in your wallet to complete\nthe transaction.'
+};
 
-const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({
-  onClickClose,
-}) => {
+const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({ onClickClose }) => {
   return (
     <TransferLedgerRejectWrapper>
       <img className='reject-icon' src={IconConnectFailPermission} alt='logo-image' />
@@ -37,7 +27,7 @@ const TransferLedgerReject: React.FC<TransferLedgerRejectProps> = ({
         <Text type='body1Bold'>Close</Text>
       </Button>
     </TransferLedgerRejectWrapper>
-  )
-}
+  );
+};
 
-export default TransferLedgerReject
+export default TransferLedgerReject;

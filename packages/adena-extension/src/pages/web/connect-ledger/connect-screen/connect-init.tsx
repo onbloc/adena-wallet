@@ -1,32 +1,19 @@
-import IconLedger from '@assets/web/ledger.svg'
-import {
-  View, WebButton, WebImg,
-} from '@components/atoms'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import type {
-  JSX,
-} from 'react'
-import styled from 'styled-components'
+import IconLedger from '@assets/web/ledger.svg';
+import { View, WebButton, WebImg } from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+import type { JSX } from 'react';
+import styled from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 18px;
   width: 100%;
   align-items: flex-start;
-`
+`;
 
-const ConnectInit = ({
-  init,
-}: {
-  init: () => Promise<void>
-}): JSX.Element => {
+const ConnectInit = ({ init }: { init: () => Promise<void> }): JSX.Element => {
   return (
     <StyledContainer>
-      <View style={{
-        rowGap: 32,
-      }}
-      >
+      <View style={{ rowGap: 32 }}>
         <WebImg src={IconLedger} size={88} />
         <WebTitleWithDescription
           title='Connect a Ledger Device'
@@ -42,7 +29,7 @@ const ConnectInit = ({
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default ConnectInit
+export default ConnectInit;

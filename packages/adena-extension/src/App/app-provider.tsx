@@ -1,30 +1,14 @@
-import {
-  AppProviderErrorBoundary, AppReloadFallback,
-} from '@common/error-boundary'
-import {
-  AdenaProvider, WalletProvider,
-} from '@common/provider'
-import theme from '@styles/theme'
-import {
-  QueryClient, QueryClientProvider,
-} from '@tanstack/react-query'
-import React, {
-  ReactElement, ReactNode, Suspense,
-} from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
+import { AppProviderErrorBoundary, AppReloadFallback } from '@common/error-boundary';
+import { AdenaProvider, WalletProvider } from '@common/provider';
+import theme from '@styles/theme';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React, { ReactElement, ReactNode, Suspense } from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-const AppProvider = ({
-  children,
-}: {
-  children: ReactNode
-}): ReactElement<any> => {
+const AppProvider = ({ children }: { children: ReactNode }): ReactElement<any> => {
   return (
     <React.Fragment>
       <AppProviderErrorBoundary fallback={<AppReloadFallback />}>
@@ -41,7 +25,7 @@ const AppProvider = ({
         </RecoilRoot>
       </AppProviderErrorBoundary>
     </React.Fragment>
-  )
-}
+  );
+};
 
-export default AppProvider
+export default AppProvider;

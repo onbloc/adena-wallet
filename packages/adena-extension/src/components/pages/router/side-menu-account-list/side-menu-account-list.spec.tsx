@@ -1,25 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import {
-  SideMenuAccountListProps,
-} from '@types'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import { SideMenuAccountListProps } from '@types';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import SideMenuAccountList from './side-menu-account-list'
+import SideMenuAccountList from './side-menu-account-list';
 
 describe('SideMenuAccountList Component', () => {
   it('SideMenuAccountList render', () => {
@@ -28,18 +16,18 @@ describe('SideMenuAccountList Component', () => {
       accounts: [],
       focusedAccountId: '',
       focusAccountId: () => {
-        return
+        return;
       },
       changeAccount: () => {
-        return
+        return;
       },
       moveGnoscan: () => {
-        return
+        return;
       },
       moveAccountDetail: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -47,7 +35,7 @@ describe('SideMenuAccountList Component', () => {
         <ThemeProvider theme={theme}>
           <SideMenuAccountList {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

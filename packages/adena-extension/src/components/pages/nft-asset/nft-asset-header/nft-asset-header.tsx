@@ -1,28 +1,24 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg'
-import IconEtc from '@assets/etc.svg'
-import IconHide from '@assets/icon-hide'
-import IconLink from '@assets/icon-link'
-import IconPin from '@assets/icon-pin'
-import IconShow from '@assets/icon-show'
-import IconUnpin from '@assets/icon-unpin'
-import {
-  SubHeader,
-} from '@components/atoms'
-import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown'
-import React, {
-  useMemo,
-} from 'react'
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import IconEtc from '@assets/etc.svg';
+import IconHide from '@assets/icon-hide';
+import IconLink from '@assets/icon-link';
+import IconPin from '@assets/icon-pin';
+import IconShow from '@assets/icon-show';
+import IconUnpin from '@assets/icon-unpin';
+import { SubHeader } from '@components/atoms';
+import OptionDropdown from '@components/atoms/option-dropdown/option-dropdown';
+import React, { useMemo } from 'react';
 
 export interface NFTAssetHeaderProps {
-  title: string
-  pinned: boolean
-  visible: boolean
-  moveBack: () => void
-  openGnoscanCollection: () => void
-  pinCollection: () => void
-  unpinCollection: () => void
-  showCollection: () => void
-  hideCollection: () => void
+  title: string;
+  pinned: boolean;
+  visible: boolean;
+  moveBack: () => void;
+  openGnoscanCollection: () => void;
+  pinCollection: () => void;
+  unpinCollection: () => void;
+  showCollection: () => void;
+  hideCollection: () => void;
 }
 
 const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
@@ -34,35 +30,35 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
   pinCollection,
   unpinCollection,
   showCollection,
-  hideCollection,
+  hideCollection
 }) => {
   const dropdownOptions = useMemo(
     () => [
       {
         text: 'View on GnoScan',
         icon: <IconLink />,
-        onClick: openGnoscanCollection,
+        onClick: openGnoscanCollection
       },
       {
         text: pinned ? 'Unpin Collection' : 'Pin Collection',
         icon: pinned ? <IconUnpin /> : <IconPin className='icon-dropdown' />,
-        onClick: pinned ? unpinCollection : pinCollection,
+        onClick: pinned ? unpinCollection : pinCollection
       },
       {
         text: visible ? 'Hide Collection' : 'Show Collection',
         icon: visible ? <IconHide className='large' /> : <IconShow className='large' />,
-        onClick: visible ? hideCollection : showCollection,
-      },
+        onClick: visible ? hideCollection : showCollection
+      }
     ],
-    [pinned, visible, openGnoscanCollection],
-  )
+    [pinned, visible, openGnoscanCollection]
+  );
 
   return (
     <SubHeader
       title={title}
       leftElement={{
         element: <img src={LeftArrowIcon} alt='back icon' />,
-        onClick: moveBack,
+        onClick: moveBack
       }}
       rightElement={{
         element: (
@@ -73,11 +69,11 @@ const NFTAssetHeader: React.FC<NFTAssetHeaderProps> = ({
           />
         ),
         onClick: (): void => {
-          return
-        },
+          return;
+        }
       }}
     />
-  )
-}
+  );
+};
 
-export default NFTAssetHeader
+export default NFTAssetHeader;

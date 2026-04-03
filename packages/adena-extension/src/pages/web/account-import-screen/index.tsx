@@ -1,72 +1,50 @@
-import {
-  ADENA_DOCS_PAGE,
-} from '@common/constants/resource.constant'
-import {
-  WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE,
-} from '@common/constants/ui.constant'
-import {
-  WebMain,
-} from '@components/atoms'
-import WebLoadingAccounts from '@components/pages/web/loading-accounts'
-import {
-  WebMainHeader,
-} from '@components/pages/web/main-header'
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  useWalletContext,
-} from '@hooks/use-context'
-import useAccountImportScreen from '@hooks/web/use-account-import-screen'
-import {
-  RoutePath,
-} from '@types'
-import {
-  Wallet,
-} from 'adena-module'
-import {
-  ReactElement, useMemo,
-} from 'react'
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { WEB_TOP_SPACING, WEB_TOP_SPACING_RESPONSIVE } from '@common/constants/ui.constant';
+import { WebMain } from '@components/atoms';
+import WebLoadingAccounts from '@components/pages/web/loading-accounts';
+import { WebMainHeader } from '@components/pages/web/main-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useWalletContext } from '@hooks/use-context';
+import useAccountImportScreen from '@hooks/web/use-account-import-screen';
+import { RoutePath } from '@types';
+import { Wallet } from 'adena-module';
+import { ReactElement, useMemo } from 'react';
 
-import SelectAccountStep from './select-account-step'
-import SetMnemonicStep from './set-mnemonic-step'
+import SelectAccountStep from './select-account-step';
+import SetMnemonicStep from './set-mnemonic-step';
 
-const HasWallet = ({
-  wallet,
-}: {
-  wallet: Wallet
-}): ReactElement<any> => {
-  const useAccountImportScreenReturn = useAccountImportScreen({
-    wallet,
-  })
+const HasWallet = ({ wallet }: { wallet: Wallet }): ReactElement<any> => {
+  const useAccountImportScreenReturn = useAccountImportScreen({ wallet });
   const {
-    inputType, step, onClickGoBack, indicatorInfo, onClickNext,
+    inputType, step, onClickGoBack, indicatorInfo, onClickNext
   }
-    = useAccountImportScreenReturn
+    = useAccountImportScreenReturn;
 
   const extended = useMemo(() => {
     if (step === 'SELECT_ACCOUNT') {
-      return true
+      return true;
     }
 
-    return inputType === '24seeds'
-  }, [step, inputType])
+    return inputType === '24seeds';
+  }, [step, inputType]);
 
   const topSpacing = useMemo(() => {
     if (extended) {
-      return null
+      return null;
     }
     return {
       default: WEB_TOP_SPACING,
-      responsive: WEB_TOP_SPACING_RESPONSIVE,
-    }
-  }, [extended])
+      responsive: WEB_TOP_SPACING_RESPONSIVE
+    };
+  }, [extended]);
 
   if (step === 'LOADING') {
     return (
       <WebMain spacing={null}>
         <WebLoadingAccounts />
       </WebMain>
-    )
+    );
   }
 
   return (
@@ -93,16 +71,12 @@ const HasWallet = ({
         <SelectAccountStep useAccountImportScreenReturn={useAccountImportScreenReturn} />
       )}
     </WebMain>
-  )
-}
+  );
+};
 
 const AccountImportScreen = (): ReactElement<any> => {
-  const {
-    wallet,
-  } = useWalletContext()
-  const {
-    navigate,
-  } = useAppNavigate()
+  const { wallet } = useWalletContext();
+  const { navigate } = useAppNavigate();
 
   return wallet
     ? (
@@ -113,11 +87,11 @@ const AccountImportScreen = (): ReactElement<any> => {
           <WebMainHeader
             stepLength={0}
             onClickGoBack={(): void => {
-              navigate(RoutePath.WebAdvancedOption)
+              navigate(RoutePath.WebAdvancedOption);
             }}
           />
         </WebMain>
-      )
-}
+      );
+};
 
-export default AccountImportScreen
+export default AccountImportScreen;

@@ -1,17 +1,15 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
 type WebImgProps = {
-  src: string
-  size?: number
-  width?: number
-  height?: number
-  color?: string
-}
+  src: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  color?: string;
+};
 
 export const WebImg = ({
-  src, size, width = size, height = size,
+  src, size, width = size, height = size
 }: WebImgProps): ReactElement<any> => {
-  return <img src={src} width={width} height={height} alt={src?.toString()} />
-}
+  return <img src={src} width={width} height={height} alt={src?.toString()} />;
+};

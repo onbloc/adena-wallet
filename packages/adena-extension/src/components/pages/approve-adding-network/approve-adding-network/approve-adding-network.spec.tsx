@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import ApproveAddingNetwork, {
-  ApproveAddingNetworkProps,
-} from './approve-adding-network'
+import ApproveAddingNetwork, { ApproveAddingNetworkProps } from './approve-adding-network';
 
 describe('ApproveAddingNetwork Component', () => {
   it('ApproveAddingNetwork render', () => {
@@ -26,25 +14,25 @@ describe('ApproveAddingNetwork Component', () => {
       networkInfo: {
         name: '',
         rpcUrl: '',
-        chainId: '',
+        chainId: ''
       },
       logo: '',
       approvable: true,
       processing: false,
       done: false,
       approve: () => {
-        return
+        return;
       },
       cancel: () => {
-        return
+        return;
       },
       onResponse: () => {
-        return
+        return;
       },
       onTimeout: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -52,7 +40,7 @@ describe('ApproveAddingNetwork Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveAddingNetwork {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

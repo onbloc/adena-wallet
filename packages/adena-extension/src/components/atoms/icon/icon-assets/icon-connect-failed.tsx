@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconConnectFailed = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconConnectFailed = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       width='100'
@@ -23,7 +17,7 @@ const IconConnectFailed = ({
         fill='#EF2D21'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconConnectFailed
+export default IconConnectFailed;

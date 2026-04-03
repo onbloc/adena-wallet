@@ -1,23 +1,19 @@
-import {
-  Icon, View, WebInputWithLabel,
-} from '@components/atoms'
-import {
-  MAX_SIGNERS,
-} from '@hooks/web/setup-multisig/use-setup-multisig-screen'
-import React from 'react'
+import { Icon, View, WebInputWithLabel } from '@components/atoms';
+import { MAX_SIGNERS } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
+import React from 'react';
 
-import * as S from './web-multisig-signer-input.styles'
+import * as S from './web-multisig-signer-input.styles';
 
-type MultisigAccountMode = 'CREATE' | 'IMPORT'
+type MultisigAccountMode = 'CREATE' | 'IMPORT';
 
 interface WebMultisigSignerInputProps {
-  mode: MultisigAccountMode
-  currentAddress?: string
-  signers: string[]
-  onSignerChange: (index: number, value: string) => void
-  onAddSigner: () => void
-  onRemoveSigner: (index: number) => void
-  multisigConfigError: string | null
+  mode: MultisigAccountMode;
+  currentAddress?: string;
+  signers: string[];
+  onSignerChange: (index: number, value: string) => void;
+  onAddSigner: () => void;
+  onRemoveSigner: (index: number) => void;
+  multisigConfigError: string | null;
 }
 
 export const WebMultisigSignerInput = ({
@@ -27,24 +23,21 @@ export const WebMultisigSignerInput = ({
   onAddSigner,
   onRemoveSigner,
   onSignerChange,
-  multisigConfigError,
+  multisigConfigError
 }: WebMultisigSignerInputProps): React.ReactElement<any> => {
-  const isFirstInputDisabled = mode === 'CREATE' && !!currentAddress
+  const isFirstInputDisabled = mode === 'CREATE' && !!currentAddress;
 
   const isMaxSigners = React.useMemo(() => {
-    return signers.length === MAX_SIGNERS
-  }, [signers])
+    return signers.length === MAX_SIGNERS;
+  }, [signers]);
 
-  const hasError = Boolean(multisigConfigError)
+  const hasError = Boolean(multisigConfigError);
 
   return (
-    <S.StyledContainer style={{
-      alignItems: 'center',
-    }}
-    >
+    <S.StyledContainer style={{ alignItems: 'center' }}>
       <View style={{
         rowGap: 16,
-        width: '100%',
+        width: '100%'
       }}
       >
         {signers.map((signer, index) => (
@@ -72,5 +65,5 @@ export const WebMultisigSignerInput = ({
         </S.StyledButtonText>
       </S.StyledAddButton>
     </S.StyledContainer>
-  )
-}
+  );
+};

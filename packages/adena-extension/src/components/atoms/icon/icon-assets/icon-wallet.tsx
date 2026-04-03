@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconWallet = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconWallet = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -33,7 +27,7 @@ const IconWallet = ({
       />
       <circle className='icon-default' cx='23' cy='17' r='1' fill='#212128' />
     </svg>
-  )
-}
+  );
+};
 
-export default IconWallet
+export default IconWallet;

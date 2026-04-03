@@ -1,24 +1,20 @@
-import IconRight from '@assets/icon-right'
-import {
-  TokenBalance,
-} from '@components/molecules'
-import React, {
-  useMemo,
-} from 'react'
+import IconRight from '@assets/icon-right';
+import { TokenBalance } from '@components/molecules';
+import React, { useMemo } from 'react';
 
 import {
   NetworkFeeContainer,
   NetworkFeeItemSkeletonBox,
-  NetworkFeeWrapper,
-} from './network-fee.styles'
+  NetworkFeeWrapper
+} from './network-fee.styles';
 
 export interface NetworkFeeProps {
-  value: string
-  denom: string
-  isLoading?: boolean
-  isError?: boolean
-  errorMessage?: string
-  onClickSetting?: () => void
+  value: string;
+  denom: string;
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  onClickSetting?: () => void;
 }
 
 const NetworkFee: React.FC<NetworkFeeProps> = ({
@@ -27,27 +23,27 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
   isLoading = false,
   isError,
   errorMessage,
-  onClickSetting,
+  onClickSetting
 }) => {
-  const hasSetting = !!onClickSetting
+  const hasSetting = !!onClickSetting;
 
-  const isEmptyValue = value === ''
+  const isEmptyValue = value === '';
 
   const hasError = useMemo(() => {
     if (isLoading) {
-      return false
+      return false;
     }
 
-    return isError || !!errorMessage
-  }, [isLoading, isError, errorMessage])
+    return isError || !!errorMessage;
+  }, [isLoading, isError, errorMessage]);
 
   const displayErrorMessage = useMemo(() => {
     if (!hasError || isEmptyValue) {
-      return ''
+      return '';
     }
 
-    return errorMessage
-  }, [hasError, isEmptyValue, errorMessage])
+    return errorMessage;
+  }, [hasError, isEmptyValue, errorMessage]);
 
   return (
     <NetworkFeeContainer>
@@ -67,24 +63,22 @@ const NetworkFee: React.FC<NetworkFeeProps> = ({
 
       {displayErrorMessage && <span className='error-message'>{displayErrorMessage}</span>}
     </NetworkFeeContainer>
-  )
-}
+  );
+};
 
 const NetworkFeeAmount: React.FC<{
-  value: string
-  denom: string
-  isLoading: boolean
-}> = ({
-  value, denom, isLoading,
-}) => {
-  const hasNetworkFee = !!Number(value) && !!denom
+  value: string;
+  denom: string;
+  isLoading: boolean;
+}> = ({ value, denom, isLoading }) => {
+  const hasNetworkFee = !!Number(value) && !!denom;
 
   if (isLoading) {
-    return <NetworkFeeItemSkeletonBox />
+    return <NetworkFeeItemSkeletonBox />;
   }
 
   if (!hasNetworkFee) {
-    return <span className='value'>-</span>
+    return <span className='value'>-</span>;
   }
 
   return (
@@ -95,7 +89,7 @@ const NetworkFeeAmount: React.FC<{
       minimumFontSize='11px'
       orientation='HORIZONTAL'
     />
-  )
-}
+  );
+};
 
-export default NetworkFee
+export default NetworkFee;

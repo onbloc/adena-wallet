@@ -1,81 +1,71 @@
-import IconFile from '@assets/file.svg'
-import IconUpload from '@assets/icon-upload'
-import {
-  ErrorText, Text, WebImg,
-} from '@components/atoms'
-import {
-  Tx,
-} from '@gnolang/tm2-js-client'
-import React, {
-  useCallback, useMemo, useState,
-} from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import IconFile from '@assets/file.svg';
+import IconUpload from '@assets/icon-upload';
+import { ErrorText, Text, WebImg } from '@components/atoms';
+import { Tx } from '@gnolang/tm2-js-client';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useTheme } from 'styled-components';
 
-import {
-  StyledHiddenInput, StyledInputLabel, StyledWrapper,
-} from './broadcast-transaction-upload-input.styles'
+import { StyledHiddenInput, StyledInputLabel, StyledWrapper } from './broadcast-transaction-upload-input.styles';
 
 export interface BroadcastTransactionUploadInputProps {
-  transaction: Tx | null
-  uploadTransaction: (text: string) => boolean
+  transaction: Tx | null;
+  uploadTransaction: (text: string) => boolean;
 }
 
 const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputProps> = ({
   transaction,
-  uploadTransaction,
+  uploadTransaction
 }) => {
-  const theme = useTheme()
-  const [loading, setLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
+  const theme = useTheme();
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const hasError = useMemo(() => {
-    return errorMessage !== null
-  }, [errorMessage])
+    return errorMessage !== null;
+  }, [errorMessage]);
 
   const uploadState = useMemo(() => {
     if (transaction) {
-      return 'SUCCESS'
+      return 'SUCCESS';
     }
     if (loading) {
-      return 'LOADING'
+      return 'LOADING';
     }
-    return 'NONE'
-  }, [transaction, loading])
+    return 'NONE';
+  }, [transaction, loading]);
 
   const onDropFile = useCallback(async (event: React.DragEvent<HTMLLabelElement>) => {
     if (event.dataTransfer.files.length > 0) {
-      const file = event.dataTransfer.files[0]
-      uploadFile(file)
+      const file = event.dataTransfer.files[0];
+      uploadFile(file);
     }
-  }, [])
+  }, []);
 
   const onChangeFileInput = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
+    const files = event.target.files;
     if (files && files.length > 0) {
-      const file = files[0]
-      uploadFile(file)
+      const file = files[0];
+      uploadFile(file);
     }
-  }, [])
+  }, []);
 
   const uploadFile = useCallback(async (file: File) => {
-    setLoading(true)
+    setLoading(true);
     const isUploadSuccess = await file.text()
       .then(uploadTransaction)
-      .catch(() => false)
-    setLoading(false)
+      .catch(() => false);
+    setLoading(false);
 
     if (isUploadSuccess) {
-      setErrorMessage(null)
-      setFileName(file.name)
+      setErrorMessage(null);
+      setFileName(file.name);
     }
     else {
-      setErrorMessage('Invalid transaction format')
-      setFileName(null)
+      setErrorMessage('Invalid transaction format');
+      setFileName(null);
     }
-  }, [])
+  }, []);
 
   return (
     <StyledWrapper>
@@ -117,7 +107,7 @@ const BroadcastTransactionUploadInput: React.FC<BroadcastTransactionUploadInputP
         onChange={onChangeFileInput}
       />
     </StyledWrapper>
-  )
-}
+  );
+};
 
-export default BroadcastTransactionUploadInput
+export default BroadcastTransactionUploadInput;

@@ -1,13 +1,7 @@
-import {
-  Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import React, {
-  type JSX,
-} from 'react'
-import styled, {
-  CSSProperties, useTheme,
-} from 'styled-components'
+import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import React, { type JSX } from 'react';
+import styled, { CSSProperties, useTheme } from 'styled-components';
 
 type WarningKeyType
   = | 'revealPassword'
@@ -15,56 +9,52 @@ type WarningKeyType
     | 'approachPassword'
     | 'approachPrivate'
     | 'approachNetwork'
-    | 'addingNetwork'
+    | 'addingNetwork';
 
 interface TextProperty {
-  title?: string
-  subTitle?: string
+  title?: string;
+  subTitle?: string;
 }
 
 interface WarningBoxStyleProps {
-  margin?: CSSProperties['margin']
-  padding?: CSSProperties['padding']
+  margin?: CSSProperties['margin'];
+  padding?: CSSProperties['padding'];
 }
 
-export interface WarningBoxProps extends WarningBoxStyleProps {
-  type: WarningKeyType
-}
+export interface WarningBoxProps extends WarningBoxStyleProps { type: WarningKeyType }
 
 const warningType: { [key in WarningKeyType]: TextProperty } = {
   revealPassword: {
     title: 'Approach with caution!',
     subTitle:
-      'You’re about to reveal your seed phrase. Please carefully review the checklist below.',
+      'You’re about to reveal your seed phrase. Please carefully review the checklist below.'
   },
   revealPrivate: {
     subTitle:
-      'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.',
+      'Your seed phrase is the only way to recover your wallet. Keep it somewhere safe and secret.'
   },
   approachPassword: {
     title: 'Approach with caution!',
     subTitle:
-      'You’re about to reveal your private key. Please carefully review the checklist below.',
+      'You’re about to reveal your private key. Please carefully review the checklist below.'
   },
   approachPrivate: {
     subTitle:
-      'Do not share your private key! Anyone with your private key will have full control of your wallet.',
+      'Do not share your private key! Anyone with your private key will have full control of your wallet.'
   },
   approachNetwork: {
     title: 'Approach with caution!',
     subTitle:
-      'A malicious network provider can lie about the state of the blockchain.\nOnly add custom networks you trust.',
+      'A malicious network provider can lie about the state of the blockchain.\nOnly add custom networks you trust.'
   },
   addingNetwork: {
     subTitle:
-      'You’re adding an unverified network.\nAdena doesn’t verify custom networks.\nOnly add networks that you trust.',
-  },
-}
+      'You’re adding an unverified network.\nAdena doesn’t verify custom networks.\nOnly add networks that you trust.'
+  }
+};
 
-export const WarningBox = ({
-  type, margin, padding,
-}: WarningBoxProps): JSX.Element => {
-  const theme = useTheme()
+export const WarningBox = ({ type, margin, padding }: WarningBoxProps): JSX.Element => {
+  const theme = useTheme();
   return (
     <Wrapper margin={margin} padding={padding}>
       {warningType[type].title && (
@@ -78,13 +68,13 @@ export const WarningBox = ({
         </Text>
       )}
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.div<WarningBoxStyleProps>`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   padding: ${(props): CSSProperties['padding'] => props.padding ?? '14px 16px'};
@@ -93,4 +83,4 @@ const Wrapper = styled.div<WarningBoxStyleProps>`
   background-color: rgba(231, 50, 59, 0.1);
   border: 1px solid rgba(231, 50, 59, 0.1);
   margin: ${(props): CSSProperties['margin'] => props.margin};
-`
+`;

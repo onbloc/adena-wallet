@@ -3,29 +3,21 @@ import {
   TransactionEndpoint,
   Tx,
   TxSignature,
-  uint8ArrayToBase64,
-} from "@gnolang/tm2-js-client";
-import {
-  v4 as uuidv4,
-} from "uuid";
+  uint8ArrayToBase64
+} from '@gnolang/tm2-js-client';
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  Document, fromBech32,
-} from "../../index.js";
-import {
-  Keyring, KeyringData, KeyringType,
-} from "./keyring.js";
+import { Document, fromBech32 } from '../../index.js';
+import { Keyring, KeyringData, KeyringType } from './keyring.js';
 
 export class AddressKeyring implements Keyring {
   public readonly id: string;
-  public readonly type: KeyringType = "AIRGAP";
+  public readonly type: KeyringType = 'AIRGAP';
   public readonly addressBytes: Uint8Array;
 
-  constructor({
-    id, addressBytes,
-  }: KeyringData) {
+  constructor({ id, addressBytes }: KeyringData) {
     if (!addressBytes) {
-      throw new Error("Invalid parameter values");
+      throw new Error('Invalid parameter values');
     }
     this.id = id || uuidv4();
     this.addressBytes = Uint8Array.from(addressBytes);
@@ -35,18 +27,18 @@ export class AddressKeyring implements Keyring {
     return {
       id: this.id,
       type: this.type,
-      addressBytes: Array.from(this.addressBytes),
+      addressBytes: Array.from(this.addressBytes)
     };
   }
 
   async sign(
     _provider: Provider,
-    _document: Document,
+    _document: Document
   ): Promise<{
-    signed: Tx
-    signature: TxSignature[]
+    signed: Tx;
+    signature: TxSignature[];
   }> {
-    throw new Error("Not support transaction sign");
+    throw new Error('Not support transaction sign');
   }
 
   async broadcastTxSync(provider: Provider, signedTx: Tx) {
@@ -60,11 +52,7 @@ export class AddressKeyring implements Keyring {
   }
 
   public static async fromAddress(address: string) {
-    const {
-      data: addressBytes,
-    } = fromBech32(address);
-    return new AddressKeyring({
-      addressBytes: [...addressBytes],
-    });
+    const { data: addressBytes } = fromBech32(address);
+    return new AddressKeyring({ addressBytes: [...addressBytes] });
   }
 }

@@ -1,32 +1,26 @@
-import ManageTokenList from '@components/molecules/manage-token-list/manage-token-list'
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  ManageGRC721Info,
-} from '@types'
-import React from 'react'
+import ManageTokenList from '@components/molecules/manage-token-list/manage-token-list';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { ManageGRC721Info } from '@types';
+import React from 'react';
 
-import ManageCollectionSearchInput from '../manage-collection-search-input/manage-collection-search-input'
-import {
-  ManageCollectionsWrapper,
-} from './manage-collections.styles'
+import ManageCollectionSearchInput from '../manage-collection-search-input/manage-collection-search-input';
+import { ManageCollectionsWrapper } from './manage-collections.styles';
 
 export interface ManageCollectionsProps {
-  keyword: string
-  collections: ManageGRC721Info[]
-  onClickClose: () => void
+  keyword: string;
+  collections: ManageGRC721Info[];
+  onClickClose: () => void;
   queryGRC721TokenUri: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<string | null>;
   queryGRC721Balance: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<number | null>
-  onChangeKeyword: (keyword: string) => void
-  onToggleActiveItem: (tokenId: string, activated: boolean) => void
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<number | null>;
+  onChangeKeyword: (keyword: string) => void;
+  onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }
 
 const ManageCollections: React.FC<ManageCollectionsProps> = ({
@@ -36,7 +30,7 @@ const ManageCollections: React.FC<ManageCollectionsProps> = ({
   queryGRC721Balance,
   onClickClose,
   onChangeKeyword,
-  onToggleActiveItem,
+  onToggleActiveItem
 }) => {
   return (
     <ManageCollectionsWrapper>
@@ -59,7 +53,7 @@ const ManageCollections: React.FC<ManageCollectionsProps> = ({
         </button>
       </div>
     </ManageCollectionsWrapper>
-  )
-}
+  );
+};
 
-export default ManageCollections
+export default ManageCollections;

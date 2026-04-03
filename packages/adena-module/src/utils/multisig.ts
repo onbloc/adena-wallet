@@ -1,20 +1,14 @@
 import {
-  Any, CompactBitArray, defaultAddressPrefix, PubKeySecp256k1,
-} from "@gnolang/tm2-js-client";
-import {
-  PubKeyMultisig,
-} from "@gnolang/tm2-js-client";
+  Any, CompactBitArray, defaultAddressPrefix, PubKeySecp256k1
+} from '@gnolang/tm2-js-client';
+import { PubKeyMultisig } from '@gnolang/tm2-js-client';
 
-import {
-  sha256,
-} from "../crypto/index.js";
-import {
-  toBech32,
-} from "../encoding/index.js";
+import { sha256 } from '../crypto/index.js';
+import { toBech32 } from '../encoding/index.js';
 
 export function createCompactBitArray(bits: number): CompactBitArray {
   if (bits <= 0) {
-    throw new Error("empty");
+    throw new Error('empty');
   }
 
   const extraBitsStored = bits % 8;
@@ -22,7 +16,7 @@ export function createCompactBitArray(bits: number): CompactBitArray {
 
   return {
     extra_bits_stored: extraBitsStored,
-    elems,
+    elems
   };
 }
 
@@ -41,7 +35,7 @@ export function compactBitArraySize(bA: CompactBitArray): number {
 export function compactBitArraySetIndex(
   bA: CompactBitArray,
   i: number,
-  v: boolean,
+  v: boolean
 ): boolean {
   if (bA.elems === null) {
     return false;
@@ -63,8 +57,8 @@ export function compactBitArraySetIndex(
   return true;
 }
 export interface Pubkey {
-  "@type": string
-  value: Uint8Array
+  '@type': string;
+  value: Uint8Array;
 }
 
 /**
@@ -76,15 +70,15 @@ export interface Pubkey {
 export function createMultisigPublicKey(
   threshold: number,
   publicKeys: Pubkey[],
-  addressPrefix: string = defaultAddressPrefix,
+  addressPrefix: string = defaultAddressPrefix
 ): {
-  address: string
-  publicKey: Uint8Array
+  address: string;
+  publicKey: Uint8Array;
 } {
   const publicKeysAny = publicKeys.map((pk) => {
     return Any.create({
-      type_url: pk["@type"],
-      value: pk.value,
+      type_url: pk['@type'],
+      value: pk.value
     });
   });
 
@@ -95,32 +89,30 @@ export function createMultisigPublicKey(
 
   return {
     address,
-    publicKey: aminoEncoded,
+    publicKey: aminoEncoded
   };
 }
 
 export interface AminoMessage {
-  type: string
+  type: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentionally loose for interop with specific message types
-  value: Record<string, any>
+  value: Record<string, any>;
 }
 
 export interface ProtoMessage {
-  "@type": string
+  '@type': string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentionally loose for interop with specific message types
-  [key: string]: any
+  [key: string]: any;
 }
 
 export function convertMessageToAmino(msg: ProtoMessage | AminoMessage): AminoMessage {
   if (msg.type && msg.value) {
     return msg as AminoMessage;
   }
-  const {
-    "@type": type, ...value
-  } = msg as ProtoMessage;
+  const { '@type': type, ...value } = msg as ProtoMessage;
   return {
     type,
-    value,
+    value
   };
 }
 
@@ -129,24 +121,22 @@ export function convertMessageToAmino(msg: ProtoMessage | AminoMessage): AminoMe
  */
 function encodeMultisigPubKey(threshold: number, pubkeys: Any[]): Uint8Array {
   const pubKeysEncoded = pubkeys.map((pk) => {
-    const pubKeyValue = PubKeySecp256k1.encode({
-      key: pk.value,
-    }).finish();
+    const pubKeyValue = PubKeySecp256k1.encode({ key: pk.value }).finish();
 
     return Any.create({
       type_url: pk.type_url,
-      value: pubKeyValue,
+      value: pubKeyValue
     });
   });
 
   const multisigValue = PubKeyMultisig.encode({
     k: BigInt(threshold),
-    pub_keys: pubKeysEncoded,
+    pub_keys: pubKeysEncoded
   }).finish();
 
   const result = Any.create({
-    type_url: "/tm.PubKeyMultisig",
-    value: multisigValue,
+    type_url: '/tm.PubKeyMultisig',
+    value: multisigValue
   });
 
   return Any.encode(result).finish();

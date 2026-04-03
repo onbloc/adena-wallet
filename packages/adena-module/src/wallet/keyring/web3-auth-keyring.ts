@@ -1,31 +1,21 @@
 import {
-  Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet,
-} from "@gnolang/tm2-js-client";
-import {
-  v4 as uuidv4,
-} from "uuid";
+  Provider, TransactionEndpoint, Tx, Wallet as Tm2Wallet
+} from '@gnolang/tm2-js-client';
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  Document, makeSignedTx, useTm2Wallet,
-} from "./../../index.js";
-import {
-  hexToArray,
-} from "./../../utils/data.js";
-import {
-  Keyring, KeyringData, KeyringType,
-} from "./keyring.js";
+import { Document, makeSignedTx, useTm2Wallet } from './../../index.js';
+import { hexToArray } from './../../utils/data.js';
+import { Keyring, KeyringData, KeyringType } from './keyring.js';
 
 export class Web3AuthKeyring implements Keyring {
   public readonly id: string;
-  public readonly type: KeyringType = "WEB3_AUTH";
+  public readonly type: KeyringType = 'WEB3_AUTH';
   public readonly publicKey: Uint8Array;
   public readonly privateKey: Uint8Array;
 
-  constructor({
-    id, publicKey, privateKey,
-  }: KeyringData) {
+  constructor({ id, publicKey, privateKey }: KeyringData) {
     if (!publicKey || !privateKey) {
-      throw new Error("Invalid parameter values");
+      throw new Error('Invalid parameter values');
     }
     this.id = id || uuidv4();
     this.publicKey = Uint8Array.from(publicKey);
@@ -37,7 +27,7 @@ export class Web3AuthKeyring implements Keyring {
       id: this.id,
       type: this.type,
       publicKey: Array.from(this.publicKey),
-      privateKey: Array.from(this.privateKey),
+      privateKey: Array.from(this.privateKey)
     };
   }
 
@@ -51,7 +41,7 @@ export class Web3AuthKeyring implements Keyring {
     const signedTx = await makeSignedTx(wallet, document);
     return {
       signed: signedTx,
-      signature: signedTx.signatures,
+      signature: signedTx.signatures
     };
   }
 
@@ -72,7 +62,7 @@ export class Web3AuthKeyring implements Keyring {
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey),
+      privateKey: Array.from(privateKey)
     });
   }
 
@@ -82,7 +72,7 @@ export class Web3AuthKeyring implements Keyring {
     const publicKey = await tm2Wallet.getSigner().getPublicKey();
     return new Web3AuthKeyring({
       publicKey: Array.from(publicKey),
-      privateKey: Array.from(privateKey),
+      privateKey: Array.from(privateKey)
     });
   }
 }

@@ -1,22 +1,14 @@
-import {
-  WalletResponseFailureType,
-} from '@adena-wallet/sdk'
-import {
-  encodeParameter, getSiteName,
-} from '@common/utils/client-utils'
+import { WalletResponseFailureType } from '@adena-wallet/sdk';
+import { encodeParameter, getSiteName } from '@common/utils/client-utils';
 
-import {
-  InjectionMessage, InjectionMessageInstance,
-} from '../message'
-import {
-  InjectCore,
-} from './core'
+import { InjectionMessage, InjectionMessageInstance } from '../message';
+import { InjectCore } from './core';
 
 export const createPopup = async (
   popupPath: string,
   message: InjectionMessage,
   closeMessage: InjectionMessage,
-  sendResponse: (response: any) => void,
+  sendResponse: (response: any) => void
 ): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
@@ -24,96 +16,95 @@ export const createPopup = async (
       + `?key=${message.key}`
       + `&hostname=${message.hostname}`
       + `&protocol=${message.protocol}`
-      + `&data=${encodeParameter(message)}`,
+      + `&data=${encodeParameter(message)}`
     ),
     type: 'popup',
     height: 590,
     width: 380,
     left: 800,
-    top: 300,
-  }
+    top: 300
+  };
 
   chrome.windows.create(popupOption, async (windowResponse) => {
     if (!windowResponse) {
-      return
+      return;
     }
 
     chrome.windows.onRemoved.addListener((removeWindowId) => {
       if (windowResponse.id === removeWindowId) {
-        sendResponse(closeMessage)
+        sendResponse(closeMessage);
       }
-    })
+    });
 
     const onMessageListener = (popupMessage: InjectionMessage): void => {
-      popupMessageListener(windowResponse.id, message, popupMessage, sendResponse)
-    }
+      popupMessageListener(windowResponse.id, message, popupMessage, sendResponse);
+    };
 
     chrome.tabs.onUpdated.addListener((tabId, info) => {
       if (info.status === 'complete' && windowResponse.tabs) {
-        chrome.runtime.onMessage.removeListener(onMessageListener)
-        chrome.runtime.onMessage.addListener(onMessageListener)
+        chrome.runtime.onMessage.removeListener(onMessageListener);
+        chrome.runtime.onMessage.addListener(onMessageListener);
 
         chrome.tabs
           .sendMessage(tabId, {
             type: message.type,
             data: message,
-            called: tabId,
+            called: tabId
           })
-          .catch(() => undefined)
+          .catch(() => undefined);
       }
-    })
-  })
-}
+    });
+  });
+};
 
 export const existsPopups = async (): Promise<boolean> => {
-  const windows = await chrome.windows.getAll()
-  return windows.findIndex(window => window.type === 'popup') > -1
-}
+  const windows = await chrome.windows.getAll();
+  return windows.findIndex(window => window.type === 'popup') > -1;
+};
 
 export const removePopups = async (): Promise<void> => {
-  const windows = await chrome.windows.getAll()
+  const windows = await chrome.windows.getAll();
   windows.forEach((window) => {
     if (window.type === 'popup' && window.id) {
-      chrome.windows.remove(window.id)
+      chrome.windows.remove(window.id);
     }
-  })
-}
+  });
+};
 
 export const checkEstablished = async (
   core: InjectCore,
   requestData: InjectionMessage,
-  sendResponse: (response: any) => void,
+  sendResponse: (response: any) => void
 ): Promise<boolean> => {
-  const accountId = await core.getCurrentAccountId()
+  const accountId = await core.getCurrentAccountId();
 
-  const siteName = getSiteName(requestData.protocol, requestData.hostname)
-  const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName)
+  const siteName = getSiteName(requestData.protocol, requestData.hostname);
+  const isEstablished = await core.establishService.isEstablishedBy(accountId, siteName);
   if (!isEstablished) {
     sendResponse(
       InjectionMessageInstance.failure(
         WalletResponseFailureType.NOT_CONNECTED,
-        {
-        },
-        requestData.key,
-      ),
-    )
-    return false
+        {},
+        requestData.key
+      )
+    );
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 const popupMessageListener = (
   popupId: number | undefined,
   requestData: InjectionMessage,
   popupMessage: InjectionMessage,
-  sendResponse: (message: any) => void,
+  sendResponse: (message: any) => void
 ): boolean => {
   new Promise((resolve) => {
     if (requestData.key === popupMessage.key) {
-      resolve(popupMessage)
+      resolve(popupMessage);
     }
   })
     .then(sendResponse)
-    .finally(() => popupId && chrome.windows.remove(popupId))
-  return true
-}
+    .finally(() => popupId && chrome.windows.remove(popupId));
+  return true;
+};

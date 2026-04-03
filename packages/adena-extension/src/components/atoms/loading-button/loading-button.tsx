@@ -1,22 +1,16 @@
-import React from 'react'
+import React from 'react';
 
-import {
-  Button, ButtonProps,
-} from '../button'
-import {
-  IconButtonLoading,
-} from '../icon/icon-assets'
+import { Button, ButtonProps } from '../button';
+import { IconButtonLoading } from '../icon/icon-assets';
 
-export interface LoadingButtonProps {
-  loading: boolean
-}
+export interface LoadingButtonProps { loading: boolean }
 
 const LoadingButton: React.FC<LoadingButtonProps & ButtonProps> = ({
   loading,
   children,
   ...props
 }) => {
-  return <Button {...props}>{loading ? <IconButtonLoading /> : children}</Button>
-}
+  return <Button {...props}>{loading ? <IconButtonLoading /> : children}</Button>;
+};
 
-export default LoadingButton
+export default LoadingButton;

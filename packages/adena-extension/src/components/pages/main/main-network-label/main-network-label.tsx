@@ -1,30 +1,20 @@
-import {
-  Text,
-} from '@components/atoms'
-import React from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import { Text } from '@components/atoms';
+import React from 'react';
+import { useTheme } from 'styled-components';
 
-import {
-  MainNetworkLabelWrapper,
-} from './main-network-label.styles'
+import { MainNetworkLabelWrapper } from './main-network-label.styles';
 
-export interface MainNetworkLabelProps {
-  networkName: string
-}
+export interface MainNetworkLabelProps { networkName: string }
 
-const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({
-  networkName,
-}) => {
-  const theme = useTheme()
+const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({ networkName }) => {
+  const theme = useTheme();
 
   return (
     <MainNetworkLabelWrapper>
       <Text
         style={{
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: 'row'
         }}
         type='light13'
         color={theme.primary._2}
@@ -34,7 +24,7 @@ const MainNetworkLabel: React.FC<MainNetworkLabelProps> = ({
         <Text type='bold13'>{networkName}</Text>
       </Text>
     </MainNetworkLabelWrapper>
-  )
-}
+  );
+};
 
-export default MainNetworkLabel
+export default MainNetworkLabel;

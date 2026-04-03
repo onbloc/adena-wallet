@@ -1,35 +1,27 @@
-import UnknownLogo from '@assets/common-unknown-logo.svg'
-import {
-  SubHeader, WarningBox,
-} from '@components/atoms'
-import {
-  BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
-import React, {
-  useEffect, useMemo,
-} from 'react'
+import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { SubHeader, WarningBox } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import React, { useEffect, useMemo } from 'react';
 
-import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table'
-import {
-  ApproveAddingNetworkWrapper,
-} from './approve-adding-network.styles'
+import ApproveAddingNetworkTable from '../approve-adding-network-table/approve-adding-network-table';
+import { ApproveAddingNetworkWrapper } from './approve-adding-network.styles';
 
 export interface AddingNetworkInfo {
-  chainId: string
-  name: string
-  rpcUrl: string
+  chainId: string;
+  name: string;
+  rpcUrl: string;
 }
 
 export interface ApproveAddingNetworkProps {
-  networkInfo: AddingNetworkInfo
-  logo?: string
-  approvable: boolean
-  processing: boolean
-  done: boolean
-  cancel: () => void
-  approve: () => void
-  onResponse: () => void
-  onTimeout: () => void
+  networkInfo: AddingNetworkInfo;
+  logo?: string;
+  approvable: boolean;
+  processing: boolean;
+  done: boolean;
+  cancel: () => void;
+  approve: () => void;
+  onResponse: () => void;
+  onTimeout: () => void;
 }
 
 const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
@@ -40,15 +32,15 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
   done,
   cancel,
   approve,
-  onResponse,
+  onResponse
 }) => {
-  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name])
+  const title = useMemo(() => `Add ${networkInfo.name}`, [networkInfo.name]);
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   return (
     <ApproveAddingNetworkWrapper>
@@ -71,18 +63,18 @@ const ApproveAddingNetwork: React.FC<ApproveAddingNetworkProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: cancel,
+          onClick: cancel
         }}
         rightButton={{
           primary: true,
           loading: processing,
           disabled: approvable === false,
           text: 'Approve',
-          onClick: approve,
+          onClick: approve
         }}
       />
     </ApproveAddingNetworkWrapper>
-  )
-}
+  );
+};
 
-export default ApproveAddingNetwork
+export default ApproveAddingNetwork;

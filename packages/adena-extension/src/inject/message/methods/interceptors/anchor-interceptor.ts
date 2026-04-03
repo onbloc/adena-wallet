@@ -1,67 +1,57 @@
-import {
-  CommandHandler,
-} from '@inject/message/command-handler'
-import {
-  CommandMessage,
-} from '@inject/message/command-message'
+import { CommandHandler } from '@inject/message/command-handler';
+import { CommandMessage } from '@inject/message/command-message';
 
-import {
-  GnoMessageInfo, parseGnoMessageInfo, shouldIntercept,
-} from '../gno-connect'
-import {
-  GnoConnectInfoProvider,
-} from '../gno-connect-info-provider'
-import {
-  IInterceptor, InterceptorContext, InterceptorHandler,
-} from '../gno-interceptor.types'
+import { GnoMessageInfo, parseGnoMessageInfo, shouldIntercept } from '../gno-connect';
+import { GnoConnectInfoProvider } from '../gno-connect-info-provider';
+import { IInterceptor, InterceptorContext, InterceptorHandler } from '../gno-interceptor.types';
 
 /**
  * Interceptor for anchor/link clicks
  * Handles gno web tx links by intercepting anchor clicks
  */
 export class AnchorInterceptor implements IInterceptor {
-  public readonly name = 'AnchorInterceptor'
-  private isRegistered = false
-  private clickHandler: ((e: MouseEvent) => void) | null = null
-  private readonly connectInfoProvider: GnoConnectInfoProvider
-  private readonly handler: InterceptorHandler
+  public readonly name = 'AnchorInterceptor';
+  private isRegistered = false;
+  private clickHandler: ((e: MouseEvent) => void) | null = null;
+  private readonly connectInfoProvider: GnoConnectInfoProvider;
+  private readonly handler: InterceptorHandler;
 
   constructor(handler?: InterceptorHandler) {
-    this.connectInfoProvider = GnoConnectInfoProvider.getInstance()
-    this.handler = handler || this.defaultHandler
+    this.connectInfoProvider = GnoConnectInfoProvider.getInstance();
+    this.handler = handler || this.defaultHandler;
   }
 
   public shouldRegister(): boolean {
-    return this.connectInfoProvider.shouldRegister()
+    return this.connectInfoProvider.shouldRegister();
   }
 
   public register(): void {
     if (this.isRegistered) {
-      console.warn(`${this.name} is already registered`)
-      return
+      console.warn(`${this.name} is already registered`);
+      return;
     }
 
     if (!this.shouldRegister()) {
-      return
+      return;
     }
 
-    this.clickHandler = this.handleClick.bind(this)
-    document.addEventListener('click', this.clickHandler, true)
-    this.isRegistered = true
+    this.clickHandler = this.handleClick.bind(this);
+    document.addEventListener('click', this.clickHandler, true);
+    this.isRegistered = true;
   }
 
   public unregister(): void {
     if (!this.isRegistered || !this.clickHandler) {
-      return
+      return;
     }
 
-    document.removeEventListener('click', this.clickHandler, true)
-    this.clickHandler = null
-    this.isRegistered = false
+    document.removeEventListener('click', this.clickHandler, true);
+    this.clickHandler = null;
+    this.isRegistered = false;
   }
 
   public isActive(): boolean {
-    return this.isRegistered
+    return this.isRegistered;
   }
 
   /**
@@ -69,32 +59,32 @@ export class AnchorInterceptor implements IInterceptor {
    */
   private handleClick(e: MouseEvent): void {
     try {
-      const anchor = (e.target as HTMLElement).closest('a')
+      const anchor = (e.target as HTMLElement).closest('a');
       if (!anchor?.href) {
-        return
+        return;
       }
 
-      const url = new URL(anchor.href, location.origin)
+      const url = new URL(anchor.href, location.origin);
       if (!shouldIntercept(url.href)) {
-        return
+        return;
       }
 
-      const gnoMessageInfo = parseGnoMessageInfo(url.href)
+      const gnoMessageInfo = parseGnoMessageInfo(url.href);
       if (gnoMessageInfo === null) {
-        return
+        return;
       }
 
-      e.preventDefault()
+      e.preventDefault();
 
-      const context = this.createContext()
+      const context = this.createContext();
       if (!context) {
-        return
+        return;
       }
 
-      this.handler(gnoMessageInfo, context)
+      this.handler(gnoMessageInfo, context);
     }
     catch (error) {
-      console.warn(`${this.name} error:`, error)
+      console.warn(`${this.name} error:`, error);
     }
   }
 
@@ -102,14 +92,12 @@ export class AnchorInterceptor implements IInterceptor {
    * Create interceptor context
    */
   private createContext(): InterceptorContext | null {
-    const gnoConnectInfo = this.connectInfoProvider.getConnectInfo()
+    const gnoConnectInfo = this.connectInfoProvider.getConnectInfo();
     if (!gnoConnectInfo) {
-      return null
+      return null;
     }
 
-    return {
-      gnoConnectInfo,
-    }
+    return { gnoConnectInfo };
   }
 
   /**
@@ -117,13 +105,13 @@ export class AnchorInterceptor implements IInterceptor {
    */
   private defaultHandler = (
     gnoMessageInfo: GnoMessageInfo,
-    context: InterceptorContext,
+    context: InterceptorContext
   ): void => {
     CommandHandler.createContentHandler(
       CommandMessage.command('checkMetadata', {
         gnoMessageInfo,
-        gnoConnectInfo: context.gnoConnectInfo,
-      }),
-    )
-  }
+        gnoConnectInfo: context.gnoConnectInfo
+      })
+    );
+  };
 }

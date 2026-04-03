@@ -1,19 +1,15 @@
-import IconGnoLand from '@assets/web/gnoland.svg'
-import IconGnoScan from '@assets/web/gnoscan.svg'
-import IconGnoSwap from '@assets/web/gnoswap.svg'
-import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json'
-import IconPin from '@assets/web/pin.svg'
+import IconGnoLand from '@assets/web/gnoland.svg';
+import IconGnoScan from '@assets/web/gnoscan.svg';
+import IconGnoSwap from '@assets/web/gnoswap.svg';
+import AnimationAllSet from '@assets/web/lottie/you-are-all-set.json';
+import IconPin from '@assets/web/pin.svg';
 import {
-  Row, View, WebButton, WebImg, WebMain, WebText,
-} from '@components/atoms'
-import Lottie from '@components/atoms/lottie'
-import useLink from '@hooks/use-link'
-import type {
-  JSX,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Row, View, WebButton, WebImg, WebMain, WebText
+} from '@components/atoms';
+import Lottie from '@components/atoms/lottie';
+import useLink from '@hooks/use-link';
+import type { JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(Row)`
   flex-shrink: 0;
@@ -21,7 +17,7 @@ const StyledContainer = styled(Row)`
   height: auto;
   column-gap: 56px;
   align-items: center;
-`
+`;
 
 const StyledLeft = styled(View)`
   width: fit-content;
@@ -29,22 +25,22 @@ const StyledLeft = styled(View)`
   row-gap: 28px;
   width: 604px;
   align-items: flex-start;
-`
+`;
 
 const StyledMessageBox = styled(View)`
   row-gap: 10px;
-`
+`;
 
 const StyledImgBox = styled(View)`
   width: 40px;
   height: 36px;
   align-items: center;
   justify-content: center;
-`
+`;
 
 const StyledLinkBox = styled(View)`
   row-gap: 16px;
-`
+`;
 
 const StyledBtn = styled(WebButton)`
   flex: 1;
@@ -55,11 +51,11 @@ const StyledBtn = styled(WebButton)`
   padding: 20px 20px 16px 20px;
   background: #16181c;
   box-shadow: 0 0 0 1px #212429 inset;
-`
+`;
 
-const StyledBtnTitle = styled(WebText)``
+const StyledBtnTitle = styled(WebText)``;
 
-const StyledBtnInfo = styled(WebText)``
+const StyledBtnInfo = styled(WebText)``;
 
 const StyledFixedWrapper = styled(Row)`
   position: fixed;
@@ -72,7 +68,7 @@ const StyledFixedWrapper = styled(Row)`
   background: #181b1f;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
   z-index: 3;
-`
+`;
 
 const StyledPinIconWrapper = styled(View)`
   display: flex;
@@ -82,28 +78,22 @@ const StyledPinIconWrapper = styled(View)`
   justify-content: center;
   align-items: center;
   border-radius: 12px;
-  background: ${({
-    theme,
-  }): string => theme.webPrimary._100};
+  background: ${({ theme }): string => theme.webPrimary._100};
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.16);
-`
+`;
 
 const WalletAllSetScreen = (): JSX.Element => {
-  const theme = useTheme()
-  const {
-    openLink,
-  } = useLink()
+  const theme = useTheme();
+  const { openLink } = useLink();
 
   const onClickDone = (): void => {
-    window.close()
-  }
+    window.close();
+  };
 
   return (
     <WebMain
       spacing={null}
-      style={{
-        width: 'fit-content',
-      }}
+      style={{ width: 'fit-content' }}
     >
       <StyledContainer>
         <StyledLeft>
@@ -113,23 +103,17 @@ const WalletAllSetScreen = (): JSX.Element => {
               Click on the Start button to launch Adena.
             </WebText>
           </StyledMessageBox>
-          <View style={{
-            gap: 40,
-          }}
-          >
+          <View style={{ gap: 40 }}>
             <StyledLinkBox>
               <WebText type='title3' color={theme.webNeutral._200}>
                 Explore the Gno.land Ecosystem
               </WebText>
-              <Row style={{
-                columnGap: 24,
-              }}
-              >
+              <Row style={{ columnGap: 24 }}>
                 <StyledBtn
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://gno.land')
+                    openLink('https://gno.land');
                   }}
                 >
                   <StyledImgBox>
@@ -137,7 +121,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6,
+                    gap: 6
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -152,7 +136,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://docs.gnoswap.io')
+                    openLink('https://docs.gnoswap.io');
                   }}
                 >
                   <StyledImgBox>
@@ -160,7 +144,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6,
+                    gap: 6
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -176,7 +160,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   figure='tertiary'
                   size='large'
                   onClick={(): void => {
-                    openLink('https://gnoscan.io')
+                    openLink('https://gnoscan.io');
                   }}
                 >
                   <StyledImgBox>
@@ -184,7 +168,7 @@ const WalletAllSetScreen = (): JSX.Element => {
                   </StyledImgBox>
                   <View style={{
                     width: '100%',
-                    gap: 6,
+                    gap: 6
                   }}
                   >
                     <StyledBtnTitle type='body5' color={theme.webNeutral._500}>
@@ -199,9 +183,7 @@ const WalletAllSetScreen = (): JSX.Element => {
             </StyledLinkBox>
 
             <WebButton
-              style={{
-                width: 'fit-content',
-              }}
+              style={{ width: 'fit-content' }}
               figure='primary'
               size='small'
               text='Start'
@@ -212,25 +194,20 @@ const WalletAllSetScreen = (): JSX.Element => {
         </StyledLeft>
         <Lottie
           width={416}
-          style={{
-            marginTop: -100,
-          }}
+          style={{ marginTop: -100 }}
           animationData={AnimationAllSet}
         />
       </StyledContainer>
 
       <StyledFixedWrapper>
-        <View style={{
-          paddingTop: 4,
-        }}
-        >
+        <View style={{ paddingTop: 4 }}>
           <StyledPinIconWrapper>
             <WebImg src={IconPin} size={24} />
           </StyledPinIconWrapper>
         </View>
         <View style={{
           width: 256,
-          gap: 6,
+          gap: 6
         }}
         >
           <WebText type='title3' color={theme.webNeutral._100}>
@@ -242,7 +219,7 @@ const WalletAllSetScreen = (): JSX.Element => {
         </View>
       </StyledFixedWrapper>
     </WebMain>
-  )
-}
+  );
+};
 
-export default WalletAllSetScreen
+export default WalletAllSetScreen;

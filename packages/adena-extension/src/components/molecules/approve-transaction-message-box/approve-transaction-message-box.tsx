@@ -1,25 +1,17 @@
-import {
-  GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect'
-import {
-  ContractMessage,
-} from '@inject/types'
-import React, {
-  useMemo,
-} from 'react'
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage } from '@inject/types';
+import React, { useMemo } from 'react';
 
-import ApproveTransactionMessage from '../approve-transaction-message/approve-transaction-message'
-import {
-  ApproveTransactionMessageBoxWrapper,
-} from './approve-transaction-message-box.styles'
+import ApproveTransactionMessage from '../approve-transaction-message/approve-transaction-message';
+import { ApproveTransactionMessageBoxWrapper } from './approve-transaction-message-box.styles';
 
 export interface ApproveTransactionMessageBoxProps {
-  messages: ContractMessage[]
-  argumentInfos?: GnoArgumentInfo[]
-  changeMessages?: (messages: ContractMessage[]) => void
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
-  editable?: boolean
-  messageErrors?: (string | undefined)[]
+  messages: ContractMessage[];
+  argumentInfos?: GnoArgumentInfo[];
+  changeMessages?: (messages: ContractMessage[]) => void;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
+  editable?: boolean;
+  messageErrors?: (string | undefined)[];
 }
 
 const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> = ({
@@ -28,35 +20,34 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
   changeMessages,
   openScannerLink,
   editable = true,
-  messageErrors,
+  messageErrors
 }) => {
   const argumentKeyMap = useMemo(() => {
     if (!argumentInfos) {
-      return undefined
+      return undefined;
     }
 
     return argumentInfos.reduce(
       (acc, info) => {
-        acc[info.index] = info.key
-        return acc
+        acc[info.index] = info.key;
+        return acc;
       },
-      {
-      } as Record<number, string>,
-    )
-  }, [argumentInfos])
+      {} as Record<number, string>
+    );
+  }, [argumentInfos]);
 
   const changeMessage = (index: number, message: ContractMessage): void => {
     if (!changeMessages) {
-      return
+      return;
     }
 
-    const newMessages = [...messages]
-    newMessages[index] = message
-    changeMessages(newMessages)
-  }
+    const newMessages = [...messages];
+    newMessages[index] = message;
+    changeMessages(newMessages);
+  };
 
   if (messages.length === 0) {
-    return <React.Fragment />
+    return <React.Fragment />;
   }
 
   return (
@@ -74,7 +65,7 @@ const ApproveTransactionMessageBox: React.FC<ApproveTransactionMessageBoxProps> 
         />
       ))}
     </ApproveTransactionMessageBoxWrapper>
-  )
-}
+  );
+};
 
-export default ApproveTransactionMessageBox
+export default ApproveTransactionMessageBox;

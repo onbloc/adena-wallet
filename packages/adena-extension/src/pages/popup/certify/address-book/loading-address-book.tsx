@@ -1,21 +1,13 @@
-import plus from '@assets/plus.svg'
-import {
-  Loading, SkeletonBoxStyle, Text,
-} from '@components/atoms'
-import {
-  CloseShadowButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
-import React, {
-  ReactElement,
-} from 'react'
-import styled from 'styled-components'
+import plus from '@assets/plus.svg';
+import { Loading, SkeletonBoxStyle, Text } from '@components/atoms';
+import { CloseShadowButton } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 const LoadingAddressBook = (): ReactElement<any> => {
-  const {
-    goBack,
-  } = useAppNavigate()
+  const { goBack } = useAppNavigate();
 
   return (
     <Wrapper>
@@ -25,9 +17,7 @@ const LoadingAddressBook = (): ReactElement<any> => {
       </TopSection>
 
       <ListWrapper>
-        {Array.from({
-          length: 4,
-        }, (_, i) => (
+        {Array.from({ length: 4 }, (_, i) => (
           <SkeletonBox key={i}>
             <Loading.Round width='80px' height='10px' radius='24px' />
             <RoundsBox>
@@ -38,13 +28,13 @@ const LoadingAddressBook = (): ReactElement<any> => {
       </ListWrapper>
       <CloseShadowButton onClick={goBack} />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
   height: 100%;
@@ -57,46 +47,44 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
   }
-`
+`;
 
 const TopSection = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   margin-bottom: 12px;
-`
+`;
 
 const ListWrapper = styled.div`
   ${mixins.flex({
     direction: 'column',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
   gap: 12px;
-`
+`;
 
 const AddButton = styled.button`
   width: 24px;
   height: 24px;
   background: url(${plus}) no-repeat center center / 100% 100%;
-`
+`;
 
 const RoundsBox = styled.div`
-  ${mixins.flex({
-    align: 'flex-end',
-  })};
+  ${mixins.flex({ align: 'flex-end' })};
   margin-left: auto;
-`
+`;
 
 const SkeletonBox = styled(SkeletonBoxStyle)`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })}
   width: 100%;
   height: 60px;
-`
+`;
 
-export default LoadingAddressBook
+export default LoadingAddressBook;

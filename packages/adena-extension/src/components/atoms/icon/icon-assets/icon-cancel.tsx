@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconCancel = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconCancel = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -37,7 +31,7 @@ const IconCancel = ({
         strokeLinecap='round'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconCancel
+export default IconCancel;

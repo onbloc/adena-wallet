@@ -1,39 +1,33 @@
-import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  useCallback,
-} from 'react'
-import styled from 'styled-components'
+import TransferLedgerReject from '@components/pages/transfer-ledger-reject/transfer-ledger-reject';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
+import React, { useCallback } from 'react';
+import styled from 'styled-components';
 
 const TransferLedgerRejectLayout = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: 100%;
   padding: 24px 20px;
   margin-bottom: 60px;
-`
+`;
 
 const TransferLedgerRejectContainer: React.FC = () => {
-  const {
-    navigate,
-  } = useAppNavigate()
+  const { navigate } = useAppNavigate();
 
   const onClickClose = useCallback(() => {
-    navigate(RoutePath.Wallet)
-  }, [navigate])
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
 
   return (
     <TransferLedgerRejectLayout>
       <TransferLedgerReject onClickClose={onClickClose} />
     </TransferLedgerRejectLayout>
-  )
-}
+  );
+};
 
-export default TransferLedgerRejectContainer
+export default TransferLedgerRejectContainer;

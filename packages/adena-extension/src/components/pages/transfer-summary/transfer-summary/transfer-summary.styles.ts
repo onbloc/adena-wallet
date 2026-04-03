@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const TransferSummaryWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   position: relative;
   padding: 24px 20px 0;
@@ -70,4 +68,4 @@ export const TransferSummaryWrapper = styled.div`
     height: 116px;
     flex-shrink: 0;
   }
-`
+`;

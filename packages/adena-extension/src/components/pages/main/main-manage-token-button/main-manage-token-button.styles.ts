@@ -1,13 +1,9 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const MainManageTokenButtonWrapper = styled.div`
-  ${mixins.flex({
-    direction: 'row',
-  })};
+  ${mixins.flex({ direction: 'row' })};
   flex-shrink: 0;
   width: 156px;
   height: 24px;
@@ -28,4 +24,4 @@ export const MainManageTokenButtonWrapper = styled.div`
     color: ${getTheme('neutral', 'a')};
     ${fonts.body1Reg};
   }
-`
+`;

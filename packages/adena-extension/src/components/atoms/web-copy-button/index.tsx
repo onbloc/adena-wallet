@@ -1,31 +1,21 @@
-import IconCopy from '@assets/web/icon-copy'
+import IconCopy from '@assets/web/icon-copy';
 import React, {
-  CSSProperties, useCallback, useEffect, useMemo, useState,
-} from 'react'
-import styled, {
-  css, RuleSet, useTheme,
-} from 'styled-components'
+  CSSProperties, useCallback, useEffect, useMemo, useState
+} from 'react';
+import styled, { css, RuleSet, useTheme } from 'styled-components';
 
-import {
-  Row, View,
-} from '../base'
-import {
-  WebText,
-} from '../web-text'
+import { Row, View } from '../base';
+import { WebText } from '../web-text';
 
 interface WebCopyButtonProps {
-  width?: CSSProperties['width']
-  height?: CSSProperties['height']
-  copyText: string
-  clearClipboardTimeout?: number
-  onCopy?: () => void
+  width?: CSSProperties['width'];
+  height?: CSSProperties['height'];
+  copyText: string;
+  clearClipboardTimeout?: number;
+  onCopy?: () => void;
 }
 
-const StyledContainer = styled(Row).withConfig({
-  shouldForwardProp: (prop): boolean => !['clicked'].includes(prop),
-})<{
-  clicked: boolean
-}>`
+const StyledContainer = styled(Row).withConfig({ shouldForwardProp: (prop): boolean => !['clicked'].includes(prop) })<{ clicked: boolean }>`
   display: flex;
   padding: 0 14px 0 14px;
   gap: 4px;
@@ -43,97 +33,91 @@ const StyledContainer = styled(Row).withConfig({
   }
 
   svg * {
-    stroke: ${({
-      theme,
-    }): string => theme.webNeutral._500};
+    stroke: ${({ theme }): string => theme.webNeutral._500};
   }
 
   &:hover {
     background: rgba(255, 255, 255, 0.08);
     svg * {
-      stroke: ${({
-        theme,
-      }): string => theme.webNeutral._100};
+      stroke: ${({ theme }): string => theme.webNeutral._100};
     }
   }
 
-  ${({
-    clicked,
-  }): RuleSet | string =>
+  ${({ clicked }): RuleSet | string =>
     clicked
       ? css`
           background: rgba(255, 255, 255, 0.08);
         `
       : ''}
-`
+`;
 
-const CLEAR_CLIPBOARD_TIMEOUT = 30_000 // 30 seconds
-const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000 // 2 seconds
+const CLEAR_CLIPBOARD_TIMEOUT = 30_000; // 30 seconds
+const COPY_TOOLTIP_DISPLAY_TIMEOUT = 2_000; // 2 seconds
 
 export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   width = 'fit-content',
   height = 32,
   copyText,
   clearClipboardTimeout = CLEAR_CLIPBOARD_TIMEOUT,
-  onCopy,
+  onCopy
 }) => {
-  const theme = useTheme()
-  const [clicked, setClicked] = useState(false)
-  const [clickedAt, setClickedAt] = useState(0)
-  const [mouseover, setMouseover] = useState(false)
+  const theme = useTheme();
+  const [clicked, setClicked] = useState(false);
+  const [clickedAt, setClickedAt] = useState(0);
+  const [mouseover, setMouseover] = useState(false);
 
   const buttonStr = useMemo(() => {
     if (clicked) {
-      return 'Copied!'
+      return 'Copied!';
     }
-    return 'Copy'
-  }, [clicked])
+    return 'Copy';
+  }, [clicked]);
 
   const activated = useMemo(() => {
-    return mouseover || clicked
-  }, [mouseover, clicked])
+    return mouseover || clicked;
+  }, [mouseover, clicked]);
 
   const onMouseDown = useCallback(() => {
     if (clicked) {
-      return
+      return;
     }
-    setClicked(true)
-    setClickedAt(Date.now())
+    setClicked(true);
+    setClickedAt(Date.now());
 
-    navigator.clipboard.writeText(copyText)
-    onCopy && onCopy()
+    navigator.clipboard.writeText(copyText);
+    onCopy && onCopy();
 
     setTimeout(() => {
-      setClicked(false)
-    }, COPY_TOOLTIP_DISPLAY_TIMEOUT)
-  }, [clicked, copyText, onCopy])
+      setClicked(false);
+    }, COPY_TOOLTIP_DISPLAY_TIMEOUT);
+  }, [clicked, copyText, onCopy]);
 
   const onMouseOver = useCallback(() => {
-    setMouseover(true)
-  }, [])
+    setMouseover(true);
+  }, []);
 
   const onMouseLeave = useCallback(() => {
-    setMouseover(false)
-  }, [])
+    setMouseover(false);
+  }, []);
 
   useEffect(() => {
-    console.log('clear start clipboard')
+    console.log('clear start clipboard');
 
     const timeout = setTimeout(() => {
-      console.log('clear clipboard')
-      navigator?.clipboard?.writeText('')
-    }, clearClipboardTimeout)
+      console.log('clear clipboard');
+      navigator?.clipboard?.writeText('');
+    }, clearClipboardTimeout);
 
     return () => {
-      clearTimeout(timeout)
-    }
-  }, [clickedAt, clearClipboardTimeout])
+      clearTimeout(timeout);
+    };
+  }, [clickedAt, clearClipboardTimeout]);
 
   return (
     <StyledContainer
       style={{
         width,
-        height,
+        height
       }}
       clicked={clicked}
       onMouseDown={onMouseDown}
@@ -158,5 +142,5 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
             </React.Fragment>
           )}
     </StyledContainer>
-  )
-}
+  );
+};

@@ -1,6 +1,4 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
 const IconAirgap = (): JSX.Element => (
   <svg width='17' height='18' viewBox='0 0 17 18' fill='none' xmlns='http://www.w3.org/2000/svg'>
@@ -15,6 +13,6 @@ const IconAirgap = (): JSX.Element => (
       </radialGradient>
     </defs>
   </svg>
-)
+);
 
-export default IconAirgap
+export default IconAirgap;

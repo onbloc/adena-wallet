@@ -1,10 +1,10 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveAddingNetworkWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: auto;
@@ -37,4 +37,4 @@ export const ApproveAddingNetworkWrapper = styled.div`
     width: 100%;
     margin-top: 15px;
   }
-`
+`;

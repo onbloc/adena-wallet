@@ -1,66 +1,48 @@
-import IconArraowDown from '@assets/arrowS-down-gray.svg'
-import IconArraowUp from '@assets/arrowS-up-gray.svg'
-import UnknownLogo from '@assets/common-unknown-logo.svg'
-import {
-  Button, Text,
-} from '@components/atoms'
-import {
-  BottomFixedLoadingButtonGroup,
-} from '@components/molecules'
-import {
-  GnoArgumentInfo,
-} from '@inject/message/methods/gno-connect'
-import {
-  ContractMessage,
-} from '@inject/types'
-import {
-  EncodeTxSignature,
-} from '@services/index'
-import {
-  NetworkFee as NetworkFeeType,
-} from '@types'
-import React, {
-  useCallback, useEffect, useMemo,
-} from 'react'
+import IconArraowDown from '@assets/arrowS-down-gray.svg';
+import IconArraowUp from '@assets/arrowS-up-gray.svg';
+import UnknownLogo from '@assets/common-unknown-logo.svg';
+import { Button, Text } from '@components/atoms';
+import { BottomFixedLoadingButtonGroup } from '@components/molecules';
+import { GnoArgumentInfo } from '@inject/message/methods/gno-connect';
+import { ContractMessage } from '@inject/types';
+import { EncodeTxSignature } from '@services/index';
+import { NetworkFee as NetworkFeeType } from '@types';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
-import {
-  ApproveTransactionLoading,
-} from '../approve-transaction-loading'
-import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box'
-import NetworkFee from '../network-fee/network-fee'
-import {
-  ApproveSignedDocumentWrapper,
-} from './approve-signed-document.styles'
+import { ApproveTransactionLoading } from '../approve-transaction-loading';
+import ApproveTransactionMessageBox from '../approve-transaction-message-box/approve-transaction-message-box';
+import NetworkFee from '../network-fee/network-fee';
+import { ApproveSignedDocumentWrapper } from './approve-signed-document.styles';
 
 export interface ApproveSignedDocumentProps {
-  loading: boolean
-  title: string
-  logo: string
-  domain: string
+  loading: boolean;
+  title: string;
+  logo: string;
+  domain: string;
   contracts: {
-    type: string
-    function: string
-    value: string
-  }[]
-  signatures: EncodeTxSignature[]
-  memo: string
-  hasMemo: boolean
-  isErrorNetworkFee?: boolean
-  isNetworkFeeLoading: boolean
-  networkFee: NetworkFeeType | null
-  transactionData: string
-  opened: boolean
-  argumentInfos?: GnoArgumentInfo[]
-  processing: boolean
-  done: boolean
-  transactionMessages: ContractMessage[]
-  maxDepositAmount?: number
-  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void
-  onToggleTransactionData: (opened: boolean) => void
-  onResponse: () => void
-  onTimeout: () => void
-  onClickConfirm: () => void
-  onClickCancel: () => void
+    type: string;
+    function: string;
+    value: string;
+  }[];
+  signatures: EncodeTxSignature[];
+  memo: string;
+  hasMemo: boolean;
+  isErrorNetworkFee?: boolean;
+  isNetworkFeeLoading: boolean;
+  networkFee: NetworkFeeType | null;
+  transactionData: string;
+  opened: boolean;
+  argumentInfos?: GnoArgumentInfo[];
+  processing: boolean;
+  done: boolean;
+  transactionMessages: ContractMessage[];
+  maxDepositAmount?: number;
+  openScannerLink: (path: string, parameters?: { [key in string]: string }) => void;
+  onToggleTransactionData: (opened: boolean) => void;
+  onResponse: () => void;
+  onTimeout: () => void;
+  onClickConfirm: () => void;
+  onClickCancel: () => void;
 }
 
 export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
@@ -83,44 +65,44 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
   onResponse,
   onClickConfirm,
   onClickCancel,
-  openScannerLink,
+  openScannerLink
 }) => {
   const disabledApprove = useMemo(() => {
     if (isNetworkFeeLoading) {
-      return true
+      return true;
     }
 
     if (isErrorNetworkFee) {
-      return true
+      return true;
     }
 
-    return Number(networkFee?.amount || 0) <= 0
-  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee])
+    return Number(networkFee?.amount || 0) <= 0;
+  }, [isErrorNetworkFee, isNetworkFeeLoading, networkFee]);
 
   const networkFeeErrorMessage = useMemo(() => {
     if (isErrorNetworkFee) {
-      return 'Insufficient network fee'
+      return 'Insufficient network fee';
     }
 
-    return ''
-  }, [isErrorNetworkFee])
+    return '';
+  }, [isErrorNetworkFee]);
 
   const onClickConfirmButton = useCallback(() => {
     if (disabledApprove) {
-      return
+      return;
     }
 
-    onClickConfirm()
-  }, [onClickConfirm, disabledApprove])
+    onClickConfirm();
+  }, [onClickConfirm, disabledApprove]);
 
   useEffect(() => {
     if (done) {
-      onResponse()
+      onResponse();
     }
-  }, [done, onResponse])
+  }, [done, onResponse]);
 
   if (loading) {
-    return <ApproveTransactionLoading rightButtonText='Approve' />
+    return <ApproveTransactionLoading rightButtonText='Approve' />;
   }
 
   return (
@@ -194,16 +176,16 @@ export const ApproveSignedDocument: React.FC<ApproveSignedDocumentProps> = ({
         filled
         leftButton={{
           text: 'Cancel',
-          onClick: onClickCancel,
+          onClick: onClickCancel
         }}
         rightButton={{
           primary: true,
           disabled: disabledApprove,
           text: 'Approve',
           loading: processing,
-          onClick: onClickConfirmButton,
+          onClick: onClickConfirmButton
         }}
       />
     </ApproveSignedDocumentWrapper>
-  )
-}
+  );
+};

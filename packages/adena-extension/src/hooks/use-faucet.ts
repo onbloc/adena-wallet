@@ -1,76 +1,52 @@
-import {
-  GNOT_TOKEN,
-} from '@common/constants/token.constant'
-import {
-  waitForRun,
-} from '@common/utils/timeout-utils'
-import {
-  FaucetResponse,
-} from '@repositories/common/response'
-import {
-  useMutation, useQuery,
-} from '@tanstack/react-query'
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { waitForRun } from '@common/utils/timeout-utils';
+import { FaucetResponse } from '@repositories/common/response';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
-import {
-  useAdenaContext,
-} from './use-context'
-import {
-  useCurrentAccount,
-} from './use-current-account'
-import {
-  useNetwork,
-} from './use-network'
+import { useAdenaContext } from './use-context';
+import { useCurrentAccount } from './use-current-account';
+import { useNetwork } from './use-network';
 
 export type UseFaucetReturn = {
-  isSupported: boolean
-  isLoading: boolean
+  isSupported: boolean;
+  isLoading: boolean;
   faucet: () => Promise<{
-    success: boolean
-    message: string
-  }>
-}
+    success: boolean;
+    message: string;
+  }>;
+};
 
-const FAUCET_AMOUNT = 10_000_000 + GNOT_TOKEN.denom
+const FAUCET_AMOUNT = 10_000_000 + GNOT_TOKEN.denom;
 
-const FAUCET_UNEXPECTED_ERROR_MESSAGES = 'Unexpected Errors.'
+const FAUCET_UNEXPECTED_ERROR_MESSAGES = 'Unexpected Errors.';
 
 export const useFaucet = (): UseFaucetReturn => {
-  const {
-    currentNetwork,
-  } = useNetwork()
-  const {
-    currentAddress,
-  } = useCurrentAccount()
-  const {
-    faucetService,
-  } = useAdenaContext()
+  const { currentNetwork } = useNetwork();
+  const { currentAddress } = useCurrentAccount();
+  const { faucetService } = useAdenaContext();
 
-  const {
-    data: isSupported = false,
-  } = useQuery<boolean>({
+  const { data: isSupported = false } = useQuery<boolean>({
     queryKey: ['faucet/isSupported', currentNetwork, faucetService],
-    queryFn: () => faucetService.availFaucet(currentNetwork.chainId),
-  })
+    queryFn: () => faucetService.availFaucet(currentNetwork.chainId)
+  });
 
-  const {
-    isPending: isLoading, mutate,
-  } = useMutation({
+  const { isPending: isLoading, mutate } = useMutation({
     mutationFn: (to: string) =>
       waitForRun<FaucetResponse>(
         () => faucetService.faucet(currentNetwork.chainId, to, FAUCET_AMOUNT),
-        1000,
-      ),
-  })
+        1000
+      )
+  });
 
   const faucet = async (): Promise<{
-    success: boolean
-    message: string
+    success: boolean;
+    message: string;
   }> => {
     if (!currentAddress) {
       return {
         success: false,
-        message: FAUCET_UNEXPECTED_ERROR_MESSAGES,
-      }
+        message: FAUCET_UNEXPECTED_ERROR_MESSAGES
+      };
     }
     return new Promise((resolve) => {
       mutate(currentAddress, {
@@ -78,15 +54,15 @@ export const useFaucet = (): UseFaucetReturn => {
         onError: () =>
           resolve({
             success: false,
-            message: FAUCET_UNEXPECTED_ERROR_MESSAGES,
-          }),
-      })
-    })
-  }
+            message: FAUCET_UNEXPECTED_ERROR_MESSAGES
+          })
+      });
+    });
+  };
 
   return {
     isSupported,
     isLoading,
-    faucet,
-  }
-}
+    faucet
+  };
+};

@@ -1,12 +1,8 @@
-import {
-  SideMenuAccountListProps,
-} from '@types'
-import React from 'react'
+import { SideMenuAccountListProps } from '@types';
+import React from 'react';
 
-import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item'
-import {
-  SideMenuAccountListWrapper,
-} from './side-menu-account-list.styles'
+import SideMenuAccountItem from '../side-menu-account-item/side-menu-account-item';
+import { SideMenuAccountListWrapper } from './side-menu-account-list.styles';
 
 const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   currentAccountId,
@@ -15,7 +11,7 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
   changeAccount,
   moveGnoscan,
   focusAccountId,
-  moveAccountDetail,
+  moveAccountDetail
 }) => {
   return (
     <SideMenuAccountListWrapper>
@@ -32,7 +28,7 @@ const SideMenuAccountList: React.FC<SideMenuAccountListProps> = ({
         />
       ))}
     </SideMenuAccountListWrapper>
-  )
-}
+  );
+};
 
-export default SideMenuAccountList
+export default SideMenuAccountList;

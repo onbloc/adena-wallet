@@ -1,47 +1,39 @@
-import IconAlert from '@assets/web/alert-rounded.svg'
-import IconLink from '@assets/web/external-link.svg'
+import IconAlert from '@assets/web/alert-rounded.svg';
+import IconLink from '@assets/web/external-link.svg';
 import {
-  Pressable, Row, View, WebButton, WebImg, WebText,
-} from '@components/atoms'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import useLink from '@hooks/use-link'
-import {
-  ReactElement,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Pressable, Row, View, WebButton, WebImg, WebText
+} from '@components/atoms';
+import { WebTitleWithDescription } from '@components/molecules';
+import useLink from '@hooks/use-link';
+import { ReactElement } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   height: 345px;
   row-gap: 40px;
   align-items: flex-start;
-`
+`;
 
 export type SensitiveInfoStepProps = {
-  link: string
-  desc: string
-  onClickNext: () => void
-}
+  link: string;
+  desc: string;
+  onClickNext: () => void;
+};
 
 export const SensitiveInfoStep = ({
   link,
   desc,
-  onClickNext,
+  onClickNext
 }: SensitiveInfoStepProps): ReactElement<any> => {
-  const theme = useTheme()
-  const {
-    openLink,
-  } = useLink()
+  const theme = useTheme();
+  const { openLink } = useLink();
 
   return (
     <StyledContainer>
       <View style={{
         rowGap: 32,
-        alignItems: 'flex-start',
+        alignItems: 'flex-start'
       }}
       >
         <WebImg src={IconAlert} size={88} />
@@ -53,19 +45,14 @@ export const SensitiveInfoStep = ({
         onClick={onClickNext}
         text='Next'
         rightIcon='chevronRight'
-        style={{
-          marginTop: -8,
-        }}
+        style={{ marginTop: -8 }}
       />
       <Pressable
         onClick={(): void => {
-          openLink(link)
+          openLink(link);
         }}
       >
-        <Row style={{
-          columnGap: 6,
-        }}
-        >
+        <Row style={{ columnGap: 6 }}>
           <WebText type='title5' color={theme.webNeutral._600}>
             Learn More
           </WebText>
@@ -73,7 +60,7 @@ export const SensitiveInfoStep = ({
         </Row>
       </Pressable>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SensitiveInfoStep
+export default SensitiveInfoStep;

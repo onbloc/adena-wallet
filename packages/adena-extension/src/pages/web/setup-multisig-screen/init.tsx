@@ -1,69 +1,58 @@
-import IconAirgap from '@assets/web/airgap-green.svg'
-import IconCreate from '@assets/web/icon-create'
-import IconImport from '@assets/web/icon-import'
-import IconLink from '@assets/web/link.svg'
+import IconAirgap from '@assets/web/airgap-green.svg';
+import IconCreate from '@assets/web/icon-create';
+import IconImport from '@assets/web/icon-import';
+import IconLink from '@assets/web/link.svg';
+import { ADENA_MULTISIG_GUIDE_LINK } from '@common/constants/resource.constant';
 import {
-  ADENA_MULTISIG_GUIDE_LINK,
-} from '@common/constants/resource.constant'
+  Pressable, Row, View, WebImg, WebText
+} from '@components/atoms';
+import WebMainButton from '@components/atoms/web-main-button';
+import { WebTitleWithDescription } from '@components/molecules';
+import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box';
+import useLink from '@hooks/use-link';
+import { MultisigAccountMode } from '@hooks/web/setup-multisig/use-setup-multisig-screen';
 import {
-  Pressable, Row, View, WebImg, WebText,
-} from '@components/atoms'
-import WebMainButton from '@components/atoms/web-main-button'
-import {
-  WebTitleWithDescription,
-} from '@components/molecules'
-import WebWarningDescriptionBox from '@components/molecules/web-warning-description-box/web-warning-description-box'
-import useLink from '@hooks/use-link'
-import {
-  MultisigAccountMode,
-} from '@hooks/web/setup-multisig/use-setup-multisig-screen'
-import {
-  Account, isAirgapAccount, isMultisigAccount, validateAddress,
-} from 'adena-module'
-import React from 'react'
-import styled from 'styled-components'
+  Account, isAirgapAccount, isMultisigAccount, validateAddress
+} from 'adena-module';
+import React from 'react';
+import styled from 'styled-components';
 
 const description
-  = 'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.'
+  = 'Adena does not rely on any backend servers for multisig — everything is executed fully on-chain for maximum security. Creating or importing a multisig account uses the same deterministic on-chain parameters.';
 
 interface SetupMultisigInitProps {
-  initSetup: (mode: MultisigAccountMode) => void
-  currentAccount: Account | null
-  currentAddress: string | null
+  initSetup: (mode: MultisigAccountMode) => void;
+  currentAccount: Account | null;
+  currentAddress: string | null;
 }
 
 const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
   initSetup,
   currentAccount,
-  currentAddress,
+  currentAddress
 }) => {
-  const {
-    openLink,
-  } = useLink()
+  const { openLink } = useLink();
 
-  const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null)
-  const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null)
+  const createMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
+  const importMultisigAccountButtonRef = React.useRef<HTMLButtonElement>(null);
 
   const cannotBeUsedAsSigner
-    = !!currentAccount && (isMultisigAccount(currentAccount) || isAirgapAccount(currentAccount))
+    = !!currentAccount && (isMultisigAccount(currentAccount) || isAirgapAccount(currentAccount));
 
   const isCreateDisabled
-    = !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner
+    = !currentAddress || !validateAddress(currentAddress) || cannotBeUsedAsSigner;
 
   const moveSetupMultisigAccountHelp = React.useCallback(() => {
-    openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT)
-  }, [openLink])
+    openLink(ADENA_MULTISIG_GUIDE_LINK.SETUP_ACCOUNT);
+  }, [openLink]);
 
   const moveCreateMultisigTransactionHelp = React.useCallback(() => {
-    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION)
-  }, [openLink])
+    openLink(ADENA_MULTISIG_GUIDE_LINK.CREATE_TRANSACTION);
+  }, [openLink]);
 
   return (
     <StyledContainer>
-      <View style={{
-        marginBottom: 8,
-      }}
-      >
+      <View style={{ marginBottom: 8 }}>
         <WebImg src={IconAirgap} size={88} />
       </View>
 
@@ -77,7 +66,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
 
       <Row style={{
         width: '100%',
-        columnGap: 12,
+        columnGap: 12
       }}
       >
         <WebMainButton
@@ -97,10 +86,7 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
         />
       </Row>
 
-      <View style={{
-        gap: 8,
-      }}
-      >
+      <View style={{ gap: 8 }}>
         <Pressable onClick={moveSetupMultisigAccountHelp}>
           <StyledLinkWrapper>
             <WebText type='title6' color='#6C717A'>
@@ -120,15 +106,15 @@ const SetupMultisigInit: React.FC<SetupMultisigInitProps> = ({
         </Pressable>
       </View>
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetupMultisigInit
+export default SetupMultisigInit;
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
 const StyledLinkWrapper = styled(Row)`
   gap: 6px;
@@ -137,4 +123,4 @@ const StyledLinkWrapper = styled(Row)`
   & > * {
     color: #6c717a;
   }
-`
+`;

@@ -1,43 +1,31 @@
-import IconFailed from '@assets/connect-fail-permission.svg'
-import {
-  CommonFullContentLayout, Text, View,
-} from '@components/atoms'
-import {
-  BottomFixedButton,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  useCallback,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import IconFailed from '@assets/connect-fail-permission.svg';
+import { CommonFullContentLayout, Text, View } from '@components/atoms';
+import { BottomFixedButton } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { RoutePath } from '@types';
+import React, { useCallback } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledFailedWrapper = styled(View)`
   margin-top: 56px;
   gap: 23px;
   justify-content: center;
   align-items: center;
-`
+`;
 
 const StyledDescriptionWrapper = styled(View)`
   gap: 12px;
   justify-content: center;
   align-items: center;
-`
+`;
 
 const BroadcastTransactionFailed: React.FC = () => {
-  const theme = useTheme()
-  const {
-    navigate,
-  } = useAppNavigate()
+  const theme = useTheme();
+  const { navigate } = useAppNavigate();
 
   const onClickClose = useCallback(() => {
-    navigate(RoutePath.Wallet)
-  }, [navigate])
+    navigate(RoutePath.Wallet);
+  }, [navigate]);
 
   return (
     <CommonFullContentLayout>
@@ -58,7 +46,7 @@ const BroadcastTransactionFailed: React.FC = () => {
         onClick={onClickClose}
       />
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default BroadcastTransactionFailed
+export default BroadcastTransactionFailed;

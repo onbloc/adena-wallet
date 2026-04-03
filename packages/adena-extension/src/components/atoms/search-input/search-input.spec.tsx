@@ -1,33 +1,21 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  SearchInput, SearchInputProps,
-} from '.'
+import { SearchInput, SearchInputProps } from '.';
 
 describe('SearchInput Component', () => {
   it('SearchInput render', () => {
     const args: SearchInputProps = {
       keyword: 'as',
       onChangeKeyword: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -35,7 +23,7 @@ describe('SearchInput Component', () => {
         <ThemeProvider theme={theme}>
           <SearchInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

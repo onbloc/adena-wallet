@@ -1,23 +1,13 @@
-import {
-  ADENA_DOCS_PAGE,
-} from '@common/constants/resource.constant'
-import {
-  View, WebMain,
-} from '@components/atoms'
-import {
-  WebMainAccountHeader,
-} from '@components/pages/web/main-account-header'
-import {
-  WebSecurityHeader,
-} from '@components/pages/web/security-header'
-import SensitiveInfoStep from '@components/pages/web/sensitive-info-step'
-import useWalletExportScreen from '@hooks/web/wallet-export/use-wallet-export-screen'
-import React, {
-  useMemo,
-} from 'react'
+import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { View, WebMain } from '@components/atoms';
+import { WebMainAccountHeader } from '@components/pages/web/main-account-header';
+import { WebSecurityHeader } from '@components/pages/web/security-header';
+import SensitiveInfoStep from '@components/pages/web/sensitive-info-step';
+import useWalletExportScreen from '@hooks/web/wallet-export/use-wallet-export-screen';
+import React, { useMemo } from 'react';
 
-import WalletExportCheckPassword from './check-password'
-import WalletExportResult from './result'
+import WalletExportCheckPassword from './check-password';
+import WalletExportResult from './result';
 
 const WalletExportScreen: React.FC = () => {
   const {
@@ -29,25 +19,25 @@ const WalletExportScreen: React.FC = () => {
     backStep,
     initWalletExport,
     checkPassword,
-    moveExport,
-  } = useWalletExportScreen()
+    moveExport
+  } = useWalletExportScreen();
 
   const spacing = useMemo(() => {
-    return null
-  }, [])
+    return null;
+  }, []);
 
   const description = useMemo(() => {
     if (exportType === 'PRIVATE_KEY') {
-      return 'You’re about to reveal your private key. Your private key is the only way to\nrecover your account. Be sure to store it in a safe place.'
+      return 'You’re about to reveal your private key. Your private key is the only way to\nrecover your account. Be sure to store it in a safe place.';
     }
-    return 'You are about to reveal your seed phrase. Your seed phrase is the only\nway to recover your wallet. Be sure to store it in a safe place.'
-  }, [exportType])
+    return 'You are about to reveal your seed phrase. Your seed phrase is the only\nway to recover your wallet. Be sure to store it in a safe place.';
+  }, [exportType]);
 
   return (
     <WebMain spacing={spacing}>
       <View style={{
         width: '100%',
-        marginBottom: 16,
+        marginBottom: 16
       }}
       >
         {walletExportState === 'INIT' && indicatorInfo.stepLength > 1 && (
@@ -88,7 +78,7 @@ const WalletExportScreen: React.FC = () => {
         <WalletExportResult exportType={exportType} exportData={exportData} />
       )}
     </WebMain>
-  )
-}
+  );
+};
 
-export default WalletExportScreen
+export default WalletExportScreen;

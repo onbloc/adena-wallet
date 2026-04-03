@@ -1,50 +1,46 @@
-import IconEdit from '@assets/icon-edit'
-import React, {
-  useCallback, useMemo, useState,
-} from 'react'
+import IconEdit from '@assets/icon-edit';
+import React, { useCallback, useMemo, useState } from 'react';
 
-import {
-  AccountNameInputWrapper,
-} from './account-name-input.styles'
+import { AccountNameInputWrapper } from './account-name-input.styles';
 
 export interface AccountNameInputProps {
-  originName: string
-  name: string
-  setName: (name: string) => void
-  reset: () => void
+  originName: string;
+  name: string;
+  setName: (name: string) => void;
+  reset: () => void;
 }
 
 const AccountNameInput: React.FC<AccountNameInputProps> = ({
   originName,
   name,
   setName,
-  reset,
+  reset
 }) => {
-  const [focused, setFocused] = useState(false)
+  const [focused, setFocused] = useState(false);
 
   const extended = useMemo(() => {
-    return focused
-  }, [focused])
+    return focused;
+  }, [focused]);
 
   const onFocus = useCallback(() => {
-    setFocused(true)
-  }, [setFocused])
+    setFocused(true);
+  }, [setFocused]);
 
   const onFocusOut = useCallback(() => {
-    setFocused(false)
-  }, [setFocused])
+    setFocused(false);
+  }, [setFocused]);
 
   const onChangeName = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setName(event.target.value)
+      setName(event.target.value);
     },
-    [setName],
-  )
+    [setName]
+  );
 
   const onClickReset = useCallback(() => {
-    reset()
-    setFocused(false)
-  }, [reset])
+    reset();
+    setFocused(false);
+  }, [reset]);
 
   return (
     <AccountNameInputWrapper className={`${extended && 'extended'}`}>
@@ -62,7 +58,7 @@ const AccountNameInput: React.FC<AccountNameInputProps> = ({
         <IconEdit />
       </div>
     </AccountNameInputWrapper>
-  )
-}
+  );
+};
 
-export default AccountNameInput
+export default AccountNameInput;

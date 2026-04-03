@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTCollectionAssetCard, {
-  NFTCollectionAssetCardProps,
-} from './nft-collection-asset-card'
+import NFTCollectionAssetCard, { NFTCollectionAssetCardProps } from './nft-collection-asset-card';
 
 describe('NFTCollectionAssetCard Component', () => {
   it('NFTCollectionAssetCard render', () => {
@@ -35,14 +21,13 @@ describe('NFTCollectionAssetCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
       moveAssetPage: () => {
-        return
+        return;
       },
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
-    }
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>
+    };
 
     render(
       <RecoilRoot>
@@ -50,7 +35,7 @@ describe('NFTCollectionAssetCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTCollectionAssetCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

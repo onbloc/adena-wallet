@@ -1,36 +1,28 @@
-import LeftArrowIcon from '@assets/arrowL-left.svg'
-import {
-  CustomNetworkInput, SubHeader,
-} from '@components/atoms'
-import {
-  BottomFixedButtonGroup,
-} from '@components/molecules'
-import React, {
-  useCallback, useMemo,
-} from 'react'
+import LeftArrowIcon from '@assets/arrowL-left.svg';
+import { CustomNetworkInput, SubHeader } from '@components/atoms';
+import { BottomFixedButtonGroup } from '@components/molecules';
+import React, { useCallback, useMemo } from 'react';
 
-import RemoveNetworkButton from '../remove-network-button/remove-network-button'
-import {
-  EditNetworkWrapper,
-} from './edit-network.styles'
+import RemoveNetworkButton from '../remove-network-button/remove-network-button';
+import { EditNetworkWrapper } from './edit-network.styles';
 
 export interface EditNetworkProps {
-  name: string
-  rpcUrl: string
-  rpcUrlError?: string
-  indexerUrl: string
-  indexerUrlError?: string
-  chainIdError?: string
-  chainId: string
-  savable: boolean
-  editType: 'rpc-only' | 'all-default' | 'all'
-  changeName: (name: string) => void
-  changeRPCUrl: (rpcUrl: string) => void
-  changeIndexerUrl: (indexerUrl: string) => void
-  changeChainId: (chainId: string) => void
-  clearNetwork: () => void
-  saveNetwork: () => void
-  moveBack: () => void
+  name: string;
+  rpcUrl: string;
+  rpcUrlError?: string;
+  indexerUrl: string;
+  indexerUrlError?: string;
+  chainIdError?: string;
+  chainId: string;
+  savable: boolean;
+  editType: 'rpc-only' | 'all-default' | 'all';
+  changeName: (name: string) => void;
+  changeRPCUrl: (rpcUrl: string) => void;
+  changeIndexerUrl: (indexerUrl: string) => void;
+  changeChainId: (chainId: string) => void;
+  clearNetwork: () => void;
+  saveNetwork: () => void;
+  moveBack: () => void;
 }
 
 const EditNetwork: React.FC<EditNetworkProps> = ({
@@ -49,29 +41,29 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
   changeChainId,
   moveBack,
   saveNetwork,
-  clearNetwork,
+  clearNetwork
 }) => {
   const clearButtonText = useMemo(() => {
     if (editType === 'all') {
-      return 'Remove Network'
+      return 'Remove Network';
     }
-    return 'Reset to Default'
-  }, [editType])
+    return 'Reset to Default';
+  }, [editType]);
 
   const onClickBack = useCallback(() => {
-    moveBack()
-  }, [moveBack])
+    moveBack();
+  }, [moveBack]);
 
   const onClickSave = useCallback(() => {
     if (!savable) {
-      return
+      return;
     }
-    saveNetwork()
-  }, [savable, saveNetwork])
+    saveNetwork();
+  }, [savable, saveNetwork]);
 
   const onClickRemoveButton = useCallback(() => {
-    clearNetwork()
-  }, [clearNetwork])
+    clearNetwork();
+  }, [clearNetwork]);
 
   return (
     <EditNetworkWrapper>
@@ -80,7 +72,7 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
           title='Edit Network'
           leftElement={{
             element: <img src={LeftArrowIcon} alt='back icon' />,
-            onClick: onClickBack,
+            onClick: onClickBack
           }}
         />
         <div className='form-wrapper'>
@@ -104,17 +96,17 @@ const EditNetwork: React.FC<EditNetworkProps> = ({
       <BottomFixedButtonGroup
         leftButton={{
           text: 'Cancel',
-          onClick: onClickBack,
+          onClick: onClickBack
         }}
         rightButton={{
           primary: true,
           disabled: !savable,
           text: 'Save',
-          onClick: onClickSave,
+          onClick: onClickSave
         }}
       />
     </EditNetworkWrapper>
-  )
-}
+  );
+};
 
-export default EditNetwork
+export default EditNetwork;

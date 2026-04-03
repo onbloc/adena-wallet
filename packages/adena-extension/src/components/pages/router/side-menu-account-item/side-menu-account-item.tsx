@@ -1,29 +1,19 @@
-import IconEtc from '@assets/icon-etc'
-import IconLink from '@assets/icon-link'
-import IconQRCode from '@assets/icon-qrcode'
-import {
-  GNOT_TOKEN,
-} from '@common/constants/token.constant'
-import {
-  CopyIconButton, Portal,
-} from '@components/atoms'
-import {
-  TokenBalance,
-} from '@components/molecules'
-import {
-  SideMenuAccountItemProps,
-} from '@types'
+import IconEtc from '@assets/icon-etc';
+import IconLink from '@assets/icon-link';
+import IconQRCode from '@assets/icon-qrcode';
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { CopyIconButton, Portal } from '@components/atoms';
+import { TokenBalance } from '@components/molecules';
+import { SideMenuAccountItemProps } from '@types';
 import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+  useCallback, useEffect, useMemo, useState
+} from 'react';
+import { useTheme } from 'styled-components';
 
 import {
   SideMenuAccountItemMoreInfoWrapper,
-  SideMenuAccountItemWrapper,
-} from './side-menu-account-item.styles'
+  SideMenuAccountItemWrapper
+} from './side-menu-account-item.styles';
 
 const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   selected,
@@ -32,82 +22,80 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
   changeAccount,
   focusAccountId,
   moveGnoscan,
-  moveAccountDetail,
+  moveAccountDetail
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
   const {
-    accountId, name, address, balance, type,
-  } = account
-  const [openedMoreInfo, setOpenedMoreInfo] = useState(false)
-  const [positionX, setPositionX] = useState(0)
-  const [positionY, setPositionY] = useState(0)
+    accountId, name, address, balance, type
+  } = account;
+  const [openedMoreInfo, setOpenedMoreInfo] = useState(false);
+  const [positionX, setPositionX] = useState(0);
+  const [positionY, setPositionY] = useState(0);
 
   const displayName = useMemo(() => {
-    return name
-  }, [name])
+    return name;
+  }, [name]);
 
   const label = useMemo(() => {
     switch (type) {
       case 'AIRGAP':
-        return 'Airgap'
+        return 'Airgap';
       case 'WEB3_AUTH':
-        return 'Google'
+        return 'Google';
       case 'PRIVATE_KEY':
-        return 'Imported'
+        return 'Imported';
       case 'LEDGER':
-        return 'Ledger'
+        return 'Ledger';
       case 'MULTISIG':
-        return 'Multsig'
+        return 'Multsig';
       default:
-        return null
+        return null;
     }
-  }, [type])
+  }, [type]);
 
   const onClickItem = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      changeAccount(accountId)
-      focusAccountId(null)
+      event.preventDefault();
+      event.stopPropagation();
+      changeAccount(accountId);
+      focusAccountId(null);
     },
-    [changeAccount, account],
-  )
+    [changeAccount, account]
+  );
 
   const onClickMore = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      const {
-        x, y,
-      } = event.currentTarget.getBoundingClientRect()
-      setPositionX(x)
-      setPositionY(y)
-      focusAccountId(accountId)
+      event.preventDefault();
+      event.stopPropagation();
+      const { x, y } = event.currentTarget.getBoundingClientRect();
+      setPositionX(x);
+      setPositionY(y);
+      focusAccountId(accountId);
     },
-    [openedMoreInfo],
-  )
+    [openedMoreInfo]
+  );
 
   useEffect(() => {
     if (!accountId) {
-      return
+      return;
     }
 
-    const opened = accountId === focusedAccountId
-    setOpenedMoreInfo(opened)
-  }, [accountId, focusedAccountId])
+    const opened = accountId === focusedAccountId;
+    setOpenedMoreInfo(opened);
+  }, [accountId, focusedAccountId]);
 
   useEffect(() => {
     if (accountId !== focusedAccountId) {
-      return
+      return;
     }
 
     const closeModal = (): void => {
-      focusAccountId(null)
-    }
+      focusAccountId(null);
+    };
 
-    window.addEventListener('click', closeModal)
-    return () => window.removeEventListener('click', closeModal)
-  }, [accountId, focusedAccountId, focusAccountId])
+    window.addEventListener('click', closeModal);
+    return () => window.removeEventListener('click', closeModal);
+  }, [accountId, focusedAccountId, focusAccountId]);
 
   return (
     <SideMenuAccountItemWrapper className={selected ? 'selected' : ''} onClick={onClickItem}>
@@ -154,19 +142,19 @@ const SideMenuAccountItem: React.FC<SideMenuAccountItemProps> = ({
         )}
       </div>
     </SideMenuAccountItemWrapper>
-  )
-}
+  );
+};
 
-export default SideMenuAccountItem
+export default SideMenuAccountItem;
 
 interface SideMenuAccountItemMoreInfoProps {
-  accountId: string
-  address: string
-  positionX: number
-  positionY: number
-  close: () => void
-  moveGnoscan: (address: string) => void
-  moveAccountDetail: (accountId: string) => void
+  accountId: string;
+  address: string;
+  positionX: number;
+  positionY: number;
+  close: () => void;
+  moveGnoscan: (address: string) => void;
+  moveAccountDetail: (accountId: string) => void;
 }
 
 const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = ({
@@ -175,30 +163,30 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
   positionX,
   positionY,
   moveGnoscan,
-  moveAccountDetail,
+  moveAccountDetail
 }) => {
   function onHover(event: React.MouseEvent<HTMLDivElement>): void {
-    event.preventDefault()
-    event.stopPropagation()
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   const onClickAccountDetails = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      moveAccountDetail(accountId)
+      event.preventDefault();
+      event.stopPropagation();
+      moveAccountDetail(accountId);
     },
-    [moveAccountDetail, accountId],
-  )
+    [moveAccountDetail, accountId]
+  );
 
   const onClickViewOnGnoscan = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      moveGnoscan(address)
+      event.preventDefault();
+      event.stopPropagation();
+      moveGnoscan(address);
     },
-    [moveGnoscan, address],
-  )
+    [moveGnoscan, address]
+  );
 
   return (
     <Portal selector='portal-popup'>
@@ -217,5 +205,5 @@ const SideMenuAccountItemMoreInfo: React.FC<SideMenuAccountItemMoreInfoProps> = 
         </div>
       </SideMenuAccountItemMoreInfoWrapper>
     </Portal>
-  )
-}
+  );
+};

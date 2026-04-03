@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import WalletConnect, {
-  WalletConnectProps,
-} from './wallet-connect'
+import WalletConnect, { WalletConnectProps } from './wallet-connect';
 
 describe('WalletConnect Component', () => {
   it('WalletConnect render', () => {
@@ -30,18 +18,18 @@ describe('WalletConnect Component', () => {
       processing: false,
       done: false,
       onClickConnect: () => {
-        return
+        return;
       },
       onClickCancel: () => {
-        return
+        return;
       },
       onResponse: () => {
-        return
+        return;
       },
       onTimeout: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -49,7 +37,7 @@ describe('WalletConnect Component', () => {
         <ThemeProvider theme={theme}>
           <WalletConnect {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

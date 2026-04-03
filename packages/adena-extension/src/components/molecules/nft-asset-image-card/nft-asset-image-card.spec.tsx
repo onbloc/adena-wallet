@@ -1,27 +1,13 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  UseQueryResult,
-} from '@tanstack/react-query'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { UseQueryResult } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import NFTAssetImageCard, {
-  NFTAssetImageCardProps,
-} from './nft-asset-image-card'
+import NFTAssetImageCard, { NFTAssetImageCardProps } from './nft-asset-image-card';
 
 describe('NFTAssetImageCard Component', () => {
   it('NFTAssetImageCard render', () => {
@@ -35,11 +21,10 @@ describe('NFTAssetImageCard Component', () => {
         tokenId: '',
         type: 'grc721',
         isMetadata: true,
-        isTokenUri: true,
+        isTokenUri: true
       },
-      queryGRC721TokenUri: () => ({
-      }) as unknown as UseQueryResult<string | null>,
-    }
+      queryGRC721TokenUri: () => ({}) as unknown as UseQueryResult<string | null>
+    };
 
     render(
       <RecoilRoot>
@@ -47,7 +32,7 @@ describe('NFTAssetImageCard Component', () => {
         <ThemeProvider theme={theme}>
           <NFTAssetImageCard {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,57 +1,51 @@
-import back from '@assets/web/chevron-left.svg'
+import back from '@assets/web/chevron-left.svg';
+import { formatAddress } from '@common/utils/client-utils';
 import {
-  formatAddress,
-} from '@common/utils/client-utils'
-import {
-  CopyIconButton, Pressable, Row, WebImg, WebText,
-} from '@components/atoms'
-import {
-  Account,
-} from 'adena-module'
+  CopyIconButton, Pressable, Row, WebImg, WebText
+} from '@components/atoms';
+import { Account } from 'adena-module';
 import React, {
-  ReactElement, useEffect, useMemo, useState,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  ReactElement, useEffect, useMemo, useState
+} from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(Row)`
   width: 100%;
   justify-content: space-between;
-`
+`;
 
 const StyledAccountRow = styled(Row)`
   gap: 8px;
-`
+`;
 
 const StyledBlank = styled(Row)`
   width: 24px;
-`
+`;
 
 export type WebMainAccountHeaderProps = {
-  account: Account | null
-  onClickGoBack: () => void
-}
+  account: Account | null;
+  onClickGoBack: () => void;
+};
 
 export const WebMainAccountHeader = ({
   account,
-  onClickGoBack,
+  onClickGoBack
 }: WebMainAccountHeaderProps): ReactElement<any> => {
-  const theme = useTheme()
-  const [address, setAddress] = useState<string>('')
+  const theme = useTheme();
+  const [address, setAddress] = useState<string>('');
 
   const addressStr = useMemo(() => {
     if (address === '') {
-      return ''
+      return '';
     }
-    return `(${formatAddress(address, 4)})`
-  }, [address])
+    return `(${formatAddress(address, 4)})`;
+  }, [address]);
 
   useEffect(() => {
     if (account) {
-      account.getAddress('g').then(setAddress)
+      account.getAddress('g').then(setAddress);
     }
-  }, [account])
+  }, [account]);
 
   return (
     <StyledContainer>
@@ -60,7 +54,7 @@ export const WebMainAccountHeader = ({
         style={{
           padding: 4,
           backgroundColor: theme.webInput._100,
-          borderRadius: 16,
+          borderRadius: 16
         }}
       >
         <WebImg src={back} size={24} />
@@ -75,9 +69,7 @@ export const WebMainAccountHeader = ({
           <WebText
             type='body4'
             color={theme.webNeutral._600}
-            style={{
-              lineHeight: '22px',
-            }}
+            style={{ lineHeight: '22px' }}
           >
             {addressStr}
           </WebText>
@@ -86,5 +78,5 @@ export const WebMainAccountHeader = ({
       )}
       <StyledBlank />
     </StyledContainer>
-  )
-}
+  );
+};

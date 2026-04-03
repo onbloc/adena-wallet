@@ -1,14 +1,10 @@
-import back from '@assets/web/chevron-left.svg'
+import back from '@assets/web/chevron-left.svg';
 import {
-  Pressable, Row, View, WebImg,
-} from '@components/atoms'
-import _ from 'lodash'
-import React, {
-  ReactElement,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Pressable, Row, View, WebImg
+} from '@components/atoms';
+import _ from 'lodash';
+import React, { ReactElement } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(Row)`
   width: 100%;
@@ -16,38 +12,34 @@ const StyledContainer = styled(Row)`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-`
+`;
 
-const StyledDot = styled(View) <{
-  selected: boolean
-}>`
+const StyledDot = styled(View) <{ selected: boolean }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: ${({
-    theme, selected,
-  }): string =>
+  background-color: ${({ theme, selected }): string =>
     selected ? theme.webPrimary._100 : 'rgba(0, 89, 255, 0.32)'};
-`
+`;
 
 const StyledEmpty = styled(View)`
   width: 24px;
-`
+`;
 
 export type WebSecurityHeaderProps = {
-  currentStep?: number
-  stepLength: number
-  visibleBackButton: boolean
-  onClickGoBack: () => void
-}
+  currentStep?: number;
+  stepLength: number;
+  visibleBackButton: boolean;
+  onClickGoBack: () => void;
+};
 
 export const WebSecurityHeader = ({
   currentStep,
   stepLength,
   visibleBackButton,
-  onClickGoBack,
+  onClickGoBack
 }: WebSecurityHeaderProps): ReactElement<any> => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <StyledContainer>
@@ -58,7 +50,7 @@ export const WebSecurityHeader = ({
               style={{
                 padding: 4,
                 backgroundColor: theme.webInput._100,
-                borderRadius: 16,
+                borderRadius: 16
               }}
             >
               <WebImg src={back} size={24} />
@@ -67,10 +59,7 @@ export const WebSecurityHeader = ({
         : <StyledEmpty />}
 
       {stepLength > 0 && (
-        <Row style={{
-          columnGap: 8,
-        }}
-        >
+        <Row style={{ columnGap: 8 }}>
           {_.times(stepLength, index => (
             <StyledDot key={index} selected={index === currentStep} />
           ))}
@@ -79,5 +68,5 @@ export const WebSecurityHeader = ({
 
       <StyledEmpty />
     </StyledContainer>
-  )
-}
+  );
+};

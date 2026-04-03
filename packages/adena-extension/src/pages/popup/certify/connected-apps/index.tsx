@@ -1,68 +1,44 @@
-import disconnected from '@assets/disconnected.svg'
-import DefaultImage from '@assets/favicon-default-small.svg'
-import {
-  ListBox, ListHierarchy, Text,
-} from '@components/atoms'
-import {
-  CloseShadowButton, LoadingNft,
-} from '@components/molecules'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  useAdenaContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import {
-  WalletState,
-} from '@states'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import {
-  type JSX, useEffect, useState,
-} from 'react'
-import {
-  useRecoilState,
-} from 'recoil'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import disconnected from '@assets/disconnected.svg';
+import DefaultImage from '@assets/favicon-default-small.svg';
+import { ListBox, ListHierarchy, Text } from '@components/atoms';
+import { CloseShadowButton, LoadingNft } from '@components/molecules';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { WalletState } from '@states';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import { type JSX, useEffect, useState } from 'react';
+import { useRecoilState } from 'recoil';
+import styled, { useTheme } from 'styled-components';
 
 export const ConnectedApps = (): JSX.Element => {
-  const theme = useTheme()
-  const {
-    establishService,
-  } = useAdenaContext()
-  const {
-    currentAccount,
-  } = useCurrentAccount()
-  const {
-    goBack,
-  } = useAppNavigate()
-  const [state] = useRecoilState(WalletState.state)
-  const [data, setData] = useState<any>([])
+  const theme = useTheme();
+  const { establishService } = useAdenaContext();
+  const { currentAccount } = useCurrentAccount();
+  const { goBack } = useAppNavigate();
+  const [state] = useRecoilState(WalletState.state);
+  const [data, setData] = useState<any>([]);
 
   useEffect(() => {
-    updateData()
-  }, [])
+    updateData();
+  }, []);
 
   const onClickDisconnect = async (item: any): Promise<void> => {
     if (!currentAccount) {
-      return
+      return;
     }
-    await establishService.unEstablishBy(currentAccount.id, item.hostname)
-    await updateData()
-  }
+    await establishService.unEstablishBy(currentAccount.id, item.hostname);
+    await updateData();
+  };
 
   const updateData = async (): Promise<void> => {
     if (!currentAccount) {
-      return
+      return;
     }
-    const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id)
-    setData(establishedSites)
-  }
+    const establishedSites = await establishService.getEstablishedSitesBy(currentAccount.id);
+    setData(establishedSites);
+  };
 
   const renderAppItem = (item: any, index: number): JSX.Element => {
     return (
@@ -89,8 +65,8 @@ export const ConnectedApps = (): JSX.Element => {
         key={index}
         mode={ListHierarchy.Static}
       />
-    )
-  }
+    );
+  };
 
   return (
     <Wrapper>
@@ -119,13 +95,13 @@ export const ConnectedApps = (): JSX.Element => {
             <LoadingNft />
           )}
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
   height: 100%;
@@ -155,20 +131,16 @@ const Wrapper = styled.main`
   }
 
   .empty-box {
-    ${mixins.flex({
-      direction: 'row',
-    })};
+    ${mixins.flex({ direction: 'row' })};
     flex-shrink: 0;
     width: 100%;
     height: 96px;
     margin-top: 20px;
   }
-`
+`;
 
 const DisconnectedBtn = styled.button`
-  ${mixins.flex({
-    direction: 'row',
-  })};
+  ${mixins.flex({ direction: 'row' })};
   flex-shrink: 0;
   width: 25px;
   height: 25px;
@@ -179,4 +151,4 @@ const DisconnectedBtn = styled.button`
   &:hover {
     background-color: #bb160b;
   }
-`
+`;

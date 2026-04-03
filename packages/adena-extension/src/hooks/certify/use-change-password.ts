@@ -1,225 +1,209 @@
-import {
-  PasswordValidationError,
-} from '@common/errors'
-import {
-  encryptWalletPassword,
-} from '@common/utils/crypto-utils'
-import {
-  evaluatePassword, EvaluatePasswordResult,
-} from '@common/utils/password-utils'
+import { PasswordValidationError } from '@common/errors';
+import { encryptWalletPassword } from '@common/utils/crypto-utils';
+import { evaluatePassword, EvaluatePasswordResult } from '@common/utils/password-utils';
 import {
   validateEqualsChangePassword,
   validateInvalidPassword,
   validateNotMatchConfirmPassword,
-  validatePasswordComplexity,
-} from '@common/validation'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  useAdenaContext,
-} from '@hooks/use-context'
+  validatePasswordComplexity
+} from '@common/validation';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useAdenaContext } from '@hooks/use-context';
 import React, {
-  useCallback, useEffect, useMemo, useRef, useState,
-} from 'react'
+  useCallback, useEffect, useMemo, useRef, useState
+} from 'react';
 
 export type UseChangePasswordReturn = {
   currPwdState: {
-    value: string
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-    error: boolean
-    ref: React.RefObject<HTMLInputElement | null>
-  }
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+    ref: React.RefObject<HTMLInputElement | null>;
+  };
   newPwdState: {
-    value: string
-    evaluationResult: EvaluatePasswordResult | null
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-    error: boolean
-  }
+    value: string;
+    evaluationResult: EvaluatePasswordResult | null;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
   confirmPwdState: {
-    value: string
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-    error: boolean
-  }
-  errorMessage: string
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    error: boolean;
+  };
+  errorMessage: string;
   buttonState: {
     onClick: {
-      cancel: () => void
-      save: () => void
-    }
-    disabled: boolean
-  }
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
-}
+      cancel: () => void;
+      save: () => void;
+    };
+    disabled: boolean;
+  };
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+};
 
 export const useChangePassword = (): UseChangePasswordReturn => {
-  const {
-    walletService,
-  } = useAdenaContext()
-  const {
-    goBack,
-  } = useAppNavigate()
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const { walletService } = useAdenaContext();
+  const { goBack } = useAppNavigate();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [inputs, setInputs] = useState({
     currPwd: '',
     newPwd: '',
-    confirmPwd: '',
-  })
-  const {
-    currPwd, newPwd, confirmPwd,
-  } = inputs
+    confirmPwd: ''
+  });
+  const { currPwd, newPwd, confirmPwd } = inputs;
 
-  const [isCurrPwdError, setIsCurrPwdError] = useState(false)
-  const [isNewPwdError, setIsNewPwdError] = useState(false)
-  const [isConfirmPwdError, setIsConfirmPwdError] = useState(false)
-  const [savedPassword, setSavedPassword] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
+  const [isCurrPwdError, setIsCurrPwdError] = useState(false);
+  const [isNewPwdError, setIsNewPwdError] = useState(false);
+  const [isConfirmPwdError, setIsConfirmPwdError] = useState(false);
+  const [savedPassword, setSavedPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const newPasswordEvaluationResult = useMemo(() => {
     if (newPwd.length > 0) {
-      return evaluatePassword(newPwd)
+      return evaluatePassword(newPwd);
     }
-    return null
-  }, [newPwd])
+    return null;
+  }, [newPwd]);
 
   useEffect(() => {
-    initSavedPassword()
-  }, [])
+    initSavedPassword();
+  }, []);
 
   useEffect(() => {
-    setIsCurrPwdError(false)
-    setIsNewPwdError(false)
-    setIsConfirmPwdError(false)
-    setErrorMessage('')
-  }, [currPwd, newPwd, confirmPwd])
+    setIsCurrPwdError(false);
+    setIsNewPwdError(false);
+    setIsConfirmPwdError(false);
+    setErrorMessage('');
+  }, [currPwd, newPwd, confirmPwd]);
 
   useEffect(() => {
     if (inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }, [inputRef])
+  }, [inputRef]);
 
   const initSavedPassword = async (): Promise<void> => {
-    const currentPassword = await walletService.loadWalletPassword()
-    setSavedPassword(currentPassword)
-  }
+    const currentPassword = await walletService.loadWalletPassword();
+    setSavedPassword(currentPassword);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && currPwd && newPwd && confirmPwd) {
-      saveButtonClick()
+      saveButtonClick();
     }
-  }
+  };
 
   const onChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const {
-        name, value,
-      } = e.target
+      const { name, value } = e.target;
       setInputs(inputs => ({
         ...inputs,
-        [name]: value,
-      }))
+        [name]: value
+      }));
     },
-    [currPwd, newPwd, confirmPwd],
-  )
+    [currPwd, newPwd, confirmPwd]
+  );
 
   const validationCheck = async (): Promise<'FINISH' | 'FAIL'> => {
-    const storedPassword = savedPassword
-    const currentPassword = currPwd
-    const newPassword = newPwd
-    const newConfirmPassword = confirmPwd
+    const storedPassword = savedPassword;
+    const currentPassword = currPwd;
+    const newPassword = newPwd;
+    const newConfirmPassword = confirmPwd;
 
-    let isValid = true
-    let errorMessage = ''
+    let isValid = true;
+    let errorMessage = '';
     try {
-      const encryptedCurrentPassword = encryptWalletPassword(currentPassword)
-      validateInvalidPassword(encryptedCurrentPassword, storedPassword)
+      const encryptedCurrentPassword = encryptWalletPassword(currentPassword);
+      validateInvalidPassword(encryptedCurrentPassword, storedPassword);
     }
     catch (error) {
-      isValid = false
+      isValid = false;
       if (error instanceof PasswordValidationError) {
-        setIsCurrPwdError(true)
+        setIsCurrPwdError(true);
         if (errorMessage === '') {
-          errorMessage = error.message
+          errorMessage = error.message;
         }
       }
     }
     try {
-      validatePasswordComplexity(newPassword)
-      validateEqualsChangePassword(newPassword, currentPassword)
+      validatePasswordComplexity(newPassword);
+      validateEqualsChangePassword(newPassword, currentPassword);
     }
     catch (error) {
-      isValid = false
+      isValid = false;
       if (error instanceof PasswordValidationError) {
-        setIsNewPwdError(true)
+        setIsNewPwdError(true);
         if (errorMessage === '') {
-          errorMessage = error.message
+          errorMessage = error.message;
         }
       }
     }
     try {
-      validateNotMatchConfirmPassword(newPassword, newConfirmPassword)
+      validateNotMatchConfirmPassword(newPassword, newConfirmPassword);
     }
     catch (error) {
-      isValid = false
+      isValid = false;
       if (error instanceof PasswordValidationError) {
-        setIsConfirmPwdError(true)
+        setIsConfirmPwdError(true);
         if (errorMessage === '') {
-          errorMessage = error.message
+          errorMessage = error.message;
         }
       }
     }
 
-    setErrorMessage(errorMessage)
+    setErrorMessage(errorMessage);
     if (isValid) {
       try {
-        await walletService.changePassword(newPassword)
-        setSavedPassword('')
+        await walletService.changePassword(newPassword);
+        setSavedPassword('');
         setInputs({
           currPwd: '',
           newPwd: '',
-          confirmPwd: '',
-        })
-        return 'FINISH'
+          confirmPwd: ''
+        });
+        return 'FINISH';
       }
       catch (e) {
-        console.error(e)
+        console.error(e);
       }
     }
-    return 'FAIL'
-  }
+    return 'FAIL';
+  };
 
   const saveButtonClick = async (): Promise<void> => {
-    const state = await validationCheck()
+    const state = await validationCheck();
     if (state === 'FINISH') {
-      return goBack()
+      return goBack();
     }
-  }
+  };
 
   return {
     currPwdState: {
       value: currPwd,
       onChange: onChange,
       error: isCurrPwdError,
-      ref: inputRef,
+      ref: inputRef
     },
     newPwdState: {
       value: newPwd,
       evaluationResult: newPasswordEvaluationResult,
       onChange: onChange,
-      error: isNewPwdError,
+      error: isNewPwdError
     },
     confirmPwdState: {
       value: confirmPwd,
       onChange: onChange,
-      error: isConfirmPwdError,
+      error: isConfirmPwdError
     },
     errorMessage: errorMessage,
     buttonState: {
       onClick: {
         cancel: goBack,
-        save: saveButtonClick,
+        save: saveButtonClick
       },
-      disabled: Object.values(inputs).some(el => el === ''),
+      disabled: Object.values(inputs).some(el => el === '')
     },
-    onKeyDown,
-  }
-}
+    onKeyDown
+  };
+};

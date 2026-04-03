@@ -1,23 +1,13 @@
-import {
-  Button, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
+import { Button, Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
 import React, {
-  type JSX, useCallback, useEffect, useState,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  type JSX, useCallback, useEffect, useState
+} from 'react';
+import styled, { useTheme } from 'styled-components';
 
-const CopyButton = styled(Button) <{
-  isClicked: boolean
-}>`
-  ${mixins.flex({
-    direction: 'row',
-  })};
+const CopyButton = styled(Button) <{ isClicked: boolean }>`
+  ${mixins.flex({ direction: 'row' })};
   height: 25px;
   border-radius: 12.5px;
   padding: 0px 12px;
@@ -25,32 +15,32 @@ const CopyButton = styled(Button) <{
   &:hover {
     background-color: ${getTheme('neutral', 'b')};
   }
-`
+`;
 
 export const Copy = ({
   copyStr,
-  tabIndex,
+  tabIndex
 }: {
-  copyStr: string
-  tabIndex?: number
+  copyStr: string;
+  tabIndex?: number;
 }): JSX.Element => {
-  const [isClicked, setIsClicked] = useState<boolean>(false)
+  const [isClicked, setIsClicked] = useState<boolean>(false);
 
-  const theme = useTheme()
+  const theme = useTheme();
   const handleButtonClick = useCallback(() => {
     if (isClicked) {
-      return
+      return;
     }
-    setIsClicked((prev: boolean) => !prev)
-    navigator.clipboard.writeText(copyStr)
-  }, [isClicked, copyStr])
+    setIsClicked((prev: boolean) => !prev);
+    navigator.clipboard.writeText(copyStr);
+  }, [isClicked, copyStr]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsClicked(false), 2000)
+    const timer = setTimeout(() => setIsClicked(false), 2000);
     return () => {
-      clearTimeout(timer)
-    }
-  }, [isClicked])
+      clearTimeout(timer);
+    };
+  }, [isClicked]);
 
   return (
     <CopyButton
@@ -61,5 +51,5 @@ export const Copy = ({
     >
       <Text type='body2Reg'>{isClicked ? 'Copied!' : 'Copy'}</Text>
     </CopyButton>
-  )
-}
+  );
+};

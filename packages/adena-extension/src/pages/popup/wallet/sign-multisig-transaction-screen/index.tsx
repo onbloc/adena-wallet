@@ -1,35 +1,23 @@
-import {
-  MultisigTransactionProvider,
-} from '@common/provider'
-import {
-  CommonFullContentLayout,
-} from '@components/atoms'
-import {
-  useMultisigTransactionContext,
-} from '@hooks/use-context'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen'
-import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen'
+import { MultisigTransactionProvider } from '@common/provider';
+import { CommonFullContentLayout } from '@components/atoms';
+import { useMultisigTransactionContext } from '@hooks/use-context';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useBroadcastMultisigTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-multisig-transaction-screen';
+import useSignMultisigTransactionScreen from '@hooks/wallet/sign-transaction/use-sign-multisig-transaction-screen';
 import {
   RawBankSendMessage,
   RawVmAddPackageMessage,
   RawVmCallMessage,
-  RawVmRunMessage,
-} from 'adena-module'
-import React, {
-  useEffect,
-} from 'react'
+  RawVmRunMessage
+} from 'adena-module';
+import React, { useEffect } from 'react';
 
-import SignTransactionLoading from './loading'
-import SignTransactionResult from './result'
-import SignMultisigTransactionUpload from './upload'
+import SignTransactionLoading from './loading';
+import SignTransactionResult from './result';
+import SignMultisigTransactionUpload from './upload';
 
 const SignMultisigTransactionContent: React.FC = () => {
-  const {
-    currentAddress,
-  } = useCurrentAccount()
+  const { currentAddress } = useCurrentAccount();
 
   const {
     transaction,
@@ -39,64 +27,64 @@ const SignMultisigTransactionContent: React.FC = () => {
     updateAccountInfo,
     setAccountNumber,
     setSequence,
-    resetMultisigTransaction,
-  } = useMultisigTransactionContext()
+    resetMultisigTransaction
+  } = useMultisigTransactionContext();
 
   const {
     uploadMultisigTransaction,
     transactionInfos,
-    rawTransaction,
-  } = useBroadcastMultisigTransactionScreen()
+    rawTransaction
+  } = useBroadcastMultisigTransactionScreen();
 
   const {
     signTransaction,
     signTransactionState,
-    errorMessage,
-  } = useSignMultisigTransactionScreen()
+    errorMessage
+  } = useSignMultisigTransactionScreen();
 
   useEffect(() => {
     if (!chainId || !transaction) {
-      return
+      return;
     }
 
     if (transaction.msg.length === 0) {
-      return
+      return;
     }
 
-    let caller = ''
+    let caller = '';
 
-    const firstMessageType = transaction.msg[0]['@type']
+    const firstMessageType = transaction.msg[0]['@type'];
     switch (firstMessageType) {
       case '/vm.m_call': {
-        const vmCallMessage = transaction.msg[0] as RawVmCallMessage
-        caller = vmCallMessage.caller
-        break
+        const vmCallMessage = transaction.msg[0] as RawVmCallMessage;
+        caller = vmCallMessage.caller;
+        break;
       }
       case '/vm.m_addpkg': {
-        const vmAddPkgMessage = transaction.msg[0] as RawVmAddPackageMessage
-        caller = vmAddPkgMessage.creator
-        break
+        const vmAddPkgMessage = transaction.msg[0] as RawVmAddPackageMessage;
+        caller = vmAddPkgMessage.creator;
+        break;
       }
       case '/bank.MsgSend': {
-        const bankSendMessage = transaction.msg[0] as RawBankSendMessage
-        caller = bankSendMessage.from_address
-        break
+        const bankSendMessage = transaction.msg[0] as RawBankSendMessage;
+        caller = bankSendMessage.from_address;
+        break;
       }
       case '/vm.m_run': {
-        const vmRunMessage = transaction.msg[0] as RawVmRunMessage
-        caller = vmRunMessage.caller
-        break
+        const vmRunMessage = transaction.msg[0] as RawVmRunMessage;
+        caller = vmRunMessage.caller;
+        break;
       }
       default:
-        return
+        return;
     }
 
     if (!caller) {
-      return
+      return;
     }
 
-    updateAccountInfo(caller)
-  }, [transaction, chainId, updateAccountInfo])
+    updateAccountInfo(caller);
+  }, [transaction, chainId, updateAccountInfo]);
 
   return (
     <CommonFullContentLayout>
@@ -122,15 +110,15 @@ const SignMultisigTransactionContent: React.FC = () => {
         <SignTransactionResult status='FAILED' errorMessage={errorMessage} />
       )}
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
 const SignMultisigTransactionScreen: React.FC = () => {
   return (
     <MultisigTransactionProvider>
       <SignMultisigTransactionContent />
     </MultisigTransactionProvider>
-  )
-}
+  );
+};
 
-export default SignMultisigTransactionScreen
+export default SignMultisigTransactionScreen;

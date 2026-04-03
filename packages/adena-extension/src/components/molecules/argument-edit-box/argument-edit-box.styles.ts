@@ -1,22 +1,12 @@
-import {
-  View,
-} from '@components/atoms'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { View } from '@components/atoms';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
-export const ArgumentEditBoxWrapper = styled(View)<{
-  $marginRight?: number
-}>`
+export const ArgumentEditBoxWrapper = styled(View)<{ $marginRight?: number }>`
   width: 100%;
-  max-width: ${({
-    $marginRight = 0,
-  }): string => `${206 - $marginRight}px`};
+  max-width: ${({ $marginRight = 0 }): string => `${206 - $marginRight}px`};
   height: 44px;
-  margin-right: ${({
-    $marginRight = 0,
-  }): string => `${$marginRight}px`};
+  margin-right: ${({ $marginRight = 0 }): string => `${$marginRight}px`};
 
   .editable-wrapper {
     display: flex;
@@ -86,4 +76,4 @@ export const ArgumentEditBoxWrapper = styled(View)<{
       }
     }
   }
-`
+`;

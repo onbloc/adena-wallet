@@ -1,7 +1,5 @@
-import {
-  getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const NFTCollectionsWrapper = styled.div`
   position: relative;
@@ -45,4 +43,4 @@ export const NFTCollectionsWrapper = styled.div`
     left: 0;
     background-color: ${getTheme('neutral', '_8')};
   }
-`
+`;

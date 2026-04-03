@@ -1,127 +1,121 @@
-import IconEditCancel from '@assets/icon-edit-cancel'
-import IconEditConfirm from '@assets/icon-edit-confirm'
-import IconPencil from '@assets/icon-pencil'
-import {
-  reverseString,
-} from '@common/utils/string-utils'
-import React, {
-  useEffect, useMemo, useState,
-} from 'react'
+import IconEditCancel from '@assets/icon-edit-cancel';
+import IconEditConfirm from '@assets/icon-edit-confirm';
+import IconPencil from '@assets/icon-pencil';
+import { reverseString } from '@common/utils/string-utils';
+import React, { useEffect, useMemo, useState } from 'react';
 
-import {
-  ArgumentEditBoxWrapper,
-} from './argument-edit-box.styles'
+import { ArgumentEditBoxWrapper } from './argument-edit-box.styles';
 
 export interface ArgumentEditBoxProps {
-  editRightMargin?: number
-  value: string
-  onChange: (value: string) => void
-  editable?: boolean
+  editRightMargin?: number;
+  value: string;
+  onChange: (value: string) => void;
+  editable?: boolean;
 }
 
-type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none'
+type EditStateType = 'confirm' | 'cancel' | 'blur' | 'none';
 
 const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
   value,
   onChange,
   editRightMargin = -18,
-  editable = true,
+  editable = true
 }) => {
-  const [editableValue, setEditableValue] = useState(false)
-  const [editValue, setEditValue] = useState(value)
-  const [editState, setEditState] = useState<EditStateType>('none')
+  const [editableValue, setEditableValue] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+  const [editState, setEditState] = useState<EditStateType>('none');
 
   const displayValue = useMemo(() => {
     if (!value) {
-      return ''
+      return '';
     }
 
-    return reverseString(value)
-  }, [value])
+    return reverseString(value);
+  }, [value]);
 
   const activateEditMode = (): void => {
-    setEditableValue(true)
-  }
+    setEditableValue(true);
+  };
 
   const deactivateEditMode = (): void => {
-    setEditableValue(false)
-  }
+    setEditableValue(false);
+  };
 
   const saveEdit = (): void => {
     if (!editableValue) {
-      return
+      return;
     }
 
-    deactivateEditMode()
-    onChange(editValue)
-  }
+    deactivateEditMode();
+    onChange(editValue);
+  };
 
   const cancelEdit = (): void => {
-    deactivateEditMode()
-    setEditValue(value)
-  }
+    deactivateEditMode();
+    setEditValue(value);
+  };
 
   const changeEditValue = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (!editableValue) {
-      return
+      return;
     }
 
-    setEditValue(e.target.value)
-  }
+    setEditValue(e.target.value);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (!editableValue) {
-      return
+      return;
     }
 
     if (e.key === 'Enter') {
-      saveEdit()
+      saveEdit();
     }
     else if (e.key === 'Escape') {
-      cancelEdit()
+      cancelEdit();
     }
-  }
+  };
 
   const onClickEditConfirm = (e: React.MouseEvent<HTMLDivElement>): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    setEditState('confirm')
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setEditState('confirm');
+  };
 
   const onClickEditCancel = (e: React.MouseEvent<HTMLDivElement>): void => {
-    e.preventDefault()
-    e.stopPropagation()
-    setEditState('cancel')
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setEditState('cancel');
+  };
 
   const onBlurEdit = (): void => {
-    setEditState('blur')
-  }
+    setEditState('blur');
+  };
 
   useEffect(() => {
     switch (editState) {
       case 'none':
-        return
+        return;
       case 'cancel':
-        cancelEdit()
-        break
+        cancelEdit();
+        break;
       case 'blur':
       case 'confirm':
-        saveEdit()
-        break
+        saveEdit();
+        break;
     }
 
-    setEditState('none')
-    setEditableValue(false)
-  }, [editState])
+    setEditState('none');
+    setEditableValue(false);
+  }, [editState]);
 
   const marginRight = useMemo(() => {
     if (editableValue) {
-      return editRightMargin
+      return editRightMargin;
     }
 
-    return 0
-  }, [editableValue, editRightMargin])
+    return 0;
+  }, [editableValue, editRightMargin]);
 
   return (
     <ArgumentEditBoxWrapper $marginRight={marginRight}>
@@ -156,7 +150,7 @@ const ArgumentEditBox: React.FC<ArgumentEditBoxProps> = ({
             </div>
           )}
     </ArgumentEditBoxWrapper>
-  )
-}
+  );
+};
 
-export default ArgumentEditBox
+export default ArgumentEditBox;

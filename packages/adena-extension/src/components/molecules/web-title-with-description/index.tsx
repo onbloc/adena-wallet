@@ -1,24 +1,18 @@
-import {
-  View, WebText,
-} from '@components/atoms'
-import React, {
-  CSSProperties,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import { View, WebText } from '@components/atoms';
+import React, { CSSProperties } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   row-gap: 10px;
-`
+`;
 
 export interface WebTitleWithDescriptionProps {
-  title: string
-  description: string
-  isCenter?: boolean
-  marginTop?: CSSProperties['marginTop']
-  marginBottom?: CSSProperties['marginBottom']
-  descriptionLetterSpacing?: CSSProperties['letterSpacing']
+  title: string;
+  description: string;
+  isCenter?: boolean;
+  marginTop?: CSSProperties['marginTop'];
+  marginBottom?: CSSProperties['marginBottom'];
+  descriptionLetterSpacing?: CSSProperties['letterSpacing'];
 }
 
 export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = ({
@@ -27,16 +21,16 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
   isCenter,
   marginTop = 0,
   marginBottom = 0,
-  descriptionLetterSpacing,
+  descriptionLetterSpacing
 }) => {
-  const theme = useTheme()
+  const theme = useTheme();
 
   return (
     <StyledContainer
       style={{
         alignItems: isCenter ? 'center' : 'flex-start',
         marginTop,
-        marginBottom,
+        marginBottom
       }}
     >
       <WebText type='headline2' textCenter={isCenter}>
@@ -46,12 +40,10 @@ export const WebTitleWithDescription: React.FC<WebTitleWithDescriptionProps> = (
         type='body4'
         color={theme.webNeutral._500}
         textCenter={isCenter}
-        style={{
-          letterSpacing: descriptionLetterSpacing,
-        }}
+        style={{ letterSpacing: descriptionLetterSpacing }}
       >
         {description}
       </WebText>
     </StyledContainer>
-  )
-}
+  );
+};

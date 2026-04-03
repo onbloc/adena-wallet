@@ -1,25 +1,19 @@
-import {
-  Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
 interface TooltipProps {
-  bgColor?: string
-  posTop?: string
+  bgColor?: string;
+  posTop?: string;
 }
 
 interface StaticTooltipProps extends TooltipProps {
   items: {
-    tooltipText: string
-    onClick: () => void
-  }[]
+    tooltipText: string;
+    onClick: () => void;
+  }[];
 }
 
 const Tooltip = styled.div<TooltipProps>`
@@ -28,15 +22,11 @@ const Tooltip = styled.div<TooltipProps>`
   height: auto;
   visibility: hidden;
   z-index: 1;
-  background-color: ${({
-    theme, bgColor,
-  }): string => (bgColor ? bgColor : theme.neutral._9)};
+  background-color: ${({ theme, bgColor }): string => (bgColor ? bgColor : theme.neutral._9)};
   border-radius: 13px;
   position: absolute;
   right: 0px;
-  top: ${({
-    posTop,
-  }): string => (posTop ? posTop : '20px')};
+  top: ${({ posTop }): string => (posTop ? posTop : '20px')};
   transform: scale(0.6);
 
   & > * {
@@ -49,11 +39,9 @@ const Tooltip = styled.div<TooltipProps>`
       border-bottom: none;
     }
   }
-`
+`;
 
-export const StaticMultiTooltip = ({
-  bgColor, posTop, items,
-}: StaticTooltipProps): JSX.Element => {
+export const StaticMultiTooltip = ({ bgColor, posTop, items }: StaticTooltipProps): JSX.Element => {
   return (
     <Tooltip className='static-tooltip' bgColor={bgColor} posTop={posTop}>
       {items.map((item, index) => (
@@ -62,5 +50,5 @@ export const StaticMultiTooltip = ({
         </Text>
       ))}
     </Tooltip>
-  )
-}
+  );
+};

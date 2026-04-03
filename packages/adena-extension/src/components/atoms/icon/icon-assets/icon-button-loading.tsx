@@ -1,9 +1,5 @@
-import React, {
-  ReactElement,
-} from 'react'
-import styled, {
-  keyframes,
-} from 'styled-components'
+import React, { ReactElement } from 'react';
+import styled, { keyframes } from 'styled-components';
 
 const rotate = keyframes`
   from {
@@ -16,7 +12,7 @@ const rotate = keyframes`
     -o-transform: rotate(360deg);
     transform: rotate(360deg);
   }
-`
+`;
 
 const SVGWrapper = styled.div`
   display: flex;
@@ -35,7 +31,7 @@ const SVGWrapper = styled.div`
     width: 60px;
     height: 60px;
   }
-`
+`;
 
 const IconButtonLoading = (): ReactElement<any> => {
   return (
@@ -102,7 +98,7 @@ const IconButtonLoading = (): ReactElement<any> => {
         </defs>
       </svg>
     </SVGWrapper>
-  )
-}
+  );
+};
 
-export default IconButtonLoading
+export default IconButtonLoading;

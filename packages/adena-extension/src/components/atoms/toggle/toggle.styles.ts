@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const ToggleWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   flex-shrink: 0;
   width: 46px;
@@ -34,4 +32,4 @@ export const ToggleWrapper = styled.div`
       margin-left: 20px;
     }
   }
-`
+`;

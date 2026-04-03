@@ -1,19 +1,15 @@
-import {
-  EVENT_KEYS,
-} from '@common/constants/event-key.constant'
+import { EVENT_KEYS } from '@common/constants/event-key.constant';
 
-export const _ = ''
+export const _ = '';
 
 declare global {
-  interface Window {
-    adena?: any
-  }
+  interface Window { adena?: any }
 
   declare module '*.svg';
   declare module '*.gif';
 
   interface WindowEventMap {
-    [EVENT_KEYS.changedAccount]: CustomEvent<string>
-    [EVENT_KEYS.changedNetwork]: CustomEvent<string>
+    [EVENT_KEYS.changedAccount]: CustomEvent<string>;
+    [EVENT_KEYS.changedNetwork]: CustomEvent<string>;
   }
 }

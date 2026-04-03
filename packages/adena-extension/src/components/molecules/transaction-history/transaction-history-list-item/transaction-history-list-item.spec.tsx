@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import TransactionHistoryListItem, {
-  TransactionHistoryListItemProps,
-} from './transaction-history-list-item'
+import TransactionHistoryListItem, { TransactionHistoryListItemProps } from './transaction-history-list-item';
 
 describe('TransactionHistoryListItem Component', () => {
   it('TransactionHistoryListItem render', () => {
@@ -32,13 +20,13 @@ describe('TransactionHistoryListItem Component', () => {
       extraInfo: '',
       amount: {
         value: '-4,000',
-        denom: 'GNOT',
+        denom: 'GNOT'
       },
       valueType: 'DEFAULT',
       onClickItem: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -46,7 +34,7 @@ describe('TransactionHistoryListItem Component', () => {
         <ThemeProvider theme={theme}>
           <TransactionHistoryListItem {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

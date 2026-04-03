@@ -1,1 +1,1 @@
-export * from './account-initialization-result'
+export * from './account-initialization-result';

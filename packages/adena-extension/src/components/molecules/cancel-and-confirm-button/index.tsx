@@ -1,40 +1,36 @@
-import {
-  Button, ButtonProps, Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import React, {
-  ReactElement,
-} from 'react'
-import styled from 'styled-components'
+import { Button, ButtonProps, Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import React, { ReactElement } from 'react';
+import styled from 'styled-components';
 
 interface DefaultButtonProps {
-  onClick: () => void
-  props?: React.ComponentPropsWithoutRef<'button'>
+  onClick: () => void;
+  props?: React.ComponentPropsWithoutRef<'button'>;
 }
 
 interface ConfirmButtonProps extends DefaultButtonProps {
-  text: string
-  hierarchy?: ButtonProps['hierarchy']
+  text: string;
+  hierarchy?: ButtonProps['hierarchy'];
 }
 
 interface CancelAndConfirmLocation {
-  cancelButtonProps: DefaultButtonProps
-  confirmButtonProps: ConfirmButtonProps
+  cancelButtonProps: DefaultButtonProps;
+  confirmButtonProps: ConfirmButtonProps;
 }
 
 const Wrapper = styled.div`
   margin-top: auto;
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   gap: 10px;
-`
+`;
 
 export const CancelAndConfirmButton = ({
   cancelButtonProps,
-  confirmButtonProps,
+  confirmButtonProps
 }: CancelAndConfirmLocation): ReactElement<any> => {
   return (
     <Wrapper>
@@ -55,5 +51,5 @@ export const CancelAndConfirmButton = ({
         <Text type='body1Bold'>{confirmButtonProps.text}</Text>
       </Button>
     </Wrapper>
-  )
-}
+  );
+};

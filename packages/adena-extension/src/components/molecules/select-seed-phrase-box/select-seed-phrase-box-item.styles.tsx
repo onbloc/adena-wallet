@@ -1,7 +1,5 @@
-import {
-  Row,
-} from '@components/atoms'
-import styled from 'styled-components'
+import { Row } from '@components/atoms';
+import styled from 'styled-components';
 
 export const StyledSelectSeedPhraseBoxItem = styled(Row)`
   height: 48px;
@@ -11,4 +9,4 @@ export const StyledSelectSeedPhraseBoxItem = styled(Row)`
   &:last-child {
     border-bottom: 1px solid #14161a;
   }
-`
+`;

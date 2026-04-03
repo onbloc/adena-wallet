@@ -1,33 +1,25 @@
-import {
-  Tx,
-} from '@gnolang/tm2-js-client'
-import {
-  ResponseDeliverTx,
-} from '@gnolang/tm2-js-client'
-import {
-  ITransactionGasRepository,
-} from '@repositories/transaction/types'
+import { Tx } from '@gnolang/tm2-js-client';
+import { ResponseDeliverTx } from '@gnolang/tm2-js-client';
+import { ITransactionGasRepository } from '@repositories/transaction/types';
 
-import {
-  ITransactionGasService,
-} from '..'
+import { ITransactionGasService } from '..';
 
 export class TransactionGasService implements ITransactionGasService {
-  private gasRepository: ITransactionGasRepository
+  private gasRepository: ITransactionGasRepository;
 
   constructor(gasRepository: ITransactionGasRepository) {
-    this.gasRepository = gasRepository
+    this.gasRepository = gasRepository;
   }
 
   public async getGasPrice(): Promise<number | null> {
-    return this.gasRepository.fetchGasPrices()
+    return this.gasRepository.fetchGasPrices();
   }
 
   public async simulateTx(tx: Tx): Promise<ResponseDeliverTx> {
-    return this.gasRepository.simulateTx(tx)
+    return this.gasRepository.simulateTx(tx);
   }
 
   public async estimateGas(tx: Tx): Promise<bigint> {
-    return this.gasRepository.estimateGasByTx(tx)
+    return this.gasRepository.estimateGasByTx(tx);
   }
 }

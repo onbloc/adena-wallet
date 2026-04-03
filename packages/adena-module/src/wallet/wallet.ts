@@ -1,24 +1,16 @@
-import {
-  LedgerConnector,
-} from "@cosmjs/ledger-amino";
+import { LedgerConnector } from '@cosmjs/ledger-amino';
 import {
   BroadcastTxCommitResult,
   BroadcastTxSyncResult,
   defaultAddressPrefix,
   Provider,
   Tx,
-  TxSignature,
-} from "@gnolang/tm2-js-client";
+  TxSignature
+} from '@gnolang/tm2-js-client';
 
-import {
-  Bip39, Random,
-} from "../crypto/index.js";
-import {
-  arrayContentEquals, arrayToHex, hexToArray,
-} from "../utils/index.js";
-import {
-  Document,
-} from "./../index.js";
+import { Bip39, Random } from '../crypto/index.js';
+import { arrayContentEquals, arrayToHex, hexToArray } from '../utils/index.js';
+import { Document } from './../index.js';
 import {
   Account,
   AccountInfo,
@@ -30,8 +22,8 @@ import {
   LedgerAccount,
   makeAccount,
   SeedAccount,
-  SingleAccount,
-} from "./account";
+  SingleAccount
+} from './account';
 import {
   AddressKeyring,
   hasPrivateKey,
@@ -43,74 +35,72 @@ import {
   KeyringData,
   LedgerKeyring,
   makeKeyring,
-  Web3AuthKeyring,
-} from "./keyring";
-import {
-  decryptAES, encryptAES,
-} from "./wallet-crypto-util.js";
+  Web3AuthKeyring
+} from './keyring';
+import { decryptAES, encryptAES } from './wallet-crypto-util.js';
 
 export interface Wallet {
-  accounts: Account[]
-  keyrings: Keyring[]
-  currentAccount: Account
-  currentKeyring: Keyring
-  defaultHDWalletKeyring: HDWalletKeyring | null
-  nextAccountName: string
-  nextLedgerAccountName: string
-  nextMultisigAccountName: string
-  lastAccountIndex: number
-  lastLedgerAccountIndex: number
-  lastMultisigAccountIndex: number
+  accounts: Account[];
+  keyrings: Keyring[];
+  currentAccount: Account;
+  currentKeyring: Keyring;
+  defaultHDWalletKeyring: HDWalletKeyring | null;
+  nextAccountName: string;
+  nextLedgerAccountName: string;
+  nextMultisigAccountName: string;
+  lastAccountIndex: number;
+  lastLedgerAccountIndex: number;
+  lastMultisigAccountIndex: number;
 
-  addAccount: (account: Account) => number
-  removeAccount: (account: Account) => boolean
-  getPrivateKeyStr(): Promise<string>
-  getMnemonic: () => string
-  getNextHDPathBy: (keyring: Keyring) => number
-  getNextAccountIndexBy: (keyring: Keyring) => number
-  getNextAccountNumberBy: (keyring: Keyring) => number
-  getLastAccountIndexBy: (keyring: Keyring) => number
-  isEmpty: () => boolean
-  hasHDWallet: () => boolean
-  hasKeyring: (keyring: Keyring) => boolean
-  hasPrivateKey: (privateKey: Uint8Array) => boolean
+  addAccount: (account: Account) => number;
+  removeAccount: (account: Account) => boolean;
+  getPrivateKeyStr(): Promise<string>;
+  getMnemonic: () => string;
+  getNextHDPathBy: (keyring: Keyring) => number;
+  getNextAccountIndexBy: (keyring: Keyring) => number;
+  getNextAccountNumberBy: (keyring: Keyring) => number;
+  getLastAccountIndexBy: (keyring: Keyring) => number;
+  isEmpty: () => boolean;
+  hasHDWallet: () => boolean;
+  hasKeyring: (keyring: Keyring) => boolean;
+  hasPrivateKey: (privateKey: Uint8Array) => boolean;
   sign: (
     provider: Provider,
-    document: Document,
+    document: Document
   ) => Promise<{
-    signed: Tx
-    signature: TxSignature[]
-  }>
+    signed: Tx;
+    signature: TxSignature[];
+  }>;
   signByAccountId: (
     provider: Provider,
     accountId: string,
-    document: Document,
+    document: Document
   ) => Promise<{
-    signed: Tx
-    signature: TxSignature[]
-  }>
+    signed: Tx;
+    signature: TxSignature[];
+  }>;
   broadcastTxSync: (
     provider: Provider,
     accountId: string,
-    tx: Tx,
-  ) => Promise<BroadcastTxSyncResult>
+    tx: Tx
+  ) => Promise<BroadcastTxSyncResult>;
   broadcastTxCommit: (
     provider: Provider,
     accountId: string,
-    tx: Tx,
-  ) => Promise<BroadcastTxCommitResult>
-  serialize: (password: string) => Promise<string>
-  clone: () => AdenaWallet
+    tx: Tx
+  ) => Promise<BroadcastTxCommitResult>;
+  serialize: (password: string) => Promise<string>;
+  clone: () => AdenaWallet;
 }
 export interface WalletData {
-  accounts: AccountInfo[]
-  keyrings: KeyringData[]
-  currentAccountId?: string
+  accounts: AccountInfo[];
+  keyrings: KeyringData[];
+  currentAccountId?: string;
 }
 
 const defaultWalletData: WalletData = {
   accounts: [] as AccountInfo[],
-  keyrings: [] as KeyringData[],
+  keyrings: [] as KeyringData[]
 };
 
 /**
@@ -130,9 +120,7 @@ export class AdenaWallet implements Wallet {
   private _currentAccountId: string | undefined;
 
   constructor(walletData?: WalletData) {
-    const {
-      accounts, keyrings, currentAccountId,
-    } = walletData ?? defaultWalletData;
+    const { accounts, keyrings, currentAccountId } = walletData ?? defaultWalletData;
     this._accounts = accounts.map(makeAccount);
     this._keyrings = keyrings.map(makeKeyring);
     this._currentAccountId = currentAccountId;
@@ -149,7 +137,7 @@ export class AdenaWallet implements Wallet {
   get currentAccount() {
     const currentAccount = this._accounts.find(account => account.id === this._currentAccountId);
     if (!currentAccount) {
-      throw new Error("Current account not found");
+      throw new Error('Current account not found');
     }
     return currentAccount;
   }
@@ -158,7 +146,7 @@ export class AdenaWallet implements Wallet {
     const currentKeyringId = this.currentAccount.keyringId;
     const currentKeyring = this._keyrings.find(keyring => keyring.id === currentKeyringId);
     if (!currentKeyring) {
-      throw new Error("Current keyring not found");
+      throw new Error('Current keyring not found');
     }
     return currentKeyring;
   }
@@ -248,7 +236,7 @@ export class AdenaWallet implements Wallet {
 
   getMnemonic() {
     if (!isHDWalletKeyring(this.currentKeyring)) {
-      throw new Error("Mnemonic words not found");
+      throw new Error('Mnemonic words not found');
     }
     return this.currentKeyring.getMnemonic();
   }
@@ -274,7 +262,7 @@ export class AdenaWallet implements Wallet {
 
   getNextHDPathBy(keyring: Keyring) {
     if (!isHDWalletKeyring(keyring)) {
-      throw new Error("The current keyring is not an HD Wallet Keyring");
+      throw new Error('The current keyring is not an HD Wallet Keyring');
     }
 
     const seedAccounts = this.accounts
@@ -285,7 +273,7 @@ export class AdenaWallet implements Wallet {
     }
 
     const lastHdPath = seedAccounts.reduce((account1, account2) =>
-      account1.hdPath > account2.hdPath ? account1 : account2,
+      account1.hdPath > account2.hdPath ? account1 : account2
     ).hdPath;
 
     for (let index = 0; index < lastHdPath; index += 1) {
@@ -309,7 +297,7 @@ export class AdenaWallet implements Wallet {
 
     const removedKeyringId = removedAccount.keyringId;
     const keyringUsedCount = filteredAccounts.filter(
-      account => account.keyringId === removedKeyringId,
+      account => account.keyringId === removedKeyringId
     ).length;
     if (keyringUsedCount === 0) {
       const filteredKeyrings = this._keyrings.filter(keyring => keyring.id !== removedKeyringId);
@@ -327,13 +315,13 @@ export class AdenaWallet implements Wallet {
 
   async getPrivateKey() {
     if (!hasPrivateKey(this.currentKeyring)) {
-      throw new Error("Current account does not have a private key");
+      throw new Error('Current account does not have a private key');
     }
     if (isHDWalletKeyring(this.currentKeyring)) {
       if (this.currentAccount instanceof SeedAccount) {
         return this.currentKeyring.getPrivateKey(this.currentAccount.hdPath);
       }
-      throw new Error("Problems with account types");
+      throw new Error('Problems with account types');
     }
     return this.currentKeyring.privateKey;
   }
@@ -345,11 +333,11 @@ export class AdenaWallet implements Wallet {
   async signByAccountId(provider: Provider, accountId: string, document: Document) {
     const account = this._accounts.find(account => account.id === accountId);
     if (!account) {
-      throw new Error("Account not found");
+      throw new Error('Account not found');
     }
     const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
     if (!keyring) {
-      throw new Error("Keyring not found");
+      throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
       return keyring.sign(provider, document, account.hdPath);
@@ -360,11 +348,11 @@ export class AdenaWallet implements Wallet {
   async broadcastTxSync(provider: Provider, accountId: string, signedTx: Tx) {
     const account = this._accounts.find(account => account.id === accountId);
     if (!account) {
-      throw new Error("Account not found");
+      throw new Error('Account not found');
     }
     const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
     if (!keyring) {
-      throw new Error("Keyring not found");
+      throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
       return keyring.broadcastTxSync(provider, signedTx, account.hdPath);
@@ -375,11 +363,11 @@ export class AdenaWallet implements Wallet {
   async broadcastTxCommit(provider: Provider, accountId: string, signedTx: Tx) {
     const account = this._accounts.find(account => account.id === accountId);
     if (!account) {
-      throw new Error("Account not found");
+      throw new Error('Account not found');
     }
     const keyring = this._keyrings.find(keyring => keyring.id === account.keyringId);
     if (!keyring) {
-      throw new Error("Keyring not found");
+      throw new Error('Keyring not found');
     }
     if (hasHDPath(account)) {
       return keyring.broadcastTxCommit(provider, signedTx, account.hdPath);
@@ -391,7 +379,7 @@ export class AdenaWallet implements Wallet {
     const plain: WalletData = {
       currentAccountId: this._currentAccountId,
       accounts: this._accounts.map(account => account.toData()),
-      keyrings: this._keyrings.map(keyring => keyring.toData()),
+      keyrings: this._keyrings.map(keyring => keyring.toData())
     };
     const serialized = JSON.stringify(plain);
     const encryptedSerialize = await encryptAES(serialized, password);
@@ -405,7 +393,7 @@ export class AdenaWallet implements Wallet {
    */
   async hasAddress(address: string): Promise<boolean> {
     const addresses = await Promise.all(
-      this._accounts.map(account => account.getAddress(defaultAddressPrefix)),
+      this._accounts.map(account => account.getAddress(defaultAddressPrefix))
     );
     return addresses.includes(address);
   }
@@ -414,7 +402,7 @@ export class AdenaWallet implements Wallet {
     return new AdenaWallet({
       accounts: this._accounts.map(account => account.toData()),
       keyrings: this._keyrings.map(keyring => keyring.toData()),
-      currentAccountId: this._currentAccountId,
+      currentAccountId: this._currentAccountId
     });
   }
 

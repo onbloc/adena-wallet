@@ -1,26 +1,25 @@
 export const clearPopup = async (): Promise<void> => {
-  const windows = await chrome.windows.getAll()
+  const windows = await chrome.windows.getAll();
   windows.forEach((window) => {
     if (window.type === 'popup' && window.id) {
       if (window.focused) {
-        return
+        return;
       }
 
-      chrome.windows.remove(window.id)
-      return
+      chrome.windows.remove(window.id);
+      return;
     }
-  })
+  });
 
-  chrome.tabs.query({
-  }, (tabs) => {
+  chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.url?.includes(chrome.runtime.id)) {
         if (!tab.id) {
-          return
+          return;
         }
 
-        chrome.tabs.remove(tab.id)
+        chrome.tabs.remove(tab.id);
       }
-    })
-  })
-}
+    });
+  });
+};

@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconSetting = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconSetting = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -25,7 +19,7 @@ const IconSetting = ({
         fill='#646486'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconSetting
+export default IconSetting;

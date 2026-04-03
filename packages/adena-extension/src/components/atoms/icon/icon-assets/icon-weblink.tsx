@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconWebLink = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconWebLink = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -21,7 +15,7 @@ const IconWebLink = ({
         fill='white'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconWebLink
+export default IconWebLink;

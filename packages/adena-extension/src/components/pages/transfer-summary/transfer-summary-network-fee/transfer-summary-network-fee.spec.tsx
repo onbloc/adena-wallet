@@ -1,32 +1,20 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import TransferSummaryNetworkFee, {
-  TransferSummaryNetworkFeeProps,
-} from './transfer-summary-network-fee'
+import TransferSummaryNetworkFee, { TransferSummaryNetworkFeeProps } from './transfer-summary-network-fee';
 
 describe('TransferSummaryNetworkFee Component', () => {
   it('TransferSummaryNetworkFee render', () => {
     const args: TransferSummaryNetworkFeeProps = {
       value: '0.0048',
       denom: 'GNOT',
-      isError: false,
-    }
+      isError: false
+    };
 
     render(
       <RecoilRoot>
@@ -34,7 +22,7 @@ describe('TransferSummaryNetworkFee Component', () => {
         <ThemeProvider theme={theme}>
           <TransferSummaryNetworkFee {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,104 +1,78 @@
-import {
-  TransactionHistoryMapper,
-} from '@repositories/transaction/mapper/transaction-history-mapper'
-import {
-  keepPreviousData, useQuery, useQueryClient,
-} from '@tanstack/react-query'
-import {
-  TransactionInfo,
-} from '@types'
+import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { TransactionInfo } from '@types';
 
-import {
-  useGetAllGRC721Collections,
-} from './nft/use-get-all-grc721-collections'
-import {
-  useAdenaContext,
-} from './use-context'
-import {
-  useGRC20Tokens,
-} from './use-grc20-tokens'
-import {
-  useNetwork,
-} from './use-network'
-import {
-  useTokenMetainfo,
-} from './use-token-metainfo'
+import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
+import { useAdenaContext } from './use-context';
+import { useGRC20Tokens } from './use-grc20-tokens';
+import { useNetwork } from './use-network';
+import { useTokenMetainfo } from './use-token-metainfo';
 
 export interface UseMakeTransactionsWithTimeReturn {
-  status: 'pending' | 'error' | 'success'
-  isLoading: boolean
-  isFetched: boolean
-  isFetching: boolean
+  status: 'pending' | 'error' | 'success';
+  isLoading: boolean;
+  isFetched: boolean;
+  isFetching: boolean;
   data: {
-    title: string
-    transactions: TransactionInfo[]
-  }[] | null | undefined
+    title: string;
+    transactions: TransactionInfo[];
+  }[] | null | undefined;
 }
 
 export const useMakeTransactionsWithTime = (
   key: string,
-  transactions: TransactionInfo[] | null | undefined,
+  transactions: TransactionInfo[] | null | undefined
 ): UseMakeTransactionsWithTimeReturn => {
-  const {
-    currentNetwork,
-  } = useNetwork()
-  const {
-    transactionHistoryService,
-  } = useAdenaContext()
-  const {
-    allTokenMetainfos, tokenLogoMap, getTokenAmount,
-  } = useTokenMetainfo()
-  const {
-    isFetched: isFetchedTokens,
-  } = useGRC20Tokens()
-  const {
-    data: grc721Collections = [], isFetched: isFetchedGRC721Collections,
-  }
-    = useGetAllGRC721Collections()
+  const { currentNetwork } = useNetwork();
+  const { transactionHistoryService } = useAdenaContext();
+  const { allTokenMetainfos, tokenLogoMap, getTokenAmount } = useTokenMetainfo();
+  const { isFetched: isFetchedTokens } = useGRC20Tokens();
+  const { data: grc721Collections = [], isFetched: isFetchedGRC721Collections }
+    = useGetAllGRC721Collections();
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const {
-    status, isLoading, isFetched, isFetching, data,
+    status, isLoading, isFetched, isFetching, data
   } = useQuery({
     queryKey: ['useMakeTransactionsWithTime', currentNetwork.chainId, Object.values(tokenLogoMap).length, transactions?.length, key || ''],
     queryFn: () => {
       if (!transactions || !grc721Collections) {
-        return null
+        return null;
       }
 
       return Promise.all(
         transactions.map(async (transaction) => {
-          let time: string | null = transaction.date
+          let time: string | null = transaction.date;
 
           if (!transactionHistoryService.supportedApi) {
             time = await queryClient.fetchQuery({
               queryKey: ['blockTime', currentNetwork.networkId, transaction.height || 1],
               queryFn: () => transactionHistoryService.fetchBlockTime(Number(transaction.height || 1)),
-              staleTime: Infinity,
-            })
+              staleTime: Infinity
+            });
           }
 
           if (transaction.type === 'TRANSFER_GRC721') {
-            const amount = transaction.amount
+            const amount = transaction.amount;
             const collection = grc721Collections.find(
-              collection => collection.packagePath === amount.denom,
-            )
+              collection => collection.packagePath === amount.denom
+            );
             return {
               ...transaction,
               amount: {
                 ...amount,
-                denom: collection?.symbol || amount.denom,
+                denom: collection?.symbol || amount.denom
               },
               networkFee: getTokenAmount(
                 transaction.networkFee || {
                   value: '0',
-                  denom: 'GNOT',
-                },
+                  denom: 'GNOT'
+                }
               ),
               logo: collection?.packagePath || '',
-              date: time || '',
-            }
+              date: time || ''
+            };
           }
           return {
             ...transaction,
@@ -106,21 +80,21 @@ export const useMakeTransactionsWithTime = (
             networkFee: getTokenAmount(
               transaction.networkFee || {
                 value: '0',
-                denom: 'GNOT',
-              },
+                denom: 'GNOT'
+              }
             ),
             logo: tokenLogoMap?.[transaction.amount.denom] || '',
-            date: time || '',
-          }
-        }),
-      )
+            date: time || ''
+          };
+        })
+      );
     },
     select: (data) => {
       if (!data) {
-        return null
+        return null;
       }
 
-      return TransactionHistoryMapper.queryToDisplay(data)
+      return TransactionHistoryMapper.queryToDisplay(data);
     },
     enabled:
       !!transactionHistoryService.supported
@@ -129,14 +103,14 @@ export const useMakeTransactionsWithTime = (
       && isFetchedGRC721Collections
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
-    placeholderData: keepPreviousData,
-  })
+    placeholderData: keepPreviousData
+  });
 
   return {
     status,
     isLoading,
     isFetched,
     isFetching,
-    data,
-  }
-}
+    data
+  };
+};

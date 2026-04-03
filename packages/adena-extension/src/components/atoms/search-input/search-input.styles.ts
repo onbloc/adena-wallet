@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const SearchInputWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
   height: 100%;
@@ -55,4 +53,4 @@ export const SearchInputWrapper = styled.div`
       height: 100%;
     }
   }
-`
+`;

@@ -1,33 +1,21 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import {
-  ApproveLedgerLoading, ApproveLedgerLoadingProps,
-} from '.'
+import { ApproveLedgerLoading, ApproveLedgerLoadingProps } from '.';
 
 describe('ApproveLedgerLoading Component', () => {
   it('ApproveLedgerLoading render', () => {
     const args: ApproveLedgerLoadingProps = {
       document: null,
       onClickCancel: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -35,7 +23,7 @@ describe('ApproveLedgerLoading Component', () => {
         <ThemeProvider theme={theme}>
           <ApproveLedgerLoading {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

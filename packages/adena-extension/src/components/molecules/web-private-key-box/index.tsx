@@ -1,35 +1,23 @@
-import {
-  stringFromBase64,
-} from '@common/utils/encoding-util'
-import {
-  generateRandomHex,
-} from '@common/utils/rand-utils'
-import {
-  WebTextarea,
-} from '@components/atoms/web-textarea'
-import {
-  type JSX, useEffect, useState,
-} from 'react'
-import styled from 'styled-components'
+import { stringFromBase64 } from '@common/utils/encoding-util';
+import { generateRandomHex } from '@common/utils/rand-utils';
+import { WebTextarea } from '@components/atoms/web-textarea';
+import { type JSX, useEffect, useState } from 'react';
+import styled from 'styled-components';
 
-import {
-  View,
-} from '../../atoms'
+import { View } from '../../atoms';
 
 interface WebPrivateKeyBoxProps {
-  privateKey: string
-  showBlur?: boolean
-  readOnly?: boolean
-  error?: boolean
+  privateKey: string;
+  showBlur?: boolean;
+  readOnly?: boolean;
+  error?: boolean;
 }
 
-const StyledContainer = styled(View)<{
-  showBlur: boolean
-}>`
+const StyledContainer = styled(View)<{ showBlur: boolean }>`
   position: relative;
   overflow: hidden;
   height: 80px;
-`
+`;
 
 const StyledBlurScreen = styled(View)`
   position: absolute;
@@ -39,31 +27,31 @@ const StyledBlurScreen = styled(View)`
   background-color: #0000000a;
   backdrop-filter: blur(4px);
   border-radius: 10px;
-`
+`;
 
 export const WebPrivateKeyBox = ({
   privateKey,
   showBlur = true,
   readOnly = false,
-  error = false,
+  error = false
 }: WebPrivateKeyBoxProps): JSX.Element => {
-  const randomHexString = generateRandomHex()
-  const [displayPrivateKey, setDisplayPrivateKey] = useState<string>(randomHexString)
+  const randomHexString = generateRandomHex();
+  const [displayPrivateKey, setDisplayPrivateKey] = useState<string>(randomHexString);
 
   useEffect(() => {
     if (!showBlur) {
-      setDisplayPrivateKey(stringFromBase64(privateKey))
-      return
+      setDisplayPrivateKey(stringFromBase64(privateKey));
+      return;
     }
 
-    setDisplayPrivateKey(randomHexString)
-  }, [showBlur, privateKey])
+    setDisplayPrivateKey(randomHexString);
+  }, [showBlur, privateKey]);
 
   useEffect(() => {
     return () => {
-      setDisplayPrivateKey('')
-    }
-  }, [])
+      setDisplayPrivateKey('');
+    };
+  }, []);
 
   return (
     <StyledContainer showBlur={showBlur}>
@@ -72,15 +60,13 @@ export const WebPrivateKeyBox = ({
         placeholder='Private Key'
         readOnly={readOnly}
         error={error}
-        style={{
-          height: '100%',
-        }}
+        style={{ height: '100%' }}
         onChange={(): void => {
-          return
+          return;
         }}
         spellCheck={false}
       />
       {showBlur && <StyledBlurScreen />}
     </StyledContainer>
-  )
-}
+  );
+};

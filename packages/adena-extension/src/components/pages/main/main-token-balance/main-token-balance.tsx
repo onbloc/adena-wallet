@@ -1,33 +1,21 @@
-import {
-  TokenBalance,
-} from '@components/molecules'
-import {
-  useWindowSize,
-} from '@hooks/use-window-size'
-import React from 'react'
+import { TokenBalance } from '@components/molecules';
+import { useWindowSize } from '@hooks/use-window-size';
+import React from 'react';
 
-import {
-  MainTokenBalanceWrapper,
-} from './main-token-balance.styles'
+import { MainTokenBalanceWrapper } from './main-token-balance.styles';
 
 export interface MainTokenBalanceProps {
   amount: {
-    value: string
-    denom: string
-  }
+    value: string;
+    denom: string;
+  };
 }
 
-const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({
-  amount,
-}) => {
-  const {
-    value, denom,
-  } = amount
-  const {
-    windowSizeType,
-  } = useWindowSize()
+const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({ amount }) => {
+  const { value, denom } = amount;
+  const { windowSizeType } = useWindowSize();
 
-  const orientation = windowSizeType === 'EXPAND' ? 'HORIZONTAL' : 'VERTICAL'
+  const orientation = windowSizeType === 'EXPAND' ? 'HORIZONTAL' : 'VERTICAL';
 
   return (
     <MainTokenBalanceWrapper>
@@ -42,7 +30,7 @@ const MainTokenBalance: React.FC<MainTokenBalanceProps> = ({
         maxWidth={200}
       />
     </MainTokenBalanceWrapper>
-  )
-}
+  );
+};
 
-export default MainTokenBalance
+export default MainTokenBalance;

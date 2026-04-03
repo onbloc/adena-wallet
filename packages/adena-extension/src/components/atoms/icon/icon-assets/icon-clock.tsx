@@ -1,12 +1,6 @@
-import React, {
-  ReactElement,
-} from 'react'
+import React, { ReactElement } from 'react';
 
-const IconClock = ({
-  className,
-}: {
-  className: string
-}): ReactElement<any> => {
+const IconClock = ({ className }: { className: string }): ReactElement<any> => {
   return (
     <svg
       className={className}
@@ -25,7 +19,7 @@ const IconClock = ({
         fill='#212128'
       />
     </svg>
-  )
-}
+  );
+};
 
-export default IconClock
+export default IconClock;

@@ -1,11 +1,7 @@
-import {
-  View,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import { View } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const NFTAssetMetadataWrapper = styled(View)`
   width: 100%;
@@ -29,7 +25,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'flex-start',
-      justify: 'flex-start',
+      justify: 'flex-start'
     })};
     gap: 8px;
   }
@@ -42,7 +38,7 @@ export const NFTAssetMetadataWrapper = styled(View)`
     ${mixins.flex({
       direction: 'column',
       align: 'flex-start',
-      justify: 'flex-start',
+      justify: 'flex-start'
     })};
     width: auto;
     max-width: 100%;
@@ -62,4 +58,4 @@ export const NFTAssetMetadataWrapper = styled(View)`
       ${fonts.body2Reg};
     }
   }
-`
+`;

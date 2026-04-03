@@ -1,132 +1,102 @@
-import {
-  GNOT_TOKEN,
-} from '@common/constants/token.constant'
-import {
-  DEFAULT_NETWORK_FEE,
-} from '@common/constants/tx.constant'
-import {
-  TransactionValidationError,
-} from '@common/errors/validation/transaction-validation-error'
-import {
-  calculateByteSize,
-} from '@common/utils/string-utils'
-import NFTTransferInput from '@components/pages/nft-transfer-input/nft-transfer-input/nft-transfer-input'
-import {
-  useGetGRC721TokenUri,
-} from '@hooks/nft/use-get-grc721-token-uri'
-import {
-  useAddressBookInput,
-} from '@hooks/use-address-book-input'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  useCurrentAccount,
-} from '@hooks/use-current-account'
-import useHistoryData from '@hooks/use-history-data'
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import {
-  useTransferInfo,
-} from '@hooks/use-transfer-info'
-import {
-  GRC721Model, RoutePath,
-} from '@types'
-import BigNumber from 'bignumber.js'
+import { GNOT_TOKEN } from '@common/constants/token.constant';
+import { DEFAULT_NETWORK_FEE } from '@common/constants/tx.constant';
+import { TransactionValidationError } from '@common/errors/validation/transaction-validation-error';
+import { calculateByteSize } from '@common/utils/string-utils';
+import NFTTransferInput from '@components/pages/nft-transfer-input/nft-transfer-input/nft-transfer-input';
+import { useGetGRC721TokenUri } from '@hooks/nft/use-get-grc721-token-uri';
+import { useAddressBookInput } from '@hooks/use-address-book-input';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import useHistoryData from '@hooks/use-history-data';
+import { useNetwork } from '@hooks/use-network';
+import { useTransferInfo } from '@hooks/use-transfer-info';
+import { GRC721Model, RoutePath } from '@types';
+import BigNumber from 'bignumber.js';
 import React, {
-  useCallback, useEffect, useMemo, useState,
-} from 'react'
+  useCallback, useEffect, useMemo, useState
+} from 'react';
 
 interface HistoryData {
-  grc721Token: GRC721Model
+  grc721Token: GRC721Model;
   addressInput: {
-    selected: boolean
+    selected: boolean;
     selectedAddressBook: {
-      id: string
-      name: string
-      address: string
-      createdAt: string
-    } | null
-    address?: string
-  }
+      id: string;
+      name: string;
+      address: string;
+      createdAt: string;
+    } | null;
+    address?: string;
+  };
 }
 
-const MEMO_MAX_BYTES = 65_536 // 2 ** 16
+const MEMO_MAX_BYTES = 65_536; // 2 ** 16
 
 const NFTTransferInputContainer: React.FC = () => {
-  const {
-    params, navigate, goBack,
-  } = useAppNavigate<RoutePath.NftTransferInput>()
-  const grc721Token = params.collectionAsset
+  const { params, navigate, goBack } = useAppNavigate<RoutePath.NftTransferInput>();
+  const grc721Token = params.collectionAsset;
 
-  const addressBookInput = useAddressBookInput()
-  const {
-    currentAccount,
-  } = useCurrentAccount()
-  const {
-    getHistoryData, setHistoryData,
-  } = useHistoryData<HistoryData>()
-  const {
-    currentNetwork,
-  } = useNetwork()
-  const {
-    memorizedTransferInfo, clear: clearMemorizedTransferInfo,
-  } = useTransferInfo()
-  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '')
+  const addressBookInput = useAddressBookInput();
+  const { currentAccount } = useCurrentAccount();
+  const { getHistoryData, setHistoryData } = useHistoryData<HistoryData>();
+  const { currentNetwork } = useNetwork();
+  const { memorizedTransferInfo, clear: clearMemorizedTransferInfo } = useTransferInfo();
+  const [memo, setMemo] = useState(memorizedTransferInfo?.memo || '');
 
   const memoError = useMemo(() => {
-    const size = calculateByteSize(memo)
+    const size = calculateByteSize(memo);
     if (size < MEMO_MAX_BYTES) {
-      return null
+      return null;
     }
 
-    return new TransactionValidationError('MEMO_TOO_LARGE_ERROR')
-  }, [memo])
+    return new TransactionValidationError('MEMO_TOO_LARGE_ERROR');
+  }, [memo]);
 
   const onChangeMemo = useCallback((memo: string) => {
-    setMemo(memo)
-  }, [])
+    setMemo(memo);
+  }, []);
 
   const saveHistoryData = (): void => {
     if (!grc721Token) {
-      return
+      return;
     }
     setHistoryData({
       grc721Token,
       addressInput: {
         selected: addressBookInput.selected,
         selectedAddressBook: addressBookInput.selectedAddressBook,
-        address: addressBookInput.address,
-      },
-    })
-  }
+        address: addressBookInput.address
+      }
+    });
+  };
 
   const isNext = useMemo(() => {
     if (addressBookInput.resultAddress === '') {
-      return false
+      return false;
     }
     if (memoError !== null) {
-      return false
+      return false;
     }
-    return true
-  }, [addressBookInput, memoError])
+    return true;
+  }, [addressBookInput, memoError]);
 
   const onClickCancel = useCallback(() => {
-    goBack()
-  }, [])
+    goBack();
+  }, []);
 
   const onClickNext = useCallback(async () => {
     if (!isNext) {
-      return
+      return;
     }
     if (!grc721Token) {
-      return
+      return;
     }
     const validAddress
       = addressBookInput.validateAddressBookInput()
-        && (await addressBookInput.validateEqualAddress())
+        && (await addressBookInput.validateEqualAddress());
 
     if (validAddress) {
-      saveHistoryData()
+      saveHistoryData();
       navigate(RoutePath.NftTransferSummary, {
         state: {
           grc721Token,
@@ -135,33 +105,33 @@ const NFTTransferInputContainer: React.FC = () => {
             value: BigNumber(DEFAULT_NETWORK_FEE)
               .shiftedBy(GNOT_TOKEN.decimals * -1)
               .toString(),
-            denom: GNOT_TOKEN.symbol,
+            denom: GNOT_TOKEN.symbol
           },
-          memo,
-        },
-      })
+          memo
+        }
+      });
     }
-  }, [addressBookInput, isNext])
+  }, [addressBookInput, isNext]);
 
   useEffect(() => {
     if (currentAccount) {
-      addressBookInput.updateAddressBook()
-      clearMemorizedTransferInfo()
+      addressBookInput.updateAddressBook();
+      clearMemorizedTransferInfo();
     }
-  }, [currentAccount, currentNetwork.chainId])
+  }, [currentAccount, currentNetwork.chainId]);
 
   useEffect(() => {
-    const historyData = getHistoryData()
+    const historyData = getHistoryData();
     if (historyData) {
-      addressBookInput.setSelected(historyData.addressInput.selected)
+      addressBookInput.setSelected(historyData.addressInput.selected);
       if (historyData.addressInput.selectedAddressBook) {
-        addressBookInput.setSelectedAddressBook(historyData.addressInput.selectedAddressBook)
+        addressBookInput.setSelectedAddressBook(historyData.addressInput.selectedAddressBook);
       }
       if (historyData.addressInput.address) {
-        addressBookInput.setAddress(historyData.addressInput.address)
+        addressBookInput.setAddress(historyData.addressInput.address);
       }
     }
-  }, [getHistoryData()])
+  }, [getHistoryData()]);
 
   return (
     <NFTTransferInput
@@ -171,7 +141,7 @@ const NFTTransferInputContainer: React.FC = () => {
       memoInput={{
         memo,
         onChangeMemo,
-        memoError,
+        memoError
       }}
       isNext={isNext}
       onClickBack={goBack}
@@ -179,7 +149,7 @@ const NFTTransferInputContainer: React.FC = () => {
       onClickNext={onClickNext}
       hasBackButton
     />
-  )
-}
+  );
+};
 
-export default NFTTransferInputContainer
+export default NFTTransferInputContainer;

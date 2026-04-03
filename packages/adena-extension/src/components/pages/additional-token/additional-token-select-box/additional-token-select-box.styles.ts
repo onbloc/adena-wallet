@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AdditionalTokenSelectBoxWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   position: relative;
   width: 100%;
@@ -16,7 +14,7 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
   .fixed-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal',
+      justify: 'normal'
     })};
     position: relative;
     width: 100%;
@@ -90,4 +88,4 @@ export const AdditionalTokenSelectBoxWrapper = styled.div`
       }
     }
   }
-`
+`;

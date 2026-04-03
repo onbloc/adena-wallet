@@ -1,12 +1,10 @@
-import {
-  CommonFullContentLayout,
-} from '@components/atoms'
-import useBroadcastTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen'
-import React from 'react'
+import { CommonFullContentLayout } from '@components/atoms';
+import useBroadcastTransactionScreen from '@hooks/wallet/broadcast-transaction/use-broadcast-transaction-screen';
+import React from 'react';
 
-import BroadcastTransactionFailed from './failed'
-import BroadcastTransactionLoading from './loading'
-import BroadcastTransactionUpload from './upload'
+import BroadcastTransactionFailed from './failed';
+import BroadcastTransactionLoading from './loading';
+import BroadcastTransactionUpload from './upload';
 
 const BroadcastTransactionScreen: React.FC = () => {
   const {
@@ -15,8 +13,8 @@ const BroadcastTransactionScreen: React.FC = () => {
     broadcastTransactionState,
     rawTransaction,
     broadcast,
-    uploadTransaction,
-  } = useBroadcastTransactionScreen()
+    uploadTransaction
+  } = useBroadcastTransactionScreen();
 
   return (
     <CommonFullContentLayout>
@@ -32,7 +30,7 @@ const BroadcastTransactionScreen: React.FC = () => {
       {broadcastTransactionState === 'LOADING' && <BroadcastTransactionLoading />}
       {broadcastTransactionState === 'FAILED' && <BroadcastTransactionFailed />}
     </CommonFullContentLayout>
-  )
-}
+  );
+};
 
-export default BroadcastTransactionScreen
+export default BroadcastTransactionScreen;

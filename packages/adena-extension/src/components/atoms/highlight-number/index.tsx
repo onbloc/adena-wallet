@@ -1,22 +1,16 @@
-import {
-  FontsType,
-} from '@styles/theme'
-import BigNumber from 'bignumber.js'
-import React, {
-  useMemo,
-} from 'react'
+import { FontsType } from '@styles/theme';
+import BigNumber from 'bignumber.js';
+import React, { useMemo } from 'react';
 
-import {
-  HighlightNumberWrapper,
-} from './highlight-number.styles'
+import { HighlightNumberWrapper } from './highlight-number.styles';
 
 export interface HighlightNumberProps {
-  value: string
-  fontColor?: string
-  fontStyleKey?: FontsType
-  minimumFontSize?: string
-  lineHeight?: string
-  withSign?: boolean
+  value: string;
+  fontColor?: string;
+  fontStyleKey?: FontsType;
+  minimumFontSize?: string;
+  lineHeight?: string;
+  withSign?: boolean;
 }
 
 export const HighlightNumber: React.FC<HighlightNumberProps> = ({
@@ -25,20 +19,20 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
   fontStyleKey = 'header6',
   minimumFontSize = '14px',
   lineHeight,
-  withSign = false,
+  withSign = false
 }) => {
-  const hasDecimal = value.includes('.')
-  const [integer, decimal] = hasDecimal ? value.split('.') : [value, '']
+  const hasDecimal = value.includes('.');
+  const [integer, decimal] = hasDecimal ? value.split('.') : [value, ''];
 
   const integerStr = useMemo(() => {
-    const raw = integer.replace(/,/g, '')
-    const formattedValue = raw === '' ? '0' : BigNumber(raw).toFormat(0)
+    const raw = integer.replace(/,/g, '');
+    const formattedValue = raw === '' ? '0' : BigNumber(raw).toFormat(0);
     if (withSign) {
-      return `+${formattedValue}`
+      return `+${formattedValue}`;
     }
 
-    return formattedValue
-  }, [integer])
+    return formattedValue;
+  }, [integer]);
 
   return (
     <HighlightNumberWrapper
@@ -53,5 +47,5 @@ export const HighlightNumber: React.FC<HighlightNumberProps> = ({
         {decimal}
       </span>
     </HighlightNumberWrapper>
-  )
-}
+  );
+};

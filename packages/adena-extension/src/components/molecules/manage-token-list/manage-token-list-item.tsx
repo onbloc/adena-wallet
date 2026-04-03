@@ -1,85 +1,69 @@
-import IconEmptyImage from '@assets/icon-empty-image.svg'
-import Toggle from '@components/atoms/toggle'
-import {
-  UseQueryOptions, UseQueryResult,
-} from '@tanstack/react-query'
-import BigNumber from 'bignumber.js'
-import React, {
-  useMemo, useState,
-} from 'react'
-import {
-  useTheme,
-} from 'styled-components'
+import IconEmptyImage from '@assets/icon-empty-image.svg';
+import Toggle from '@components/atoms/toggle';
+import { UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import BigNumber from 'bignumber.js';
+import React, { useMemo, useState } from 'react';
+import { useTheme } from 'styled-components';
 
-import {
-  TokenBalance,
-} from '../token-balance'
-import {
-  ManageGRC721Info, ManageTokenInfo,
-} from './manage-token-list'
-import {
-  ManageTokenListItemWrapper,
-} from './manage-token-list.styles'
+import { TokenBalance } from '../token-balance';
+import { ManageGRC721Info, ManageTokenInfo } from './manage-token-list';
+import { ManageTokenListItemWrapper } from './manage-token-list.styles';
 
 export interface ManageTokenListItemProps {
-  token: ManageTokenInfo | ManageGRC721Info
+  token: ManageTokenInfo | ManageGRC721Info;
   queryGRC721TokenUri?: (
     packagePath: string,
     tokenId: string,
-    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<string | null>
+    options?: Omit<UseQueryOptions<string | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<string | null>;
   queryGRC721Balance?: (
     packagePath: string,
-    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>,
-  ) => UseQueryResult<number | null>
-  onToggleActiveItem: (tokenId: string, activated: boolean) => void
+    options?: Omit<UseQueryOptions<number | null, Error>, 'queryKey' | 'queryFn'>
+  ) => UseQueryResult<number | null>;
+  onToggleActiveItem: (tokenId: string, activated: boolean) => void;
 }
 
 function isManageTokenInfo(token: ManageTokenInfo | ManageGRC721Info): token is ManageTokenInfo {
-  return token.type === 'token'
+  return token.type === 'token';
 }
 
 const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
   token,
   queryGRC721TokenUri,
   queryGRC721Balance,
-  onToggleActiveItem,
+  onToggleActiveItem
 }) => {
-  const theme = useTheme()
-  const [hasLogoError, setHasLogoError] = useState(false)
-  const isTokenInfo = isManageTokenInfo(token)
+  const theme = useTheme();
+  const [hasLogoError, setHasLogoError] = useState(false);
+  const isTokenInfo = isManageTokenInfo(token);
   const tokenUriResponse
     = !isTokenInfo && token.isTokenUri && queryGRC721TokenUri
-      ? queryGRC721TokenUri(token.packagePath, '0', {
-          enabled: !!token.isTokenUri,
-        })
-      : null
+      ? queryGRC721TokenUri(token.packagePath, '0', { enabled: !!token.isTokenUri })
+      : null;
   const tokenBalanceResponse
     = !isTokenInfo && queryGRC721Balance
-      ? queryGRC721Balance(token.packagePath, {
-          refetchOnMount: true,
-        })
-      : null
+      ? queryGRC721Balance(token.packagePath, { refetchOnMount: true })
+      : null;
 
   const grc721CollectionImage = useMemo(() => {
     if (!hasLogoError) {
-      return null
+      return null;
     }
 
     if (!tokenUriResponse) {
-      return null
+      return null;
     }
 
     if (!tokenUriResponse.data) {
-      return null
+      return null;
     }
 
-    return tokenUriResponse.data
-  }, [tokenUriResponse])
+    return tokenUriResponse.data;
+  }, [tokenUriResponse]);
 
   const grc721BalanceStr = useMemo(() => {
     if (isTokenInfo) {
-      return ''
+      return '';
     }
 
     if (
@@ -87,20 +71,20 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
       || tokenBalanceResponse.data === undefined
       || tokenBalanceResponse.data === null
     ) {
-      return '-'
+      return '-';
     }
 
-    const balanceBN = BigNumber(tokenBalanceResponse.data)
+    const balanceBN = BigNumber(tokenBalanceResponse.data);
     if (balanceBN.isGreaterThan(1)) {
-      return `${balanceBN.toFormat()} Items`
+      return `${balanceBN.toFormat()} Items`;
     }
 
-    return `${balanceBN.toFormat()} Item`
-  }, [token])
+    return `${balanceBN.toFormat()} Item`;
+  }, [token]);
 
   const handleLogoError = (): void => {
-    setHasLogoError(true)
-  }
+    setHasLogoError(true);
+  };
 
   if (isTokenInfo) {
     return (
@@ -131,7 +115,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
           )}
         </div>
       </ManageTokenListItemWrapper>
-    )
+    );
   }
 
   return (
@@ -160,7 +144,7 @@ const ManageTokenListItem: React.FC<ManageTokenListItemProps> = ({
         />
       </div>
     </ManageTokenListItemWrapper>
-  )
-}
+  );
+};
 
-export default ManageTokenListItem
+export default ManageTokenListItem;

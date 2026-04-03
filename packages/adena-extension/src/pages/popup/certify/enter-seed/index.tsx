@@ -1,41 +1,29 @@
 import {
-  Button, ErrorText, SecureTextarea, Text,
-} from '@components/atoms'
-import {
-  TermsCheckbox, TitleWithDesc,
-} from '@components/molecules'
-import {
-  useEnterSeed,
-} from '@hooks/certify/use-enter-seed'
-import useAppNavigate from '@hooks/use-app-navigate'
-import mixins from '@styles/mixins'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+  Button, ErrorText, SecureTextarea, Text
+} from '@components/atoms';
+import { TermsCheckbox, TitleWithDesc } from '@components/molecules';
+import { useEnterSeed } from '@hooks/certify/use-enter-seed';
+import useAppNavigate from '@hooks/use-app-navigate';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
 const walletContent = {
   title: 'Import with Seed Phrase',
   desc: 'Import an existing wallet with\na 12 or 24-word seed phrase.',
-  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
-}
+  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.'
+};
 
 const forgotContent = {
   title: 'Enter Seed Phrase ',
   desc: 'Reset your password with\na 12 or 24-word seed phrase.',
-  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.',
-}
+  terms: 'This phrase will only be stored on this device. Adena can’t recover it for you.'
+};
 
 export const EnterSeedPhrase = (): JSX.Element => {
-  const {
-    seedState, termsState, buttonState,
-  } = useEnterSeed()
-  const {
-    params,
-  } = useAppNavigate<RoutePath.EnterSeedPhrase>()
+  const { seedState, termsState, buttonState } = useEnterSeed();
+  const { params } = useAppNavigate<RoutePath.EnterSeedPhrase>();
 
   return (
     <Wrapper onKeyDown={seedState.onKeyDown}>
@@ -68,20 +56,18 @@ export const EnterSeedPhrase = (): JSX.Element => {
         </Button>
       </TermsWrap>
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
-  ${mixins.flex({
-    justify: 'flex-start',
-  })};
+  ${mixins.flex({ justify: 'flex-start' })};
   width: 100%;
   height: 100%;
   padding-top: 50px;
   .seed-box {
     margin-top: 27px;
   }
-`
+`;
 
 const TermsWrap = styled.div`
   margin-top: auto;
@@ -89,4 +75,4 @@ const TermsWrap = styled.div`
   .terms-A {
     margin-bottom: 13px;
   }
-`
+`;

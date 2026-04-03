@@ -1,20 +1,12 @@
-import {
-  Text,
-} from '@components/atoms'
-import mixins from '@styles/mixins'
-import {
-  getTheme,
-} from '@styles/theme'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import { Text } from '@components/atoms';
+import mixins from '@styles/mixins';
+import { getTheme } from '@styles/theme';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
-import IconExpand from '../icon/icon-assets/icon-expand'
+import IconExpand from '../icon/icon-assets/icon-expand';
 
-interface PopWindowButtonProps {
-  onClick: () => void
-}
+interface PopWindowButtonProps { onClick: () => void }
 
 const StyledContainer = styled.div`
   display: flex;
@@ -30,30 +22,24 @@ const StyledContainer = styled.div`
     transition: all 0.1s ease-in-out;
     transform: scale(1);
   }
-`
+`;
 
 const StyledIconWrapper = styled.div`
   display: flex;
 
   .icon-expand {
     transition: 0.2s;
-    fill: ${({
-      theme,
-    }): string => theme.neutral.a};
+    fill: ${({ theme }): string => theme.neutral.a};
   }
 
   &:hover .icon-expand {
-    fill: ${({
-      theme,
-    }): string => theme.neutral._1};
+    fill: ${({ theme }): string => theme.neutral._1};
   }
-`
+`;
 
 const StyledTooltip = styled.div`
   position: fixed;
-  ${mixins.flex({
-    direction: 'row',
-  })};
+  ${mixins.flex({ direction: 'row' })};
   width: max-content;
   height: 25px;
   visibility: hidden;
@@ -64,11 +50,9 @@ const StyledTooltip = styled.div`
   top: 40px;
   right: 12px;
   transform: scale(0.6);
-`
+`;
 
-export const PopWindowButton = ({
-  onClick,
-}: PopWindowButtonProps): JSX.Element => {
+export const PopWindowButton = ({ onClick }: PopWindowButtonProps): JSX.Element => {
   return (
     <StyledContainer>
       <StyledIconWrapper onClick={onClick}>
@@ -78,5 +62,5 @@ export const PopWindowButton = ({
         <Text type='body3Reg'>Pop Window</Text>
       </StyledTooltip>
     </StyledContainer>
-  )
-}
+  );
+};

@@ -1,45 +1,19 @@
-import {
-  useNetwork,
-} from '@hooks/use-network'
-import {
-  WalletState,
-} from '@states'
-import {
-  getTheme,
-} from '@styles/theme'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX,
-} from 'react'
-import {
-  useLocation, useMatch,
-} from 'react-router'
-import {
-  useRecoilState,
-} from 'recoil'
-import styled from 'styled-components'
+import { useNetwork } from '@hooks/use-network';
+import { WalletState } from '@states';
+import { getTheme } from '@styles/theme';
+import { RoutePath } from '@types';
+import React, { type JSX } from 'react';
+import { useLocation, useMatch } from 'react-router';
+import { useRecoilState } from 'recoil';
+import styled from 'styled-components';
 
-import ApproveMenu from './approve-menu'
-import {
-  ArrowTitleMenu,
-} from './arrow-title-menu'
-import {
-  CloseTitleMenu,
-} from './close-title-menu'
-import {
-  HomeMenu,
-} from './home-menu'
-import {
-  ProgressMenu,
-} from './progress-menu'
-import {
-  TabMenu,
-} from './tab-menu'
-import {
-  TopMenu,
-} from './top-menu'
+import ApproveMenu from './approve-menu';
+import { ArrowTitleMenu } from './arrow-title-menu';
+import { CloseTitleMenu } from './close-title-menu';
+import { HomeMenu } from './home-menu';
+import { ProgressMenu } from './progress-menu';
+import { TabMenu } from './tab-menu';
+import { TopMenu } from './top-menu';
 
 const Wrapper = styled.header`
   display: flex;
@@ -50,65 +24,63 @@ const Wrapper = styled.header`
   position: sticky;
   top: 0px;
   z-index: 2;
-`
+`;
 
 export const Header = (): JSX.Element => {
-  const location = useLocation()
-  const login = useMatch(RoutePath.Login)
-  const approveEstablish = useMatch(RoutePath.ApproveEstablish)
-  const ApproveLogin = useMatch(RoutePath.ApproveLogin)
-  const approveSign = useMatch(RoutePath.ApproveSign)
-  const approveTransaction = useMatch(RoutePath.ApproveTransaction)
-  const approveSignFailed = useMatch(RoutePath.ApproveSignFailed)
-  const wallet = useMatch('/wallet/*')
-  const nft = useMatch(RoutePath.Nft)
+  const location = useLocation();
+  const login = useMatch(RoutePath.Login);
+  const approveEstablish = useMatch(RoutePath.ApproveEstablish);
+  const ApproveLogin = useMatch(RoutePath.ApproveLogin);
+  const approveSign = useMatch(RoutePath.ApproveSign);
+  const approveTransaction = useMatch(RoutePath.ApproveTransaction);
+  const approveSignFailed = useMatch(RoutePath.ApproveSignFailed);
+  const wallet = useMatch('/wallet/*');
+  const nft = useMatch(RoutePath.Nft);
 
-  const explore = useMatch(RoutePath.Explore)
-  const history = useMatch(RoutePath.History)
-  const settings = useMatch('/settings/*')
-  const connectedApps = useMatch(RoutePath.ConnectedApps)
-  const changeNetwork = useMatch(RoutePath.ChangeNetwork)
+  const explore = useMatch(RoutePath.Explore);
+  const history = useMatch(RoutePath.History);
+  const settings = useMatch('/settings/*');
+  const connectedApps = useMatch(RoutePath.ConnectedApps);
+  const changeNetwork = useMatch(RoutePath.ChangeNetwork);
 
-  const accountDetails = useMatch(RoutePath.AccountDetails)
-  const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase)
-  const createPassword = useMatch(RoutePath.CreatePassword)
-  const launchAdena = useMatch(RoutePath.LaunchAdena)
+  const accountDetails = useMatch(RoutePath.AccountDetails);
+  const enterSeedPhrase = useMatch(RoutePath.EnterSeedPhrase);
+  const createPassword = useMatch(RoutePath.CreatePassword);
+  const launchAdena = useMatch(RoutePath.LaunchAdena);
 
-  const forgotPassword = useMatch(RoutePath.ForgotPassword)
-  const resetWallet = useMatch(RoutePath.ResetWallet)
-  const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger)
-  const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount)
+  const forgotPassword = useMatch(RoutePath.ForgotPassword);
+  const resetWallet = useMatch(RoutePath.ResetWallet);
+  const approveHardwareWalletConnect = useMatch(RoutePath.WebConnectLedger);
+  const approveHardwareWalletSelectAccount = useMatch(RoutePath.WebConnectLedgerSelectAccount);
 
-  const [walletState] = useRecoilState(WalletState.state)
-  const {
-    failedNetwork,
-  } = useNetwork()
+  const [walletState] = useRecoilState(WalletState.state);
+  const { failedNetwork } = useNetwork();
 
-  const loadingComplete = walletState === 'FINISH' || failedNetwork !== null
+  const loadingComplete = walletState === 'FINISH' || failedNetwork !== null;
   const renderHeader = (): JSX.Element | undefined => {
     if (login || ApproveLogin) {
-      return <HomeMenu entry={location.pathname as string} />
+      return <HomeMenu entry={location.pathname as string} />;
     }
     if (enterSeedPhrase) {
       if (location?.state?.type === 'ADD_ACCOUNT') {
-        return <ArrowTitleMenu />
+        return <ArrowTitleMenu />;
       }
-      return <ProgressMenu progressLevel='first' />
+      return <ProgressMenu progressLevel='first' />;
     }
     if (approveEstablish || approveTransaction || approveSign || approveSignFailed) {
-      return <ApproveMenu />
+      return <ApproveMenu />;
     }
     if (createPassword) {
-      return <ProgressMenu progressLevel='second' />
+      return <ProgressMenu progressLevel='second' />;
     }
     if (launchAdena) {
-      return <ProgressMenu progressLevel='third' hideArrow />
+      return <ProgressMenu progressLevel='third' hideArrow />;
     }
     if (forgotPassword) {
-      return <ArrowTitleMenu title='Forgot Password?' />
+      return <ArrowTitleMenu title='Forgot Password?' />;
     }
     if (approveHardwareWalletConnect || approveHardwareWalletSelectAccount) {
-      return <TabMenu />
+      return <TabMenu />;
     }
     if (resetWallet) {
       return location?.state?.from === 'forgot-password'
@@ -117,11 +89,11 @@ export const Header = (): JSX.Element => {
           )
         : (
             <TopMenu />
-          )
+          );
     }
 
     if (accountDetails) {
-      return <CloseTitleMenu title='Account Details' />
+      return <CloseTitleMenu title='Account Details' />;
     }
 
     if (
@@ -134,9 +106,9 @@ export const Header = (): JSX.Element => {
       || changeNetwork
       || loadingComplete
     ) {
-      return <TopMenu />
+      return <TopMenu />;
     }
-  }
+  };
 
-  return <Wrapper>{renderHeader()}</Wrapper>
-}
+  return <Wrapper>{renderHeader()}</Wrapper>;
+};

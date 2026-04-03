@@ -1,29 +1,23 @@
-import {
-  Text,
-} from '@components/atoms'
-import theme from '@styles/theme'
-import React, {
-  useMemo,
-} from 'react'
+import { Text } from '@components/atoms';
+import theme from '@styles/theme';
+import React, { useMemo } from 'react';
 
-import {
-  AdditionalTokenPathInputWrapper,
-} from './additional-token-path-input.styles'
+import { AdditionalTokenPathInputWrapper } from './additional-token-path-input.styles';
 
 export interface AdditionalTokenPathInputProps {
-  keyword: string
-  onChangeKeyword: (keyword: string) => void
-  errorMessage: string | null
+  keyword: string;
+  onChangeKeyword: (keyword: string) => void;
+  errorMessage: string | null;
 }
 
 const AdditionalTokenPathInput: React.FC<AdditionalTokenPathInputProps> = ({
   keyword,
   onChangeKeyword,
-  errorMessage,
+  errorMessage
 }) => {
   const hasError = useMemo(() => {
-    return !!errorMessage
-  }, [errorMessage])
+    return !!errorMessage;
+  }, [errorMessage]);
 
   return (
     <AdditionalTokenPathInputWrapper>
@@ -40,7 +34,7 @@ const AdditionalTokenPathInput: React.FC<AdditionalTokenPathInputProps> = ({
         </Text>
       )}
     </AdditionalTokenPathInputWrapper>
-  )
-}
+  );
+};
 
-export default AdditionalTokenPathInput
+export default AdditionalTokenPathInput;

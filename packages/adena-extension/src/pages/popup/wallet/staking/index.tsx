@@ -1,10 +1,6 @@
-import {
-  Text,
-} from '@components/atoms'
-import React, {
-  type JSX,
-} from 'react'
-import styled from 'styled-components'
+import { Text } from '@components/atoms';
+import React, { type JSX } from 'react';
+import styled from 'styled-components';
 
 const Wrapper = styled.div`
   position: relative;
@@ -26,7 +22,7 @@ const Wrapper = styled.div`
     left: 0px;
     z-index: 1;
   }
-`
+`;
 
 export const Staking = (): JSX.Element => {
   return (
@@ -35,5 +31,5 @@ export const Staking = (): JSX.Element => {
         Staking
       </Text>
     </Wrapper>
-  )
-}
+  );
+};

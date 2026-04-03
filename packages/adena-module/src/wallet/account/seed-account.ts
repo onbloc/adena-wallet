@@ -1,19 +1,9 @@
-import {
-  v4 as uuidv4,
-} from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
-import {
-  publicKeyToAddress,
-} from "../../utils/address.js";
-import {
-  isHDWalletKeyring, Keyring, KeyringType,
-} from "../../wallet/keyring/index.js";
-import {
-  Wallet,
-} from "../wallet.js";
-import {
-  Account, AccountInfo,
-} from "./account.js";
+import { publicKeyToAddress } from '../../utils/address.js';
+import { isHDWalletKeyring, Keyring, KeyringType } from '../../wallet/keyring/index.js';
+import { Wallet } from '../wallet.js';
+import { Account, AccountInfo } from './account.js';
 
 export class SeedAccount implements Account {
   public readonly id;
@@ -31,7 +21,7 @@ export class SeedAccount implements Account {
   private _name: string;
 
   constructor({
-    id, index, keyringId, publicKey, type, name, hdPath,
+    id, index, keyringId, publicKey, type, name, hdPath
   }: AccountInfo) {
     this.id = id ?? uuidv4();
     this._index = index;
@@ -70,32 +60,30 @@ export class SeedAccount implements Account {
       keyringId: this.keyringId,
       hdPath: this.hdPath,
       publicKey: Array.from(this.publicKey),
-      name: this._name,
+      name: this._name
     };
   }
 
   public static async createBy(keyring: Keyring, name: string, hdPath: number, index = 1) {
     if (!isHDWalletKeyring(keyring)) {
-      throw new Error("Invalid account type");
+      throw new Error('Invalid account type');
     }
     const publicKey = await keyring.getPublicKey(hdPath);
 
-    const {
-      id: keyringId, type: type,
-    } = keyring;
+    const { id: keyringId, type: type } = keyring;
     return new SeedAccount({
       keyringId,
       index,
       type,
       publicKey: Array.from(publicKey),
       name,
-      hdPath,
+      hdPath
     });
   }
 
   public static async createByWallet(wallet: Wallet) {
     if (!wallet.currentKeyring || !isHDWalletKeyring(wallet.currentKeyring)) {
-      throw new Error("The current keyring is not an HD Wallet Keyring");
+      throw new Error('The current keyring is not an HD Wallet Keyring');
     }
     const hdPath = wallet.getNextHDPathBy(wallet.currentKeyring);
     return this.createBy(wallet.currentKeyring, wallet.nextAccountName, hdPath);
@@ -109,7 +97,7 @@ export class SeedAccount implements Account {
       keyringId: accountInfo.keyringId,
       hdPath: accountInfo.hdPath,
       publicKey: accountInfo.publicKey,
-      name: accountInfo.name,
+      name: accountInfo.name
     });
   }
 }

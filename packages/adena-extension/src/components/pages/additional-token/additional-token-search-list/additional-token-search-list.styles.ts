@@ -1,13 +1,11 @@
-import mixins from '@styles/mixins'
-import {
-  fonts, getTheme,
-} from '@styles/theme'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import { fonts, getTheme } from '@styles/theme';
+import styled from 'styled-components';
 
 export const AdditionalTokenSearchListWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   width: 100%;
   height: auto;
@@ -16,7 +14,7 @@ export const AdditionalTokenSearchListWrapper = styled.div`
   .scroll-wrapper {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal',
+      justify: 'normal'
     })};
     width: 100%;
     overflow-y: auto;
@@ -31,13 +29,13 @@ export const AdditionalTokenSearchListWrapper = styled.div`
     justify-content: center;
     align-items: center;
   }
-`
+`;
 
 export const AdditionalTokenSearchListItemWrapper = styled.div`
   ${mixins.flex({
     direction: 'row',
     align: 'normal',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   height: auto;
@@ -80,4 +78,4 @@ export const AdditionalTokenSearchListItemWrapper = styled.div`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-`
+`;

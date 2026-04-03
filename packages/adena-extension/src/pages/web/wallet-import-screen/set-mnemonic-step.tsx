@@ -1,35 +1,23 @@
 import {
-  Row, View, WebButton, WebCheckBox, WebText,
-} from '@components/atoms'
-import {
-  WebSeedInput, WebTitleWithDescription,
-} from '@components/molecules'
-import {
-  UseWalletImportReturn,
-} from '@hooks/web/use-wallet-import-screen'
-import {
-  ReactElement, useState,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+  Row, View, WebButton, WebCheckBox, WebText
+} from '@components/atoms';
+import { WebSeedInput, WebTitleWithDescription } from '@components/molecules';
+import { UseWalletImportReturn } from '@hooks/web/use-wallet-import-screen';
+import { ReactElement, useState } from 'react';
+import styled, { useTheme } from 'styled-components';
 
 const StyledContainer = styled(View)`
   width: 100%;
   row-gap: 24px;
-`
+`;
 
-const SetMnemonicStep = ({
-  useWalletImportScreenReturn,
-}: {
-  useWalletImportScreenReturn: UseWalletImportReturn
-}): ReactElement<any> => {
+const SetMnemonicStep = ({ useWalletImportScreenReturn }: { useWalletImportScreenReturn: UseWalletImportReturn }): ReactElement<any> => {
   const {
-    setInputType, updateInputValue, onClickNext, errMsg, isValidForm,
+    setInputType, updateInputValue, onClickNext, errMsg, isValidForm
   }
-    = useWalletImportScreenReturn
-  const theme = useTheme()
-  const [agreeWarning, setAgreeWarning] = useState(false)
+    = useWalletImportScreenReturn;
+  const theme = useTheme();
+  const [agreeWarning, setAgreeWarning] = useState(false);
 
   return (
     <StyledContainer>
@@ -39,15 +27,13 @@ const SetMnemonicStep = ({
       />
       <View style={{
         paddingBottom: 8,
-        marginTop: -6,
+        marginTop: -6
       }}
       >
         <WebSeedInput
-          onChange={({
-            type, value,
-          }): void => {
-            updateInputValue(value)
-            setInputType(type)
+          onChange={({ type, value }): void => {
+            updateInputValue(value);
+            setInputType(type);
           }}
           errorMessage={errMsg}
         />
@@ -55,13 +41,13 @@ const SetMnemonicStep = ({
 
       <Row style={{
         columnGap: 8,
-        alignItems: 'center',
+        alignItems: 'center'
       }}
       >
         <WebCheckBox
           checked={agreeWarning}
           onClick={(): void => {
-            setAgreeWarning(!agreeWarning)
+            setAgreeWarning(!agreeWarning);
           }}
         />
         <WebText type='body5' color={theme.webNeutral._500}>
@@ -74,14 +60,12 @@ const SetMnemonicStep = ({
         size='small'
         onClick={onClickNext}
         disabled={!agreeWarning || !isValidForm}
-        style={{
-          justifyContent: 'center',
-        }}
+        style={{ justifyContent: 'center' }}
         text='Next'
         rightIcon='chevronRight'
       />
     </StyledContainer>
-  )
-}
+  );
+};
 
-export default SetMnemonicStep
+export default SetMnemonicStep;

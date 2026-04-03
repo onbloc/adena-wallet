@@ -1,24 +1,12 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import TransactionHistoryList, {
-  TransactionHistoryListProps,
-} from './transaction-history-list'
+import TransactionHistoryList, { TransactionHistoryListProps } from './transaction-history-list';
 
 describe('TransactionHistoryList Component', () => {
   it('TransactionHistoryList render', () => {
@@ -26,9 +14,9 @@ describe('TransactionHistoryList Component', () => {
       title: '',
       transactions: [],
       onClickItem: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -36,7 +24,7 @@ describe('TransactionHistoryList Component', () => {
         <ThemeProvider theme={theme}>
           <TransactionHistoryList {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

@@ -1,33 +1,21 @@
-import {
-  GlobalPopupStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalPopupStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import MemoInput, {
-  MemoInputProps,
-} from './memo-input'
+import MemoInput, { MemoInputProps } from './memo-input';
 
 describe('MemoInput Component', () => {
   it('MemoInput render', () => {
     const args: MemoInputProps = {
       memo: '132123123123',
       onChangeMemo: () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -35,7 +23,7 @@ describe('MemoInput Component', () => {
         <ThemeProvider theme={theme}>
           <MemoInput {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

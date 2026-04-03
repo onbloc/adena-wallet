@@ -1,14 +1,8 @@
-import React, {
-  type JSX,
-} from 'react'
+import React, { type JSX } from 'react';
 
-interface IconUploadProps {
-  fill?: string
-}
+interface IconUploadProps { fill?: string }
 
-const IconUpload: React.FC<IconUploadProps> = ({
-  fill = 'white',
-}): JSX.Element => (
+const IconUpload: React.FC<IconUploadProps> = ({ fill = 'white' }): JSX.Element => (
   <svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none'>
     <path
       className='icon'
@@ -19,6 +13,6 @@ const IconUpload: React.FC<IconUploadProps> = ({
     <rect x='14' y='19' width='4' height='5' fill='#191920' />
   </svg>
 
-)
+);
 
-export default IconUpload
+export default IconUpload;

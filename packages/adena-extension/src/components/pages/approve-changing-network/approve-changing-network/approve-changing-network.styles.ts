@@ -1,5 +1,5 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const ApproveChangingNetworkWrapper = styled.div`
   ${mixins.flex()};
@@ -12,7 +12,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
   .title-container {
     ${mixins.flex({
       align: 'normal',
-      justify: 'normal',
+      justify: 'normal'
     })};
     width: 100%;
     height: 152px;
@@ -40,7 +40,7 @@ export const ApproveChangingNetworkWrapper = styled.div`
     ${mixins.flex({
       direction: 'row',
       align: 'flex-start',
-      justify: 'normal',
+      justify: 'normal'
     })};
     width: fit-content;
 
@@ -50,4 +50,4 @@ export const ApproveChangingNetworkWrapper = styled.div`
       margin: 28px;
     }
   }
-`
+`;

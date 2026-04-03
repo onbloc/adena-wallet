@@ -1,10 +1,10 @@
-import mixins from '@styles/mixins'
-import styled from 'styled-components'
+import mixins from '@styles/mixins';
+import styled from 'styled-components';
 
 export const TransferInputWrapper = styled.div`
   ${mixins.flex({
     align: 'normal',
-    justify: 'normal',
+    justify: 'normal'
   })};
   position: relative;
   width: 100%;
@@ -38,4 +38,4 @@ export const TransferInputWrapper = styled.div`
     display: flex;
     padding-bottom: 20px;
   }
-`
+`;

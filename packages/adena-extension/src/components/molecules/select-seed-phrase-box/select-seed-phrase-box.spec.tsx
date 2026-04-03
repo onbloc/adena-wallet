@@ -1,24 +1,12 @@
-import {
-  GlobalWebStyle,
-} from '@styles/global-style'
-import theme from '@styles/theme'
-import {
-  render,
-} from '@testing-library/react'
-import React from 'react'
-import {
-  RecoilRoot,
-} from 'recoil'
-import {
-  ThemeProvider,
-} from 'styled-components'
-import {
-  describe, it,
-} from 'vitest'
+import { GlobalWebStyle } from '@styles/global-style';
+import theme from '@styles/theme';
+import { render } from '@testing-library/react';
+import React from 'react';
+import { RecoilRoot } from 'recoil';
+import { ThemeProvider } from 'styled-components';
+import { describe, it } from 'vitest';
 
-import SelectSeedPhraseBox, {
-  SelectSeedPhraseBoxProps,
-} from './select-seed-phrase-box'
+import SelectSeedPhraseBox, { SelectSeedPhraseBoxProps } from './select-seed-phrase-box';
 
 describe('SelectSeedPhraseBox Component', () => {
   it('SelectSeedPhraseBox render', () => {
@@ -28,13 +16,13 @@ describe('SelectSeedPhraseBox Component', () => {
           index: 1,
           keyringId: 'id',
           accountCount: 1,
-          selected: false,
-        },
+          selected: false
+        }
       ],
       select: async () => {
-        return
-      },
-    }
+        return;
+      }
+    };
 
     render(
       <RecoilRoot>
@@ -42,7 +30,7 @@ describe('SelectSeedPhraseBox Component', () => {
         <ThemeProvider theme={theme}>
           <SelectSeedPhraseBox {...args} />
         </ThemeProvider>
-      </RecoilRoot>,
-    )
-  })
-})
+      </RecoilRoot>
+    );
+  });
+});

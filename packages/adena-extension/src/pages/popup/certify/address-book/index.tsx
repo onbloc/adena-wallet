@@ -1,54 +1,34 @@
-import plus from '@assets/plus.svg'
-import {
-  formatAddress, formatNickname,
-} from '@common/utils/client-utils'
-import {
-  ListBox, Text,
-} from '@components/atoms'
-import {
-  CloseShadowButton,
-} from '@components/molecules'
-import {
-  useAddressBook,
-} from '@hooks/use-address-book'
-import useAppNavigate from '@hooks/use-app-navigate'
-import {
-  AddressBookItem,
-} from '@repositories/wallet'
-import mixins from '@styles/mixins'
-import {
-  RoutePath,
-} from '@types'
-import React, {
-  type JSX,
-} from 'react'
-import styled, {
-  useTheme,
-} from 'styled-components'
+import plus from '@assets/plus.svg';
+import { formatAddress, formatNickname } from '@common/utils/client-utils';
+import { ListBox, Text } from '@components/atoms';
+import { CloseShadowButton } from '@components/molecules';
+import { useAddressBook } from '@hooks/use-address-book';
+import useAppNavigate from '@hooks/use-app-navigate';
+import { AddressBookItem } from '@repositories/wallet';
+import mixins from '@styles/mixins';
+import { RoutePath } from '@types';
+import React, { type JSX } from 'react';
+import styled, { useTheme } from 'styled-components';
 
-import LoadingAddressBook from './loading-address-book'
+import LoadingAddressBook from './loading-address-book';
 
-type navigateStatus = 'add' | 'edit'
+type navigateStatus = 'add' | 'edit';
 
 const AddressBook = (): JSX.Element => {
-  const theme = useTheme()
-  const {
-    navigate, goBack,
-  } = useAppNavigate()
-  const {
-    loading, addressBook,
-  } = useAddressBook()
+  const theme = useTheme();
+  const { navigate, goBack } = useAppNavigate();
+  const { loading, addressBook } = useAddressBook();
   const addAddressHandler = (status: navigateStatus, curr?: AddressBookItem): void =>
     navigate<RoutePath.AddAddress>(RoutePath.AddAddress, {
       state: {
         status,
         addressList: addressBook,
-        curr,
-      },
-    })
+        curr
+      }
+    });
 
   if (loading) {
-    return <LoadingAddressBook />
+    return <LoadingAddressBook />;
   }
 
   return (
@@ -85,13 +65,13 @@ const AddressBook = (): JSX.Element => {
       </>
       <CloseShadowButton onClick={goBack} />
     </Wrapper>
-  )
-}
+  );
+};
 
 const Wrapper = styled.main`
   ${mixins.flex({
     align: 'flex-start',
-    justify: 'flex-start',
+    justify: 'flex-start'
   })};
   width: 100%;
   height: 100%;
@@ -104,21 +84,21 @@ const Wrapper = styled.main`
     width: 100%;
     text-align: center;
   }
-`
+`;
 
 const TopSection = styled.div`
   ${mixins.flex({
     direction: 'row',
-    justify: 'space-between',
+    justify: 'space-between'
   })};
   width: 100%;
   margin-bottom: 12px;
-`
+`;
 
 const AddButton = styled.button`
   width: 24px;
   height: 24px;
   background: url(${plus}) no-repeat center center / 100% 100%;
-`
+`;
 
-export default AddressBook
+export default AddressBook;

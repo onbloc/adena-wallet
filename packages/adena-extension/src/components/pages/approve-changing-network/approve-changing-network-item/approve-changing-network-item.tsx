@@ -1,18 +1,16 @@
-import UnknownLogo from '@assets/common-unknown-logo.svg'
-import React from 'react'
+import UnknownLogo from '@assets/common-unknown-logo.svg';
+import React from 'react';
 
-import {
-  ApproveChangingNetworkItemWrapper,
-} from './approve-changing-network-item.styles'
+import { ApproveChangingNetworkItemWrapper } from './approve-changing-network-item.styles';
 
 export interface ApproveChangingNetworkItemProps {
-  name: string
-  logo?: string
+  name: string;
+  logo?: string;
 }
 
 const ApproveChangingNetworkItem: React.FC<ApproveChangingNetworkItemProps> = ({
   name,
-  logo,
+  logo
 }) => {
   return (
     <ApproveChangingNetworkItemWrapper>
@@ -21,7 +19,7 @@ const ApproveChangingNetworkItem: React.FC<ApproveChangingNetworkItemProps> = ({
         <span className='chain-name'>{name}</span>
       </div>
     </ApproveChangingNetworkItemWrapper>
-  )
-}
+  );
+};
 
-export default ApproveChangingNetworkItem
+export default ApproveChangingNetworkItem;
